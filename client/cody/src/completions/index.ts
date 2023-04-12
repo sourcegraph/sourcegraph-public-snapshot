@@ -1,24 +1,36 @@
-import { OpenAIApi } from 'openai'
+import * as anthropic from '@anthropic-ai/sdk'
+import { ChatCompletionRequestMessage } from 'openai'
 import * as vscode from 'vscode'
 
+import { ReferenceSnippet, getContext } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
+import { History } from './history'
+import { Message, messagesToText } from './prompts'
+
+function lastNLines(text: string, n: number): string {
+    const lines = text.split('\n')
+    return lines.slice(Math.max(0, lines.length - n)).join('\n')
+}
+
+const estimatedLLMResponseLatencyMS = 700
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
+    private promptTokens: number
     private maxPrefixTokens: number
     private maxSuffixTokens: number
     constructor(
-        private openai: OpenAIApi,
+        private claude: anthropic.Client | null,
         private documentProvider: CompletionsDocumentProvider,
-        private model = 'gpt-3.5-turbo',
+        private history: History,
         private contextWindowTokens = 2048, // 8001
-        private bytesPerToken = 4,
+        private charsPerToken = 4,
         private responseTokens = 200,
-        private prefixPercentage = 0.9,
+        private prefixPercentage = 0.6,
         private suffixPercentage = 0.1
     ) {
-        const promptTokens = this.contextWindowTokens - this.responseTokens
-        this.maxPrefixTokens = Math.floor(promptTokens * this.prefixPercentage)
-        this.maxSuffixTokens = Math.floor(promptTokens * this.suffixPercentage)
+        this.promptTokens = this.contextWindowTokens - this.responseTokens
+        this.maxPrefixTokens = Math.floor(this.promptTokens * this.prefixPercentage)
+        this.maxSuffixTokens = Math.floor(this.promptTokens * this.suffixPercentage)
     }
 
     public async provideInlineCompletionItems(
@@ -30,14 +42,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            vscode.window.showErrorMessage(error)
+            await vscode.window.showErrorMessage(`Error in provideInlineCompletionItems: ${error}`)
             return []
         }
     }
 
-    private tokToByte(toks: number): number {
-        return Math.floor(toks * this.bytesPerToken)
+    private tokToChar(toks: number): number {
+        return toks * this.charsPerToken
     }
 
     private async provideInlineCompletionItemsInner(
@@ -46,16 +57,16 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         context: vscode.InlineCompletionContext,
         token: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
-        // Require manual invocation
-        if (context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic) {
+        if (!this.claude) {
+            console.log('claude not activated')
             return []
         }
 
         const docContext = getCurrentDocContext(
             document,
             position,
-            this.tokToByte(this.maxPrefixTokens),
-            this.tokToByte(this.maxSuffixTokens)
+            this.tokToChar(this.maxPrefixTokens),
+            this.tokToChar(this.maxSuffixTokens)
         )
         if (!docContext) {
             return []
@@ -63,71 +74,45 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const { prefix, prevLine: precedingLine } = docContext
         let waitMs: number
-        let completionPrefix = '' // text to require as the first part of the completion
+        const remainingChars = this.tokToChar(this.promptTokens)
+        const completers: CompletionProvider[] = []
         if (precedingLine.trim() === '') {
-            // Start of line: medium debounce, allow multiple lines
-            waitMs = 1000
+            // Start of line: medium debounce
+            waitMs = 1500
+            completers.push(
+                new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '', 2)
+            )
         } else if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || precedingLine.endsWith('.')) {
-            // Middle of line: long debounce, next line
-            waitMs = 100
+            // Do nothing
+            return []
         } else {
-            // End of line: long debounce, next line
-            completionPrefix = '\n'
-            waitMs = 2000
-
-            // TODO(beyang): handle this as a special case, try 2 completions, one with newline inserted, one without
+            // End of line: long debounce, complete until newline
+            waitMs = 3000
+            completers.push(
+                new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '', 2),
+                new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '\n', 2)
+            )
         }
 
         const aborter = new AbortController()
         token.onCancellationRequested(() => aborter.abort())
 
-        const waiter = new Promise<void>(resolve => setTimeout(() => resolve(), waitMs))
-        const completionsPromise = this.openai.createChatCompletion(
-            {
-                model: this.model,
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'Complete whatever code you obtain from the user through the end of the line.',
-                    },
-                    {
-                        role: 'user',
-                        content: prefix + completionPrefix,
-                    },
-                ],
-                max_tokens: Math.min(this.contextWindowTokens - this.maxPrefixTokens, this.responseTokens),
-                n: 1,
-            },
-            {
-                signal: aborter.signal,
-            }
+        // TODO(beyang): trigger on context quality (better context means longer completion)
+
+        const waiter = new Promise<void>(resolve =>
+            setTimeout(() => resolve(), Math.max(0, waitMs - estimatedLLMResponseLatencyMS))
         )
         await waiter
-        let completions
-        try {
-            completions = await completionsPromise
-        } catch (error) {
-            throw new Error(`error fetching completions from OpenAI: ${error}`)
-        }
-        if (token.isCancellationRequested) {
-            return []
-        }
-
-        if (completions.data.choices.length === 0) {
-            throw new Error('no completions')
-        }
-
-        const inlineCompletions: vscode.InlineCompletionItem[] = []
-        for (const choice of completions.data.choices) {
-            if (!choice.message?.content) {
-                continue
-            }
-            inlineCompletions.push(new vscode.InlineCompletionItem(completionPrefix + choice.message.content))
-        }
-        return inlineCompletions
+        const results = (await Promise.all(completers.map(c => c.generateCompletions()))).flat()
+        return results.map(r => new vscode.InlineCompletionItem(r.content))
     }
 
     public async fetchAndShowCompletions(): Promise<void> {
+        if (!this.claude) {
+            console.log('claude not activated')
+            return
+        }
+
         const currentEditor = vscode.window.activeTextEditor
         if (!currentEditor || currentEditor?.document.uri.scheme === 'cody') {
             return
@@ -143,58 +128,55 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             viewColumn: 2,
         })
 
+        // TODO(beyang): make getCurrentDocContext fetch complete line prefix
         const docContext = getCurrentDocContext(
             currentEditor.document,
             currentEditor.selection.start,
-            this.tokToByte(this.maxPrefixTokens),
-            this.tokToByte(this.maxSuffixTokens)
+            this.tokToChar(this.maxPrefixTokens),
+            this.tokToChar(this.maxSuffixTokens)
         )
         if (docContext === null) {
             console.error('not showing completions, no currently open doc')
             return
         }
-        const { prefix, suffix, prevLine, prevNonEmptyLine } = docContext
+        const { prefix } = docContext
+
+        // TODO: better remaining context calculation
+        const systemMessage: ChatCompletionRequestMessage = {
+            role: 'system',
+            content: 'Complete whatever code you obtain from the user up to the end of the function or block scope.',
+        }
+        const l = (systemMessage.role + ': ' + systemMessage.content + '\n').length + prefix.length + 'user: \n'.length
+        const contextChars = this.tokToChar(this.promptTokens) - l
+
+        const windowSize = 20
+        const similarCode = await getContext(
+            currentEditor,
+            this.history,
+            lastNLines(prefix, windowSize),
+            windowSize,
+            contextChars
+        )
+
+        const remainingChars = this.tokToChar(this.promptTokens)
+
+        const completer = new MultilineCompletionProvider(
+            this.claude,
+            remainingChars,
+            this.responseTokens,
+            similarCode,
+            prefix
+        )
 
         try {
-            const completion = await this.openai.createChatCompletion({
-                model: this.model,
-                messages: [
-                    {
-                        role: 'system',
-                        content:
-                            'Complete whatever code you obtain from the user up to the end of the function or block scope.',
-                    },
-                    {
-                        role: 'user',
-                        content: prefix,
-                    },
-                ],
-                max_tokens: Math.min(this.contextWindowTokens - this.maxPrefixTokens, this.responseTokens),
-                n: 3,
-            })
-
-            // Trim lines that go past current indent
-            for (const choice of completion.data.choices) {
-                if (!choice.message?.content) {
-                    continue
-                }
-                const indent = getIndent(prevNonEmptyLine)
-                choice.message.content = trimToIndent(choice.message.content, indent)
-            }
-
-            this.documentProvider.addCompletions(completionsUri, ext, prevLine, completion.data, {
-                prompt: prefix,
-                suffix,
+            const completions = await completer.generateCompletions(3)
+            this.documentProvider.addCompletions(completionsUri, ext, completions, {
+                suffix: '',
                 elapsedMillis: 0,
                 llmOptions: null,
             })
         } catch (error) {
-            if (error.response) {
-                console.error(error.response.status)
-                console.error(error.response.data)
-            } else {
-                console.error(error.message)
-            }
+            await vscode.window.showErrorMessage(`Error in provideInlineCompletionItems: ${error}`)
         }
     }
 }
@@ -278,25 +260,239 @@ function getCurrentDocContext(
     }
 }
 
-function getIndent(line: string): string {
-    const match = /^(\s*)/.exec(line)
-    if (!match || match.length < 2) {
-        return ''
+async function batchClaude(
+    claude: anthropic.Client,
+    params: anthropic.SamplingParameters,
+    n: number
+): Promise<anthropic.CompletionResponse[]> {
+    const responses: Promise<anthropic.CompletionResponse>[] = []
+    for (let i = 0; i < n; i++) {
+        responses.push(claude.complete(params))
     }
-    return match[1]
+    return Promise.all(responses)
 }
 
-function trimToIndent(text: string, indent: string): string {
-    const lines = text.split('\n')
-    // Iterate through the lines starting at the second line (always include the first line)
-    for (let i = 1; i < lines.length; i++) {
-        if (lines[i].trim().length === 0) {
-            continue
+export interface Completion {
+    prompt: string
+    content: string
+    stopReason?: string
+}
+
+interface CompletionProvider {
+    generateCompletions(n?: number): Promise<Completion[]>
+}
+
+export class MultilineCompletionProvider implements CompletionProvider {
+    constructor(
+        private claude: anthropic.Client,
+        private promptChars: number,
+        private responseTokens: number,
+        private snippets: ReferenceSnippet[],
+        private prefix: string,
+        private defaultN: number = 1
+    ) {}
+
+    private makePrompt(): string {
+        // TODO(beyang): escape 'Human:' and 'Assistant:'
+        const prefix = this.prefix.trim()
+
+        const prefixLines = prefix.split('\n')
+        if (prefixLines.length === 0) {
+            throw new Error('no prefix lines')
         }
-        const lineIndent = getIndent(lines[i])
-        if (indent.startsWith(lineIndent) && lineIndent.length < indent.length) {
-            return lines.slice(0, i).join('\n')
+
+        const referenceSnippetMessages: Message[] = []
+        let prefixMessages: Message[]
+        if (prefixLines.length > 2) {
+            const endLine = Math.max(Math.floor(prefixLines.length / 2), prefixLines.length - 5)
+            prefixMessages = [
+                {
+                    role: 'human',
+                    text:
+                        'Complete the following file:\n' +
+                        '```' +
+                        `\n${prefixLines.slice(0, endLine).join('\n')}\n` +
+                        '```',
+                },
+                {
+                    role: 'ai',
+                    text: `Here is the completion of the file:\n\`\`\`\n${prefixLines.slice(endLine).join('\n')}`,
+                },
+            ]
+        } else {
+            prefixMessages = [
+                {
+                    role: 'human',
+                    text: 'Write some code',
+                },
+                {
+                    role: 'ai',
+                    text: `Here is some code:\n\`\`\`\n${prefix}`,
+                },
+            ]
         }
+
+        const promptNoSnippets = messagesToText([...referenceSnippetMessages, ...prefixMessages])
+        let remainingChars = this.promptChars - promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
+        for (const snippet of this.snippets) {
+            const snippetMessages: Message[] = [
+                {
+                    role: 'human',
+                    text:
+                        `Add the following code snippet (from file ${snippet.filename}) to your knowledge base:\n` +
+                        '```' +
+                        `\n${snippet.text}\n` +
+                        '```',
+                },
+                {
+                    role: 'ai',
+                    text: 'Okay, I have added it to my knowledge base.',
+                },
+            ]
+            const numSnippetChars = messagesToText(snippetMessages).length + 1
+            if (numSnippetChars > remainingChars) {
+                break
+            }
+            referenceSnippetMessages.push(...snippetMessages)
+            remainingChars -= numSnippetChars
+        }
+
+        return messagesToText([...referenceSnippetMessages, ...prefixMessages])
     }
-    return text
+    private postProcess(completion: string): string {
+        const endBlockIndex = completion.indexOf('```')
+        if (endBlockIndex !== -1) {
+            return completion.slice(0, endBlockIndex).trimEnd()
+        }
+        return completion.trimEnd()
+    }
+
+    public async generateCompletions(n?: number): Promise<Completion[]> {
+        // Create prompt
+        const prompt = this.makePrompt()
+        if (prompt.length > this.promptChars) {
+            throw new Error('prompt length exceeded maximum alloted chars')
+        }
+
+        // Issue request
+        const responses = await batchClaude(
+            this.claude,
+            {
+                prompt,
+                stop_sequences: [anthropic.HUMAN_PROMPT],
+                max_tokens_to_sample: this.responseTokens,
+                model: 'claude-instant-v1.0',
+            },
+            n || this.defaultN
+        )
+        // Post-process
+        return responses.map(resp => ({
+            prompt,
+            content: this.postProcess(resp.completion),
+            stopReason: resp.stop_reason,
+        }))
+    }
+}
+
+export class EndOfLineCompletionProvider implements CompletionProvider {
+    constructor(
+        private claude: anthropic.Client,
+        private promptChars: number,
+        private responseTokens: number,
+        private prefix: string,
+        private injectPrefix: string,
+        private defaultN: number = 1
+    ) {}
+
+    private makePrompt(): string {
+        // TODO(beyang): escape 'Human:' and 'Assistant:'
+        const prefixLines = this.prefix.split('\n')
+        if (prefixLines.length === 0) {
+            throw new Error('no prefix lines')
+        }
+
+        const referenceSnippetMessages: Message[] = []
+        let prefixMessages: Message[]
+        if (prefixLines.length > 2) {
+            const endLine = Math.max(Math.floor(prefixLines.length / 2), prefixLines.length - 5)
+            prefixMessages = [
+                {
+                    role: 'human',
+                    text:
+                        'Complete the following file:\n' +
+                        '```' +
+                        `\n${prefixLines.slice(0, endLine).join('\n')}\n` +
+                        '```',
+                },
+                {
+                    role: 'ai',
+                    text:
+                        'Here is the completion of the file:\n' +
+                        '```' +
+                        `\n${prefixLines.slice(endLine).join('\n')}${this.injectPrefix}`,
+                },
+            ]
+        } else {
+            prefixMessages = [
+                {
+                    role: 'human',
+                    text: 'Write some code',
+                },
+                {
+                    role: 'ai',
+                    text: `Here is some code:\n\`\`\`\n${this.prefix}${this.injectPrefix}`,
+                },
+            ]
+        }
+
+        return messagesToText([...referenceSnippetMessages, ...prefixMessages])
+    }
+
+    private postProcess(completion: string): string {
+        // Sometimes Claude omits an extra space
+        if (
+            completion.length > 0 &&
+            completion.startsWith(' ') &&
+            this.prefix.length > 0 &&
+            this.prefix.endsWith(' ')
+        ) {
+            completion = completion.slice(1)
+        }
+        // Insert the injected prefix back in
+        if (this.injectPrefix.length > 0) {
+            completion = this.injectPrefix + completion
+        }
+        // Strip out trailing markdown block and trim trailing whitespace
+        const endBlockIndex = completion.indexOf('```')
+        if (endBlockIndex !== -1) {
+            return completion.slice(0, endBlockIndex).trimEnd()
+        }
+        return completion.trimEnd()
+    }
+
+    public async generateCompletions(n?: number): Promise<Completion[]> {
+        // Create prompt
+        const prompt = this.makePrompt()
+        if (prompt.length > this.promptChars) {
+            throw new Error('prompt length exceeded maximum alloted chars')
+        }
+
+        // Issue request
+        const responses = await batchClaude(
+            this.claude,
+            {
+                prompt,
+                stop_sequences: [anthropic.HUMAN_PROMPT, '\n'],
+                max_tokens_to_sample: this.responseTokens,
+                model: 'claude-instant-v1.0',
+            },
+            n || this.defaultN
+        )
+        // Post-process
+        return responses.map(resp => ({
+            prompt,
+            content: this.postProcess(resp.completion),
+            stopReason: resp.stop_reason,
+        }))
+    }
 }

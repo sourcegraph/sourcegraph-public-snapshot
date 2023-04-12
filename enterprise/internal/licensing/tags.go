@@ -73,4 +73,5 @@ var MiscTags = []string{
 	"dev",
 	TrueUpUserCountTag,
 	"starter",
+	"mau",
 }

@@ -9,9 +9,12 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -20,12 +23,15 @@ import (
 )
 
 type handler struct {
-	nameSet       *janitor.NameSet
-	logStore      command.ExecutionLogEntryStore
-	filesStore    workspace.FilesStore
-	options       Options
-	operations    *command.Operations
-	runnerFactory func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner
+	nameSet      *janitor.NameSet
+	cmdRunner    util.CmdRunner
+	cmd          command.Command
+	logStore     command.ExecutionLogEntryStore
+	filesStore   workspace.FilesStore
+	options      Options
+	cloneOptions workspace.CloneOptions
+	operations   *command.Operations
+	jobRuntime   runtime.Runtime
 }
 
 var (
@@ -40,11 +46,11 @@ var (
 // with keeping our heartbeats due to machine load. We'll continue to check this condition on the
 // polling interval
 func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments any, err error) {
-	if !h.options.FirecrackerOptions.Enabled {
+	if !h.options.RunnerOptions.FirecrackerOptions.Enabled {
 		return true, nil, nil
 	}
 
-	runningVMsByName, err := ignite.ActiveVMsByName(context.Background(), h.options.VMPrefix, false)
+	runningVMsByName, err := ignite.ActiveVMsByName(context.Background(), h.cmdRunner, h.options.VMPrefix, false)
 	if err != nil {
 		return false, nil, err
 	}
@@ -80,131 +86,74 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	commandLogger := command.NewLogger(h.logStore, job, job.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
+	commandLogger := command.NewLogger(logger, h.logStore, job, union(h.options.RedactedValues, job.RedactedValues))
 	defer func() {
 		if flushErr := commandLogger.Flush(); flushErr != nil {
 			err = errors.Append(err, flushErr)
 		}
 	}()
 
-	// Create a working directory for this job which will be removed once the job completes.
-	// If a repository is supplied as part of the job configuration, it will be cloned into
-	// the working directory.
+	// src-cli steps do not work in the new runtime environment.
+	// Remove this when native SSBC is complete.
+	if len(job.CliSteps) > 0 {
+		logger.Debug("Handling src-cli steps")
+		return h.handle(ctx, logger, commandLogger, job)
+	}
+
+	if h.jobRuntime == nil {
+		// For backwards compatibility. If no runtime mode is provided, then use the old handler.
+		logger.Debug("Runtime not configured. Falling back to legacy handler")
+		return h.handle(ctx, logger, commandLogger, job)
+	}
+
+	// Setup all the file, mounts, etc...
 	logger.Info("Creating workspace")
-
-	hostRunner := h.runnerFactory("", commandLogger, command.Options{}, h.operations)
-	ws, err := h.prepareWorkspace(ctx, hostRunner, job, commandLogger)
+	ws, err := h.jobRuntime.PrepareWorkspace(ctx, commandLogger, job)
 	if err != nil {
-		return errors.Wrap(err, "failed to prepare workspace")
+		return errors.Wrap(err, "creating workspace")
 	}
-	defer ws.Remove(ctx, h.options.KeepWorkspaces)
-
-	vmNameSuffix, err := uuid.NewRandom()
-	if err != nil {
-		return err
-	}
-
-	// Construct a unique name for the VM prefixed by something that differentiates
-	// VMs created by this executor instance and another one that happens to run on
-	// the same host (as is the case in dev). This prefix is expected to match the
-	// prefix given to ignite.CurrentlyRunningVMs in other parts of this service.
-	name := fmt.Sprintf("%s-%s", h.options.VMPrefix, vmNameSuffix.String())
+	defer ws.Remove(ctx, h.options.RunnerOptions.FirecrackerOptions.KeepWorkspaces)
 
 	// Before we setup a VM (and after we teardown), mark the name as in-use so that
 	// the janitor process cleaning up orphaned VMs doesn't try to stop/remove the one
 	// we're using for the current job.
+	name := newVMName(h.options.VMPrefix)
 	h.nameSet.Add(name)
 	defer h.nameSet.Remove(name)
 
-	options := command.Options{
-		ExecutorName:       name,
-		DockerOptions:      h.options.DockerOptions,
-		FirecrackerOptions: h.options.FirecrackerOptions,
-		ResourceOptions:    h.options.ResourceOptions,
-	}
-	// If the job has docker auth config set, prioritize that over the env var.
-	if len(job.DockerAuthConfig.Auths) > 0 {
-		options.DockerOptions.DockerAuthConfig = job.DockerAuthConfig
-	}
-	runner := h.runnerFactory(ws.Path(), commandLogger, options, h.operations)
-
-	logger.Info("Setting up VM")
-
-	// Setup Firecracker VM (if enabled)
-	if err := runner.Setup(ctx); err != nil {
-		return errors.Wrap(err, "failed to setup virtual machine")
+	// Create the runner that will actually run the commands.
+	logger.Info("Setting up runner")
+	runtimeRunner, err := h.jobRuntime.NewRunner(ctx, commandLogger, runtime.RunnerOptions{Path: ws.Path(), DockerAuthConfig: job.DockerAuthConfig})
+	if err != nil {
+		return errors.Wrap(err, "creating runtime runner")
 	}
 	defer func() {
 		// Perform this outside of the task execution context. If there is a timeout or
 		// cancellation error we don't want to skip cleaning up the resources that we've
 		// allocated for the current task.
-		if teardownErr := runner.Teardown(context.Background()); teardownErr != nil {
+		if teardownErr := runtimeRunner.Teardown(context.Background()); teardownErr != nil {
 			err = errors.Append(err, teardownErr)
 		}
 	}()
 
-	// Invoke each docker step sequentially
-	for i, dockerStep := range job.DockerSteps {
-		var key string
-		if dockerStep.Key != "" {
-			key = fmt.Sprintf("step.docker.%s", dockerStep.Key)
-		} else {
-			key = fmt.Sprintf("step.docker.%d", i)
-		}
-		dockerStepCommand := command.CommandSpec{
-			Key:        key,
-			Image:      dockerStep.Image,
-			ScriptPath: ws.ScriptFilenames()[i],
-			Dir:        dockerStep.Dir,
-			Env:        dockerStep.Env,
-			Operation:  h.operations.Exec,
-		}
-
-		logger.Info(fmt.Sprintf("Running docker step #%d", i))
-
-		if err := runner.Run(ctx, dockerStepCommand); err != nil {
-			return errors.Wrap(err, "failed to perform docker step")
-		}
+	// Get the commands we will execute.
+	logger.Info("Creating commands")
+	commands, err := h.jobRuntime.NewRunnerSpecs(ws, job.DockerSteps)
+	if err != nil {
+		return errors.Wrap(err, "creating commands")
 	}
 
-	// Invoke each src-cli step sequentially
-	for i, cliStep := range job.CliSteps {
-		var key string
-		if cliStep.Key != "" {
-			key = fmt.Sprintf("step.src.%s", cliStep.Key)
-		} else {
-			key = fmt.Sprintf("step.src.%d", i)
-		}
-
-		cliStepCommand := command.CommandSpec{
-			Key:       key,
-			Command:   append([]string{"src"}, cliStep.Commands...),
-			Dir:       cliStep.Dir,
-			Env:       cliStep.Env,
-			Operation: h.operations.Exec,
-		}
-
-		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
-
-		if err := runner.Run(ctx, cliStepCommand); err != nil {
-			return errors.Wrap(err, "failed to perform src-cli step")
+	// Run all the things.
+	logger.Info("Running commands")
+	for _, spec := range commands {
+		spec.Queue = h.options.QueueName
+		spec.JobID = job.ID
+		if err := runtimeRunner.Run(ctx, spec); err != nil {
+			return errors.Wrapf(err, "running command %q", spec.CommandSpec.Key)
 		}
 	}
 
 	return nil
-}
-
-func union(a, b map[string]string) map[string]string {
-	c := make(map[string]string, len(a)+len(b))
-
-	for k, v := range a {
-		c[k] = v
-	}
-	for k, v := range b {
-		c[k] = v
-	}
-
-	return c
 }
 
 func createHoneyEvent(_ context.Context, job types.Job, err error, duration time.Duration) honey.Event {
@@ -222,4 +171,157 @@ func createHoneyEvent(_ context.Context, job types.Job, err error, duration time
 	}
 
 	return honey.NewEventWithFields("executor", fields)
+}
+
+func union(a, b map[string]string) map[string]string {
+	c := make(map[string]string, len(a)+len(b))
+
+	for k, v := range a {
+		c[k] = v
+	}
+	for k, v := range b {
+		c[k] = v
+	}
+
+	return c
+}
+
+// Handle clones the target code into a temporary directory, invokes the target indexer in a
+// fresh docker container, and uploads the results to the external frontend API.
+func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger command.Logger, job types.Job) error {
+	// Create a working directory for this job which will be removed once the job completes.
+	// If a repository is supplied as part of the job configuration, it will be cloned into
+	// the working directory.
+	logger.Info("Creating workspace")
+
+	ws, err := h.prepareWorkspace(ctx, h.cmd, job, commandLogger)
+	if err != nil {
+		return errors.Wrap(err, "failed to prepare workspace")
+	}
+	defer ws.Remove(ctx, h.options.RunnerOptions.FirecrackerOptions.KeepWorkspaces)
+
+	// Before we setup a VM (and after we teardown), mark the name as in-use so that
+	// the janitor process cleaning up orphaned VMs doesn't try to stop/remove the one
+	// we're using for the current job.
+	name := newVMName(h.options.VMPrefix)
+	h.nameSet.Add(name)
+	defer h.nameSet.Remove(name)
+
+	jobRunner := runner.NewRunner(h.cmd, ws.Path(), name, commandLogger, h.options.RunnerOptions, job.DockerAuthConfig, h.operations)
+
+	logger.Info("Setting up VM")
+
+	// Setup Firecracker VM (if enabled)
+	if err = jobRunner.Setup(ctx); err != nil {
+		return errors.Wrap(err, "failed to setup virtual machine")
+	}
+	defer func() {
+		// Perform this outside of the task execution context. If there is a timeout or
+		// cancellation error we don't want to skip cleaning up the resources that we've
+		// allocated for the current task.
+		if teardownErr := jobRunner.Teardown(context.Background()); teardownErr != nil {
+			err = errors.Append(err, teardownErr)
+		}
+	}()
+
+	// Invoke each docker step sequentially
+	for i, dockerStep := range job.DockerSteps {
+		var key string
+		if dockerStep.Key != "" {
+			key = fmt.Sprintf("step.docker.%s", dockerStep.Key)
+		} else {
+			key = fmt.Sprintf("step.docker.%d", i)
+		}
+		dockerStepCommand := runner.Spec{
+			CommandSpec: command.Spec{
+				Key:       key,
+				Dir:       dockerStep.Dir,
+				Env:       dockerStep.Env,
+				Operation: h.operations.Exec,
+			},
+			Image:      dockerStep.Image,
+			ScriptPath: ws.ScriptFilenames()[i],
+		}
+
+		logger.Info(fmt.Sprintf("Running docker step #%d", i))
+
+		if err = jobRunner.Run(ctx, dockerStepCommand); err != nil {
+			return errors.Wrap(err, "failed to perform docker step")
+		}
+	}
+
+	// Invoke each src-cli step sequentially
+	for i, cliStep := range job.CliSteps {
+		var key string
+		if cliStep.Key != "" {
+			key = fmt.Sprintf("step.src.%s", cliStep.Key)
+		} else {
+			key = fmt.Sprintf("step.src.%d", i)
+		}
+
+		cliStepCommand := runner.Spec{
+			CommandSpec: command.Spec{
+				Key:       key,
+				Command:   append([]string{"src"}, cliStep.Commands...),
+				Dir:       cliStep.Dir,
+				Env:       cliStep.Env,
+				Operation: h.operations.Exec,
+			},
+		}
+
+		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
+
+		if err = jobRunner.Run(ctx, cliStepCommand); err != nil {
+			return errors.Wrap(err, "failed to perform src-cli step")
+		}
+	}
+
+	return nil
+}
+
+// prepareWorkspace creates and returns a temporary directory in which acts the workspace
+// while processing a single job. It is up to the caller to ensure that this directory is
+// removed after the job has finished processing. If a repository name is supplied, then
+// that repository will be cloned (through the frontend API) into the workspace.
+func (h *handler) prepareWorkspace(
+	ctx context.Context,
+	cmd command.Command,
+	job types.Job,
+	commandLogger command.Logger,
+) (workspace.Workspace, error) {
+	if h.options.RunnerOptions.FirecrackerOptions.Enabled {
+		return workspace.NewFirecrackerWorkspace(
+			ctx,
+			h.filesStore,
+			job,
+			h.options.RunnerOptions.DockerOptions.Resources.DiskSpace,
+			h.options.RunnerOptions.FirecrackerOptions.KeepWorkspaces,
+			h.cmdRunner,
+			cmd,
+			commandLogger,
+			h.cloneOptions,
+			h.operations,
+		)
+	}
+
+	return workspace.NewDockerWorkspace(
+		ctx,
+		h.filesStore,
+		job,
+		cmd,
+		commandLogger,
+		h.cloneOptions,
+		h.operations,
+	)
+}
+
+func newVMName(vmPrefix string) string {
+	vmNameSuffix := uuid.NewString()
+
+	// Construct a unique name for the VM prefixed by something that differentiates
+	// VMs created by this executor instance and another one that happens to run on
+	// the same host (as is the case in dev). This prefix is expected to match the
+	// prefix given to ignite.CurrentlyRunningVMs in other parts of this service.
+	name := fmt.Sprintf("%s-%s", vmPrefix, vmNameSuffix)
+	return name
 }

@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 )
 
@@ -18,10 +17,10 @@ type CodeNavService interface {
 	GetRanges(ctx context.Context, args codenav.RequestArgs, requestState codenav.RequestState, startLine, endLine int) (adjustedRanges []codenav.AdjustedCodeIntelligenceRange, err error)
 	GetStencil(ctx context.Context, args codenav.RequestArgs, requestState codenav.RequestState) (adjustedRanges []shared.Range, err error)
 	GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []uploadsshared.Dump, err error)
+	VisibleUploadsForPath(ctx context.Context, requestState codenav.RequestState) ([]uploadsshared.Dump, error)
+	SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string, uploadID int) (data []shared.SnapshotData, err error)
 }
 
 type AutoIndexingService interface {
 	QueueRepoRev(ctx context.Context, repositoryID int, rev string) error
 }
-
-type UploadsService = sharedresolvers.UploadsService

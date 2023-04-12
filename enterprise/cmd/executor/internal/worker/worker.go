@@ -14,9 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -29,11 +33,6 @@ type Options struct {
 	// this executor instance. Different values for executors running on the same host
 	// (as in dev) will allow the janitors not to see each other's jobs as orphans.
 	VMPrefix string
-
-	// KeepWorkspaces prevents deletion of a workspace after a job completes. Setting
-	// this value to true will continually use more and more disk, so it should only
-	// be used as a debugging mechanism.
-	KeepWorkspaces bool
 
 	// QueueName is the name of the queue to process work from. Having this configurable
 	// allows us to have multiple worker pools with different resource requirements and
@@ -59,15 +58,7 @@ type Options struct {
 	// FilesOptions configures the client that interacts with the files API.
 	FilesOptions apiclient.BaseClientOptions
 
-	// DockerOptions configures the behavior of docker container creation.
-	DockerOptions command.DockerOptions
-
-	// FirecrackerOptions configures the behavior of Firecracker virtual machine creation.
-	FirecrackerOptions command.FirecrackerOptions
-
-	// ResourceOptions configures the resource limits of docker container and Firecracker
-	// virtual machines running on the executor.
-	ResourceOptions command.ResourceOptions
+	RunnerOptions runner.Options
 
 	// NodeExporterEndpoint is the URL of the local node_exporter endpoint, without
 	// the /metrics path.
@@ -97,18 +88,39 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 		return nil, errors.Wrap(err, "building files store")
 	}
 
-	h := &handler{
-		nameSet:       nameSet,
-		logStore:      queueClient,
-		filesStore:    filesClient,
-		options:       options,
-		operations:    command.NewOperations(observationCtx),
-		runnerFactory: command.NewRunner,
+	commandOps := command.NewOperations(observationCtx)
+	cloneOptions := workspace.CloneOptions{
+		ExecutorName:   options.WorkerOptions.WorkerHostname,
+		EndpointURL:    options.QueueOptions.BaseClientOptions.EndpointOptions.URL,
+		GitServicePath: options.GitServicePath,
+		ExecutorToken:  options.QueueOptions.BaseClientOptions.EndpointOptions.Token,
 	}
 
-	ctx := context.Background()
+	cmdRunner := &util.RealCmdRunner{}
+	cmd := &command.RealCommand{
+		CmdRunner: cmdRunner,
+		Logger:    log.Scoped("executor-worker.command", "command execution"),
+	}
 
-	return workerutil.NewWorker[types.Job](ctx, queueClient, h, options.WorkerOptions), nil
+	// Configure the supported runtimes
+	jobRuntime, err := runtime.New(observationCtx.Logger, commandOps, filesClient, cloneOptions, options.RunnerOptions, cmdRunner, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	h := &handler{
+		nameSet:      nameSet,
+		cmdRunner:    cmdRunner,
+		cmd:          cmd,
+		logStore:     queueClient,
+		filesStore:   filesClient,
+		options:      options,
+		cloneOptions: cloneOptions,
+		operations:   commandOps,
+		jobRuntime:   jobRuntime,
+	}
+
+	return workerutil.NewWorker[types.Job](context.Background(), queueClient, h, options.WorkerOptions), nil
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.

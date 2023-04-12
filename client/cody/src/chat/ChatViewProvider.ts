@@ -128,6 +128,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 const isValid = await isValidLogin(message.serverEndpoint, message.accessToken)
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
+                    await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
                     logEvent(
                         'CodyVSCodeExtension:login:clicked',
                         { serverEndpoint: this.serverEndpoint },
@@ -229,12 +230,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             return
         }
 
-        const interaction = await recipe.getInteraction(
-            humanChatInput,
-            this.editor,
-            this.intentDetector,
-            this.codebaseContext
-        )
+        const interaction = await recipe.getInteraction(humanChatInput, {
+            editor: this.editor,
+            intentDetector: this.intentDetector,
+            codebaseContext: this.codebaseContext,
+        })
         if (!interaction) {
             return
         }

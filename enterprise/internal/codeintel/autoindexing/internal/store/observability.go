@@ -11,47 +11,25 @@ import (
 )
 
 type operations struct {
-	// Commits
-	processStaleSourcedCommits *observation.Operation
-
-	// Indexes
-	insertIndex                    *observation.Operation
-	indexesInserted                prometheus.Counter
-	getRepositoriesForIndexScan    *observation.Operation
-	getIndexes                     *observation.Operation
-	getIndexByID                   *observation.Operation
-	getIndexesByIDs                *observation.Operation
-	getRecentIndexesSummary        *observation.Operation
-	getLastIndexScanForRepository  *observation.Operation
-	deleteIndexByID                *observation.Operation
-	deleteIndexes                  *observation.Operation
-	reindexIndexByID               *observation.Operation
-	reindexIndexes                 *observation.Operation
-	deleteIndexesWithoutRepository *observation.Operation
-	isQueued                       *observation.Operation
-	queueRepoRev                   *observation.Operation
-	getQueuedRepoRev               *observation.Operation
-	markRepoRevsAsProcessed        *observation.Operation
-
-	// Index Configuration
+	getInferenceScript                     *observation.Operation
+	setInferenceScript                     *observation.Operation
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
-	setInferenceScript                     *observation.Operation
-	getInferenceScript                     *observation.Operation
-	// Language Support
-	getLanguagesRequestedBy   *observation.Operation
-	setRequestLanguageSupport *observation.Operation
+	topRepositoriesToConfigure             *observation.Operation
+	repositoryIDsWithConfiguration         *observation.Operation
+	getLastIndexScanForRepository          *observation.Operation
+	setConfigurationSummary                *observation.Operation
+	truncateConfigurationSummary           *observation.Operation
+	getRepositoriesForIndexScan            *observation.Operation
+	getQueuedRepoRev                       *observation.Operation
+	markRepoRevsAsProcessed                *observation.Operation
+	isQueued                               *observation.Operation
+	isQueuedRootIndexer                    *observation.Operation
+	insertIndexes                          *observation.Operation
+	insertDependencyIndexingJob            *observation.Operation
+	queueRepoRev                           *observation.Operation
 
-	insertDependencyIndexingJob *observation.Operation
-	expireFailedRecords         *observation.Operation
-
-	getRepoName                         *observation.Operation
-	numRepositoriesWithCodeIntelligence *observation.Operation
-	repositoryIDsWithErrors             *observation.Operation
-	repositoryIDsWithConfiguration      *observation.Operation
-	topRepositoriesToConfigure          *observation.Operation
-	setConfigurationSummary             *observation.Operation
-	truncateConfigurationSummary        *observation.Operation
+	indexesInserted prometheus.Counter
 }
 
 var (
@@ -87,47 +65,24 @@ func newOperations(observationCtx *observation.Context) *operations {
 	indexesInsertedCounter, _ := indexesInsertedCounterMemo.Init(observationCtx.Registerer)
 
 	return &operations{
-		// Commits
-		processStaleSourcedCommits: op("ProcessStaleSourcedCommits"),
-
-		// Indexes
-		insertIndex:                    op("InsertIndex"),
-		indexesInserted:                indexesInsertedCounter,
-		getIndexes:                     op("GetIndexes"),
-		getIndexByID:                   op("GetIndexByID"),
-		getIndexesByIDs:                op("GetIndexesByIDs"),
-		getRecentIndexesSummary:        op("GetRecentIndexesSummary"),
-		getLastIndexScanForRepository:  op("GetLastIndexScanForRepository"),
-		deleteIndexByID:                op("DeleteIndexByID"),
-		deleteIndexes:                  op("DeleteIndexes"),
-		reindexIndexByID:               op("ReindexIndexByID"),
-		reindexIndexes:                 op("ReindexIndexes"),
-		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
-		isQueued:                       op("IsQueued"),
-		queueRepoRev:                   op("QueueRepoRev"),
-		getQueuedRepoRev:               op("GetQueuedRepoRev"),
-		markRepoRevsAsProcessed:        op("MarkRepoRevsAsProcessed"),
-
-		// Index Configuration
-		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
-		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		getInferenceScript:                     op("GetInferenceScript"),
 		setInferenceScript:                     op("SetInferenceScript"),
+		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
+		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
+		topRepositoriesToConfigure:             op("TopRepositoriesToConfigure"),
+		repositoryIDsWithConfiguration:         op("RepositoryIDsWithConfiguration"),
+		getLastIndexScanForRepository:          op("GetLastIndexScanForRepository"),
+		setConfigurationSummary:                op("SetConfigurationSummary"),
+		truncateConfigurationSummary:           op("TruncateConfigurationSummary"),
+		getRepositoriesForIndexScan:            op("GetRepositoriesForIndexScan"),
+		getQueuedRepoRev:                       op("GetQueuedRepoRev"),
+		markRepoRevsAsProcessed:                op("MarkRepoRevsAsProcessed"),
+		isQueued:                               op("IsQueued"),
+		isQueuedRootIndexer:                    op("IsQueuedRootIndexer"),
+		insertIndexes:                          op("InsertIndexes"),
+		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
+		queueRepoRev:                           op("QueueRepoRev"),
 
-		// Language Support
-		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
-		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
-
-		insertDependencyIndexingJob: op("InsertDependencyIndexingJob"),
-		expireFailedRecords:         op("ExpireFailedRecords"),
-
-		getRepoName:                         op("GetRepoName"),
-		numRepositoriesWithCodeIntelligence: op("NumRepositoriesWithCodeIntelligence"),
-		repositoryIDsWithErrors:             op("RepositoryIDsWithErrors"),
-		repositoryIDsWithConfiguration:      op("RepositoryIDsWithConfiguration"),
-		topRepositoriesToConfigure:          op("TopRepositoriesToConfigure"),
-		setConfigurationSummary:             op("SetConfigurationSummary"),
-		truncateConfigurationSummary:        op("TruncateConfigurationSummary"),
-		getRepositoriesForIndexScan:         op("GetRepositoriesForIndexScan"),
+		indexesInserted: indexesInsertedCounter,
 	}
 }

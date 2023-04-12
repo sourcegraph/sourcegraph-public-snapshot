@@ -44,7 +44,13 @@ export const SidebarNavItem: FC<PropsWithChildren<SidebarNavItemProps>> = ({
 
     if (source === 'server') {
         return (
-            <ButtonLink as={AnchorLink} to={to} className={classNames(buttonClassNames, className)} onClick={onClick}>
+            <ButtonLink
+                as={AnchorLink}
+                to={to}
+                variant={routeMatch ? 'primary' : undefined}
+                className={classNames(buttonClassNames, className)}
+                onClick={onClick}
+            >
                 {children}
             </ButtonLink>
         )

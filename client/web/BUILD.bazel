@@ -569,6 +569,7 @@ ts_project(
         "src/enterprise/codeintel/dashboard/components/tree/util.ts",
         "src/enterprise/codeintel/dashboard/constants.ts",
         "src/enterprise/codeintel/dashboard/hooks/useRepoCodeIntelStatus.ts",
+        "src/enterprise/codeintel/dashboard/hooks/useVisibleIndexes.ts",
         "src/enterprise/codeintel/dashboard/pages/GlobalDashboardPage.tsx",
         "src/enterprise/codeintel/dashboard/pages/RepoDashboardPage.tsx",
         "src/enterprise/codeintel/indexes/components/AuditLog.tsx",
@@ -601,6 +602,7 @@ ts_project(
         "src/enterprise/cody/api.ts",
         "src/enterprise/cody/icon.ts",
         "src/enterprise/cody/search/CodySearchPage.tsx",
+        "src/enterprise/cody/search/translateToQuery.ts",
         "src/enterprise/dotcom/productSubscriptions/AccountEmailAddresses.tsx",
         "src/enterprise/dotcom/productSubscriptions/AccountName.tsx",
         "src/enterprise/dotcom/productSubscriptions/ProductLicenseValidity.tsx",
@@ -1003,6 +1005,7 @@ ts_project(
         "src/hooks/useScrollManager/useScrollManager.ts",
         "src/hooks/useUrlSyncedState.ts",
         "src/hooks/useUrlSyncedString.ts",
+        "src/hooks/useUserExternalAccounts.ts",
         "src/initBuildInfo.ts",
         "src/insights/Icons.tsx",
         "src/insights/types.ts",
@@ -1193,6 +1196,7 @@ ts_project(
         "src/repo/blob/codemirror/navigate-to-any-line-on-click.ts",
         "src/repo/blob/codemirror/occurrence-utils.ts",
         "src/repo/blob/codemirror/react-interop.tsx",
+        "src/repo/blob/codemirror/scip-snapshot.ts",
         "src/repo/blob/codemirror/search.tsx",
         "src/repo/blob/codemirror/sourcegraph-extensions.ts",
         "src/repo/blob/codemirror/token-selection/code-intel-tooltips.ts",
@@ -1246,6 +1250,7 @@ ts_project(
         "src/repo/repoHeaderActionButtons.tsx",
         "src/repo/repoRevisionContainerRoutes.tsx",
         "src/repo/repoRevisionSidebar/cody/RepoRevisionSidebarCody.tsx",
+        "src/repo/repoRevisionSidebar/cody/backend.tsx",
         "src/repo/settings/RepoSettingsArea.tsx",
         "src/repo/settings/RepoSettingsIndexPage.tsx",
         "src/repo/settings/RepoSettingsMirrorPage.tsx",
@@ -1304,7 +1309,8 @@ ts_project(
         "src/search/results/components/aggregation/pings.ts",
         "src/search/results/components/aggregation/types.ts",
         "src/search/results/createActions.ts",
-        "src/search/results/searchResultsExport.ts",
+        "src/search/results/export/SearchResultsCsvExportModal.tsx",
+        "src/search/results/export/searchResultsExport.ts",
         "src/search/results/sidebar/Revisions.mocks.ts",
         "src/search/results/sidebar/Revisions.tsx",
         "src/search/results/sidebar/SearchAggregations.tsx",
@@ -1807,7 +1813,7 @@ ts_project(
         "src/search/input/useRecentSearches.test.tsx",
         "src/search/results/SearchResultsInfoBar.test.tsx",
         "src/search/results/StreamingSearchResults.test.tsx",
-        "src/search/results/searchResultsExport.test.ts",
+        "src/search/results/export/searchResultsExport.test.ts",
         "src/search/results/sidebar/Revisions.test.tsx",
         "src/site-admin/SiteAdminMigrationsPage.test.ts",
         "src/site-admin/init/SiteInitPage.test.tsx",
@@ -1896,6 +1902,7 @@ jest_test(
 # webpack dev environment -------------------
 WEBPACK_CONFIG_DEPS = [
     ":node_modules/@sourcegraph/build-config",
+    "//:node_modules/@babel/runtime",
     "//:node_modules/@pmmmwh/react-refresh-webpack-plugin",
     "//:node_modules/@sentry/webpack-plugin",
     "//:node_modules/buffer",
@@ -1963,6 +1970,30 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
     ]
 ]
 
+webpack_bundle(
+    name = "bundle-enterprise",
+    srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
+        "//:babel_config",
+        "//:browserslist",
+        "//:package_json",
+    ],
+    entry_points = {
+        "src/enterprise/main.js": "app",
+    },
+    env = {
+        "NODE_ENV": "production",
+        "ENTERPRISE": "true",
+        "INTEGRATION_TESTS": "false",
+        "WEBPACK_BUNDLE_ANALYZER": "false",
+        "WEBPACK_USE_NAMED_CHUNKS": "false",
+    },
+    output_dir = True,
+    webpack_config = "webpack.bazel.config.js",
+    deps = WEBPACK_CONFIG_DEPS,
+)
+
+# Used for integartion tests and has bigger bundle size
+# because of the inlined source-maps.
 webpack_web_app(
     name = "app-enterprise",
     srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
@@ -2011,6 +2042,6 @@ build_test(
     name = "webpack_test",
     targets = [
         ":bundle",
-        ":app-enterprise",
+        ":bundle-enterprise",
     ],
 )

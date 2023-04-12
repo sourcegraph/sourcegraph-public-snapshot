@@ -9,17 +9,173 @@ package worker
 import (
 	"context"
 	"io"
+	"io/fs"
+	"os/exec"
 	"sync"
 
-	command "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	util "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	command "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	runner "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
+	runtime "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	workspace "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
+// MockCommand is a mock implementation of the Command interface (from the
+// package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command)
+// used for unit testing.
+type MockCommand struct {
+	// RunFunc is an instance of a mock function object controlling the
+	// behavior of the method Run.
+	RunFunc *CommandRunFunc
+}
+
+// NewMockCommand creates a new mock of the Command interface. All methods
+// return zero values for all results, unless overwritten.
+func NewMockCommand() *MockCommand {
+	return &MockCommand{
+		RunFunc: &CommandRunFunc{
+			defaultHook: func(context.Context, command.Logger, command.Spec) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockCommand creates a new mock of the Command interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockCommand() *MockCommand {
+	return &MockCommand{
+		RunFunc: &CommandRunFunc{
+			defaultHook: func(context.Context, command.Logger, command.Spec) error {
+				panic("unexpected invocation of MockCommand.Run")
+			},
+		},
+	}
+}
+
+// NewMockCommandFrom creates a new mock of the MockCommand interface. All
+// methods delegate to the given implementation, unless overwritten.
+func NewMockCommandFrom(i command.Command) *MockCommand {
+	return &MockCommand{
+		RunFunc: &CommandRunFunc{
+			defaultHook: i.Run,
+		},
+	}
+}
+
+// CommandRunFunc describes the behavior when the Run method of the parent
+// MockCommand instance is invoked.
+type CommandRunFunc struct {
+	defaultHook func(context.Context, command.Logger, command.Spec) error
+	hooks       []func(context.Context, command.Logger, command.Spec) error
+	history     []CommandRunFuncCall
+	mutex       sync.Mutex
+}
+
+// Run delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCommand) Run(v0 context.Context, v1 command.Logger, v2 command.Spec) error {
+	r0 := m.RunFunc.nextHook()(v0, v1, v2)
+	m.RunFunc.appendCall(CommandRunFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Run method of the
+// parent MockCommand instance is invoked and the hook queue is empty.
+func (f *CommandRunFunc) SetDefaultHook(hook func(context.Context, command.Logger, command.Spec) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Run method of the parent MockCommand instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *CommandRunFunc) PushHook(hook func(context.Context, command.Logger, command.Spec) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CommandRunFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, command.Logger, command.Spec) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CommandRunFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, command.Logger, command.Spec) error {
+		return r0
+	})
+}
+
+func (f *CommandRunFunc) nextHook() func(context.Context, command.Logger, command.Spec) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CommandRunFunc) appendCall(r0 CommandRunFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CommandRunFuncCall objects describing the
+// invocations of this function.
+func (f *CommandRunFunc) History() []CommandRunFuncCall {
+	f.mutex.Lock()
+	history := make([]CommandRunFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CommandRunFuncCall is an object that describes an invocation of method
+// Run on an instance of MockCommand.
+type CommandRunFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 command.Logger
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 command.Spec
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CommandRunFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CommandRunFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // MockExecutionLogEntryStore is a mock implementation of the
 // ExecutionLogEntryStore interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command)
 // used for unit testing.
 type MockExecutionLogEntryStore struct {
 	// AddExecutionLogEntryFunc is an instance of a mock function object
@@ -310,110 +466,126 @@ func (c ExecutionLogEntryStoreUpdateExecutionLogEntryFuncCall) Results() []inter
 	return []interface{}{c.Result0}
 }
 
-// MockRunner is a mock implementation of the Runner interface (from the
+// MockLogEntry is a mock implementation of the LogEntry interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command)
 // used for unit testing.
-type MockRunner struct {
-	// RunFunc is an instance of a mock function object controlling the
-	// behavior of the method Run.
-	RunFunc *RunnerRunFunc
-	// SetupFunc is an instance of a mock function object controlling the
-	// behavior of the method Setup.
-	SetupFunc *RunnerSetupFunc
-	// TeardownFunc is an instance of a mock function object controlling the
-	// behavior of the method Teardown.
-	TeardownFunc *RunnerTeardownFunc
+type MockLogEntry struct {
+	// CloseFunc is an instance of a mock function object controlling the
+	// behavior of the method Close.
+	CloseFunc *LogEntryCloseFunc
+	// CurrentLogEntryFunc is an instance of a mock function object
+	// controlling the behavior of the method CurrentLogEntry.
+	CurrentLogEntryFunc *LogEntryCurrentLogEntryFunc
+	// FinalizeFunc is an instance of a mock function object controlling the
+	// behavior of the method Finalize.
+	FinalizeFunc *LogEntryFinalizeFunc
+	// WriteFunc is an instance of a mock function object controlling the
+	// behavior of the method Write.
+	WriteFunc *LogEntryWriteFunc
 }
 
-// NewMockRunner creates a new mock of the Runner interface. All methods
+// NewMockLogEntry creates a new mock of the LogEntry interface. All methods
 // return zero values for all results, unless overwritten.
-func NewMockRunner() *MockRunner {
-	return &MockRunner{
-		RunFunc: &RunnerRunFunc{
-			defaultHook: func(context.Context, command.CommandSpec) (r0 error) {
+func NewMockLogEntry() *MockLogEntry {
+	return &MockLogEntry{
+		CloseFunc: &LogEntryCloseFunc{
+			defaultHook: func() (r0 error) {
 				return
 			},
 		},
-		SetupFunc: &RunnerSetupFunc{
-			defaultHook: func(context.Context) (r0 error) {
+		CurrentLogEntryFunc: &LogEntryCurrentLogEntryFunc{
+			defaultHook: func() (r0 executor.ExecutionLogEntry) {
 				return
 			},
 		},
-		TeardownFunc: &RunnerTeardownFunc{
-			defaultHook: func(context.Context) (r0 error) {
+		FinalizeFunc: &LogEntryFinalizeFunc{
+			defaultHook: func(int) {
+				return
+			},
+		},
+		WriteFunc: &LogEntryWriteFunc{
+			defaultHook: func([]byte) (r0 int, r1 error) {
 				return
 			},
 		},
 	}
 }
 
-// NewStrictMockRunner creates a new mock of the Runner interface. All
+// NewStrictMockLogEntry creates a new mock of the LogEntry interface. All
 // methods panic on invocation, unless overwritten.
-func NewStrictMockRunner() *MockRunner {
-	return &MockRunner{
-		RunFunc: &RunnerRunFunc{
-			defaultHook: func(context.Context, command.CommandSpec) error {
-				panic("unexpected invocation of MockRunner.Run")
+func NewStrictMockLogEntry() *MockLogEntry {
+	return &MockLogEntry{
+		CloseFunc: &LogEntryCloseFunc{
+			defaultHook: func() error {
+				panic("unexpected invocation of MockLogEntry.Close")
 			},
 		},
-		SetupFunc: &RunnerSetupFunc{
-			defaultHook: func(context.Context) error {
-				panic("unexpected invocation of MockRunner.Setup")
+		CurrentLogEntryFunc: &LogEntryCurrentLogEntryFunc{
+			defaultHook: func() executor.ExecutionLogEntry {
+				panic("unexpected invocation of MockLogEntry.CurrentLogEntry")
 			},
 		},
-		TeardownFunc: &RunnerTeardownFunc{
-			defaultHook: func(context.Context) error {
-				panic("unexpected invocation of MockRunner.Teardown")
+		FinalizeFunc: &LogEntryFinalizeFunc{
+			defaultHook: func(int) {
+				panic("unexpected invocation of MockLogEntry.Finalize")
+			},
+		},
+		WriteFunc: &LogEntryWriteFunc{
+			defaultHook: func([]byte) (int, error) {
+				panic("unexpected invocation of MockLogEntry.Write")
 			},
 		},
 	}
 }
 
-// NewMockRunnerFrom creates a new mock of the MockRunner interface. All
+// NewMockLogEntryFrom creates a new mock of the MockLogEntry interface. All
 // methods delegate to the given implementation, unless overwritten.
-func NewMockRunnerFrom(i command.Runner) *MockRunner {
-	return &MockRunner{
-		RunFunc: &RunnerRunFunc{
-			defaultHook: i.Run,
+func NewMockLogEntryFrom(i command.LogEntry) *MockLogEntry {
+	return &MockLogEntry{
+		CloseFunc: &LogEntryCloseFunc{
+			defaultHook: i.Close,
 		},
-		SetupFunc: &RunnerSetupFunc{
-			defaultHook: i.Setup,
+		CurrentLogEntryFunc: &LogEntryCurrentLogEntryFunc{
+			defaultHook: i.CurrentLogEntry,
 		},
-		TeardownFunc: &RunnerTeardownFunc{
-			defaultHook: i.Teardown,
+		FinalizeFunc: &LogEntryFinalizeFunc{
+			defaultHook: i.Finalize,
+		},
+		WriteFunc: &LogEntryWriteFunc{
+			defaultHook: i.Write,
 		},
 	}
 }
 
-// RunnerRunFunc describes the behavior when the Run method of the parent
-// MockRunner instance is invoked.
-type RunnerRunFunc struct {
-	defaultHook func(context.Context, command.CommandSpec) error
-	hooks       []func(context.Context, command.CommandSpec) error
-	history     []RunnerRunFuncCall
+// LogEntryCloseFunc describes the behavior when the Close method of the
+// parent MockLogEntry instance is invoked.
+type LogEntryCloseFunc struct {
+	defaultHook func() error
+	hooks       []func() error
+	history     []LogEntryCloseFuncCall
 	mutex       sync.Mutex
 }
 
-// Run delegates to the next hook function in the queue and stores the
+// Close delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockRunner) Run(v0 context.Context, v1 command.CommandSpec) error {
-	r0 := m.RunFunc.nextHook()(v0, v1)
-	m.RunFunc.appendCall(RunnerRunFuncCall{v0, v1, r0})
+func (m *MockLogEntry) Close() error {
+	r0 := m.CloseFunc.nextHook()()
+	m.CloseFunc.appendCall(LogEntryCloseFuncCall{r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the Run method of the
-// parent MockRunner instance is invoked and the hook queue is empty.
-func (f *RunnerRunFunc) SetDefaultHook(hook func(context.Context, command.CommandSpec) error) {
+// SetDefaultHook sets function that is called when the Close method of the
+// parent MockLogEntry instance is invoked and the hook queue is empty.
+func (f *LogEntryCloseFunc) SetDefaultHook(hook func() error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Run method of the parent MockRunner instance invokes the hook at the
+// Close method of the parent MockLogEntry instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *RunnerRunFunc) PushHook(hook func(context.Context, command.CommandSpec) error) {
+func (f *LogEntryCloseFunc) PushHook(hook func() error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -421,20 +593,20 @@ func (f *RunnerRunFunc) PushHook(hook func(context.Context, command.CommandSpec)
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *RunnerRunFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, command.CommandSpec) error {
+func (f *LogEntryCloseFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func() error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *RunnerRunFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, command.CommandSpec) error {
+func (f *LogEntryCloseFunc) PushReturn(r0 error) {
+	f.PushHook(func() error {
 		return r0
 	})
 }
 
-func (f *RunnerRunFunc) nextHook() func(context.Context, command.CommandSpec) error {
+func (f *LogEntryCloseFunc) nextHook() func() error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -447,32 +619,26 @@ func (f *RunnerRunFunc) nextHook() func(context.Context, command.CommandSpec) er
 	return hook
 }
 
-func (f *RunnerRunFunc) appendCall(r0 RunnerRunFuncCall) {
+func (f *LogEntryCloseFunc) appendCall(r0 LogEntryCloseFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of RunnerRunFuncCall objects describing the
-// invocations of this function.
-func (f *RunnerRunFunc) History() []RunnerRunFuncCall {
+// History returns a sequence of LogEntryCloseFuncCall objects describing
+// the invocations of this function.
+func (f *LogEntryCloseFunc) History() []LogEntryCloseFuncCall {
 	f.mutex.Lock()
-	history := make([]RunnerRunFuncCall, len(f.history))
+	history := make([]LogEntryCloseFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// RunnerRunFuncCall is an object that describes an invocation of method Run
-// on an instance of MockRunner.
-type RunnerRunFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 command.CommandSpec
+// LogEntryCloseFuncCall is an object that describes an invocation of method
+// Close on an instance of MockLogEntry.
+type LogEntryCloseFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -480,44 +646,700 @@ type RunnerRunFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c RunnerRunFuncCall) Args() []interface{} {
+func (c LogEntryCloseFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LogEntryCloseFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// LogEntryCurrentLogEntryFunc describes the behavior when the
+// CurrentLogEntry method of the parent MockLogEntry instance is invoked.
+type LogEntryCurrentLogEntryFunc struct {
+	defaultHook func() executor.ExecutionLogEntry
+	hooks       []func() executor.ExecutionLogEntry
+	history     []LogEntryCurrentLogEntryFuncCall
+	mutex       sync.Mutex
+}
+
+// CurrentLogEntry delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLogEntry) CurrentLogEntry() executor.ExecutionLogEntry {
+	r0 := m.CurrentLogEntryFunc.nextHook()()
+	m.CurrentLogEntryFunc.appendCall(LogEntryCurrentLogEntryFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CurrentLogEntry
+// method of the parent MockLogEntry instance is invoked and the hook queue
+// is empty.
+func (f *LogEntryCurrentLogEntryFunc) SetDefaultHook(hook func() executor.ExecutionLogEntry) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CurrentLogEntry method of the parent MockLogEntry instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *LogEntryCurrentLogEntryFunc) PushHook(hook func() executor.ExecutionLogEntry) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LogEntryCurrentLogEntryFunc) SetDefaultReturn(r0 executor.ExecutionLogEntry) {
+	f.SetDefaultHook(func() executor.ExecutionLogEntry {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LogEntryCurrentLogEntryFunc) PushReturn(r0 executor.ExecutionLogEntry) {
+	f.PushHook(func() executor.ExecutionLogEntry {
+		return r0
+	})
+}
+
+func (f *LogEntryCurrentLogEntryFunc) nextHook() func() executor.ExecutionLogEntry {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LogEntryCurrentLogEntryFunc) appendCall(r0 LogEntryCurrentLogEntryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LogEntryCurrentLogEntryFuncCall objects
+// describing the invocations of this function.
+func (f *LogEntryCurrentLogEntryFunc) History() []LogEntryCurrentLogEntryFuncCall {
+	f.mutex.Lock()
+	history := make([]LogEntryCurrentLogEntryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LogEntryCurrentLogEntryFuncCall is an object that describes an invocation
+// of method CurrentLogEntry on an instance of MockLogEntry.
+type LogEntryCurrentLogEntryFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 executor.ExecutionLogEntry
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LogEntryCurrentLogEntryFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LogEntryCurrentLogEntryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// LogEntryFinalizeFunc describes the behavior when the Finalize method of
+// the parent MockLogEntry instance is invoked.
+type LogEntryFinalizeFunc struct {
+	defaultHook func(int)
+	hooks       []func(int)
+	history     []LogEntryFinalizeFuncCall
+	mutex       sync.Mutex
+}
+
+// Finalize delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockLogEntry) Finalize(v0 int) {
+	m.FinalizeFunc.nextHook()(v0)
+	m.FinalizeFunc.appendCall(LogEntryFinalizeFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the Finalize method of
+// the parent MockLogEntry instance is invoked and the hook queue is empty.
+func (f *LogEntryFinalizeFunc) SetDefaultHook(hook func(int)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Finalize method of the parent MockLogEntry instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *LogEntryFinalizeFunc) PushHook(hook func(int)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LogEntryFinalizeFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(int) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LogEntryFinalizeFunc) PushReturn() {
+	f.PushHook(func(int) {
+		return
+	})
+}
+
+func (f *LogEntryFinalizeFunc) nextHook() func(int) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LogEntryFinalizeFunc) appendCall(r0 LogEntryFinalizeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LogEntryFinalizeFuncCall objects describing
+// the invocations of this function.
+func (f *LogEntryFinalizeFunc) History() []LogEntryFinalizeFuncCall {
+	f.mutex.Lock()
+	history := make([]LogEntryFinalizeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LogEntryFinalizeFuncCall is an object that describes an invocation of
+// method Finalize on an instance of MockLogEntry.
+type LogEntryFinalizeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 int
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LogEntryFinalizeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LogEntryFinalizeFuncCall) Results() []interface{} {
+	return []interface{}{}
+}
+
+// LogEntryWriteFunc describes the behavior when the Write method of the
+// parent MockLogEntry instance is invoked.
+type LogEntryWriteFunc struct {
+	defaultHook func([]byte) (int, error)
+	hooks       []func([]byte) (int, error)
+	history     []LogEntryWriteFuncCall
+	mutex       sync.Mutex
+}
+
+// Write delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockLogEntry) Write(v0 []byte) (int, error) {
+	r0, r1 := m.WriteFunc.nextHook()(v0)
+	m.WriteFunc.appendCall(LogEntryWriteFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Write method of the
+// parent MockLogEntry instance is invoked and the hook queue is empty.
+func (f *LogEntryWriteFunc) SetDefaultHook(hook func([]byte) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Write method of the parent MockLogEntry instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *LogEntryWriteFunc) PushHook(hook func([]byte) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LogEntryWriteFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func([]byte) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LogEntryWriteFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func([]byte) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *LogEntryWriteFunc) nextHook() func([]byte) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LogEntryWriteFunc) appendCall(r0 LogEntryWriteFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LogEntryWriteFuncCall objects describing
+// the invocations of this function.
+func (f *LogEntryWriteFunc) History() []LogEntryWriteFuncCall {
+	f.mutex.Lock()
+	history := make([]LogEntryWriteFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LogEntryWriteFuncCall is an object that describes an invocation of method
+// Write on an instance of MockLogEntry.
+type LogEntryWriteFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 []byte
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LogEntryWriteFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LogEntryWriteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockLogger is a mock implementation of the Logger interface (from the
+// package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command)
+// used for unit testing.
+type MockLogger struct {
+	// FlushFunc is an instance of a mock function object controlling the
+	// behavior of the method Flush.
+	FlushFunc *LoggerFlushFunc
+	// LogEntryFunc is an instance of a mock function object controlling the
+	// behavior of the method LogEntry.
+	LogEntryFunc *LoggerLogEntryFunc
+}
+
+// NewMockLogger creates a new mock of the Logger interface. All methods
+// return zero values for all results, unless overwritten.
+func NewMockLogger() *MockLogger {
+	return &MockLogger{
+		FlushFunc: &LoggerFlushFunc{
+			defaultHook: func() (r0 error) {
+				return
+			},
+		},
+		LogEntryFunc: &LoggerLogEntryFunc{
+			defaultHook: func(string, []string) (r0 command.LogEntry) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockLogger creates a new mock of the Logger interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockLogger() *MockLogger {
+	return &MockLogger{
+		FlushFunc: &LoggerFlushFunc{
+			defaultHook: func() error {
+				panic("unexpected invocation of MockLogger.Flush")
+			},
+		},
+		LogEntryFunc: &LoggerLogEntryFunc{
+			defaultHook: func(string, []string) command.LogEntry {
+				panic("unexpected invocation of MockLogger.LogEntry")
+			},
+		},
+	}
+}
+
+// NewMockLoggerFrom creates a new mock of the MockLogger interface. All
+// methods delegate to the given implementation, unless overwritten.
+func NewMockLoggerFrom(i command.Logger) *MockLogger {
+	return &MockLogger{
+		FlushFunc: &LoggerFlushFunc{
+			defaultHook: i.Flush,
+		},
+		LogEntryFunc: &LoggerLogEntryFunc{
+			defaultHook: i.LogEntry,
+		},
+	}
+}
+
+// LoggerFlushFunc describes the behavior when the Flush method of the
+// parent MockLogger instance is invoked.
+type LoggerFlushFunc struct {
+	defaultHook func() error
+	hooks       []func() error
+	history     []LoggerFlushFuncCall
+	mutex       sync.Mutex
+}
+
+// Flush delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockLogger) Flush() error {
+	r0 := m.FlushFunc.nextHook()()
+	m.FlushFunc.appendCall(LoggerFlushFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Flush method of the
+// parent MockLogger instance is invoked and the hook queue is empty.
+func (f *LoggerFlushFunc) SetDefaultHook(hook func() error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Flush method of the parent MockLogger instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *LoggerFlushFunc) PushHook(hook func() error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LoggerFlushFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func() error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LoggerFlushFunc) PushReturn(r0 error) {
+	f.PushHook(func() error {
+		return r0
+	})
+}
+
+func (f *LoggerFlushFunc) nextHook() func() error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LoggerFlushFunc) appendCall(r0 LoggerFlushFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LoggerFlushFuncCall objects describing the
+// invocations of this function.
+func (f *LoggerFlushFunc) History() []LoggerFlushFuncCall {
+	f.mutex.Lock()
+	history := make([]LoggerFlushFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LoggerFlushFuncCall is an object that describes an invocation of method
+// Flush on an instance of MockLogger.
+type LoggerFlushFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LoggerFlushFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LoggerFlushFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// LoggerLogEntryFunc describes the behavior when the LogEntry method of the
+// parent MockLogger instance is invoked.
+type LoggerLogEntryFunc struct {
+	defaultHook func(string, []string) command.LogEntry
+	hooks       []func(string, []string) command.LogEntry
+	history     []LoggerLogEntryFuncCall
+	mutex       sync.Mutex
+}
+
+// LogEntry delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockLogger) LogEntry(v0 string, v1 []string) command.LogEntry {
+	r0 := m.LogEntryFunc.nextHook()(v0, v1)
+	m.LogEntryFunc.appendCall(LoggerLogEntryFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the LogEntry method of
+// the parent MockLogger instance is invoked and the hook queue is empty.
+func (f *LoggerLogEntryFunc) SetDefaultHook(hook func(string, []string) command.LogEntry) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LogEntry method of the parent MockLogger instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *LoggerLogEntryFunc) PushHook(hook func(string, []string) command.LogEntry) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LoggerLogEntryFunc) SetDefaultReturn(r0 command.LogEntry) {
+	f.SetDefaultHook(func(string, []string) command.LogEntry {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LoggerLogEntryFunc) PushReturn(r0 command.LogEntry) {
+	f.PushHook(func(string, []string) command.LogEntry {
+		return r0
+	})
+}
+
+func (f *LoggerLogEntryFunc) nextHook() func(string, []string) command.LogEntry {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LoggerLogEntryFunc) appendCall(r0 LoggerLogEntryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LoggerLogEntryFuncCall objects describing
+// the invocations of this function.
+func (f *LoggerLogEntryFunc) History() []LoggerLogEntryFuncCall {
+	f.mutex.Lock()
+	history := make([]LoggerLogEntryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LoggerLogEntryFuncCall is an object that describes an invocation of
+// method LogEntry on an instance of MockLogger.
+type LoggerLogEntryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 command.LogEntry
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LoggerLogEntryFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c RunnerRunFuncCall) Results() []interface{} {
+func (c LoggerLogEntryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// RunnerSetupFunc describes the behavior when the Setup method of the
-// parent MockRunner instance is invoked.
-type RunnerSetupFunc struct {
-	defaultHook func(context.Context) error
-	hooks       []func(context.Context) error
-	history     []RunnerSetupFuncCall
+// MockCmdRunner is a mock implementation of the CmdRunner interface (from
+// the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util)
+// used for unit testing.
+type MockCmdRunner struct {
+	// CombinedOutputFunc is an instance of a mock function object
+	// controlling the behavior of the method CombinedOutput.
+	CombinedOutputFunc *CmdRunnerCombinedOutputFunc
+	// CommandContextFunc is an instance of a mock function object
+	// controlling the behavior of the method CommandContext.
+	CommandContextFunc *CmdRunnerCommandContextFunc
+	// LookPathFunc is an instance of a mock function object controlling the
+	// behavior of the method LookPath.
+	LookPathFunc *CmdRunnerLookPathFunc
+	// StatFunc is an instance of a mock function object controlling the
+	// behavior of the method Stat.
+	StatFunc *CmdRunnerStatFunc
+}
+
+// NewMockCmdRunner creates a new mock of the CmdRunner interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockCmdRunner() *MockCmdRunner {
+	return &MockCmdRunner{
+		CombinedOutputFunc: &CmdRunnerCombinedOutputFunc{
+			defaultHook: func(context.Context, string, ...string) (r0 []byte, r1 error) {
+				return
+			},
+		},
+		CommandContextFunc: &CmdRunnerCommandContextFunc{
+			defaultHook: func(context.Context, string, ...string) (r0 *exec.Cmd) {
+				return
+			},
+		},
+		LookPathFunc: &CmdRunnerLookPathFunc{
+			defaultHook: func(string) (r0 string, r1 error) {
+				return
+			},
+		},
+		StatFunc: &CmdRunnerStatFunc{
+			defaultHook: func(string) (r0 fs.FileInfo, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockCmdRunner creates a new mock of the CmdRunner interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockCmdRunner() *MockCmdRunner {
+	return &MockCmdRunner{
+		CombinedOutputFunc: &CmdRunnerCombinedOutputFunc{
+			defaultHook: func(context.Context, string, ...string) ([]byte, error) {
+				panic("unexpected invocation of MockCmdRunner.CombinedOutput")
+			},
+		},
+		CommandContextFunc: &CmdRunnerCommandContextFunc{
+			defaultHook: func(context.Context, string, ...string) *exec.Cmd {
+				panic("unexpected invocation of MockCmdRunner.CommandContext")
+			},
+		},
+		LookPathFunc: &CmdRunnerLookPathFunc{
+			defaultHook: func(string) (string, error) {
+				panic("unexpected invocation of MockCmdRunner.LookPath")
+			},
+		},
+		StatFunc: &CmdRunnerStatFunc{
+			defaultHook: func(string) (fs.FileInfo, error) {
+				panic("unexpected invocation of MockCmdRunner.Stat")
+			},
+		},
+	}
+}
+
+// NewMockCmdRunnerFrom creates a new mock of the MockCmdRunner interface.
+// All methods delegate to the given implementation, unless overwritten.
+func NewMockCmdRunnerFrom(i util.CmdRunner) *MockCmdRunner {
+	return &MockCmdRunner{
+		CombinedOutputFunc: &CmdRunnerCombinedOutputFunc{
+			defaultHook: i.CombinedOutput,
+		},
+		CommandContextFunc: &CmdRunnerCommandContextFunc{
+			defaultHook: i.CommandContext,
+		},
+		LookPathFunc: &CmdRunnerLookPathFunc{
+			defaultHook: i.LookPath,
+		},
+		StatFunc: &CmdRunnerStatFunc{
+			defaultHook: i.Stat,
+		},
+	}
+}
+
+// CmdRunnerCombinedOutputFunc describes the behavior when the
+// CombinedOutput method of the parent MockCmdRunner instance is invoked.
+type CmdRunnerCombinedOutputFunc struct {
+	defaultHook func(context.Context, string, ...string) ([]byte, error)
+	hooks       []func(context.Context, string, ...string) ([]byte, error)
+	history     []CmdRunnerCombinedOutputFuncCall
 	mutex       sync.Mutex
 }
 
-// Setup delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockRunner) Setup(v0 context.Context) error {
-	r0 := m.SetupFunc.nextHook()(v0)
-	m.SetupFunc.appendCall(RunnerSetupFuncCall{v0, r0})
-	return r0
+// CombinedOutput delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCmdRunner) CombinedOutput(v0 context.Context, v1 string, v2 ...string) ([]byte, error) {
+	r0, r1 := m.CombinedOutputFunc.nextHook()(v0, v1, v2...)
+	m.CombinedOutputFunc.appendCall(CmdRunnerCombinedOutputFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the Setup method of the
-// parent MockRunner instance is invoked and the hook queue is empty.
-func (f *RunnerSetupFunc) SetDefaultHook(hook func(context.Context) error) {
+// SetDefaultHook sets function that is called when the CombinedOutput
+// method of the parent MockCmdRunner instance is invoked and the hook queue
+// is empty.
+func (f *CmdRunnerCombinedOutputFunc) SetDefaultHook(hook func(context.Context, string, ...string) ([]byte, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Setup method of the parent MockRunner instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *RunnerSetupFunc) PushHook(hook func(context.Context) error) {
+// CombinedOutput method of the parent MockCmdRunner instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CmdRunnerCombinedOutputFunc) PushHook(hook func(context.Context, string, ...string) ([]byte, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -525,20 +1347,20 @@ func (f *RunnerSetupFunc) PushHook(hook func(context.Context) error) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *RunnerSetupFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context) error {
-		return r0
+func (f *CmdRunnerCombinedOutputFunc) SetDefaultReturn(r0 []byte, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, ...string) ([]byte, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *RunnerSetupFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context) error {
-		return r0
+func (f *CmdRunnerCombinedOutputFunc) PushReturn(r0 []byte, r1 error) {
+	f.PushHook(func(context.Context, string, ...string) ([]byte, error) {
+		return r0, r1
 	})
 }
 
-func (f *RunnerSetupFunc) nextHook() func(context.Context) error {
+func (f *CmdRunnerCombinedOutputFunc) nextHook() func(context.Context, string, ...string) ([]byte, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -551,74 +1373,91 @@ func (f *RunnerSetupFunc) nextHook() func(context.Context) error {
 	return hook
 }
 
-func (f *RunnerSetupFunc) appendCall(r0 RunnerSetupFuncCall) {
+func (f *CmdRunnerCombinedOutputFunc) appendCall(r0 CmdRunnerCombinedOutputFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of RunnerSetupFuncCall objects describing the
-// invocations of this function.
-func (f *RunnerSetupFunc) History() []RunnerSetupFuncCall {
+// History returns a sequence of CmdRunnerCombinedOutputFuncCall objects
+// describing the invocations of this function.
+func (f *CmdRunnerCombinedOutputFunc) History() []CmdRunnerCombinedOutputFuncCall {
 	f.mutex.Lock()
-	history := make([]RunnerSetupFuncCall, len(f.history))
+	history := make([]CmdRunnerCombinedOutputFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// RunnerSetupFuncCall is an object that describes an invocation of method
-// Setup on an instance of MockRunner.
-type RunnerSetupFuncCall struct {
+// CmdRunnerCombinedOutputFuncCall is an object that describes an invocation
+// of method CombinedOutput on an instance of MockCmdRunner.
+type CmdRunnerCombinedOutputFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 []byte
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation.
-func (c RunnerSetupFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c CmdRunnerCombinedOutputFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c RunnerSetupFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+func (c CmdRunnerCombinedOutputFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
-// RunnerTeardownFunc describes the behavior when the Teardown method of the
-// parent MockRunner instance is invoked.
-type RunnerTeardownFunc struct {
-	defaultHook func(context.Context) error
-	hooks       []func(context.Context) error
-	history     []RunnerTeardownFuncCall
+// CmdRunnerCommandContextFunc describes the behavior when the
+// CommandContext method of the parent MockCmdRunner instance is invoked.
+type CmdRunnerCommandContextFunc struct {
+	defaultHook func(context.Context, string, ...string) *exec.Cmd
+	hooks       []func(context.Context, string, ...string) *exec.Cmd
+	history     []CmdRunnerCommandContextFuncCall
 	mutex       sync.Mutex
 }
 
-// Teardown delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockRunner) Teardown(v0 context.Context) error {
-	r0 := m.TeardownFunc.nextHook()(v0)
-	m.TeardownFunc.appendCall(RunnerTeardownFuncCall{v0, r0})
+// CommandContext delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCmdRunner) CommandContext(v0 context.Context, v1 string, v2 ...string) *exec.Cmd {
+	r0 := m.CommandContextFunc.nextHook()(v0, v1, v2...)
+	m.CommandContextFunc.appendCall(CmdRunnerCommandContextFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the Teardown method of
-// the parent MockRunner instance is invoked and the hook queue is empty.
-func (f *RunnerTeardownFunc) SetDefaultHook(hook func(context.Context) error) {
+// SetDefaultHook sets function that is called when the CommandContext
+// method of the parent MockCmdRunner instance is invoked and the hook queue
+// is empty.
+func (f *CmdRunnerCommandContextFunc) SetDefaultHook(hook func(context.Context, string, ...string) *exec.Cmd) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Teardown method of the parent MockRunner instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *RunnerTeardownFunc) PushHook(hook func(context.Context) error) {
+// CommandContext method of the parent MockCmdRunner instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CmdRunnerCommandContextFunc) PushHook(hook func(context.Context, string, ...string) *exec.Cmd) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -626,20 +1465,20 @@ func (f *RunnerTeardownFunc) PushHook(hook func(context.Context) error) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *RunnerTeardownFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context) error {
+func (f *CmdRunnerCommandContextFunc) SetDefaultReturn(r0 *exec.Cmd) {
+	f.SetDefaultHook(func(context.Context, string, ...string) *exec.Cmd {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *RunnerTeardownFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context) error {
+func (f *CmdRunnerCommandContextFunc) PushReturn(r0 *exec.Cmd) {
+	f.PushHook(func(context.Context, string, ...string) *exec.Cmd {
 		return r0
 	})
 }
 
-func (f *RunnerTeardownFunc) nextHook() func(context.Context) error {
+func (f *CmdRunnerCommandContextFunc) nextHook() func(context.Context, string, ...string) *exec.Cmd {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -652,44 +1491,265 @@ func (f *RunnerTeardownFunc) nextHook() func(context.Context) error {
 	return hook
 }
 
-func (f *RunnerTeardownFunc) appendCall(r0 RunnerTeardownFuncCall) {
+func (f *CmdRunnerCommandContextFunc) appendCall(r0 CmdRunnerCommandContextFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of RunnerTeardownFuncCall objects describing
+// History returns a sequence of CmdRunnerCommandContextFuncCall objects
+// describing the invocations of this function.
+func (f *CmdRunnerCommandContextFunc) History() []CmdRunnerCommandContextFuncCall {
+	f.mutex.Lock()
+	history := make([]CmdRunnerCommandContextFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CmdRunnerCommandContextFuncCall is an object that describes an invocation
+// of method CommandContext on an instance of MockCmdRunner.
+type CmdRunnerCommandContextFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *exec.Cmd
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c CmdRunnerCommandContextFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CmdRunnerCommandContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CmdRunnerLookPathFunc describes the behavior when the LookPath method of
+// the parent MockCmdRunner instance is invoked.
+type CmdRunnerLookPathFunc struct {
+	defaultHook func(string) (string, error)
+	hooks       []func(string) (string, error)
+	history     []CmdRunnerLookPathFuncCall
+	mutex       sync.Mutex
+}
+
+// LookPath delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCmdRunner) LookPath(v0 string) (string, error) {
+	r0, r1 := m.LookPathFunc.nextHook()(v0)
+	m.LookPathFunc.appendCall(CmdRunnerLookPathFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the LookPath method of
+// the parent MockCmdRunner instance is invoked and the hook queue is empty.
+func (f *CmdRunnerLookPathFunc) SetDefaultHook(hook func(string) (string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LookPath method of the parent MockCmdRunner instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CmdRunnerLookPathFunc) PushHook(hook func(string) (string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CmdRunnerLookPathFunc) SetDefaultReturn(r0 string, r1 error) {
+	f.SetDefaultHook(func(string) (string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CmdRunnerLookPathFunc) PushReturn(r0 string, r1 error) {
+	f.PushHook(func(string) (string, error) {
+		return r0, r1
+	})
+}
+
+func (f *CmdRunnerLookPathFunc) nextHook() func(string) (string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CmdRunnerLookPathFunc) appendCall(r0 CmdRunnerLookPathFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CmdRunnerLookPathFuncCall objects
+// describing the invocations of this function.
+func (f *CmdRunnerLookPathFunc) History() []CmdRunnerLookPathFuncCall {
+	f.mutex.Lock()
+	history := make([]CmdRunnerLookPathFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CmdRunnerLookPathFuncCall is an object that describes an invocation of
+// method LookPath on an instance of MockCmdRunner.
+type CmdRunnerLookPathFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CmdRunnerLookPathFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CmdRunnerLookPathFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CmdRunnerStatFunc describes the behavior when the Stat method of the
+// parent MockCmdRunner instance is invoked.
+type CmdRunnerStatFunc struct {
+	defaultHook func(string) (fs.FileInfo, error)
+	hooks       []func(string) (fs.FileInfo, error)
+	history     []CmdRunnerStatFuncCall
+	mutex       sync.Mutex
+}
+
+// Stat delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCmdRunner) Stat(v0 string) (fs.FileInfo, error) {
+	r0, r1 := m.StatFunc.nextHook()(v0)
+	m.StatFunc.appendCall(CmdRunnerStatFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Stat method of the
+// parent MockCmdRunner instance is invoked and the hook queue is empty.
+func (f *CmdRunnerStatFunc) SetDefaultHook(hook func(string) (fs.FileInfo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Stat method of the parent MockCmdRunner instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *CmdRunnerStatFunc) PushHook(hook func(string) (fs.FileInfo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CmdRunnerStatFunc) SetDefaultReturn(r0 fs.FileInfo, r1 error) {
+	f.SetDefaultHook(func(string) (fs.FileInfo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CmdRunnerStatFunc) PushReturn(r0 fs.FileInfo, r1 error) {
+	f.PushHook(func(string) (fs.FileInfo, error) {
+		return r0, r1
+	})
+}
+
+func (f *CmdRunnerStatFunc) nextHook() func(string) (fs.FileInfo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CmdRunnerStatFunc) appendCall(r0 CmdRunnerStatFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CmdRunnerStatFuncCall objects describing
 // the invocations of this function.
-func (f *RunnerTeardownFunc) History() []RunnerTeardownFuncCall {
+func (f *CmdRunnerStatFunc) History() []CmdRunnerStatFuncCall {
 	f.mutex.Lock()
-	history := make([]RunnerTeardownFuncCall, len(f.history))
+	history := make([]CmdRunnerStatFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// RunnerTeardownFuncCall is an object that describes an invocation of
-// method Teardown on an instance of MockRunner.
-type RunnerTeardownFuncCall struct {
+// CmdRunnerStatFuncCall is an object that describes an invocation of method
+// Stat on an instance of MockCmdRunner.
+type CmdRunnerStatFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 context.Context
+	Arg0 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 fs.FileInfo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c RunnerTeardownFuncCall) Args() []interface{} {
+func (c CmdRunnerStatFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c RunnerTeardownFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+func (c CmdRunnerStatFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // MockFilesStore is a mock implementation of the FilesStore interface (from
@@ -976,4 +2036,1393 @@ func (c FilesStoreGetFuncCall) Args() []interface{} {
 // invocation.
 func (c FilesStoreGetFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockRuntime is a mock implementation of the Runtime interface (from the
+// package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime)
+// used for unit testing.
+type MockRuntime struct {
+	// NameFunc is an instance of a mock function object controlling the
+	// behavior of the method Name.
+	NameFunc *RuntimeNameFunc
+	// NewRunnerFunc is an instance of a mock function object controlling
+	// the behavior of the method NewRunner.
+	NewRunnerFunc *RuntimeNewRunnerFunc
+	// NewRunnerSpecsFunc is an instance of a mock function object
+	// controlling the behavior of the method NewRunnerSpecs.
+	NewRunnerSpecsFunc *RuntimeNewRunnerSpecsFunc
+	// PrepareWorkspaceFunc is an instance of a mock function object
+	// controlling the behavior of the method PrepareWorkspace.
+	PrepareWorkspaceFunc *RuntimePrepareWorkspaceFunc
+}
+
+// NewMockRuntime creates a new mock of the Runtime interface. All methods
+// return zero values for all results, unless overwritten.
+func NewMockRuntime() *MockRuntime {
+	return &MockRuntime{
+		NameFunc: &RuntimeNameFunc{
+			defaultHook: func() (r0 runtime.Name) {
+				return
+			},
+		},
+		NewRunnerFunc: &RuntimeNewRunnerFunc{
+			defaultHook: func(context.Context, command.Logger, runtime.RunnerOptions) (r0 runner.Runner, r1 error) {
+				return
+			},
+		},
+		NewRunnerSpecsFunc: &RuntimeNewRunnerSpecsFunc{
+			defaultHook: func(workspace.Workspace, []types.DockerStep) (r0 []runner.Spec, r1 error) {
+				return
+			},
+		},
+		PrepareWorkspaceFunc: &RuntimePrepareWorkspaceFunc{
+			defaultHook: func(context.Context, command.Logger, types.Job) (r0 workspace.Workspace, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockRuntime creates a new mock of the Runtime interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockRuntime() *MockRuntime {
+	return &MockRuntime{
+		NameFunc: &RuntimeNameFunc{
+			defaultHook: func() runtime.Name {
+				panic("unexpected invocation of MockRuntime.Name")
+			},
+		},
+		NewRunnerFunc: &RuntimeNewRunnerFunc{
+			defaultHook: func(context.Context, command.Logger, runtime.RunnerOptions) (runner.Runner, error) {
+				panic("unexpected invocation of MockRuntime.NewRunner")
+			},
+		},
+		NewRunnerSpecsFunc: &RuntimeNewRunnerSpecsFunc{
+			defaultHook: func(workspace.Workspace, []types.DockerStep) ([]runner.Spec, error) {
+				panic("unexpected invocation of MockRuntime.NewRunnerSpecs")
+			},
+		},
+		PrepareWorkspaceFunc: &RuntimePrepareWorkspaceFunc{
+			defaultHook: func(context.Context, command.Logger, types.Job) (workspace.Workspace, error) {
+				panic("unexpected invocation of MockRuntime.PrepareWorkspace")
+			},
+		},
+	}
+}
+
+// NewMockRuntimeFrom creates a new mock of the MockRuntime interface. All
+// methods delegate to the given implementation, unless overwritten.
+func NewMockRuntimeFrom(i runtime.Runtime) *MockRuntime {
+	return &MockRuntime{
+		NameFunc: &RuntimeNameFunc{
+			defaultHook: i.Name,
+		},
+		NewRunnerFunc: &RuntimeNewRunnerFunc{
+			defaultHook: i.NewRunner,
+		},
+		NewRunnerSpecsFunc: &RuntimeNewRunnerSpecsFunc{
+			defaultHook: i.NewRunnerSpecs,
+		},
+		PrepareWorkspaceFunc: &RuntimePrepareWorkspaceFunc{
+			defaultHook: i.PrepareWorkspace,
+		},
+	}
+}
+
+// RuntimeNameFunc describes the behavior when the Name method of the parent
+// MockRuntime instance is invoked.
+type RuntimeNameFunc struct {
+	defaultHook func() runtime.Name
+	hooks       []func() runtime.Name
+	history     []RuntimeNameFuncCall
+	mutex       sync.Mutex
+}
+
+// Name delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRuntime) Name() runtime.Name {
+	r0 := m.NameFunc.nextHook()()
+	m.NameFunc.appendCall(RuntimeNameFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Name method of the
+// parent MockRuntime instance is invoked and the hook queue is empty.
+func (f *RuntimeNameFunc) SetDefaultHook(hook func() runtime.Name) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Name method of the parent MockRuntime instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *RuntimeNameFunc) PushHook(hook func() runtime.Name) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RuntimeNameFunc) SetDefaultReturn(r0 runtime.Name) {
+	f.SetDefaultHook(func() runtime.Name {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RuntimeNameFunc) PushReturn(r0 runtime.Name) {
+	f.PushHook(func() runtime.Name {
+		return r0
+	})
+}
+
+func (f *RuntimeNameFunc) nextHook() func() runtime.Name {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RuntimeNameFunc) appendCall(r0 RuntimeNameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RuntimeNameFuncCall objects describing the
+// invocations of this function.
+func (f *RuntimeNameFunc) History() []RuntimeNameFuncCall {
+	f.mutex.Lock()
+	history := make([]RuntimeNameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RuntimeNameFuncCall is an object that describes an invocation of method
+// Name on an instance of MockRuntime.
+type RuntimeNameFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 runtime.Name
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RuntimeNameFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RuntimeNameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RuntimeNewRunnerFunc describes the behavior when the NewRunner method of
+// the parent MockRuntime instance is invoked.
+type RuntimeNewRunnerFunc struct {
+	defaultHook func(context.Context, command.Logger, runtime.RunnerOptions) (runner.Runner, error)
+	hooks       []func(context.Context, command.Logger, runtime.RunnerOptions) (runner.Runner, error)
+	history     []RuntimeNewRunnerFuncCall
+	mutex       sync.Mutex
+}
+
+// NewRunner delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRuntime) NewRunner(v0 context.Context, v1 command.Logger, v2 runtime.RunnerOptions) (runner.Runner, error) {
+	r0, r1 := m.NewRunnerFunc.nextHook()(v0, v1, v2)
+	m.NewRunnerFunc.appendCall(RuntimeNewRunnerFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the NewRunner method of
+// the parent MockRuntime instance is invoked and the hook queue is empty.
+func (f *RuntimeNewRunnerFunc) SetDefaultHook(hook func(context.Context, command.Logger, runtime.RunnerOptions) (runner.Runner, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NewRunner method of the parent MockRuntime instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *RuntimeNewRunnerFunc) PushHook(hook func(context.Context, command.Logger, runtime.RunnerOptions) (runner.Runner, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RuntimeNewRunnerFunc) SetDefaultReturn(r0 runner.Runner, r1 error) {
+	f.SetDefaultHook(func(context.Context, command.Logger, runtime.RunnerOptions) (runner.Runner, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RuntimeNewRunnerFunc) PushReturn(r0 runner.Runner, r1 error) {
+	f.PushHook(func(context.Context, command.Logger, runtime.RunnerOptions) (runner.Runner, error) {
+		return r0, r1
+	})
+}
+
+func (f *RuntimeNewRunnerFunc) nextHook() func(context.Context, command.Logger, runtime.RunnerOptions) (runner.Runner, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RuntimeNewRunnerFunc) appendCall(r0 RuntimeNewRunnerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RuntimeNewRunnerFuncCall objects describing
+// the invocations of this function.
+func (f *RuntimeNewRunnerFunc) History() []RuntimeNewRunnerFuncCall {
+	f.mutex.Lock()
+	history := make([]RuntimeNewRunnerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RuntimeNewRunnerFuncCall is an object that describes an invocation of
+// method NewRunner on an instance of MockRuntime.
+type RuntimeNewRunnerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 command.Logger
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 runtime.RunnerOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 runner.Runner
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RuntimeNewRunnerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RuntimeNewRunnerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RuntimeNewRunnerSpecsFunc describes the behavior when the NewRunnerSpecs
+// method of the parent MockRuntime instance is invoked.
+type RuntimeNewRunnerSpecsFunc struct {
+	defaultHook func(workspace.Workspace, []types.DockerStep) ([]runner.Spec, error)
+	hooks       []func(workspace.Workspace, []types.DockerStep) ([]runner.Spec, error)
+	history     []RuntimeNewRunnerSpecsFuncCall
+	mutex       sync.Mutex
+}
+
+// NewRunnerSpecs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRuntime) NewRunnerSpecs(v0 workspace.Workspace, v1 []types.DockerStep) ([]runner.Spec, error) {
+	r0, r1 := m.NewRunnerSpecsFunc.nextHook()(v0, v1)
+	m.NewRunnerSpecsFunc.appendCall(RuntimeNewRunnerSpecsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the NewRunnerSpecs
+// method of the parent MockRuntime instance is invoked and the hook queue
+// is empty.
+func (f *RuntimeNewRunnerSpecsFunc) SetDefaultHook(hook func(workspace.Workspace, []types.DockerStep) ([]runner.Spec, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NewRunnerSpecs method of the parent MockRuntime instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *RuntimeNewRunnerSpecsFunc) PushHook(hook func(workspace.Workspace, []types.DockerStep) ([]runner.Spec, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RuntimeNewRunnerSpecsFunc) SetDefaultReturn(r0 []runner.Spec, r1 error) {
+	f.SetDefaultHook(func(workspace.Workspace, []types.DockerStep) ([]runner.Spec, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RuntimeNewRunnerSpecsFunc) PushReturn(r0 []runner.Spec, r1 error) {
+	f.PushHook(func(workspace.Workspace, []types.DockerStep) ([]runner.Spec, error) {
+		return r0, r1
+	})
+}
+
+func (f *RuntimeNewRunnerSpecsFunc) nextHook() func(workspace.Workspace, []types.DockerStep) ([]runner.Spec, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RuntimeNewRunnerSpecsFunc) appendCall(r0 RuntimeNewRunnerSpecsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RuntimeNewRunnerSpecsFuncCall objects
+// describing the invocations of this function.
+func (f *RuntimeNewRunnerSpecsFunc) History() []RuntimeNewRunnerSpecsFuncCall {
+	f.mutex.Lock()
+	history := make([]RuntimeNewRunnerSpecsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RuntimeNewRunnerSpecsFuncCall is an object that describes an invocation
+// of method NewRunnerSpecs on an instance of MockRuntime.
+type RuntimeNewRunnerSpecsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 workspace.Workspace
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []types.DockerStep
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []runner.Spec
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RuntimeNewRunnerSpecsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RuntimeNewRunnerSpecsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RuntimePrepareWorkspaceFunc describes the behavior when the
+// PrepareWorkspace method of the parent MockRuntime instance is invoked.
+type RuntimePrepareWorkspaceFunc struct {
+	defaultHook func(context.Context, command.Logger, types.Job) (workspace.Workspace, error)
+	hooks       []func(context.Context, command.Logger, types.Job) (workspace.Workspace, error)
+	history     []RuntimePrepareWorkspaceFuncCall
+	mutex       sync.Mutex
+}
+
+// PrepareWorkspace delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRuntime) PrepareWorkspace(v0 context.Context, v1 command.Logger, v2 types.Job) (workspace.Workspace, error) {
+	r0, r1 := m.PrepareWorkspaceFunc.nextHook()(v0, v1, v2)
+	m.PrepareWorkspaceFunc.appendCall(RuntimePrepareWorkspaceFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the PrepareWorkspace
+// method of the parent MockRuntime instance is invoked and the hook queue
+// is empty.
+func (f *RuntimePrepareWorkspaceFunc) SetDefaultHook(hook func(context.Context, command.Logger, types.Job) (workspace.Workspace, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PrepareWorkspace method of the parent MockRuntime instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *RuntimePrepareWorkspaceFunc) PushHook(hook func(context.Context, command.Logger, types.Job) (workspace.Workspace, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RuntimePrepareWorkspaceFunc) SetDefaultReturn(r0 workspace.Workspace, r1 error) {
+	f.SetDefaultHook(func(context.Context, command.Logger, types.Job) (workspace.Workspace, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RuntimePrepareWorkspaceFunc) PushReturn(r0 workspace.Workspace, r1 error) {
+	f.PushHook(func(context.Context, command.Logger, types.Job) (workspace.Workspace, error) {
+		return r0, r1
+	})
+}
+
+func (f *RuntimePrepareWorkspaceFunc) nextHook() func(context.Context, command.Logger, types.Job) (workspace.Workspace, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RuntimePrepareWorkspaceFunc) appendCall(r0 RuntimePrepareWorkspaceFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RuntimePrepareWorkspaceFuncCall objects
+// describing the invocations of this function.
+func (f *RuntimePrepareWorkspaceFunc) History() []RuntimePrepareWorkspaceFuncCall {
+	f.mutex.Lock()
+	history := make([]RuntimePrepareWorkspaceFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RuntimePrepareWorkspaceFuncCall is an object that describes an invocation
+// of method PrepareWorkspace on an instance of MockRuntime.
+type RuntimePrepareWorkspaceFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 command.Logger
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 types.Job
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 workspace.Workspace
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RuntimePrepareWorkspaceFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RuntimePrepareWorkspaceFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockRunner is a mock implementation of the Runner interface (from the
+// package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner)
+// used for unit testing.
+type MockRunner struct {
+	// RunFunc is an instance of a mock function object controlling the
+	// behavior of the method Run.
+	RunFunc *RunnerRunFunc
+	// SetupFunc is an instance of a mock function object controlling the
+	// behavior of the method Setup.
+	SetupFunc *RunnerSetupFunc
+	// TeardownFunc is an instance of a mock function object controlling the
+	// behavior of the method Teardown.
+	TeardownFunc *RunnerTeardownFunc
+	// TempDirFunc is an instance of a mock function object controlling the
+	// behavior of the method TempDir.
+	TempDirFunc *RunnerTempDirFunc
+}
+
+// NewMockRunner creates a new mock of the Runner interface. All methods
+// return zero values for all results, unless overwritten.
+func NewMockRunner() *MockRunner {
+	return &MockRunner{
+		RunFunc: &RunnerRunFunc{
+			defaultHook: func(context.Context, runner.Spec) (r0 error) {
+				return
+			},
+		},
+		SetupFunc: &RunnerSetupFunc{
+			defaultHook: func(context.Context) (r0 error) {
+				return
+			},
+		},
+		TeardownFunc: &RunnerTeardownFunc{
+			defaultHook: func(context.Context) (r0 error) {
+				return
+			},
+		},
+		TempDirFunc: &RunnerTempDirFunc{
+			defaultHook: func() (r0 string) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockRunner creates a new mock of the Runner interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockRunner() *MockRunner {
+	return &MockRunner{
+		RunFunc: &RunnerRunFunc{
+			defaultHook: func(context.Context, runner.Spec) error {
+				panic("unexpected invocation of MockRunner.Run")
+			},
+		},
+		SetupFunc: &RunnerSetupFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockRunner.Setup")
+			},
+		},
+		TeardownFunc: &RunnerTeardownFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockRunner.Teardown")
+			},
+		},
+		TempDirFunc: &RunnerTempDirFunc{
+			defaultHook: func() string {
+				panic("unexpected invocation of MockRunner.TempDir")
+			},
+		},
+	}
+}
+
+// NewMockRunnerFrom creates a new mock of the MockRunner interface. All
+// methods delegate to the given implementation, unless overwritten.
+func NewMockRunnerFrom(i runner.Runner) *MockRunner {
+	return &MockRunner{
+		RunFunc: &RunnerRunFunc{
+			defaultHook: i.Run,
+		},
+		SetupFunc: &RunnerSetupFunc{
+			defaultHook: i.Setup,
+		},
+		TeardownFunc: &RunnerTeardownFunc{
+			defaultHook: i.Teardown,
+		},
+		TempDirFunc: &RunnerTempDirFunc{
+			defaultHook: i.TempDir,
+		},
+	}
+}
+
+// RunnerRunFunc describes the behavior when the Run method of the parent
+// MockRunner instance is invoked.
+type RunnerRunFunc struct {
+	defaultHook func(context.Context, runner.Spec) error
+	hooks       []func(context.Context, runner.Spec) error
+	history     []RunnerRunFuncCall
+	mutex       sync.Mutex
+}
+
+// Run delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRunner) Run(v0 context.Context, v1 runner.Spec) error {
+	r0 := m.RunFunc.nextHook()(v0, v1)
+	m.RunFunc.appendCall(RunnerRunFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Run method of the
+// parent MockRunner instance is invoked and the hook queue is empty.
+func (f *RunnerRunFunc) SetDefaultHook(hook func(context.Context, runner.Spec) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Run method of the parent MockRunner instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *RunnerRunFunc) PushHook(hook func(context.Context, runner.Spec) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RunnerRunFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, runner.Spec) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RunnerRunFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, runner.Spec) error {
+		return r0
+	})
+}
+
+func (f *RunnerRunFunc) nextHook() func(context.Context, runner.Spec) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RunnerRunFunc) appendCall(r0 RunnerRunFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RunnerRunFuncCall objects describing the
+// invocations of this function.
+func (f *RunnerRunFunc) History() []RunnerRunFuncCall {
+	f.mutex.Lock()
+	history := make([]RunnerRunFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RunnerRunFuncCall is an object that describes an invocation of method Run
+// on an instance of MockRunner.
+type RunnerRunFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 runner.Spec
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RunnerRunFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RunnerRunFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RunnerSetupFunc describes the behavior when the Setup method of the
+// parent MockRunner instance is invoked.
+type RunnerSetupFunc struct {
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
+	history     []RunnerSetupFuncCall
+	mutex       sync.Mutex
+}
+
+// Setup delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRunner) Setup(v0 context.Context) error {
+	r0 := m.SetupFunc.nextHook()(v0)
+	m.SetupFunc.appendCall(RunnerSetupFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Setup method of the
+// parent MockRunner instance is invoked and the hook queue is empty.
+func (f *RunnerSetupFunc) SetDefaultHook(hook func(context.Context) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Setup method of the parent MockRunner instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *RunnerSetupFunc) PushHook(hook func(context.Context) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RunnerSetupFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RunnerSetupFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
+	})
+}
+
+func (f *RunnerSetupFunc) nextHook() func(context.Context) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RunnerSetupFunc) appendCall(r0 RunnerSetupFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RunnerSetupFuncCall objects describing the
+// invocations of this function.
+func (f *RunnerSetupFunc) History() []RunnerSetupFuncCall {
+	f.mutex.Lock()
+	history := make([]RunnerSetupFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RunnerSetupFuncCall is an object that describes an invocation of method
+// Setup on an instance of MockRunner.
+type RunnerSetupFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RunnerSetupFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RunnerSetupFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RunnerTeardownFunc describes the behavior when the Teardown method of the
+// parent MockRunner instance is invoked.
+type RunnerTeardownFunc struct {
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
+	history     []RunnerTeardownFuncCall
+	mutex       sync.Mutex
+}
+
+// Teardown delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRunner) Teardown(v0 context.Context) error {
+	r0 := m.TeardownFunc.nextHook()(v0)
+	m.TeardownFunc.appendCall(RunnerTeardownFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Teardown method of
+// the parent MockRunner instance is invoked and the hook queue is empty.
+func (f *RunnerTeardownFunc) SetDefaultHook(hook func(context.Context) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Teardown method of the parent MockRunner instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *RunnerTeardownFunc) PushHook(hook func(context.Context) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RunnerTeardownFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RunnerTeardownFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
+	})
+}
+
+func (f *RunnerTeardownFunc) nextHook() func(context.Context) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RunnerTeardownFunc) appendCall(r0 RunnerTeardownFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RunnerTeardownFuncCall objects describing
+// the invocations of this function.
+func (f *RunnerTeardownFunc) History() []RunnerTeardownFuncCall {
+	f.mutex.Lock()
+	history := make([]RunnerTeardownFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RunnerTeardownFuncCall is an object that describes an invocation of
+// method Teardown on an instance of MockRunner.
+type RunnerTeardownFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RunnerTeardownFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RunnerTeardownFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RunnerTempDirFunc describes the behavior when the TempDir method of the
+// parent MockRunner instance is invoked.
+type RunnerTempDirFunc struct {
+	defaultHook func() string
+	hooks       []func() string
+	history     []RunnerTempDirFuncCall
+	mutex       sync.Mutex
+}
+
+// TempDir delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRunner) TempDir() string {
+	r0 := m.TempDirFunc.nextHook()()
+	m.TempDirFunc.appendCall(RunnerTempDirFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the TempDir method of
+// the parent MockRunner instance is invoked and the hook queue is empty.
+func (f *RunnerTempDirFunc) SetDefaultHook(hook func() string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// TempDir method of the parent MockRunner instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *RunnerTempDirFunc) PushHook(hook func() string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RunnerTempDirFunc) SetDefaultReturn(r0 string) {
+	f.SetDefaultHook(func() string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RunnerTempDirFunc) PushReturn(r0 string) {
+	f.PushHook(func() string {
+		return r0
+	})
+}
+
+func (f *RunnerTempDirFunc) nextHook() func() string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RunnerTempDirFunc) appendCall(r0 RunnerTempDirFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RunnerTempDirFuncCall objects describing
+// the invocations of this function.
+func (f *RunnerTempDirFunc) History() []RunnerTempDirFuncCall {
+	f.mutex.Lock()
+	history := make([]RunnerTempDirFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RunnerTempDirFuncCall is an object that describes an invocation of method
+// TempDir on an instance of MockRunner.
+type RunnerTempDirFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RunnerTempDirFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RunnerTempDirFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockWorkspace is a mock implementation of the Workspace interface (from
+// the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace)
+// used for unit testing.
+type MockWorkspace struct {
+	// PathFunc is an instance of a mock function object controlling the
+	// behavior of the method Path.
+	PathFunc *WorkspacePathFunc
+	// RemoveFunc is an instance of a mock function object controlling the
+	// behavior of the method Remove.
+	RemoveFunc *WorkspaceRemoveFunc
+	// ScriptFilenamesFunc is an instance of a mock function object
+	// controlling the behavior of the method ScriptFilenames.
+	ScriptFilenamesFunc *WorkspaceScriptFilenamesFunc
+}
+
+// NewMockWorkspace creates a new mock of the Workspace interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockWorkspace() *MockWorkspace {
+	return &MockWorkspace{
+		PathFunc: &WorkspacePathFunc{
+			defaultHook: func() (r0 string) {
+				return
+			},
+		},
+		RemoveFunc: &WorkspaceRemoveFunc{
+			defaultHook: func(context.Context, bool) {
+				return
+			},
+		},
+		ScriptFilenamesFunc: &WorkspaceScriptFilenamesFunc{
+			defaultHook: func() (r0 []string) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockWorkspace creates a new mock of the Workspace interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockWorkspace() *MockWorkspace {
+	return &MockWorkspace{
+		PathFunc: &WorkspacePathFunc{
+			defaultHook: func() string {
+				panic("unexpected invocation of MockWorkspace.Path")
+			},
+		},
+		RemoveFunc: &WorkspaceRemoveFunc{
+			defaultHook: func(context.Context, bool) {
+				panic("unexpected invocation of MockWorkspace.Remove")
+			},
+		},
+		ScriptFilenamesFunc: &WorkspaceScriptFilenamesFunc{
+			defaultHook: func() []string {
+				panic("unexpected invocation of MockWorkspace.ScriptFilenames")
+			},
+		},
+	}
+}
+
+// NewMockWorkspaceFrom creates a new mock of the MockWorkspace interface.
+// All methods delegate to the given implementation, unless overwritten.
+func NewMockWorkspaceFrom(i workspace.Workspace) *MockWorkspace {
+	return &MockWorkspace{
+		PathFunc: &WorkspacePathFunc{
+			defaultHook: i.Path,
+		},
+		RemoveFunc: &WorkspaceRemoveFunc{
+			defaultHook: i.Remove,
+		},
+		ScriptFilenamesFunc: &WorkspaceScriptFilenamesFunc{
+			defaultHook: i.ScriptFilenames,
+		},
+	}
+}
+
+// WorkspacePathFunc describes the behavior when the Path method of the
+// parent MockWorkspace instance is invoked.
+type WorkspacePathFunc struct {
+	defaultHook func() string
+	hooks       []func() string
+	history     []WorkspacePathFuncCall
+	mutex       sync.Mutex
+}
+
+// Path delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWorkspace) Path() string {
+	r0 := m.PathFunc.nextHook()()
+	m.PathFunc.appendCall(WorkspacePathFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Path method of the
+// parent MockWorkspace instance is invoked and the hook queue is empty.
+func (f *WorkspacePathFunc) SetDefaultHook(hook func() string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Path method of the parent MockWorkspace instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *WorkspacePathFunc) PushHook(hook func() string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WorkspacePathFunc) SetDefaultReturn(r0 string) {
+	f.SetDefaultHook(func() string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WorkspacePathFunc) PushReturn(r0 string) {
+	f.PushHook(func() string {
+		return r0
+	})
+}
+
+func (f *WorkspacePathFunc) nextHook() func() string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WorkspacePathFunc) appendCall(r0 WorkspacePathFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WorkspacePathFuncCall objects describing
+// the invocations of this function.
+func (f *WorkspacePathFunc) History() []WorkspacePathFuncCall {
+	f.mutex.Lock()
+	history := make([]WorkspacePathFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WorkspacePathFuncCall is an object that describes an invocation of method
+// Path on an instance of MockWorkspace.
+type WorkspacePathFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WorkspacePathFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WorkspacePathFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// WorkspaceRemoveFunc describes the behavior when the Remove method of the
+// parent MockWorkspace instance is invoked.
+type WorkspaceRemoveFunc struct {
+	defaultHook func(context.Context, bool)
+	hooks       []func(context.Context, bool)
+	history     []WorkspaceRemoveFuncCall
+	mutex       sync.Mutex
+}
+
+// Remove delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWorkspace) Remove(v0 context.Context, v1 bool) {
+	m.RemoveFunc.nextHook()(v0, v1)
+	m.RemoveFunc.appendCall(WorkspaceRemoveFuncCall{v0, v1})
+	return
+}
+
+// SetDefaultHook sets function that is called when the Remove method of the
+// parent MockWorkspace instance is invoked and the hook queue is empty.
+func (f *WorkspaceRemoveFunc) SetDefaultHook(hook func(context.Context, bool)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Remove method of the parent MockWorkspace instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *WorkspaceRemoveFunc) PushHook(hook func(context.Context, bool)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WorkspaceRemoveFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(context.Context, bool) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WorkspaceRemoveFunc) PushReturn() {
+	f.PushHook(func(context.Context, bool) {
+		return
+	})
+}
+
+func (f *WorkspaceRemoveFunc) nextHook() func(context.Context, bool) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WorkspaceRemoveFunc) appendCall(r0 WorkspaceRemoveFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WorkspaceRemoveFuncCall objects describing
+// the invocations of this function.
+func (f *WorkspaceRemoveFunc) History() []WorkspaceRemoveFuncCall {
+	f.mutex.Lock()
+	history := make([]WorkspaceRemoveFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WorkspaceRemoveFuncCall is an object that describes an invocation of
+// method Remove on an instance of MockWorkspace.
+type WorkspaceRemoveFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 bool
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WorkspaceRemoveFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WorkspaceRemoveFuncCall) Results() []interface{} {
+	return []interface{}{}
+}
+
+// WorkspaceScriptFilenamesFunc describes the behavior when the
+// ScriptFilenames method of the parent MockWorkspace instance is invoked.
+type WorkspaceScriptFilenamesFunc struct {
+	defaultHook func() []string
+	hooks       []func() []string
+	history     []WorkspaceScriptFilenamesFuncCall
+	mutex       sync.Mutex
+}
+
+// ScriptFilenames delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockWorkspace) ScriptFilenames() []string {
+	r0 := m.ScriptFilenamesFunc.nextHook()()
+	m.ScriptFilenamesFunc.appendCall(WorkspaceScriptFilenamesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ScriptFilenames
+// method of the parent MockWorkspace instance is invoked and the hook queue
+// is empty.
+func (f *WorkspaceScriptFilenamesFunc) SetDefaultHook(hook func() []string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ScriptFilenames method of the parent MockWorkspace instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *WorkspaceScriptFilenamesFunc) PushHook(hook func() []string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WorkspaceScriptFilenamesFunc) SetDefaultReturn(r0 []string) {
+	f.SetDefaultHook(func() []string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WorkspaceScriptFilenamesFunc) PushReturn(r0 []string) {
+	f.PushHook(func() []string {
+		return r0
+	})
+}
+
+func (f *WorkspaceScriptFilenamesFunc) nextHook() func() []string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WorkspaceScriptFilenamesFunc) appendCall(r0 WorkspaceScriptFilenamesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WorkspaceScriptFilenamesFuncCall objects
+// describing the invocations of this function.
+func (f *WorkspaceScriptFilenamesFunc) History() []WorkspaceScriptFilenamesFuncCall {
+	f.mutex.Lock()
+	history := make([]WorkspaceScriptFilenamesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WorkspaceScriptFilenamesFuncCall is an object that describes an
+// invocation of method ScriptFilenames on an instance of MockWorkspace.
+type WorkspaceScriptFilenamesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WorkspaceScriptFilenamesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WorkspaceScriptFilenamesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }

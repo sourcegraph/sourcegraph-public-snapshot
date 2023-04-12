@@ -202,6 +202,12 @@ type MockCodeNavService struct {
 	// GetStencilFunc is an instance of a mock function object controlling
 	// the behavior of the method GetStencil.
 	GetStencilFunc *CodeNavServiceGetStencilFunc
+	// SnapshotForDocumentFunc is an instance of a mock function object
+	// controlling the behavior of the method SnapshotForDocument.
+	SnapshotForDocumentFunc *CodeNavServiceSnapshotForDocumentFunc
+	// VisibleUploadsForPathFunc is an instance of a mock function object
+	// controlling the behavior of the method VisibleUploadsForPath.
+	VisibleUploadsForPathFunc *CodeNavServiceVisibleUploadsForPathFunc
 }
 
 // NewMockCodeNavService creates a new mock of the CodeNavService interface.
@@ -245,6 +251,16 @@ func NewMockCodeNavService() *MockCodeNavService {
 		},
 		GetStencilFunc: &CodeNavServiceGetStencilFunc{
 			defaultHook: func(context.Context, codenav.RequestArgs, codenav.RequestState) (r0 []shared1.Range, r1 error) {
+				return
+			},
+		},
+		SnapshotForDocumentFunc: &CodeNavServiceSnapshotForDocumentFunc{
+			defaultHook: func(context.Context, int, string, string, int) (r0 []shared1.SnapshotData, r1 error) {
+				return
+			},
+		},
+		VisibleUploadsForPathFunc: &CodeNavServiceVisibleUploadsForPathFunc{
+			defaultHook: func(context.Context, codenav.RequestState) (r0 []shared.Dump, r1 error) {
 				return
 			},
 		},
@@ -295,6 +311,16 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 				panic("unexpected invocation of MockCodeNavService.GetStencil")
 			},
 		},
+		SnapshotForDocumentFunc: &CodeNavServiceSnapshotForDocumentFunc{
+			defaultHook: func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error) {
+				panic("unexpected invocation of MockCodeNavService.SnapshotForDocument")
+			},
+		},
+		VisibleUploadsForPathFunc: &CodeNavServiceVisibleUploadsForPathFunc{
+			defaultHook: func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
+				panic("unexpected invocation of MockCodeNavService.VisibleUploadsForPath")
+			},
+		},
 	}
 }
 
@@ -326,6 +352,12 @@ func NewMockCodeNavServiceFrom(i CodeNavService) *MockCodeNavService {
 		},
 		GetStencilFunc: &CodeNavServiceGetStencilFunc{
 			defaultHook: i.GetStencil,
+		},
+		SnapshotForDocumentFunc: &CodeNavServiceSnapshotForDocumentFunc{
+			defaultHook: i.SnapshotForDocument,
+		},
+		VisibleUploadsForPathFunc: &CodeNavServiceVisibleUploadsForPathFunc{
+			defaultHook: i.VisibleUploadsForPath,
 		},
 	}
 }
@@ -1264,97 +1296,37 @@ func (c CodeNavServiceGetStencilFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// MockUploadsService is a mock implementation of the UploadsService
-// interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/transport/graphql)
-// used for unit testing.
-type MockUploadsService struct {
-	// GetIndexesByIDsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetIndexesByIDs.
-	GetIndexesByIDsFunc *UploadsServiceGetIndexesByIDsFunc
-	// GetUploadsByIDsFunc is an instance of a mock function object
-	// controlling the behavior of the method GetUploadsByIDs.
-	GetUploadsByIDsFunc *UploadsServiceGetUploadsByIDsFunc
-}
-
-// NewMockUploadsService creates a new mock of the UploadsService interface.
-// All methods return zero values for all results, unless overwritten.
-func NewMockUploadsService() *MockUploadsService {
-	return &MockUploadsService{
-		GetIndexesByIDsFunc: &UploadsServiceGetIndexesByIDsFunc{
-			defaultHook: func(context.Context, ...int) (r0 []shared.Index, r1 error) {
-				return
-			},
-		},
-		GetUploadsByIDsFunc: &UploadsServiceGetUploadsByIDsFunc{
-			defaultHook: func(context.Context, ...int) (r0 []shared.Upload, r1 error) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockUploadsService creates a new mock of the UploadsService
-// interface. All methods panic on invocation, unless overwritten.
-func NewStrictMockUploadsService() *MockUploadsService {
-	return &MockUploadsService{
-		GetIndexesByIDsFunc: &UploadsServiceGetIndexesByIDsFunc{
-			defaultHook: func(context.Context, ...int) ([]shared.Index, error) {
-				panic("unexpected invocation of MockUploadsService.GetIndexesByIDs")
-			},
-		},
-		GetUploadsByIDsFunc: &UploadsServiceGetUploadsByIDsFunc{
-			defaultHook: func(context.Context, ...int) ([]shared.Upload, error) {
-				panic("unexpected invocation of MockUploadsService.GetUploadsByIDs")
-			},
-		},
-	}
-}
-
-// NewMockUploadsServiceFrom creates a new mock of the MockUploadsService
-// interface. All methods delegate to the given implementation, unless
-// overwritten.
-func NewMockUploadsServiceFrom(i UploadsService) *MockUploadsService {
-	return &MockUploadsService{
-		GetIndexesByIDsFunc: &UploadsServiceGetIndexesByIDsFunc{
-			defaultHook: i.GetIndexesByIDs,
-		},
-		GetUploadsByIDsFunc: &UploadsServiceGetUploadsByIDsFunc{
-			defaultHook: i.GetUploadsByIDs,
-		},
-	}
-}
-
-// UploadsServiceGetIndexesByIDsFunc describes the behavior when the
-// GetIndexesByIDs method of the parent MockUploadsService instance is
+// CodeNavServiceSnapshotForDocumentFunc describes the behavior when the
+// SnapshotForDocument method of the parent MockCodeNavService instance is
 // invoked.
-type UploadsServiceGetIndexesByIDsFunc struct {
-	defaultHook func(context.Context, ...int) ([]shared.Index, error)
-	hooks       []func(context.Context, ...int) ([]shared.Index, error)
-	history     []UploadsServiceGetIndexesByIDsFuncCall
+type CodeNavServiceSnapshotForDocumentFunc struct {
+	defaultHook func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error)
+	hooks       []func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error)
+	history     []CodeNavServiceSnapshotForDocumentFuncCall
 	mutex       sync.Mutex
 }
 
-// GetIndexesByIDs delegates to the next hook function in the queue and
+// SnapshotForDocument delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUploadsService) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]shared.Index, error) {
-	r0, r1 := m.GetIndexesByIDsFunc.nextHook()(v0, v1...)
-	m.GetIndexesByIDsFunc.appendCall(UploadsServiceGetIndexesByIDsFuncCall{v0, v1, r0, r1})
+func (m *MockCodeNavService) SnapshotForDocument(v0 context.Context, v1 int, v2 string, v3 string, v4 int) ([]shared1.SnapshotData, error) {
+	r0, r1 := m.SnapshotForDocumentFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.SnapshotForDocumentFunc.appendCall(CodeNavServiceSnapshotForDocumentFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the GetIndexesByIDs
-// method of the parent MockUploadsService instance is invoked and the hook
+// SetDefaultHook sets function that is called when the SnapshotForDocument
+// method of the parent MockCodeNavService instance is invoked and the hook
 // queue is empty.
-func (f *UploadsServiceGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]shared.Index, error)) {
+func (f *CodeNavServiceSnapshotForDocumentFunc) SetDefaultHook(hook func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetIndexesByIDs method of the parent MockUploadsService instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *UploadsServiceGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int) ([]shared.Index, error)) {
+// SnapshotForDocument method of the parent MockCodeNavService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeNavServiceSnapshotForDocumentFunc) PushHook(hook func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1362,20 +1334,20 @@ func (f *UploadsServiceGetIndexesByIDsFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadsServiceGetIndexesByIDsFunc) SetDefaultReturn(r0 []shared.Index, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...int) ([]shared.Index, error) {
+func (f *CodeNavServiceSnapshotForDocumentFunc) SetDefaultReturn(r0 []shared1.SnapshotData, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadsServiceGetIndexesByIDsFunc) PushReturn(r0 []shared.Index, r1 error) {
-	f.PushHook(func(context.Context, ...int) ([]shared.Index, error) {
+func (f *CodeNavServiceSnapshotForDocumentFunc) PushReturn(r0 []shared1.SnapshotData, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadsServiceGetIndexesByIDsFunc) nextHook() func(context.Context, ...int) ([]shared.Index, error) {
+func (f *CodeNavServiceSnapshotForDocumentFunc) nextHook() func(context.Context, int, string, string, int) ([]shared1.SnapshotData, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1388,90 +1360,93 @@ func (f *UploadsServiceGetIndexesByIDsFunc) nextHook() func(context.Context, ...
 	return hook
 }
 
-func (f *UploadsServiceGetIndexesByIDsFunc) appendCall(r0 UploadsServiceGetIndexesByIDsFuncCall) {
+func (f *CodeNavServiceSnapshotForDocumentFunc) appendCall(r0 CodeNavServiceSnapshotForDocumentFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of UploadsServiceGetIndexesByIDsFuncCall
+// History returns a sequence of CodeNavServiceSnapshotForDocumentFuncCall
 // objects describing the invocations of this function.
-func (f *UploadsServiceGetIndexesByIDsFunc) History() []UploadsServiceGetIndexesByIDsFuncCall {
+func (f *CodeNavServiceSnapshotForDocumentFunc) History() []CodeNavServiceSnapshotForDocumentFuncCall {
 	f.mutex.Lock()
-	history := make([]UploadsServiceGetIndexesByIDsFuncCall, len(f.history))
+	history := make([]CodeNavServiceSnapshotForDocumentFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// UploadsServiceGetIndexesByIDsFuncCall is an object that describes an
-// invocation of method GetIndexesByIDs on an instance of
-// MockUploadsService.
-type UploadsServiceGetIndexesByIDsFuncCall struct {
+// CodeNavServiceSnapshotForDocumentFuncCall is an object that describes an
+// invocation of method SnapshotForDocument on an instance of
+// MockCodeNavService.
+type CodeNavServiceSnapshotForDocumentFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []int
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Index
+	Result0 []shared1.SnapshotData
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c UploadsServiceGetIndexesByIDsFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
+// invocation.
+func (c CodeNavServiceSnapshotForDocumentFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c UploadsServiceGetIndexesByIDsFuncCall) Results() []interface{} {
+func (c CodeNavServiceSnapshotForDocumentFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// UploadsServiceGetUploadsByIDsFunc describes the behavior when the
-// GetUploadsByIDs method of the parent MockUploadsService instance is
+// CodeNavServiceVisibleUploadsForPathFunc describes the behavior when the
+// VisibleUploadsForPath method of the parent MockCodeNavService instance is
 // invoked.
-type UploadsServiceGetUploadsByIDsFunc struct {
-	defaultHook func(context.Context, ...int) ([]shared.Upload, error)
-	hooks       []func(context.Context, ...int) ([]shared.Upload, error)
-	history     []UploadsServiceGetUploadsByIDsFuncCall
+type CodeNavServiceVisibleUploadsForPathFunc struct {
+	defaultHook func(context.Context, codenav.RequestState) ([]shared.Dump, error)
+	hooks       []func(context.Context, codenav.RequestState) ([]shared.Dump, error)
+	history     []CodeNavServiceVisibleUploadsForPathFuncCall
 	mutex       sync.Mutex
 }
 
-// GetUploadsByIDs delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockUploadsService) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]shared.Upload, error) {
-	r0, r1 := m.GetUploadsByIDsFunc.nextHook()(v0, v1...)
-	m.GetUploadsByIDsFunc.appendCall(UploadsServiceGetUploadsByIDsFuncCall{v0, v1, r0, r1})
+// VisibleUploadsForPath delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeNavService) VisibleUploadsForPath(v0 context.Context, v1 codenav.RequestState) ([]shared.Dump, error) {
+	r0, r1 := m.VisibleUploadsForPathFunc.nextHook()(v0, v1)
+	m.VisibleUploadsForPathFunc.appendCall(CodeNavServiceVisibleUploadsForPathFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the GetUploadsByIDs
-// method of the parent MockUploadsService instance is invoked and the hook
-// queue is empty.
-func (f *UploadsServiceGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]shared.Upload, error)) {
+// SetDefaultHook sets function that is called when the
+// VisibleUploadsForPath method of the parent MockCodeNavService instance is
+// invoked and the hook queue is empty.
+func (f *CodeNavServiceVisibleUploadsForPathFunc) SetDefaultHook(hook func(context.Context, codenav.RequestState) ([]shared.Dump, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUploadsByIDs method of the parent MockUploadsService instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *UploadsServiceGetUploadsByIDsFunc) PushHook(hook func(context.Context, ...int) ([]shared.Upload, error)) {
+// VisibleUploadsForPath method of the parent MockCodeNavService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeNavServiceVisibleUploadsForPathFunc) PushHook(hook func(context.Context, codenav.RequestState) ([]shared.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1479,20 +1454,20 @@ func (f *UploadsServiceGetUploadsByIDsFunc) PushHook(hook func(context.Context, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadsServiceGetUploadsByIDsFunc) SetDefaultReturn(r0 []shared.Upload, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...int) ([]shared.Upload, error) {
+func (f *CodeNavServiceVisibleUploadsForPathFunc) SetDefaultReturn(r0 []shared.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadsServiceGetUploadsByIDsFunc) PushReturn(r0 []shared.Upload, r1 error) {
-	f.PushHook(func(context.Context, ...int) ([]shared.Upload, error) {
+func (f *CodeNavServiceVisibleUploadsForPathFunc) PushReturn(r0 []shared.Dump, r1 error) {
+	f.PushHook(func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadsServiceGetUploadsByIDsFunc) nextHook() func(context.Context, ...int) ([]shared.Upload, error) {
+func (f *CodeNavServiceVisibleUploadsForPathFunc) nextHook() func(context.Context, codenav.RequestState) ([]shared.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1505,56 +1480,49 @@ func (f *UploadsServiceGetUploadsByIDsFunc) nextHook() func(context.Context, ...
 	return hook
 }
 
-func (f *UploadsServiceGetUploadsByIDsFunc) appendCall(r0 UploadsServiceGetUploadsByIDsFuncCall) {
+func (f *CodeNavServiceVisibleUploadsForPathFunc) appendCall(r0 CodeNavServiceVisibleUploadsForPathFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of UploadsServiceGetUploadsByIDsFuncCall
+// History returns a sequence of CodeNavServiceVisibleUploadsForPathFuncCall
 // objects describing the invocations of this function.
-func (f *UploadsServiceGetUploadsByIDsFunc) History() []UploadsServiceGetUploadsByIDsFuncCall {
+func (f *CodeNavServiceVisibleUploadsForPathFunc) History() []CodeNavServiceVisibleUploadsForPathFuncCall {
 	f.mutex.Lock()
-	history := make([]UploadsServiceGetUploadsByIDsFuncCall, len(f.history))
+	history := make([]CodeNavServiceVisibleUploadsForPathFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// UploadsServiceGetUploadsByIDsFuncCall is an object that describes an
-// invocation of method GetUploadsByIDs on an instance of
-// MockUploadsService.
-type UploadsServiceGetUploadsByIDsFuncCall struct {
+// CodeNavServiceVisibleUploadsForPathFuncCall is an object that describes
+// an invocation of method VisibleUploadsForPath on an instance of
+// MockCodeNavService.
+type CodeNavServiceVisibleUploadsForPathFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []int
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 codenav.RequestState
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Upload
+	Result0 []shared.Dump
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c UploadsServiceGetUploadsByIDsFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
+// invocation.
+func (c CodeNavServiceVisibleUploadsForPathFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c UploadsServiceGetUploadsByIDsFuncCall) Results() []interface{} {
+func (c CodeNavServiceVisibleUploadsForPathFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

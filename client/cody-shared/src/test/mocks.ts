@@ -1,3 +1,5 @@
+import { RecipeContext } from '../chat/recipes/recipe'
+import { CodebaseContext } from '../codebase-context'
 import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentDetector } from '../intent-detector'
@@ -74,3 +76,13 @@ export const defaultIntentDetector = new MockIntentDetector()
 export const defaultKeywordContextFetcher = new MockKeywordContextFetcher()
 
 export const defaultEditor = new MockEditor()
+
+export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
+    args = args || {}
+    return {
+        editor: args.editor || defaultEditor,
+        intentDetector: args.intentDetector || defaultIntentDetector,
+        codebaseContext:
+            args.codebaseContext || new CodebaseContext('none', defaultEmbeddingsClient, defaultKeywordContextFetcher),
+    }
+}

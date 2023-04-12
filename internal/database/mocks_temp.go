@@ -41718,6 +41718,9 @@ type MockRepoStore struct {
 	// QueryFunc is an instance of a mock function object controlling the
 	// behavior of the method Query.
 	QueryFunc *RepoStoreQueryFunc
+	// RepoEmbeddingExistsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoEmbeddingExists.
+	RepoEmbeddingExistsFunc *RepoStoreRepoEmbeddingExistsFunc
 	// StreamMinimalReposFunc is an instance of a mock function object
 	// controlling the behavior of the method StreamMinimalRepos.
 	StreamMinimalReposFunc *RepoStoreStreamMinimalReposFunc
@@ -41820,6 +41823,11 @@ func NewMockRepoStore() *MockRepoStore {
 		},
 		QueryFunc: &RepoStoreQueryFunc{
 			defaultHook: func(context.Context, *sqlf.Query) (r0 *sql.Rows, r1 error) {
+				return
+			},
+		},
+		RepoEmbeddingExistsFunc: &RepoStoreRepoEmbeddingExistsFunc{
+			defaultHook: func(context.Context, api.RepoID) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -41935,6 +41943,11 @@ func NewStrictMockRepoStore() *MockRepoStore {
 				panic("unexpected invocation of MockRepoStore.Query")
 			},
 		},
+		RepoEmbeddingExistsFunc: &RepoStoreRepoEmbeddingExistsFunc{
+			defaultHook: func(context.Context, api.RepoID) (bool, error) {
+				panic("unexpected invocation of MockRepoStore.RepoEmbeddingExists")
+			},
+		},
 		StreamMinimalReposFunc: &RepoStoreStreamMinimalReposFunc{
 			defaultHook: func(context.Context, ReposListOptions, func(*types.MinimalRepo)) error {
 				panic("unexpected invocation of MockRepoStore.StreamMinimalRepos")
@@ -42010,6 +42023,9 @@ func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {
 		},
 		QueryFunc: &RepoStoreQueryFunc{
 			defaultHook: i.Query,
+		},
+		RepoEmbeddingExistsFunc: &RepoStoreRepoEmbeddingExistsFunc{
+			defaultHook: i.RepoEmbeddingExists,
 		},
 		StreamMinimalReposFunc: &RepoStoreStreamMinimalReposFunc{
 			defaultHook: i.StreamMinimalRepos,
@@ -43988,6 +44004,115 @@ func (c RepoStoreQueryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoStoreQueryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RepoStoreRepoEmbeddingExistsFunc describes the behavior when the
+// RepoEmbeddingExists method of the parent MockRepoStore instance is
+// invoked.
+type RepoStoreRepoEmbeddingExistsFunc struct {
+	defaultHook func(context.Context, api.RepoID) (bool, error)
+	hooks       []func(context.Context, api.RepoID) (bool, error)
+	history     []RepoStoreRepoEmbeddingExistsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoEmbeddingExists delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRepoStore) RepoEmbeddingExists(v0 context.Context, v1 api.RepoID) (bool, error) {
+	r0, r1 := m.RepoEmbeddingExistsFunc.nextHook()(v0, v1)
+	m.RepoEmbeddingExistsFunc.appendCall(RepoStoreRepoEmbeddingExistsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepoEmbeddingExists
+// method of the parent MockRepoStore instance is invoked and the hook queue
+// is empty.
+func (f *RepoStoreRepoEmbeddingExistsFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoEmbeddingExists method of the parent MockRepoStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *RepoStoreRepoEmbeddingExistsFunc) PushHook(hook func(context.Context, api.RepoID) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStoreRepoEmbeddingExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStoreRepoEmbeddingExistsFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoStoreRepoEmbeddingExistsFunc) nextHook() func(context.Context, api.RepoID) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStoreRepoEmbeddingExistsFunc) appendCall(r0 RepoStoreRepoEmbeddingExistsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoStoreRepoEmbeddingExistsFuncCall
+// objects describing the invocations of this function.
+func (f *RepoStoreRepoEmbeddingExistsFunc) History() []RepoStoreRepoEmbeddingExistsFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStoreRepoEmbeddingExistsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStoreRepoEmbeddingExistsFuncCall is an object that describes an
+// invocation of method RepoEmbeddingExists on an instance of MockRepoStore.
+type RepoStoreRepoEmbeddingExistsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoStoreRepoEmbeddingExistsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStoreRepoEmbeddingExistsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

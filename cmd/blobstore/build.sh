@@ -17,7 +17,7 @@ if [[ "$CACHE" == "true" ]]; then
 fi
 
 
-if [[ "$DOCKER_BAZEL" == "true" ]]; then
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
 
   bazel build //cmd/gitserver \
     --stamp \

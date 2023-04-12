@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "workspace",
@@ -7,15 +7,38 @@ go_library(
         "docker.go",
         "files.go",
         "firecracker.go",
-        "iface.go",
+        "kubernetes.go",
         "util.go",
+        "workspace.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace",
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
-        "//enterprise/cmd/executor/internal/command",
+        "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/command",
         "//enterprise/internal/executor/types",
         "//lib/errors",
         "@com_github_c2h5oh_datasize//:datasize",
+    ],
+)
+
+go_test(
+    name = "workspace_test",
+    srcs = [
+        "docker_test.go",
+        "firecracker_test.go",
+        "kubernetes_test.go",
+        "mocks_test.go",
+    ],
+    embed = [":workspace"],
+    deps = [
+        "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/internal/executor/types",
+        "//internal/executor",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

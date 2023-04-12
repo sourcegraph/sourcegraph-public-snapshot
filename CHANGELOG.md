@@ -17,7 +17,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Executors natively support Kubernetes environments. [#49236](https://github.com/sourcegraph/sourcegraph/pull/49236)
 - Documentation for GitHub fine-grained access tokens. [#50274](https://github.com/sourcegraph/sourcegraph/pull/50274)
+- Code Insight dashboards retain size and order of the cards. [#50301](https://github.com/sourcegraph/sourcegraph/pull/50301)
+- The LLM completions endpoint is now exposed through a GraphQL query in addition to the streaming endpoint [#50455](https://github.com/sourcegraph/sourcegraph/pull/50455)
 
 ### Changed
 
@@ -33,7 +36,35 @@ All notable changes to Sourcegraph are documented in this file.
 
 - User tags are removed in favor of the newer feature flags functionality. [#49318](https://github.com/sourcegraph/sourcegraph/pull/49318)
 
--
+## 5.0.1
+
+### Added
+
+- The ability to exclude certain file path patterns from embeddings.
+- Added a modal to show warnings and errors when exporting search results. [#50348](https://github.com/sourcegraph/sourcegraph/pull/50348)
+
+### Changed
+
+### Fixed
+
+- Fixed CVE-2023-0464 in container images
+- Fixed CVE-2023-24532 in container images
+- Fixed an issue where Slack code monitoring notifications failed when the message was too long. [#50083](https://github.com/sourcegraph/sourcegraph/pull/50083)
+- Fixed an edge case issue with usage statistics calculations that cross over month and year boundaries.
+- Fixed the "Last incremental sync" value in user/repo permissions from displaying a wrong date if no sync had been completed yet.
+- Fixed an issue that caused search context creation to fail with error "you must provide a first or last value to properly paginate" when defining the repositories and revisions with a JSON configuration.
+- Fixed an issue where the incorrect actor was provided when searching an embeddings index.
+- Fixed multiple requests downloading the embeddings index concurrently on an empty cache leading to an out-of-memory error.
+- Fixed the encoding of embeddings indexes which caused out-of-memory errors for large indexes when uploading them from the worker service.
+- Fixed git blame decorations styles
+- CODEOWNERS rules with consecutive slashes (`//`) will no longer fail ownership searches
+- Granting pending permissions to users when experimentalFeatures.unifiedPermissions is turned ON [#50059](https://github.com/sourcegraph/sourcegraph/pull/50059)
+- The unified permissions out of band migration reported as unfinished if there were users with no permissions [#50147](https://github.com/sourcegraph/sourcegraph/pull/50147)
+- Filenames with special characters are correctly handled in Cody's embedding service [#50023](https://github.com/sourcegraph/sourcegraph/pull/50023)
+- Structural search correctly cleans up when done preventing a goroutine leak [#50034](https://github.com/sourcegraph/sourcegraph/pull/50034)
+- Fetch search based definitions in the reference panel if no precise definitions were found [#50179](https://github.com/sourcegraph/sourcegraph/pull/50179)
+
+### Removed
 
 ## 5.0.0
 

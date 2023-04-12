@@ -9,19 +9,14 @@ import { truncateText } from '../../prompt/truncation'
 import { getShortTimestamp } from '../../timestamp'
 import { Interaction } from '../transcript/interaction'
 
-import { Recipe } from './recipe'
+import { Recipe, RecipeContext } from './recipe'
 
 export class ChatQuestion implements Recipe {
     public getID(): string {
         return 'chat-question'
     }
 
-    public async getInteraction(
-        humanChatInput: string,
-        editor: Editor,
-        intentDetector: IntentDetector,
-        codebaseContext: CodebaseContext
-    ): Promise<Interaction | null> {
+    public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const timestamp = getShortTimestamp()
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
 
@@ -29,7 +24,7 @@ export class ChatQuestion implements Recipe {
             new Interaction(
                 { speaker: 'human', text: truncatedText, displayText: humanChatInput, timestamp },
                 { speaker: 'assistant', text: '', displayText: '', timestamp },
-                this.getContextMessages(truncatedText, editor, intentDetector, codebaseContext)
+                this.getContextMessages(truncatedText, context.editor, context.intentDetector, context.codebaseContext)
             )
         )
     }
@@ -45,8 +40,8 @@ export class ChatQuestion implements Recipe {
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
         if (isCodebaseContextRequired) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
-                numCodeResults: 8,
-                numTextResults: 2,
+                numCodeResults: 12,
+                numTextResults: 3,
             })
             contextMessages.push(...codebaseContextMessages)
         }
