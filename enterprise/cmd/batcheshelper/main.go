@@ -52,7 +52,11 @@ func doMain() error {
 	ctx := context.Background()
 	switch arguments.mode {
 	case "pre":
-		return run.Pre(ctx, logger, arguments.step, executionInput, previousResult, *workspaceFilesPath)
+		wd, err := os.Getwd()
+		if err != nil {
+			return errors.Wrap(err, "getting working directory")
+		}
+		return run.Pre(ctx, logger, arguments.step, executionInput, previousResult, wd, *workspaceFilesPath)
 	case "post":
 		return run.Post(ctx, logger, arguments.step, executionInput, previousResult, *workspaceFilesPath)
 	default:

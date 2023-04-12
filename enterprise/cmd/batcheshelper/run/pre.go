@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/kballard/go-shellquote"
@@ -28,6 +28,7 @@ func Pre(
 	stepIdx int,
 	executionInput batcheslib.WorkspacesExecutionInput,
 	previousResult execution.AfterStepResult,
+	workingDirectory string,
 	workspaceFilesPath string,
 ) error {
 	// Resolve step.Env given the current environment.
@@ -57,7 +58,6 @@ func Pre(
 		}); err != nil {
 			return err
 		}
-		fmt.Println("Skipping step")
 
 		// Write the step result file with the skipped flag set.
 		stepResult := execution.AfterStepResult{
@@ -68,31 +68,31 @@ func Pre(
 		if err != nil {
 			return errors.Wrap(err, "marshalling step result")
 		}
-		if err = os.WriteFile(fmt.Sprintf("step%d.json", stepIdx), stepResultBytes, os.ModePerm); err != nil {
+		if err = os.WriteFile(filepath.Join(workingDirectory, util.StepJSONFile(stepIdx)), stepResultBytes, os.ModePerm); err != nil {
 			return errors.Wrap(err, "failed to write step result file")
 		}
 
-		// Bail out early.
-		os.Exit(0)
+		return nil
 	} else {
-		wd, err := os.Getwd()
-		if err != nil {
-			return errors.Wrap(err, "getting working directory")
-		}
-		tmpFileDir := util.FilesMountPath(wd, stepIdx)
-		if err = os.Mkdir(tmpFileDir, os.ModePerm); err != nil {
-			return errors.Wrap(err, "failed to create directory for file mounts")
-		}
-
 		// Parse and render the step.Files.
-		filesToMount, err := createFilesToMount(tmpFileDir, step, &stepContext)
+		filesToMount, err := createFilesToMount(workingDirectory, stepIdx, step, &stepContext)
 		if err != nil {
 			return errors.Wrap(err, "failed to create files to mount")
 		}
-		for path, file := range filesToMount {
-			// TODO: Does file.Name() work?
-			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", file.Name(), path))
-			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("chmod", "+x", path))
+		if len(filesToMount) > 0 {
+			// Sort the keys for consistent unit testing.
+			keys := make([]string, len(filesToMount))
+			i := 0
+			for k := range filesToMount {
+				keys[i] = k
+				i++
+			}
+			sort.Strings(keys)
+
+			for _, path := range keys {
+				fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", filesToMount[path], path))
+				fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("chmod", "+x", path))
+			}
 		}
 
 		// Mount any paths on the local system to the docker container. The paths have already been validated during parsing.
@@ -133,13 +133,10 @@ func Pre(
 		envPreamble += "\n"
 	}
 
-	stepScriptPath := fmt.Sprintf("step%d.sh", stepIdx)
+	stepScriptPath := filepath.Join(workingDirectory, fmt.Sprintf("step%d.sh", stepIdx))
 	fullScript := []byte(envPreamble + fileMountsPreamble + runScript.String())
 	if err = os.WriteFile(stepScriptPath, fullScript, os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to write step script file")
-	}
-	if _, err = exec.CommandContext(ctx, "chmod", "+x", stepScriptPath).CombinedOutput(); err != nil {
-		return errors.Wrap(err, "failed to chmod step script file")
 	}
 
 	return nil
@@ -175,31 +172,32 @@ func getStepContext(executionInput batcheslib.WorkspacesExecutionInput, previous
 // createFilesToMount creates temporary files with the contents of Step.Files
 // that are to be mounted into the container that executes the step.
 // TODO: Remove these files in the `after` step.
-func createFilesToMount(tempDir string, step batcheslib.Step, stepContext *template.StepContext) (map[string]*os.File, error) {
+func createFilesToMount(workingDirectory string, stepIdx int, step batcheslib.Step, stepContext *template.StepContext) (map[string]string, error) {
 	// Parse and render the step.Files.
 	files, err := template.RenderStepMap(step.Files, stepContext)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing step files")
 	}
 
+	if len(files) == 0 {
+		return nil, nil
+	}
+
+	tempDir := util.FilesMountPath(workingDirectory, stepIdx)
+	if err = os.Mkdir(tempDir, os.ModePerm); err != nil {
+		return nil, errors.Wrap(err, "failed to create directory for file mounts")
+	}
+
 	// Create temp files with the rendered content of step.Files so that we
 	// can mount them into the container.
-	filesToMount := make(map[string]*os.File, len(files))
+	filesToMount := make(map[string]string, len(files))
 	for name, content := range files {
-		fp, err := os.CreateTemp(tempDir, "")
-		if err != nil {
-			return nil, errors.Wrap(err, "creating temporary file")
+		file := filepath.Join(tempDir, name)
+		if err = os.WriteFile(file, []byte(content), os.ModePerm); err != nil {
+			return nil, errors.Wrapf(err, "creating file %q", name)
 		}
 
-		if _, err = fp.WriteString(content); err != nil {
-			return nil, errors.Wrap(err, "writing to temporary file")
-		}
-
-		if err = fp.Close(); err != nil {
-			return nil, errors.Wrap(err, "closing temporary file")
-		}
-
-		filesToMount[name] = fp
+		filesToMount[name] = file
 	}
 
 	return filesToMount, nil

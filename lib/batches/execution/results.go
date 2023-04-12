@@ -56,6 +56,7 @@ func (a *AfterStepResult) UnmarshalJSON(data []byte) error {
 		a.StepIndex = v2.StepIndex
 		a.Diff = v2.Diff
 		a.Outputs = v2.Outputs
+		a.Skipped = v2.Skipped
 		return nil
 	}
 	var v1 v1AfterStepResult
