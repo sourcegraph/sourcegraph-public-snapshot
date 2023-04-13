@@ -67,11 +67,10 @@ func main() {
 
 	// Now that we have our repositories synced and cloned into the instance, we
 	// can start testing.
-
-	// TODO: Just one basic test for now, we want to extend this more later.
 	testCases := []Test{
 		testHelloWorldBatchChange(),
 		testEnvObjectBatchChange(),
+		testFileMountBatchChange(),
 	}
 
 	for _, t := range testCases {

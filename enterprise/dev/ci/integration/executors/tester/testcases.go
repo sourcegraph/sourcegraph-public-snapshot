@@ -451,8 +451,221 @@ func testEnvObjectBatchChange() Test {
 }
 
 func testFileMountBatchChange() Test {
+	batchSpecPs := batchSpecParams{
+		NameContent: "file-mount",
+		Description: "Add the content of a mounted file to READMEs",
+		RunCommand:  "IFS=$'\\n'; cat /tmp/hello-world.txt | tee -a $(find -name README.md)",
+		AdditionalKeyValues: []specStepBlock{
+			{
+				BlockName: "files",
+				KeyValues: []keyValue{
+					// Use a multi-line scalar to circumvent weird diff behaviour in the actual response
+					{Key: "/tmp/hello-world.txt", Value: "|\n        Hello world from a mounted file!"},
+				},
+			},
+		},
+		ChangeSetTemplateTitle:  "Hello World from mounted file",
+		ChangeSetTemplateBranch: "file-mount",
+		CommitMessage:           "Append the content of a mounted file to all README.md files",
+	}
+	batchSpec := generateBatchSpec(batchSpecPs)
 
-	return Test{}
+	diffPs := diffParams{
+		READMEObjectHash:         "cf2aaac",
+		ExamplesREADMEObjectHash: "b36ca23",
+		Project3READMEObjectHash: "3c8b671",
+		Project1READMEObjectHash: "af08a9d",
+		Project2READMEObjectHash: "488f3ac",
+		HelloWorldMessage:        "Hello world from a mounted file!",
+	}
+	expectedDiff := generateDiff(diffPs)
+
+	expectedState := gqltestutil.BatchSpecDeep{
+		State: "COMPLETED",
+		ChangesetSpecs: gqltestutil.BatchSpecChangesetSpecs{
+			TotalCount: 1,
+			Nodes: []gqltestutil.ChangesetSpec{
+				{
+					Type: "BRANCH",
+					Description: gqltestutil.ChangesetSpecDescription{
+						BaseRepository: gqltestutil.ChangesetRepository{Name: sourceRepository},
+						BaseRef:        sourceRef,
+						BaseRev:        "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
+						HeadRef:        batchSpecPs.ChangeSetTemplateBranch,
+						Title:          batchSpecPs.ChangeSetTemplateTitle,
+						Body:           changeSetBody,
+						Commits: []gqltestutil.ChangesetSpecCommit{
+							{
+								Message: batchSpecPs.CommitMessage,
+								Subject: batchSpecPs.CommitMessage,
+								Body:    "",
+								Author: gqltestutil.ChangesetSpecCommitAuthor{
+									Name:  authorName,
+									Email: authorEmail,
+								},
+							},
+						},
+						Diffs: gqltestutil.ChangesetSpecDiffs{
+							FileDiffs: gqltestutil.ChangesetSpecFileDiffs{
+								RawDiff: ``,
+							},
+						},
+					},
+					ForkTarget: gqltestutil.ChangesetForkTarget{},
+				},
+			},
+		},
+		Namespace: gqltestutil.Namespace{},
+		WorkspaceResolution: gqltestutil.WorkspaceResolution{
+			Workspaces: gqltestutil.WorkspaceResolutionWorkspaces{
+				TotalCount: 1,
+				Stats: gqltestutil.WorkspaceResolutionWorkspacesStats{
+					Completed: 1,
+				},
+				Nodes: []gqltestutil.BatchSpecWorkspace{
+					{
+						State: "COMPLETED",
+						DiffStat: gqltestutil.DiffStat{
+							Added:   5,
+							Deleted: 5,
+						},
+						Repository: gqltestutil.ChangesetRepository{Name: sourceRepository},
+						Branch: gqltestutil.WorkspaceBranch{
+							Name: sourceRef,
+						},
+						ChangesetSpecs: []gqltestutil.WorkspaceChangesetSpec{
+							{},
+						},
+						SearchResultPaths: []string{},
+						Executor: gqltestutil.Executor{
+							QueueName: "batches",
+							Active:    true,
+						},
+						Stages: gqltestutil.BatchSpecWorkspaceStages{
+							Setup: []gqltestutil.ExecutionLogEntry{
+								{
+									Key:      "setup.git.init",
+									ExitCode: 0,
+								},
+								{
+									Key:      "setup.git.add-remote",
+									ExitCode: 0,
+								},
+								{
+									Key:      "setup.git.disable-gc",
+									ExitCode: 0,
+								},
+								{
+									Key:      "setup.git.fetch",
+									ExitCode: 0,
+								},
+								{
+									Key:      "setup.git.checkout",
+									ExitCode: 0,
+								},
+								{
+									Key:      "setup.git.set-remote",
+									ExitCode: 0,
+								},
+								{
+									Key:      "setup.fs.extras",
+									Command:  []string{},
+									ExitCode: 0,
+								},
+							},
+							SrcExec: []gqltestutil.ExecutionLogEntry{
+								{
+									Key:      "step.docker.step.0.pre",
+									ExitCode: 0,
+								},
+								{
+									Key:      "step.docker.step.0.run",
+									ExitCode: 0,
+								},
+								{
+									Key:      "step.docker.step.0.post",
+									ExitCode: 0,
+								},
+							},
+							Teardown: []gqltestutil.ExecutionLogEntry{
+								{
+									Key:      "teardown.fs",
+									Command:  []string{},
+									ExitCode: 0,
+								},
+							},
+						},
+						Steps: []gqltestutil.BatchSpecWorkspaceStep{
+							{
+								Number:    1,
+								Run:       batchSpecPs.RunCommand,
+								Container: container,
+								OutputLines: gqltestutil.WorkspaceOutputLines{
+									Nodes: []string{
+										"stderr: WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested",
+										"stderr: Hello World",
+										"",
+									},
+									TotalCount: 3,
+								},
+								ExitCode:        0,
+								Environment:     []gqltestutil.WorkspaceEnvironmentVariable{},
+								OutputVariables: []gqltestutil.WorkspaceOutputVariable{},
+								DiffStat: gqltestutil.DiffStat{
+									Added:   5,
+									Deleted: 5,
+								},
+								Diff: gqltestutil.ChangesetSpecDiffs{
+									FileDiffs: gqltestutil.ChangesetSpecFileDiffs{
+										RawDiff: expectedDiff,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Source: "REMOTE",
+		Files: gqltestutil.BatchSpecFiles{
+			TotalCount: 0,
+			Nodes:      []gqltestutil.BatchSpecFile{},
+		},
+	}
+
+	return Test{
+		PreExistingCacheEntries: map[string]execution.AfterStepResult{},
+		BatchSpecInput:          batchSpec,
+		ExpectedCacheEntries: map[string]execution.AfterStepResult{
+			"rzrP_eyDXgEVvch3YZUG9A-step-0": {
+				Version: 2,
+				Stdout:  fmt.Sprintf("%s\n", diffPs.HelloWorldMessage),
+				Diff:    []byte(expectedDiff),
+				Outputs: map[string]any{},
+			},
+		},
+		ExpectedChangesetSpecs: []*types.ChangesetSpec{
+			{
+				Type:              "branch",
+				DiffStatAdded:     5,
+				DiffStatDeleted:   5,
+				BatchSpecID:       2,
+				BaseRepoID:        1,
+				UserID:            1,
+				BaseRev:           "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
+				BaseRef:           sourceRef,
+				HeadRef:           fmt.Sprintf("refs/heads/%s", batchSpecPs.ChangeSetTemplateBranch),
+				Title:             batchSpecPs.ChangeSetTemplateTitle,
+				Body:              changeSetBody,
+				CommitMessage:     batchSpecPs.CommitMessage,
+				CommitAuthorName:  authorName,
+				CommitAuthorEmail: authorEmail,
+				Diff:              []byte(expectedDiff),
+			},
+		},
+		ExpectedState: expectedState,
+		CacheDisabled: true,
+	}
 }
 
 type diffParams struct {
@@ -567,12 +780,12 @@ on:
 steps:
   - run: {{.RunCommand}}
     container: alpine:3
-{{range .AdditionalKeyValues}}
+{{- range .AdditionalKeyValues }}
     {{.BlockName}}:
-    {{range .KeyValues}}
+    {{- range .KeyValues }}
       {{.Key}}: {{.Value}}
-    {{end}}
-{{end}}
+    {{- end}}
+{{- end}}
 
 changesetTemplate:
   title: {{.ChangeSetTemplateTitle}}
