@@ -15,10 +15,6 @@ const config: Meta = {
         },
     },
     argTypes: {
-        isSourcegraphDotCom: {
-            control: { type: 'boolean' },
-            defaultValue: false,
-        },
         canCreateBatchChanges: {
             control: { type: 'boolean' },
             defaultValue: true,
@@ -29,7 +25,5 @@ const config: Meta = {
 export default config
 
 export const Overview: Story = args => (
-    <WebStory>
-        {() => <GettingStarted isSourcegraphDotCom={args.isSourcegraphDotCom} canCreate={args.canCreateBatchChanges} />}
-    </WebStory>
+    <WebStory>{() => <GettingStarted canCreate={args.canCreateBatchChanges} />}</WebStory>
 )

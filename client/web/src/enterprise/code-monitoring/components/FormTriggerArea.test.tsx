@@ -26,7 +26,6 @@ describe('FormTriggerArea', () => {
     const testCases = [
         {
             query: '',
-            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: false,
@@ -34,7 +33,6 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test',
-            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: false,
@@ -42,7 +40,6 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test patternType:literal',
-            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: false,
@@ -50,7 +47,6 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test patternType:regexp',
-            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: false,
@@ -58,7 +54,6 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test patternType:structural',
-            isSourcegraphDotCom: true,
             patternTypeChecked: false,
             typeChecked: false,
             repoChecked: false,
@@ -66,7 +61,6 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test type:repo',
-            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: false,
@@ -74,7 +68,6 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test type:diff',
-            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: true,
             repoChecked: false,
@@ -82,7 +75,6 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test type:commit',
-            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: true,
             repoChecked: false,
@@ -90,7 +82,6 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test repo:test',
-            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: false,
             repoChecked: true,
@@ -98,7 +89,6 @@ describe('FormTriggerArea', () => {
         },
         {
             query: 'test repo:test type:diff',
-            isSourcegraphDotCom: true,
             patternTypeChecked: true,
             typeChecked: true,
             repoChecked: true,
@@ -115,7 +105,6 @@ describe('FormTriggerArea', () => {
                     onQueryChange={sinon.spy()}
                     setTriggerCompleted={sinon.spy()}
                     startExpanded={false}
-                    isSourcegraphDotCom={testCase.isSourcegraphDotCom}
                 />
             )
             userEvent.click(screen.getByTestId('trigger-button'))
@@ -138,16 +127,7 @@ describe('FormTriggerArea', () => {
             }
 
             const repoCheckbox = screen.getByTestId('repo-checkbox')
-            if (testCase.isSourcegraphDotCom) {
-                const repoCheckbox = screen.getByTestId('repo-checkbox')
-                if (testCase.repoChecked) {
-                    expect(repoCheckbox).toBeChecked()
-                } else {
-                    expect(repoCheckbox).not.toBeChecked()
-                }
-            } else {
-                expect(repoCheckbox).not.toBeInTheDocument()
-            }
+            expect(repoCheckbox).not.toBeInTheDocument()
 
             const validCheckbox = screen.getByTestId('valid-checkbox')
             if (testCase.validChecked) {
@@ -167,7 +147,6 @@ describe('FormTriggerArea', () => {
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
-                isSourcegraphDotCom={false}
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))
@@ -185,7 +164,6 @@ describe('FormTriggerArea', () => {
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
                 startExpanded={false}
-                isSourcegraphDotCom={false}
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))

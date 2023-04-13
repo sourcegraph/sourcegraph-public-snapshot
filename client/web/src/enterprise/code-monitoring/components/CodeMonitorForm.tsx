@@ -39,8 +39,6 @@ export interface CodeMonitorFormProps {
     description?: string
 
     deleteCodeMonitor?: typeof _deleteCodeMonitor
-
-    isSourcegraphDotCom: boolean
 }
 
 interface FormCompletionSteps {
@@ -57,7 +55,6 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
     deleteCodeMonitor = _deleteCodeMonitor,
     triggerQuery,
     description,
-    isSourcegraphDotCom,
 }) => {
     const LOADING = 'loading' as const
 
@@ -205,7 +202,6 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
                             cardBtnClassName={styles.cardButton}
                             cardLinkClassName={styles.cardLink}
                             cardClassName={styles.card}
-                            isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     </div>
                     {/*

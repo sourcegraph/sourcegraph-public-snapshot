@@ -42,7 +42,6 @@ export const FormTrigerArea: Story = () => (
                         cardBtnClassName={codeMonitorFormStyles.cardButton}
                         cardLinkClassName={codeMonitorFormStyles.cardLink}
                         cardClassName={codeMonitorFormStyles.card}
-                        isSourcegraphDotCom={false}
                     />
                 </div>
 
@@ -58,7 +57,6 @@ export const FormTrigerArea: Story = () => (
                         cardBtnClassName={codeMonitorFormStyles.cardButton}
                         cardLinkClassName={codeMonitorFormStyles.cardLink}
                         cardClassName={codeMonitorFormStyles.card}
-                        isSourcegraphDotCom={false}
                     />
                 </div>
 
@@ -74,7 +72,6 @@ export const FormTrigerArea: Story = () => (
                         cardBtnClassName={codeMonitorFormStyles.cardButton}
                         cardLinkClassName={codeMonitorFormStyles.cardLink}
                         cardClassName={codeMonitorFormStyles.card}
-                        isSourcegraphDotCom={false}
                     />
                 </div>
 
@@ -90,7 +87,6 @@ export const FormTrigerArea: Story = () => (
                         cardBtnClassName={codeMonitorFormStyles.cardButton}
                         cardLinkClassName={codeMonitorFormStyles.cardLink}
                         cardClassName={codeMonitorFormStyles.card}
-                        isSourcegraphDotCom={false}
                     />
                 </div>
             </>

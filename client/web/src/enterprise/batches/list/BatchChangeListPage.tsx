@@ -9,7 +9,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
-import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -57,7 +57,6 @@ export interface BatchChangeListPageProps extends TelemetryProps, SettingsCascad
     canCreate: true | string
     headingElement: 'h1' | 'h2'
     namespaceID?: Scalars['ID']
-    isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
     authenticatedUser: AuthenticatedUser | null
     /** For testing only. */
@@ -78,9 +77,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     openTab,
     settingsCascade,
     telemetryService,
-    isSourcegraphDotCom,
     isSourcegraphApp,
-    authenticatedUser,
 }) => {
     const location = useLocation()
     useEffect(() => telemetryService.logViewEvent('BatchChangesListPage'), [telemetryService])
@@ -88,9 +85,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
     const { selectedFilters, setSelectedFilters, availableFilters } = useBatchChangeListFilters({ isExecutionEnabled })
-    const [selectedTab, setSelectedTab] = useState<SelectedTab>(
-        openTab ?? (isSourcegraphDotCom ? 'gettingStarted' : 'batchChanges')
-    )
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>(openTab ?? 'batchChanges')
 
     // We keep state to track to the last total count of batch changes in the connection
     // to avoid the display flickering as the connection is loading more data or a
@@ -158,20 +153,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
         <Page>
             <PageHeader
                 className="test-batches-list-page mb-3"
-                actions={
-                    isSourcegraphDotCom ? (
-                        <Button
-                            as={Link}
-                            to="https://about.sourcegraph.com"
-                            variant="primary"
-                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryBatchChanges' })}
-                        >
-                            Get Sourcegraph Enterprise
-                        </Button>
-                    ) : (
-                        <NewBatchChangeButton to={`${location.pathname}/create`} canCreate={canCreate} />
-                    )
-                }
+                actions={<NewBatchChangeButton to={`${location.pathname}/create`} canCreate={canCreate} />}
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
             >
@@ -197,16 +179,9 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 </LimitedAccessBanner>
             )}
             <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
-            {!isSourcegraphDotCom && (
-                <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-            )}
+            <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             {selectedTab === 'gettingStarted' && (
-                <GettingStarted
-                    canCreate={canCreate}
-                    isSourcegraphApp={isSourcegraphApp}
-                    isSourcegraphDotCom={isSourcegraphDotCom}
-                    className="mb-4"
-                />
+                <GettingStarted canCreate={canCreate} isSourcegraphApp={isSourcegraphApp} className="mb-4" />
             )}
             {selectedTab === 'batchChanges' && (
                 <>

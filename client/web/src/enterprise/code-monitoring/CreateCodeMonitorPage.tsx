@@ -21,13 +21,11 @@ interface CreateCodeMonitorPageProps {
     authenticatedUser: AuthenticatedUser
 
     createCodeMonitor?: typeof _createCodeMonitor
-
-    isSourcegraphDotCom: boolean
 }
 
 const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
     React.PropsWithChildren<CreateCodeMonitorPageProps>
-> = ({ authenticatedUser, createCodeMonitor = _createCodeMonitor, isSourcegraphDotCom }) => {
+> = ({ authenticatedUser, createCodeMonitor = _createCodeMonitor }) => {
     const location = useLocation()
 
     const triggerQuery = useMemo(
@@ -95,7 +93,6 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<
                 triggerQuery={triggerQuery}
                 description={description}
                 submitButtonLabel="Create code monitor"
-                isSourcegraphDotCom={isSourcegraphDotCom}
             />
         </div>
     )

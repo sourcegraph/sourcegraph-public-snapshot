@@ -69,7 +69,6 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeMonitoringGettingStartedProps>
 > = ({ authenticatedUser, isSourcegraphApp }) => {
     const isLightTheme = useIsLightTheme()
-    const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
     const assetsRoot = window.context?.assetsRoot || ''
 
     const logExampleMonitorClicked = useCallback(() => {
@@ -110,21 +109,20 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                 </div>
             </Card>
 
-            {isSourcegraphDotCom ||
-                (isSourcegraphApp && (
-                    <CallToActionBanner variant="filled">
-                        To monitor changes across your team's private repositories,{' '}
-                        <Link
-                            to={ctaBannerUrl}
-                            onClick={() =>
-                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'MonitoringGettingStarted' })
-                            }
-                        >
-                            get Sourcegraph Enterprise
-                        </Link>
-                        .
-                    </CallToActionBanner>
-                ))}
+            {isSourcegraphApp && (
+                <CallToActionBanner variant="filled">
+                    To monitor changes across your team's private repositories,{' '}
+                    <Link
+                        to={ctaBannerUrl}
+                        onClick={() =>
+                            eventLogger.log('ClickedOnEnterpriseCTA', { location: 'MonitoringGettingStarted' })
+                        }
+                    >
+                        get Sourcegraph Enterprise
+                    </Link>
+                    .
+                </CallToActionBanner>
+            )}
 
             <div>
                 <H3 className="mb-3">Example code monitors</H3>

@@ -109,7 +109,6 @@ export const ListOfBatchChanges: Story = () => (
                 {...props}
                 repo={repoDefaults}
                 authenticatedUser={mockAuthenticatedUser}
-                isSourcegraphDotCom={false}
                 queryRepoBatchChangeStats={queryRepoBatchChangeStats}
                 queryRepoBatchChanges={queryList}
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
@@ -127,7 +126,6 @@ export const NoBatchChanges: Story = () => (
                 {...props}
                 repo={repoDefaults}
                 authenticatedUser={mockAuthenticatedUser}
-                isSourcegraphDotCom={false}
                 queryRepoBatchChangeStats={queryEmptyRepoBatchChangeStats}
                 queryRepoBatchChanges={queryNone}
             />

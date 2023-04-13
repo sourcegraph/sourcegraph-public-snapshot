@@ -21,7 +21,6 @@ interface Props {
     // the user cannot create.
     canCreate: true | string
     repo: RepositoryFields
-    isSourcegraphDotCom: boolean
     onlyArchived?: boolean
 
     /** For testing only. */
@@ -37,7 +36,6 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
     viewerCanAdminister,
     canCreate,
     repo,
-    isSourcegraphDotCom,
     queryRepoBatchChanges = _queryRepoBatchChanges,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
 }) => {
@@ -72,7 +70,7 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
                 headComponent={RepoBatchChangesHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={<GettingStarted isSourcegraphDotCom={isSourcegraphDotCom} canCreate={canCreate} />}
+                emptyElement={<GettingStarted canCreate={canCreate} />}
             />
         </Container>
     )
