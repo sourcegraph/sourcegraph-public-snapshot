@@ -6,29 +6,30 @@ import (
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/elimity-com/scim/schema"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // Get returns the resource corresponding with the given identifier.
-func (h *UserResourceHandler) Get(r *http.Request, idStr string) (scim.Resource, error) {
-	user, err := getUserFromDB(r.Context(), h.db.Users(), idStr)
+func (h *ResourceHandler) Get(r *http.Request, idStr string) (scim.Resource, error) {
+	resource, err := h.service.Get(r.Context(), idStr)
 	if err != nil {
 		return scim.Resource{}, err
 	}
-	return convertUserToSCIMResource(user), nil
+	return resource, nil
 }
 
 // GetAll returns a paginated list of resources.
 // An empty list of resources will be represented as `null` in the JSON response if `nil` is assigned to the
 // Page.Resources. Otherwise, if an empty slice is assigned, an empty list will be represented as `[]`.
-func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestParams) (scim.Page, error) {
+func (h *ResourceHandler) GetAll(r *http.Request, params scim.ListRequestParams) (scim.Page, error) {
 	var totalCount int
 	var resources []scim.Resource
 	var err error
 
 	if params.Filter == nil {
-		totalCount, resources, err = h.getAllFromDB(r, params.StartIndex, &params.Count)
+		totalCount, resources, err = h.service.GetAll(r.Context(), params.StartIndex, &params.Count)
+
 	} else {
 		extensionSchemas := make([]schema.Schema, 0, len(h.schemaExtensions))
 		for _, ext := range h.schemaExtensions {
@@ -39,8 +40,8 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 		// Fetch all resources from the DB and then filter them here.
 		// This doesn't feel efficient, but it wasn't reasonable to implement this in SQL in the time available.
 		var allResources []scim.Resource
-		_, allResources, err = h.getAllFromDB(r, 0, nil)
-
+		// ignore the total count because it is calculated without the filter
+		_, allResources, err = h.service.GetAll(r.Context(), 0, nil)
 		for _, resource := range allResources {
 			if err := validator.PassesFilter(resource.Attributes); err != nil {
 				continue
@@ -62,38 +63,4 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 		TotalResults: totalCount,
 		Resources:    resources,
 	}, nil
-}
-
-// getAllFromDB returns all users from the database, starting at the given index, and up to the given count.
-func (h *UserResourceHandler) getAllFromDB(r *http.Request, startIndex int, count *int) (totalCount int, resources []scim.Resource, err error) {
-	// Calculate offset
-	var offset int
-	if startIndex > 0 {
-		offset = startIndex - 1
-	}
-
-	// Get users and convert them to SCIM resources
-	var opt = &database.UsersListOptions{}
-	if count != nil {
-		opt = &database.UsersListOptions{
-			LimitOffset: &database.LimitOffset{Limit: *count, Offset: offset},
-		}
-	}
-	users, err := h.db.Users().ListForSCIM(r.Context(), opt)
-	if err != nil {
-		return
-	}
-	resources = make([]scim.Resource, 0, len(users))
-	for _, user := range users {
-		resources = append(resources, convertUserToSCIMResource(user))
-	}
-
-	// Get total count
-	if count == nil {
-		totalCount = len(users)
-	} else {
-		totalCount, err = h.db.Users().Count(r.Context(), &database.UsersListOptions{})
-	}
-
-	return
 }

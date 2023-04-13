@@ -478,11 +478,13 @@ func TestUsers_ListForSCIM_Query(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
+	userToSoftDelete := NewUserForSCIM{NewUser: NewUser{Email: "notactive@example.com", Username: "notactive", EmailIsVerified: true}, SCIMExternalID: "notactive"}
 	// Create users
 	newUsers := []NewUserForSCIM{
 		{NewUser: NewUser{Email: "alice@example.com", Username: "alice", EmailIsVerified: true}},
 		{NewUser: NewUser{Email: "bob@example.com", Username: "bob", EmailVerificationCode: "bb"}, SCIMExternalID: "BOB"},
 		{NewUser: NewUser{Email: "charlie@example.com", Username: "charlie", EmailIsVerified: true}, SCIMExternalID: "CHARLIE", AdditionalVerifiedEmails: []string{"charlie2@example.com"}},
+		userToSoftDelete,
 	}
 	for _, newUser := range newUsers {
 		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, newUser.NewUser, extsvc.AccountSpec{ServiceType: "scim", AccountID: newUser.SCIMExternalID}, extsvc.AccountData{})
@@ -501,16 +503,25 @@ func TestUsers_ListForSCIM_Query(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	inactiveUser, err := db.Users().GetByUsername(ctx, userToSoftDelete.Username)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.Users().Delete(ctx, inactiveUser.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	users, err := db.Users().ListForSCIM(ctx, &UsersListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Len(t, users, 3)
+	assert.Len(t, users, 4)
 	assert.Equal(t, "alice", users[0].Username)
 	assert.Equal(t, "", users[0].SCIMExternalID)
 	assert.Equal(t, "BOB", users[1].SCIMExternalID)
 	assert.Equal(t, "CHARLIE", users[2].SCIMExternalID)
+	assert.Equal(t, "notactive", users[3].Username)
 	assert.Len(t, users[0].Emails, 1)
 	assert.Len(t, users[1].Emails, 0)
 	assert.Len(t, users[2].Emails, 2)

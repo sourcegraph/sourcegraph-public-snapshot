@@ -43,7 +43,7 @@ func getMockDB(users []*types.UserForSCIM, usersEmails map[int32][]*database.Use
 
 		return applyLimitOffset(users, opt.LimitOffset)
 	})
-	userStore.CountFunc.SetDefaultReturn(4, nil)
+	userStore.CountForSCIMFunc.SetDefaultReturn(len(users), nil)
 	userStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*types.User, error) {
 		for _, user := range users {
 			if user.Username == username {
@@ -83,6 +83,28 @@ func getMockDB(users []*types.UserForSCIM, usersEmails map[int32][]*database.Use
 		}
 
 		return database.NewUserNotFoundErr()
+	})
+	userStore.RecoverUsersListFunc.SetDefaultHook(func(ctx context.Context, userIds []int32) ([]int32, error) {
+		updated := []int32{}
+		for _, id := range userIds {
+			for _, user := range users {
+				if user.ID == id {
+					user.Active = true
+					updated = append(updated, id)
+				}
+			}
+		}
+		return updated, nil
+	})
+
+	userStore.DeleteFunc.SetDefaultHook(func(ctx context.Context, id int32) error {
+		for _, user := range users {
+			if user.ID == id {
+				user.Active = false
+				return nil
+			}
+		}
+		return errors.New("user not found")
 	})
 
 	userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
