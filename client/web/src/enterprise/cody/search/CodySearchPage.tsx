@@ -9,7 +9,18 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Alert, Form, Input, LoadingSpinner, Text, Badge, Link, Tooltip, Icon } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    Form,
+    Input,
+    LoadingSpinner,
+    Text,
+    Badge,
+    Link,
+    Tooltip,
+    Icon,
+    useSessionStorage,
+} from '@sourcegraph/wildcard'
 
 import { CodyIcon } from '../../../cody/CodyIcon'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
@@ -42,6 +53,8 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
     /** The value entered by the user in the query input */
     // const [input, setInput] = useState('')
     const [input, setInput] = useURLSyncedString('cody-search', '')
+    const codySearchStorage = useSessionStorage<string>('cody-search-input', '')
+    const setCodySearchInput = codySearchStorage[1]
 
     const [inputError, setInputError] = useState<string | null>(null)
 
@@ -53,30 +66,41 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
     const [loading, setLoading] = useState(false)
 
     const onSubmit = useCallback(() => {
-        eventLogger.log('web:codySearch:submit', { input })
+        const sanitizedInput = input.trim()
+
+        if (!sanitizedInput) {
+            return
+        }
+
+        eventLogger.log('web:codySearch:submit', { input: sanitizedInput })
         setLoading(true)
-        translateToQuery(input, authenticatedUser).then(
+        translateToQuery(sanitizedInput, authenticatedUser).then(
             query => {
                 setLoading(false)
 
                 if (query) {
-                    eventLogger.log('web:codySearch:submitSucceeded', { input, translatedQuery: query })
+                    eventLogger.log('web:codySearch:submitSucceeded', { input: sanitizedInput, translatedQuery: query })
+                    setCodySearchInput(JSON.stringify({ input: sanitizedInput, translatedQuery: query }))
                     navigate({
                         pathname: '/search',
-                        search: buildSearchURLQuery(query, SearchPatternType.regexp, false),
+                        search: buildSearchURLQuery(query, SearchPatternType.regexp, false) + '&ref=cody-search',
                     })
                 } else {
-                    eventLogger.log('web:codySearch:submitFailed', { input, reason: 'untranslatable' })
+                    eventLogger.log('web:codySearch:submitFailed', { input: sanitizedInput, reason: 'untranslatable' })
                     setInputError('Cody does not understand this query. Try rephrasing it.')
                 }
             },
             error => {
-                eventLogger.log('web:codySearch:submitFailed', { input, reason: 'unreachable', error: error?.message })
+                eventLogger.log('web:codySearch:submitFailed', {
+                    input: sanitizedInput,
+                    reason: 'unreachable',
+                    error: error?.message,
+                })
                 setLoading(false)
                 setInputError(`Unable to reach Cody. Error: ${error?.message}`)
             }
         )
-    }, [navigate, input, authenticatedUser])
+    }, [navigate, input, authenticatedUser, setCodySearchInput])
 
     const isLightTheme = useIsLightTheme()
 
