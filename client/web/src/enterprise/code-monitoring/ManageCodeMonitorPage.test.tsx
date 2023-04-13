@@ -46,7 +46,6 @@ describe('ManageCodeMonitorPage', () => {
         toggleCodeMonitorEnabled: sinon.spy((id: string, enabled: boolean) => of({ id: 'test', enabled: true })),
         deleteCodeMonitor: sinon.spy((id: string) => of(undefined)),
         isLightTheme: false,
-        isSourcegraphDotCom: false,
     }
 
     test('Form is pre-loaded with code monitor data', () => {

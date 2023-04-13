@@ -29,7 +29,6 @@ export const ManageCodeMonitorPageStory: Story = () => (
                 updateCodeMonitor={fake()}
                 fetchCodeMonitor={fake(() => of(mockCodeMonitor))}
                 deleteCodeMonitor={fake(() => NEVER)}
-                isSourcegraphDotCom={false}
             />
         )}
     </WebStory>

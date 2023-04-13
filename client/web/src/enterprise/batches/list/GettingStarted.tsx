@@ -6,12 +6,9 @@ import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/
 import { Alert, Container, H2, H3, Link, Text, Icon, useReducedMotion } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
-import { CallToActionBanner } from '../../../components/CallToActionBanner'
 import { CtaBanner } from '../../../components/CtaBanner'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface GettingStartedProps {
-    isSourcegraphDotCom: boolean
     isSourcegraphApp?: boolean
     // canCreate indicates whether or not the currently-authenticated user has sufficient
     // permissions to create a batch change in whatever context this getting started
@@ -24,7 +21,6 @@ export interface GettingStartedProps {
 const productPageUrl = 'https://about.sourcegraph.com/batch-changes'
 
 export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<GettingStartedProps>> = ({
-    isSourcegraphDotCom,
     isSourcegraphApp,
     canCreate,
     className,
@@ -102,30 +98,15 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     </div>
                 </div>
             </Container>
-            {isSourcegraphDotCom ? (
-                <CallToActionBanner variant="filled">
-                    To automate changes across your team's private repositories,{' '}
-                    <Link
-                        to="https://about.sourcegraph.com"
-                        onClick={() =>
-                            eventLogger.log('ClickedOnEnterpriseCTA', { location: 'BatchChangesGettingStarted' })
-                        }
-                    >
-                        get Sourcegraph Enterprise
-                    </Link>
-                    .
-                </CallToActionBanner>
-            ) : (
-                <div className="d-flex justify-content-start">
-                    <CtaBanner
-                        bodyText="Try it yourself in less than 10 minutes (without actually pushing changes)."
-                        title={<H3>Start using Batch Changes</H3>}
-                        linkText="Read quickstart docs"
-                        href="/help/batch_changes/quickstart"
-                        icon={<BatchChangesIcon />}
-                    />
-                </div>
-            )}
+            <div className="d-flex justify-content-start">
+                <CtaBanner
+                    bodyText="Try it yourself in less than 10 minutes (without actually pushing changes)."
+                    title={<H3>Start using Batch Changes</H3>}
+                    linkText="Read quickstart docs"
+                    href="/help/batch_changes/quickstart"
+                    icon={<BatchChangesIcon />}
+                />
+            </div>
         </div>
     )
 }

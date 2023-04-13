@@ -7,28 +7,13 @@ import { AuthenticatedUser } from '../../auth'
 
 const CodeInsightsAppLazyRouter = lazyComponent(() => import('./CodeInsightsAppRouter'), 'CodeInsightsAppRouter')
 
-const CodeInsightsDotComGetStartedLazy = lazyComponent(
-    () => import('./pages/landing/dot-com-get-started/CodeInsightsDotComGetStarted'),
-    'CodeInsightsDotComGetStarted'
-)
-
 export interface CodeInsightsRouterProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
 }
 
 export const CodeInsightsRouter: FC<CodeInsightsRouterProps> = props => {
     const { authenticatedUser, telemetryService, isSourcegraphApp } = props
-
-    if (!window.context?.codeInsightsEnabled) {
-        return (
-            <CodeInsightsDotComGetStartedLazy
-                telemetryService={telemetryService}
-                authenticatedUser={authenticatedUser}
-            />
-        )
-    }
 
     return (
         <CodeInsightsAppLazyRouter

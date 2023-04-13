@@ -9,7 +9,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
-import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../../batches/utils'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE } from '../../../batches/utils'
 import { NotFoundPage } from '../../../components/HeroPage'
 import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
@@ -45,7 +45,6 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
 
 interface Props extends TelemetryProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
 }
 
@@ -54,19 +53,15 @@ interface Props extends TelemetryProps, SettingsCascadeProps {
  */
 export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
-    isSourcegraphDotCom,
     isSourcegraphApp,
     ...props
 }) => {
     const canCreate: true | string = useMemo(() => {
-        if (isSourcegraphDotCom) {
-            return NO_ACCESS_SOURCEGRAPH_COM
-        }
         if (!canWriteBatchChanges(authenticatedUser)) {
             return NO_ACCESS_BATCH_CHANGES_WRITE
         }
         return true
-    }, [isSourcegraphDotCom, authenticatedUser])
+    }, [authenticatedUser])
 
     return (
         <div className="w-100">
@@ -78,13 +73,12 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
                             headingElement="h1"
                             canCreate={canCreate}
                             authenticatedUser={authenticatedUser}
-                            isSourcegraphDotCom={isSourcegraphDotCom}
                             isSourcegraphApp={isSourcegraphApp}
                             {...props}
                         />
                     }
                 />
-                {!isSourcegraphDotCom && canCreate === true && (
+                {canCreate === true && (
                     <Route
                         path="create"
                         element={

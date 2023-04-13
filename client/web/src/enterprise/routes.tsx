@@ -1,5 +1,6 @@
 import { Navigate, RouteObject } from 'react-router-dom'
 
+import { isDefined } from '@sourcegraph/common'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LegacyRoute } from '../LegacyRouteContext'
@@ -43,10 +44,7 @@ export const enterpriseRoutes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <GlobalBatchChangesArea {...props} />}
-                // We also render this route on sourcegraph.com as a precaution in case anyone
-                // follows an in-app link to /batch-changes from sourcegraph.com; the component
-                // will just redirect the visitor to the marketing page
-                condition={({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom}
+                condition={({ batchChangesEnabled }) => batchChangesEnabled}
             />
         ),
     },
@@ -120,4 +118,4 @@ export const enterpriseRoutes: RouteObject[] = [
         ),
     },
     ...routes,
-]
+].filter(isDefined)

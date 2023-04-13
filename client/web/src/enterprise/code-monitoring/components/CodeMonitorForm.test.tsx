@@ -13,7 +13,6 @@ const PROPS: CodeMonitorFormProps = {
     onSubmit: () => NEVER,
     submitButtonLabel: '',
     authenticatedUser: mockAuthenticatedUser,
-    isSourcegraphDotCom: false,
 }
 
 describe('CodeMonitorForm', () => {

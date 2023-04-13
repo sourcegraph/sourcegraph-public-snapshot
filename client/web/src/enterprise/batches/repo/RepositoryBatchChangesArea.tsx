@@ -15,7 +15,6 @@ export interface RepositoryBatchChangesAreaPageProps extends BreadcrumbSetters {
      */
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphDotCom: boolean
 }
 
 const BREADCRUMB = { key: 'batch-changes', element: 'Batch Changes' }
@@ -24,17 +23,13 @@ const BREADCRUMB = { key: 'batch-changes', element: 'Batch Changes' }
  * Renders pages related to repository batch changes.
  */
 export const RepositoryBatchChangesArea: FC<RepositoryBatchChangesAreaPageProps> = props => {
-    const { useBreadcrumb, repo, authenticatedUser, isSourcegraphDotCom } = props
+    const { useBreadcrumb, repo, authenticatedUser } = props
 
     useBreadcrumb(BREADCRUMB)
 
     return (
         <div className="repository-batch-changes-area container mt-3">
-            <BatchChangeRepoPage
-                repo={repo}
-                authenticatedUser={authenticatedUser}
-                isSourcegraphDotCom={isSourcegraphDotCom}
-            />
+            <BatchChangeRepoPage repo={repo} authenticatedUser={authenticatedUser} />
         </div>
     )
 }

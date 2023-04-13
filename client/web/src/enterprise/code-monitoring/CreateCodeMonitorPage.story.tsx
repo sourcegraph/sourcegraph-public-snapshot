@@ -30,7 +30,6 @@ export const CreateCodeMonitorPageStory: Story = () => (
                     } as AuthenticatedUser
                 }
                 createCodeMonitor={sinon.fake()}
-                isSourcegraphDotCom={false}
             />
         )}
     </WebStory>
