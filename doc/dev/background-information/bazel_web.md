@@ -55,3 +55,50 @@ The `client/web` devserver can be run using `bazel run //client/web:devserver`
 ## Rule configuration
 
 Most rules used throughout `client/*` are macros defined in `tools/*.bzl` to provide a consistent configuration used throughout the repo.
+
+## FAQ
+
+### I want to execute a js binary with bazel. How do I do that?
+
+Lets say I want to execute a js binary called `rawr` . `rules_js` [generates Starlark APIs](https://docs.aspect.build/rules/aspect_rules_js/docs/#using-binaries-published-to-npm) for all dependencies defined in `package`.json, so to import the generated api for `rawr` we can do:
+
+```
+load("@npm//:rawr/package_json.bzl", my_alias = "bin")
+```
+
+With the above statement `rules_js` generated the following targets for `rawr`:
+
+* `rawr` for use with `bazel build`
+* `rawr_binary` for use with `bazel run`
+* `rawr_test` for use with `bazel test`
+
+Cool? I mean we technically have rawr now available but HTF do we use this? To create a build target using rawr we can now do:
+
+```
+my_alias.rawr (
+  # js_binary attributes
+  name = "rawr_event"
+  srcs = ["earth.js],
+  args = ["-event", "asteroid"],
+)
+```
+
+To create a test target using rawr we can do (note the _test suffix):
+
+```
+my_alias.rawr_test (
+  # js_test attributes
+  name = "rawr_event_test"
+  srcs = ["earth.js],
+  args = ["-event", "asteroid", "-test"],
+)
+```
+
+So now we have two targets that will execute  the `rawr` js binary with different arguments:
+
+```
+bazel build //:rawr_event
+bazel test //:rawr_event_test
+```
+
+An example of a js binary being executed as a bazel test target is `graphql-schema-linter`, whose definition can be found in [`cmd/frontend/graphqlbackend/BUILD.bazel`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@71616027c3f461d6022f3fa2fa24c0e085ee545f/-/blob/cmd/frontend/graphqlbackend/BUILD.bazel).

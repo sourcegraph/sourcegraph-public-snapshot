@@ -69,15 +69,6 @@ http_archive(
 )
 
 http_archive(
-    name = "com_google_protobuf",
-    sha256 = "6aff9834fd7c540875e1836967c8d14c6897e3785a2efac629f69860fb7834ff",
-    strip_prefix = "protobuf-3.15.0",
-    urls = [
-        "https://github.com/protocolbuffers/protobuf/archive/v3.15.0.tar.gz",
-    ],
-)
-
-http_archive(
     name = "rules_rust",
     sha256 = "dc8d79fe9a5beb79d93e482eb807266a0e066e97a7b8c48d43ecf91f32a3a8f3",
     urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],

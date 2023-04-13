@@ -70,7 +70,7 @@ func InitGitserver() {
 	}
 
 	grpcServer := defaults.NewServer(logger)
-	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 
 	srv := &http.Server{

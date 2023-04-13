@@ -8,14 +8,23 @@ export async function translateToQuery(input: string, user: AuthenticatedUser | 
     if (!result.includes('contents>') && !result.includes('filters>')) {
         return null
     }
-    const query = result
-        .replace('<contents>', ' ')
-        .replace('</contents>', ' ')
-        .replace('<filters>', ' ')
-        .replace('</filters>', ' ')
+
+    const contents =
+        result
+            ?.match(/<contents>.*<\/contents>/)
+            ?.reduce(
+                (content, match) => `${content}${match.replace('<contents>', ' ').replace('</contents>', ' ')}`,
+                ''
+            )
+            ?.trim() || '.*'
+    const filters = result
+        ?.match(/<filters>.*<\/filters>/)
+        ?.reduce((content, match) => `${content}${match.replace('<filters>', ' ').replace('</filters>', ' ')}`, '')
+    const query = `${contents} ${filters}`
         .replace(/\n/g, ' ')
         .replace(/\s{2,}/g, ' ')
         .trim()
+
     return query
 }
 
@@ -46,18 +55,21 @@ const getCompletionRequestMessages = (input: string, user: AuthenticatedUser | n
             '16. <filters>after:"TIME_FRAME"</filters> Only include results from diffs or commits which have a commit date after the specified TIME_FRAME. To only include diff or commits after last thursday use <filters>after:"last thursday"</filters>. To only include diffs or commits after 1 november 2020 use <filters>after:"1 november 2020".\n' +
             '17. <filters>message:"COMMIT_MESSAGE"</filters> Only include results from diffs or commits which have a commit message containing the string COMMIT_MESSAGE. To include diffs or commits including bugfix use <fitlers>message:"bugfix"</filters>.\n' +
             '18. <filters>select:repo</filters> displays only distinct repo paths from the search results. If you want to list repos having package.json file use <filters>select:repo file:package.json</filters>.\n' +
-            '19. <filters>select:file.owners</filters> displays owners of files from the search results. If you want to find owners of ci directory use <filters>select:file.owners file:ci/</filters>.\n' +
+            '19. <filters>select:file.owners</filters> displays owners of files from the search results. If you want to find owners of ci directory use <contents>.*</contents><filters>select:file.owners file:ci/</filters>.\n' +
             '20. <filters>select:file</filters> displays file paths from the search results. If you want to list all files inside backend directory use <filters>select:file file:backend/</filters>.\n' +
-            '21. <filters>select:commit.diff.added</filters> when searching commit diffs, select only diffs where the pattern matches on added lines. For example to search for recent commits that added TODOs in your code use <contents>TODO</contents><filters>type:diff select:commit.diff.added</filters>. This filter can be used to search for added lines of code, added references to symbols, added function calls etc.\n' +
-            '22. <filters>select:commit.diff.removed</filters> when searching commit diffs, select only diffs where the pattern matches on removed lines. For example to search for recent commits that removed TODOs in your code use <contents>TODO</contents><filters>type:diff select:commit.diff.removed</filters>. This filter can be used to search for removed lines of code, removed references to symbols, removed function calls etc.\n' +
-            '23. <filters>select:symbol.SYMBOL_KIND</filters> only finds symbols of specific kind as SYMBOL_KIND based on the search contents. SYMBOL_KIND can be of following types: file, module, namespace, package, class, method, property, field, constructor, enum, interface, function, variable, constant, string, number, boolean, array, object, key, null, enum-number, struct, event, operator, type-parameter. For example to find functions with name like use.* they query will be <contents>use.*</contents><filters>select.symbol.function type:symbol</filters>. Always use type:symbol only when using select:symbol.SYMBOL_KIND. To list all symbols of a particular kind without any pattern matching use <contents>.*</contents><filters>select:symbol.SYMBOL_KIND type:symbol</filters>, for example to list all classes in typescript files use <contents>.*</contents><filters>select:symbol.class type:symbol lang:typescript</filters>.\n\n' +
+            '21. <filters>select:commit.diff.added</filters> when searching commit diffs, select only diffs where the pattern matches on added lines. For example to search for recent commits that added TODOs in your code use <contents>TODO</contents><filters>type:diff select:commit.diff.added</filters>. This filter can be used to search for added lines of code, added references to symbols, added function calls etc. If the content is empty always use .* as content. Like convert <contents></contents><filters>type:diff select:commit.diff.added</filters> to <contents>.*</contents><filters>type:diff select:commit.diff.added</filters>.\n' +
+            '22. <filters>select:commit.diff.removed</filters> when searching commit diffs, select only diffs where the pattern matches on removed lines. For example to search for recent commits that removed TODOs in your code use <contents>TODO</contents><filters>type:diff select:commit.diff.removed</filters>. This filter can be used to search for removed lines of code, removed references to symbols, removed function calls etc. Like convert <contents></contents><filters>type:diff select:commit.diff.removed</filters> to <contents>.*</contents><filters>type:diff select:commit.diff.removed</filters>\n' +
+            '23. <filters>select:symbol.SYMBOL_KIND</filters> only finds symbols of specific kind as SYMBOL_KIND based on the search contents. SYMBOL_KIND can be of following types: file, module, namespace, package, class, method, property, field, constructor, enum, interface, function, variable, constant, string, number, boolean, array, object, key, null, enum-number, struct, event, operator, type-parameter. For example to find functions with name like use.* they query will be <contents>use.*</contents><filters>select.symbol.function type:symbol</filters>. Always use type:symbol only when using select:symbol.SYMBOL_KIND. To list all symbols of a particular kind without any pattern matching use <contents>.*</contents><filters>select:symbol.SYMBOL_KIND type:symbol</filters>, for example to list all classes in typescript files use <contents>.*</contents><filters>select:symbol.class type:symbol lang:typescript</filters>. You can not use select:symbol.* with type:diff or type:commit filters. Always use type:symbol filter with select:symbol.*. If search content if empty with <filters>select:symbol.SYMBOL_KIND</filters> always use <contents>.*</contents>.\n\n' +
             'There are operators as well which helps to contruct query that human requests. There are 2 operators AND, OR, NOT.\n' +
             'AND operator returns results for files containing matches on the left and right side of the AND. To search files containing both foo and bar use <contents>foo AND bar</contents>.\n' +
             'OR returns file content matching either on the left or right side, or both. To search files containing both foo or bar use <contents>foo OR bar</contents>.\n' +
             'NOT can be used in place of - to negate keywords, such as file, content, lang, repohasfile, and repo. For search patterns, NOT excludes documents that contain the term after NOT. For readability, you can also include the AND operator before a NOT (i.e. panic NOT ever is equivalent to panic AND NOT ever).\n' +
             'If the search pattern content has a string which literally conflicts with syntax of any of the fitlers mentioned above, like <contents>repo:analytics</contents> use <filters>content:"repo:analytics"</filters> instead.',
     },
-    { speaker: 'assistant', text: 'Understood. I will follow these rules.' },
+    {
+        speaker: 'assistant',
+        text: 'Understood. I will follow these rules. I will always use type:diff with select:commit.diff.added and select:commit.diff.removed. I will never use select:symbol.* filters if type:diff or type:commit filters are present. I will use select:symbol.* filters with type:symbol. I will always use <contents>.*<contents> with <filters>select:symbol.SYMBOL_KIND</filters> if contents in empty.',
+    },
 
     // repo filter basic
     { speaker: 'human', text: 'What is the query for <request>multierror repo</request>?' },
@@ -385,7 +397,10 @@ const getCompletionRequestMessages = (input: string, user: AuthenticatedUser | n
 
     // select owners with files filter
     { speaker: 'human', text: 'What is the query for <request>owners of schema\\.graphql</request>?' },
-    { speaker: 'assistant', text: '<contents></contents><filters>select:file.owners file:schema\\.graphql/</filters>' },
+    {
+        speaker: 'assistant',
+        text: '<contents>.*</contents><filters>select:file.owners file:schema\\.graphql/</filters>',
+    },
 
     // select owners with text
     { speaker: 'human', text: 'What is the query for <request>who owns files with useLocalStorage</request>?' },
@@ -405,12 +420,15 @@ const getCompletionRequestMessages = (input: string, user: AuthenticatedUser | n
     },
     {
         speaker: 'assistant',
-        text: '<contents></contents><filters>select:file.owners type:commit rev:4569f55"</filters>',
+        text: '<contents>.*</contents><filters>select:file.owners type:commit rev:4569f55"</filters>',
     },
 
     // select owners with files filter
     { speaker: 'human', text: 'What is the query for <request>people owning enterprise/utils</request>?' },
-    { speaker: 'assistant', text: '<contents></contents><filters>select:file.owners file:enterprise/utils</filters>' },
+    {
+        speaker: 'assistant',
+        text: '<contents>.*</contents><filters>select:file.owners file:enterprise/utils</filters>',
+    },
 
     // select owners with repo filter
     { speaker: 'human', text: 'What is the query for <request>owners of lodash repo</request>?' },
@@ -440,6 +458,20 @@ const getCompletionRequestMessages = (input: string, user: AuthenticatedUser | n
     {
         speaker: 'assistant',
         text: '<contents></contents><filters>select:file type:diff repo:aws rev:4569455</filters>',
+    },
+
+    // select removed anything
+    { speaker: 'human', text: 'What is the query for <request>removals from migration\\.sql file</request>?' },
+    {
+        speaker: 'assistant',
+        text: '<contents>.*</contents><filters>select:commit.diff.removed type:diff file:migration\\.sql</filters>',
+    },
+
+    // select removed anything with author filter
+    { speaker: 'human', text: 'What is the query for <request>lines removed by @kyler</request>?' },
+    {
+        speaker: 'assistant',
+        text: '<contents>.*</contents><filters>select:commit.diff.removed type:diff author:@kyler</filters>',
     },
 
     // select removed symbol
@@ -490,6 +522,13 @@ const getCompletionRequestMessages = (input: string, user: AuthenticatedUser | n
         text: '<contents>parseDate</contents><filters>select:commit.diff.added type:diff</filters>',
     },
 
+    // select added as question
+    { speaker: 'human', text: 'What is the query for <request>when was GitubOAuth added</request>?' },
+    {
+        speaker: 'assistant',
+        text: '<contents>GithubOAuth</contents><filters>select:commit.diff.added type:diff</filters>',
+    },
+
     // select added text with repo
     { speaker: 'human', text: 'What is the query for <request>added call to df.sort in nlp repo</request>?' },
     {
@@ -507,11 +546,32 @@ const getCompletionRequestMessages = (input: string, user: AuthenticatedUser | n
         text: '<contents>Cookies</contents><filters>select:commit.diff.added type:diff file:src/middleware</filters>',
     },
 
+    // select added anything
+    { speaker: 'human', text: 'What is the query for <request>additions made to global\\.scss</request>?' },
+    {
+        speaker: 'assistant',
+        text: '<contents>.*</contents><filters>select:commit.diff.added type:diff file:global\\.scss</filters>',
+    },
+
+    // select added anything with author filter
+    { speaker: 'human', text: 'What is the query for <request>additions made by @kyler</request>?' },
+    {
+        speaker: 'assistant',
+        text: '<contents>.*</contents><filters>select:commit.diff.added type:diff author:@kyler</filters>',
+    },
+
     // select added with who query correction
     { speaker: 'human', text: 'What is the query for <request>who added UserAvatar</request>?' },
     {
         speaker: 'assistant',
         text: '<contents>UserAvatar</contents><filters>select:commit.diff.added type:diff</filters>',
+    },
+
+    // select symbol any function
+    { speaker: 'human', text: 'What is the query for <request>functions in typescript utils file</request>?' },
+    {
+        speaker: 'assistant',
+        text: '<contents>.*</contents><filters>select:symbol.function type:symbol lang:typescript file:utils</filters>',
     },
 
     // select symbol function

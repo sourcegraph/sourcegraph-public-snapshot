@@ -3,14 +3,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "graphql",
     srcs = [
+        "dataloader.go",
         "iface.go",
         "index_steps_resolver.go",
         "indexer_resolver.go",
         "observability.go",
         "precise_index_resolver.go",
         "precise_index_resolver_factory.go",
-        "prefetcher.go",
-        "prefetcher_factory.go",
         "root_resolver.go",
         "root_resolver_coverage.go",
         "root_resolver_index_mutations.go",
@@ -51,13 +50,7 @@ go_library(
 
 go_test(
     name = "graphql_test",
-    srcs = [
-        "mocks_test.go",
-        "prefetcher_test.go",
-    ],
+    srcs = ["mocks_test.go"],
     embed = [":graphql"],
-    deps = [
-        "//enterprise/internal/codeintel/uploads/shared",
-        "@com_github_google_go_cmp//cmp",
-    ],
+    deps = ["//enterprise/internal/codeintel/uploads/shared"],
 )

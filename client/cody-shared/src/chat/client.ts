@@ -95,12 +95,11 @@ export async function createClient({
 
     return {
         submitMessage: async (text: string) => {
-            const interaction = await chatQuestionRecipe.getInteraction(
-                text,
-                fakeEditor,
+            const interaction = await chatQuestionRecipe.getInteraction(text, {
+                editor: fakeEditor,
                 intentDetector,
-                codebaseContext
-            )
+                codebaseContext,
+            })
             if (!interaction) {
                 throw new Error('No interaction')
             }

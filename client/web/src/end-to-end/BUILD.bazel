@@ -25,6 +25,7 @@ ts_project(
         "utils/initEndToEndTest.ts",
     ],
     tsconfig = ":tsconfig",
+    usePresetEnv = False,
     deps = [
         "//:node_modules/@types/mockdate",
         "//:node_modules/mockdate",
@@ -41,6 +42,7 @@ ts_project(
         "frontend-platform/theme-switcher.test.ts",
     ],
     tsconfig = ":tsconfig",
+    usePresetEnv = False,
     deps = [
         ":end-to-end",
         "//:node_modules/@types/lodash",
@@ -52,8 +54,14 @@ ts_project(
     ],
 )
 
-# mocha_test(
-#     name = "e2e",
-#     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
-#     deps = [":end-to-end_tests"],
-# )
+mocha_test(
+    name = "e2e",
+    timeout = "moderate",
+    env = {"INCLUDE_ADMIN_ONBOARDING": "false"},
+    tags = [
+        "manual",
+        "requires-network",
+    ],
+    tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
+    deps = [":end-to-end_tests"],
+)

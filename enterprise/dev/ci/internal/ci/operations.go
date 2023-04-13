@@ -55,9 +55,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 
 	// Simple, fast-ish linter checks
 	linterOps := operations.NewNamedSet("Linters and static analysis")
-	if diff.Has(changed.GraphQL) {
-		linterOps.Append(addGraphQLLint)
-	}
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
 		linterOps.Append(addSgLints(targets))
 	}
@@ -207,13 +204,6 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 //		bk.SoftFail(222))
 // }
 
-// pnpm ~41s + ~1s
-func addGraphQLLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:graphql"))
-}
-
 // Adds Typescript check.
 func addTypescriptCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":typescript: Build TS",
@@ -285,8 +275,6 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("CHECK_BUNDLESIZE", "1"),
-			// To ensure the Bundlesize output can be diffed to the baseline on main
-			bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
 		}
 
 		if opts.CacheBundleSize {

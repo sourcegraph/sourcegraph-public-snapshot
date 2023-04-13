@@ -33,7 +33,7 @@ import { CodeInsightsProps } from '../../insights/types'
 import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { buildSearchURLQueryFromQueryState, useNavbarQueryState, useNotepad } from '../../stores'
+import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
@@ -86,6 +86,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const prefetchBlobFormat = usePrefetchBlobFormat()
     const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
     const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
@@ -523,9 +524,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         <StreamingSearchResultsList
                             {...props}
                             enableOwnershipSearch={enableOwnershipSearch}
+                            enableRepositoryMetadata={enableRepositoryMetadata}
                             results={results}
                             allExpanded={allExpanded}
-                            assetsRoot={window.context?.assetsRoot || ''}
                             executedQuery={location.search}
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
@@ -534,6 +535,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             queryState={queryState}
                             setQueryState={setQueryState}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                            setSearchMode={setSearchMode}
+                            submitSearch={submitSearch}
+                            caseSensitive={caseSensitive}
+                            searchQueryFromURL={submittedURLQuery}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             logSearchResultClicked={logSearchResultClicked}
                         />

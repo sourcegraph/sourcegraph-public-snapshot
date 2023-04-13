@@ -10,6 +10,16 @@
     color: var(--bubble-text-color);
 }
 
+:global(.token-hallucinated) {
+    border-bottom: 2px solid var(--vscode-testing-iconQueued);
+    word-break: break-all;
+}
+
+:global(.token-not-hallucinated) {
+    border-bottom: 2px solid var(--vscode-testing-iconPassed);
+    word-break: break-all;
+}
+
 .bubble-content pre,
 .bubble-content span > code,
 .bubble-content p > code {
