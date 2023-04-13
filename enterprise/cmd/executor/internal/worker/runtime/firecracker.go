@@ -66,6 +66,10 @@ func (r *firecrackerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []type
 		} else {
 			key = fmt.Sprintf("step.docker.%d", i)
 		}
+		index := i
+		if step.Index != nil {
+			index = *step.Index
+		}
 
 		runnerSpecs[i] = runner.Spec{
 			CommandSpec: command.Spec{
@@ -75,6 +79,7 @@ func (r *firecrackerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []type
 				Env:       step.Env,
 				Operation: r.operations.Exec,
 			},
+			Index:      index,
 			Image:      step.Image,
 			ScriptPath: ws.ScriptFilenames()[i],
 		}
