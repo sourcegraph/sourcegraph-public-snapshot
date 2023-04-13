@@ -27,11 +27,8 @@ RUN apk update && apk add --no-cache \
     'bind-tools>=9.16.33-r0' \
     busybox \
     ca-certificates \
-    # TODO(DevX) for now, we disable this, because the latest release of curl on edge
-    # segfaults on 3.14. We'll be releasing a fix before the patch release.
-    # DRI: @jhchabran
-    # 'curl>=8.0.0-r0' --repository='https://dl-cdn.alpinelinux.org/alpine/edge/main' \
-    curl \
+    # Don't use alpine/edge, the curl release on this segfaults
+    curl --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main \
     mailcap \
     tini \
     wget
