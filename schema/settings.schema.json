@@ -512,12 +512,6 @@
         "pointer": true
       }
     },
-    "alerts.codeHostIntegrationMessaging": {
-      "description": "What in-app messaging to use around availability of Sourcegraph's code intelligence on code hosts. If the native code host integration is installed, this should be set to \"native-integration\" and users won't need to install the Sourcegraph browser extension to get code intelligence on code hosts.",
-      "type": "string",
-      "enum": ["browser-extension", "native-integration"],
-      "default": "browser-extension"
-    },
     "search.hideSuggestions": {
       "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
       "type": "boolean",
