@@ -483,6 +483,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         maxSize={codySidebarSizes.max}
                         minSize={codySidebarSizes.min}
                         defaultSize={codySidebarSizes.default}
+                        storageKey={`size-cache-cody-sidebar`}
                     >
                         <CodyChat onClose={() => setCodySidebarOpen(false)} repoName={repoName} />
                     </Panel>
