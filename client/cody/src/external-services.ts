@@ -26,7 +26,7 @@ export async function configureExternalServices(
     secretStorage: SecretStorage,
     contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
     mode: 'development' | 'production',
-    customHeaders: object
+    customHeaders: Record<string, string>
 ): Promise<ExternalServices> {
     const accessToken = await getAccessToken(secretStorage)
     const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken, customHeaders)

@@ -26,7 +26,11 @@ import { sanitizeServerEndpoint } from '../sanitize'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
-async function isValidLogin(serverEndpoint: string, accessToken: string, customHeaders: object): Promise<boolean> {
+async function isValidLogin(
+    serverEndpoint: string,
+    accessToken: string,
+    customHeaders: Record<string, string>
+): Promise<boolean> {
     const client = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(serverEndpoint), accessToken, customHeaders)
     const userId = await client.getCurrentUserId()
     return !isError(userId)
@@ -57,7 +61,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         private rgPath: string,
         private mode: 'development' | 'production',
         private localStorage: LocalStorage,
-        private customHeaders: object
+        private customHeaders: Record<string, string>
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
@@ -79,7 +83,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext,
         chatClient: ChatClient,
-        customHeaders: object
+        customHeaders: Record<string, string>
     ): ChatViewProvider {
         return new ChatViewProvider(
             extensionPath,

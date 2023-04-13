@@ -61,7 +61,11 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
 
-    constructor(private instanceUrl: string, private accessToken: string | null, private customHeaders: object = {}) {}
+    constructor(
+        private instanceUrl: string,
+        private accessToken: string | null,
+        private customHeaders: Record<string, string> = {}
+    ) {}
 
     public async getCurrentUserId(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>

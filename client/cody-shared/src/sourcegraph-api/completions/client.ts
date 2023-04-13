@@ -14,7 +14,7 @@ export abstract class SourcegraphCompletionsClient {
         instanceUrl: string,
         protected accessToken: string | null,
         protected mode: 'development' | 'production',
-        protected customHeaders: object = {}
+        protected customHeaders: Record<string, string> = {}
     ) {
         this.completionsEndpoint = new URL('/.api/completions/stream', instanceUrl).href
         this.codeCompletionsEndpoint = new URL('/.api/completions/code', instanceUrl).href

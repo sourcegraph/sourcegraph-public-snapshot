@@ -11,7 +11,7 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
         experimentalSuggest: config.get('cody.experimental.suggestions', false),
         anthropicKey: config.get('cody.experimental.keys.anthropic', null),
-        customHeaders: config.get<object>('cody.customHeaders', {}),
+        customHeaders: config.get<Record<string, string>>('cody.customHeaders', {}),
     }
 }
 

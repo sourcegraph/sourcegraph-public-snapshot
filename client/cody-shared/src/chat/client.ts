@@ -19,7 +19,7 @@ export interface ClientInit {
     accessToken: string | null
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: ChatMessage[]) => void
-    customHeaders?: object
+    customHeaders?: Record<string, string>
 }
 
 export interface Client {
