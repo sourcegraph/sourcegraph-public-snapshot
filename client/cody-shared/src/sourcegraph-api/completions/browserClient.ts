@@ -6,12 +6,14 @@ import type { Event, CompletionParameters, CompletionCallbacks } from './types'
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
         const abort = new AbortController()
+        const headersInstance = new Headers(this.customHeaders as HeadersInit)
+        headersInstance.set('Content-Type', 'application/json; charset=utf-8')
+        if (this.accessToken) {
+            headersInstance.set('Authorization', `token ${this.accessToken}`)
+        }
         fetchEventSource(this.completionsEndpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8',
-                ...(this.accessToken ? { Authorization: `token ${this.accessToken}`, ...this.customHeaders } : null),
-            },
+            headers: Object.fromEntries(headersInstance.entries()),
             body: JSON.stringify(params),
             signal: abort.signal,
             onmessage: message => {

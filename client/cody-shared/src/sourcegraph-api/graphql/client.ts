@@ -61,7 +61,7 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
 
-    constructor(private instanceUrl: string, private accessToken: string | null, private customHeaders?: object) {}
+    constructor(private instanceUrl: string, private accessToken: string | null, private customHeaders: object = {}) {}
 
     public async getCurrentUserId(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
@@ -140,7 +140,9 @@ export class SourcegraphGraphQLAPIClient {
         const updatedHeaders = this.customHeaders === undefined ? {} : this.customHeaders
         const headers = new Headers(updatedHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
-        headers.set('Authorization', `token ${this.accessToken}`)
+        if (this.accessToken) {
+            headers.set('Authorization', `token ${this.accessToken}`)
+        }
 
         return fetch(endpointURL, {
             method: 'POST',
