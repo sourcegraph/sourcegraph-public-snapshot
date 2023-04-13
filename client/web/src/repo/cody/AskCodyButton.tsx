@@ -3,7 +3,7 @@ import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './AskCodyButton.module.scss'
 
-export function AskCodyButton({ onClick }: { onClick: () => void }) {
+export function AskCodyButton({ onClick }: { onClick: () => void }): JSX.Element {
     return (
         <Tooltip content="Open Cody" placement="bottom">
             <Button className={styles.codyButton} onClick={onClick}>

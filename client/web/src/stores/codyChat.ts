@@ -18,8 +18,8 @@ interface CodyChatStore {
     onSubmit: (text: string) => void
 }
 
-export const useChatStoreState = create<CodyChatStore>((set, get) => {
-    const onSubmit = (text: string) => {
+export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore => {
+    const onSubmit = (text: string): void => {
         const client = get().client
         if (client && !isErrorLike(client)) {
             // eventLogger.log('web:codySidebar:submit', { repo: get().config?.codebase, path: get().filePath, text })
@@ -34,7 +34,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get) => {
         filePath: '',
         setClient: client => set({ client }),
         setMessageInProgress: message => set({ messageInProgress: message }),
-        setTranscript: transcript => set({ transcript: transcript }),
+        setTranscript: transcript => set({ transcript }),
 
         initializeClient: config => {
             set({ messageInProgress: null })
