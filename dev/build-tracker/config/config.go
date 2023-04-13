@@ -3,8 +3,6 @@ package config
 import (
 	"os"
 	"strconv"
-
-	"github.com/cockroachdb/errors"
 )
 
 const DefaultChannel = "#william-buildchecker-webhook-test"
