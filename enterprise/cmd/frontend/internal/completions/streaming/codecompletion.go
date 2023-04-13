@@ -54,8 +54,7 @@ func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// TODO(beyang): pass in model through params and default to completionsConfig
-	client := anthropic.NewAnthropicClient(httpcli.ExternalDoer, completionsConfig.AccessToken, "claude-instant-v1.0")
+	client := anthropic.NewAnthropicClient(httpcli.ExternalDoer, completionsConfig.AccessToken, completionsConfig.CompletionModel)
 	completion, err := client.Complete(ctx, p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

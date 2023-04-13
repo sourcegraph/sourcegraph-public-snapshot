@@ -44,12 +44,16 @@ func NewAnthropicClient(cli httpcli.Doer, accessToken string, model string) type
 	}
 }
 
+var allowedClientSpecifiedModels = map[string]struct{}{
+	"claude-instant-v1.0": struct{}{},
+}
+
 func (a *anthropicClient) Complete(
 	ctx context.Context,
 	requestParams types.CodeCompletionRequestParameters,
 ) (*types.CodeCompletionResponse, error) {
 	var model string
-	if requestParams.Model != "" {
+	if _, isAllowed := allowedClientSpecifiedModels[requestParams.Model]; isAllowed {
 		model = requestParams.Model
 	} else {
 		model = a.model
