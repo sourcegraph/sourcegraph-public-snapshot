@@ -105,7 +105,7 @@ func bazelBuildAndTest(optional bool, targets ...string) func(*bk.Pipeline) {
 
 	cmds = append(
 		cmds,
-		bk.RawCmd("dev/ci/integration/run-bazel-server.sh"),
+		// TODO(JH): run server image for end-to-end tests on SOURCEGRAPH_BASE_URL similar to run-bazel-server.sh.
 		bk.RawCmd(bazelBuildCmd),
 		bk.RawCmd(bazelTestCmd),
 	)

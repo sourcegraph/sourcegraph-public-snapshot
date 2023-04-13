@@ -29,7 +29,7 @@ NON_BUNDLED_DEPS = [
     "//client/web:node_modules/@sourcegraph/build-config",
 ]
 
-def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb = False, **kwargs):
+def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs):
     bundle_name = "%s_bundle" % name
 
     # Bundle the tests to remove the use of esm modules in tests
@@ -90,21 +90,10 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, use_xvfb 
         "DISPLAY": ":99",
     })
 
-    mocha_name = "%s_mocha" % name if use_xvfb else name
-
     bin.mocha_test(
-        name = mocha_name,
+        name = name,
         args = args,
         data = data + args_data + NON_BUNDLED_DEPS,
         env = env,
         **kwargs
     )
-
-    if use_xvfb:
-        native.sh_test(
-            name = name,
-            srcs = ["//dev:mocha-xvfb.sh"],
-            args = ["$(location :%s)" % mocha_name] + args,
-            data = args_data + [":%s" % mocha_name],
-            env = env,
-        )
