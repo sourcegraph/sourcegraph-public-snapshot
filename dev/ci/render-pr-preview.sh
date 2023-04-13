@@ -142,7 +142,7 @@ if [ -z "${renderServiceId}" ]; then
             \"pullRequestPreviewsEnabled\": \"no\",
             \"envSpecificDetails\": {
                 \"buildCommand\": \"dev/ci/pnpm-build-render-com.sh client/web\",
-                \"startCommand\": \"pnpm --filter @sourcegraph/web serve:prod\"
+                \"startCommand\": \"export PATH="$PWD/bin:$PATH" && pnpm --version\"
             },
             \"numInstances\": 1,
             \"plan\": \"starter\",

@@ -9,5 +9,8 @@ mkdir -p bin
 corepack enable --install-directory bin
 export PATH="$PWD/bin:$PATH"
 
+pnpm_version=$(pnpm --version)
+echo "pnpm version=$pnpm_version"
+
 echo "--- running pnpm-build.sh"
-./dev/ci/pnpm-build.sh "$1"
+# ./dev/ci/pnpm-build.sh "$1"
