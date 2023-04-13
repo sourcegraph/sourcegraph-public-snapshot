@@ -4,6 +4,20 @@
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [2.1.3]
+
+### Added
+
 - Compatibility with IntelliJ 2023.1
 
 ### Fixed
