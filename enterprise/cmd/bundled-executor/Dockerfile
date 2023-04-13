@@ -26,7 +26,8 @@ ENV EXECUTOR_NUM_TOTAL_JOBS=1
 RUN apk add --no-cache \
     # Minimal version requirement to address vulnerabilities
     # https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/
-    'git>=2.39.2-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
+    # Don't use alpine/edge, the git release on this segfaults
+    'git>=2.38.0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main \
     ca-certificates
 
 # Install src-cli.
