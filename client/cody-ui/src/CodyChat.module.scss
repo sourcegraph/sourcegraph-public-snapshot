@@ -30,8 +30,38 @@
 }
 .bubble-content code {
     color: var(--code-background);
+}
 
+.main-wrapper {
+    height: 100%;
+    overflow: hidden;
+}
 
+.scroll-button-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 20px;
+    bottom: 90px;
+    z-index: 5;
+    width: 100%;
+    position: sticky;
+
+}
+.scroll-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    padding: 5px;
+
+    border: var(--btn-border-width) solid var(--border-color-2);
+    color: var(--body-color);
+    background-color: var(--input-bg);
+
+    cursor: pointer;
 }
 
 .bot-bubble-content {
