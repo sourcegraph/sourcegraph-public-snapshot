@@ -31,7 +31,7 @@ import { ViewResolver } from '../shared/views'
 
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
-import { getFileContainers, parseURL, getSelectorFor } from './util'
+import { getFileContainers, parseURL, getSelectorFor, isNewGitHubUI, getEmbeddedData } from './util'
 
 import styles from './codeHost.module.scss'
 
@@ -383,7 +383,7 @@ const searchEnhancement: GithubCodeHost['searchEnhancement'] = {
 export const isPrivateRepository = async (
     repoName: string,
     fetchCache = background.fetchCache,
-    fallbackSelector = '#repository-container-header h2 span.Label'
+    fallbackSelector = '#repository-container-header span.Label'
 ): Promise<boolean> => {
     if (window.location.hostname !== 'github.com') {
         return Promise.resolve(true)
@@ -697,7 +697,7 @@ export const githubCodeHost: GithubCodeHost = {
         return {
             rawRepoName,
             revision: pageType === 'blob' || pageType === 'tree' ? resolveFileInfo().blob.revision : undefined,
-            privateRepository: await isPrivateRepository(repoName),
+            privateRepository: isNewGitHubUI() ? getEmbeddedData().repo.private : await isPrivateRepository(repoName),
         }
     },
     isLightTheme: defer(() => {
@@ -784,7 +784,7 @@ export const githubCodeHost: GithubCodeHost = {
         return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },
     observeLineSelection: fromEvent(window, 'hashchange').pipe(
-        startWith(undefined), // capture intital value
+        startWith(undefined), // capture initial value
         map(() => parseHash(window.location.hash))
     ),
     codeViewsRequireTokenization: true,

@@ -319,6 +319,9 @@ const newUISelectors: UISelectors = {
 export const getSelectorFor = (key: keyof UISelectors): string => `${oldUISelectors[key]}, ${newUISelectors[key]}`
 
 interface GitHubEmbeddedData {
+    repo: {
+        private: boolean
+    }
     refInfo: {
         name: string
         currentOid: string
