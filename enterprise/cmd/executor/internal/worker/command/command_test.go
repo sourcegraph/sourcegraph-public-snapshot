@@ -80,8 +80,7 @@ func TestCommand_Run(t *testing.T) {
 			name:         "Step skipped",
 			command:      []string{"git", "pull"},
 			mockExitCode: 0,
-			// TODO - this will break src-cli
-			mockStdout: "batcheshelper pre 1 skipped\n",
+			mockStdout:   "batcheshelper pre 1 skipped\n",
 			mockFunc: func(t *testing.T, cmdRunner *fakeCmdRunner, logger *mockLogger) {
 				logEntry := new(mockLogEntry)
 				logger.
