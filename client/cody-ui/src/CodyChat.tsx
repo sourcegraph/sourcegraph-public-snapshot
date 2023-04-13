@@ -40,7 +40,7 @@ export const CodyChat = ({ repoName, onClose }: CodyChatProps): JSX.Element => {
         }
     }, [codySidebarRef])
 
-    const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    const scrollToBottom = (behavior: ScrollBehavior = 'smooth'): void => {
         const sidebar = codySidebarRef.current
         if (sidebar) {
             sidebar.scrollTo({
@@ -56,7 +56,7 @@ export const CodyChat = ({ repoName, onClose }: CodyChatProps): JSX.Element => {
             console.log(messageInProgress)
             scrollToBottom('auto')
         }
-    }, [transcript, shouldScrollToBottom])
+    }, [transcript, shouldScrollToBottom, messageInProgress])
 
     return (
         <div className={styles.mainWrapper}>
@@ -103,15 +103,13 @@ export const CodyChat = ({ repoName, onClose }: CodyChatProps): JSX.Element => {
     )
 }
 
-const ScrollDownButton = ({ onClick }: { onClick: () => void }) => {
-    return (
-        <div className={styles.scrollButtonWrapper}>
-            <div className={styles.scrollButton} onClick={onClick}>
-                <Icon svgPath={mdiArrowDown} />
-            </div>
+const ScrollDownButton = ({ onClick }: { onClick: () => void }): JSX.Element => (
+    <div className={styles.scrollButtonWrapper}>
+        <div className={styles.scrollButton} onClick={onClick}>
+            <Icon svgPath={mdiArrowDown} />
         </div>
-    )
-}
+    </div>
+)
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <button className={className} type="submit" disabled={disabled} onClick={onClick}>

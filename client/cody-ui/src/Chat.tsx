@@ -80,7 +80,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
 
     const inputHandler = useCallback(
-        (inputValue: string) => {
+        (inputValue: string): void => {
             const rowsCount = inputValue.match(/\n/g)?.length
             if (rowsCount) {
                 setInputRows(rowsCount < 5 ? 5 : rowsCount > 25 ? 25 : rowsCount)
@@ -95,7 +95,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [historyIndex, inputHistory, setFormInput]
     )
 
-    const onChatSubmit = useCallback(() => {
+    const onChatSubmit = useCallback((): void => {
         // Submit chat only when input is not empty
         if (formInput !== undefined) {
             onSubmit(formInput)
@@ -274,14 +274,14 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
         if (textAreaRef.current) {
             textAreaRef.current.style.height = '0px'
             const scrollHeight = textAreaRef.current.scrollHeight
-            textAreaRef.current.style.height = scrollHeight + 'px'
+            textAreaRef.current.style.height = `${scrollHeight}px`
 
             // Hide scroll if the textArea isn't overflowing.
             textAreaRef.current.style.overflowY = scrollHeight < 200 ? 'hidden' : 'auto'
         }
     }
 
-    const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>): void => {
         onChange(event.target.value)
         adjustTextAreaHeight()
     }
