@@ -57,6 +57,11 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types
 			key = fmt.Sprintf("step.kubernetes.%d", i)
 		}
 
+		index := i
+		if step.Index != nil {
+			index = *step.Index
+		}
+
 		runnerSpecs[i] = runner.Spec{
 			CommandSpec: command.Spec{
 				Key: key,
@@ -69,6 +74,7 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types
 				Env:       step.Env,
 				Operation: r.operations.Exec,
 			},
+			Index: index,
 			Image: step.Image,
 		}
 	}
