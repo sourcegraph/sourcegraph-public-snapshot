@@ -191,14 +191,23 @@ func createFilesToMount(workingDirectory string, stepIdx int, step batcheslib.St
 
 	// Create temp files with the rendered content of step.Files so that we
 	// can mount them into the container.
+	//filesToMount := make(map[string]*os.File, len(files))
 	filesToMount := make(map[string]string, len(files))
 	for name, content := range files {
-		file := filepath.Join(tempDir, name)
-		if err = os.WriteFile(file, []byte(content), os.ModePerm); err != nil {
-			return nil, errors.Wrapf(err, "creating file %q", name)
+		fp, err := os.CreateTemp(tempDir, "")
+		if err != nil {
+			return nil, errors.Wrap(err, "creating temporary file")
 		}
 
-		filesToMount[name] = file
+		if _, err = fp.WriteString(content); err != nil {
+			return nil, errors.Wrap(err, "writing to temporary file")
+		}
+
+		if err = fp.Close(); err != nil {
+			return nil, errors.Wrap(err, "closing temporary file")
+		}
+
+		filesToMount[name] = fp.Name()
 	}
 
 	return filesToMount, nil
