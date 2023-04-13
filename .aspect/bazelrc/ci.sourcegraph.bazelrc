@@ -32,3 +32,7 @@ build --test_env=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"
 build --test_env=GH_TOKEN
 # temp
 build --test_env=INCLUDE_ADMIN_ONBOARDING=false
+
+# Used by BEP and ci-agent
+# See https://github.com/bazelbuild/continuous-integration/releases/tag/agent-0.1.4
+build --build_event_json_file=bep.json

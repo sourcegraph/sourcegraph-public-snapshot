@@ -3,6 +3,7 @@
 
 # Bazel
 bazel-*
+bep.json
 
 # Vim
 *.swp
