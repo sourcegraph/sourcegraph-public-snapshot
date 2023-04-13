@@ -41,7 +41,8 @@ RUN set -ex && \
 
 # Install additional common tools for running batch changes.
 RUN apk add --no-cache \
-    xmlstarlet
+    xmlstarlet \
+    python3 py3-pip
 
 # Install batcheshelper.
 COPY batcheshelper /usr/local/bin/
