@@ -13,7 +13,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
-	"github.com/kr/pretty"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -150,9 +149,7 @@ func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Stor
 	}
 
 	if diff := cmp.Diff(*gqlResp, test.ExpectedState, compareBatchSpecDeepCmpopts()...); diff != "" {
-		log.Printf("Batch spec diff detected: %s\n", diff)
-		d2 := strings.Join(pretty.Diff(*gqlResp, test.ExpectedState), "\n")
-		log.Printf("Batch spec diff detected:\n%s", d2)
+		log.Printf("Batch spec diff detected:\n%s", diff)
 		return errors.New("batch spec not in expected state")
 	}
 
@@ -221,6 +218,10 @@ DELETE FROM changeset_specs;
 func compareBatchSpecDeepCmpopts() []cmp.Option {
 	// TODO: Reduce the number of ignores in here.
 	return []cmp.Option{
+		// The printed diff isn't guaranteed to display the lines that don't match if they are further down in the diff.
+		// This transformer breaks up the string in separate lines which will only print the offending lines (and 2 around them).
+		// See https://github.com/google/go-cmp/issues/311
+		cmpopts.AcyclicTransformer("onlyShowDiffs", func(in string) any { return strings.Split(in, "\n") }),
 		cmpopts.IgnoreFields(gqltestutil.BatchSpecDeep{}, "ID", "CreatedAt", "FinishedAt", "StartedAt", "ExpiresAt"),
 		cmpopts.IgnoreFields(gqltestutil.ChangesetSpec{}, "ID"),
 		cmpopts.IgnoreFields(gqltestutil.BatchSpecWorkspace{}, "QueuedAt", "StartedAt", "FinishedAt"),

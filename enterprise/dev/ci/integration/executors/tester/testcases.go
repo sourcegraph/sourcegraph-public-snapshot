@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"text/template"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -247,7 +246,6 @@ func testEnvObjectBatchChange() Test {
 		CommitMessage:           "Append an env object to all README.md files",
 	}
 	batchSpec := generateBatchSpec(batchSpecPs)
-	log.Printf("Generated batch spec:\n%s", batchSpec)
 
 	diffPs := diffParams{
 		READMEObjectHash:         "23aa51b",
@@ -453,86 +451,6 @@ func testEnvObjectBatchChange() Test {
 }
 
 func testFileMountBatchChange() Test {
-	//	batchSpec := `
-	//name: e2e-test-batch-change-file-mount
-	//description: Add the value of a mounted file to READMEs
-	//
-	//on:
-	//  - repository: github.com/sourcegraph/automation-testing
-	//    # This branch is never changing - hopefully.
-	//    branch: executors-e2e
-	//
-	//steps:
-	//  - run: IFS=$'\n'; cat /tmp/hello-world.txt | tee -a $(find -name README.md)
-	//    container: alpine:3
-	//    files:
-	//      /tmp/hello-world.txt: Hello world from a file!
-	//
-	//changesetTemplate:
-	//  title: Hello World from file
-	//  body: My first batch change!
-	//  branch: file-mount # Push the commit to this branch.
-	//  commit:
-	//    message: Append the content of a mounted file to all README.md files
-	//`
-	//
-	//	expectedDiff := strings.Join([]string{
-	//		"diff --git README.md README.md",
-	//		"index 1914491..89e55af 100644",
-	//		"--- README.md",
-	//		"+++ README.md",
-	//		"@@ -3,4 +3,4 @@ This repository is used to test opening and closing pull request with Automation",
-	//		" ",
-	//		" (c) Copyright Sourcegraph 2013-2020.",
-	//		" (c) Copyright Sourcegraph 2013-2020.",
-	//		"-(c) Copyright Sourcegraph 2013-2020.",
-	//		"\\ No newline at end of file",
-	//		"+(c) Copyright Sourcegraph 2013-2020.Hello world from a file!",
-	//		"diff --git examples/README.md examples/README.md",
-	//		"index 40452a9..a32cc2f 100644",
-	//		"--- examples/README.md",
-	//		"+++ examples/README.md",
-	//		"@@ -5,4 +5,4 @@ This folder contains examples",
-	//		" (This is a test message, ignore)",
-	//		" ",
-	//		" (c) Copyright Sourcegraph 2013-2020.",
-	//		"-(c) Copyright Sourcegraph 2013-2020.",
-	//		"\\ No newline at end of file",
-	//		"+(c) Copyright Sourcegraph 2013-2020.Hello world from a file!",
-	//		"diff --git examples/project3/README.md examples/project3/README.md",
-	//		"index 272d9ea..f49f17d 100644",
-	//		"--- examples/project3/README.md",
-	//		"+++ examples/project3/README.md",
-	//		"@@ -1,4 +1,4 @@",
-	//		" # project3",
-	//		" ",
-	//		" (c) Copyright Sourcegraph 2013-2020.",
-	//		"-(c) Copyright Sourcegraph 2013-2020.",
-	//		"\\ No newline at end of file",
-	//		"+(c) Copyright Sourcegraph 2013-2020.Hello world from a file!",
-	//		"diff --git project1/README.md project1/README.md",
-	//		"index 8a5f437..6284591 100644",
-	//		"--- project1/README.md",
-	//		"+++ project1/README.md",
-	//		"@@ -3,4 +3,4 @@",
-	//		" This is project 1.",
-	//		" ",
-	//		" (c) Copyright Sourcegraph 2013-2020.",
-	//		"-(c) Copyright Sourcegraph 2013-2020.",
-	//		"\\ No newline at end of file",
-	//		"+(c) Copyright Sourcegraph 2013-2020.Hello world from a file!",
-	//		"diff --git project2/README.md project2/README.md",
-	//		"index b1e1cdd..9445efe 100644",
-	//		"--- project2/README.md",
-	//		"+++ project2/README.md",
-	//		"@@ -1,3 +1,3 @@",
-	//		" This is a starter template for [Learn Next.js](https://nextjs.org/learn).",
-	//		" (c) Copyright Sourcegraph 2013-2020.",
-	//		"-(c) Copyright Sourcegraph 2013-2020.",
-	//		"\\ No newline at end of file",
-	//		"+(c) Copyright Sourcegraph 2013-2020.Hello world from a file!",
-	//		"",
-	//	}, "\n")
 
 	return Test{}
 }
