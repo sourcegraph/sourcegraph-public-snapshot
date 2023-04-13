@@ -12,8 +12,9 @@ import (
 )
 
 type mockAuthProvider struct {
-	configID ConfigID
-	config   schema.AuthProviderCommon
+	configID            ConfigID
+	config              schema.AuthProviderCommon
+	authProvidersConfig *schema.AuthProviders
 }
 
 func (m mockAuthProvider) ConfigID() ConfigID {
@@ -21,6 +22,10 @@ func (m mockAuthProvider) ConfigID() ConfigID {
 }
 
 func (m mockAuthProvider) Config() schema.AuthProviders {
+	if m.authProvidersConfig != nil {
+		return *m.authProvidersConfig
+	}
+
 	return schema.AuthProviders{
 		Github: &schema.GitHubAuthProvider{
 			Type:          m.configID.Type,
@@ -120,6 +125,48 @@ func TestGetAuthProviderCommon(t *testing.T) {
 			name: "All parameters are zero value",
 			provider: mockAuthProvider{
 				config: schema.AuthProviderCommon{},
+			},
+			want: schema.AuthProviderCommon{
+				Hidden:        false,
+				Order:         0,
+				DisplayName:   "",
+				DisplayPrefix: nil,
+			},
+		},
+		{
+			name:     "Works without a config",
+			provider: mockAuthProvider{},
+			want: schema.AuthProviderCommon{
+				Hidden:        false,
+				Order:         0,
+				DisplayName:   "",
+				DisplayPrefix: nil,
+			},
+		},
+		{
+			name: "Works with BuiltinAuthProvider",
+			provider: mockAuthProvider{
+				authProvidersConfig: &schema.AuthProviders{
+					Builtin: &schema.BuiltinAuthProvider{
+						Type: "builtin",
+					},
+				},
+			},
+			want: schema.AuthProviderCommon{
+				Hidden:        false,
+				Order:         0,
+				DisplayName:   "",
+				DisplayPrefix: nil,
+			},
+		},
+		{
+			name: "Works with HttpHeaderAuthProvider",
+			provider: mockAuthProvider{
+				authProvidersConfig: &schema.AuthProviders{
+					HttpHeader: &schema.HTTPHeaderAuthProvider{
+						Type: "http-header",
+					},
+				},
 			},
 			want: schema.AuthProviderCommon{
 				Hidden:        false,

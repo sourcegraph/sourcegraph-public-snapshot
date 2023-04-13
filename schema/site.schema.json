@@ -2561,6 +2561,15 @@
           "description": "URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.",
           "default": "https://gerrit-review.googlesource.com/"
         },
+        "displayName": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
+        },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
         "hidden": {
           "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
         },
