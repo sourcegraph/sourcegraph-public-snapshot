@@ -141,7 +141,7 @@ if [ -z "${renderServiceId}" ]; then
         \"serviceDetails\": {
             \"pullRequestPreviewsEnabled\": \"no\",
             \"envSpecificDetails\": {
-                \"buildCommand\": \"dev/ci/pnpm-build.sh client/web\",
+                \"buildCommand\": \"dev/ci/pnpm-build-render-com.sh client/web\",
                 \"startCommand\": \"pnpm --filter @sourcegraph/web serve:prod\"
             },
             \"numInstances\": 1,
