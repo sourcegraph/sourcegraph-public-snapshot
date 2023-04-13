@@ -141,7 +141,6 @@ func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 	bazelRawCmd := bazelRawCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
 	cmds = append(
 		cmds,
-		bk.RawCmd("dev/ci/integration/run-bazel-server.sh"),
 		bk.RawCmd(bazelRawCmd),
 	)
 
