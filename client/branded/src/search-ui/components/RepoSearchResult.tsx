@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { highlightNode } from '@sourcegraph/common'
 import { codeHostSubstrLength, displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Icon, Link } from '@sourcegraph/wildcard'
+import { Badge, Icon, Link } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { ResultContainer } from './ResultContainer'
@@ -21,6 +21,29 @@ export interface RepoSearchResultProps {
     containerClassName?: string
     as?: React.ElementType
     index: number
+}
+
+const RepoMetadata: React.FunctionComponent<{ keyValuePairs?: Record<string, string>; className?: string }> = ({
+    keyValuePairs,
+    className,
+}) => {
+    if (!keyValuePairs) {
+        return null
+    }
+    return (
+        <div className={classNames(styles.repoMetadata, className, 'd-flex align-items-center flex-wrap')}>
+            {Object.entries(keyValuePairs).map(([key, value]) => (
+                <span className="d-flex align-items-center justify-content-center" key={`${key}:${value}`}>
+                    <Badge small={true} variant="info" className={classNames({ [styles.repoMetadataKey]: value })}>
+                        {key}
+                    </Badge>
+                    <Badge small={true} variant="secondary" className={styles.repoMetadataValue}>
+                        {value}
+                    </Badge>
+                </span>
+            ))}
+        </div>
+    )
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
@@ -81,15 +104,18 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
-            keyValuePairs={result.keyValuePairs}
             as={as}
         >
             <div data-testid="search-repo-result">
                 <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
                     {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                     <div className="d-flex align-items-center flex-row">
-                        <div className={styles.matchType}>
+                        <div className={classNames('d-flex align-items-start', styles.matchType)}>
                             <small>Repository match</small>
+                            <RepoMetadata
+                                keyValuePairs={result.keyValuePairs}
+                                className="justify-content-end ml-2 mr-4"
+                            />
                         </div>
                         {result.fork && (
                             <>

@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { Badge, ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
+import { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
 
@@ -23,7 +23,6 @@ export interface ResultContainerProps {
     className?: string
     rankingDebug?: string
     onResultClicked?: () => void
-    keyValuePairs?: Record<string, string>
 }
 
 const accessibleResultType: Record<SearchMatch['type'], string> = {
@@ -34,29 +33,6 @@ const accessibleResultType: Record<SearchMatch['type'], string> = {
     commit: 'commit',
     person: 'person',
     team: 'team',
-}
-
-const RepoMetadata: React.FunctionComponent<{ keyValuePairs?: Record<string, string>; className?: string }> = ({
-    keyValuePairs,
-    className,
-}) => {
-    if (!keyValuePairs) {
-        return null
-    }
-    return (
-        <div className={classNames(styles.repoMetadata, className, 'd-flex align-items-center flex-wrap')}>
-            {Object.entries(keyValuePairs).map(([key, value]) => (
-                <span className="d-flex align-items-center justify-content-center" key={`${key}:${value}`}>
-                    <Badge variant="info" className={classNames({ [styles.repoMetadataKey]: value })}>
-                        {key}
-                    </Badge>
-                    <Badge variant="secondary" className={styles.repoMetadataValue}>
-                        {value}
-                    </Badge>
-                </span>
-            ))}
-        </div>
-    )
 }
 
 /**
@@ -79,7 +55,6 @@ export const ResultContainer: ForwardReferenceExoticComponent<
         rankingDebug,
         as: Component = 'div',
         onResultClicked,
-        keyValuePairs,
     } = props
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -106,16 +81,13 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                     >
                         {title}
                     </div>
-                    <div className="d-flex">
-                        {formattedRepositoryStarCount && (
-                            <span className="d-flex align-items-center">
-                                <SearchResultStar aria-label={`${repoStars} stars`} />
-                                <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
-                            </span>
-                        )}
-                    </div>
+                    {formattedRepositoryStarCount && (
+                        <span className="d-flex align-items-center">
+                            <SearchResultStar aria-label={`${repoStars} stars`} />
+                            <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
+                        </span>
+                    )}
                 </div>
-                <RepoMetadata keyValuePairs={keyValuePairs} className="justify-content-end mb-2" />
                 {rankingDebug && <div>{rankingDebug}</div>}
                 <div className={classNames(styles.result, resultClassName)}>{children}</div>
             </article>
