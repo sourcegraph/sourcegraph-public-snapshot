@@ -70,7 +70,7 @@ func main() {
 	testCases := []Test{
 		testHelloWorldBatchChange(),
 		testEnvObjectBatchChange(),
-		testFileMountBatchChange(),
+		testFromFileBatchChange(),
 	}
 
 	for _, t := range testCases {

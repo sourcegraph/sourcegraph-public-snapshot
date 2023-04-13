@@ -450,33 +450,33 @@ func testEnvObjectBatchChange() Test {
 	}
 }
 
-func testFileMountBatchChange() Test {
+func testFromFileBatchChange() Test {
 	batchSpecPs := batchSpecParams{
 		NameContent: "file-mount",
-		Description: "Add the content of a mounted file to READMEs",
+		Description: "Add the content of a file to READMEs",
 		RunCommand:  "IFS=$'\\n'; cat /tmp/hello-world.txt | tee -a $(find -name README.md)",
 		AdditionalKeyValues: []specStepBlock{
 			{
 				BlockName: "files",
 				KeyValues: []keyValue{
 					// Use a multi-line scalar to circumvent weird diff behaviour in the actual response
-					{Key: "/tmp/hello-world.txt", Value: "|\n        Hello world from a mounted file!"},
+					{Key: "/tmp/hello-world.txt", Value: "|\n        Hello world from a file!"},
 				},
 			},
 		},
-		ChangeSetTemplateTitle:  "Hello World from mounted file",
-		ChangeSetTemplateBranch: "file-mount",
-		CommitMessage:           "Append the content of a mounted file to all README.md files",
+		ChangeSetTemplateTitle:  "Hello World from file",
+		ChangeSetTemplateBranch: "file",
+		CommitMessage:           "Append the content of a file to all README.md files",
 	}
 	batchSpec := generateBatchSpec(batchSpecPs)
 
 	diffPs := diffParams{
-		READMEObjectHash:         "cf2aaac",
-		ExamplesREADMEObjectHash: "b36ca23",
-		Project3READMEObjectHash: "3c8b671",
-		Project1READMEObjectHash: "af08a9d",
-		Project2READMEObjectHash: "488f3ac",
-		HelloWorldMessage:        "Hello world from a mounted file!",
+		READMEObjectHash:         "1bfecb8",
+		ExamplesREADMEObjectHash: "79a6f77",
+		Project3READMEObjectHash: "287d7ea",
+		Project1READMEObjectHash: "30e9fe6",
+		Project2READMEObjectHash: "209f60f",
+		HelloWorldMessage:        "Hello world from a file!",
 	}
 	expectedDiff := generateDiff(diffPs)
 
@@ -633,11 +633,12 @@ func testFileMountBatchChange() Test {
 		},
 	}
 
+	// TODO: verify file mount in the expected state?
 	return Test{
 		PreExistingCacheEntries: map[string]execution.AfterStepResult{},
 		BatchSpecInput:          batchSpec,
 		ExpectedCacheEntries: map[string]execution.AfterStepResult{
-			"rzrP_eyDXgEVvch3YZUG9A-step-0": {
+			"9_AvsVMDl3SJLH-vtwD5Lg-step-0": {
 				Version: 2,
 				Stdout:  fmt.Sprintf("%s\n", diffPs.HelloWorldMessage),
 				Diff:    []byte(expectedDiff),
