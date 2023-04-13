@@ -14,14 +14,11 @@ import { CODY_ACCESS_TOKEN_SECRET, VSCodeSecretStorage } from './secret-storage'
 
 let client: LanguageClient
 
-function sendCommandRequest(command: string, args: any[] | undefined): void {
-    client
+export async function sendCommandRequest(command: string, args: any[] | undefined): Promise<void> {
+    return client
         .sendRequest('workspace/executeCommand', {
             command,
             arguments: args,
-        })
-        .catch(e => {
-            console.error(e)
         })
 }
 
@@ -64,8 +61,6 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
 
     PromptMixin.add(languagePromptMixin(vscode.env.language))
 
-    vscode.commands.registerCommand
-
     // Options to control the language client
     let clientOptions: LanguageClientOptions = {
         // Register the server for plain text documents
@@ -78,7 +73,11 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
             resolveCodeAction: async (item, token, next): Promise<vscode.CodeAction | null | undefined> => {
                 const action = await next(item, token)
                 if (action != null && action != undefined && action.command != undefined) {
-                    sendCommandRequest(action.command.command, action.command.arguments)
+                    try {
+                        await sendCommandRequest(action.command.command, action.command.arguments)
+                    } catch (err) {
+                        console.error(err)
+                    }
                 }
                 return action
             },
@@ -96,6 +95,23 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
 
     const config = getConfiguration(vscode.workspace.getConfiguration())
     const repos = config.codebase != undefined && config.codebase != '' ? [config.codebase] : null
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('cody.dostuff', async (args: any[]) => {
+            const editor = vscode.window.activeTextEditor;
+            if (editor) {
+                const filePath = "file://" + editor.document.uri.fsPath;
+                const selection = editor.selection;
+                const start = selection.start;
+                const end = selection.end;
+                const prompt = args?.length ? (args[0] as string) : await vscode.window.showInputBox()
+                try {
+                    await sendCommandRequest("cody", [filePath, start.line, end.line, prompt, true, true])
+                } catch (err) {
+                    console.error(err)
+                }
+            }
+        }))
 
     secretStorage.get(CODY_ACCESS_TOKEN_SECRET).then(res => {
         client.sendNotification('workspace/didChangeConfiguration', {

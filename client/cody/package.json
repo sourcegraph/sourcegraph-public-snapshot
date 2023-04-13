@@ -74,6 +74,10 @@
         "title": "Cody: Toggle Enabled/Disabled"
       },
       {
+        "command": "cody.dostuff",
+        "title": "Cody: Do stuff"
+      },
+      {
         "command": "cody.recipe.explain-code",
         "title": "Ask Cody: Explain Code in Detail"
       },
