@@ -1,3 +1,4 @@
+// This package defines both streaming and non-streaming completion REST endpoints. Should probably be renamed "rest".
 package streaming
 
 import (

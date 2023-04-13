@@ -1,4 +1,3 @@
-// TODO(beyang): move this to separate package
 package streaming
 
 import (
