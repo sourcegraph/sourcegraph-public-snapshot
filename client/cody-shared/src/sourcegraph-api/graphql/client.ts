@@ -137,8 +137,7 @@ export class SourcegraphGraphQLAPIClient {
 
     private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
         const endpointURL = new URL('/.api/graphql', this.instanceUrl).href
-        const updatedHeaders = this.customHeaders === undefined ? {} : this.customHeaders
-        const headers = new Headers(updatedHeaders as HeadersInit)
+        const headers = new Headers(this.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (this.accessToken) {
             headers.set('Authorization', `token ${this.accessToken}`)
