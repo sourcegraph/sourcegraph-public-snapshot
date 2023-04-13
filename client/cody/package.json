@@ -230,6 +230,16 @@
         },
         "cody.experimental.keys.anthropic": {
           "type": "string"
+        },
+        "cody.customHeaders": {
+          "type": "object",
+          "default": {},
+          "examples": [
+            {
+              "Cache-Control": "no-cache",
+              "Proxy-Authenticate": "Basic"
+            }
+          ]
         }
       }
     }

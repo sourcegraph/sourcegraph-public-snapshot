@@ -15,6 +15,7 @@ describe('getConfiguration', () => {
             useContext: 'embeddings',
             experimentalSuggest: false,
             anthropicKey: null,
+            customHeaders: {},
         })
     })
 
@@ -36,6 +37,11 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.keys.anthropic':
                         return 'sk-YYY'
+                    case 'cody.customHeaders':
+                        return {
+                            'Cache-Control': 'no-cache',
+                            'Proxy-Authenticate': 'Basic',
+                        }
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -49,6 +55,10 @@ describe('getConfiguration', () => {
             useContext: 'keyword',
             experimentalSuggest: true,
             anthropicKey: 'sk-YYY',
+            customHeaders: {
+                'Cache-Control': 'no-cache',
+                'Proxy-Authenticate': 'Basic',
+            },
         })
     })
 })

@@ -26,8 +26,12 @@ import { sanitizeServerEndpoint } from '../sanitize'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
-async function isValidLogin(serverEndpoint: string, accessToken: string): Promise<boolean> {
-    const client = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(serverEndpoint), accessToken)
+async function isValidLogin(
+    serverEndpoint: string,
+    accessToken: string,
+    customHeaders: Record<string, string>
+): Promise<boolean> {
+    const client = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(serverEndpoint), accessToken, customHeaders)
     const userId = await client.getCurrentUserId()
     return !isError(userId)
 }
@@ -56,7 +60,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         private rgPath: string,
         private mode: 'development' | 'production',
-        private localStorage: LocalStorage
+        private localStorage: LocalStorage,
+        private customHeaders: Record<string, string>
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
@@ -77,7 +82,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         mode: 'development' | 'production',
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext,
-        chatClient: ChatClient
+        chatClient: ChatClient,
+        customHeaders: Record<string, string>
     ): ChatViewProvider {
         return new ChatViewProvider(
             extensionPath,
@@ -92,7 +98,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             contextType,
             rgPath,
             mode,
-            localStorage
+            localStorage,
+            customHeaders
         )
     }
 
@@ -117,7 +124,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 await this.acceptTOS(message.version)
                 break
             case 'settings': {
-                const isValid = await isValidLogin(message.serverEndpoint, message.accessToken)
+                const isValid = await isValidLogin(message.serverEndpoint, message.accessToken, this.customHeaders)
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
@@ -373,7 +380,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     this.editor,
                     this.secretStorage,
                     this.contextType,
-                    this.mode
+                    this.mode,
+                    this.customHeaders
                 )
 
                 this.codebase = codebase
