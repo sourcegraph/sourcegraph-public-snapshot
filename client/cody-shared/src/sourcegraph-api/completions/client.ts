@@ -13,10 +13,11 @@ export abstract class SourcegraphCompletionsClient {
     constructor(
         instanceUrl: string,
         protected accessToken: string | null,
-        protected mode: 'development' | 'production'
+        protected mode: 'development' | 'production',
+        protected customHeaders: Record<string, string> = {}
     ) {
-        this.completionsEndpoint = `${instanceUrl}/.api/completions/stream`
-        this.codeCompletionsEndpoint = `${instanceUrl}/.api/completions/code`
+        this.completionsEndpoint = new URL('/.api/completions/stream', instanceUrl).href
+        this.codeCompletionsEndpoint = new URL('/.api/completions/code', instanceUrl).href
     }
 
     protected sendEvents(events: Event[], cb: CompletionCallbacks): void {

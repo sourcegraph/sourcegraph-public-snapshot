@@ -43,7 +43,8 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         editor,
         secretStorage,
         config.useContext,
-        mode
+        mode,
+        config.customHeaders
     )
 
     // Create chat webview
@@ -59,7 +60,8 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         mode,
         intentDetector,
         codebaseContext,
-        chatClient
+        chatClient,
+        config.customHeaders
     )
 
     vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
