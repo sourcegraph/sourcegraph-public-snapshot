@@ -300,6 +300,7 @@ importers:
       license-checker: ^25.0.1
       linguist-languages: ^7.14.0
       linkifyjs: ^4.1.0
+      lit-html: ^2.7.2
       lodash: ^4.17.20
       lru-cache: ^7.8.0
       marked: 4.0.16
@@ -510,6 +511,7 @@ importers:
       jsonc-parser: 3.2.0
       linguist-languages: 7.14.0
       linkifyjs: 4.1.0
+      lit-html: 2.7.2
       lodash: 4.17.21
       lru-cache: 7.14.0
       marked: 4.0.16
@@ -9390,7 +9392,6 @@ packages:
 
   /@types/trusted-types/2.0.3:
     resolution: {integrity: sha512-NfQ4gyz38SL8sDNrSixxU2Os1a5xcdFxipAFxYEuLUlvU2uDwS4NUpsImcf1//SlWItCVMMLiylsxbmNMToV/g==}
-    dev: true
 
   /@types/tsscmp/1.0.0:
     resolution: {integrity: sha512-rj18XR6c4Ohds86Lq8MI1NMRrXes4eLo4H06e5bJyKucE1rXGsfBBbFGD2oDC+DSufQCpnU3TTW7QAiwLx+7Yw==}
@@ -19909,6 +19910,12 @@ packages:
   /lit-html/1.4.1:
     resolution: {integrity: sha512-B9btcSgPYb1q4oSOb/PrOT6Z/H+r6xuNzfH4lFli/AWhYwdtrgQkQWBbIc6mdnf6E2IL3gDXdkkqNktpU0OZQA==}
     dev: true
+
+  /lit-html/2.7.2:
+    resolution: {integrity: sha512-ZJCfKlA2XELu5tn7XuzOziGFGvf1SeQm+ngLWoJ8bXtSkRrrR3ms6SWy+gsdxeYwySLij5xAhdd2C3EX0ftxdQ==}
+    dependencies:
+      '@types/trusted-types': 2.0.3
+    dev: false
 
   /load-json-file/1.1.0:
     resolution: {integrity: sha512-cy7ZdNRXdablkXYNI049pthVeXFurRyb9+hA/dZzerZ0pGTx42z+y+ssxBaVV2l70t1muq5IdKhn4UtcoGUY9A==}
