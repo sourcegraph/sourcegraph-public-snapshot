@@ -1,4 +1,13 @@
 .repo-container {
     margin-left: auto;
     margin-right: auto;
+    overflow-x: hidden;
+}
+
+.header-bar {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    padding-right: 20px;
+    justify-content:space-between
 }
