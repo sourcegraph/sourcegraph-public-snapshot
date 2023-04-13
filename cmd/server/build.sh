@@ -16,7 +16,7 @@ export OUTPUT
 #   rm -rf "$TMP"
 # }
 # trap cleanup EXIT
-if [[ "$DOCKER_BAZEL" != "true" ]]; then
+if [[ "${DOCKER_BAZEL:-false}" != "true" ]]; then
   parallel_run() {
     ./dev/ci/parallel_run.sh "$@"
   }
