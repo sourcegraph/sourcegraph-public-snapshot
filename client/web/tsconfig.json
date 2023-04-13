@@ -57,7 +57,7 @@
       "path": "../wildcard",
     },
   ],
-  "include": ["**/*", ".*", "./src/**/*.json"],
+  "include": ["**/*", ".*", "./src/**/*.json", "../cody-ui/src/icons/CodyLogo.tsx"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "src/end-to-end", "src/regression", "src/integration"],
   "ts-node": {
     "moduleTypes": {
