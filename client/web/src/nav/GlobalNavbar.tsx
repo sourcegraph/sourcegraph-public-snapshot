@@ -322,17 +322,30 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
-                        <NavAction>
-                            <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
-                                <Link
-                                    to="https://about.sourcegraph.com/app"
-                                    className={classNames(styles.link, 'small')}
-                                    onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'NavBar' })}
-                                >
-                                    Download app
-                                </Link>
-                            </Tooltip>
-                        </NavAction>
+                        <>
+                            <NavAction>
+                                <Tooltip content="The AI code assistant you can trust to answer questions and write code for you.">
+                                    <Link
+                                        to="https://about.sourcegraph.com/cody"
+                                        className={classNames(styles.link, 'small')}
+                                        onClick={() => eventLogger.log('ClickedOnCodyCTA', { location: 'NavBar' })}
+                                    >
+                                        Cody
+                                    </Link>
+                                </Tooltip>
+                            </NavAction>
+                            <NavAction>
+                                <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
+                                    <Link
+                                        to="https://about.sourcegraph.com/app"
+                                        className={classNames(styles.link, 'small')}
+                                        onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'NavBar' })}
+                                    >
+                                        App
+                                    </Link>
+                                </Tooltip>
+                            </NavAction>
+                        </>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser?.siteAdmin && (
