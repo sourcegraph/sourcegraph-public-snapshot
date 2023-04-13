@@ -27,7 +27,7 @@ RUN apk update && apk add --no-cache \
     'bind-tools>=9.16.33-r0' \
     busybox \
     ca-certificates \
-    # Don't use alpine/edge, the git release on this segfaults
+    # Don't use alpine/edge, the curl release on this segfaults
     curl --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main \
     mailcap \
     tini \
