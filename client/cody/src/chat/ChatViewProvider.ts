@@ -10,6 +10,7 @@ import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/tran
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
@@ -260,6 +261,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     }
 
     private async onBotMessageComplete(): Promise<void> {
+        const lastInteraction = this.transcript.getLastInteraction()
+        if (lastInteraction) {
+            const { text, displayText } = lastInteraction.getAssistantMessage()
+            const { text: highlightedDisplayText } = await highlightTokens(displayText, fileExists)
+            this.transcript.addAssistantResponse(text, highlightedDisplayText)
+        }
+
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
         this.sendTranscript()
@@ -408,4 +416,32 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
         return text
     }
+}
+
+function trimPrefix(text: string, prefix: string): string {
+    if (text.startsWith(prefix)) {
+        return text.slice(prefix.length)
+    }
+    return text
+}
+
+function trimSuffix(text: string, suffix: string): string {
+    if (text.endsWith(suffix)) {
+        return text.slice(0, -suffix.length)
+    }
+    return text
+}
+
+async function fileExists(filePath: string): Promise<boolean> {
+    const patterns = [filePath, '**/' + trimSuffix(trimPrefix(filePath, '/'), '/') + '/**']
+    if (!filePath.endsWith('/')) {
+        patterns.push('**/' + trimPrefix(filePath, '/') + '*')
+    }
+    for (const pattern of patterns) {
+        const files = await vscode.workspace.findFiles(pattern, null, 1)
+        if (files.length > 0) {
+            return true
+        }
+    }
+    return false
 }
