@@ -1,6 +1,6 @@
 import React, { FC, Suspense, useEffect, useMemo, useState } from 'react'
 
-import { mdiSourceRepository, mdiClose } from '@mdi/js'
+import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import { Location, useLocation, Route, Routes } from 'react-router-dom'
@@ -9,6 +9,7 @@ import { catchError, switchMap } from 'rxjs/operators'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { ClientInit } from '@sourcegraph/cody-shared/src/chat/client'
+import { CodyChat } from '@sourcegraph/cody-ui/src/CodyChat'
 import { asError, ErrorLike, isErrorLike, logger, repeatUntil } from '@sourcegraph/common'
 import {
     isCloneInProgressErrorLike,
@@ -51,7 +52,6 @@ import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { fetchFileExternalLinks, ResolvedRevision, resolveRepoRevision } from './backend'
 import { AskCodyButton } from './cody/AskCodyButton'
-import { CodyLogo } from './cody/CodyLogo'
 import { RepoContainerError } from './RepoContainerError'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -61,7 +61,6 @@ import {
     RepoRevisionContainerRoute,
 } from './RepoRevisionContainer'
 import { repoSplat } from './repoRevisionContainerRoutes'
-import { RepoRevisionSidebarCody } from './repoRevisionSidebar/cody/RepoRevisionSidebarCody'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { repoSettingsAreaPath } from './settings/routes'
@@ -191,7 +190,13 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     /**
      * Cody client.
      */
-    const { initializeClient, onSubmit, messageInProgress, transcript } = useChatStoreState()
+    const isCodyEnabled = useFeatureFlag('cody-experimental')
+
+    const codySidebarSizes = { default: 350, max: 1200, min: 250 }
+    const focusCodyShortcut = useKeyboardShortcut('focusCody')
+    const [isCodySidebarOpen, setCodySidebarOpen] = useState(true)
+
+    const { initializeClient } = useChatStoreState()
 
     const config = useMemo<ClientInit['config']>(
         () => ({
@@ -202,18 +207,9 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         [repoName]
     )
 
-    useEffect(() => {
+    useMemo(() => {
         initializeClient(config)
     }, [config, repoName])
-
-    // TODO: Extract Cody panel as a component.
-    const codyEnabled = useFeatureFlag('cody-experimental')
-    const focusCodyShortcut = useKeyboardShortcut('focusCody')
-    const [isCodyActive, setCodyActive] = useState(true)
-
-    const chatTitle = 'Ask Cody'
-
-    const sidebarSizes = { default: 350, max: 1200, min: 250 }
 
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
@@ -370,7 +366,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     key={index}
                     {...keybinding}
                     onMatch={() => {
-                        setCodyActive(true)
+                        setCodySidebarOpen(true)
                     }}
                 />
             ))}
@@ -388,7 +384,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                             platformContext={props.platformContext}
                             telemetryService={props.telemetryService}
                         />
-                        {!isCodyActive && <AskCodyButton onClick={() => setCodyActive(true)} />}
+                        {!isCodySidebarOpen && <AskCodyButton onClick={() => setCodySidebarOpen(true)} />}
                     </div>
 
                     <RepoHeaderContributionPortal
@@ -480,35 +476,15 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                 </div>
 
                 {/* Cody sidebar*/}
-                {codyEnabled && isCodyActive && (
+                {isCodyEnabled && isCodySidebarOpen && (
                     <Panel
                         position="right"
                         ariaLabel="Cody sidebar"
-                        maxSize={sidebarSizes.max}
-                        minSize={sidebarSizes.min}
-                        defaultSize={sidebarSizes.default}
+                        maxSize={codySidebarSizes.max}
+                        minSize={codySidebarSizes.min}
+                        defaultSize={codySidebarSizes.default}
                     >
-                        <div className={styles.codySidebar}>
-                            <div className={styles.codySidebarHeader}>
-                                <div>
-                                    <CodyLogo />
-                                    {chatTitle}
-                                </div>
-                                <div>
-                                    <Button variant="icon" aria-label="Close" onClick={() => setCodyActive(false)}>
-                                        <Icon aria-hidden={true} svgPath={mdiClose} />
-                                    </Button>
-                                </div>
-                            </div>
-                            <RepoRevisionSidebarCody
-                                repoID={''} // Missing the ID in this context.
-                                repoName={repoName}
-                                activePath={filePath || ''}
-                                onSubmit={onSubmit}
-                                messageInProgress={messageInProgress}
-                                transcript={transcript}
-                            />
-                        </div>
+                        <CodyChat onClose={() => setCodySidebarOpen(false)} repoName={repoName} />
                     </Panel>
                 )}
             </div>
