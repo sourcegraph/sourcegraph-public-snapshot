@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
+import { BatchChangeRolloutWindow } from '@sourcegraph/shared/src/schema/site.schema'
 import {
     ProductStatusBadge,
     Button,
@@ -172,6 +173,9 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
     const onSelect = useCallback(() => {
         setSelectedType(action.type)
     }, [setSelectedType, action.type])
+
+    const { batchChangesRolloutWindows } = window.context
+
     return (
         <MenuItem className={styles.menuListItem} onSelect={onSelect} disabled={action.disabled}>
             <H4 className="mb-1">
@@ -184,7 +188,14 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
                 )}
             </H4>
             <Text className="text-wrap text-muted mb-0">
-                <small>{action.dropdownDescription}</small>
+                {action.type === 'publish' && batchChangesRolloutWindows && batchChangesRolloutWindows.length > 0 ? (
+                    <small>
+                        {action.dropdownDescription} Note: Rollout windows have been set up by the admin. This means
+                        that some of the selected changesets won't be processed until a time in the future.
+                    </small>
+                ) : (
+                    <small>{action.dropdownDescription}</small>
+                )}
             </Text>
         </MenuItem>
     )
