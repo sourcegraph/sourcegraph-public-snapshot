@@ -1,9 +1,13 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 
 import { SourcegraphCompletionsClient } from './client'
-import type { Event, CompletionParameters, CompletionCallbacks } from './types'
+import type { Event, CompletionParameters, CompletionCallbacks, CodeCompletionResponse } from './types'
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
+    public complete(): Promise<CodeCompletionResponse> {
+        throw new Error('SourcegraphBrowserCompletionsClient.complete not implemented')
+    }
+
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
         const abort = new AbortController()
         const headersInstance = new Headers(this.customHeaders as HeadersInit)
@@ -17,7 +21,6 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             body: JSON.stringify(params),
             signal: abort.signal,
             onmessage: message => {
-                // console.log('[EventSource]', message)
                 const data: Event = { ...JSON.parse(message.data), type: message.event }
                 this.sendEvents([data], cb)
             },

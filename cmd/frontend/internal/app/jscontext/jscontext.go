@@ -39,11 +39,12 @@ import (
 var BillingPublishableKey string
 
 type authProviderInfo struct {
-	IsBuiltin         bool   `json:"isBuiltin"`
-	DisplayName       string `json:"displayName"`
-	ServiceType       string `json:"serviceType"`
-	AuthenticationURL string `json:"authenticationURL"`
-	ServiceID         string `json:"serviceID"`
+	IsBuiltin         bool    `json:"isBuiltin"`
+	DisplayName       string  `json:"displayName"`
+	DisplayPrefix     *string `json:"displayPrefix"`
+	ServiceType       string  `json:"serviceType"`
+	AuthenticationURL string  `json:"authenticationURL"`
+	ServiceID         string  `json:"serviceID"`
 }
 
 // GenericPasswordPolicy a generic password policy that holds password requirements
@@ -234,15 +235,17 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	// Auth providers
 	var authProviders []authProviderInfo
-	for _, p := range providers.Providers() {
-		if p.Config().Github != nil && p.Config().Github.Hidden {
+	for _, p := range providers.SortedProviders() {
+		commonConfig := providers.GetAuthProviderCommon(p)
+		if commonConfig.Hidden {
 			continue
 		}
 		info := p.CachedInfo()
 		if info != nil {
 			authProviders = append(authProviders, authProviderInfo{
 				IsBuiltin:         p.Config().Builtin != nil,
-				DisplayName:       info.DisplayName,
+				DisplayName:       commonConfig.DisplayName,
+				DisplayPrefix:     commonConfig.DisplayPrefix,
 				ServiceType:       p.ConfigID().Type,
 				AuthenticationURL: info.AuthenticationURL,
 				ServiceID:         info.ServiceID,

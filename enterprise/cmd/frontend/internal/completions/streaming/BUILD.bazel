@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "streaming",
-    srcs = ["stream.go"],
+    srcs = [
+        "codecompletion.go",
+        "stream.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [

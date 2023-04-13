@@ -86,7 +86,8 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                     <>
                         <SearchContextDropdown
                             authenticatedUser={props.authenticatedUser}
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            // This is only used to render the CTA which we do not want on JetBrains
+                            isSourcegraphDotCom={false}
                             searchContextsEnabled={props.searchContextsEnabled}
                             showSearchContextManagement={props.showSearchContextManagement}
                             setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
@@ -100,6 +101,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                             className={classNames(styles.searchBoxContextDropdown, 'jb-search-context-dropdown')}
                             menuClassName={styles.searchBoxContextMenu}
                             onEscapeMenuClose={focusEditor}
+                            ignoreDefaultContextDoesNotExistError={true}
                         />
                         <div className={styles.searchBoxSeparator} />
                     </>

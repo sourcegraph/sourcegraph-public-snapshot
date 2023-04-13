@@ -12644,48 +12644,6 @@ Query: `max(rate(src_repoupdater_sched_error[1m]))`
 
 ### Repo Updater: Permissions
 
-#### repo-updater: permissions_syncs_scheduled_reason
-
-<p class="subtitle">Number of users/repos scheduled for permissions sync grouped by reason</p>
-
-Indicates the number of users/repos scheduled for permissions sync grouped by reason.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100100` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (type) (src_repoupdater_perms_syncer_items_sync_scheduled)`
-
-</details>
-
-<br />
-
-#### repo-updater: permissions_syncs_scheduled_priority
-
-<p class="subtitle">Number of users/repos scheduled for permissions sync grouped by priority</p>
-
-Indicates the number of users/repos scheduled for permissions sync grouped by priority.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100101` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (priority) (src_repoupdater_perms_syncer_items_sync_scheduled)`
-
-</details>
-
-<br />
-
 #### repo-updater: user_success_syncs_total
 
 <p class="subtitle">Total number of user permissions syncs</p>
@@ -12694,7 +12652,7 @@ Indicates the total number of user permissions sync completed.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100100` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -12715,7 +12673,7 @@ Indicates the number of users permissions syncs completed.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100101` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -12736,7 +12694,7 @@ Indicates the number of permissions syncs done for the first time for the user.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100112` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100102` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -12744,27 +12702,6 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <summary>Technical details</summary>
 
 Query: `sum(increase(src_repoupdater_perms_syncer_initial_syncs{type="user"}[5m]))`
-
-</details>
-
-<br />
-
-#### repo-updater: user_failed_syncs
-
-<p class="subtitle">Number of user permissions failed syncs [5m]</p>
-
-Indicates the number of users permissions syncs failed.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100120` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_repoupdater_perms_syncer_failed_syncs{type="user"}[5m]))`
 
 </details>
 
@@ -12778,7 +12715,7 @@ Indicates the total number of repo permissions sync completed.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100130` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100110` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -12799,7 +12736,7 @@ Indicates the number of repos permissions syncs completed.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100131` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100111` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -12820,7 +12757,7 @@ Indicates the number of permissions syncs done for the first time for the repo.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100132` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100112` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -12828,27 +12765,6 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <summary>Technical details</summary>
 
 Query: `sum(increase(src_repoupdater_perms_syncer_initial_syncs{type="repo"}[5m]))`
-
-</details>
-
-<br />
-
-#### repo-updater: repo_failed_syncs
-
-<p class="subtitle">Number of repo permissions failed syncs over 5m</p>
-
-Indicates the number of repos permissions syncs failed in last 5 minute.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100140` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_repoupdater_perms_syncer_failed_syncs{type="repo"}[5m]))`
 
 </details>
 
@@ -12862,7 +12778,7 @@ Indicates the max delay between two consecutive permissions sync for a user duri
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100150` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100120` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -12883,7 +12799,7 @@ Indicates the max delay between two consecutive permissions sync for a repo duri
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100151` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100121` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -12904,7 +12820,7 @@ Indicates the max delay between user creation and their permissions sync
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100160` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100130` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -12925,7 +12841,7 @@ Indicates the max delay between repo creation and their permissions sync
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100161` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100131` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -12946,7 +12862,7 @@ Indicates the number permissions found during users/repos permissions sync.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100170` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100140` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -12967,7 +12883,7 @@ Indicates the average number permissions found during permissions sync per user/
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100171` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100141` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -12980,70 +12896,13 @@ Query: `avg by (type) (src_repoupdater_perms_syncer_perms_found)`
 
 <br />
 
-#### repo-updater: perms_syncer_perms
-
-<p class="subtitle">Time gap between least and most up to date permissions</p>
-
-Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-perms) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100180` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)`
-
-</details>
-
-<br />
-
-#### repo-updater: perms_syncer_stale_perms
-
-<p class="subtitle">Number of entities with stale permissions</p>
-
-Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-stale-perms) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100181` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max by (type) (src_repoupdater_perms_syncer_stale_perms)`
-
-</details>
-
-<br />
-
-#### repo-updater: perms_syncer_no_perms
-
-<p class="subtitle">Number of entities with no permissions</p>
-
-Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-no-perms) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100190` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max by (type) (src_repoupdater_perms_syncer_no_perms)`
-
-</details>
-
-<br />
-
 #### repo-updater: perms_syncer_outdated_perms
 
 <p class="subtitle">Number of entities with outdated permissions</p>
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-outdated-perms) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100191` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100150` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -13062,7 +12921,7 @@ Query: `max by (type) (src_repoupdater_perms_syncer_outdated_perms)`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-sync-duration) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100160` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -13075,32 +12934,13 @@ Query: `histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_s
 
 <br />
 
-#### repo-updater: perms_syncer_queue_size
-
-<p class="subtitle">Permissions sync queued items</p>
-
-Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-queue-size) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100201` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max(src_repoupdater_perms_syncer_queue_size)`
-
-</details>
-
-<br />
-
 #### repo-updater: perms_syncer_sync_errors
 
 <p class="subtitle">Permissions sync error rate</p>
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-sync-errors) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100210` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100170` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
@@ -13122,7 +12962,7 @@ More about repository permissions synchronization [here](https://docs.sourcegrap
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100211` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100171` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 

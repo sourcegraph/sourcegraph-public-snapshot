@@ -15,15 +15,15 @@ export class Transcript {
         this.interactions.push(interaction)
     }
 
-    private getLastInteraction(): Interaction | null {
+    public getLastInteraction(): Interaction | null {
         return this.interactions.length > 0 ? this.interactions[this.interactions.length - 1] : null
     }
 
-    public addAssistantResponse(text: string): void {
+    public addAssistantResponse(text: string, displayText?: string): void {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',
             text,
-            displayText: text,
+            displayText: displayText ?? text,
             timestamp: getShortTimestamp(),
         })
     }

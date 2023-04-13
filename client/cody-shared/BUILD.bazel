@@ -44,6 +44,7 @@ ts_project(
         "src/editor/index.ts",
         "src/embeddings/client.ts",
         "src/embeddings/index.ts",
+        "src/hallucinations-detector/index.ts",
         "src/intent-detector/client.ts",
         "src/intent-detector/index.ts",
         "src/keyword-context/index.ts",
@@ -87,6 +88,7 @@ ts_project(
     testonly = True,
     srcs = [
         "src/chat/transcript/transcript.test.ts",
+        "src/hallucinations-detector/index.test.ts",
         "src/test/mocks.ts",
     ],
     tsconfig = ":tsconfig",

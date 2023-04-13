@@ -1,7 +1,14 @@
-import { Event, CompletionParameters, CompletionCallbacks } from './types'
+import {
+    Event,
+    CompletionParameters,
+    CompletionCallbacks,
+    CodeCompletionParameters,
+    CodeCompletionResponse,
+} from './types'
 
 export abstract class SourcegraphCompletionsClient {
     protected completionsEndpoint: string
+    protected codeCompletionsEndpoint: string
 
     constructor(
         instanceUrl: string,
@@ -10,6 +17,7 @@ export abstract class SourcegraphCompletionsClient {
         protected customHeaders: object = {}
     ) {
         this.completionsEndpoint = new URL('/.api/completions/stream', instanceUrl).href
+        this.codeCompletionsEndpoint = new URL('/.api/completions/code', instanceUrl).href
     }
 
     protected sendEvents(events: Event[], cb: CompletionCallbacks): void {
@@ -29,4 +37,5 @@ export abstract class SourcegraphCompletionsClient {
     }
 
     public abstract stream(params: CompletionParameters, cb: CompletionCallbacks): () => void
+    public abstract complete(params: CodeCompletionParameters): Promise<CodeCompletionResponse>
 }

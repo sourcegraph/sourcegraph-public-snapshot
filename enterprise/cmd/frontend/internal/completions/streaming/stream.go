@@ -1,3 +1,4 @@
+// This package defines both streaming and non-streaming completion REST endpoints. Should probably be renamed "rest".
 package streaming
 
 import (
@@ -32,12 +33,12 @@ type streamHandler struct {
 	logger log.Logger
 }
 
-func GetCompletionStreamClient(provider string, accessToken string, model string) (types.CompletionStreamClient, error) {
+func GetCompletionClient(provider string, accessToken string, model string) (types.CompletionsClient, error) {
 	switch provider {
 	case "anthropic":
-		return anthropic.NewAnthropicCompletionStreamClient(httpcli.ExternalDoer, accessToken, model), nil
+		return anthropic.NewAnthropicClient(httpcli.ExternalDoer, accessToken, model), nil
 	case "openai":
-		return openai.NewOpenAIChatCompletionsStreamClient(httpcli.ExternalDoer, accessToken, model), nil
+		return openai.NewOpenAIClient(httpcli.ExternalDoer, accessToken, model), nil
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}
@@ -66,7 +67,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var requestParams types.CompletionRequestParameters
+	var requestParams types.ChatCompletionRequestParameters
 	if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
 		http.Error(w, "could not decode request body", http.StatusBadRequest)
 		return
@@ -79,7 +80,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		tr.Finish()
 	}()
 
-	completionStreamClient, err := GetCompletionStreamClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
+	model := completionsConfig.ChatModel
+	if model == "" {
+		model = completionsConfig.Model
+	}
+	completionClient, err := GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, model)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -94,7 +99,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Always send a final done event so clients know the stream is shutting down.
 	defer eventWriter.Event("done", map[string]any{})
 
-	err = completionStreamClient.Stream(ctx, requestParams, func(event types.CompletionEvent) error { return eventWriter.Event("completion", event) })
+	err = completionClient.Stream(ctx, requestParams, func(event types.ChatCompletionEvent) error { return eventWriter.Event("completion", event) })
 	if err != nil {
 		h.logger.Error("error while streaming completions", log.Error(err))
 		eventWriter.Event("error", map[string]string{"error": err.Error()})
