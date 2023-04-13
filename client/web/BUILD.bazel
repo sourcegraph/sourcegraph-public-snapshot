@@ -1010,7 +1010,6 @@ ts_project(
         "src/initBuildInfo.ts",
         "src/insights/Icons.tsx",
         "src/insights/types.ts",
-        "src/insights/utils/is-code-insights-enabled.ts",
         "src/insights/utils/use-series-toggle.ts",
         "src/jscontext.ts",
         "src/lsif/html.ts",
