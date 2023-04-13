@@ -132,8 +132,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
 
     const renderResult = useCallback(
-        (searchResult: SearchMatch, index: number): JSX.Element => {
-            const result = enableRepositoryMetadata ? searchResult : { ...searchResult, keyValuePairs: undefined }
+        (result: SearchMatch, index: number): JSX.Element => {
             function renderResultContent(): JSX.Element {
                 switch (result.type) {
                     case 'content':
@@ -213,6 +212,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 result={result}
                                 onSelect={() => logSearchResultClicked?.(index, 'repo')}
                                 containerClassName={resultClassName}
+                                enableRepositoryMetadata={enableRepositoryMetadata}
                                 as="li"
                             />
                         )

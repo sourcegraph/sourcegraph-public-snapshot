@@ -15,35 +15,31 @@ import styles from './SearchResult.module.scss'
 
 const REPO_DESCRIPTION_CHAR_LIMIT = 500
 
+const RepoMetadata: React.FunctionComponent<{ keyValuePairs: Record<string, string>; className?: string }> = ({
+    keyValuePairs,
+    className,
+}) => (
+    <div className={classNames(styles.repoMetadata, className, 'd-flex align-items-center flex-wrap')}>
+        {Object.entries(keyValuePairs).map(([key, value]) => (
+            <span className="d-flex align-items-center justify-content-center" key={`${key}:${value}`}>
+                <Badge small={true} variant="info" className={classNames({ [styles.repoMetadataKey]: value })}>
+                    {key}
+                </Badge>
+                <Badge small={true} variant="secondary" className={styles.repoMetadataValue}>
+                    {value}
+                </Badge>
+            </span>
+        ))}
+    </div>
+)
+
 export interface RepoSearchResultProps {
     result: RepositoryMatch
     onSelect: () => void
     containerClassName?: string
     as?: React.ElementType
     index: number
-}
-
-const RepoMetadata: React.FunctionComponent<{ keyValuePairs?: Record<string, string>; className?: string }> = ({
-    keyValuePairs,
-    className,
-}) => {
-    if (!keyValuePairs) {
-        return null
-    }
-    return (
-        <div className={classNames(styles.repoMetadata, className, 'd-flex align-items-center flex-wrap')}>
-            {Object.entries(keyValuePairs).map(([key, value]) => (
-                <span className="d-flex align-items-center justify-content-center" key={`${key}:${value}`}>
-                    <Badge small={true} variant="info" className={classNames({ [styles.repoMetadataKey]: value })}>
-                        {key}
-                    </Badge>
-                    <Badge small={true} variant="secondary" className={styles.repoMetadataValue}>
-                        {value}
-                    </Badge>
-                </span>
-            ))}
-        </div>
-    )
+    enableRepositoryMetadata?: boolean
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
@@ -52,6 +48,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     containerClassName,
     as,
     index,
+    enableRepositoryMetadata,
 }) => {
     const repoDescriptionElement = useRef<HTMLDivElement>(null)
     const repoNameElement = useRef<HTMLAnchorElement>(null)
@@ -110,12 +107,14 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                 <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
                     {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                     <div className="d-flex align-items-center flex-row">
-                        <div className={classNames('d-flex align-items-start', styles.matchType)}>
+                        <div className={classNames(styles.matchType, 'd-flex align-items-start')}>
                             <small>Repository match</small>
-                            <RepoMetadata
-                                keyValuePairs={result.keyValuePairs}
-                                className="justify-content-end ml-2 mr-4"
-                            />
+                            {enableRepositoryMetadata && !!result.keyValuePairs && (
+                                <RepoMetadata
+                                    keyValuePairs={result.keyValuePairs}
+                                    className="justify-content-end ml-2 mr-4"
+                                />
+                            )}
                         </div>
                         {result.fork && (
                             <>
