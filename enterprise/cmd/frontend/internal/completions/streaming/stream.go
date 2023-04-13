@@ -79,7 +79,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		tr.Finish()
 	}()
 
-	completionClient, err := GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
+	model := completionsConfig.ChatModel
+	if model == "" {
+		model = completionsConfig.Model
+	}
+	completionClient, err := GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, model)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
