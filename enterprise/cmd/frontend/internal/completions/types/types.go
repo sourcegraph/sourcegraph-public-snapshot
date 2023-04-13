@@ -35,7 +35,7 @@ type CodeCompletionResponse struct {
 	LogID      string  `json:"logID"`
 }
 
-type CompletionRequestParameters struct {
+type ChatCompletionRequestParameters struct {
 	Messages          []Message `json:"messages"`
 	Temperature       float32   `json:"temperature"`
 	MaxTokensToSample int       `json:"maxTokensToSample"`
@@ -43,7 +43,7 @@ type CompletionRequestParameters struct {
 	TopP              float32   `json:"topP"`
 }
 
-type CompletionEvent struct {
+type ChatCompletionEvent struct {
 	Completion string `json:"completion"`
 }
 
@@ -65,9 +65,9 @@ func (m Message) GetPrompt(humanPromptPrefix, assistantPromptPrefix string) (str
 	return fmt.Sprintf("%s %s", prefix, m.Text), nil
 }
 
-type SendCompletionEvent func(event CompletionEvent) error
+type SendCompletionEvent func(event ChatCompletionEvent) error
 
-type CompletionStreamClient interface {
-	Stream(ctx context.Context, requestParams CompletionRequestParameters, sendEvent SendCompletionEvent) error
+type CompletionsClient interface {
+	Stream(ctx context.Context, requestParams ChatCompletionRequestParameters, sendEvent SendCompletionEvent) error
 	Complete(ctx context.Context, requestParams CodeCompletionRequestParameters) (*CodeCompletionResponse, error)
 }

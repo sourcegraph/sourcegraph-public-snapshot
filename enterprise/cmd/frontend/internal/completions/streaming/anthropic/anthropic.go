@@ -30,21 +30,21 @@ type AnthropicCompletionsRequestParameters struct {
 	Stream            bool     `json:"stream"`
 }
 
-type anthropicCompletionStreamClient struct {
+type anthropicClient struct {
 	cli         httpcli.Doer
 	accessToken string
 	model       string
 }
 
-func NewAnthropicCompletionStreamClient(cli httpcli.Doer, accessToken string, model string) types.CompletionStreamClient {
-	return &anthropicCompletionStreamClient{
+func NewAnthropicClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
+	return &anthropicClient{
 		cli:         cli,
 		accessToken: accessToken,
 		model:       model,
 	}
 }
 
-func (a *anthropicCompletionStreamClient) Complete(
+func (a *anthropicClient) Complete(
 	ctx context.Context,
 	requestParams types.CodeCompletionRequestParameters,
 ) (*types.CodeCompletionResponse, error) {
@@ -109,9 +109,9 @@ func (a *anthropicCompletionStreamClient) Complete(
 	}, nil
 }
 
-func (a *anthropicCompletionStreamClient) Stream(
+func (a *anthropicClient) Stream(
 	ctx context.Context,
-	requestParams types.CompletionRequestParameters,
+	requestParams types.ChatCompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
 	prompt, err := getPrompt(requestParams.Messages)
@@ -174,7 +174,7 @@ func (a *anthropicCompletionStreamClient) Stream(
 			continue
 		}
 
-		var event types.CompletionEvent
+		var event types.ChatCompletionEvent
 		if err := json.Unmarshal(data, &event); err != nil {
 			return errors.Errorf("failed to decode event payload: %w", err)
 		}
