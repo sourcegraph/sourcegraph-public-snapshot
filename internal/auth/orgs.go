@@ -11,6 +11,14 @@ import (
 
 var ErrNotAuthenticated = errors.New("not authenticated")
 
+func CheckOrgAccessOrSiteAdminOrSameUser(ctx context.Context, db database.DB, subjectUserID, subjectOrgID int32) error {
+	a := actor.FromContext(ctx)
+	if a.IsInternal() || (a.IsAuthenticated() && a.UID == subjectUserID) {
+		return nil
+	}
+	return CheckOrgAccessOrSiteAdmin(ctx, db, subjectOrgID)
+}
+
 // CheckOrgAccessOrSiteAdmin returns an error if:
 // (1) the user is not a member of the organization
 // (2) the user is not a site admin
