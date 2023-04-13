@@ -143,7 +143,7 @@ func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 		cmds,
 		bk.RawCmd("wget https://github.com/bazelbuild/continuous-integration/releases/download/agent-0.1.4/bazelci-agent-0.1.4-x86_64-unknown-linux-musl -O bazelci-agent"),
 		bk.RawCmd("chmod +x bazelci-agent"),
-		bk.RawCmd("./bazelci-agent --build_event_json_file bep.json --delay 10 --mode buildkite &"),
+		bk.RawCmd("./bazelci-agent artifact upload --build_event_json_file bep.json --delay 10 --mode buildkite &"),
 		bk.RawCmd(bazelRawCmd),
 	)
 
