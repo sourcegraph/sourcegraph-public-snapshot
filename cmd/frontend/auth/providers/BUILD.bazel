@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "providers",
@@ -9,5 +9,16 @@ go_library(
         "//internal/extsvc",
         "//schema",
         "@com_github_inconshreveable_log15//:log15",
+    ],
+)
+
+go_test(
+    name = "providers_test",
+    srcs = ["providers_test.go"],
+    embed = [":providers"],
+    deps = [
+        "//internal/extsvc",
+        "//schema",
+        "@com_github_stretchr_testify//require",
     ],
 )
