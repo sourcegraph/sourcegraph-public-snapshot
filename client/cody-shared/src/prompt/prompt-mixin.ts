@@ -15,7 +15,7 @@ export class PromptMixin {
         if (mixins) {
             // Stuff the prompt mixins at the start of the human text.
             // Note we do not reflect them in displayText.
-            humanMessage.text = `${mixins}\n\n${humanMessage.text}`
+            return { ...humanMessage, text: `${mixins}\n\n${humanMessage.text}` }
         }
         return humanMessage
     }

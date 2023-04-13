@@ -221,6 +221,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                         className={classNames(
                                             styles.bubbleContent,
                                             styles.botBubbleContent,
+                                            bubbleContentClassName,
                                             botBubbleContentClassName
                                         )}
                                     >
