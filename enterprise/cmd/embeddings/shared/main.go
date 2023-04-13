@@ -131,7 +131,7 @@ func NewHandler(
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/search2", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 			return
@@ -158,7 +158,7 @@ func NewHandler(
 		}
 	})
 
-	mux.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/search_old", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 			return
@@ -214,6 +214,7 @@ func NewHandler(
 }
 
 func search(ctx context.Context, args embeddings.EmbeddingsSearchParameters, logger log.Logger) (*embeddings.EmbeddingSearchResults, error) {
+	// The client should probably be a singleton, but for now we create a new one for each request.
 	client, err := weaviate.NewClient(weaviate.Config{
 		Host:   "localhost:8181",
 		Scheme: "http",
@@ -236,14 +237,13 @@ func search(ctx context.Context, args embeddings.EmbeddingsSearchParameters, log
 					EndLine:   int(cMap["end_line"].(float64)),
 				},
 				Content: content,
-				Debug:   "",
 			})
 		}
 		return srs
 	}
 
 	// Alpha is the weight of the embeddings in the hybrid search. The higher the
-	// alpha, the more the embeddings are used.
+	// alpha, the bigger the influence of embeddings are.
 	var alpha float32 = 0.7
 	hybridArgs := (&graphql.HybridArgumentBuilder{}).WithAlpha(alpha).WithQuery(args.Query)
 	wantFields := []graphql.Field{
@@ -260,13 +260,11 @@ func search(ctx context.Context, args embeddings.EmbeddingsSearchParameters, log
 	if err != nil {
 		return nil, err
 	}
-	logger.Info("res", log.String("res", fmt.Sprintf("%v", res)))
-	codeResults := extractResults(res, "Code")
-	textResults := extractResults(res, "Text")
+	// logger.Info("res", log.String("res", fmt.Sprintf("%v", res)))
 
 	return &embeddings.EmbeddingSearchResults{
-		CodeResults: codeResults,
-		TextResults: textResults,
+		CodeResults: extractResults(res, "Code"),
+		TextResults: extractResults(res, "Text"),
 	}, nil
 }
 

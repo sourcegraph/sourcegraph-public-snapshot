@@ -2,7 +2,6 @@ package embed
 
 import (
 	"path/filepath"
-
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
@@ -23,6 +22,8 @@ var textFileExtensions = map[string]struct{}{
 var defaultExcludedFilePathPatterns = []string{
 	"*.sql",
 	"*.svg",
+	"*.png",
+	"*.jpg",
 	"*.json",
 	"*.yml",
 	"*.yaml",

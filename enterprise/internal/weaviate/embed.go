@@ -17,7 +17,6 @@ import (
 
 type readFile func(fileName string) ([]byte, error)
 
-// TODO (stefan): use the same chunking logic as in the current embeddings code
 func EmbedRepo(
 	ctx context.Context,
 	logger log.Logger,
@@ -30,7 +29,7 @@ func EmbedRepo(
 	splitOptions split.SplitOptions,
 ) error {
 
-	batchSize := 100
+	batchSize := 512
 	batch := client.Batch().ObjectsBatcher()
 
 	cnt := 0
@@ -52,7 +51,7 @@ func EmbedRepo(
 		chunks := split.SplitIntoEmbeddableChunks(string(b), fileName, splitOptions)
 		for _, chunk := range chunks {
 			cnt++
-			logger.Info("adding object", log.String("type", typ), log.String("filename", chunk.FileName))
+			// logger.Info("adding object", log.String("type", typ), log.String("filename", chunk.FileName))
 			batch.WithObjects(&models.Object{
 				Class: typ,
 				Properties: map[string]interface{}{
