@@ -44,6 +44,9 @@ type Services struct {
 	// Handler for completions stream.
 	NewCompletionsStreamHandler NewCompletionsStreamHandler
 
+	// Handler for code completions endpoint.
+	NewCodeCompletionsHandler NewCodeCompletionsHandler
+
 	PermissionsGitHubWebhook  webhooks.Registerer
 	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
 	RankingService            RankingService
@@ -80,6 +83,9 @@ type NewComputeStreamHandler func() http.Handler
 // NewCompletionsStreamHandler creates a new handler for the completions streaming endpoint.
 type NewCompletionsStreamHandler func() http.Handler
 
+// NewCodeCompletionsHandler creates a new handler for the code completions endpoint.
+type NewCodeCompletionsHandler func() http.Handler
+
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
@@ -104,6 +110,7 @@ func DefaultServices() Services {
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
 		CodeInsightsDataExportHandler:   makeNotFoundHandler("code insights data export handler"),
 		NewCompletionsStreamHandler:     func() http.Handler { return makeNotFoundHandler("completions streaming endpoint") },
+		NewCodeCompletionsHandler:       func() http.Handler { return makeNotFoundHandler("code completions streaming endpoint") },
 		EnterpriseSearchJobs:            jobutil.NewUnimplementedEnterpriseJobs(),
 	}
 }
