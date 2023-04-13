@@ -241,6 +241,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     </div>
                 )}
             </div>
+
             <form className={classNames(styles.inputRow, inputRowClassName)}>
                 <AutoResizableTextArea
                     value={formInput}
