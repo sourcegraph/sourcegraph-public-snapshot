@@ -136,5 +136,13 @@ export const PERMISSIONS_SYNC_JOBS_STATS = gql`
             usersWithStalePermissions
             reposWithStalePermissions
         }
+        site {
+            users(deletedAt: { empty: true }) {
+                totalCount
+            }
+        }
+        repositoryStats {
+            total
+        }
     }
 `

@@ -97,12 +97,14 @@
 }
 
 .stats-box {
-    border-radius: 3px;
-    border: 1px solid var(--border-color-2);
+    border: none;
 }
 
 .stat {
     border-right: 1px solid var(--border-color-2);
     flex: 1;
     padding-bottom: 0.1rem;
+}
+.stat:last-child {
+    border-right: none;
 }
