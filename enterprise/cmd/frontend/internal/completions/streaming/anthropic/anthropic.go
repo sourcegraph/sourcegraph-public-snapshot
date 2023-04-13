@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
@@ -45,7 +44,7 @@ func NewAnthropicClient(cli httpcli.Doer, accessToken string, model string) type
 }
 
 var allowedClientSpecifiedModels = map[string]struct{}{
-	"claude-instant-v1.0": struct{}{},
+	"claude-instant-v1.0": {},
 }
 
 func (a *anthropicClient) Complete(
@@ -98,7 +97,7 @@ func (a *anthropicClient) Complete(
 	}
 
 	var response types.CodeCompletionResponse
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err := json.Unmarshal(body, &response); err != nil {
 		return nil, err
 	}

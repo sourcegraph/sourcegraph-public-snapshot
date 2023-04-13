@@ -36,12 +36,16 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         try {
                             const resp = JSON.parse(buffer) as CodeCompletionResponse
                             if (typeof resp.completion !== 'string' || typeof resp.stopReason !== 'string') {
-                                reject(`response ${resp} does not satisfy CodeCompletionResponse`)
+                                reject(new Error(`response does not satisfy CodeCompletionResponse: ${buffer}`))
                             } else {
                                 resolve(resp)
                             }
-                        } catch (err) {
-                            reject(`error parsing response ${buffer} as CodeCompletionResponse: ${err}`)
+                        } catch (error) {
+                            reject(
+                                new Error(
+                                    `error parsing response CodeCompletionResponse: ${error}, response text: ${buffer}`
+                                )
+                            )
                         }
                     })
 

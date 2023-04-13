@@ -47,7 +47,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
     )
 
     // Create chat webview
-    const chatProvider = await ChatViewProvider.create(
+    const chatProvider = ChatViewProvider.create(
         context.extensionPath,
         sanitizeCodebase(config.codebase),
         sanitizeServerEndpoint(config.serverEndpoint),

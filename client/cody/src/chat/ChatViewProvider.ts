@@ -65,7 +65,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.createNewChatID()
     }
 
-    public static async create(
+    public static create(
         extensionPath: string,
         codebase: string,
         serverEndpoint: string,
@@ -78,7 +78,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext,
         chatClient: ChatClient
-    ): Promise<ChatViewProvider> {
+    ): ChatViewProvider {
         return new ChatViewProvider(
             extensionPath,
             codebase,
