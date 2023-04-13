@@ -15,6 +15,26 @@ type Message struct {
 	Text    string `json:"text"`
 }
 
+type CodeCompletionRequestParameters struct {
+	Prompt            string            `json:"prompt"`
+	Temperature       float64           `json:"temperature,omitempty"`
+	MaxTokensToSample int               `json:"maxTokensToSample"`
+	StopSequences     []string          `json:"stopSequences"`
+	TopK              int               `json:"topK,omitempty"`
+	TopP              float64           `json:"topP,omitempty"`
+	Model             string            `json:"model"`
+	Tags              map[string]string `json:"tags,omitempty"`
+}
+
+type CodeCompletionResponse struct {
+	Completion string  `json:"completion"`
+	Stop       *string `json:"stop"`
+	StopReason string  `json:"stopReason"`
+	Truncated  bool    `json:"truncated"`
+	Exception  *string `json:"exception"`
+	LogID      string  `json:"logID"`
+}
+
 type CompletionRequestParameters struct {
 	Messages          []Message `json:"messages"`
 	Temperature       float32   `json:"temperature"`
@@ -49,4 +69,5 @@ type SendCompletionEvent func(event CompletionEvent) error
 
 type CompletionStreamClient interface {
 	Stream(ctx context.Context, requestParams CompletionRequestParameters, sendEvent SendCompletionEvent) error
+	Complete(ctx context.Context, requestParams CodeCompletionRequestParameters) (*CodeCompletionResponse, error)
 }

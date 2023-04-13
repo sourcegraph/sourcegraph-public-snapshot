@@ -51,6 +51,10 @@ func NewOpenAIChatCompletionsStreamClient(cli httpcli.Doer, accessToken string, 
 	}
 }
 
+func (a *openAIChatCompletionStreamClient) Complete(ctx context.Context, requestParams types.CodeCompletionRequestParameters) (*types.CodeCompletionResponse, error) {
+	return nil, errors.New("openAIChatCompletionStreamClient.Complete: unimplemented")
+}
+
 func (a *openAIChatCompletionStreamClient) Stream(
 	ctx context.Context,
 	requestParams types.CompletionRequestParameters,
