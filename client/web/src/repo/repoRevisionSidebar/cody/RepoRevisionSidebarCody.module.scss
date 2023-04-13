@@ -19,9 +19,20 @@
     background-color: var(--code-background);
 }
 
-.bubble-content pre,
+.bubble-content pre {
+
+    border-top: solid 1px var(--border-color-2);
+    border-bottom: solid 1px var(--border-color-2);
+    border-radius: 2px;
+    padding: 10px;
+    background: var(--body-bg);
+    margin-bottom: 10px;
+
+}
 .bubble-content code {
     color: var(--code-background);
+
+
 }
 
 .bot-bubble-content {
