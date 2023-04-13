@@ -89,8 +89,6 @@ The default run type.
 - Pipeline for `DockerImages` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests
-  - **Test builds**: Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build blobstore, Build blobstore2, Build node-exporter, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build executor, Build executor-kubernetes, Build executor-vm, Build batcheshelper, Build opentelemetry-collector, Build embeddings, Build dind, Build bundled-executor, Build server, Build sg
-  - **Scan test builds**: Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan jaeger-agent, Scan jaeger-all-in-one, Scan blobstore2, Scan node-exporter, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan symbols, Scan syntax-highlighter, Scan worker, Scan migrator, Scan executor, Scan executor-kubernetes, Scan executor-vm, Scan batcheshelper, Scan opentelemetry-collector, Scan embeddings, Scan dind, Scan bundled-executor, Scan sg
   - Upload build trace
 
 - Pipeline for `WolfiPackages` changes:
