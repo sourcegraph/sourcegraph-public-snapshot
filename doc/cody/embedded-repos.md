@@ -1,6 +1,6 @@
 # Embedded repositories (5+ stars)
 
-Last updated: 04-10-2023 · 11:09 AM PDT
+Last updated: 04-12-2023 · 07:51 AM PDT
 
 1. `github.com/152334H/DL-Art-School`
 1. `github.com/152334H/tortoise-tts-fast`
@@ -11,7 +11,6 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/aarnphm/whispercpp`
 1. `github.com/abey79/vpype`
 1. `github.com/abey79/vsketch`
-1. `github.com/abey79/vsketch/`
 1. `github.com/abseil/abseil-cpp`
 1. `github.com/AcademySoftwareFoundation/OpenTimelineIO`
 1. `github.com/AcademySoftwareFoundation/rez`
@@ -40,6 +39,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/AndrewRayCode/shaderfrog-2.0-hybrid-graph-demo`
 1. `github.com/angepagel/A2T`
 1. `github.com/angrycub/nomad_example_jobs`
+1. `github.com/angular/angular`
 1. `github.com/ant-design/ant-design`
 1. `github.com/apache/airflow`
 1. `github.com/apache/arrow-datafusion`
@@ -61,6 +61,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/ardanlabs/service`
 1. `github.com/argoproj/argo-workflows`
 1. `github.com/Arinerron/heaptrace`
+1. `github.com/arquillian/arquillian-core`
 1. `github.com/asticode/go-astits`
 1. `github.com/AUTOMATIC1111/stable-diffusion-webui`
 1. `github.com/aws-amplify/amplify-js`
@@ -81,6 +82,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/bambang/Synthetic-Aperture-Radar-SAR-Simulator`
 1. `github.com/bambang/SyntheticApertureRadarImaging`
 1. `github.com/bazelbuild/bazel-gazelle`
+1. `github.com/bazelbuild/rules_foreign_cc`
 1. `github.com/bellard/quickjs`
 1. `github.com/Benqi-fi/BENQI-Smart-Contracts`
 1. `github.com/benweet/stackedit`
@@ -160,6 +162,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/dask/distributed`
 1. `github.com/databricks/terraform-provider-databricks`
 1. `github.com/datafuselabs/databend`
+1. `github.com/de4dot/de4dot`
 1. `github.com/delta-io/delta`
 1. `github.com/demonnic/highlighter`
 1. `github.com/demonnic/mdk`
@@ -178,6 +181,9 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/dstoc/pkmapp`
 1. `github.com/duckdb/duckdb`
 1. `github.com/ebkalderon/tower-lsp`
+1. `github.com/eclipse-ee4j/eclipselink`
+1. `github.com/eclipse-ee4j/glassfish`
+1. `github.com/eclipse-ee4j/jersey`
 1. `github.com/eclipse-zenoh/zenoh`
 1. `github.com/eclipse/eclipse-collections`
 1. `github.com/ecomfe/reskript`
@@ -188,6 +194,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/emscripten-core/emsdk`
 1. `github.com/encode/django-rest-framework`
 1. `github.com/envoyproxy/envoy`
+1. `github.com/erocarrera/pefile`
 1. `github.com/ethereum/go-ethereum`
 1. `github.com/ethereum/solidity`
 1. `github.com/ethereum/web3.py`
@@ -213,6 +220,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/firebase/firebase-admin-python`
 1. `github.com/fish-shell/fish-shell`
 1. `github.com/floating-ui/floating-ui`
+1. `github.com/floooh/sokol`
 1. `github.com/flores-jacob/philippine-regions-provinces-cities-municipalities-barangays`
 1. `github.com/flutter-stripe/flutter_stripe`
 1. `github.com/flutter/codelabs`
@@ -221,6 +229,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/flutter/samples`
 1. `github.com/fluxcd/kustomize-controller`
 1. `github.com/fluxcd/source-controller`
+1. `github.com/folke/lazy.nvim`
 1. `github.com/framer/motion`
 1. `github.com/freenome/flyte`
 1. `github.com/galaxyproject/ansible-galaxy`
@@ -279,6 +288,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/hmahal/NESharp`
 1. `github.com/Homebrew/brew`
 1. `github.com/Homebrew/homebrew-cask`
+1. `github.com/hrsh7th/nvim-cmp`
 1. `github.com/huangsam/ultimate-python`
 1. `github.com/huggingface`
 1. `github.com/huggingface/accelerate`
@@ -299,9 +309,12 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/iobtl/tlpdb`
 1. `github.com/iPoetDev/terni-lapilli--toe`
 1. `github.com/ironsource-mobile/Mediation-Demo-Apps`
+1. `github.com/isrc-cas/flounder`
 1. `github.com/istio/istio`
 1. `github.com/istio/tools`
 1. `github.com/jaceyi/chat`
+1. `github.com/jakartaee/persistence`
+1. `github.com/jaredpalmer/formik`
 1. `github.com/jart/blink`
 1. `github.com/jart/cosmopolitan`
 1. `github.com/jauderho/bl3auto`
@@ -344,6 +357,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/laravel/laravel`
 1. `github.com/launchbadge/sqlx`
 1. `github.com/laurent22/joplin`
+1. `github.com/LazyVim/LazyVim`
 1. `github.com/libgdx/libgdx`
 1. `github.com/linebender/xilem`
 1. `github.com/linkedin/rest.li`
@@ -384,6 +398,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/mckaywrigley/chatbot-ui`
 1. `github.com/Megabit/Blazorise`
 1. `github.com/mehcode/config-rs`
+1. `github.com/mesonbuild/meson`
 1. `github.com/metabase/metabase`
 1. `github.com/MetaMask/metamask-extension`
 1. `github.com/MetaMask/metamask-mobile`
@@ -396,6 +411,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/microsoft/OpenAPI.NET`
 1. `github.com/microsoft/playwright`
 1. `github.com/microsoft/PowerToys`
+1. `github.com/microsoft/pyright`
 1. `github.com/microsoft/semantic-kernel`
 1. `github.com/microsoft/thrifty`
 1. `github.com/Microsoft/TypeScript`
@@ -440,6 +456,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/nodejs/node`
 1. `github.com/nopSolutions/nopCommerce`
 1. `github.com/not-fl3/macroquad`
+1. `github.com/nothings/stb`
 1. `github.com/novaforgood/canopy`
 1. `github.com/nrwl/nx`
 1. `github.com/numpy/numpy`
@@ -468,11 +485,14 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/pandas-dev/pandas/`
 1. `github.com/panoply/esthetic`
 1. `github.com/pastelsky/bundlephobia`
+1. `github.com/payara/Payara`
 1. `github.com/pdtgct/crypto11`
 1. `github.com/pdtgct/ml-nlp-notes`
 1. `github.com/pdtgct/pkcs11`
 1. `github.com/penflip/penflip`
+1. `github.com/penrose/penrose`
 1. `github.com/php/php-src`
+1. `github.com/PiusLucky/nodejs-next-chat-app`
 1. `github.com/plaid/plaid-python`
 1. `github.com/plasmicapp/plasmic`
 1. `github.com/plasmicapp/plasmic-internal`
@@ -502,6 +522,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/qdrant/vector-db-benchmark`
 1. `github.com/qemu/qemu`
 1. `github.com/Qihoo360/evpp`
+1. `github.com/qilingframework/qiling`
 1. `github.com/Qiskit/rustworkx`
 1. `github.com/Qiskit/rustworkx/`
 1. `github.com/qmk/qmk_configurator`
@@ -516,6 +537,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/ray-project/kuberay`
 1. `github.com/ray-project/ray`
 1. `github.com/raycast/extensions`
+1. `github.com/raysan5/raylib`
 1. `github.com/react-navigation/react-navigation`
 1. `github.com/ReactiveX/rxjs`
 1. `github.com/ReactiveX/RxSwift`
@@ -524,6 +546,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/ReaTeam/ReaScripts`
 1. `github.com/reduxjs/redux`
 1. `github.com/reduxjs/redux-toolkit`
+1. `github.com/release-it/release-it`
 1. `github.com/remix-run/remix`
 1. `github.com/replicatedhq/kots`
 1. `github.com/RimWorld-zh/RimWorld-Decompile`
@@ -565,6 +588,8 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/signalapp/Signal-Desktop`
 1. `github.com/signalapp/Signal-Server`
 1. `github.com/silverbullet233/starrocks`
+1. `github.com/simonw/datasette`
+1. `github.com/simonw/sqlite-utils`
 1. `github.com/simplcommerce/SimplCommerce`
 1. `github.com/sirupsen/logrus`
 1. `github.com/slackapi/bolt-python`
@@ -572,6 +597,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/slackapi/python-slack-sdk`
 1. `github.com/slundberg/shap`
 1. `github.com/snap-one`
+1. `github.com/snowfork/snowbridge`
 1. `github.com/socketteer/loom`
 1. `github.com/solidjs/solid`
 1. `github.com/soulhighwing/LocalGPT`
@@ -590,10 +616,12 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/sourcegraph/sourcegraph`
 1. `github.com/sourcegraph/src-cli`
 1. `github.com/sourcegraph/typescript-language-server`
+1. `github.com/sourcegrpah/conc`
 1. `github.com/spf13/cobra`
 1. `github.com/spring-projects/spring-boot`
 1. `github.com/spring-projects/spring-framework`
 1. `github.com/spring/spring`
+1. `github.com/sqlite/sqlite`
 1. `github.com/square/javapoet`
 1. `github.com/square/kotlinpoet`
 1. `github.com/stargate/stargate`
@@ -603,13 +631,21 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/stephenskelley/midi_composer`
 1. `github.com/stephenskelley/my_torch`
 1. `github.com/stitchfix/hamilton`
+1. `github.com/storj/common`
+1. `github.com/storj/gateway-mt`
+1. `github.com/storj/private`
+1. `github.com/storj/storj`
+1. `github.com/storj/uplink`
 1. `github.com/streamlit/streamlit`
 1. `github.com/stretchr/testify`
 1. `github.com/stripe/stripe-python`
 1. `github.com/stryker-mutator/stryker-js`
+1. `github.com/subspace/subspace`
+1. `github.com/suika2engine/suika2`
 1. `github.com/supabase/supabaseJS`
 1. `github.com/suprsend/suprsend-py-sdk`
 1. `github.com/surodri/VeinsVanetSimulations`
+1. `github.com/sveltejs/kit`
 1. `github.com/sveltejs/svelte`
 1. `github.com/swairshah/AthenaAgent`
 1. `github.com/swairshah/language-models`
@@ -622,6 +658,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/TanStack/router`
 1. `github.com/TanStack/table`
 1. `github.com/tatsu-lab/stanford_alpaca`
+1. `github.com/tauri-apps/tauri`
 1. `github.com/team-magic/api`
 1. `github.com/team-magic/assess`
 1. `github.com/team-magic/infrastructure`
@@ -665,6 +702,7 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/uber/RIBs/wiki`
 1. `github.com/ueberdosis/tiptap`
 1. `github.com/umijs/umi`
+1. `github.com/unicorn-engine/unicorn`
 1. `github.com/unionai-oss/pandera`
 1. `github.com/Uniswap/web3-react`
 1. `github.com/Unity-Technologies/unity-ads-android`
@@ -689,20 +727,25 @@ Last updated: 04-10-2023 · 11:09 AM PDT
 1. `github.com/vitejs/vite`
 1. `github.com/vrischmann/servare`
 1. `github.com/vuejs/core`
+1. `github.com/vuejs/pinia`
 1. `github.com/vuejs/vue`
 1. `github.com/wagmi-dev/wagmi`
 1. `github.com/web-infra-dev/modern.js`
 1. `github.com/webpack/webpack`
+1. `github.com/webpro/knip`
 1. `github.com/wention/BeautifulSoup4`
 1. `github.com/windmill-labs/windmill`
+1. `github.com/wine-mirror/wine`
 1. `github.com/winfsp/cgofuse`
 1. `github.com/winglang/wing`
+1. `github.com/WiseLibs/better-sqlite3`
 1. `github.com/wolfpld/tracy`
 1. `github.com/WongKinYiu/yolov7`
 1. `github.com/WP2Static/wp2static`
 1. `github.com/writeas/writefreely`
 1. `github.com/X-Raym/REAPER-ReaScripts`
 1. `github.com/xhwhis/monkey.rs`
+1. `github.com/xmake-io/xmake`
 1. `github.com/yetone/openai-translator`
 1. `github.com/yk/gpt-4chan-public`
 1. `github.com/yoheinakajima/babyagi`
