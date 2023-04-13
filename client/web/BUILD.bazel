@@ -1461,6 +1461,7 @@ ts_project(
         "src/site-admin/packages/modal-content/ManagePackageFiltersModalContent.tsx",
         "src/site-admin/permissions-center/PermissionsSyncJobNode.tsx",
         "src/site-admin/permissions-center/PermissionsSyncJobsTable.tsx",
+        "src/site-admin/permissions-center/PermissionsSyncStats.tsx",
         "src/site-admin/permissions-center/backend.ts",
         "src/site-admin/routes.tsx",
         "src/site-admin/sidebaritems.ts",

@@ -883,6 +883,7 @@ go_library(
         "frontend/1680707560_sg_telemetry_allowlist/down.sql",
         "frontend/1680707560_sg_telemetry_allowlist/metadata.yaml",
         "frontend/1680707560_sg_telemetry_allowlist/up.sql",
+        "codeinsights/pbcopy",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/migrations",
     visibility = ["//visibility:public"],
