@@ -155,6 +155,10 @@ func (s *Service) WithStore(store *store.Store) *Service {
 	return &Service{logger: s.logger, store: store, sourcer: s.sourcer, clock: s.clock, operations: s.operations}
 }
 
+func handleOrgLevelAccess() error {
+
+}
+
 type CreateEmptyBatchChangeOpts struct {
 	NamespaceUserID int32
 	NamespaceOrgID  int32
