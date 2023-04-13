@@ -36,7 +36,7 @@ const accessibleResultType: Record<SearchMatch['type'], string> = {
     team: 'team',
 }
 
-const RepoKVPs: React.FunctionComponent<{ keyValuePairs?: Record<string, string>; className?: string }> = ({
+const RepoMetadata: React.FunctionComponent<{ keyValuePairs?: Record<string, string>; className?: string }> = ({
     keyValuePairs,
     className,
 }) => {
@@ -44,11 +44,11 @@ const RepoKVPs: React.FunctionComponent<{ keyValuePairs?: Record<string, string>
         return null
     }
     return (
-        <div className={classNames(styles.repoKvps, className, 'd-flex align-items-center flex-wrap')}>
+        <div className={classNames(styles.repoMetadata, className, 'd-flex align-items-center flex-wrap')}>
             {Object.entries(keyValuePairs).map(([key, value]) => (
                 <span className="d-flex align-items-center justify-content-center" key={`${key}:${value}`}>
-                    <span className={styles.repoKvpsKey}>{key}</span>
-                    <span className={styles.repoKvpsValue}>{value}</span>
+                    <span className={styles.repoMetadataKey}>{key}</span>
+                    <span className={styles.repoMetadataValue}>{value}</span>
                 </span>
             ))}
         </div>
@@ -111,7 +111,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                         )}
                     </div>
                 </div>
-                <RepoKVPs keyValuePairs={keyValuePairs} className="justify-content-end mb-2" />
+                <RepoMetadata keyValuePairs={keyValuePairs} className="justify-content-end mb-2" />
                 {rankingDebug && <div>{rankingDebug}</div>}
                 <div className={classNames(styles.result, resultClassName)}>{children}</div>
             </article>
