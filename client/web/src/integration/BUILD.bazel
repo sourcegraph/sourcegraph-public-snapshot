@@ -104,14 +104,17 @@ ts_project(
 
 mocha_test(
     name = "integration-tests",
-    timeout = "long",
+    timeout = "moderate",
+    args = [
+        "--parallel",
+        "--jobs 16",
+    ],
     data = ["//client/web:app-enterprise"],
     env = {
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
     },
     flaky = True,
     tags = [
-        "no-cache",
         "no-sandbox",
     ],
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
