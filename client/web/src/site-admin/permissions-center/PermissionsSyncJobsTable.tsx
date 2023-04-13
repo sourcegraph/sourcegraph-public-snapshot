@@ -68,10 +68,11 @@ import {
     PermissionsSyncJobStatusBadge,
     PermissionsSyncJobSubject,
 } from './PermissionsSyncJobNode'
+import { PermissionsSyncStats } from './PermissionsSyncStats'
 
 import styles from './styles.module.scss'
 
-interface Filters {
+export interface Filters {
     reason: string
     state: string
     searchType: string
@@ -90,7 +91,7 @@ const DEFAULT_FILTERS = {
     query: '',
     partial: '',
 }
-const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 2000
+export const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 2000
 
 interface Props extends TelemetryProps {
     minimal?: boolean
@@ -113,7 +114,6 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     const [polling, setPolling] = useLocalStorage<boolean>('polling_for_permissions_sync_jobs', true)
     const [showModal, setShowModal] = useState<boolean>(false)
     const [selectedJob, setSelectedJob] = useState<PermissionsSyncJob | undefined>(undefined)
-
     const { connection, loading, startPolling, stopPolling, error, variables, ...paginationProps } =
         usePageSwitcherPagination<PermissionsSyncJobsResult, PermissionsSyncJobsVariables, PermissionsSyncJob>({
             query: PERMISSIONS_SYNC_JOBS_QUERY,
@@ -302,9 +302,10 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 className={classNames(styles.pageHeader, 'mb-3')}
             />
             {showModal && selectedJob && renderModal(selectedJob, () => setShowModal(false))}
+            <PermissionsSyncStats filters={filters} setFilters={setFilters} polling={polling} />
             <Container>
                 {error && <ConnectionError errors={[error.message]} />}
-                {!connection && <ConnectionLoading />}
+                {!connection && !error && <ConnectionLoading />}
                 {connection?.nodes && (
                     <div className={styles.filtersGrid}>
                         <PermissionsSyncJobReasonGroupPicker value={filters.reason} onChange={setReason} />
