@@ -34,6 +34,7 @@ const EditSearchContextPage = lazyComponent(
 )
 const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
 const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'), 'CodySearchPage')
+const CodyHomepage = lazyComponent(() => import('./cody/home/CodyHomepage'), 'CodyHomepage')
 const OwnPage = lazyComponent(() => import('./own/OwnPage'), 'OwnPage')
 const AppComingSoonPage = lazyComponent(() => import('./app/AppComingSoonPage'), 'AppComingSoonPage')
 const AppAuthCallbackPage = lazyComponent(() => import('./app/AppAuthCallbackPage'), 'AppAuthCallbackPage')
@@ -97,6 +98,10 @@ export const enterpriseRoutes: RouteObject[] = [
     {
         path: EnterprisePageRoutes.CodySearch,
         element: <LegacyRoute render={props => <CodySearchPage {...props} />} />,
+    },
+    {
+        path: EnterprisePageRoutes.Cody,
+        element: <LegacyRoute render={props => <CodyHomepage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.Own,
