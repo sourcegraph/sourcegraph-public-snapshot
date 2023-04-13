@@ -80,7 +80,8 @@ func TestCommand_Run(t *testing.T) {
 			name:         "Step skipped",
 			command:      []string{"git", "pull"},
 			mockExitCode: 0,
-			mockStdout:   "{\"operation\":\"TASK_STEP_SKIPPED\",\"timestamp\":\"2023-04-13T14:51:33.149Z\",\"status\":\"PROGRESS\",\"metadata\":{\"step\":1}}\n",
+			// TODO - this will break src-cli
+			mockStdout: "batcheshelper pre 1 skipped\n",
 			mockFunc: func(t *testing.T, cmdRunner *fakeCmdRunner, logger *mockLogger) {
 				logEntry := new(mockLogEntry)
 				logger.
@@ -89,9 +90,9 @@ func TestCommand_Run(t *testing.T) {
 				logEntry.On("Write", mock.Anything).Run(func(args mock.Arguments) {
 					// Use Run to see the actual output in the test output. Else we just get byte output.
 					actual := args.Get(0).([]byte)
-					assert.Equal(t, "stdout: {\"operation\":\"TASK_STEP_SKIPPED\",\"timestamp\":\"2023-04-13T14:51:33.149Z\",\"status\":\"PROGRESS\",\"metadata\":{\"step\":1}}\n", string(actual))
+					assert.Equal(t, "stdout: batcheshelper pre 1 skipped\n", string(actual))
 				}).Return(0, nil)
-				logEntry.On("Finalize", -1).Return()
+				logEntry.On("Finalize", 0).Return()
 				logEntry.On("Close").Return(nil)
 			},
 			expectedErr: errors.New("step skipped"),

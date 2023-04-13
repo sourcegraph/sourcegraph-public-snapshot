@@ -53,11 +53,12 @@ func Pre(
 
 	if !cond {
 		// Write the skip event to the log.
-		if err = logger.WriteEvent(batcheslib.LogEventOperationTaskStepSkipped, batcheslib.LogEventStatusProgress, &batcheslib.TaskStepMetadata{
+		if err = logger.WriteEvent(batcheslib.LogEventOperationTaskStepSkipped, batcheslib.LogEventStatusProgress, &batcheslib.TaskStepSkippedMetadata{
 			Step: stepIdx + 1,
 		}); err != nil {
 			return err
 		}
+		fmt.Printf("batcheshelper pre %d skipped\n", stepIdx)
 
 		// Write the step result file with the skipped flag set.
 		stepResult := execution.AfterStepResult{

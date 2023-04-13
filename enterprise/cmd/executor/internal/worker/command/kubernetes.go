@@ -82,15 +82,24 @@ func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podN
 
 	pipeReaderWaitGroup := readProcessPipe(logEntry, stream)
 
+	stepSkipped := false
 	select {
 	case <-ctx.Done():
 	case err = <-watchErrGroup(pipeReaderWaitGroup):
 		if err != nil {
-			return errors.Wrap(err, "reading process pipes")
+			if errors.Is(err, ErrStepSkipped) {
+				stepSkipped = true
+			} else {
+				return errors.Wrap(err, "reading process pipes")
+			}
 		}
 	}
 
 	logEntry.Finalize(0)
+
+	if stepSkipped {
+		return ErrStepSkipped
+	}
 
 	return nil
 }

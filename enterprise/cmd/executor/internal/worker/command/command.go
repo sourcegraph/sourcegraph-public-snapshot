@@ -114,10 +114,6 @@ func (c *RealCommand) Run(ctx context.Context, cmdLogger Logger, spec Spec) (err
 		return err
 	}
 	if exitCode != 0 {
-		if exitCode == -1 {
-			return ErrStepSkipped
-		}
-
 		// If is context cancellation, forward the ctx.Err().
 		if err = ctx.Err(); err != nil {
 			return err
@@ -208,7 +204,7 @@ func readIntoBuffer(prefix string, w io.WriteCloser, r io.Reader) error {
 	return scanner.Err()
 }
 
-var textRegexSkipped = regexp.MustCompile(".*TASK_STEP_SKIPPED.*")
+var textRegexSkipped = regexp.MustCompile("^batcheshelper pre \\d+ skipped$")
 var ErrStepSkipped = errors.New("step skipped")
 
 const maxBuffer = 100 * 1024 * 1024
@@ -244,7 +240,7 @@ func startCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *errgr
 	}
 
 	if stepSkipped {
-		return -1, nil
+		return 0, ErrStepSkipped
 	}
 
 	// All good, command ran successfully.
