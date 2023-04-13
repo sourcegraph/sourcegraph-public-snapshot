@@ -85,7 +85,6 @@ const MOCKS_FOR_NAMESPACE = new WildcardMockLink([
 
 interface Args {
     canCreate: boolean
-    isDotCom: boolean
     isApp: boolean
 }
 
@@ -98,7 +97,6 @@ export const ListOfBatchChanges: Story<Args> = args => (
                     headingElement="h1"
                     canCreate={args.canCreate || "You don't have permission to create batch changes"}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    isSourcegraphDotCom={args.isDotCom}
                     isSourcegraphApp={args.isApp}
                     authenticatedUser={null}
                 />
@@ -111,11 +109,6 @@ ListOfBatchChanges.argTypes = {
         name: 'can create batch changes',
         control: { type: 'boolean' },
         defaultValue: true,
-    },
-    isDotCom: {
-        name: 'is sourcegraph.com',
-        control: { type: 'boolean' },
-        defaultValue: false,
     },
     isApp: {
         name: 'is Sourcegraph App',
@@ -136,7 +129,6 @@ export const ListOfBatchChangesSpecificNamespace: Story = () => (
                     canCreate={true}
                     namespaceID="test-12345"
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    isSourcegraphDotCom={false}
                     isSourcegraphApp={false}
                     authenticatedUser={null}
                 />
@@ -161,7 +153,6 @@ export const ListOfBatchChangesServerSideExecutionEnabled: Story = () => (
                             experimentalFeatures: { batchChangesExecution: true },
                         },
                     }}
-                    isSourcegraphDotCom={false}
                     isSourcegraphApp={false}
                     authenticatedUser={null}
                 />
@@ -181,7 +172,6 @@ export const LicensingNotEnforced: Story = () => (
                     headingElement="h1"
                     canCreate={true}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    isSourcegraphDotCom={false}
                     isSourcegraphApp={false}
                     authenticatedUser={null}
                 />
@@ -201,7 +191,6 @@ export const NoBatchChanges: Story = () => (
                     headingElement="h1"
                     canCreate={true}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    isSourcegraphDotCom={false}
                     isSourcegraphApp={false}
                     authenticatedUser={null}
                 />
@@ -222,7 +211,6 @@ export const AllBatchChangesTabEmpty: Story = () => (
                     canCreate={true}
                     openTab="batchChanges"
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    isSourcegraphDotCom={false}
                     isSourcegraphApp={false}
                     authenticatedUser={null}
                 />

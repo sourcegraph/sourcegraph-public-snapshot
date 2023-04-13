@@ -25,7 +25,6 @@ interface TriggerAreaProps {
     cardClassName?: string
     cardBtnClassName?: string
     cardLinkClassName?: string
-    isSourcegraphDotCom: boolean
 }
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
@@ -93,7 +92,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     cardClassName,
     cardBtnClassName,
     cardLinkClassName,
-    isSourcegraphDotCom,
 }) => {
     const [expanded, setExpanded] = useState(startExpanded)
 
@@ -115,12 +113,8 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     const [hasPatternTypeFilter, setHasPatternTypeFilter] = useState(false)
     const [hasValidPatternTypeFilter, setHasValidPatternTypeFilter] = useState(true)
     const isTriggerQueryComplete = useMemo(
-        () =>
-            isValidQuery &&
-            hasTypeDiffOrCommitFilter &&
-            (!isSourcegraphDotCom || hasRepoFilter) &&
-            hasValidPatternTypeFilter,
-        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery, isSourcegraphDotCom]
+        () => isValidQuery && hasTypeDiffOrCommitFilter && hasRepoFilter && hasValidPatternTypeFilter,
+        [hasRepoFilter, hasTypeDiffOrCommitFilter, hasValidPatternTypeFilter, isValidQuery]
     )
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
@@ -236,7 +230,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                 <LazyQueryInput
                                     className="test-trigger-input"
                                     patternType={SearchPatternType.standard}
-                                    isSourcegraphDotCom={isSourcegraphDotCom}
+                                    isSourcegraphDotCom={false}
                                     caseSensitive={false}
                                     queryState={queryState}
                                     onChange={setQueryState}
@@ -285,18 +279,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     Contains a <Code>type:diff</Code> or <Code>type:commit</Code> filter
                                 </ValidQueryChecklistItem>
                             </li>
-                            {/* Enforce repo filter on sourcegraph.com because otherwise it's too easy to generate a lot of load */}
-                            {isSourcegraphDotCom && (
-                                <li>
-                                    <ValidQueryChecklistItem
-                                        checked={hasRepoFilter}
-                                        hint="The repo: filter is required to narrow down your search."
-                                        dataTestid="repo-checkbox"
-                                    >
-                                        Contains a <Code>repo:</Code> filter
-                                    </ValidQueryChecklistItem>
-                                </li>
-                            )}
                             <li>
                                 <ValidQueryChecklistItem checked={isValidQuery} dataTestid="valid-checkbox">
                                     Is a valid search query

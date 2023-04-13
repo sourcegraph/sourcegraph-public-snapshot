@@ -141,12 +141,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const routeMatch = useRoutesMatch(props.routes)
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
-    // Search context management is still enabled on .com
-    // but should not show in the navbar. Users can still
-    // access this feature via the context dropdown.
-    const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = codeMonitoringEnabled
-    const showSearchNotebook = notebooksEnabled
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
     // TODO: Include isSourcegraphDotCom in subsequent PR
@@ -172,13 +166,19 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const [codyEnabled] = useFeatureFlag('cody-experimental')
 
     const searchNavBarItems = useMemo(() => {
+        // Search context management is still enabled on .com but should not show in the navbar.
+        // Users can still access this feature via the context dropdown.
+        if (isSourcegraphDotCom) {
+            return []
+        }
+
         const items: (NavDropdownItem | false)[] = [
-            !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
+            { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
             codyEnabled && { path: EnterprisePageRoutes.CodySearch, content: 'Cody' },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [codyEnabled, ownEnabled, showSearchContext])
+    }, [codyEnabled, ownEnabled, isSourcegraphDotCom])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
@@ -218,26 +218,21 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavLink>
                         </NavItem>
                     )}
-                    {showSearchNotebook && (
+                    {!isSourcegraphDotCom && (
                         <NavItem icon={BookOutlineIcon}>
                             <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Notebooks}>
                                 Notebooks
                             </NavLink>
                         </NavItem>
                     )}
-                    {showCodeMonitoring && (
+                    {!isSourcegraphDotCom && (
                         <NavItem icon={CodeMonitoringLogo}>
                             <NavLink variant={navLinkVariant} to="/code-monitoring">
                                 Monitoring
                             </NavLink>
                         </NavItem>
                     )}
-                    {/* This is the only circumstance where we show something
-                         batch-changes-related even if the instance does not have batch
-                         changes enabled, for marketing purposes on sourcegraph.com */}
-                    {(props.batchChangesEnabled || isSourcegraphDotCom) && (
-                        <BatchChangesNavItem variant={navLinkVariant} />
-                    )}
+                    {props.batchChangesEnabled && <BatchChangesNavItem variant={navLinkVariant} />}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
                             <NavLink variant={navLinkVariant} to="/insights">
@@ -245,14 +240,14 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavLink>
                         </NavItem>
                     )}
-                    {showSentinel && (
+                    {showSentinel && !isSourcegraphDotCom && (
                         <NavItem icon={ShieldHalfFullIcon}>
                             <NavLink variant={navLinkVariant} to="/sentinel">
                                 Sentinel
                             </NavLink>
                         </NavItem>
                     )}
-                    {isSourcegraphApp && (
+                    {isSourcegraphApp && !isSourcegraphDotCom && (
                         <NavDropdown
                             routeMatch="something-that-never-matches"
                             toggleItem={{
@@ -295,14 +290,14 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             )}
                         </>
                     )}
-                    {isSourcegraphApp && (
+                    {isSourcegraphApp && !isSourcegraphDotCom && (
                         <NavAction>
                             <Link className={styles.link} to="/app/coming-soon">
                                 Coming soon
                             </Link>
                         </NavAction>
                     )}
-                    {isSourcegraphApp && (
+                    {isSourcegraphApp && !isSourcegraphDotCom && (
                         <ButtonLink
                             variant="secondary"
                             outline={true}

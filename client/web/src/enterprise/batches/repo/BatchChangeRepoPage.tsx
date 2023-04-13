@@ -8,7 +8,7 @@ import { PageHeader, H2, useObservable, Text, H4 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
-import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../../batches/utils'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE } from '../../../batches/utils'
 import { DiffStat } from '../../../components/diff/DiffStat'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
@@ -32,7 +32,6 @@ import { RepoBatchChanges } from './RepoBatchChanges'
 interface BatchChangeRepoPageProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphDotCom: boolean
     /** For testing only. */
     queryRepoBatchChangeStats?: typeof _queryRepoBatchChangeStats
     /** For testing only. */
@@ -43,7 +42,6 @@ interface BatchChangeRepoPageProps {
 
 export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
     repo,
-    isSourcegraphDotCom,
     authenticatedUser,
     queryRepoBatchChangeStats = _queryRepoBatchChangeStats,
     ...props
@@ -56,14 +54,11 @@ export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
     const hasChangesets = stats?.changesetsStats.total
 
     const canCreate: true | string = useMemo(() => {
-        if (isSourcegraphDotCom) {
-            return NO_ACCESS_SOURCEGRAPH_COM
-        }
         if (!canWriteBatchChanges(authenticatedUser)) {
             return NO_ACCESS_BATCH_CHANGES_WRITE
         }
         return true
-    }, [isSourcegraphDotCom, authenticatedUser])
+    }, [authenticatedUser])
 
     return (
         <Page>
@@ -92,13 +87,7 @@ export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
             ) : (
                 <div className="mb-3" />
             )}
-            <RepoBatchChanges
-                isSourcegraphDotCom={isSourcegraphDotCom}
-                viewerCanAdminister={true}
-                repo={repo}
-                canCreate={canCreate}
-                {...props}
-            />
+            <RepoBatchChanges viewerCanAdminister={true} repo={repo} canCreate={canCreate} {...props} />
         </Page>
     )
 }

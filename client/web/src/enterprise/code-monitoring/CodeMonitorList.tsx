@@ -6,10 +6,8 @@ import { of } from 'rxjs'
 import { Container, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
@@ -33,7 +31,6 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
     toggleCodeMonitorEnabled,
 }) => {
     const location = useLocation()
-    const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
 
     const queryConnection = useCallback(
         (args: Partial<ListUserCodeMonitorsVariables>) => {
@@ -60,20 +57,6 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                 <div className="d-flex flex-column w-100 col">
                     <div className="d-flex align-items-center justify-content-between">
                         <H3 className="mb-2">Your code monitors</H3>
-                        {isSourcegraphDotCom && (
-                            <CallToActionBanner variant="outlined" small={true}>
-                                To monitor changes across your private repositories,{' '}
-                                <Link
-                                    to="https://about.sourcegraph.com"
-                                    onClick={() =>
-                                        eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Monitoring' })
-                                    }
-                                >
-                                    get Sourcegraph Enterprise
-                                </Link>
-                                .
-                            </CallToActionBanner>
-                        )}
                     </div>
                     <Container className="py-3">
                         <FilteredConnection<

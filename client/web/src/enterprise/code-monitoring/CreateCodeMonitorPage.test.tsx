@@ -32,7 +32,6 @@ describe('CreateCodeMonitorPage', () => {
             of({ description: mockCodeMonitor.node.description })
         ),
         isLightTheme: true,
-        isSourcegraphDotCom: false,
     }
 
     const origContext = window.context

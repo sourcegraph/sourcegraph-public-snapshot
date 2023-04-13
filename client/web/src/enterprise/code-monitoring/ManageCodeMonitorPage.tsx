@@ -29,8 +29,6 @@ interface ManageCodeMonitorPageProps {
     fetchCodeMonitor?: typeof _fetchCodeMonitor
     updateCodeMonitor?: typeof _updateCodeMonitor
     deleteCodeMonitor?: typeof _deleteCodeMonitor
-
-    isSourcegraphDotCom: boolean
 }
 
 const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
@@ -40,7 +38,6 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
     fetchCodeMonitor = _fetchCodeMonitor,
     updateCodeMonitor = _updateCodeMonitor,
     deleteCodeMonitor = _deleteCodeMonitor,
-    isSourcegraphDotCom,
 }) => {
     const LOADING = 'loading' as const
 
@@ -132,7 +129,6 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                         codeMonitor={codeMonitorState}
                         submitButtonLabel="Save"
                         showDeleteButton={true}
-                        isSourcegraphDotCom={isSourcegraphDotCom}
                     />
                 </>
             )}

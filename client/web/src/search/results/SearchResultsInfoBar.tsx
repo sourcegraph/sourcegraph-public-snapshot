@@ -13,7 +13,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Icon, Label, Alert, useSessionStorage, Link, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../batches/utils'
+import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE } from '../../batches/utils'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -67,8 +67,6 @@ export interface SearchResultsInfoBarProps
     sidebarCollapsed: boolean
     setSidebarCollapsed: (collapsed: boolean) => void
 
-    isSourcegraphDotCom: boolean
-
     isRankingEnabled: boolean
     setRankingEnabled: (enabled: boolean) => void
 }
@@ -94,9 +92,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         if (globalTypeFilter === 'diff' || globalTypeFilter === 'commit') {
             return 'Batch changes cannot be created from searches with type:diff or type:commit'
         }
-        if (props.isSourcegraphDotCom) {
-            return NO_ACCESS_SOURCEGRAPH_COM
-        }
         if (!props.batchChangesEnabled || !props.batchChangesExecutionEnabled) {
             return false
         }
@@ -104,13 +99,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             return NO_ACCESS_BATCH_CHANGES_WRITE
         }
         return true
-    }, [
-        globalTypeFilter,
-        props.isSourcegraphDotCom,
-        props.batchChangesEnabled,
-        props.batchChangesExecutionEnabled,
-        props.authenticatedUser,
-    ])
+    }, [globalTypeFilter, props.batchChangesEnabled, props.batchChangesExecutionEnabled, props.authenticatedUser])
 
     // When adding a new create action check and update the $collapse-breakpoint in CreateActions.module.scss.
     // The collapse breakpoint indicates at which window size we hide the buttons and show the collapsed menu instead.

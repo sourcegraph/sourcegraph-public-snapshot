@@ -64,7 +64,7 @@ const injectedValuesConfig = {
 
 const hardcodedConfig = {
     codeIntelligenceEnabled: true,
-    codeInsightsEnabled: true,
+    codeInsightsEnabled: !window.context.sourcegraphDotComMode,
     searchContextsEnabled: true,
     notebooksEnabled: true,
     codeMonitoringEnabled: true,

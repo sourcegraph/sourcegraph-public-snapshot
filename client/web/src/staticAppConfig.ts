@@ -84,7 +84,10 @@ export interface StaticWindowContextComputedAppConfig extends Pick<BatchChangesP
  */
 export const windowContextConfig = {
     isSourcegraphDotCom: window.context.sourcegraphDotComMode,
-    isSourcegraphApp: window.context.sourcegraphAppMode,
+
+    // If running in dotcom mode locally (for testing dotcom behavior), then do not treat it as app.
+    isSourcegraphApp: window.context.sourcegraphAppMode && !window.context.sourcegraphDotComMode,
+
     needsRepositoryConfiguration: window.context.needsRepositoryConfiguration,
     batchChangesWebhookLogsEnabled: window.context.batchChangesWebhookLogsEnabled,
     batchChangesEnabled: window.context.batchChangesEnabled,
