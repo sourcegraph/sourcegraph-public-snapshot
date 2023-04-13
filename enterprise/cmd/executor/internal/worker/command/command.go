@@ -208,7 +208,7 @@ func readIntoBuffer(prefix string, w io.WriteCloser, r io.Reader) error {
 	return scanner.Err()
 }
 
-var textRegexSkipped = regexp.MustCompile("Skipping step")
+var textRegexSkipped = regexp.MustCompile(".*TASK_STEP_SKIPPED.*")
 var ErrStepSkipped = errors.New("step skipped")
 
 const maxBuffer = 100 * 1024 * 1024
