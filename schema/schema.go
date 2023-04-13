@@ -950,9 +950,11 @@ type FusionClient struct {
 
 // GerritAuthProvider description: Gerrit auth provider
 type GerritAuthProvider struct {
-	Hidden bool   `json:"hidden,omitempty"`
-	Order  int    `json:"order,omitempty"`
-	Type   string `json:"type"`
+	DisplayName   string  `json:"displayName,omitempty"`
+	DisplayPrefix *string `json:"displayPrefix,omitempty"`
+	Hidden        bool    `json:"hidden,omitempty"`
+	Order         int     `json:"order,omitempty"`
+	Type          string  `json:"type"`
 	// Url description: URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.
 	Url string `json:"url"`
 }
