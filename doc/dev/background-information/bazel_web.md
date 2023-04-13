@@ -60,7 +60,7 @@ Most rules used throughout `client/*` are macros defined in `tools/*.bzl` to pro
 
 ### I want to execute a js binary with bazel. How do I do that?
 
-Lets say I want to execute a js binary called `rawr` . `rules_js` generates Starlark APIs for all dependencies defined in `package`.json, so to import the generated api for `rawr` we can do:
+Lets say I want to execute a js binary called `rawr` . `rules_js` [generates Starlark APIs](https://docs.aspect.build/rules/aspect_rules_js/docs/#using-binaries-published-to-npm) for all dependencies defined in `package`.json, so to import the generated api for `rawr` we can do:
 
 ```
 load("@npm//:rawr/package_json.bzl", my_alias = "bin")
@@ -101,4 +101,4 @@ bazel build //:rawr_event
 bazel test //:rawr_event_test
 ```
 
-An example of a js binary being executed as a bazel test target is `graphql-schema-linter`, whose definition can be found in `cmd/frontend/graphqlbackend/BUILD.bazel`.
+An example of a js binary being executed as a bazel test target is `graphql-schema-linter`, whose definition can be found in [`cmd/frontend/graphqlbackend/BUILD.bazel`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@71616027c3f461d6022f3fa2fa24c0e085ee545f/-/blob/cmd/frontend/graphqlbackend/BUILD.bazel).
