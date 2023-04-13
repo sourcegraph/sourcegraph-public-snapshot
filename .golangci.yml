@@ -2,21 +2,21 @@
 linters:
   disable-all: true
   enable:
-    - bodyclose
-    - depguard
-    - forbidigo
-    - gocritic
+    - bodyclose # nogo equivelant
+    - depguard # nogo equivelant
+    - forbidigo # nogo equivelant
+    - gocritic # nogo equivelant
     - goimports
     - gosimple
-    - govet
-    - ineffassign
+    - govet # nogo equivelant
+    - ineffassign # nogo equivelant
     #- nolintlint see https://github.com/golangci/golangci-lint/issues/3228.
-    - staticcheck
+    - staticcheck # nogo equivelant
     - typecheck
     - unconvert
     # - unused
     - unparam
-    - exportloopref
+    - exportloopref # nogo equivelant
 
 linters-settings:
   depguard:
