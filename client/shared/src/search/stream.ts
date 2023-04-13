@@ -41,7 +41,6 @@ export interface PathMatch {
     branches?: string[]
     commit?: string
     debug?: string
-    keyValuePairs?: Record<string, string>
 }
 
 export interface ContentMatch {
@@ -57,7 +56,6 @@ export interface ContentMatch {
     chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
     debug?: string
-    keyValuePairs?: Record<string, string>
 }
 
 export interface DecoratedHunk {
@@ -107,7 +105,6 @@ export interface SymbolMatch {
     commit?: string
     symbols: MatchedSymbol[]
     debug?: string
-    keyValuePairs?: Record<string, string>
 }
 
 export interface MatchedSymbol {
@@ -142,7 +139,6 @@ export interface CommitMatch {
     content: MarkdownText
     // Array of [line, character, length] triplets
     ranges: number[][]
-    keyValuePairs?: Record<string, string>
 }
 
 export interface RepositoryMatch {

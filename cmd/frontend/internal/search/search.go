@@ -323,7 +323,6 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 	if r, ok := repoCache[fm.Repo.ID]; ok {
 		pathEvent.RepoStars = r.Stars
 		pathEvent.RepoLastFetched = r.LastFetched
-		pathEvent.KeyValuePairs = r.KeyValuePairs
 	}
 
 	if fm.InputRev != nil {
@@ -411,7 +410,6 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 	if r, ok := repoCache[fm.Repo.ID]; ok {
 		contentEvent.RepoStars = r.Stars
 		contentEvent.RepoLastFetched = r.LastFetched
-		contentEvent.KeyValuePairs = r.KeyValuePairs
 	}
 
 	if fm.Debug != nil {
@@ -451,7 +449,6 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searc
 	if r, ok := repoCache[fm.Repo.ID]; ok {
 		symbolMatch.RepoStars = r.Stars
 		symbolMatch.RepoLastFetched = r.LastFetched
-		symbolMatch.KeyValuePairs = r.KeyValuePairs
 	}
 
 	if fm.InputRev != nil {
@@ -516,7 +513,6 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 	if r, ok := repoCache[commit.Repo.ID]; ok {
 		commitEvent.RepoStars = r.Stars
 		commitEvent.RepoLastFetched = r.LastFetched
-		commitEvent.KeyValuePairs = r.KeyValuePairs
 	}
 
 	return commitEvent

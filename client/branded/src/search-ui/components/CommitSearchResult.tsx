@@ -77,7 +77,6 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
-            keyValuePairs={result.keyValuePairs}
             as={as}
         >
             <CommitSearchResultMatch

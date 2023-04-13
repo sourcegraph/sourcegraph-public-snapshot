@@ -19,19 +19,18 @@ type EventContentMatch struct {
 	// Type is always FileMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path            string             `json:"path"`
-	PathMatches     []Range            `json:"pathMatches,omitempty"`
-	RepositoryID    int32              `json:"repositoryID"`
-	Repository      string             `json:"repository"`
-	RepoStars       int                `json:"repoStars,omitempty"`
-	RepoLastFetched *time.Time         `json:"repoLastFetched,omitempty"`
-	Branches        []string           `json:"branches,omitempty"`
-	Commit          string             `json:"commit,omitempty"`
-	Hunks           []DecoratedHunk    `json:"hunks"`
-	LineMatches     []EventLineMatch   `json:"lineMatches,omitempty"`
-	ChunkMatches    []ChunkMatch       `json:"chunkMatches,omitempty"`
-	Debug           string             `json:"debug,omitempty"`
-	KeyValuePairs   map[string]*string `json:"keyValuePairs,omitempty"`
+	Path            string           `json:"path"`
+	PathMatches     []Range          `json:"pathMatches,omitempty"`
+	RepositoryID    int32            `json:"repositoryID"`
+	Repository      string           `json:"repository"`
+	RepoStars       int              `json:"repoStars,omitempty"`
+	RepoLastFetched *time.Time       `json:"repoLastFetched,omitempty"`
+	Branches        []string         `json:"branches,omitempty"`
+	Commit          string           `json:"commit,omitempty"`
+	Hunks           []DecoratedHunk  `json:"hunks"`
+	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
+	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
+	Debug           string           `json:"debug,omitempty"`
 }
 
 func (e *EventContentMatch) eventMatch() {}
@@ -44,16 +43,15 @@ type EventPathMatch struct {
 	// Type is always PathMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path            string             `json:"path"`
-	PathMatches     []Range            `json:"pathMatches,omitempty"`
-	RepositoryID    int32              `json:"repositoryID"`
-	Repository      string             `json:"repository"`
-	RepoStars       int                `json:"repoStars,omitempty"`
-	RepoLastFetched *time.Time         `json:"repoLastFetched,omitempty"`
-	Branches        []string           `json:"branches,omitempty"`
-	Commit          string             `json:"commit,omitempty"`
-	Debug           string             `json:"debug,omitempty"`
-	KeyValuePairs   map[string]*string `json:"keyValuePairs,omitempty"`
+	Path            string     `json:"path"`
+	PathMatches     []Range    `json:"pathMatches,omitempty"`
+	RepositoryID    int32      `json:"repositoryID"`
+	Repository      string     `json:"repository"`
+	RepoStars       int        `json:"repoStars,omitempty"`
+	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
+	Branches        []string   `json:"branches,omitempty"`
+	Commit          string     `json:"commit,omitempty"`
+	Debug           string     `json:"debug,omitempty"`
 }
 
 func (e *EventPathMatch) eventMatch() {}
@@ -128,8 +126,7 @@ type EventSymbolMatch struct {
 	Branches        []string   `json:"branches,omitempty"`
 	Commit          string     `json:"commit,omitempty"`
 
-	Symbols       []Symbol           `json:"symbols"`
-	KeyValuePairs map[string]*string `json:"keyValuePairs,omitempty"`
+	Symbols []Symbol `json:"symbols"`
 }
 
 func (e *EventSymbolMatch) eventMatch() {}
@@ -165,8 +162,7 @@ type EventCommitMatch struct {
 	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
 	Content         string     `json:"content"`
 	// [line, character, length]
-	Ranges        [][3]int32         `json:"ranges"`
-	KeyValuePairs map[string]*string `json:"keyValuePairs,omitempty"`
+	Ranges [][3]int32 `json:"ranges"`
 }
 
 func (e *EventCommitMatch) eventMatch() {}
