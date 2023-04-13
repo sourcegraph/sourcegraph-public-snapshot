@@ -5,6 +5,7 @@ fun properties(key: String) = project.findProperty(key).toString()
 
 plugins {
     id("java")
+    // Dependencies are locked at this version to work with JDK 11 on CI.
     id("org.jetbrains.kotlin.jvm") version "1.7.0"
     id("org.jetbrains.intellij") version "1.11.0"
     id("org.jetbrains.changelog") version "1.3.1"

@@ -218,6 +218,7 @@ nogo(
     visibility = ["//visibility:public"],  # must have public visibility
     deps = [
         "//dev/linters/bodyclose",
+        "//dev/linters/depguard",
         "//dev/linters/exportloopref",
         "//dev/linters/forbidigo",
         "//dev/linters/gocritic",

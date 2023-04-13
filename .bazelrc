@@ -23,3 +23,6 @@ build --test_env=ENABLE_BAZEL_PACKAGES_LOAD_HACK=true
 # build --//:assets_bundle_type=enterprise
 
 build --incompatible_enable_cc_toolchain_resolution
+
+# Except in CI run E2E tests in headless mode
+try-import %workspace%/user.bazelrc
