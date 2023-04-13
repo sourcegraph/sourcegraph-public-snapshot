@@ -8,5 +8,5 @@ export interface Configuration {
     useContext: ConfigurationUseContext
     experimentalSuggest: boolean
     anthropicKey: string | null
-    customHeaders: object
+    customHeaders: Record<string, string>
 }
