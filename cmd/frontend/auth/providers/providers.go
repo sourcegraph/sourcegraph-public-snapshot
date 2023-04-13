@@ -198,9 +198,9 @@ func GetAuthProviderCommon(p Provider) schema.AuthProviderCommon {
 		if !field.IsNil() {
 			// the field struct incorporates all the fields from schema.AuthProviderCommon
 			e := field.Elem()
-			common.Hidden = e.FieldByName("Hidden").Bool()
-			common.Order = int(e.FieldByName("Order").Int())
-			common.DisplayName = e.FieldByName("DisplayName").String()
+			common.Hidden = e.FieldByName("Hidden").Interface().(bool)
+			common.Order = e.FieldByName("Order").Interface().(int)
+			common.DisplayName = e.FieldByName("DisplayName").Interface().(string)
 
 			dP := e.FieldByName("DisplayPrefix")
 			if !dP.IsNil() {

@@ -2,6 +2,7 @@ package providers
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,11 @@ func (m mockAuthProvider) ConfigID() ConfigID {
 func (m mockAuthProvider) Config() schema.AuthProviders {
 	return schema.AuthProviders{
 		Github: &schema.GitHubAuthProvider{
-			Type: m.configID.Type,
+			Type:          m.configID.Type,
+			DisplayName:   m.config.DisplayName,
+			DisplayPrefix: m.config.DisplayPrefix,
+			Hidden:        m.config.Hidden,
+			Order:         m.config.Order,
 		},
 	}
 }
@@ -37,6 +42,102 @@ func (m mockAuthProvider) Refresh(ctx context.Context) error {
 
 func (m mockAuthProvider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
 	panic("should not be called")
+}
+
+func stringPointer(s string) *string {
+	return &s
+}
+
+func TestGetAuthProviderCommon(t *testing.T) {
+	testCases := []struct {
+		name     string
+		provider Provider
+		want     schema.AuthProviderCommon
+	}{
+		{
+			name: "all config fields are defined",
+			provider: mockAuthProvider{
+				config: schema.AuthProviderCommon{
+					Hidden:        true,
+					Order:         1,
+					DisplayName:   "Mock Provider",
+					DisplayPrefix: stringPointer("Mock"),
+				},
+			},
+			want: schema.AuthProviderCommon{
+				Hidden:        true,
+				Order:         1,
+				DisplayName:   "Mock Provider",
+				DisplayPrefix: stringPointer("Mock"),
+			},
+		},
+		{
+			name: "DisplayPrefix is zero value",
+			provider: mockAuthProvider{
+				config: schema.AuthProviderCommon{
+					Hidden:      false,
+					Order:       2,
+					DisplayName: "Another Mock",
+				},
+			},
+			want: schema.AuthProviderCommon{
+				Hidden:        false,
+				Order:         2,
+				DisplayName:   "Another Mock",
+				DisplayPrefix: nil,
+			},
+		},
+		{
+			name: "DisplayName is zero value",
+			provider: mockAuthProvider{
+				config: schema.AuthProviderCommon{
+					Hidden: false,
+					Order:  2,
+				},
+			},
+			want: schema.AuthProviderCommon{
+				Hidden:        false,
+				Order:         2,
+				DisplayName:   "",
+				DisplayPrefix: nil,
+			},
+		},
+		{
+			name: "Hidden is zero value",
+			provider: mockAuthProvider{
+				config: schema.AuthProviderCommon{
+					Order: 2,
+				},
+			},
+			want: schema.AuthProviderCommon{
+				Hidden:        false,
+				Order:         2,
+				DisplayName:   "",
+				DisplayPrefix: nil,
+			},
+		},
+		{
+			name: "All parameters are zero value",
+			provider: mockAuthProvider{
+				config: schema.AuthProviderCommon{},
+			},
+			want: schema.AuthProviderCommon{
+				Hidden:        false,
+				Order:         0,
+				DisplayName:   "",
+				DisplayPrefix: nil,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			have := GetAuthProviderCommon(tc.provider)
+			if !reflect.DeepEqual(have, tc.want) {
+				t.Errorf("have %+v, want %+v", have, tc.want)
+			}
+		})
+	}
 }
 
 func TestSortedProviders(t *testing.T) {
