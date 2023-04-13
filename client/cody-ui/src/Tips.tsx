@@ -1,11 +1,15 @@
-import './Tips.css'
+import classNames from 'classnames'
+
+import styles from './Tips.module.css'
 
 export const Tips: React.FunctionComponent<{ recommendations?: JSX.Element[]; after?: JSX.Element }> = ({
     recommendations,
     after,
 }) => (
-    <div className="tips-container">
-        <h3>Recommendations</h3>
+    <div className={classNames(styles.tipsContainer)}>
+        <h4>
+            <strong>Recommendations</strong>
+        </h4>
         <ul>
             {recommendations?.map((recommendation, i) => (
                 <li key={i}>{recommendation}</li>
@@ -16,7 +20,7 @@ export const Tips: React.FunctionComponent<{ recommendations?: JSX.Element[]; af
             </li>
         </ul>
         <blockquote>
-            <pre className="code-block">
+            <pre className={classNames(styles.codeBlock)}>
                 <div>```</div>
                 <div>
                     {'{'}code{'}'}
@@ -25,7 +29,9 @@ export const Tips: React.FunctionComponent<{ recommendations?: JSX.Element[]; af
                 <div>Explain the code above (or your question).</div>
             </pre>
         </blockquote>
-        <h3>Example questions</h3>
+        <h4>
+            <strong>Example questions</strong>
+        </h4>
         <ul>
             <li>What are the most popular Go CLI libraries?</li>
             <li>Write a function that parses JSON in Python.</li>
