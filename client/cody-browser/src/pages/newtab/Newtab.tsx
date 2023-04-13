@@ -12,7 +12,6 @@ export default function App(): JSX.Element {
     const [auth, setAuth] = useState(false)
     const [codyIsTyping, setCodyIsTyping] = useState(false)
     const [sgEndpoint, setSgEndpoint] = useState('https://example.sourcegraph.com')
-    const [accessToken, setAccessToken] = useState('')
     const [storedValue, setStoredValue] = useState('')
     const [input, setInput] = useState('')
     const [messages, setMessages] = useState<Message[]>([])
@@ -24,15 +23,12 @@ export default function App(): JSX.Element {
 
     // Call on mount only
     useEffect(() => {
-        chrome.storage.local.get(['sgCodyEndpoint', 'sgCodyToken', 'sgCodyAuth'], (data: chromeStorageData) => {
+        chrome.storage.local.get(['sgCodyEndpoint', 'sgCodyAuth'], (data: chromeStorageData) => {
             if (data?.sgCodyEndpoint) {
                 setSgEndpoint(data?.sgCodyEndpoint)
             }
-            if (data?.sgCodyToken) {
-                setAccessToken(data?.sgCodyToken)
-            }
-            if (data?.sgCodyEndpoint && data?.sgCodyToken) {
-                isLoggedin(data?.sgCodyEndpoint, data?.sgCodyToken).then(status => {
+            if (data?.sgCodyEndpoint) {
+                isLoggedin(data?.sgCodyEndpoint).then(status => {
                     chrome.storage.local.set({ sgCodyAuth: status })
                     setAuth(status)
                 })
@@ -44,7 +40,7 @@ export default function App(): JSX.Element {
         chrome.storage.local.get('sgCodyAuth', data => {
             setAuth(data?.sgCodyAuth)
         })
-    }, [accessToken, sgEndpoint, auth])
+    }, [sgEndpoint, auth])
 
     const onChatKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>): void => {
         if (event.key === 'Enter' && !event.shiftKey && input) {
@@ -55,14 +51,13 @@ export default function App(): JSX.Element {
     }
 
     const onSignInClick = useCallback(async () => {
-        if (!accessToken || !sgEndpoint) {
+        if (!sgEndpoint) {
             return
         }
-        chrome.storage.local.set({ sgCodyToken: accessToken })
         chrome.storage.local.set({ sgCodyEndpoint: sgEndpoint })
-        const authStatus = await isLoggedin(sgEndpoint, accessToken)
+        const authStatus = await isLoggedin(sgEndpoint)
         setAuth(authStatus)
-    }, [accessToken, sgEndpoint])
+    }, [sgEndpoint])
 
     const onChatSubmit = useCallback(() => {
         console.log('sending request to cody')
@@ -75,7 +70,8 @@ export default function App(): JSX.Element {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `token ${accessToken}`,
+                'X-Requested-With': 'Sourcegraph - chrome-extension v0.0.1',
+                credentials: 'include',
             },
             body: JSON.stringify(createRequestBody([...conversationStarter, ...groupedMsgs])),
         }
@@ -117,7 +113,7 @@ export default function App(): JSX.Element {
                 console.error(e.message)
                 setCodyIsTyping(false)
             })
-    }, [input, accessToken, storedValue])
+    }, [input, storedValue])
 
     return (
         <div className="cody-root container mx-auto p-4">
@@ -136,14 +132,6 @@ export default function App(): JSX.Element {
                             type="url"
                             value={sgEndpoint}
                             onChange={e => setSgEndpoint(e.target.value)}
-                            className="w-full p-1 my-4 rounded-lg"
-                            required={true}
-                        />
-                        <p>Access Token</p>
-                        <input
-                            type="password"
-                            value={accessToken}
-                            onChange={e => setAccessToken(e.target.value)}
                             className="w-full p-1 my-4 rounded-lg"
                             required={true}
                         />

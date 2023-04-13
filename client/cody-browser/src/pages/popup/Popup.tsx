@@ -7,39 +7,33 @@ import { isLoggedin } from '../client/utils'
 export default function Popup(): JSX.Element {
     const [auth, setAuth] = useState(false)
     const [sgEndpoint, setSgEndpoint] = useState('https://example.sourcegraph.com')
-    const [accessToken, setAccessToken] = useState('')
     const [saveClicked, setSaveClicked] = useState(false)
 
     // Call on mount only
     useEffect(() => {
-        chrome.storage.local.get('sgCodyToken', (data: any) => {
-            setAccessToken(data?.sgCodyToken)
-        })
         chrome.storage.local.get('sgCodyEndpoint', (data: any) => {
             if (data?.sgCodyEndpoint) {
                 setSgEndpoint(data?.sgCodyEndpoint)
             }
         })
-    }, [accessToken, sgEndpoint])
+    }, [sgEndpoint])
 
     useEffect(() => {
-        if (!auth && sgEndpoint && accessToken) {
-            isLoggedin(sgEndpoint, accessToken).then((authState: boolean) => {
-                chrome.storage.local.set({ sgCodyToken: accessToken })
+        if (!auth && sgEndpoint) {
+            isLoggedin(sgEndpoint).then((authState: boolean) => {
                 chrome.storage.local.set({ sgCodyEndpoint: sgEndpoint })
                 chrome.storage.local.set({ sgCodyAuth: authState })
                 setAuth(authState)
             })
         }
-    }, [accessToken, sgEndpoint, auth, saveClicked])
+    }, [sgEndpoint, auth, saveClicked])
 
     const onSignInClick = useCallback(async () => {
         setSaveClicked(true)
-        chrome.storage.local.set({ sgCodyToken: accessToken })
         chrome.storage.local.set({ sgCodyEndpoint: sgEndpoint })
-        const authUser = await isLoggedin(accessToken, sgEndpoint)
+        const authUser = await isLoggedin(sgEndpoint)
         setAuth(authUser)
-    }, [accessToken, sgEndpoint])
+    }, [sgEndpoint])
 
     const onAskCodyClick = useCallback(() => {
         // Define the properties of the new popup window
@@ -73,16 +67,8 @@ export default function Popup(): JSX.Element {
                             className="w-full p-1 my-4 rounded-lg bg-gray-700 text-slate-200"
                             required={true}
                         />
-                        <p>Access Token</p>
-                        <input
-                            type="password"
-                            value={accessToken}
-                            onChange={e => setAccessToken(e.target.value)}
-                            className="w-full p-1 my-4 rounded-lg bg-gray-700 text-slate-200"
-                            required={true}
-                        />
                         {auth && <p>Status: You are currently logged in.</p>}
-                        {!auth && accessToken && sgEndpoint && <p className="text-pink-500">⛔️ Failed to sign in.</p>}
+                        {!auth && sgEndpoint && <p className="text-pink-500">⛔️ Failed to sign in.</p>}
                         <button
                             className="mt-5 rounded-full bg-violet-600"
                             form="signin"
@@ -100,10 +86,9 @@ export default function Popup(): JSX.Element {
                             className="w-full p-1 my-4 rounded-lg border-2 border-green-500 bg-gray-700 text-slate-200"
                             disabled={true}
                         />
-                        <p className="text-center">Start selecting code snippet</p>
+                        <p className="text-center">Right click on highlighted code to start</p>
                         <p className="text-center my-2">-- or --</p>
-                        <p className="text-center">Start a conversation with Cody</p>
-                        <button className="mt-5 rounded-full bg-violet-600" onClick={() => onAskCodyClick()}>
+                        <button className="rounded-full bg-violet-600" onClick={() => onAskCodyClick()}>
                             Ask Cody
                         </button>
                     </div>

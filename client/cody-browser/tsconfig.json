@@ -24,7 +24,7 @@
       "@pages/*": ["src/pages/*"],
     },
   },
-  "include": ["src", "utils", "vite.config.ts"],
+  "include": ["src", "utils", "vite.config.ts", "package.json"],
   "exclude": ["out", "dist"],
   "references": [
     {

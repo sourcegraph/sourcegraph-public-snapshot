@@ -29,9 +29,8 @@ chrome.runtime.onInstalled.addListener(async () => {
     })
 })
 
-chrome.storage.local.get(['sgCodyEndpoint', 'sgCodyToken', 'sgCodyAuth'], (data: any) => {
+chrome.storage.local.get(['sgCodyEndpoint', 'sgCodyAuth'], (data: any) => {
     let endpoint = data?.sgCodyEndpoint
-    let accessToken = data?.sgCodyToken
     let authStatus = data?.sgCodyAuth
     // listen to storage keys change
     chrome.storage.onChanged.addListener(function (changes, namespace) {
@@ -40,9 +39,6 @@ chrome.storage.local.get(['sgCodyEndpoint', 'sgCodyToken', 'sgCodyAuth'], (data:
             switch (key) {
                 case 'sgCodyEndpoint':
                     endpoint = storageChange.newValue
-                    break
-                case 'sgCodyToken':
-                    accessToken = storageChange.newValue
                     break
                 case 'sgCodyAuth':
                     authStatus = storageChange.newValue
@@ -58,7 +54,7 @@ chrome.storage.local.get(['sgCodyEndpoint', 'sgCodyToken', 'sgCodyAuth'], (data:
         const tId = tab?.id
         // if the tab id is presented...
         if (tId && (action === 'ask' || action === 'optimize' || action === 'explain' || action === 'debug')) {
-            const isAuthed = await isLoggedin(endpoint, accessToken)
+            const isAuthed = await isLoggedin(endpoint)
             if (!authStatus && !isAuthed) {
                 // Send message to UI to ask users to sign in
                 chrome.tabs.sendMessage(tId, {
@@ -81,7 +77,7 @@ chrome.storage.local.get(['sgCodyEndpoint', 'sgCodyToken', 'sgCodyAuth'], (data:
                 headers: {
                     'Content-Type': 'application/json',
                     credentials: 'include',
-                    Authorization: `token ${accessToken}`,
+                    'X-Requested-With': 'Sourcegraph - chrome-extension v0.0.1',
                 },
                 body: JSON.stringify(createRequestBody(groupedMsgs)),
             }

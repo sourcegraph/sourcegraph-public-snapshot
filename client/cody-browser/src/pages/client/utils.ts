@@ -76,8 +76,8 @@ export function sendEvents(body: string, cb: CompletionCallbacks): void {
 }
 
 // Check if user is an authorized user of the provided sg instance
-export const isLoggedin = async (uri: string, token: string) => {
-    if (!uri || !token) {
+export const isLoggedin = async (uri: string) => {
+    if (!uri) {
         console.error('incorrect uri:', uri)
         return false
     }
@@ -87,7 +87,8 @@ export const isLoggedin = async (uri: string, token: string) => {
         credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `token ${token}`,
+            credentials: 'include',
+            'X-Requested-With': 'Sourcegraph - chrome-extension v0.0.1',
         },
         body: JSON.stringify({
             query: `
