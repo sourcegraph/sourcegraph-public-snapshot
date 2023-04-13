@@ -98,6 +98,9 @@ func (a *anthropicClient) Complete(
 
 	var response types.CodeCompletionResponse
 	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	if err := json.Unmarshal(body, &response); err != nil {
 		return nil, err
 	}
