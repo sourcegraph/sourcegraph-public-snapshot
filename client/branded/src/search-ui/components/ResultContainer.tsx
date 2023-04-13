@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
+import { Badge, ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
 
@@ -47,8 +47,12 @@ const RepoMetadata: React.FunctionComponent<{ keyValuePairs?: Record<string, str
         <div className={classNames(styles.repoMetadata, className, 'd-flex align-items-center flex-wrap')}>
             {Object.entries(keyValuePairs).map(([key, value]) => (
                 <span className="d-flex align-items-center justify-content-center" key={`${key}:${value}`}>
-                    <span className={styles.repoMetadataKey}>{key}</span>
-                    <span className={styles.repoMetadataValue}>{value}</span>
+                    <Badge variant="info" className={styles.repoMetadataKey}>
+                        {key}
+                    </Badge>
+                    <Badge variant="secondary" className={styles.repoMetadataValue}>
+                        {value}
+                    </Badge>
                 </span>
             ))}
         </div>
