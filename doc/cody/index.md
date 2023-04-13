@@ -8,7 +8,7 @@
 
 Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge.
 
-Cody is in private alpha (tagged as an [experimental](../doc/admin/beta_and_experimental_features.md) feature) at this stage. 
+Cody is in private alpha (tagged as an [experimental](../admin/beta_and_experimental_features.md) feature) at this stage. 
 - If you are an existing Sourcegraph Enterprise customer or want to use Cody for your team, contact your techical advisor or [sign up here](https://sourcegraph.typeform.com/to/pIXTgwrd) to get access
 - If you want to try Cody on open source code, sign up [here](https://forms.gle/cffMa8mrr8YuHv8o8) and we'll e-mail you instructions to connect Cody to sourcegraph.com as soon as your account is added.
 
@@ -24,6 +24,7 @@ Cody uses Sourcegraph to fetch relevant context to generate answers and code. Th
 1. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
   1. Set the Sourcegraph URL to be `https://sourcegraph.com`
   1. Set the access token to be the token you just created
+1. See [this section](#enabling-codebase-aware-answers) on how to enable codebase-aware answers.
 
 <img width="553" alt="Cody login screen" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
 
@@ -34,11 +35,20 @@ After installing, we recommend the following:
 
 ## Cody on Sourcegraph Cloud
 
-On Sourcegraph Cloud, Cody is a managed service and you do not need to follow the self-hosted installation guide. Cody can be enabled on demand by contacting your account manager.
+On Sourcegraph Cloud, Cody is a managed service and you do not need to follow the step 1 of the self-hosted guide. 
 
-Learn more from [Cody on Cloud](../cloud/index.md#cody)
+1. Cody can be enabled on demand on your Sourcegraph instance by contacting your account manager. The Sourcegraph team will refer to the [handbook](https://handbook.sourcegraph.com/departments/cloud/#managed-instance-requests).
+1. Users can then configure the [VS Code extension](#step-2-configure-the-vs-code-extension)
+
+Learn more from [Cody on Cloud](../cloud/index.md#cody).
 
 ## Cody on your self-hosted Sourcegraph Enterprise instance
+
+### Prerequisites
+
+- Sourcegraph 5.0.1 or above.
+- An Anthropic API key, that you can get from your Technical Advisor or Customer Engineer. 
+- (Optionally), an OpenAI API key for embeddings.
 
 There are two steps required to enable Cody for Enterprise: enable your Sourcegraph instance and configure the VS Code extension.
 
@@ -47,7 +57,7 @@ There are two steps required to enable Cody for Enterprise: enable your Sourcegr
 Note that this requires site-admin privileges.
 
 1. Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). In particular, code snippets will be sent to a third-party language model provider when you use the Cody extension.
-2. To turn Cody on, you will need to set an access token for Sourcegraph to authentify with the third-party large language model provider (currently Anthropic but we may use different or several models over time). Reach out to your Sourcegraph Technical Advisor to get a key.
+2. To turn Cody on, you will need to set an access token for Sourcegraph to authentify with the third-party large language model provider (currently Anthropic but we may use different or several models over time). Reach out to your Sourcegraph Technical Advisor or Customer Engineer to get a key. They will create a key for you using the [anthropic console](https://console.anthropic.com/account/keys).
 3. Once you have the key, go to Site admin > Site configuration (`/site-admin/configuration`) on your instance and set:
 
 ```json
@@ -59,7 +69,7 @@ Note that this requires site-admin privileges.
 }
 ```
 4. You're done! 
-5. (Optional). Cody can be configured to use embeddings to improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [embeddings](#embeddings) section for more.
+5. Cody can be configured to use embeddings to significantly improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [embeddings](#embeddings) section for more.
 
 ### Step 2: Configure the VS Code extension
 
@@ -80,6 +90,8 @@ Now that Cody is turned on on your Sourcegraph instance, any user can configure 
     
 <img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
 
+6. See [this section](#enabling-codebase-aware-answers) on how to enable codebase-aware answers.
+
 You're all set!
 
 ### Step 3: Try Cody!
@@ -92,6 +104,15 @@ A few things you can ask Cody:
 - Try any of the Cody recipes!
 
 <img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
+
+## Enabling codebase-aware answers
+
+The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. By setting this configuration option to the repository name on your Sourcegraph instance, Cody will be able to provide more accurate and relevant answers to your coding questions, based on the context of the codebase you are currently working in.
+
+1. Open the VS Code workspace settings by pressing <kbd>Cmd/Ctrl+,</kbd>, (or File > Preferences (Settings) on Windows & Linux).
+2. Search for the `Cody: Codebase` setting.
+3. Enter the repository name as listed on your Sourcegraph instance.
+   1. For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
 
 ## Embeddings
 
@@ -107,13 +128,31 @@ Here is the config for the OpenAI Embeddings API:
   "url": "https://api.openai.com/v1/embeddings",
   "accessToken": "<token>",
   "model": "text-embedding-ada-002",
-  "dimensions": 1536
+  "dimensions": 1536,
+  "excludedFilePathPatterns": []
 }
 ```
 
 * Navigate to Site admin > Cody (`/site-admin/cody`) and schedule repositories for embedding.
 
 > NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice). 
+
+### Excluding files from embeddings
+
+The `excludedFilePathPatterns` is a setting in the Sourcegraph embeddings configuration that allows you to exclude certain file paths from being used in generating embeddings. By specifying glob patterns that match file paths, you can exclude files that have low information value, such as test fixtures, mocks, auto-generated files, and other files that are not relevant to the codebase.
+
+To use `excludedFilePathPatterns`, add it to your embeddings site config with a list of glob patterns. For example, to exclude all SVG files, you would add the following setting to your configuration file:
+
+```json
+"embeddings": {
+  // ...
+  "excludedFilePathPatterns": [
+    "*.svg"
+  ]
+}
+```
+
+> NOTE: The `excludedFilePathPatterns` setting is only available in Sourcegraph version `5.0.1` and later.
 
 ### Storing embedding indexes
 
@@ -158,3 +197,9 @@ If you would like to allow your Sourcegraph instance to control the creation and
 ### Environment variables for the `embeddings` service
 
 - `EMBEDDINGS_REPO_INDEX_CACHE_SIZE`: Number of repository embedding indexes to cache in memory (the default cache size is 5). Increasing the cache size will improve the search performance but require more memory resources.
+
+
+## Turning Cody off
+
+To turn Cody off, set `embeddings` and `completions` site-admin settings to `enabled:false` (or remove them altogether).
+

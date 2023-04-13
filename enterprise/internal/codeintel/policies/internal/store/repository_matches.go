@@ -5,8 +5,7 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -15,47 +14,43 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-// GetRepoIDsByGlobPatterns returns a page of repository identifiers and a total count of repositories matching
-// one of the given patterns.
 func (s *store) GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error) {
-	ctx, _, endObservation := s.operations.getRepoIDsByGlobPatterns.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("patterns", strings.Join(patterns, ", ")),
-		otlog.Int("limit", limit),
-		otlog.Int("offset", offset),
+	ctx, _, endObservation := s.operations.getRepoIDsByGlobPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numPatterns", len(patterns)),
+		log.Int("limit", limit),
+		log.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	if len(patterns) == 0 {
 		return nil, 0, nil
 	}
+	cond := makePatternCondition(patterns, false)
 
-	conds := make([]*sqlf.Query, 0, len(patterns))
-	for _, pattern := range patterns {
-		conds = append(conds, sqlf.Sprintf("lower(name) LIKE %s", makeWildcardPattern(pattern)))
-	}
+	var a []int
+	var b int
+	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
+		authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx))
+		if err != nil {
+			return err
+		}
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
+		// TODO - standardize counting techniques
+		totalCount, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternsCountQuery, cond, authzConds)))
+		if err != nil {
+			return err
+		}
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx))
-	if err != nil {
-		return nil, 0, err
-	}
+		ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternsQuery, cond, authzConds, limit, offset)))
+		if err != nil {
+			return err
+		}
 
-	totalCount, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternsCountQuery, sqlf.Join(conds, "OR"), authzConds)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternsQuery, sqlf.Join(conds, "OR"), authzConds, limit, offset)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return ids, totalCount, nil
+		a = ids
+		b = totalCount
+		return nil
+	})
+	return a, b, err
 }
 
 const repoIDsByGlobPatternsCountQuery = `
@@ -77,44 +72,32 @@ WHERE
 	blocked IS NULL AND
 	(%s)
 ORDER BY stars DESC NULLS LAST, id
-LIMIT %s OFFSET %s
+LIMIT %s
+OFFSET %s
 `
 
-// UpdateReposMatchingPatterns updates the values of the repository pattern lookup table for the
-// given configuration policy identifier. Each repository matching one of the given patterns will
-// be associated with the target configuration policy. If the patterns list is empty, the lookup
-// table will remove any data associated with the target configuration policy. If the number of
-// matches exceeds the given limit (if supplied), then only top ranked repositories by star count
-// will be associated to the policy in the database and the remainder will be dropped.
 func (s *store) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
-	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("pattern", strings.Join(patterns, ",")),
-		otlog.Int("policyID", policyID),
+	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numPatterns", len(patterns)),
+		log.String("pattern", strings.Join(patterns, ",")),
+		log.Int("policyID", policyID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	n := len(patterns)
-	if n == 0 {
-		n = 1
-	}
+	// We'll get a SQL syntax error if we try to join an empty disjunction list, so we
+	// put this sentinel value here. Note that we choose FALSE over TRUE because we want
+	// the absence of patterns to match NO repositories, not ALL repositories.
+	cond := makePatternCondition(patterns, false)
+	limitExpression := optionalLimit(repositoryMatchLimit)
 
-	conds := make([]*sqlf.Query, 0, n)
-	for _, pattern := range patterns {
-		conds = append(conds, sqlf.Sprintf("lower(name) LIKE %s", makeWildcardPattern(pattern)))
-	}
-	if len(patterns) == 0 {
-		// We'll get a SQL syntax error if we try to join an empty disjunction list, so we
-		// put this sentinel value here. Note that we choose FALSE over TRUE because we want
-		// the absence of patterns to match NO repositories, not ALL repositories.
-		conds = append(conds, sqlf.Sprintf("FALSE"))
-	}
-
-	limitExpression := sqlf.Sprintf("")
-	if repositoryMatchLimit != nil {
-		limitExpression = sqlf.Sprintf("LIMIT %s", *repositoryMatchLimit)
-	}
-
-	return s.db.Exec(ctx, sqlf.Sprintf(updateReposMatchingPatternsQuery, sqlf.Join(conds, "OR"), limitExpression, policyID, policyID, policyID))
+	return s.db.Exec(ctx, sqlf.Sprintf(
+		updateReposMatchingPatternsQuery,
+		cond,
+		limitExpression,
+		policyID,
+		policyID,
+		policyID,
+	))
 }
 
 const updateReposMatchingPatternsQuery = `
@@ -167,23 +150,17 @@ SELECT
 	(SELECT COUNT(*) FROM deleted) AS num_deleted
 `
 
-func makeWildcardPattern(pattern string) string {
-	return strings.ToLower(strings.ReplaceAll(pattern, "*", "%"))
-}
-
-// SelectPoliciesForRepositoryMembershipUpdate returns a slice of configuration policies that should be considered
-// for repository membership updates. Configuration policies are returned in the order of least recently updated.
-func (s *store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []shared.ConfigurationPolicy, err error) {
-	ctx, trace, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{})
+func (s *store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (_ []shared.ConfigurationPolicy, err error) {
+	ctx, _, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSize", batchSize),
+	}})
 	defer endObservation(1, observation.Args{})
 
-	configurationPolicies, err = scanConfigurationPolicies(s.db.Query(ctx, sqlf.Sprintf(selectPoliciesForRepositoryMembershipUpdate, batchSize, timeutil.Now())))
-	if err != nil {
-		return nil, err
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numConfigurationPolicies", len(configurationPolicies)))
-
-	return configurationPolicies, nil
+	return scanConfigurationPolicies(s.db.Query(ctx, sqlf.Sprintf(
+		selectPoliciesForRepositoryMembershipUpdate,
+		batchSize,
+		timeutil.Now(),
+	)))
 }
 
 const selectPoliciesForRepositoryMembershipUpdate = `

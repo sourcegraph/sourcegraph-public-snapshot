@@ -52,7 +52,8 @@ func TestDeleteLsifDataByUploadIds(t *testing.T) {
 func TestDeleteUnreferencedDocuments(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
-	store := newStore(&observation.TestContext, codeIntelDB)
+	internalStore := basestore.NewWithHandle(codeIntelDB.Handle())
+	store := New(&observation.TestContext, codeIntelDB)
 
 	for i := 0; i < 200; i++ {
 		insertDocumentQuery := sqlf.Sprintf(
@@ -61,7 +62,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 			fmt.Sprintf("hash-%d", i+1),
 			fmt.Sprintf("payload-%d", i+1),
 		)
-		if err := store.db.Exec(context.Background(), insertDocumentQuery); err != nil {
+		if err := internalStore.Exec(context.Background(), insertDocumentQuery); err != nil {
 			t.Fatalf("unexpected error setting up database: %s", err)
 		}
 	}
@@ -73,7 +74,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 			fmt.Sprintf("path-%d", i+1),
 			i+1,
 		)
-		if err := store.db.Exec(context.Background(), insertDocumentLookupQuery); err != nil {
+		if err := internalStore.Exec(context.Background(), insertDocumentLookupQuery); err != nil {
 			t.Fatalf("unexpected error setting up database: %s", err)
 		}
 
@@ -84,14 +85,14 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 				fmt.Sprintf("path-%d", i+1),
 				i+1,
 			)
-			if err := store.db.Exec(context.Background(), insertDocumentLookupQuery); err != nil {
+			if err := internalStore.Exec(context.Background(), insertDocumentLookupQuery); err != nil {
 				t.Fatalf("unexpected error setting up database: %s", err)
 			}
 		}
 	}
 
 	deleteReferencesQuery := sqlf.Sprintf(`DELETE FROM codeintel_scip_document_lookup WHERE upload_id = 42`)
-	if err := store.db.Exec(context.Background(), deleteReferencesQuery); err != nil {
+	if err := internalStore.Exec(context.Background(), deleteReferencesQuery); err != nil {
 		t.Fatalf("unexpected error setting up database: %s", err)
 	}
 
@@ -129,7 +130,7 @@ func TestDeleteUnreferencedDocuments(t *testing.T) {
 	}
 
 	documentIDsQuery := sqlf.Sprintf(`SELECT id FROM codeintel_scip_documents ORDER BY id`)
-	ids, err := basestore.ScanInts(store.db.Query(context.Background(), documentIDsQuery))
+	ids, err := basestore.ScanInts(internalStore.Query(context.Background(), documentIDsQuery))
 	if err != nil {
 		t.Fatalf("unexpected error querying document ids: %s", err)
 	}
@@ -183,7 +184,7 @@ func TestIDsWithMeta(t *testing.T) {
 func TestReconcileCandidates(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
-	store := newStore(&observation.TestContext, codeIntelDB)
+	store := New(&observation.TestContext, codeIntelDB)
 
 	ctx := context.Background()
 	now := time.Unix(1587396557, 0).UTC()
@@ -200,7 +201,7 @@ func TestReconcileCandidates(t *testing.T) {
 	}
 
 	// Initial batch of records
-	ids, err := store.reconcileCandidates(ctx, 4, now)
+	ids, err := store.ReconcileCandidatesWithTime(ctx, 4, now)
 	if err != nil {
 		t.Fatalf("failed to get candidate IDs for reconciliation: %s", err)
 	}
@@ -216,7 +217,7 @@ func TestReconcileCandidates(t *testing.T) {
 	}
 
 	// Wraps around after exhausting first records
-	ids, err = store.reconcileCandidates(ctx, 4, now.Add(time.Minute*1))
+	ids, err = store.ReconcileCandidatesWithTime(ctx, 4, now.Add(time.Minute*1))
 	if err != nil {
 		t.Fatalf("failed to get candidate IDs for reconciliation: %s", err)
 	}
@@ -232,7 +233,7 @@ func TestReconcileCandidates(t *testing.T) {
 	}
 
 	// Continues to wrap around
-	ids, err = store.reconcileCandidates(ctx, 2, now.Add(time.Minute*2))
+	ids, err = store.ReconcileCandidatesWithTime(ctx, 2, now.Add(time.Minute*2))
 	if err != nil {
 		t.Fatalf("failed to get candidate IDs for reconciliation: %s", err)
 	}

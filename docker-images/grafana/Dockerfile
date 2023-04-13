@@ -12,8 +12,8 @@ RUN ls '/generated/grafana'
 # DO NOT UPGRADE to AGPL Grafana without consulting Stephen+legal, Grafana >= 8.0 is AGPLv3 Licensed
 # See https://docs.google.com/document/d/1nSmz1ChL_rBvX8FAKTB-CNzgcff083sUlIpoXEz6FHE/edit#heading=h.69clsrno4211
 # We use a Grafana base image built by Chainguard
-# TODO(@willdollman): This image was manually uploaded to our registry 2023-03-08
-FROM us.gcr.io/sourcegraph-dev/wolfi-grafana@sha256:47c8c8eaf8d2829f0c34d2e3616e96c04a3fbf6d3ea7e8a420ff910e5916a528 as production
+# TODO(@willdollman): This image was manually uploaded to our registry 2023-04-06
+FROM us.gcr.io/sourcegraph-dev/wolfi-grafana@sha256:ec1049f35ff7e4ab6ff7b4cc6790996ad74d196b8dcee8ea5283fca759156637 as production
 LABEL com.sourcegraph.grafana.version=7.5.17
 
 ARG COMMIT_SHA="unknown"

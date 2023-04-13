@@ -981,9 +981,10 @@ func (q *repositoryQuery) DoSingleRequest(ctx context.Context, results chan *git
 	}
 
 	for i := range res.Repos {
+	out:
 		select {
 		case <-ctx.Done():
-			break
+			break out
 		case results <- &githubResult{repo: &res.Repos[i]}:
 		}
 	}

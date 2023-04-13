@@ -37,12 +37,13 @@ type preciseIndexResolver struct {
 	index            *uploadsshared.Index
 }
 
-func NewPreciseIndexResolver(
+func newPreciseIndexResolver(
 	ctx context.Context,
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
-	prefetcher *Prefetcher,
+	uploadLoader UploadLoader,
+	indexLoader IndexLoader,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
 	locationResolver *gitresolvers.CachedLocationResolver,
@@ -51,7 +52,7 @@ func NewPreciseIndexResolver(
 	index *uploadsshared.Index,
 ) (resolverstubs.PreciseIndexResolver, error) {
 	if index != nil && index.AssociatedUploadID != nil && upload == nil {
-		v, ok, err := prefetcher.GetUploadByID(ctx, *index.AssociatedUploadID)
+		v, ok, err := uploadLoader.GetByID(ctx, *index.AssociatedUploadID)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +63,7 @@ func NewPreciseIndexResolver(
 
 	if upload != nil {
 		if upload.AssociatedIndexID != nil {
-			v, ok, err := prefetcher.GetIndexByID(ctx, *upload.AssociatedIndexID)
+			v, ok, err := indexLoader.GetByID(ctx, *upload.AssociatedIndexID)
 			if err != nil {
 				return nil, err
 			}
@@ -453,10 +454,12 @@ func newLSIFUploadsAuditLogsResolver(log shared.UploadLog) resolverstubs.LSIFUpl
 }
 
 func (r *lsifUploadsAuditLogResolver) Reason() *string { return r.log.Reason }
+
 func (r *lsifUploadsAuditLogResolver) ChangedColumns() (values []resolverstubs.AuditLogColumnChange) {
 	for _, transition := range r.log.TransitionColumns {
-		values = append(values, &auditLogColumnChangeResolver{transition})
+		values = append(values, newAuditLogColumnChangeResolver(transition))
 	}
+
 	return values
 }
 

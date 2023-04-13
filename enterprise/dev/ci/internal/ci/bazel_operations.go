@@ -13,25 +13,7 @@ const bazelRemoteCacheURL = "https://storage.googleapis.com/sourcegraph_bazel_ca
 func BazelOperations(optional bool) *operations.Set {
 	ops := operations.NewNamedSet("Bazel")
 	ops.Append(bazelConfigure(optional))
-	ops.Append(bazelBuildAndTest(optional, "//..."))
-	return ops
-}
-
-// BazelIncrementalMainOperations is a set of operations that only run on the main
-// branch and whose purpose is to gradually introduce invariants as we progress through
-// the migration.
-func BazelIncrementalMainOperations() *operations.Set {
-	optional := true
-
-	ops := operations.NewNamedSet("Bazel (optional)")
-	ops.Append(bazelAnalysisPhase(optional))
-	ops.Append(bazelTestWithDepends(optional, "bazel-analysis",
-		"//lib/...",
-		"//internal/...",
-		"//cmd/...",
-		"//enterprise/...",
-	))
-
+	ops.Append(bazelTest(optional, "//..."))
 	return ops
 }
 
@@ -123,6 +105,7 @@ func bazelBuildAndTest(optional bool, targets ...string) func(*bk.Pipeline) {
 
 	cmds = append(
 		cmds,
+		// TODO(JH): run server image for end-to-end tests on SOURCEGRAPH_BASE_URL similar to run-bazel-server.sh.
 		bk.RawCmd(bazelBuildCmd),
 		bk.RawCmd(bazelTestCmd),
 	)
@@ -131,6 +114,17 @@ func bazelBuildAndTest(optional bool, targets ...string) func(*bk.Pipeline) {
 		if optional {
 			cmds = append(cmds, bk.SoftFail())
 		}
+
+		// TODO(JH) Broken we don't have go on the bazel agents
+		// cmds = append(cmds, bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
+		// 	Message:     ":alert: :bazel: test failed",
+		// 	ChannelName: "dev-experience-alerts",
+		// 	Conditions: bk.SlackStepNotifyPayloadConditions{
+		// 		Failed:   true,
+		// 		Branches: []string{"main"},
+		// 	},
+		// }))
+
 		pipeline.AddStep(":bazel: Build && Test",
 			cmds...,
 		)
@@ -140,11 +134,15 @@ func bazelBuildAndTest(optional bool, targets ...string) func(*bk.Pipeline) {
 func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
+		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 	}
 
-	bazelRawCmd := bazelRawCmd("test %s", strings.Join(targets, " "))
-	cmds = append(cmds, bk.RawCmd(bazelRawCmd))
+	bazelRawCmd := bazelRawCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
+	cmds = append(
+		cmds,
+		bk.RawCmd(bazelRawCmd),
+	)
 
 	return func(pipeline *bk.Pipeline) {
 		if optional {

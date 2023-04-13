@@ -279,17 +279,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 
 	default:
-		if c.RunType.Is(runtype.MainBranch) {
-			// If we're on the main branch, we test a few Bazel invariants.
-			ops.Merge(BazelIncrementalMainOperations())
-		}
 		// Slow async pipeline
 		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 			triggerAsync(buildOptions)))
-
-		// At this stage, we don't break builds because of a Bazel failure.
-		// TODO(JH) disabled until I re-enable this with a flag
-		// ops.Merge(BazelOperations(true))
 
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
@@ -325,8 +317,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
-			// Do not enable this on main
-			// ForceBazel:                c.MessageFlags.ForceBazel,
+			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
 
 		// Integration tests

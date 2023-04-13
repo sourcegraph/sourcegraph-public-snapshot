@@ -83,3 +83,28 @@
     max-width: 1.5rem;
     max-height: 1.5rem;
 }
+
+.text-success-muted {
+    color: var(--success-2);
+}
+
+.text-danger-muted {
+    color: var(--danger-2);
+}
+
+.text-total-number {
+    color: var(--icon-muted);
+}
+
+.stats-box {
+    border: none;
+}
+
+.stat {
+    border-right: 1px solid var(--border-color-2);
+    flex: 1;
+    padding-bottom: 0.1rem;
+}
+.stat:last-child {
+    border-right: none;
+}

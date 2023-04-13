@@ -7,10 +7,14 @@ import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { Terms } from '@sourcegraph/cody-ui/src/Terms'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { useQuery } from '@sourcegraph/http-client'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { TextArea as WildcardTextArea } from '@sourcegraph/wildcard'
+import { Text, TextArea as WildcardTextArea, ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { Scalars } from '../../../graphql-operations'
+import { Scalars, RepoEmbeddingExistsQueryResult, RepoEmbeddingExistsQueryVariables } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
+
+import { REPO_EMBEDDING_EXISTS_QUERY } from './backend'
 
 import styles from './RepoRevisionSidebarCody.module.scss'
 
@@ -24,7 +28,11 @@ export const RepoRevisionSidebarCody: React.FunctionComponent<
 
         focusKey?: string
     } & Partial<RevisionSpec>
-> = ({ repoName }) => {
+> = ({ repoName, activePath }) => {
+    useEffect(() => {
+        eventLogger.log('web:codySidebar:view', { repo: repoName })
+    }, [repoName])
+
     const config = useMemo<ClientInit['config']>(
         () => ({
             serverEndpoint: window.location.origin,
@@ -42,17 +50,42 @@ export const RepoRevisionSidebarCody: React.FunctionComponent<
     useEffect(() => {
         setMessageInProgress(null)
         setTranscript([])
-        createClient({ config, accessToken: null, setMessageInProgress, setTranscript }).then(setClient, setClient)
-    }, [config])
+        createClient({ config, accessToken: null, setMessageInProgress, setTranscript }).then(setClient, error => {
+            eventLogger.log('web:codySidebar:clientError', { repo: repoName })
+            setClient(error)
+        })
+    }, [config, repoName])
 
     const onSubmit = useCallback(
         (text: string) => {
             if (client && !isErrorLike(client)) {
+                eventLogger.log('web:codySidebar:submit', { repo: repoName, path: activePath, text })
                 client.submitMessage(text)
             }
         },
-        [client]
+        [activePath, client, repoName]
     )
+
+    const { data, loading, error } = useQuery<RepoEmbeddingExistsQueryResult, RepoEmbeddingExistsQueryVariables>(
+        REPO_EMBEDDING_EXISTS_QUERY,
+        { variables: { repoName } }
+    )
+
+    if (!client || loading) {
+        return <LoadingSpinner />
+    }
+
+    if (error) {
+        return <ErrorAlert error={error} />
+    }
+
+    if (isErrorLike(client)) {
+        return <ErrorAlert error={client} />
+    }
+
+    if (!data?.repository?.embeddingExists) {
+        return <Text>Repo embeddings not generated.</Text>
+    }
 
     return (
         <Chat

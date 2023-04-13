@@ -63,6 +63,7 @@ module.exports = api => {
       ],
     ],
     plugins: [
+      '@babel/plugin-transform-runtime',
       ['@babel/plugin-transform-typescript', { isTSX: true }],
       'babel-plugin-lodash',
       [

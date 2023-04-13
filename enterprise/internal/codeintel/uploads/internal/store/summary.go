@@ -281,7 +281,7 @@ ORDER BY u.root, u.indexer
 `
 
 func (s *store) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []uploadsshared.RepositoryWithCount, totalCount int, err error) {
-	ctx, _, endObservation := s.operations.repositoryIDsWithErrors.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := s.operations.repositoryIDsWithErrors.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return scanRepositoryWithCounts(s.db.Query(ctx, sqlf.Sprintf(repositoriesWithErrorsQuery, limit, offset)))
@@ -358,7 +358,7 @@ OFFSET %s
 `
 
 func (s *store) NumRepositoriesWithCodeIntelligence(ctx context.Context) (_ int, err error) {
-	ctx, _, endObservation := s.operations.numRepositoriesWithCodeIntelligence.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := s.operations.numRepositoriesWithCodeIntelligence.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	numRepositoriesWithCodeIntelligence, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(countRepositoriesQuery)))

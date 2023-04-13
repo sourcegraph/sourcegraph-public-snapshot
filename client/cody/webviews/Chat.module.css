@@ -10,6 +10,16 @@
     color: var(--bubble-text-color);
 }
 
+:global(.token-hallucinated) {
+    border-bottom: 2px solid var(--vscode-testing-iconQueued);
+    word-break: break-all;
+}
+
+:global(.token-not-hallucinated) {
+    border-bottom: 2px solid var(--vscode-testing-iconPassed);
+    word-break: break-all;
+}
+
 .bubble-content pre,
 .bubble-content span > code,
 .bubble-content p > code {
@@ -45,4 +55,20 @@
     outline: none;
     color: var(--vscode-input-foreground);
     background-color: var(--vscode-input-background);
+}
+
+.transcript-container {
+    display: flex;
+    flex-direction: column-reverse;
+    flex: 1;
+    overflow: auto;
+}
+
+.empty-transcript-container {
+    overflow: auto;
+}
+
+.inner-container {
+    height: 100%;
+    overflow: auto;
 }

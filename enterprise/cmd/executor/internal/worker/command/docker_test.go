@@ -22,7 +22,7 @@ func TestNewDockerSpec(t *testing.T) {
 			name:       "Converts to docker spec",
 			workingDir: "/workingDirectory",
 			image:      "some-image",
-			scriptPath: "some/path",
+			scriptPath: "script/path",
 			spec: command.Spec{
 				Key:     "some-key",
 				Command: []string{"some", "command"},
@@ -44,7 +44,7 @@ func TestNewDockerSpec(t *testing.T) {
 					"--entrypoint",
 					"/bin/sh",
 					"some-image",
-					"/data/.sourcegraph-executor/some/path",
+					"/data/.sourcegraph-executor/script/path",
 				},
 			},
 		},

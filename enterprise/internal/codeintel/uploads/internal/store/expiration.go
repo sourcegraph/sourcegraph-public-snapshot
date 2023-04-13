@@ -100,36 +100,32 @@ func (s *store) UpdateUploadRetention(ctx context.Context, protectedIDs, expired
 	sort.Ints(protectedIDs)
 	sort.Ints(expiredIDs)
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+	return s.withTransaction(ctx, func(tx *store) error {
+		now := time.Now()
+		if len(protectedIDs) > 0 {
+			queries := make([]*sqlf.Query, 0, len(protectedIDs))
+			for _, id := range protectedIDs {
+				queries = append(queries, sqlf.Sprintf("%s", id))
+			}
 
-	now := time.Now()
-	if len(protectedIDs) > 0 {
-		queries := make([]*sqlf.Query, 0, len(protectedIDs))
-		for _, id := range protectedIDs {
-			queries = append(queries, sqlf.Sprintf("%s", id))
+			if err := tx.db.Exec(ctx, sqlf.Sprintf(updateUploadRetentionQuery, sqlf.Sprintf("last_retention_scan_at = %s", now), sqlf.Join(queries, ","))); err != nil {
+				return err
+			}
 		}
 
-		if err := tx.Exec(ctx, sqlf.Sprintf(updateUploadRetentionQuery, sqlf.Sprintf("last_retention_scan_at = %s", now), sqlf.Join(queries, ","))); err != nil {
-			return err
-		}
-	}
+		if len(expiredIDs) > 0 {
+			queries := make([]*sqlf.Query, 0, len(expiredIDs))
+			for _, id := range expiredIDs {
+				queries = append(queries, sqlf.Sprintf("%s", id))
+			}
 
-	if len(expiredIDs) > 0 {
-		queries := make([]*sqlf.Query, 0, len(expiredIDs))
-		for _, id := range expiredIDs {
-			queries = append(queries, sqlf.Sprintf("%s", id))
+			if err := tx.db.Exec(ctx, sqlf.Sprintf(updateUploadRetentionQuery, sqlf.Sprintf("expired = TRUE"), sqlf.Join(queries, ","))); err != nil {
+				return err
+			}
 		}
 
-		if err := tx.Exec(ctx, sqlf.Sprintf(updateUploadRetentionQuery, sqlf.Sprintf("expired = TRUE"), sqlf.Join(queries, ","))); err != nil {
-			return err
-		}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 const updateUploadRetentionQuery = `
@@ -143,40 +139,40 @@ func (s *store) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (_,
 	ctx, trace, endObservation := s.operations.softDeleteExpiredUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	// Just in case
-	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_SOFT_DELETE_BAIL_OUT") != "" {
-		s.logger.Warn("Soft deletion is currently disabled")
-		return 0, 0, nil
-	}
-
-	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
-	defer unset(ctx)
-	scannedCount, repositories, err := scanCountsWithTotalCount(tx.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery, batchSize)))
-	if err != nil {
-		return 0, 0, err
-	}
-
-	count := 0
-	for _, numUpdated := range repositories {
-		count += numUpdated
-	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("count", count),
-		attribute.Int("numRepositories", len(repositories)))
-
-	for repositoryID := range repositories {
-		if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx); err != nil {
-			return 0, 0, err
+	var a, b int
+	err = s.withTransaction(ctx, func(tx *store) error {
+		// Just in case
+		if os.Getenv("DEBUG_PRECISE_CODE_INTEL_SOFT_DELETE_BAIL_OUT") != "" {
+			s.logger.Warn("Soft deletion is currently disabled")
+			return nil
 		}
-	}
 
-	return scannedCount, count, nil
+		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
+		defer unset(ctx)
+		scannedCount, repositories, err := scanCountsWithTotalCount(tx.db.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery, batchSize)))
+		if err != nil {
+			return err
+		}
+
+		count := 0
+		for _, numUpdated := range repositories {
+			count += numUpdated
+		}
+		trace.AddEvent("TODO Domain Owner",
+			attribute.Int("count", count),
+			attribute.Int("numRepositories", len(repositories)))
+
+		for repositoryID := range repositories {
+			if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx.db); err != nil {
+				return err
+			}
+		}
+
+		a = scannedCount
+		b = count
+		return nil
+	})
+	return a, b, err
 }
 
 const softDeleteExpiredUploadsQuery = `
@@ -314,38 +310,39 @@ func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traver
 	ctx, trace, endObservation := s.operations.softDeleteExpiredUploadsViaTraversal.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
-	defer unset(ctx)
-	scannedCount, repositories, err := scanCountsWithTotalCount(tx.Query(ctx, sqlf.Sprintf(
-		softDeleteExpiredUploadsViaTraversalQuery,
-		traversalLimit,
-		traversalLimit,
-	)))
-	if err != nil {
-		return 0, 0, err
-	}
-
-	count := 0
-	for _, numUpdated := range repositories {
-		count += numUpdated
-	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("count", count),
-		attribute.Int("numRepositories", len(repositories)))
-
-	for repositoryID := range repositories {
-		if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx); err != nil {
-			return 0, 0, err
+	var a, b int
+	err = s.withTransaction(ctx, func(tx *store) error {
+		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
+		defer unset(ctx)
+		scannedCount, repositories, err := scanCountsWithTotalCount(tx.db.Query(ctx, sqlf.Sprintf(
+			softDeleteExpiredUploadsViaTraversalQuery,
+			traversalLimit,
+			traversalLimit,
+		)))
+		if err != nil {
+			return err
 		}
-	}
 
-	return scannedCount, count, nil
+		count := 0
+		for _, numUpdated := range repositories {
+			count += numUpdated
+		}
+		trace.AddEvent("TODO Domain Owner",
+			attribute.Int("count", count),
+			attribute.Int("numRepositories", len(repositories)))
+
+		for repositoryID := range repositories {
+			if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx.db); err != nil {
+				return err
+			}
+		}
+
+		a = scannedCount
+		b = count
+		return nil
+	})
+	return a, b, err
+
 }
 
 const softDeleteExpiredUploadsViaTraversalQuery = `

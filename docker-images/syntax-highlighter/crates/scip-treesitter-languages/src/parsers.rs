@@ -19,6 +19,7 @@ pub enum BundledParser {
     Scala,
     Sql,
     Xlsg,
+    Zig,
 
     // These two are special cases
     Typescript,
@@ -46,6 +47,7 @@ impl BundledParser {
             BundledParser::Typescript => tree_sitter_typescript::language_typescript(),
             BundledParser::Tsx => tree_sitter_typescript::language_tsx(),
             BundledParser::Xlsg => tree_sitter_xlsg::language(),
+            BundledParser::Zig => tree_sitter_zig::language(),
         }
     }
 
@@ -69,6 +71,7 @@ impl BundledParser {
             "typescript" => Some(BundledParser::Typescript),
             "tsx" => Some(BundledParser::Tsx),
             "xlsg" => Some(BundledParser::Xlsg),
+            "zig" => Some(BundledParser::Zig),
             _ => None,
         }
     }

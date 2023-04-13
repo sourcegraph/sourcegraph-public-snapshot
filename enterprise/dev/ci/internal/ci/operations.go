@@ -55,9 +55,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 
 	// Simple, fast-ish linter checks
 	linterOps := operations.NewNamedSet("Linters and static analysis")
-	if diff.Has(changed.GraphQL) {
-		linterOps.Append(addGraphQLLint)
-	}
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
 		linterOps.Append(addSgLints(targets))
 	}
@@ -69,7 +66,8 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		if opts.ForceBazel {
 			// If there are any Graphql changes, they are impacting the client as well.
 			clientChecks = operations.NewNamedSet("Client checks",
-				clientIntegrationTests,
+				// clientIntegrationTests is now covered by Bazel
+				// clientIntegrationTests,
 				clientChromaticTests(opts),
 				// frontendTests is now covered by Bazel
 				// frontendTests,                // ~4.5m
@@ -206,13 +204,6 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 //		bk.SoftFail(222))
 // }
 
-// pnpm ~41s + ~1s
-func addGraphQLLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:graphql"))
-}
-
 // Adds Typescript check.
 func addTypescriptCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":typescript: Build TS",
@@ -284,8 +275,6 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("CHECK_BUNDLESIZE", "1"),
-			// To ensure the Bundlesize output can be diffed to the baseline on main
-			bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
 		}
 
 		if opts.CacheBundleSize {
@@ -913,7 +902,7 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 				folder := app
 				if app == "blobstore2" {
 					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
-					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get publishe
+					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get published
 					// under the same name.
 					// https://github.com/sourcegraph/sourcegraph/issues/45594
 					// TODO(blobstore): remove this when making Go blobstore the default

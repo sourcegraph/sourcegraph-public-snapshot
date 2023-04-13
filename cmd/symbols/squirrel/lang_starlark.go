@@ -72,7 +72,7 @@ func (s *SquirrelService) getDefStarlarkString(ctx context.Context, node Node) (
 		if err != nil {
 			return nil, err
 		}
-		return starlarkBindingNamed(symbol, *destinationRoot)
+		return starlarkBindingNamed(symbol, *destinationRoot) //nolint:staticcheck
 	}
 }
 

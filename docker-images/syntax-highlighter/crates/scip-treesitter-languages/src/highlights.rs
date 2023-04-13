@@ -138,7 +138,7 @@ macro_rules! create_configurations {
 }
 
 lazy_static::lazy_static! {
-    static ref CONFIGURATIONS: HashMap<BundledParser, HighlightConfiguration> = {
+    pub static ref CONFIGURATIONS: HashMap<BundledParser, HighlightConfiguration> = {
         // NOTE: typescript/tsx crates are included, even though not listed below.
 
         // You can add any new crate::parsers::Parser variants here.
@@ -158,7 +158,8 @@ lazy_static::lazy_static! {
             Rust,
             Scala,
             Sql,
-            Xlsg
+            Xlsg,
+            Zig
         )
     };
 }

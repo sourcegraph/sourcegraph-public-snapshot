@@ -30,6 +30,7 @@ interface ChatProps extends ChatClassNames {
 }
 
 interface ChatClassNames {
+    transcriptContainerClassName?: string
     bubbleContentClassName?: string
     humanBubbleContentClassName?: string
     botBubbleContentClassName?: string
@@ -69,6 +70,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     tipsRecommendations,
     afterTips,
     className,
+    transcriptContainerClassName,
     bubbleContentClassName,
     humanBubbleContentClassName,
     botBubbleContentClassName,
@@ -113,7 +115,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         (event: React.KeyboardEvent<HTMLDivElement>): void => {
             // Submit input on Enter press (without shift) and
             // trim the formInput to make sure input value is not empty.
-            if (event.key === 'Enter' && !event.shiftKey && formInput && formInput.trim()) {
+            if (
+                event.key === 'Enter' &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing &&
+                formInput &&
+                formInput.trim()
+            ) {
                 event.preventDefault()
                 event.stopPropagation()
                 onChatSubmit()
@@ -152,7 +160,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         <div className={classNames(className, styles.innerContainer)}>
             <div
                 ref={transcriptContainerRef}
-                className={transcript.length >= 1 ? styles.transcriptContainer : styles.nonTranscriptContainer}
+                className={classNames(styles.transcriptContainer, transcriptContainerClassName)}
             >
                 {/* Show Tips view if no conversation has happened */}
                 {transcript.length === 0 && !messageInProgress && (
@@ -215,6 +223,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                         className={classNames(
                                             styles.bubbleContent,
                                             styles.botBubbleContent,
+                                            bubbleContentClassName,
                                             botBubbleContentClassName
                                         )}
                                     >

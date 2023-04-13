@@ -18,46 +18,38 @@ func (s *store) InsertDefinitionsForRanking(
 	rankingGraphKey string,
 	definitions chan shared.RankingDefinitions,
 ) (err error) {
-	ctx, _, endObservation := s.operations.insertDefinitionsForRanking.With(
-		ctx,
-		&err,
-		observation.Args{},
-	)
+	ctx, _, endObservation := s.operations.insertDefinitionsForRanking.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	inserter := func(inserter *batch.Inserter) error {
-		for definition := range definitions {
-			if err := inserter.Insert(ctx, definition.UploadID, definition.SymbolName, definition.DocumentPath, rankingGraphKey); err != nil {
-				return err
+	return s.withTransaction(ctx, func(tx *store) error {
+		inserter := func(inserter *batch.Inserter) error {
+			for definition := range definitions {
+				if err := inserter.Insert(ctx, definition.UploadID, definition.SymbolName, definition.DocumentPath, rankingGraphKey); err != nil {
+					return err
+				}
 			}
+
+			return nil
+		}
+
+		if err := batch.WithInserter(
+			ctx,
+			tx.db.Handle(),
+			"codeintel_ranking_definitions",
+			batch.MaxNumPostgresParameters,
+			[]string{
+				"upload_id",
+				"symbol_name",
+				"document_path",
+				"graph_key",
+			},
+			inserter,
+		); err != nil {
+			return err
 		}
 
 		return nil
-	}
-
-	if err := batch.WithInserter(
-		ctx,
-		tx.Handle(),
-		"codeintel_ranking_definitions",
-		batch.MaxNumPostgresParameters,
-		[]string{
-			"upload_id",
-			"symbol_name",
-			"document_path",
-			"graph_key",
-		},
-		inserter,
-	); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 func (s *store) VacuumAbandonedDefinitions(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {

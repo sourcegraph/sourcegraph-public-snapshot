@@ -31,6 +31,8 @@ import { ValueLegendList, ValueLegendListProps } from './analytics/components/Va
 import { REPOSITORIES_QUERY, REPO_PAGE_POLL_INTERVAL, STATUS_AND_REPO_STATS } from './backend'
 import { RepositoryNode } from './RepositoryNode'
 
+import styles from './SiteAdminRepositoriesContainer.module.scss'
+
 const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
     All: {
         label: 'All',
@@ -380,7 +382,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
         <>
             <Container className="py-3 mb-1">
                 {error && !loading && <ErrorAlert error={error} />}
-                {legends && <ValueLegendList items={legends} />}
+                {legends && <ValueLegendList items={legends} className={styles.legend} />}
             </Container>
             {extSvcs && (
                 <Container>

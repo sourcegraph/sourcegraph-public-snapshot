@@ -30,14 +30,7 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() { err = tx.db.Done(err) }()
-
 	var conds []*sqlf.Query
-
 	if opts.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
@@ -63,36 +56,44 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx.db))
-	if err != nil {
-		return nil, 0, err
-	}
-	conds = append(conds, authzConds)
+	var a []shared.Index
+	var b int
+	err = s.withTransaction(ctx, func(tx *store) error {
+		authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx.db))
+		if err != nil {
+			return err
+		}
+		conds = append(conds, authzConds)
 
-	indexes, err := scanIndexes(tx.db.Query(ctx, sqlf.Sprintf(
-		getIndexesSelectQuery,
-		sqlf.Join(conds, " AND "),
-		opts.Limit,
-		opts.Offset,
-	)))
-	if err != nil {
-		return nil, 0, err
-	}
-	trace.AddEvent("scanIndexesWithCount",
-		attribute.Int("numIndexes", len(indexes)))
+		indexes, err := scanIndexes(tx.db.Query(ctx, sqlf.Sprintf(
+			getIndexesSelectQuery,
+			sqlf.Join(conds, " AND "),
+			opts.Limit,
+			opts.Offset,
+		)))
+		if err != nil {
+			return err
+		}
+		trace.AddEvent("scanIndexesWithCount",
+			attribute.Int("numIndexes", len(indexes)))
 
-	totalCount, _, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
-		getIndexesCountQuery,
-		sqlf.Join(conds, " AND "),
-	)))
-	if err != nil {
-		return nil, 0, err
-	}
-	trace.AddEvent("scanIndexesWithCount",
-		attribute.Int("totalCount", totalCount),
-	)
+		totalCount, _, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
+			getIndexesCountQuery,
+			sqlf.Join(conds, " AND "),
+		)))
+		if err != nil {
+			return err
+		}
+		trace.AddEvent("scanIndexesWithCount",
+			attribute.Int("totalCount", totalCount),
+		)
 
-	return indexes, totalCount, nil
+		a = indexes
+		b = totalCount
+		return nil
+	})
+
+	return a, b, err
 }
 
 const getIndexesSelectQuery = `
@@ -295,13 +296,7 @@ func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return false, err
-	}
-	defer func() { err = tx.db.Done(err) }()
-
-	_, exists, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(deleteIndexByIDQuery, id)))
+	_, exists, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(deleteIndexByIDQuery, id)))
 	return exists, err
 }
 
@@ -347,21 +342,12 @@ func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOpti
 	}
 	conds = append(conds, authzConds)
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.db.Done(err) }()
+	return s.withTransaction(ctx, func(tx *store) error {
+		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_indexes_audit.reason", "direct delete by filter criteria request")
+		defer unset(ctx)
 
-	unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_indexes_audit.reason", "direct delete by filter criteria request")
-	defer unset(ctx)
-
-	err = tx.db.Exec(ctx, sqlf.Sprintf(deleteIndexesQuery, sqlf.Join(conds, " AND ")))
-	if err != nil {
-		return err
-	}
-
-	return nil
+		return tx.db.Exec(ctx, sqlf.Sprintf(deleteIndexesQuery, sqlf.Join(conds, " AND ")))
+	})
 }
 
 const deleteIndexesQuery = `
@@ -377,13 +363,7 @@ func (s *store) ReindexIndexByID(ctx context.Context, id int) (err error) {
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.db.Done(err) }()
-
-	return tx.db.Exec(ctx, sqlf.Sprintf(reindexIndexByIDQuery, id))
+	return s.db.Exec(ctx, sqlf.Sprintf(reindexIndexByIDQuery, id))
 }
 
 const reindexIndexByIDQuery = `
@@ -430,21 +410,12 @@ func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOp
 	}
 	conds = append(conds, authzConds)
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.db.Done(err) }()
+	return s.withTransaction(ctx, func(tx *store) error {
+		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_indexes_audit.reason", "direct reindex by filter criteria request")
+		defer unset(ctx)
 
-	unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_indexes_audit.reason", "direct reindex by filter criteria request")
-	defer unset(ctx)
-
-	err = tx.db.Exec(ctx, sqlf.Sprintf(reindexIndexesQuery, sqlf.Join(conds, " AND ")))
-	if err != nil {
-		return err
-	}
-
-	return nil
+		return tx.db.Exec(ctx, sqlf.Sprintf(reindexIndexesQuery, sqlf.Join(conds, " AND ")))
+	})
 }
 
 const reindexIndexesQuery = `

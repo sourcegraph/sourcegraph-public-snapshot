@@ -8,8 +8,9 @@ import (
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/scim2/filter-parser/v2"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -276,7 +277,7 @@ func Test_UserResourceHandler_PatchMoveUnverifiedEmailToPrimaryWithFilter(t *tes
 	assert.True(t, containsEmail(dbEmails, "secondary@work.com", true, true))
 }
 
-func Test_UserResourceHandler_PatchHardDeleteWithSoftDelete(t *testing.T) {
+func Test_UserResourceHandler_PatchSoftDelete(t *testing.T) {
 	db := createMockDB()
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	operations := []scim.PatchOperation{
@@ -288,8 +289,58 @@ func Test_UserResourceHandler_PatchHardDeleteWithSoftDelete(t *testing.T) {
 	assert.Equal(t, userRes.Attributes[AttrActive], false)
 	// Check user in DB
 	userID, _ := strconv.Atoi(userRes.ID)
-	_, err = db.Users().GetByID(context.Background(), int32(userID))
-	assert.Error(t, err, "user not found")
+	users, err := db.Users().ListForSCIM(context.Background(), &database.UsersListOptions{UserIDs: []int32{int32(userID)}})
+	assert.NoError(t, err)
+	assert.Len(t, users, 1, "1 user should be found")
+	assert.False(t, users[0].Active, "user should not be active")
+}
+
+func Test_UserResourceHandler_PatchReactiveUser(t *testing.T) {
+	scimData := `{
+		"active": false,
+		"emails": [
+		  {
+			"type": "work",
+			"value": "primary@work.com",
+			"primary": true
+		  },		 
+		],
+		"name": {
+		  "givenName": "Nannie",
+		  "familyName": "Krystina",
+		  "formatted": "Reilly",
+		  "middleName": "Camren"
+		},
+		"displayName": "N0LBQ9P0TTH4",
+		"userName": "faye@rippinkozey.com"
+	  }`
+	user := &types.UserForSCIM{
+		User:            types.User{ID: 1, Username: "test-user1"},
+		Emails:          []string{"primary@work.com"},
+		SCIMExternalID:  "id1",
+		SCIMAccountData: scimData,
+		Active:          false,
+	}
+	emails := map[int32][]*database.UserEmail{1: {
+		makeEmail(1, "primary@work.com", true, true),
+		makeEmail(1, "secondary@work.com", false, true),
+	}}
+	db := getMockDB([]*types.UserForSCIM{user}, emails)
+
+	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	operations := []scim.PatchOperation{
+		{Op: "replace", Path: parseStringPath(AttrActive), Value: true},
+	}
+
+	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
+	assert.NoError(t, err)
+	assert.Equal(t, userRes.Attributes[AttrActive], true)
+	// Check user in DB
+	userID, _ := strconv.Atoi(userRes.ID)
+	users, err := db.Users().ListForSCIM(context.Background(), &database.UsersListOptions{UserIDs: []int32{int32(userID)}})
+	assert.NoError(t, err)
+	assert.Len(t, users, 1, "1 user should be found")
+	assert.True(t, users[0].Active, "user should be active")
 }
 
 func Test_UserResourceHandler_Patch_ReplaceStrategies_Azure(t *testing.T) {

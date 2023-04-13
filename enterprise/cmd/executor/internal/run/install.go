@@ -300,7 +300,7 @@ func installSrc(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, c
 
 	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, config.UseFirecracker, logger)
 	copts := queueOptions(config, telemetryOptions)
-	client, err := apiclient.NewBaseClient(copts.BaseClientOptions)
+	client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
 	if err != nil {
 		return err
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
-	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// IsQueued returns true if there is an index or an upload for the repository and commit.
 func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
 	ctx, _, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
@@ -74,9 +73,8 @@ SELECT
 	)
 `
 
-// IsQueuedRootIndexer returns true if there is an index or an upload for the given (repository, commit, root, indexer).
 func (s *store) IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.isQueuedRootIndexer.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.String("root", root),
@@ -84,7 +82,13 @@ func (s *store) IsQueuedRootIndexer(ctx context.Context, repositoryID int, commi
 	}})
 	defer endObservation(1, observation.Args{})
 
-	isQueued, _, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(isQueuedRootIndexerQuery, repositoryID, commit, root, indexer)))
+	isQueued, _, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(
+		isQueuedRootIndexerQuery,
+		repositoryID,
+		commit,
+		root,
+		indexer,
+	)))
 	return isQueued, err
 }
 
@@ -93,21 +97,23 @@ SELECT NOT should_reindex
 FROM lsif_indexes
 WHERE
 	repository_id  = %s AND
-	commit         = %s AND
-	root           = %s AND
-	indexer        = %s
+	commit = %s AND
+	root = %s AND
+	indexer = %s
 ORDER BY queued_at DESC
 LIMIT 1
 `
 
-// InsertIndexes inserts a new index and returns the hydrated index models.
-func (s *store) InsertIndexes(ctx context.Context, indexes []uploadsshared.Index) (_ []uploadsshared.Index, err error) {
-	ctx, _, endObservation := s.operations.insertIndexes.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("numIndexes", len(indexes)),
-		}})
-	}()
+// TODO (ideas):
+// - batch insert
+// - canonization methods
+// - share code with uploads store (should own this?)
+
+func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []shared.Index, err error) {
+	ctx, _, endObservation := s.operations.insertIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIndexes", len(indexes)),
+	}})
+	endObservation(1, observation.Args{})
 
 	if len(indexes) == 0 {
 		return nil, nil
@@ -116,13 +122,13 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []uploadsshared.Index
 	values := make([]*sqlf.Query, 0, len(indexes))
 	for _, index := range indexes {
 		if index.DockerSteps == nil {
-			index.DockerSteps = []uploadsshared.DockerStep{}
-		}
-		if index.IndexerArgs == nil {
-			index.IndexerArgs = []string{}
+			index.DockerSteps = []shared.DockerStep{}
 		}
 		if index.LocalSteps == nil {
 			index.LocalSteps = []string{}
+		}
+		if index.IndexerArgs == nil {
+			index.IndexerArgs = []string{}
 		}
 
 		values = append(values, sqlf.Sprintf(
@@ -141,20 +147,30 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []uploadsshared.Index
 		))
 	}
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.db.Done(err) }()
+	indexes = []shared.Index{}
+	err = s.withTransaction(ctx, func(tx *store) error {
+		ids, err := basestore.ScanInts(tx.db.Query(ctx, sqlf.Sprintf(insertIndexQuery, sqlf.Join(values, ","))))
+		if err != nil {
+			return err
+		}
 
-	ids, err := basestore.ScanInts(tx.db.Query(ctx, sqlf.Sprintf(insertIndexQuery, sqlf.Join(values, ","))))
-	if err != nil {
-		return nil, err
-	}
+		s.operations.indexesInserted.Add(float64(len(ids)))
 
-	s.operations.indexesInserted.Add(float64(len(ids)))
+		authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+		if err != nil {
+			return err
+		}
 
-	return tx.getIndexesByIDs(ctx, ids...)
+		queries := make([]*sqlf.Query, 0, len(ids))
+		for _, id := range ids {
+			queries = append(queries, sqlf.Sprintf("%d", id))
+		}
+
+		indexes, err = scanIndexes(tx.db.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+		return err
+	})
+
+	return indexes, err
 }
 
 const insertIndexQuery = `
@@ -170,42 +186,9 @@ INSERT INTO lsif_indexes (
 	outfile,
 	execution_logs,
 	requested_envvars
-) VALUES %s
+)
+VALUES %s
 RETURNING id
-`
-
-// getIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
-// have a corresponding element in the returned list.
-func (s *store) getIndexesByIDs(ctx context.Context, ids ...int) (_ []uploadsshared.Index, err error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
-	if err != nil {
-		return nil, err
-	}
-
-	queries := make([]*sqlf.Query, 0, len(ids))
-	for _, id := range ids {
-		queries = append(queries, sqlf.Sprintf("%d", id))
-	}
-
-	return scanIndexes(s.db.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
-}
-
-const indexAssociatedUploadIDQueryFragment = `
-(
-	SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id
-) AS associated_upload_id
-`
-
-const indexRankQueryFragment = `
-SELECT
-	r.id,
-	ROW_NUMBER() OVER (ORDER BY COALESCE(r.process_after, r.queued_at), r.id) as rank
-FROM lsif_indexes_with_repository_name r
-WHERE r.state = 'queued'
 `
 
 const getIndexesByIDsQuery = `
@@ -230,11 +213,17 @@ SELECT
 	u.execution_logs,
 	s.rank,
 	u.local_steps,
-	` + indexAssociatedUploadIDQueryFragment + `,
+	(SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id) AS associated_upload_id,
 	u.should_reindex,
 	u.requested_envvars
 FROM lsif_indexes u
-LEFT JOIN (` + indexRankQueryFragment + `) s
+LEFT JOIN (
+	SELECT
+		r.id,
+		ROW_NUMBER() OVER (ORDER BY COALESCE(r.process_after, r.queued_at), r.id) as rank
+	FROM lsif_indexes_with_repository_name r
+	WHERE r.state = 'queued'
+) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
 WHERE repo.deleted_at IS NULL AND u.id IN (%s) AND %s
@@ -244,9 +233,7 @@ ORDER BY u.id
 //
 //
 
-var scanIndexes = basestore.NewSliceScanner(scanIndex)
-
-func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
+func scanIndex(s dbutil.Scanner) (index shared.Index, err error) {
 	var executionLogs []executor.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
@@ -277,6 +264,7 @@ func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
 	}
 
 	index.ExecutionLogs = append(index.ExecutionLogs, executionLogs...)
-
 	return index, nil
 }
+
+var scanIndexes = basestore.NewSliceScanner(scanIndex)

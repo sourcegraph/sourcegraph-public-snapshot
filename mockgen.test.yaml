@@ -65,6 +65,22 @@
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
       interfaces:
         - Workspace
+- filename: enterprise/cmd/executor/internal/worker/runtime/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
+      interfaces:
+        - Command
+        - Logger
+        - LogEntry
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
+      interfaces:
+        - FilesStore
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
+      interfaces:
+        - Workspace
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util
+      interfaces:
+        - CmdRunner
 - filename: enterprise/cmd/frontend/internal/app/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app
   interfaces:
@@ -108,18 +124,17 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer
   interfaces:
     - SyncStore
-- filename: enterprise/internal/codeintel/autoindexing/internal/background/mocks_test.go
+- filename: enterprise/internal/codeintel/autoindexing/internal/background/dependencies/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background/dependencies
       interfaces:
         - DependenciesService
-        - ReposStore
-        - ExternalServiceStore
         - GitserverRepoStore
-        - PolicyMatcher
+        - ExternalServiceStore
+        - ReposStore
+        - IndexEnqueuer
         - RepoUpdaterClient
         - UploadService
-        - IndexEnqueuer
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared
       interfaces:
         - PackageReferenceScanner
@@ -179,7 +194,8 @@
         - RepoStore
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore
       interfaces:
-        - LSIFStore
+        - Store
+      prefix: LSIF
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads
       interfaces:
         - PolicyService
@@ -188,26 +204,46 @@
       interfaces:
         - Store
       prefix: Worker
-- filename: enterprise/internal/codeintel/uploads/internal/background/mocks_test.go
+- filename: enterprise/internal/codeintel/uploads/internal/background/processor/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background/processor
+      interfaces:
+        - RepoStore
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store
+      interfaces:
+        - Store
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore
+      interfaces:
+        - Store
+        - SCIPWriter
+      prefix: LSIF
+    - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
+      interfaces:
+        - Store
+      prefix: Worker
+- filename: enterprise/internal/codeintel/uploads/internal/background/expirer/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background/expirer
       interfaces:
         - PolicyService
         - PolicyMatcher
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store
       interfaces:
         - Store
-    - path: enterprise/internal/codeintel/uploads/internal/background
-      interfaces:
-        - RepoStore
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore
       interfaces:
-        - LSIFStore
+        - Store
         - SCIPWriter
+      prefix: LSIF
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
       interfaces:
         - Store
       prefix: Worker
+- filename: enterprise/internal/codeintel/uploads/internal/background/backfiller/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store
+      interfaces:
+        - Store
 - filename: internal/database/migration/runner/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/database/migration/runner
   interfaces:
@@ -289,7 +325,6 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/transport/graphql
   interfaces:
     - AutoIndexingService
-    - UploadsService
     - CodeNavService
 - filename: enterprise/internal/insights/background/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background

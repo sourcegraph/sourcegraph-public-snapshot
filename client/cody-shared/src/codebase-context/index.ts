@@ -1,8 +1,6 @@
-import path from 'path'
-
 import { EmbeddingsSearch } from '../embeddings'
 import { KeywordContextFetcher } from '../keyword-context'
-import { populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
+import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 import { isError } from '../utils'
@@ -124,11 +122,4 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
     }
 
     return mergedResults
-}
-
-const MARKDOWN_EXTENSIONS = new Set(['md', 'markdown'])
-
-function isMarkdownFile(filePath: string): boolean {
-    const extension = path.extname(filePath).slice(1)
-    return MARKDOWN_EXTENSIONS.has(extension)
 }

@@ -22,7 +22,12 @@ func (s *store) InsertDependencyIndexingJob(ctx context.Context, uploadID int, e
 		}})
 	}()
 
-	id, _, err = basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(insertDependencyIndexingJobQuery, uploadID, externalServiceKind, syncTime)))
+	id, _, err = basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
+		insertDependencyIndexingJobQuery,
+		uploadID,
+		externalServiceKind,
+		syncTime,
+	)))
 	return id, err
 }
 
@@ -32,8 +37,6 @@ VALUES (%s, %s, %s)
 RETURNING id
 `
 
-// QueueRepoRev enqueues the given repository and rev to be processed by the auto-indexing scheduler.
-// This method is ultimately used to index on-demand (with deduplication) from transport layers.
 func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
 	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
@@ -41,21 +44,17 @@ func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+	return s.withTransaction(ctx, func(tx *store) error {
+		isQueued, err := tx.IsQueued(ctx, repositoryID, rev)
+		if err != nil {
+			return err
+		}
+		if isQueued {
+			return nil
+		}
 
-	isQueued, err := tx.IsQueued(ctx, repositoryID, rev)
-	if err != nil {
-		return err
-	}
-	if isQueued {
-		return nil
-	}
-
-	return tx.db.Exec(ctx, sqlf.Sprintf(queueRepoRevQuery, repositoryID, rev))
+		return tx.db.Exec(ctx, sqlf.Sprintf(queueRepoRevQuery, repositoryID, rev))
+	})
 }
 
 const queueRepoRevQuery = `

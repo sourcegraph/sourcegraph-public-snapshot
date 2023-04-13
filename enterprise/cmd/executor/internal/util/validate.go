@@ -155,11 +155,11 @@ Try running "executor install ignite", or:
 }
 
 // ValidateCNIInstalled validate that the CNI plugins for firecracker are properly installed.
-func ValidateCNIInstalled() error {
+func ValidateCNIInstalled(cmdRunner CmdRunner) error {
 	var errs error
 	var missingPlugins []string
 	missingIsolationPlugin := false
-	if stat, err := os.Stat(config.CNIBinDir); err != nil {
+	if stat, err := cmdRunner.Stat(config.CNIBinDir); err != nil {
 		if os.IsNotExist(err) {
 			errs = errors.Append(errs, errors.Newf("Cannot find directory %s. Are the CNI plugins for firecracker installed correctly?", config.CNIBinDir))
 			missingPlugins = append([]string{}, config.RequiredCNIPlugins...)
@@ -173,7 +173,7 @@ func ValidateCNIInstalled() error {
 		}
 		for _, plugin := range config.RequiredCNIPlugins {
 			pluginPath := path.Join(config.CNIBinDir, plugin)
-			if s, err := os.Stat(pluginPath); err != nil {
+			if s, err := cmdRunner.Stat(pluginPath); err != nil {
 				if os.IsNotExist(err) {
 					missingPlugins = append(missingPlugins, plugin)
 					if plugin == "isolation" {
