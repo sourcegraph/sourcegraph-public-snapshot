@@ -2,25 +2,12 @@ import React, { useCallback, useState } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    Button,
-    H2,
-    Link,
-    Icon,
-    Tabs,
-    TabList,
-    TabPanels,
-    TabPanel,
-    Tab,
-    ProductStatusBadge,
-} from '@sourcegraph/wildcard'
+import { Button, H2, Link, Icon, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { exampleQueryColumns } from './QueryExamples.constants'
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
 import { useQueryExamples, QueryExamplesSection } from './useQueryExamples'
 
@@ -62,8 +49,6 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
-    const [queryExampleTabActive, setQueryExampleTabActive] = useState<boolean>(false)
-    const navigate = useNavigate()
 
     const exampleSyntaxColumns = useQueryExamples(
         selectedSearchContextSpec ?? 'global',
@@ -71,18 +56,8 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
         enableOwnershipSearch
     )
 
-    const handleTabChange = (selectedTab: number): void => {
-        setQueryExampleTabActive(!!selectedTab)
-    }
-
     const onQueryExampleClick = useCallback(
-        (id: string | undefined, query: string, slug: string | undefined) => {
-            // Run search for dotcom longer query examples
-            if (isSourcegraphDotCom && queryExampleTabActive) {
-                telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
-                navigate(slug!)
-            }
-
+        (id: string | undefined, query: string) => {
             setQueryState({ query: `${queryState.query} ${query}`.trimStart(), hint: EditorHint.Focus })
 
             telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
@@ -115,77 +90,35 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
             setSelectedTip,
             selectTipTimeout,
             setSelectTipTimeout,
-            queryExampleTabActive,
-            navigate,
-            isSourcegraphDotCom,
         ]
     )
 
     return (
         <div>
-            {isSourcegraphDotCom ? (
-                <>
-                    <Tabs size="medium" onChange={handleTabChange}>
-                        <TabList wrapperClassName={classNames('mb-4', styles.tabHeader)}>
-                            <Tab key="Code search basics">Code search basics</Tab>
-                            <Tab key="Search query examples">Search query examples</Tab>
-                        </TabList>
-                        <TabPanels>
-                            <TabPanel className={styles.tabPanel}>
-                                <QueryExamplesLayout
-                                    queryColumns={exampleSyntaxColumns}
-                                    onQueryExampleClick={onQueryExampleClick}
-                                />
-                            </TabPanel>
-                            <TabPanel className={styles.tabPanel}>
-                                <QueryExamplesLayout
-                                    queryColumns={exampleQueryColumns}
-                                    onQueryExampleClick={onQueryExampleClick}
-                                />
-                            </TabPanel>
-                        </TabPanels>
-                    </Tabs>
-                </>
-            ) : (
-                <div>
-                    <div className={classNames(styles.tip, selectedTip && styles.tipVisible)}>
-                        <strong>Tip</strong>
-                        <span className="mx-1">–</span>
-                        {selectedTip === 'rev' && (
-                            <>
-                                Add{' '}
-                                <QueryExampleChip
-                                    query="rev:branchname"
-                                    onClick={onQueryExampleClick}
-                                    className="mx-1"
-                                />{' '}
-                                to query accross a specific branch or commit
-                            </>
-                        )}
-                        {selectedTip === 'lang' && (
-                            <>
-                                Use <QueryExampleChip query="lang:" onClick={onQueryExampleClick} className="mx-1" /> to
-                                query for matches only in a given language
-                            </>
-                        )}
-                        {selectedTip === 'before' && (
-                            <>
-                                Use{' '}
-                                <QueryExampleChip
-                                    query={'before:"last week"'}
-                                    onClick={onQueryExampleClick}
-                                    className="mx-1"
-                                />{' '}
-                                to query within a time range
-                            </>
-                        )}
-                    </div>
-                    <QueryExamplesLayout
-                        queryColumns={exampleSyntaxColumns}
-                        onQueryExampleClick={onQueryExampleClick}
-                    />
-                </div>
-            )}
+            <div className={classNames(styles.tip, selectedTip && styles.tipVisible)}>
+                <strong>Tip</strong>
+                <span className="mx-1">–</span>
+                {selectedTip === 'rev' && (
+                    <>
+                        Add <QueryExampleChip query="rev:branchname" onClick={onQueryExampleClick} className="mx-1" />{' '}
+                        to query accross a specific branch or commit
+                    </>
+                )}
+                {selectedTip === 'lang' && (
+                    <>
+                        Use <QueryExampleChip query="lang:" onClick={onQueryExampleClick} className="mx-1" /> to query
+                        for matches only in a given language
+                    </>
+                )}
+                {selectedTip === 'before' && (
+                    <>
+                        Use{' '}
+                        <QueryExampleChip query={'before:"last week"'} onClick={onQueryExampleClick} className="mx-1" />{' '}
+                        to query within a time range
+                    </>
+                )}
+            </div>
+            <QueryExamplesLayout queryColumns={exampleSyntaxColumns} onQueryExampleClick={onQueryExampleClick} />
         </div>
     )
 }
