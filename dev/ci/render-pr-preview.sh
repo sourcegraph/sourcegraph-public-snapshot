@@ -141,8 +141,8 @@ if [ -z "${renderServiceId}" ]; then
         \"serviceDetails\": {
             \"pullRequestPreviewsEnabled\": \"no\",
             \"envSpecificDetails\": {
-                \"buildCommand\": \"dev/ci/pnpm-build-render-com.sh client/web\",
-                \"startCommand\": \"export PATH="$PWD/bin:$PATH" && pnpm --version\"
+                \"buildCommand\": \"dev/ci/pnpm-build-render-com.sh\",
+                \"startCommand\": \"dev/ci/pnpm-build-render-com.sh && pnpm --version\"
             },
             \"numInstances\": 1,
             \"plan\": \"starter\",
