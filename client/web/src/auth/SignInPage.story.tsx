@@ -138,3 +138,15 @@ export const OnlyBuiltInAuthProvider: Story = () => (
         )}
     </WebStory>
 )
+
+export const PrefixCanBeChanged: Story = () => {
+    const providers = noBuiltInAuthProviders.map(provider => ({ ...provider, displayPrefix: 'Just login with' }))
+
+    return (
+        <WebStory>
+            {({ isLightTheme }) => (
+                <SignInPage context={{ ...context, authProviders: providers }} authenticatedUser={null} />
+            )}
+        </WebStory>
+    )
+}
