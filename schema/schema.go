@@ -573,9 +573,13 @@ type CloudKMSEncryptionKey struct {
 type Completions struct {
 	// AccessToken description: The access token used to authenticate with the external completions provider.
 	AccessToken string `json:"accessToken"`
+	// ChatModel description: The model used for chat completions.
+	ChatModel string `json:"chatModel,omitempty"`
+	// CompletionModel description: The model used for code completion.
+	CompletionModel string `json:"completionModel,omitempty"`
 	// Enabled description: Toggles whether completions are enabled.
 	Enabled bool `json:"enabled"`
-	// Model description: The model used for completions.
+	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model"`
 	// Provider description: The external completions provider.
 	Provider string `json:"provider"`

@@ -2100,7 +2100,15 @@
           "default": false
         },
         "model": {
-          "description": "The model used for completions.",
+          "description": "DEPRECATED. Use chatModel instead.",
+          "type": "string"
+        },
+        "chatModel": {
+          "description": "The model used for chat completions.",
+          "type": "string"
+        },
+        "completionModel": {
+          "description": "The model used for code completion.",
           "type": "string"
         },
         "accessToken": {

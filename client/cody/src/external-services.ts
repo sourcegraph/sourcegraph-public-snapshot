@@ -15,6 +15,7 @@ interface ExternalServices {
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     chatClient: ChatClient
+    completionsClient: SourcegraphNodeCompletionsClient
 }
 
 export async function configureExternalServices(
@@ -49,5 +50,6 @@ export async function configureExternalServices(
         intentDetector: new SourcegraphIntentDetectorClient(client),
         codebaseContext,
         chatClient: new ChatClient(completions),
+        completionsClient: completions,
     }
 }

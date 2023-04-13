@@ -19,6 +19,25 @@ export interface Message {
     text: string
 }
 
+export interface CodeCompletionResponse {
+    completion: string
+    stop: string | null
+    stopReason: string
+    truncated: boolean
+    exception: string | null
+    logID: string
+}
+
+export interface CodeCompletionParameters {
+    prompt: string
+    temperature: number
+    maxTokensToSample: number
+    stopSequences: string[]
+    topK: number
+    topP: number
+    model?: string
+}
+
 export interface CompletionParameters {
     messages: Message[]
     temperature: number
