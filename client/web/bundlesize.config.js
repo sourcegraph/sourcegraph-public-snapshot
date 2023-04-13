@@ -1,6 +1,6 @@
 const path = require('path')
 
-const STATIC_ASSETS_PATH = path.join(__dirname, '../../ui/assets')
+const STATIC_ASSETS_PATH = process.env.WEB_BUNDLE_PATH || path.join(__dirname, '../../ui/assets')
 
 const config = {
   files: [
@@ -8,7 +8,7 @@ const config = {
      * Our main entry JavaScript bundles, contains core logic that is loaded on every page.
      */
     {
-      path: path.join(STATIC_ASSETS_PATH, 'scripts/app.bundle.js.br'),
+      path: path.join(STATIC_ASSETS_PATH, 'scripts/app.*.bundle.js.br'),
       /**
        * Note: Temporary increase from 400kb.
        * Primary cause is due to multiple ongoing migrations that mean we are duplicating similar dependencies.
@@ -18,17 +18,17 @@ const config = {
       compression: 'none',
     },
     {
-      path: path.join(STATIC_ASSETS_PATH, 'scripts/embed.bundle.js.br'),
+      path: path.join(STATIC_ASSETS_PATH, 'scripts/embed.*.bundle.js.br'),
       maxSize: '155kb',
       compression: 'none',
     },
     {
-      path: path.join(STATIC_ASSETS_PATH, 'scripts/react.bundle.js.br'),
+      path: path.join(STATIC_ASSETS_PATH, 'scripts/react.*.bundle.js.br'),
       maxSize: '45kb',
       compression: 'none',
     },
     {
-      path: path.join(STATIC_ASSETS_PATH, 'scripts/opentelemetry.bundle.js.br'),
+      path: path.join(STATIC_ASSETS_PATH, 'scripts/opentelemetry.*.bundle.js.br'),
       maxSize: '40kb',
       compression: 'none',
     },
