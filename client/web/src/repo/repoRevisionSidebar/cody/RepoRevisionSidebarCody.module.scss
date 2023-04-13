@@ -3,7 +3,7 @@
     --human-text-color: --dark-text;
     --bot-bubble-color: linear-gradient(var(--input-bg), var(--input-bg)) padding-box,
               linear-gradient(130deg, #00CBEC, #A112FF) border-box;
-    --bot-text-color: var(--dark-text)
+    --bot-text-color: --dark-text;
 }
 
 .container {
@@ -37,7 +37,7 @@
 }
 
 .bubble-loader-dot {
-    background-color: var(--bot-text-color);
+    background-color: var(--dark-text);
 }
 
 .input-row {
