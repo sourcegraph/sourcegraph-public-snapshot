@@ -47,7 +47,7 @@ const RepoMetadata: React.FunctionComponent<{ keyValuePairs?: Record<string, str
         <div className={classNames(styles.repoMetadata, className, 'd-flex align-items-center flex-wrap')}>
             {Object.entries(keyValuePairs).map(([key, value]) => (
                 <span className="d-flex align-items-center justify-content-center" key={`${key}:${value}`}>
-                    <Badge variant="info" className={styles.repoMetadataKey}>
+                    <Badge variant="info" className={classNames({ [styles.repoMetadataKey]: value })}>
                         {key}
                     </Badge>
                     <Badge variant="secondary" className={styles.repoMetadataValue}>
