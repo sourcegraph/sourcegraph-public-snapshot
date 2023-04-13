@@ -51,8 +51,8 @@
         --hover-box-shadow: none;
 
         .search-example-icon {
-            color: var(--vscode-button-secondaryHoverBackground) !important;
-            background-color: var(--vscode-button-foreground) !important;
+            color: var(--vscode-button-foreground) !important;
+            background-color: var(--vscode-button-background) !important;
         }
     }
 }
@@ -66,8 +66,8 @@
     color: var(--vscode-button-foreground) !important;
 
     &:hover {
-        color: var(--vscode-button-secondaryHoverBackground) !important;
-        background-color: var(--vscode-button-foreground) !important;
+        color: var(--vscode-button-foreground) !important;
+        background-color: var(--vscode-button-background) !important;
     }
 }
 
