@@ -3,11 +3,12 @@ package repo
 import (
 	"context"
 
+	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/grafana/regexp"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
@@ -30,7 +31,7 @@ var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
 
 var matchEverythingRegexp = regexp.MustCompile(``)
 
-const MAX_FILE_SIZE = 1000000 // 1MB
+const maxFileSize = 1000000 // 1MB
 
 // The threshold to embed the entire file is slightly larger than the chunk threshold to
 // avoid splitting small files unnecessarily.
@@ -56,21 +57,12 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
-	files, err := h.gitserverClient.ListFiles(ctx, nil, repo.Name, record.Revision, matchEverythingRegexp)
+	validFiles, err := h.gitserverClient.ListFiles(ctx, nil, repo.Name, record.Revision, &protocol.ListFilesOpts{
+		IncludeDirs:      false,
+		MaxFileSizeBytes: maxFileSize,
+	})
 	if err != nil {
 		return err
-	}
-
-	validFiles := []string{}
-	for _, file := range files {
-		stat, err := h.gitserverClient.Stat(ctx, nil, repo.Name, record.Revision, file)
-		if err != nil {
-			return err
-		}
-
-		if !stat.IsDir() && stat.Size() <= MAX_FILE_SIZE {
-			validFiles = append(validFiles, file)
-		}
 	}
 
 	embeddingsClient := embed.NewEmbeddingsClient()
