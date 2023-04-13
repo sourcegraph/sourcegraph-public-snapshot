@@ -12,7 +12,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -664,54 +663,45 @@ func (s *store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 		return err
 	}
 
-	g, gctx := errgroup.WithContext(ctx)
-
 	// Insert the set of uploads that are visible from each commit for a given repository into a temporary table.
-	nearestUploadsWriter := func() error {
-		return batch.InsertValues(
-			gctx,
-			tx.Handle(),
-			"t_lsif_nearest_uploads",
-			batch.MaxNumPostgresParameters,
-			[]string{"commit_bytea", "uploads"},
-			sanitizedInput.nearestUploadsRowValues,
-		)
+	if err := batch.InsertValues(
+		ctx,
+		tx.Handle(),
+		"t_lsif_nearest_uploads",
+		batch.MaxNumPostgresParameters,
+		[]string{"commit_bytea", "uploads"},
+		sanitizedInput.nearestUploadsRowValues,
+	); err != nil {
+		return err
 	}
 
 	// Insert the commits not inserted into the table above by adding links to a unique ancestor and their relative
 	// distance in the graph into another temporary table. We use this as a cheap way to reconstruct the full data
 	// set, which is multiplicative in the size of the commit graph AND the number of unique roots.
-	nearestUploadsLinksWriter := func() error {
-		return batch.InsertValues(
-			gctx,
-			tx.Handle(),
-			"t_lsif_nearest_uploads_links",
-			batch.MaxNumPostgresParameters,
-			[]string{"commit_bytea", "ancestor_commit_bytea", "distance"},
-			sanitizedInput.nearestUploadsLinksRowValues,
-		)
+	if err := batch.InsertValues(
+		ctx,
+		tx.Handle(),
+		"t_lsif_nearest_uploads_links",
+		batch.MaxNumPostgresParameters,
+		[]string{"commit_bytea", "ancestor_commit_bytea", "distance"},
+		sanitizedInput.nearestUploadsLinksRowValues,
+	); err != nil {
+		return err
 	}
 
 	// Insert the set of uploads visible from the tip of the default branch into a temporary table. These values are
 	// used to determine which bundles for a repository we open during a global find references query.
-	uploadsVisibleAtTipWriter := func() error {
-		return batch.InsertValues(
-			gctx,
-			tx.Handle(),
-			"t_lsif_uploads_visible_at_tip",
-			batch.MaxNumPostgresParameters,
-			[]string{"upload_id", "branch_or_tag_name", "is_default_branch"},
-			sanitizedInput.uploadsVisibleAtTipRowValues,
-		)
-	}
-
-	g.Go(nearestUploadsWriter)
-	g.Go(nearestUploadsLinksWriter)
-	g.Go(uploadsVisibleAtTipWriter)
-
-	if err := g.Wait(); err != nil {
+	if err := batch.InsertValues(
+		ctx,
+		tx.Handle(),
+		"t_lsif_uploads_visible_at_tip",
+		batch.MaxNumPostgresParameters,
+		[]string{"upload_id", "branch_or_tag_name", "is_default_branch"},
+		sanitizedInput.uploadsVisibleAtTipRowValues,
+	); err != nil {
 		return err
 	}
+
 	trace.AddEvent("TODO Domain Owner",
 		attribute.Int("numNearestUploadsRecords", int(sanitizedInput.numNearestUploadsRecords)),
 		attribute.Int("numNearestUploadsLinksRecords", int(sanitizedInput.numNearestUploadsLinksRecords)),
