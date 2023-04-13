@@ -101,6 +101,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                             className={classNames(styles.searchBoxContextDropdown, 'jb-search-context-dropdown')}
                             menuClassName={styles.searchBoxContextMenu}
                             onEscapeMenuClose={focusEditor}
+                            ignoreDefaultContextDoesNotExistError={true}
                         />
                         <div className={styles.searchBoxSeparator} />
                     </>

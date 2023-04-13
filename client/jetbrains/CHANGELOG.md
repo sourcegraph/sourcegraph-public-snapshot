@@ -6,6 +6,10 @@
 
 - Compatibility with IntelliJ 2023.1
 
+### Fixed
+
+- Fixed a backward-compatibility issue with Sourcegraph versions prior to 4.3 [#50080](https://github.com/sourcegraph/sourcegraph/issues/50080)
+
 ## [2.1.2]
 
 ### Added
