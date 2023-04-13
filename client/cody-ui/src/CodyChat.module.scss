@@ -1,0 +1,121 @@
+:root {
+    --human-bubble-color: var(--input-bg);
+    --human-text-color: --dark-text;
+    --bot-bubble-color: linear-gradient(var(--input-bg), var(--input-bg)) padding-box,
+              linear-gradient(130deg, #00CBEC, #A112FF) border-box;
+    --bot-text-color: --dark-text;
+}
+
+.container {
+    font-size: 0.9rem;
+    padding-top: 1rem;
+    flex-grow: 1;
+}
+
+.bubble-content pre,
+.bubble-content span > code,
+.bubble-content p > code {
+    /* Our syntax highlighter emits colors intended for dark backgrounds only. */
+    background-color: var(--code-background);
+}
+
+.bubble-content pre {
+
+    border-top: solid 1px var(--border-color-2);
+    border-bottom: solid 1px var(--border-color-2);
+    border-radius: 2px !important;
+    padding: 10px !important;
+    background: var(--body-bg);
+
+}
+.bubble-content code {
+    color: var(--code-background);
+}
+
+.main-wrapper {
+    height: 100%;
+    overflow: hidden;
+}
+
+.scroll-button-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 20px;
+    bottom: 90px;
+    z-index: 5;
+    width: 100%;
+    position: sticky;
+
+}
+.scroll-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    padding: 5px;
+
+    border: var(--btn-border-width) solid var(--border-color-2);
+    color: var(--body-color);
+    background-color: var(--input-bg);
+
+    cursor: pointer;
+}
+
+.bot-bubble-content {
+    background: var(--bot-bubble-color);
+    color: var(--bot-text-color);
+    border: 1px solid transparent;
+ }
+
+.human-bubble-content {
+    border: solid 1px var(--border-color-2);
+    background-color: var(--human-bubble-color);
+    color: var(--human-text-color);
+}
+
+.bubble-loader-dot {
+    background-color: var(--dark-text);
+}
+
+.input-row {
+    position: sticky;
+    bottom: 0;
+    padding: 0.8rem 0.6rem;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--input-bg);
+    margin: 0 8px;
+}
+
+.chat-input {
+    padding: .6rem 1.5rem .8rem .8rem;
+    max-height: 200px;
+    border-color: var(--border-color-2);
+}
+
+
+.cody-sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color-2);
+    padding: 8px;
+    margin: 0 8px;
+    font-size: 14px;
+    position: sticky;
+    top: 0;
+    background-color: var(--input-bg);
+    z-index: 3;
+}
+
+
+
+.cody-sidebar {
+    background-color: var(--input-bg);
+    filter: drop-shadow(0px 0px 4px RGBA(36,41,54,.1));
+    overflow-y: scroll;
+    overflow-x: hidden;
+    height: 100%;
+}

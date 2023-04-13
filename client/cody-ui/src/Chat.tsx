@@ -11,8 +11,6 @@ import { Tips } from './Tips'
 
 import styles from './Chat.module.css'
 
-const SCROLL_THRESHOLD = 15
-
 interface ChatProps extends ChatClassNames {
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
@@ -21,7 +19,6 @@ interface ChatProps extends ChatClassNames {
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
     onSubmit: (text: string) => void
-    textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     tipsRecommendations?: JSX.Element[]
@@ -64,7 +61,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     inputHistory,
     setInputHistory,
     onSubmit,
-    textAreaComponent: TextArea,
     submitButtonComponent: SubmitButton,
     fileLinkComponent,
     tipsRecommendations,
@@ -82,7 +78,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
-    const transcriptContainerRef = useRef<HTMLDivElement>(null)
 
     const inputHandler = useCallback(
         (inputValue: string) => {
@@ -115,13 +110,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         (event: React.KeyboardEvent<HTMLDivElement>): void => {
             // Submit input on Enter press (without shift) and
             // trim the formInput to make sure input value is not empty.
-            if (
-                event.key === 'Enter' &&
-                !event.shiftKey &&
-                !event.nativeEvent.isComposing &&
-                formInput &&
-                formInput.trim()
-            ) {
+            if (event.key === 'Enter' && !event.shiftKey && formInput && formInput.trim()) {
                 event.preventDefault()
                 event.stopPropagation()
                 onChatSubmit()
@@ -140,28 +129,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const getBubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
 
-    useEffect(() => {
-        if (transcriptContainerRef.current) {
-            // Only scroll if the user didn't scroll up manually more than the scrolling threshold.
-            // That is so that you can freely copy content or read up on older content while new
-            // content is being produced.
-            // We allow some small threshold for "what is considered not scrolled up" so that minimal
-            // scroll doesn't affect it (ie. if I'm not all the way scrolled down by like a pixel or two,
-            // I probably still want it to scroll).
-            // Sice this container uses flex-direction: column-reverse, the scrollTop starts in the negatives
-            // and ends at 0.
-            if (transcriptContainerRef.current.scrollTop >= -SCROLL_THRESHOLD) {
-                transcriptContainerRef.current.scrollTo({ behavior: 'smooth', top: 0 })
-            }
-        }
-    }, [transcript, transcriptContainerRef])
-
     return (
         <div className={classNames(className, styles.innerContainer)}>
-            <div
-                ref={transcriptContainerRef}
-                className={classNames(styles.transcriptContainer, transcriptContainerClassName)}
-            >
+            <div className={classNames(styles.transcriptContainer, transcriptContainerClassName)}>
                 {/* Show Tips view if no conversation has happened */}
                 {transcript.length === 0 && !messageInProgress && (
                     <Tips recommendations={tipsRecommendations} after={afterTips} />
@@ -223,7 +193,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                         className={classNames(
                                             styles.bubbleContent,
                                             styles.botBubbleContent,
-                                            bubbleContentClassName,
                                             botBubbleContentClassName
                                         )}
                                     >
@@ -265,21 +234,73 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     </div>
                 )}
             </div>
+
             <form className={classNames(styles.inputRow, inputRowClassName)}>
-                <TextArea
-                    className={classNames(styles.chatInput, chatInputClassName)}
-                    rows={inputRows}
+                <AutoResizableTextArea
                     value={formInput}
-                    autoFocus={true}
-                    required={true}
+                    onChange={setFormInput}
+                    className={classNames(styles.chatInput, chatInputClassName)}
                     onInput={({ target }) => {
                         const { value } = target as HTMLInputElement
                         inputHandler(value)
                     }}
                     onKeyDown={onChatKeyDown}
                 />
+
                 <SubmitButton className={styles.submitButton} onClick={onChatSubmit} disabled={!!messageInProgress} />
             </form>
         </div>
+    )
+}
+
+interface AutoResizableTextAreaProps {
+    value: string
+    onChange: (value: string) => void
+    onInput?: React.FormEventHandler<HTMLTextAreaElement>
+    onKeyDown?: React.KeyboardEventHandler<HTMLTextAreaElement>
+    className?: string
+}
+
+export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
+    value,
+    onChange,
+    onInput,
+    onKeyDown,
+    className,
+}) => {
+    const textAreaRef = useRef<HTMLTextAreaElement>(null)
+
+    const adjustTextAreaHeight = () => {
+        if (textAreaRef.current) {
+            textAreaRef.current.style.height = '0px'
+            const scrollHeight = textAreaRef.current.scrollHeight
+            textAreaRef.current.style.height = scrollHeight + 'px'
+
+            // Hide scroll if the textArea isn't overflowing.
+            textAreaRef.current.style.overflowY = scrollHeight < 200 ? 'hidden' : 'auto'
+        }
+    }
+
+    const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        onChange(event.target.value)
+        adjustTextAreaHeight()
+    }
+
+    useEffect(() => {
+        adjustTextAreaHeight()
+    }, [value])
+
+    return (
+        <textarea
+            ref={textAreaRef}
+            className={className}
+            value={value}
+            onChange={handleChange}
+            rows={1}
+            autoFocus={true}
+            required={true}
+            onKeyDown={onKeyDown}
+            onInput={onInput}
+        />
     )
 }
