@@ -2162,6 +2162,18 @@
         "displayName": {
           "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
         },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
+        },
         "configID": {
           "description": "An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.",
           "type": "string"
@@ -2217,6 +2229,18 @@
         },
         "displayName": {
           "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
+        },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
         },
         "serviceProviderIssuer": {
           "description": "The SAML Service Provider name, used to identify this Service Provider. This is required if the \"externalURL\" field is not set (as the SAML metadata endpoint is computed as \"<externalURL>.auth/saml/metadata\"), or when using multiple SAML authentication providers.",
@@ -2352,6 +2376,18 @@
         "displayName": {
           "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
         },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
+        },
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts via GitHub authentication. If false, users signing in via GitHub must have an existing Sourcegraph account, which will be linked to their GitHub identity after sign-in.",
           "default": false,
@@ -2387,11 +2423,6 @@
           "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching).",
           "default": false,
           "type": "boolean"
-        },
-        "hidden": {
-          "description": "Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.",
-          "default": false,
-          "type": "boolean"
         }
       }
     },
@@ -2420,6 +2451,18 @@
         },
         "displayName": {
           "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
+        },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
         },
         "apiScope": {
           "type": "string",
@@ -2478,6 +2521,18 @@
         "displayName": {
           "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
         },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
+        },
         "apiScope": {
           "type": "string",
           "description": "The OAuth API scope that should be used",
@@ -2505,6 +2560,21 @@
           "type": "string",
           "description": "URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.",
           "default": "https://gerrit-review.googlesource.com/"
+        },
+        "displayName": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
+        },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
         }
       }
     },
@@ -2528,6 +2598,18 @@
         },
         "displayName": {
           "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
+        },
+        "displayPrefix": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/displayPrefix",
+          "!go": {
+            "pointer": true
+          }
+        },
+        "hidden": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/hidden"
+        },
+        "order": {
+          "$ref": "#/definitions/AuthProviderCommon/properties/order"
         },
         "apiScope": {
           "type": "string",
@@ -2558,9 +2640,27 @@
       "description": "Common properties for authentication providers.",
       "type": "object",
       "properties": {
+        "hidden": {
+          "description": "Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.",
+          "type": "boolean",
+          "default": false
+        },
+        "order": {
+          "description": "Determines order of auth providers on the login screen. Ordered as numbers, for example 1, 2, 3.",
+          "type": "integer",
+          "minimum": 1
+        },
         "displayName": {
           "description": "The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).",
           "type": "string"
+        },
+        "displayPrefix": {
+          "description": "Defines the prefix of the auth provider button on the login screen. By default we show `Continue with <displayName>`. This propery allows you to change the `Continue with ` part to something else. Useful in cases where the displayName is not compatible with the prefix.",
+          "type": "string",
+          "default": "Continue with ",
+          "!go": {
+            "pointer": true
+          }
         }
       }
     },
