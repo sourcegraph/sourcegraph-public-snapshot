@@ -1,21 +1,24 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
-    "beforeBuildCommand": "",
+    "beforeBuildCommand": "./src-tauri/compose-assets.sh",
     "beforeDevCommand": "",
     "devPath": "http://localhost:3080/sign-in?nonce=foobar&returnTo=/",
-    "distDir": "http://localhost:3080/sign-in?nonce=foobar&returnTo=/"
+    "distDir": "./assets"
   },
   "package": {
     "productName": "sourcegraph",
-    "version": "0.1.0"
+    "version": "1.0.0"
   },
   "tauri": {
     "allowlist": {
       "shell": {
         "sidecar": true,
         "scope": [
-          { "name": "../.bin/backend", "sidecar": true }
+          {
+            "name": "../.bin/backend",
+            "sidecar": true
+          }
         ]
       }
     },
