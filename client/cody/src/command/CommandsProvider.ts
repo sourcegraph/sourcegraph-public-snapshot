@@ -1,4 +1,3 @@
-import * as anthropic from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
 
 import { ChatViewProvider } from '../chat/ChatViewProvider'
@@ -6,8 +5,11 @@ import { CodyCompletionItemProvider } from '../completions'
 import { CompletionsDocumentProvider } from '../completions/docprovider'
 import { History } from '../completions/history'
 import { getConfiguration } from '../configuration'
+import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent, updateEventLogger } from '../event-logger'
 import { ExtensionApi } from '../extension-api'
+import { configureExternalServices } from '../external-services'
+import { getRgPath } from '../rg'
 import { sanitizeCodebase, sanitizeServerEndpoint } from '../sanitize'
 import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from '../secret-storage'
 
@@ -28,15 +30,36 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
 
     await updateEventLogger(config, secretStorage, localStorage)
 
+    const editor = new VSCodeEditor()
+    const rgPath = await getRgPath(context.extensionPath)
+    const mode = config.debug ? 'development' : 'production'
+    const serverEndpoint = sanitizeServerEndpoint(config.serverEndpoint)
+    const codebase = sanitizeCodebase(config.codebase)
+
+    const { intentDetector, codebaseContext, chatClient, completionsClient } = await configureExternalServices(
+        serverEndpoint,
+        codebase,
+        rgPath,
+        editor,
+        secretStorage,
+        config.useContext,
+        mode
+    )
+
     // Create chat webview
-    const chatProvider = await ChatViewProvider.create(
+    const chatProvider = ChatViewProvider.create(
         context.extensionPath,
         sanitizeCodebase(config.codebase),
         sanitizeServerEndpoint(config.serverEndpoint),
         config.useContext,
-        config.debug,
         secretStorage,
-        localStorage
+        localStorage,
+        editor,
+        rgPath,
+        mode,
+        intentDetector,
+        codebaseContext,
+        chatClient
     )
 
     vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
@@ -115,15 +138,11 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
     )
 
     if (config.experimentalSuggest) {
-        let claudeApi = null
-        if (config.anthropicKey) {
-            claudeApi = new anthropic.Client(config.anthropicKey)
-        }
         const docprovider = new CompletionsDocumentProvider()
         vscode.workspace.registerTextDocumentContentProvider('cody', docprovider)
 
         const history = new History()
-        const completionsProvider = new CodyCompletionItemProvider(claudeApi, docprovider, history)
+        const completionsProvider = new CodyCompletionItemProvider(completionsClient, docprovider, history)
         context.subscriptions.push(
             vscode.commands.registerCommand('cody.experimental.suggest', async () => {
                 await completionsProvider.fetchAndShowCompletions()

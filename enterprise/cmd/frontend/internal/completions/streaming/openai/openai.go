@@ -43,7 +43,7 @@ type openAIChatCompletionStreamClient struct {
 	model       string
 }
 
-func NewOpenAIChatCompletionsStreamClient(cli httpcli.Doer, accessToken string, model string) types.CompletionStreamClient {
+func NewOpenAIClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
 	return &openAIChatCompletionStreamClient{
 		cli:         cli,
 		accessToken: accessToken,
@@ -51,9 +51,13 @@ func NewOpenAIChatCompletionsStreamClient(cli httpcli.Doer, accessToken string, 
 	}
 }
 
+func (a *openAIChatCompletionStreamClient) Complete(ctx context.Context, requestParams types.CodeCompletionRequestParameters) (*types.CodeCompletionResponse, error) {
+	return nil, errors.New("openAIChatCompletionStreamClient.Complete: unimplemented")
+}
+
 func (a *openAIChatCompletionStreamClient) Stream(
 	ctx context.Context,
-	requestParams types.CompletionRequestParameters,
+	requestParams types.ChatCompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
 	// TODO(sqs): make CompletionRequestParameters non-anthropic-specific
@@ -134,7 +138,7 @@ func (a *openAIChatCompletionStreamClient) Stream(
 
 		if len(event.Choices) > 0 && event.Choices[0].FinishReason == nil {
 			content = append(content, event.Choices[0].Delta.Content)
-			err = sendEvent(types.CompletionEvent{Completion: strings.Join(content, "")})
+			err = sendEvent(types.ChatCompletionEvent{Completion: strings.Join(content, "")})
 			if err != nil {
 				return err
 			}
