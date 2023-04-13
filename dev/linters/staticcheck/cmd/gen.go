@@ -8,12 +8,15 @@ import (
 	"text/template"
 
 	"honnef.co/go/tools/analysis/lint"
+	"honnef.co/go/tools/simple"
 	"honnef.co/go/tools/staticcheck"
 )
 
 var ignoredLinters = map[string]string{
 	"SAXXXX": "I am an exmaple for a linter that should be ignored",
 }
+var AllAnalyzers = append(staticcheck.Analyzers, simple.Analyzers...)
+
 var analyzers []*lint.Analyzer = sortedAnalyzers()
 
 var BazelBuildTemplate = `# GENERATED FILE - DO NOT EDIT
@@ -64,15 +67,34 @@ STATIC_CHECK_ANALYZERS = [
 ]
 `
 
-func sortedAnalyzers() []*lint.Analyzer {
-	linters := make([]*lint.Analyzer, 0)
-	// remove ignored linters first
-	for _, linter := range staticcheck.Analyzers {
-		if _, shouldIgnore := ignoredLinters[linter.Analyzer.Name]; !shouldIgnore {
-			linters = append(linters, linter)
+func unique(analyzers ...*lint.Analyzer) []*lint.Analyzer {
+	set := make(map[string]bool)
+	uniq := make([]*lint.Analyzer, 0)
+
+	for _, a := range analyzers {
+		if _, ok := set[a.Analyzer.Name]; !ok {
+			// first time we see this analyzer!
+			uniq = append(uniq, a)
+			set[a.Analyzer.Name] = true
 		}
 	}
-	// now sort them
+
+	return uniq
+}
+
+func filterIgnored(analyzers []*lint.Analyzer, ignored map[string]string) []*lint.Analyzer {
+	result := make([]*lint.Analyzer, 0)
+	for _, a := range analyzers {
+		if _, shouldIgnore := ignored[a.Analyzer.Name]; !shouldIgnore {
+			result = append(result, a)
+		}
+	}
+
+	return result
+}
+
+func sortedAnalyzers() []*lint.Analyzer {
+	linters := filterIgnored(unique(AllAnalyzers...), ignoredLinters)
 	sort.SliceStable(linters, func(i, j int) bool {
 		return strings.Compare(linters[i].Analyzer.Name, linters[j].Analyzer.Name) < 0
 	})
