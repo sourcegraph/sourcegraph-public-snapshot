@@ -88,7 +88,7 @@ function detectFilePaths(
 ): Promise<HighlightedToken[]> {
     const filePaths = Array.from(line.matchAll(filePathRegexp))
         .map(match => ({ fullMatch: match[0], pathMatch: match[1] }))
-        .filter(match => isFilePathLike(match.pathMatch))
+        .filter(match => isFilePathLike(match.fullMatch, match.pathMatch))
         .map(async (match): Promise<HighlightedToken> => {
             const exists = await fileExists(match.pathMatch)
             return { type: 'file', outerValue: match.fullMatch, innerValue: match.pathMatch, isHallucinated: !exists }
@@ -109,8 +109,14 @@ const filePathRegexpParts = [
 
 const filePathRegexp = new RegExp(filePathRegexpParts.join(''), 'g')
 
-function isFilePathLike(text: string): boolean {
-    const parts = text.split(/[/\\]/)
+function isFilePathLike(fullMatch: string, pathMatch: string): boolean {
+    const parts = pathMatch.split(/[/\\]/)
+
+    if (fullMatch.startsWith(' ') && parts.length <= 2) {
+        // Probably a / used as an "or" in a sentence. For example, "This is a cool/awesome function."
+        return false
+    }
+
     if (parts[0].includes('.com') || parts[0].startsWith('http')) {
         // Probably a URL.
         return false
