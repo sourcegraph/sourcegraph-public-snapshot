@@ -138,6 +138,18 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
         <td><a href="https://github.com/sourcegraph/scip-ruby#scip-ruby">See notes</a></td> <!-- Build tooling -->
       </tr>
+     <tr>
+        <td>C#</td>
+        <td><a href="https://github.com/sourcegraph/scip-dotnet">scip-dotnet</a></td>
+        <td><a href="#status-definitions" class="indexer-status">🟠</a></td>
+        <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
+        <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
+        <td class="indexer-implemented-y">✓</td> <!-- Find references -->
+        <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
+        <td class="indexer-implemented-y">✗</td> <!-- Cross-repository -->
+        <td class="indexer-implemented-n">✓</td> <!-- Find implementations -->
+        <td><code>.sln</code> and <code>.csproj</code></td> <!-- Build tooling -->
+      </tr>
    </tbody>
 </table>
 

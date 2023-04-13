@@ -275,8 +275,6 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("CHECK_BUNDLESIZE", "1"),
-			// To ensure the Bundlesize output can be diffed to the baseline on main
-			bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
 		}
 
 		if opts.CacheBundleSize {

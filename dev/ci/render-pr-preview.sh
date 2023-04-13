@@ -141,8 +141,8 @@ if [ -z "${renderServiceId}" ]; then
         \"serviceDetails\": {
             \"pullRequestPreviewsEnabled\": \"no\",
             \"envSpecificDetails\": {
-                \"buildCommand\": \"dev/ci/pnpm-build.sh client/web\",
-                \"startCommand\": \"pnpm --filter @sourcegraph/web serve:prod\"
+                \"buildCommand\": \"source dev/ci/render-preview-install.sh && dev/ci/pnpm-build.sh client/web\",
+                \"startCommand\": \"source dev/ci/render-preview-install.sh && pnpm --filter @sourcegraph/web serve:prod\"
             },
             \"numInstances\": 1,
             \"plan\": \"starter\",
