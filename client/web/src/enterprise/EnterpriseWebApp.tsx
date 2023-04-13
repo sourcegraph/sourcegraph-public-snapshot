@@ -1,6 +1,8 @@
-import { FC } from 'react'
+import { FC, useEffect } from 'react'
 
 import '../SourcegraphWebApp.scss'
+
+import { Command } from '@tauri-apps/api/shell'
 
 import { logger } from '@sourcegraph/common'
 
