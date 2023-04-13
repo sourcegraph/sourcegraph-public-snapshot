@@ -154,6 +154,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 		spec.JobID = job.ID
 		if err := runtimeRunner.Run(ctx, spec); err != nil {
 			if errors.Is(err, command.ErrStepSkipped) {
+				logger.Debug("Step skipped", log.Int("index", spec.Index), log.String("key", spec.CommandSpec.Key))
 				skippedSteps[spec.Index] = true
 				continue
 			}
