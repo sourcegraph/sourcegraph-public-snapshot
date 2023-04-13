@@ -3,7 +3,7 @@ package errors
 import (
 	"fmt"
 
-	"github.com/cockroachdb/errors"
+	"github.com/cockroachdb/errors" //nolint:depguard
 )
 
 var (
