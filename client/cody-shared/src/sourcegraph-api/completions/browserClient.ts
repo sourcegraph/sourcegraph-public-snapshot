@@ -5,7 +5,7 @@ import type { Event, CompletionParameters, CompletionCallbacks, CodeCompletionRe
 
 export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsClient {
     public complete(): Promise<CodeCompletionResponse> {
-        throw new Error('SourcegraphBrowserCompletionsClienet.complete not implemented')
+        throw new Error('SourcegraphBrowserCompletionsClient.complete not implemented')
     }
 
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {

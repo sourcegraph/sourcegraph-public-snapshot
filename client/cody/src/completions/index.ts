@@ -103,15 +103,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     this.responseTokens,
                     prefix,
                     '',
-                    2
+                    2 // 2 tries
                 ),
                 new EndOfLineCompletionProvider(
                     this.completionsClient,
                     remainingChars,
                     this.responseTokens,
                     prefix,
-                    '\n',
-                    2
+                    '\n', // force a new line in the case we are at end of line
+                    2 // 2 tries
                 )
             )
         }
@@ -399,9 +399,9 @@ export class MultilineCompletionProvider implements CompletionProvider {
                 stopSequences: [anthropic.HUMAN_PROMPT],
                 maxTokensToSample: this.responseTokens,
                 model: 'claude-instant-v1.0',
-                temperature: 1,
-                topK: -1,
-                topP: -1,
+                temperature: 1, // default value (source: https://console.anthropic.com/docs/api/reference)
+                topK: -1, // default value
+                topP: -1, // default value
             },
             n || this.defaultN
         )
