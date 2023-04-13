@@ -13,14 +13,6 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "codeInsights": {
-          "description": "Enables code insights on directory pages.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "codeInsightsLandingPage": {
           "deprecated": true,
           "description": "DEPRECATED: Enables code insights landing page layout.",
