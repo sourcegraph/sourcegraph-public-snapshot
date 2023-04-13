@@ -2,7 +2,7 @@
   "name": "cody-chrome",
   "displayName": "Ask Cody - Beta",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "sourcegraph",
   "description": "Your programming sidekick powered by AI and Sourcegraph's code search and intelligence, now in browser.",
   "license": "Apache-2.0",

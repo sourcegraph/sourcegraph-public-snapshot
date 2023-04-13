@@ -81,17 +81,18 @@ export const isLoggedin = async (uri: string) => {
         console.error('incorrect uri:', uri)
         return false
     }
-    const sgURL = new URL('/.api/graphql', uri).href
-    const res = await fetch(sgURL, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
+    try {
+        const sgURL = new URL('/.api/graphql', uri).href
+        const res = await fetch(sgURL, {
+            method: 'POST',
             credentials: 'include',
-            'X-Requested-With': 'Sourcegraph - chrome-extension v0.0.1',
-        },
-        body: JSON.stringify({
-            query: `
+            headers: {
+                'Content-Type': 'application/json',
+                credentials: 'include',
+                'X-Requested-With': 'Sourcegraph - chrome-extension v0.0.1',
+            },
+            body: JSON.stringify({
+                query: `
         query CurrentAuthState {
           currentUser {
               __typename
@@ -104,8 +105,12 @@ export const isLoggedin = async (uri: string) => {
           }
       }
       `,
-        }),
-    })
-    chrome.storage.local.set({ sgCodyAuth: res.ok })
-    return res.ok
+            }),
+        })
+        chrome.storage.local.set({ sgCodyAuth: res.ok })
+        return res.ok
+    } catch (error) {
+        console.error('Fail to auth:', error)
+        return false
+    }
 }
