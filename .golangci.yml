@@ -7,7 +7,7 @@ linters:
     - forbidigo # nogo equivelant
     - gocritic # nogo equivelant
     - goimports
-    - gosimple
+    - gosimple # nogo equivelant
     - govet # nogo equivelant
     - ineffassign # nogo equivelant
     #- nolintlint see https://github.com/golangci/golangci-lint/issues/3228.
