@@ -270,6 +270,7 @@ importers:
       graphql: ^15.4.0
       graphql-schema-linter: ^2.0.1
       gulp: ^4.0.2
+      handlebars: ^4.7.7
       highlight.js: ^10.5.0
       highlightjs-graphql: ^1.0.2
       history: 4.5.1
@@ -494,6 +495,7 @@ importers:
       fzf: 0.5.1
       got: 11.8.5
       graphiql: 1.11.5_iezu2wrysx2y3eydxgd52zpi2y
+      handlebars: 4.7.7
       highlight.js: 10.7.3
       highlightjs-graphql: 1.0.2
       history: 4.5.1
