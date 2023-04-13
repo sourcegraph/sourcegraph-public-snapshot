@@ -49,8 +49,9 @@ func start(ctx context.Context, observationCtx *observation.Context, cgf *Config
 	for i := 0; i < 3; i++ {
 		time.Sleep(10 * time.Second)
 		logger.Info("creating schema", log.Int("attempt", i))
-		err = createSchemaIfNotExists(ctx)
+		err = createSchemaIfNotExists(ctx, logger)
 		if err == nil {
+			logger.Info("success", log.Int("attempt", i))
 			break
 		}
 		logger.Error(fmt.Sprintf("error creating schema %s, type=%T", err, err))
@@ -63,39 +64,51 @@ func start(ctx context.Context, observationCtx *observation.Context, cgf *Config
 	return err
 }
 
-func createSchemaIfNotExists(ctx context.Context) error {
-	err := createSchema(ctx)
-
-	// Ignore error if the schema already exists
+func createSchemaIfNotExists(ctx context.Context, logger log.Logger) error {
 	var wErr *fault.WeaviateClientError
+
+	err := createSchema(ctx, "Code")
 	if errors.As(err, &wErr) {
+		logger.Info("error creating \"code\" schema", log.Error(wErr.DerivedFromError))
 		if wErr.StatusCode == 422 {
-			return nil
+			err = nil
 		}
 	}
+	if err != nil {
+		return errors.Wrap(err, "error creating \"code\" schema")
+	}
 
-	return err
+	err = createSchema(ctx, "Text")
+	if errors.As(err, &wErr) {
+		logger.Info("error creating \"text\" schema", log.Error(wErr.DerivedFromError))
+		if wErr.StatusCode == 422 {
+			err = nil
+		}
+	}
+	if err != nil {
+		return errors.Wrap(err, "error creating \"text\" schema")
+	}
+
+	return nil
 }
 
-func createSchema(ctx context.Context) error {
+func createSchema(ctx context.Context, typ string) error {
 	client, err := weaviate.NewClient(weaviate.Config{Host: "localhost:8181", Scheme: "http"})
 	if err != nil {
 		return errors.Wrap(err, "error getting weaviate client")
 	}
 
+	class := &models.Class{
+		Class: typ,
+		Properties: []*models.Property{
+			{Name: "filename", DataType: []string{"string"}},
+			{Name: "content", DataType: []string{"string"}},
+			{Name: "repository", DataType: []string{"string"}},
+			{Name: "revision", DataType: []string{"string"}},
+			{Name: "start_line", DataType: []string{"int"}},
+			{Name: "end_line", DataType: []string{"int"}},
+		},
+		Vectorizer: "text2vec-openai",
+	}
 	return client.Schema().ClassCreator().WithClass(class).Do(ctx)
-}
-
-var class = &models.Class{
-	Class: "Code",
-	Properties: []*models.Property{
-		{Name: "filename", DataType: []string{"string"}},
-		{Name: "content", DataType: []string{"string"}},
-		{Name: "type", DataType: []string{"string"}}, // text or code
-		{Name: "repository", DataType: []string{"string"}},
-		{Name: "revision", DataType: []string{"string"}},
-		{Name: "start_line", DataType: []string{"int"}},
-		{Name: "end_line", DataType: []string{"int"}},
-	},
-	Vectorizer: "text2vec-openai",
 }

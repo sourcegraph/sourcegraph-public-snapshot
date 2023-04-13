@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate"
-	"github.com/weaviate/weaviate-go-client/v4/weaviate/filters"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate/graphql"
 	"github.com/weaviate/weaviate/entities/models"
 
@@ -145,7 +144,7 @@ func NewHandler(
 			return
 		}
 
-		srs, err := search(r.Context(), searchOpts)
+		srs, err := search(r.Context(), searchOpts, logger)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -214,7 +213,7 @@ func NewHandler(
 	return mux
 }
 
-func search(ctx context.Context, args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingSearchResults, error) {
+func search(ctx context.Context, args embeddings.EmbeddingsSearchParameters, logger log.Logger) (*embeddings.EmbeddingSearchResults, error) {
 	client, err := weaviate.NewClient(weaviate.Config{
 		Host:   "localhost:8181",
 		Scheme: "http",
@@ -223,9 +222,9 @@ func search(ctx context.Context, args embeddings.EmbeddingsSearchParameters) (*e
 		return nil, err
 	}
 
-	extractResults := func(res *models.GraphQLResponse) []embeddings.EmbeddingSearchResult {
+	extractResults := func(res *models.GraphQLResponse, typ string) []embeddings.EmbeddingSearchResult {
 		get := res.Data["Get"].(map[string]interface{})
-		code := get["Code"].([]interface{})
+		code := get[typ].([]interface{})
 		srs := make([]embeddings.EmbeddingSearchResult, 0, len(code))
 		for _, c := range code {
 			cMap := c.(map[string]interface{})
@@ -254,28 +253,16 @@ func search(ctx context.Context, args embeddings.EmbeddingsSearchParameters) (*e
 		{Name: "end_line"},
 	}
 
-	// I don't know whether it is possible to do this in one query, so I'm doing it in two.
-	isCode := filters.Where().
-		WithPath([]string{"type"}).
-		WithOperator(filters.Equal).
-		WithValueString("code")
-	codeBuilder := client.GraphQL().Get().WithClassName("Code").WithHybrid(hybridArgs).WithFields(wantFields...).WithWhere(isCode).WithLimit(args.CodeResultsCount)
-	codeRes, err := codeBuilder.Do(ctx)
+	CodeBuilder := client.GraphQL().Get().WithClassName("Code").WithHybrid(hybridArgs).WithFields(wantFields...).WithLimit(args.CodeResultsCount)
+	TextBuilder := client.GraphQL().Get().WithClassName("Text").WithHybrid(hybridArgs).WithFields(wantFields...).WithLimit(args.TextResultsCount)
+	multiClassGetter := client.GraphQL().MultiClassGet().AddQueryClass(CodeBuilder).AddQueryClass(TextBuilder)
+	res, err := multiClassGetter.Do(ctx)
 	if err != nil {
 		return nil, err
 	}
-	codeResults := extractResults(codeRes)
-
-	isText := filters.Where().
-		WithPath([]string{"type"}).
-		WithOperator(filters.Equal).
-		WithValueString("text")
-	textBuilder := client.GraphQL().Get().WithClassName("Code").WithHybrid(hybridArgs).WithFields(wantFields...).WithWhere(isText).WithLimit(args.TextResultsCount)
-	textRes, err := textBuilder.Do(ctx)
-	if err != nil {
-		return nil, err
-	}
-	textResults := extractResults(textRes)
+	logger.Info("res", log.String("res", fmt.Sprintf("%v", res)))
+	codeResults := extractResults(res, "Code")
+	textResults := extractResults(res, "Text")
 
 	return &embeddings.EmbeddingSearchResults{
 		CodeResults: codeResults,

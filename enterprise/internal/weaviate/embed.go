@@ -39,9 +39,9 @@ func EmbedRepo(
 			continue
 		}
 
-		typ := "code"
+		typ := "Code"
 		if isValidTextFile(fileName) {
-			typ = "text"
+			typ = "Text"
 		}
 
 		b, err := readFile(fileName)
@@ -52,14 +52,13 @@ func EmbedRepo(
 		chunks := split.SplitIntoEmbeddableChunks(string(b), fileName, splitOptions)
 		for _, chunk := range chunks {
 			cnt++
-			logger.Info("adding object")
+			logger.Info("adding object", log.String("type", typ), log.String("filename", chunk.FileName))
 			batch.WithObjects(&models.Object{
-				Class: "Code",
+				Class: typ,
 				Properties: map[string]interface{}{
 					"filename":   chunk.FileName,
 					"content":    chunk.Content,
 					"repository": string(repoName),
-					"type":       typ,
 					"revision":   string(revision),
 					"start_line": chunk.StartLine,
 					"end_line":   chunk.EndLine,
