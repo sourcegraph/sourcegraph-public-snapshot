@@ -22,8 +22,6 @@ type AfterStepResult struct {
 	Diff []byte `json:"diff"`
 	// Outputs is a copy of the Outputs after executing the Step.
 	Outputs map[string]any `json:"outputs"`
-	// Skipped determines whether the step was skipped.
-	Skipped bool `json:"skipped"`
 }
 
 func (a AfterStepResult) MarshalJSON() ([]byte, error) {
@@ -57,7 +55,6 @@ func (a *AfterStepResult) UnmarshalJSON(data []byte) error {
 		a.StepIndex = v2.StepIndex
 		a.Diff = v2.Diff
 		a.Outputs = v2.Outputs
-		a.Skipped = v2.Skipped
 		return nil
 	}
 	var v1 v1AfterStepResult
@@ -85,7 +82,6 @@ type v2AfterStepResult struct {
 	StepIndex    int            `json:"stepIndex"`
 	Diff         []byte         `json:"diff"`
 	Outputs      map[string]any `json:"outputs"`
-	Skipped      bool           `json:"skipped"`
 }
 
 type v1AfterStepResult struct {
