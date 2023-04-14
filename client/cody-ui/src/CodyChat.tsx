@@ -53,7 +53,6 @@ export const CodyChat = ({ repoName, onClose }: CodyChatProps): JSX.Element => {
     useEffect(() => {
         const sidebar = codySidebarRef.current
         if (sidebar && shouldScrollToBottom) {
-            console.log(messageInProgress)
             scrollToBottom('auto')
         }
     }, [transcript, shouldScrollToBottom, messageInProgress])
