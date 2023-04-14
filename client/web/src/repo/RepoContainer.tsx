@@ -46,7 +46,6 @@ import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useNavbarQueryState } from '../stores'
 import { useChatStore } from '../stores/codyChat'
-import { eventLogger } from '../tracking/eventLogger'
 import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 

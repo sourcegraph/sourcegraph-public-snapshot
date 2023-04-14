@@ -149,6 +149,7 @@
     border: 1px solid var(--border-color-2) !important;
     border-radius: 4px !important;
     font-size: 0.8rem !important;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
     padding: 1px 8px;
     background-color: var(--color-bg-2) !important;
 }
