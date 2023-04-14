@@ -205,7 +205,7 @@ func (r *batchSpecWorkspaceStepV2Resolver) IfCondition() *string {
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) CachedResultFound() bool {
-	return r.stepInfo.StartedAt.IsZero() && r.cachedResult != nil
+	return r.cachedResult != nil
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) Skipped() bool {
