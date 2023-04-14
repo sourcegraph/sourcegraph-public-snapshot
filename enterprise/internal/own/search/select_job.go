@@ -87,7 +87,7 @@ func (s *selectOwnersJob) Name() string {
 	return "SelectOwnersSearchJob"
 }
 
-func (s *selectOwnersJob) Fields(v job.Verbosity) (res []otlog.Field) {
+func (s *selectOwnersJob) Fields(_ job.Verbosity) (res []otlog.Field) {
 	return res
 }
 
