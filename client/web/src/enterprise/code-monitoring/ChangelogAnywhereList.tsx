@@ -392,7 +392,7 @@ const ExampleChangelog: React.FunctionComponent<ExampleChangelogProps> = ({ name
                     <H3>Aggregate:</H3>
                     {queries.map(({ query, focus }) => (
                         <div className="mt-1 d-flex align-items-center" key={query}>
-                            <Label className="mb-0 mr-1">Use {focus} from:</Label>
+                            <Label className="mb-0 mr-1">{focus} from:</Label>
                             <LazyQueryInput
                                 className={styles.input}
                                 patternType={SearchPatternType.standard}
@@ -563,9 +563,6 @@ export const ChangelogAnywhereList: React.FunctionComponent<
                     ]}
                 />
             </div>
-        </div>
-        <div className="mt-5">
-            We want to hear your feedback! <Link to="mailto:feedback@sourcegraph.com">Share your thoughts</Link>
         </div>
     </>
 )
