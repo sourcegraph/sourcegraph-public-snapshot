@@ -22,8 +22,6 @@ out=$(bazel cquery //cmd/symbols --output=files)
 cp "$out" "$OUTPUT"
 cp cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 
-tree $OUTPUT
-
 docker build -f cmd/symbols/Dockerfile.bazel -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
