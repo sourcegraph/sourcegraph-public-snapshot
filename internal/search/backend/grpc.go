@@ -51,6 +51,7 @@ func (c *switchableZoektGRPCClient) String() string {
 	return c.httpClient.String()
 }
 
+// zoektGRPCClient is a zoekt.Streamer that uses gRPC for its RPC layer
 type zoektGRPCClient struct {
 	endpoint string
 	client   v1.WebserverServiceClient
@@ -112,6 +113,7 @@ func (z *zoektGRPCClient) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 func (z *zoektGRPCClient) Close()         {}
 func (z *zoektGRPCClient) String() string { return z.endpoint }
 
+// convertError translates gRPC errors to well-known Go errors.
 func convertError(err error) error {
 	if err == nil || err == io.EOF {
 		return nil
