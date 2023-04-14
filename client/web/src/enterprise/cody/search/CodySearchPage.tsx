@@ -64,27 +64,39 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                 setLoading(false)
 
                 if (query) {
-                    eventLogger.log('web:codySearch:submitSucceeded', { input: sanitizedInput, translatedQuery: query }, { input: sanitizedInput, translatedQuery: query })
+                    eventLogger.log(
+                        'web:codySearch:submitSucceeded',
+                        { input: sanitizedInput, translatedQuery: query },
+                        { input: sanitizedInput, translatedQuery: query }
+                    )
                     setCodySearchInput(JSON.stringify({ input: sanitizedInput, translatedQuery: query }))
                     navigate({
                         pathname: '/search',
                         search: buildSearchURLQuery(query, SearchPatternType.regexp, false) + '&ref=cody-search',
                     })
                 } else {
-                    eventLogger.log('web:codySearch:submitFailed', { input: sanitizedInput, reason: 'untranslatable' }, { input: sanitizedInput, reason: 'untranslatable' })
+                    eventLogger.log(
+                        'web:codySearch:submitFailed',
+                        { input: sanitizedInput, reason: 'untranslatable' },
+                        { input: sanitizedInput, reason: 'untranslatable' }
+                    )
                     setInputError('Cody does not understand this query. Try rephrasing it.')
                 }
             },
             error => {
-                eventLogger.log('web:codySearch:submitFailed', {
-                    input: sanitizedInput,
-                    reason: 'unreachable',
-                    error: error?.message,
-                }, {
-                    input: sanitizedInput,
-                    reason: 'unreachable',
-                    error: error?.message,
-                })
+                eventLogger.log(
+                    'web:codySearch:submitFailed',
+                    {
+                        input: sanitizedInput,
+                        reason: 'unreachable',
+                        error: error?.message,
+                    },
+                    {
+                        input: sanitizedInput,
+                        reason: 'unreachable',
+                        error: error?.message,
+                    }
+                )
                 setLoading(false)
                 setInputError(`Unable to reach Cody. Error: ${error?.message}`)
             }
