@@ -96,6 +96,7 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                     inputRowClassName={styles.inputRow}
                     chatInputClassName={styles.chatInput}
                     textAreaComponent={AutoResizableTextArea}
+                    codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
                 />
             </div>
             {showScrollDownButton && <ScrollDownButton onClick={() => scrollToBottom('smooth')} />}
