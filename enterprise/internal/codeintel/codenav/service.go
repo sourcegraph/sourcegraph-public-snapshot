@@ -889,7 +889,7 @@ func (s *Service) GetPrototypes(ctx context.Context, args RequestArgs, requestSt
 	if err != nil {
 		return nil, cursor, err
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numImplementationsLocations", len(prototypeLocations)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numPrototypesLocations", len(prototypeLocations)))
 
 	return prototypeLocations, cursor, nil
 }
