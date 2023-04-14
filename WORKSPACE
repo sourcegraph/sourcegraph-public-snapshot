@@ -198,11 +198,6 @@ go_repository(
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()
 
-local_repository(
-    name = "com_github_sourcegraph_zoekt",
-    path = "/Users/camdencheek/src/sourcegraph/zoekt",
-)
-
 go_rules_dependencies()
 
 go_register_toolchains(
