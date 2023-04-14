@@ -14,7 +14,7 @@ import (
 
 func TestLogger_WriteEvent(t *testing.T) {
 	var buf bytes.Buffer
-	logger := &log.Logger{W: &buf}
+	logger := &log.Logger{Writer: &buf}
 
 	err := logger.WriteEvent(
 		batcheslib.LogEventOperationTaskStep,

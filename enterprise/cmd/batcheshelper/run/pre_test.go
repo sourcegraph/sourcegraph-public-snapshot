@@ -241,7 +241,7 @@ func TestPre(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var buf bytes.Buffer
-			logger := &log.Logger{W: &buf}
+			logger := &log.Logger{Writer: &buf}
 
 			dir := t.TempDir()
 

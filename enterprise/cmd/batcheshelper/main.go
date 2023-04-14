@@ -47,7 +47,7 @@ func doMain() error {
 		return err
 	}
 
-	logger := &log.Logger{W: os.Stdout}
+	logger := &log.Logger{Writer: os.Stdout}
 
 	wd, err := os.Getwd()
 	if err != nil {
