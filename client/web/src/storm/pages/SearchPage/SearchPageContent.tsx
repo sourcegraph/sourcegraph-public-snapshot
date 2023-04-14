@@ -102,16 +102,16 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         {codySearchEnabled && (
                             <div className="d-flex justify-content-center mt-4">
                                 <Text className="text-muted">
-                                    <Badge variant="merged">New</Badge>{' '}
+                                    <Badge variant="merged">Experimental</Badge>{' '}
                                     <Link
                                         to="/search/cody"
                                         onClick={() =>
-                                            telemetryService.log('ClickedOnTryMagicalSearchCTA', {
+                                            telemetryService.log('ClickedOnTryCodySearchCTA', {
                                                 location: 'SearchPage',
                                             })
                                         }
                                     >
-                                        Try the Magical Search Experience powered by Cody <CodyIcon />{' '}
+                                        Ask Cody to contruct a query from natural language <CodyIcon />{' '}
                                         <Icon svgPath={mdiArrowRight} aria-hidden={true} />
                                     </Link>
                                 </Text>
