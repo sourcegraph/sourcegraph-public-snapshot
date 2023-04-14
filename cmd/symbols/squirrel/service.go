@@ -131,9 +131,9 @@ type DirOrNode struct {
 
 func (dirOrNode *DirOrNode) String() string {
 	if dirOrNode.Dir != nil {
-		return fmt.Sprintf("%s", dirOrNode.Dir)
+		return dirOrNode.Dir.String()
 	}
-	return fmt.Sprintf("%s", dirOrNode.Node)
+	return dirOrNode.Node.String()
 }
 
 func (s *SquirrelService) getDef(ctx context.Context, node Node) (*Node, error) {

@@ -22,13 +22,16 @@ import { updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
 import { configureExternalServices } from '../external-services'
-import { getRgPath } from '../rg'
 import { sanitizeServerEndpoint } from '../sanitize'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
-async function isValidLogin(serverEndpoint: string, accessToken: string): Promise<boolean> {
-    const client = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(serverEndpoint), accessToken)
+async function isValidLogin(
+    serverEndpoint: string,
+    accessToken: string,
+    customHeaders: Record<string, string>
+): Promise<boolean> {
+    const client = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(serverEndpoint), accessToken, customHeaders)
     const userId = await client.getCurrentUserId()
     return !isError(userId)
 }
@@ -57,7 +60,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         private rgPath: string,
         private mode: 'development' | 'production',
-        private localStorage: LocalStorage
+        private localStorage: LocalStorage,
+        private customHeaders: Record<string, string>
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
@@ -66,28 +70,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.createNewChatID()
     }
 
-    public static async create(
+    public static create(
         extensionPath: string,
         codebase: string,
         serverEndpoint: string,
         contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
-        debug: boolean,
         secretStorage: SecretStorage,
-        localStorage: LocalStorage
-    ): Promise<ChatViewProvider> {
-        const mode = debug ? 'development' : 'production'
-        const rgPath = await getRgPath(extensionPath)
-        const editor = new VSCodeEditor()
-
-        const { intentDetector, codebaseContext, chatClient } = await configureExternalServices(
-            serverEndpoint,
-            codebase,
-            rgPath,
-            editor,
-            secretStorage,
-            contextType,
-            mode
-        )
+        localStorage: LocalStorage,
+        editor: VSCodeEditor,
+        rgPath: string,
+        mode: 'development' | 'production',
+        intentDetector: IntentDetector,
+        codebaseContext: CodebaseContext,
+        chatClient: ChatClient,
+        customHeaders: Record<string, string>
+    ): ChatViewProvider {
         return new ChatViewProvider(
             extensionPath,
             codebase,
@@ -101,7 +98,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             contextType,
             rgPath,
             mode,
-            localStorage
+            localStorage,
+            customHeaders
         )
     }
 
@@ -126,7 +124,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 await this.acceptTOS(message.version)
                 break
             case 'settings': {
-                const isValid = await isValidLogin(message.serverEndpoint, message.accessToken)
+                const isValid = await isValidLogin(message.serverEndpoint, message.accessToken, this.customHeaders)
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
@@ -370,6 +368,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         return this.transcript.toChat()
     }
 
+    // TODO(beyang): maybe move this into CommandsProvider (should maybe change that to a top-level controller class)
     public async onConfigChange(change: string, codebase: string, serverEndpoint: string): Promise<void> {
         switch (change) {
             case 'token':
@@ -381,7 +380,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     this.editor,
                     this.secretStorage,
                     this.contextType,
-                    this.mode
+                    this.mode,
+                    this.customHeaders
                 )
 
                 this.codebase = codebase

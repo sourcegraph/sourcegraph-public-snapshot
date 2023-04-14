@@ -158,7 +158,8 @@ lazy_static::lazy_static! {
             Rust,
             Scala,
             Sql,
-            Xlsg
+            Xlsg,
+            Zig
         )
     };
 }

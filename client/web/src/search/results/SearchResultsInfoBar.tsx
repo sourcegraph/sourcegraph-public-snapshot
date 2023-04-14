@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react'
 
-import { mdiChevronDoubleDown, mdiChevronDoubleUp } from '@mdi/js'
+import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiThumbUp, mdiThumbDown, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
+import { useLocation } from 'react-router-dom'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -9,11 +10,12 @@ import { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/share
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon, Label } from '@sourcegraph/wildcard'
+import { Button, Icon, Label, Alert, useSessionStorage, Link, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../batches/utils'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import {
     CreateAction,
@@ -140,6 +142,21 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     // Show/hide ranking toggle
     const [rankingEnabled] = useFeatureFlag('search-ranking')
 
+    const location = useLocation()
+    const refFromCodySearch = new URLSearchParams(location.search).get('ref') === 'cody-search'
+    const [codySearchInputString] = useSessionStorage<string>('cody-search-input', '')
+    const codySearchInput: { input?: string; translatedQuery?: string } = JSON.parse(codySearchInputString || '{}')
+    const [codyFeedback, setCodyFeedback] = useState<null | boolean>(null)
+
+    const collectCodyFeedback = (positive: boolean): void => {
+        if (codyFeedback !== null) {
+            return
+        }
+
+        eventLogger.log('web:codySearch:feedbackSubmitted', { ...codySearchInput, positive })
+        setCodyFeedback(positive)
+    }
+
     return (
         <aside
             role="region"
@@ -147,6 +164,48 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             className={classNames(props.className, styles.searchResultsInfoBar)}
             data-testid="results-info-bar"
         >
+            {refFromCodySearch && codySearchInput.input && codySearchInput.translatedQuery === props.query ? (
+                <Alert variant="info" className={styles.codyFeedbackAlert}>
+                    Sourcegraph converted "<strong>{codySearchInput.input}</strong>" to "
+                    <strong>{codySearchInput.translatedQuery}</strong>".{' '}
+                    <small>
+                        <Link target="blank" to="/help/code_search/reference/queries">
+                            Complete query reference{' '}
+                            <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                        </Link>
+                    </small>
+                    {codyFeedback === null ? (
+                        <>
+                            <Text className="my-2">Was this helpful?</Text>
+                            <div>
+                                <Button
+                                    variant="secondary"
+                                    outline={true}
+                                    size="sm"
+                                    onClick={() => collectCodyFeedback(true)}
+                                >
+                                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiThumbUp} />
+                                    Yes
+                                </Button>
+                                <Button
+                                    className="ml-2"
+                                    variant="secondary"
+                                    outline={true}
+                                    size="sm"
+                                    onClick={() => collectCodyFeedback(false)}
+                                >
+                                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiThumbDown} />
+                                    No
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <Text className="my-2">
+                            <strong>Thanks for your feedback!</strong>
+                        </Text>
+                    )}
+                </Alert>
+            ) : null}
             <div className={styles.row}>
                 {props.stats}
 

@@ -15,6 +15,7 @@ interface ExternalServices {
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     chatClient: ChatClient
+    completionsClient: SourcegraphNodeCompletionsClient
 }
 
 export async function configureExternalServices(
@@ -24,11 +25,12 @@ export async function configureExternalServices(
     editor: Editor,
     secretStorage: SecretStorage,
     contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
-    mode: 'development' | 'production'
+    mode: 'development' | 'production',
+    customHeaders: Record<string, string>
 ): Promise<ExternalServices> {
     const accessToken = await getAccessToken(secretStorage)
-    const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken)
-    const completions = new SourcegraphNodeCompletionsClient(serverEndpoint, accessToken, mode)
+    const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken, customHeaders)
+    const completions = new SourcegraphNodeCompletionsClient(serverEndpoint, accessToken, mode, customHeaders)
 
     const repoId = codebase ? await client.getRepoId(codebase) : null
     if (isError(repoId)) {
@@ -49,5 +51,6 @@ export async function configureExternalServices(
         intentDetector: new SourcegraphIntentDetectorClient(client),
         codebaseContext,
         chatClient: new ChatClient(completions),
+        completionsClient: completions,
     }
 }

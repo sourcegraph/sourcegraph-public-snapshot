@@ -11,8 +11,6 @@ import (
 	"github.com/scim2/filter-parser/v2"
 
 	sgfilter "github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Patch updates one or more attributes of a SCIM resource using a sequence of
@@ -23,75 +21,33 @@ import (
 //  2. the Remove operation should return No Content when the value to be removed is already absent.
 //
 // More information in Section 3.5.2 of RFC 7644: https://tools.ietf.org/html/rfc7644#section-3.5.2
-func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []scim.PatchOperation) (scim.Resource, error) {
+func (h *ResourceHandler) Patch(r *http.Request, id string, operations []scim.PatchOperation) (scim.Resource, error) {
 	if err := checkBodyNotEmpty(r); err != nil {
 		return scim.Resource{}, err
 	}
-
-	userRes := scim.Resource{}
-	// Because emails require special handling keep track if they have changed
-	emailsModified := false
-
-	// Start transaction
-	err := h.db.WithTransact(r.Context(), func(tx database.DB) error {
-		// Load user from DB
-		user, err := getUserFromDB(r.Context(), tx.Users(), id)
-		if err != nil {
-			return err
-		}
-		userRes = convertUserToSCIMResource(user)
-
+	finalEntity, err := h.service.Update(r.Context(), id, func(getResource func() scim.Resource) (scim.Resource, error) {
 		// Apply changes to the user resource
-		var changed bool
+		resource := getResource()
 		for _, op := range operations {
-			newlyChanged, emailsNewlyModified, opErr := h.applyOperation(op, &userRes)
+			opErr := h.applyOperation(op, &resource)
 			if opErr != nil {
-				return opErr
+				return scim.Resource{}, opErr
 			}
-			changed = changed || newlyChanged
-			emailsModified = emailsModified || emailsNewlyModified
 		}
-
-		if !changed {
-			// StatusNoContent
-			userRes = scim.Resource{}
-			return nil
-		}
-
-		// Non-intuitive behavior! If the user is being deactivated, hard delete the user!
-		// We will remove this later if soft deletion becomes a user requirement
-		if userRes.Attributes[AttrActive] == false {
-			err := h.Delete(r, id)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-
-		// Update user
 		var now = time.Now()
-		userRes.Meta.LastModified = &now
-		return updateUser(r.Context(), tx, user, userRes.Attributes, emailsModified)
+		resource.Meta.LastModified = &now
+		return resource, nil
 	})
-	if err != nil {
-		multiErr, ok := err.(errors.MultiError)
-		if !ok || len(multiErr.Errors()) == 0 {
-			return scim.Resource{}, err
-		}
-		return scim.Resource{}, multiErr.Errors()[len(multiErr.Errors())-1]
-	}
 
-	return userRes, nil
+	return finalEntity, err
 }
 
 // applyOperation applies a single operation to the given user resource and reports what it did.
-func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *scim.Resource) (changed bool, emailsModified bool, err error) {
+func (h *ResourceHandler) applyOperation(op scim.PatchOperation, resource *scim.Resource) (err error) {
 	// Handle multiple operations in one value
 	if op.Path == nil {
 		for rawPath, value := range op.Value.(map[string]interface{}) {
-			newlyChanged := applyChangeToAttributes(userRes.Attributes, rawPath, value)
-			changed = changed || newlyChanged
-			emailsModified = true
+			applyChangeToAttributes(resource.Attributes, rawPath, value)
 		}
 		return
 	}
@@ -102,10 +58,6 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 		valueExpr   = op.Path.ValueExpression
 	)
 
-	if attrName == AttrEmails {
-		emailsModified = true
-	}
-
 	// There might be a bug in the parser: when a filter is present, SubAttributeName() isn't populated.
 	// Populating it manually here.
 	if subAttrName == "" && op.Path.SubAttribute != nil {
@@ -113,26 +65,24 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 	}
 
 	// Attribute does not exist yet → add it
-	old, ok := userRes.Attributes[attrName]
+	old, ok := resource.Attributes[attrName]
 	if !ok && op.Op != "remove" {
 		switch {
 		case subAttrName != "": // Add new attribute with a sub-attribute
-			userRes.Attributes[attrName] = map[string]interface{}{
+			resource.Attributes[attrName] = map[string]interface{}{
 				subAttrName: op.Value,
 			}
-			changed = true
 		case valueExpr != nil:
 			// Having a value expression for a non-existing attribute is invalid → do nothing
 		default: // Add new attribute
-			userRes.Attributes[attrName] = op.Value
-			changed = true
+			resource.Attributes[attrName] = op.Value
 		}
 		return
 	}
 
 	// Attribute exists
 	if op.Op == "remove" {
-		currentValue, ok := userRes.Attributes[attrName]
+		currentValue, ok := resource.Attributes[attrName]
 		if !ok { // The current attribute does not exist - nothing to do
 			return
 		}
@@ -140,8 +90,7 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 		switch v := currentValue.(type) {
 		case []interface{}: // this value has multiple items
 			if valueExpr == nil { // this applies to whole attribute remove it
-				newlyChanged := applyAttributeChange(userRes.Attributes, attrName, nil, op.Op)
-				changed = changed || newlyChanged
+				applyAttributeChange(resource.Attributes, attrName, nil, op.Op)
 				return
 			}
 			remainingItems := []interface{}{} // keep track of the items that should remain
@@ -157,41 +106,35 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 			}
 			// Even though this is a "remove" operation since there is a filter we're actually replacing
 			// the attribute with the items that do not match the filter
-			newlyChanged := applyAttributeChange(userRes.Attributes, attrName, remainingItems, "replace")
-			changed = changed || newlyChanged
+			applyAttributeChange(resource.Attributes, attrName, remainingItems, "replace")
 		default: // this is just a value remove the attribute
-			var newlyChanged bool
 			if subAttrName != "" {
-				newlyChanged = applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
+				applyAttributeChange(resource.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
 			} else {
-				newlyChanged = applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
+				applyAttributeChange(resource.Attributes, attrName, v, op.Op)
 			}
-			changed = changed || newlyChanged
 		}
 	} else { // add or replace
 		switch v := op.Value.(type) {
 		case []interface{}: // this value has multiple items → append or replace
 			if op.Op == "add" {
-				userRes.Attributes[attrName] = append(old.([]interface{}), v...)
-				ensureSinglePrimaryItem(v, userRes.Attributes, attrName)
+				resource.Attributes[attrName] = append(old.([]interface{}), v...)
+				ensureSinglePrimaryItem(v, resource.Attributes, attrName)
 			} else { // replace
-				userRes.Attributes[attrName] = v
+				resource.Attributes[attrName] = v
 			}
-			changed = true
 		default: // this value has a single item
-			var newlyChanged bool
 			if valueExpr == nil { // no value expression → just apply the change
 				if subAttrName != "" {
-					newlyChanged = applyAttributeChange(userRes.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
+					applyAttributeChange(resource.Attributes[attrName].(map[string]interface{}), subAttrName, v, op.Op)
 				} else {
-					newlyChanged = applyAttributeChange(userRes.Attributes, attrName, v, op.Op)
+					applyAttributeChange(resource.Attributes, attrName, v, op.Op)
 				}
-				changed = changed || newlyChanged
 				return
 			}
 
 			// We have a valueExpression to apply which means this must be a slice
-			attributeItems, isArray := userRes.Attributes[attrName].([]interface{})
+			attributeItems, isArray := resource.Attributes[attrName].([]interface{})
 			if !isArray {
 				return // This isn't a slice, so nothing will match the expression → do nothing
 			}
@@ -216,7 +159,6 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 						attributeItems[i] = item //attribute items are updated
 						matchedItems = append(matchedItems, item)
 					}
-					changed = changed || newlyChanged
 				}
 			}
 			if !filterMatched && op.Op == "replace" {
@@ -227,9 +169,9 @@ func (h *UserResourceHandler) applyOperation(op scim.PatchOperation, userRes *sc
 				}
 			}
 			if attributeToSet == "primary" && v == true {
-				ensureSinglePrimaryItem(matchedItems, userRes.Attributes, attrName)
+				ensureSinglePrimaryItem(matchedItems, resource.Attributes, attrName)
 			}
-			userRes.Attributes[attrName] = attributeItems
+			resource.Attributes[attrName] = attributeItems
 		}
 	}
 
@@ -263,10 +205,10 @@ func ensureSinglePrimaryItem(changedItems []interface{}, attributes scim.Resourc
 }
 
 // applyChangeToAttributes applies a change to a resource (for example, sets its userName).
-func applyChangeToAttributes(attributes scim.ResourceAttributes, rawPath string, value interface{}) (changed bool) {
+func applyChangeToAttributes(attributes scim.ResourceAttributes, rawPath string, value interface{}) {
 	// Ignore nil values
 	if value == nil {
-		return false
+		return
 	}
 
 	// Convert rawPath to path
@@ -284,22 +226,22 @@ func applyChangeToAttributes(attributes scim.ResourceAttributes, rawPath string,
 			}
 			m[subAttrName] = value
 			attributes[path.AttributeName] = m
-			return true
+			return
 		}
 		// It doesn't exist → add new attribute
 		attributes[path.AttributeName] = map[string]interface{}{subAttrName: value}
-		return true
+		return
 	}
 
 	// Add new root attribute if it doesn't exist
 	_, ok := attributes[rawPath]
 	if !ok {
 		attributes[rawPath] = value
-		return true
+		return
 	}
 
 	// Update existing sub-attribute or root attribute
-	return applyAttributeChange(attributes, rawPath, value, "replace")
+	applyAttributeChange(attributes, rawPath, value, "replace")
 }
 
 // applyAttributeChange applies a change to an _existing_ resource attribute (for example, userName).

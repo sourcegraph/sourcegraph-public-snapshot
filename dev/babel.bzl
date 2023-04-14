@@ -3,7 +3,7 @@
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:@babel/cli/package_json.bzl", "bin")
 
-def babel(name, srcs, module = None, usePresetEnv = True, **kwargs):
+def babel(name, srcs, module = None, use_preset_env = True, **kwargs):
     """A wrapper around Babel CLI
 
     Args:
@@ -13,7 +13,7 @@ def babel(name, srcs, module = None, usePresetEnv = True, **kwargs):
 
         module: If specified, sets BABEL_MODULE environment variable to this value
 
-        usePresetEnv: Controls if we transpile TS sources with babel-preset-env.
+        use_preset_env: Controls if we transpile TS sources with babel-preset-env.
         If set to False, sets the DISABLE_PRESET_ENV environment variable to "true".
 
         **kwargs: Additional arguments to pass to the rule
@@ -70,7 +70,7 @@ def babel(name, srcs, module = None, usePresetEnv = True, **kwargs):
     if module != None:
         env["BABEL_MODULE"] = module
 
-    if usePresetEnv == False:
+    if use_preset_env == False:
         env["DISABLE_PRESET_ENV"] = "true"
 
     bin.babel(

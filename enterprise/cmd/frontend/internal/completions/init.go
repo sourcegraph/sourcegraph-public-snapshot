@@ -25,6 +25,7 @@ func Init(
 ) error {
 	logger := log.Scoped("completions", "")
 	enterpriseServices.NewCompletionsStreamHandler = func() http.Handler { return streaming.NewCompletionsStreamHandler(logger) }
+	enterpriseServices.NewCodeCompletionsHandler = func() http.Handler { return streaming.NewCodeCompletionsHandler(logger) }
 	enterpriseServices.CompletionsResolver = resolvers.NewCompletionsResolver()
 
 	return nil

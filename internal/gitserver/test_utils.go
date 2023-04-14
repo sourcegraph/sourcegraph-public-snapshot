@@ -55,20 +55,23 @@ func MakeGitRepository(t *testing.T, cmds ...string) api.RepoName {
 	return repo
 }
 
-// MakeBareGitRepository calls initGitRepository to create a new Git
-// repository and returns a handle to a bare clone of it.
-func MakeBareGitRepository(t *testing.T, cmds ...string) api.RepoName {
+// MakeGitRepositoryAndReturnDir calls initGitRepository to create a new Git repository and returns
+// the repo name and directory.
+func MakeGitRepositoryAndReturnDir(t *testing.T, cmds ...string) (api.RepoName, string) {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
-	repo := api.RepoName(filepath.Base(dir) + "-bare")
-	bareDir := filepath.Join(filepath.Dir(dir), string(repo), ".git")
-	if err := os.Mkdir(filepath.Dir(bareDir), 0700); err != nil {
-		t.Fatal(err)
+	repo := api.RepoName(filepath.Base(dir))
+	return repo, dir
+}
+
+func GetHeadCommitFromGitDir(t *testing.T, gitDir string) string {
+	t.Helper()
+	cmd := CreateGitCommand(gitDir, "bash", []string{"-c", "git rev-parse HEAD"}...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("Command %q failed. Output was: %s, Error: %+v\n ", cmd, out, err)
 	}
-	if _, err := exec.Command("git", "clone", "--bare", dir, bareDir).Output(); err != nil {
-		t.Fatal(err)
-	}
-	return repo
+	return strings.Trim(string(out), "\n")
 }
 
 // InitGitRepository initializes a new Git repository and runs commands in a new

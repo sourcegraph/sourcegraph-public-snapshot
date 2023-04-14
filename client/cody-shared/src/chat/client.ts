@@ -19,6 +19,7 @@ export interface ClientInit {
     accessToken: string | null
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: ChatMessage[]) => void
+    customHeaders?: Record<string, string>
 }
 
 export interface Client {
@@ -30,15 +31,17 @@ export async function createClient({
     accessToken,
     setMessageInProgress,
     setTranscript,
+    customHeaders,
 }: ClientInit): Promise<Client> {
     const completionsClient = new SourcegraphBrowserCompletionsClient(
         config.serverEndpoint,
         accessToken,
-        process.env.NODE_ENV === 'development' ? 'development' : 'production'
+        process.env.NODE_ENV === 'development' ? 'development' : 'production',
+        customHeaders
     )
     const chatClient = new ChatClient(completionsClient)
 
-    const graphqlClient = new SourcegraphGraphQLAPIClient(config.serverEndpoint, accessToken)
+    const graphqlClient = new SourcegraphGraphQLAPIClient(config.serverEndpoint, accessToken, customHeaders)
 
     const repoId = config.codebase ? await graphqlClient.getRepoId(config.codebase) : null
     if (isError(repoId)) {

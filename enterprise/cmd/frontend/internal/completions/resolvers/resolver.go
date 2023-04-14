@@ -15,6 +15,7 @@ import (
 
 var _ graphqlbackend.CompletionsResolver = &completionsResolver{}
 
+// completionsResolver provides chat completions
 type completionsResolver struct {
 }
 
@@ -35,13 +36,13 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", errors.New("completions are not configured or disabled")
 	}
 
-	client, err := streaming.GetCompletionStreamClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
+	client, err := streaming.GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
 	if err != nil {
 		return "", errors.Wrap(err, "GetCompletionStreamClient")
 	}
 
 	var last string
-	if err := client.Stream(ctx, convertParams(args), func(event types.CompletionEvent) error {
+	if err := client.Stream(ctx, convertParams(args), func(event types.ChatCompletionEvent) error {
 		// each completion is just a partial of the final result, since we're in a sync request anyway
 		// we will just wait for the final completion event
 		last = event.Completion
@@ -52,8 +53,8 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 	return last, nil
 }
 
-func convertParams(args graphqlbackend.CompletionsArgs) types.CompletionRequestParameters {
-	return types.CompletionRequestParameters{
+func convertParams(args graphqlbackend.CompletionsArgs) types.ChatCompletionRequestParameters {
+	return types.ChatCompletionRequestParameters{
 		Messages:          convertMessages(args.Input.Messages),
 		Temperature:       float32(args.Input.Temperature),
 		MaxTokensToSample: int(args.Input.MaxTokensToSample),
