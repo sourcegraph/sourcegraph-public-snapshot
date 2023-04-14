@@ -50,7 +50,7 @@
                 }
             </script>
 
-            <script type="module" src="https://esm.sh/@markprompt/web@0.2.2-beta38" defer></script>
+            <script type="module" src="https://esm.sh/@markprompt/web@0.2.2-beta44" defer></script>
 
             <script>
                 function showMarkprompt() {
@@ -199,6 +199,18 @@
 
                     return { label, href }
                 };
+
+                component.promptTemplate = `You are a very enthusiastic company representative from Sourcegraph who loves to help people! Given the following sections from the documentation (preceded by a section id), answer the question using only that information, outputted in Markdown format. Here are some further instructions:
+- If you encounter a relative link, or an anchor link (starting with #), prepend it with the section id. Also remove any extension (such as ".md") from the section id, and replace "/docs/" with "/".
+- If you are unsure and the answer is not explicitly written in the documentation, say "\{\{I_DONT_KNOW\}\}".
+
+Context sections:
+---
+\{\{CONTEXT\}\}
+
+Question: "\{\{PROMPT\}\}"
+
+Answer (including related code snippets if available):`
 
                 function setDark(dark) {
                     if (dark) {
