@@ -58,7 +58,6 @@ func Pre(
 		}); err != nil {
 			return err
 		}
-		fmt.Printf("batcheshelper pre %d skipped\n", stepIdx)
 
 		// Write the step result file with the skipped flag set.
 		stepResult := execution.AfterStepResult{
@@ -73,7 +72,7 @@ func Pre(
 			return errors.Wrap(err, "failed to write step result file")
 		}
 
-		return nil
+		return ErrStepSkipped
 	} else {
 		// Parse and render the step.Files.
 		filesToMount, err := createFilesToMount(workingDirectory, stepIdx, step, &stepContext)
@@ -235,3 +234,6 @@ func getAbsoluteMountPath(batchSpecDir string, mountPath string) (string, error)
 	}
 	return p, nil
 }
+
+// ErrStepSkipped is returned when a step is skipped.
+var ErrStepSkipped = errors.New("step skipped")
