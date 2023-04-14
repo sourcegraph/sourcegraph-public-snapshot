@@ -1,6 +1,6 @@
 # Embedded repositories (5+ stars)
 
-Last updated: 04-12-2023 · 07:51 AM PDT
+Last updated: 04-14-2023 · 01:37 PM PDT
 
 1. `github.com/152334H/DL-Art-School`
 1. `github.com/152334H/tortoise-tts-fast`
@@ -46,6 +46,7 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/apache/arrow-rs`
 1. `github.com/apache/cassandra`
 1. `github.com/apache/flink`
+1. `github.com/apache/hadoop`
 1. `github.com/apache/lucene`
 1. `github.com/apache/spark`
 1. `github.com/appium/appium`
@@ -61,6 +62,7 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/ardanlabs/service`
 1. `github.com/argoproj/argo-workflows`
 1. `github.com/Arinerron/heaptrace`
+1. `github.com/arkworks-rs/crypto-primitives`
 1. `github.com/arquillian/arquillian-core`
 1. `github.com/asticode/go-astits`
 1. `github.com/AUTOMATIC1111/stable-diffusion-webui`
@@ -78,9 +80,10 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/bambang/Digital-Beam-Forming-for-spaceborne-Reflector-SAR`
 1. `github.com/bambang/RITSAR`
 1. `github.com/bambang/sentinel1Level0DecodingDemo`
-1. `github.com/bambang/Ship-Detection-on-Remote-Sensing-Synthetic-Aperture-Radar-Data`
+1. `github.com/bambang/1. `Ship-Detection-on-Remote-Sensing-Synthetic-Aperture-Radar-Data`
 1. `github.com/bambang/Synthetic-Aperture-Radar-SAR-Simulator`
 1. `github.com/bambang/SyntheticApertureRadarImaging`
+1. `github.com/bazelbuild/bazel`
 1. `github.com/bazelbuild/bazel-gazelle`
 1. `github.com/bazelbuild/rules_foreign_cc`
 1. `github.com/bellard/quickjs`
@@ -104,6 +107,7 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/calcsam/marketing-for-engineers`
 1. `github.com/capnproto/capnproto`
 1. `github.com/carlmjohnson/requests`
+1. `github.com/celery/celery`
 1. `github.com/CesiumGS/cesium`
 1. `github.com/cfillion/reaimgui`
 1. `github.com/cfillion/reascripts`
@@ -134,6 +138,7 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/codemirror/state`
 1. `github.com/codemirror/view`
 1. `github.com/collabora/spear-tts-pytorch`
+1. `github.com/CompVis/stable-diffusion`
 1. `github.com/Conflux-Chain/js-conflux-sdk`
 1. `github.com/containerd/nerdctl`
 1. `github.com/CorpAssure/bizengine-backend-api.git`
@@ -162,6 +167,7 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/dask/distributed`
 1. `github.com/databricks/terraform-provider-databricks`
 1. `github.com/datafuselabs/databend`
+1. `github.com/davecheney/pub`
 1. `github.com/de4dot/de4dot`
 1. `github.com/delta-io/delta`
 1. `github.com/demonnic/highlighter`
@@ -169,12 +175,15 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/demonnic/muddler`
 1. `github.com/denoland/deno`
 1. `github.com/dgtlmoon/changedetection.io`
+1. `github.com/dipy/dipy`
 1. `github.com/distribution/distribution`
 1. `github.com/django/django`
 1. `github.com/dmcable/spacexr`
 1. `github.com/dongyuwei/hallelujahIM`
 1. `github.com/doomemacs/doomemacs`
 1. `github.com/dosbox-staging/dosbox-staging`
+1. `github.com/dotnet/roslyn`
+1. `github.com/dotnet/runtime`
 1. `github.com/dotnet/Silk.NET`
 1. `github.com/DrKLO/Telegram`
 1. `github.com/drupal/drupal`
@@ -187,6 +196,7 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/eclipse-zenoh/zenoh`
 1. `github.com/eclipse/eclipse-collections`
 1. `github.com/ecomfe/reskript`
+1. `github.com/elastic/elasticsearch`
 1. `github.com/element-plus/element-plus`
 1. `github.com/elixir-ecto/ecto`
 1. `github.com/emacs-mirror/emacs`
@@ -279,6 +289,7 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/hashicorp/nomad`
 1. `github.com/hashicorp/terraform`
 1. `github.com/hashicorp/terraform-provider-aws`
+1. `github.com/hashicorp/vault`
 1. `github.com/hasura/graphql-engine`
 1. `github.com/hatemhosny/parse-starter`
 1. `github.com/helix-editor/helix`
@@ -341,6 +352,7 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/kedro-org/kedro`
 1. `github.com/keepsafe/dexcount-gradle-plugin`
 1. `github.com/kelseyhightower/kubernetes-the-hard-way`
+1. `github.com/kelseyhightower/vault-init`
 1. `github.com/koolhazz/LuaGameEngine`
 1. `github.com/Kotlin/kotlinx.coroutines`
 1. `github.com/kubearmor/KubeArmor`
@@ -376,7 +388,10 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/LotJ/LotJ`
 1. `github.com/lucasvaltl/RobotIsland`
 1. `github.com/lucidrains/audiolm-pytorch`
+1. `github.com/lucidrains/DALLE2-pytorch`
+1. `github.com/lucidrains/imagen-pytorch`
 1. `github.com/lucidrains/vector-quantize-pytorch`
+1. `github.com/lucidrains/vit-pytorch`
 1. `github.com/lugia19/elevenlabslib`
 1. `github.com/luning/jquery.parcel`
 1. `github.com/luxiaoxun/NettyRpc`
@@ -445,6 +460,7 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/newrelic/go-agent`
 1. `github.com/nextdns/nextdns`
 1. `github.com/nginx/nginx`
+1. `github.com/ngrx/platform`
 1. `github.com/nicholaslyang/vicuna`
 1. `github.com/NixOS/nix`
 1. `github.com/NixOS/nixpkgs`
@@ -453,6 +469,7 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/nmrshll/auth-rs-warp`
 1. `github.com/nmrshll/bb`
 1. `github.com/nmrshll/chart`
+1. `github.com/nocodb/nocodb`
 1. `github.com/nodejs/node`
 1. `github.com/nopSolutions/nopCommerce`
 1. `github.com/not-fl3/macroquad`
@@ -463,11 +480,14 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/nushell/nushell`
 1. `github.com/OneKeyHQ/app-monorepo`
 1. `github.com/oobabooga/text-generation-webui`
+1. `github.com/open-mmlab/mmcv`
+1. `github.com/open-telemetry/opentelemetry-collector`
 1. `github.com/open-telemetry/opentelemetry-collector-contrib`
 1. `github.com/open-telemetry/opentelemetry-demo`
 1. `github.com/open-telemetry/opentelemetry-go`
 1. `github.com/openai/chatgpt-retrieval-plugin`
 1. `github.com/openai/evals`
+1. `github.com/openai/openai-cookbook`
 1. `github.com/openai/openai-python`
 1. `github.com/opencv/opencv`
 1. `github.com/openframeworks/openFrameworks`
@@ -484,6 +504,8 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/pandas-dev/pandas`
 1. `github.com/pandas-dev/pandas/`
 1. `github.com/panoply/esthetic`
+1. `github.com/parca-dev/parca`
+1. `github.com/parca-dev/parca-agent`
 1. `github.com/pastelsky/bundlephobia`
 1. `github.com/payara/Payara`
 1. `github.com/pdtgct/crypto11`
@@ -502,8 +524,11 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/pmndrs/jotai`
 1. `github.com/pola-rs/polars`
 1. `github.com/pola-rs/polars/`
+1. `github.com/polarsignals/frostdb`
 1. `github.com/pomdtr/sunbeam`
 1. `github.com/postgres/postgres`
+1. `github.com/PowerShell/PowerShell`
+1. `github.com/primefaces/primeng`
 1. `github.com/prisma/prisma`
 1. `github.com/Pritts/MeetingApp`
 1. `github.com/probml/pyprobml`
@@ -544,11 +569,17 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/reactjs/react.dev`
 1. `github.com/ReaTeam/JSFX`
 1. `github.com/ReaTeam/ReaScripts`
+1. `github.com/redis/redis`
 1. `github.com/reduxjs/redux`
 1. `github.com/reduxjs/redux-toolkit`
 1. `github.com/release-it/release-it`
 1. `github.com/remix-run/remix`
 1. `github.com/replicatedhq/kots`
+1. `github.com/reworkd/AgentGPT`
+1. `github.com/Rich-Harris/devalue`
+1. `github.com/Rich-Harris/magic-string`
+1. `github.com/Rich-Harris/svelte-cubed`
+1. `github.com/Rich-Harris/vite`
 1. `github.com/RimWorld-zh/RimWorld-Decompile`
 1. `github.com/roq-trading/roq-api`
 1. `github.com/ros2`
@@ -592,6 +623,7 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/simonw/sqlite-utils`
 1. `github.com/simplcommerce/SimplCommerce`
 1. `github.com/sirupsen/logrus`
+1. `github.com/sky-uk/osprey`
 1. `github.com/slackapi/bolt-python`
 1. `github.com/slackapi/python-slack-events-api`
 1. `github.com/slackapi/python-slack-sdk`
@@ -624,6 +656,8 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/sqlite/sqlite`
 1. `github.com/square/javapoet`
 1. `github.com/square/kotlinpoet`
+1. `github.com/square/okhttp`
+1. `github.com/square/okio`
 1. `github.com/stargate/stargate`
 1. `github.com/StarRocks/starrocks`
 1. `github.com/status-im/status-mobile`
@@ -643,10 +677,14 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/subspace/subspace`
 1. `github.com/suika2engine/suika2`
 1. `github.com/supabase/supabaseJS`
+1. `github.com/supranational/blst`
 1. `github.com/suprsend/suprsend-py-sdk`
 1. `github.com/surodri/VeinsVanetSimulations`
 1. `github.com/sveltejs/kit`
+1. `github.com/sveltejs/realworld`
 1. `github.com/sveltejs/svelte`
+1. `github.com/sveltejs/svelte-preprocess`
+1. `github.com/sveltejs/svelte-todomvc`
 1. `github.com/swairshah/AthenaAgent`
 1. `github.com/swairshah/language-models`
 1. `github.com/swairshah/vid-search`
@@ -672,8 +710,10 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/Tencent/mars`
 1. `github.com/Tencent/QMUI_Android`
 1. `github.com/Tencent/wcdb`
+1. `github.com/TencentARC/GFPGAN`
 1. `github.com/tensorflow/tensorflow`
 1. `github.com/tensorflow/tfx`
+1. `github.com/Textualize/rich`
 1. `github.com/ThalesIgnite/crypto11`
 1. `github.com/thanos-io/thanos`
 1. `github.com/TheAlgorithms/Python`
@@ -685,6 +725,7 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/THUDM/CodeGeeX`
 1. `github.com/tiangolo/fastapi`
 1. `github.com/tintinweb/smart-contract-sanctuary`
+1. `github.com/tldraw/tldraw`
 1. `github.com/tloen/alpaca-lora`
 1. `github.com/tobiasbueschel/search-gpt`
 1. `github.com/tokio-rs/tracing`
@@ -708,6 +749,9 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/Unity-Technologies/unity-ads-android`
 1. `github.com/Unity-Technologies/UnityCsReference`
 1. `github.com/uptech/git-ps-rs`
+1. `github.com/urbit/js-http-api`
+1. `github.com/urbit/urbit`
+1. `github.com/urbit/vere`
 1. `github.com/urllib3/urllib3`
 1. `github.com/uroni/multic`
 1. `github.com/varabyte/kobweb`
@@ -761,5 +805,8 @@ Last updated: 04-12-2023 · 07:51 AM PDT
 1. `github.com/zio/zio`
 1. `github.com/zoom/zoom-sdk-android`
 1. `github.com/zoom/zoom-sdk-android-getting-started`
+1. `github.com/zotero/pdf-reader`
+1. `github.com/zotero/translate`
+1. `github.com/zotero/zotero`
 1. `github.com/zsh-users/zsh`
 1. `gitlab.com/graphviz/graphviz`
