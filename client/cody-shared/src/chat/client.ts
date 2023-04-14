@@ -9,6 +9,7 @@ import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
 import { isError } from '../utils'
 
 import { ChatClient } from './chat'
+import { getPreamble } from './preamble'
 import { ChatQuestion } from './recipes/chat-question'
 import { Transcript } from './transcript'
 import { ChatMessage } from './transcript/messages'
@@ -107,7 +108,7 @@ export async function createClient({
             transcript.addInteraction(interaction)
             sendTranscript()
 
-            const prompt = await transcript.toPrompt()
+            const prompt = await transcript.toPrompt(getPreamble(config.codebase))
             const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
 
             chatClient.chat(prompt, {
