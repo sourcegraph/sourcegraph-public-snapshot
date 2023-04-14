@@ -104,7 +104,9 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
             name = name,
             args = percy_args + args,
             data = data + args_data + NON_BUNDLED_DEPS + ["//:node_modules/mocha"],
-            env = env,
+            env = dict(env, **{
+                "PERCY_ON": "true",
+            }),
             **kwargs
         )
     else:
