@@ -1,0 +1,24 @@
+name: e2e-test-batch-change
+description: Add Hello World to READMEs
+
+on:
+  - repository: github.com/sourcegraph/automation-testing
+    # This branch is never changing - hopefully.
+    branch: executors-e2e
+
+steps:
+  - run: IFS=$'\n'; echo Hello World | tee -a $(find -name README.md)
+    if: false
+    container: ubuntu:18.04
+  - run: IFS=$'\n'; echo Hello World | tee -a $(find -name README.md)
+    container: ubuntu:18.04
+  - run: IFS=$'\n'; echo Hello World | tee -a $(find -name README.md)
+    if: ${{ eq repository.name "github.com/sourcegraph/src-cli" }}
+    container: ubuntu:18.04
+
+changesetTemplate:
+  title: Hello World
+  body: My first batch change!
+  branch: hello-world
+  commit:
+    message: Append Hello World to all README.md files

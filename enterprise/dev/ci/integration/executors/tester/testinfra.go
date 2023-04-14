@@ -11,7 +11,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -31,11 +30,6 @@ type Test struct {
 }
 
 func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Store, test Test) error {
-	// Reset DB state.
-	if err := bstore.Exec(ctx, sqlf.Sprintf(cleanupBatchChangesDB)); err != nil {
-		return err
-	}
-
 	_, err := batches.ParseBatchSpec([]byte(test.BatchSpecInput))
 	if err != nil {
 		return err
@@ -199,15 +193,6 @@ func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Stor
 
 	return nil
 }
-
-const cleanupBatchChangesDB = `
-DELETE FROM batch_changes;
-DELETE FROM executor_secrets;
-DELETE FROM batch_specs;
-DELETE FROM batch_spec_workspace_execution_last_dequeues;
-DELETE FROM batch_spec_workspace_files;
-DELETE FROM changeset_specs;
-`
 
 func compareBatchSpecDeepCmpopts() []cmp.Option {
 	// TODO: Reduce the number of ignores in here.

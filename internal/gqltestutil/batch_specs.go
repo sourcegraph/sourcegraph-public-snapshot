@@ -96,7 +96,7 @@ func (c *Client) GetBatchSpecWorkspaceResolutionStatus(batchSpec string) (string
 func (c *Client) ExecuteBatchSpec(batchSpec string, noCache bool) error {
 	const query = `
 	mutation ExecuteBatchSpec($batchSpec: ID!, $noCache: Boolean!) {
-		executeBatchSpec(batchSpec: $batchSpec, noCache: $noCache) {
+		executeBatchSpec(batchSpec: $batchSpec, noCache: $noCache, useExperimentalExecution: true) {
 			id
 		}
 	}
