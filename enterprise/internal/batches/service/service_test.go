@@ -3130,6 +3130,13 @@ func testDraftBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChang
 	return bc
 }
 
+func testOrgBatchChange(user, org int32, spec *btypes.BatchSpec) *btypes.BatchChange {
+	bc := testBatchChange(user, spec)
+	bc.NamespaceUserID = 0
+	bc.NamespaceOrgID = org
+	return bc
+}
+
 func testBatchSpec(user int32) *btypes.BatchSpec {
 	return &btypes.BatchSpec{
 		Spec:            &batcheslib.BatchSpec{},
