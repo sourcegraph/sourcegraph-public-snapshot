@@ -74,7 +74,7 @@ export async function createClient({
             return null
         },
         replaceSelection(_fileName, _selectedText, _replacement) {
-	    return Promise.resolve()
+            return Promise.resolve()
         },
         async showQuickPick(labels) {
             return window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || undefined
