@@ -79,6 +79,7 @@
     border: solid 1px var(--border-color-2);
     background-color: var(--human-bubble-color);
     color: var(--human-text-color);
+    white-space: pre-wrap;
 }
 
 .bubble-loader-dot {
@@ -88,10 +89,9 @@
 .input-row {
     position: sticky;
     bottom: 0;
-    padding: 0.8rem 0.6rem;
+    padding: 0.8rem 1rem;
     border-top: 1px solid var(--border-color);
     background-color: var(--input-bg);
-    margin: 0 8px;
 }
 
 .chat-input {
@@ -106,8 +106,7 @@
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--border-color-2);
-    padding: 0.5rem;
-    margin: 0 0.5rem;
+    padding: 0.5rem 1rem;
     font-size: 0.875rem;
     position: sticky;
     top: 0;
