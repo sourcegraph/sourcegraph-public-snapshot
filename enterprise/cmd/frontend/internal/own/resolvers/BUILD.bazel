@@ -37,6 +37,7 @@ go_library(
 
 go_test(
     name = "resolvers_test",
+    timeout = "short",
     srcs = [
         "codeowners_resolvers_test.go",
         "resolvers_test.go",

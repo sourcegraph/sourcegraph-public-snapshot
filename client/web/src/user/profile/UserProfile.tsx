@@ -1,8 +1,8 @@
 import { Fragment, FC } from 'react'
 
 import { formatDistanceToNowStrict } from 'date-fns'
-import { startCase } from 'lodash'
 
+import { prettifySystemRole } from '../../util/settings'
 import { UserAreaRouteContext } from '../area/UserArea'
 
 type UserData =
@@ -21,7 +21,7 @@ type UserData =
 
 export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) => {
     const primaryEmail = user.emails?.find(email => email.isPrimary)?.email
-    const roles = user.roles?.nodes.map(role => toTitleCase(role.name))
+    const roles = user.roles?.nodes.map(role => (role.system ? prettifySystemRole(role.name) : role.name))
 
     const userData: UserData[] = [
         {
@@ -78,9 +78,4 @@ export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) =>
             )}
         </dl>
     )
-}
-
-const toTitleCase = (name: string): string => {
-    const normalizedName = name.replace(/_/g, ' ').toLowerCase()
-    return startCase(normalizedName)
 }

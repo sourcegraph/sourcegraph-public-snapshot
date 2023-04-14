@@ -86,7 +86,7 @@ func newWithClock(db edb.InsightsDB, postgres database.DB, clock func() time.Tim
 		timeSeriesStore:      base.timeSeriesStore,
 		insightMetadataStore: base.insightStore,
 		dataSeriesStore:      base.insightStore,
-		insightEnqueuer:      background.NewInsightEnqueuer(clock, base.workerBaseStore),
+		insightEnqueuer:      background.NewInsightEnqueuer(clock, base.workerBaseStore, log.Scoped("resolver insight enqueuer", "")),
 	}
 }
 

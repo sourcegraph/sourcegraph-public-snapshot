@@ -23,6 +23,7 @@ type changeset struct {
 	Title              *string      `json:"title"`
 	Body               *string      `json:"body"`
 	AuthorName         *string      `json:"author_name"`
+	AuthorEmail        *string      `json:"author_email"`
 	State              string       `json:"state"`
 	Labels             []string     `json:"labels"`
 	ExternalURL        *string      `json:"external_url"`
@@ -54,6 +55,7 @@ const gqlChangesetQuery = `query Changeset($id: ID!) {
 			body
 			author {
 				name
+				email
 			}
 			state
 			labels {
@@ -91,7 +93,8 @@ type gqlChangesetResponse struct {
 			Title     *string   `json:"title"`
 			Body      *string   `json:"body"`
 			Author    *struct {
-				Name string `json:"name"`
+				Name  string `json:"name"`
+				Email string `json:"email"`
 			} `json:"author"`
 			State  string `json:"state"`
 			Labels []struct {
@@ -101,11 +104,11 @@ type gqlChangesetResponse struct {
 				URL string `json:"url"`
 			} `json:"externalURL"`
 			ForkNamespace      *string     `json:"forkNamespace"`
+			ForkName           *string     `json:"forkName"`
 			ReviewState        *string     `json:"reviewState"`
 			CheckState         *string     `json:"checkState"`
 			Error              *string     `json:"error"`
 			SyncerError        *string     `json:"syncerError"`
-			ForkName           *string     `json:"forkName"`
 			OwnedByBatchChange *graphql.ID `json:"ownedByBatchChange"`
 		}
 	}
@@ -149,6 +152,11 @@ func marshalChangeset(ctx context.Context, client httpcli.Doer, id graphql.ID) (
 		authorName = &node.Author.Name
 	}
 
+	var authorEmail *string
+	if node.Author != nil {
+		authorEmail = &node.Author.Email
+	}
+
 	var externalURL *string
 	if node.ExternalURL != nil {
 		externalURL = &node.ExternalURL.URL
@@ -164,15 +172,16 @@ func marshalChangeset(ctx context.Context, client httpcli.Doer, id graphql.ID) (
 		Title:              node.Title,
 		Body:               node.Body,
 		AuthorName:         authorName,
+		AuthorEmail:        authorEmail,
 		State:              node.State,
 		Labels:             labels,
 		ExternalURL:        externalURL,
 		ForkNamespace:      node.ForkNamespace,
+		ForkName:           node.ForkName,
 		ReviewState:        node.ReviewState,
 		CheckState:         node.CheckState,
 		Error:              node.Error,
 		SyncerError:        node.SyncerError,
-		ForkName:           node.ForkName,
 		OwnedByBatchChange: node.OwnedByBatchChange,
 	})
 }

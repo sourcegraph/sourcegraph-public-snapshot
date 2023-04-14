@@ -11,9 +11,9 @@ import {
     SuggestionResult,
     filterRenderer,
     filterValueRenderer,
-    shortenPath,
     combineResults,
     defaultLanguages,
+    queryRenderer,
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import { getQueryInformation } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { isDefined } from '@sourcegraph/common'
@@ -25,7 +25,7 @@ import { FILTERS, FilterType, isNegatableFilter, ResolvedFilter } from '@sourceg
 import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
 import { predicateCompletion } from '@sourcegraph/shared/src/search/query/predicates'
 import { selectorHasFields } from '@sourcegraph/shared/src/search/query/selectFilter'
-import { CharacterRange, Filter, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
+import { CharacterRange, Filter, KeywordKind, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
 import { isFilterOfType, resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcons'
 
@@ -186,7 +186,7 @@ function toRepoCompletion(
         kind: 'repo',
         action: {
             type: 'completion',
-            insertValue: valuePrefix + regexInsertText(item.name, { globbing: false }) + ' ',
+            insertValue: valuePrefix + regexInsertText(item.name) + ' ',
             from,
             to,
         },
@@ -256,18 +256,13 @@ function toFileCompletion(
     return {
         label: valuePrefix + item.path,
         icon: mdiFileOutline,
-        description: item.repository,
         matches: positions,
         kind: 'file',
         action: {
             type: 'completion',
-            insertValue: valuePrefix + regexInsertText(item.path, { globbing: false }) + ' ',
+            insertValue: valuePrefix + regexInsertText(item.path) + ' ',
             from,
             to,
-        },
-        alternativeAction: {
-            type: 'goto',
-            url: item.url,
         },
     }
 }
@@ -288,18 +283,13 @@ function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from
     return {
         label: item.name,
         matches: positions,
-        description: shortenPath(item.path, 20),
         icon: getSymbolIconSVGPath(item.kind),
         kind: 'symbol',
         action: {
             type: 'completion',
-            insertValue: item.name + ' type:symbol ',
+            insertValue: `type:symbol ${item.name} `,
             from,
             to,
-        },
-        alternativeAction: {
-            type: 'goto',
-            url: item.url,
         },
     }
 }
@@ -311,7 +301,13 @@ const NEGATEABLE_FILTER_MATCHER = new Fzf(
 )
 // These are the filters shown when the query input is empty or the cursor is at
 // at whitespace token.
-const DEFAULT_FILTERS: FilterType[] = [FilterType.repo, FilterType.context, FilterType.lang, FilterType.type]
+const DEFAULT_FILTERS: FilterType[] = [
+    FilterType.repo,
+    FilterType.lang,
+    FilterType.type,
+    FilterType.select,
+    FilterType.context,
+]
 // If the query contains one of the listed filters, suggest these filters
 // too.
 const RELATED_FILTERS: Partial<Record<FilterType, (filter: Filter) => FilterType[]>> = {
@@ -323,39 +319,101 @@ const RELATED_FILTERS: Partial<Record<FilterType, (filter: Filter) => FilterType
         }
         return []
     },
+    [FilterType.repo]: () => [FilterType.file],
 }
 
 /**
- * Returns filter completion suggestions for the current term at the cursor. If
- * there is no term a small list of default filters is returned. Filters are
- * matched by prefix.
+ * If the input is empty or the cursor is at a whitespace token, show default suggestions.
  */
-const filterSuggestions: InternalSource = ({ tokens, token, position }) => {
+const defaultSuggestions: InternalSource = ({ tokens, token, position }) => {
     let options: Group['options'] = []
 
-    if (!token || token.type === 'whitespace') {
-        const filters = DEFAULT_FILTERS
-            // Show related filters
-            .concat(
-                tokens.flatMap(token => {
-                    if (token.type !== 'filter') {
-                        return none
-                    }
-                    const resolvedFilter = resolveFilterMemoized(token.field.value)
-                    return resolvedFilter ? RELATED_FILTERS[resolvedFilter.type]?.(token) ?? none : none
-                })
-            )
-            // Remove existing filters
-            .filter(filterType => !tokens.some(token => token.type === 'filter' && isFilterOfType(token, filterType)))
+    if (token && token.type !== 'whitespace') {
+        return null
+    }
 
-        options = filters.map(filter =>
-            toFilterCompletion(filter, getFilterDescription(resolveFilterMemoized(filter)), position)
+    const isEmpty = tokens.length === 0
+
+    const filters = DEFAULT_FILTERS
+        // Show related filters
+        .concat(
+            tokens.flatMap(token => {
+                if (token.type !== 'filter') {
+                    return none
+                }
+                const resolvedFilter = resolveFilterMemoized(token.field.value)
+                return resolvedFilter ? RELATED_FILTERS[resolvedFilter.type]?.(token) ?? none : none
+            })
         )
-    } else if (token?.type === 'pattern') {
-        if (token.value.startsWith('-')) {
-            options = NEGATEABLE_FILTER_MATCHER.find('^' + token.value.slice(1)).map(entry => {
-                const resolvedFilter = resolveFilterMemoized(entry.item)
-                return {
+        // Remove existing filters
+        .filter(filterType => !tokens.some(token => token.type === 'filter' && isFilterOfType(token, filterType)))
+
+    options = filters.map(filter =>
+        toFilterCompletion(filter, getFilterDescription(resolveFilterMemoized(filter)), position)
+    )
+
+    if (
+        (token?.type === 'whitespace' || (!token && !isEmpty)) &&
+        !tokens.some(token => token.type === 'keyword' && token.kind === KeywordKind.Or)
+    ) {
+        options.push({
+            label: 'OR',
+            description: 'Matches the left or the right side',
+            render: queryRenderer,
+            kind: 'keyword',
+            icon: ' ', // for alignment
+            action: {
+                type: 'completion',
+                insertValue: 'OR ',
+                from: position,
+            },
+        })
+    }
+
+    return options.length > 0 ? { result: [{ title: 'Narrow your search', options }] } : null
+}
+
+/**
+ * Returns filter completion suggestions for the current term at the cursor.
+ * Filters are matched by prefix.
+ */
+const filterSuggestions: InternalSource = ({ token }) => {
+    if (token?.type !== 'pattern') {
+        return null
+    }
+
+    let options: Group['options'] = []
+
+    if (token.value.startsWith('-')) {
+        options = NEGATEABLE_FILTER_MATCHER.find('^' + token.value.slice(1)).map(entry => {
+            const resolvedFilter = resolveFilterMemoized(entry.item)
+            return {
+                ...toFilterCompletion(
+                    '-' + entry.item,
+                    getFilterDescription(resolvedFilter, true),
+                    token.range.start,
+                    token.range.end
+                ),
+                matches: shiftPositions(entry.positions, 1),
+            }
+        })
+    } else {
+        // ^ triggers a prefix match
+        options = FILTER_MATCHER.find('^' + token.value).flatMap(entry => {
+            const resolvedFilter = resolveFilterMemoized(entry.item)
+            const options = [
+                {
+                    ...toFilterCompletion(
+                        entry.item,
+                        getFilterDescription(resolvedFilter),
+                        token.range.start,
+                        token.range.end
+                    ),
+                    matches: entry.positions,
+                },
+            ]
+            if (resolvedFilter && isNegatableFilter(resolvedFilter?.type)) {
+                options.push({
                     ...toFilterCompletion(
                         '-' + entry.item,
                         getFilterDescription(resolvedFilter, true),
@@ -363,37 +421,10 @@ const filterSuggestions: InternalSource = ({ tokens, token, position }) => {
                         token.range.end
                     ),
                     matches: shiftPositions(entry.positions, 1),
-                }
-            })
-        } else {
-            // ^ triggers a prefix match
-            options = FILTER_MATCHER.find('^' + token.value).flatMap(entry => {
-                const resolvedFilter = resolveFilterMemoized(entry.item)
-                const options = [
-                    {
-                        ...toFilterCompletion(
-                            entry.item,
-                            getFilterDescription(resolvedFilter),
-                            token.range.start,
-                            token.range.end
-                        ),
-                        matches: entry.positions,
-                    },
-                ]
-                if (resolvedFilter && isNegatableFilter(resolvedFilter?.type)) {
-                    options.push({
-                        ...toFilterCompletion(
-                            '-' + entry.item,
-                            getFilterDescription(resolvedFilter, true),
-                            token.range.start,
-                            token.range.end
-                        ),
-                        matches: shiftPositions(entry.positions, 1),
-                    })
-                }
-                return options
-            })
-        }
+                })
+            }
+            return options
+        })
     }
 
     return options.length > 0 ? { result: [{ title: 'Narrow your search', options }] } : null
@@ -477,14 +508,13 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                         const groups = [
                             {
                                 title: 'Files',
-                                options: entries
-                                    .map(item => toFileCompletion(item, from, to))
-                                    .slice(
-                                        0,
-                                        predicates.length === 0
-                                            ? ALL_FILTER_VALUE_LIST_SIZE
-                                            : MULTIPLE_FILTER_VALUE_LIST_SIZE
-                                    ),
+                                options: limitUniqueOptions(
+                                    entries,
+                                    predicates.length === 0
+                                        ? ALL_FILTER_VALUE_LIST_SIZE
+                                        : MULTIPLE_FILTER_VALUE_LIST_SIZE,
+                                    item => toFileCompletion(item, from, to)
+                                ),
                             },
                         ]
 
@@ -709,9 +739,9 @@ function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): 
             results => [
                 {
                     title: 'Files',
-                    options: results
-                        .slice(0, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE)
-                        .map(result => toFileSuggestion(result, token.range.start)),
+                    options: limitUniqueOptions(results, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE, result =>
+                        toFileSuggestion(result, token.range.start)
+                    ),
                 },
             ],
             parsedQuery,
@@ -754,9 +784,9 @@ function symbolSuggestions(cache: Caches['symbol']): InternalSource {
             results => [
                 {
                     title: 'Symbols',
-                    options: results
-                        .slice(0, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE)
-                        .map(result => toSymbolSuggestion(result, token.range.start)),
+                    options: limitUniqueOptions(results, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE, result =>
+                        toSymbolSuggestion(result, token.range.start)
+                    ),
                 },
             ],
             parsedQuery,
@@ -999,6 +1029,7 @@ export const createSuggestionsSource = (config: SuggestionsSourceConfig): Source
     const caches = createCaches(config)
 
     const sources: InternalSource[] = [
+        defaultSuggestions,
         filterValueSuggestions(caches),
         filterSuggestions,
         repoSuggestions(caches.repo),
@@ -1241,4 +1272,24 @@ function getFilterDescription(filter: ResolvedFilter, negated = false): string |
     return typeof filter.definition.description === 'function'
         ? filter.definition.description(negated)
         : filter.definition.description
+}
+
+/**
+ * Returns a reduces list of unique options.
+ */
+function limitUniqueOptions<T>(values: T[], limit: number, mapper: (value: T) => Option): Option[] {
+    const seen = new Set()
+    const options: Option[] = []
+    for (const value of values) {
+        const option = mapper(value)
+        if (!seen.has(option.label)) {
+            seen.add(option.label)
+            options.push(option)
+        }
+
+        if (options.length >= limit) {
+            break
+        }
+    }
+    return options
 }

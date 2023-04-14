@@ -5,7 +5,7 @@ import { LinkOrSpan } from '@sourcegraph/wildcard'
 import styles from './DataSummary.module.scss'
 
 export interface DataSummaryItem {
-    value: number
+    value: JSX.Element
     label: string
     to?: string
 

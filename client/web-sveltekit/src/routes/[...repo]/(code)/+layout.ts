@@ -2,12 +2,12 @@ import { dirname } from 'path'
 
 import { catchError } from 'rxjs/operators'
 
-import type { LayoutLoad } from './$types'
-
 import { asError, isErrorLike, type ErrorLike } from '$lib/common'
 import { fetchTreeEntries } from '$lib/loader/repo'
 import { asStore } from '$lib/utils'
 import { requestGraphQL } from '$lib/web'
+
+import type { LayoutLoad } from './$types'
 
 export const load: LayoutLoad = ({ parent, params }) => ({
     treeEntries: asStore(

@@ -39,9 +39,12 @@ func (r *TriggerJob) RecordID() int {
 const enqueueTriggerQueryFmtStr = `
 WITH due AS (
     SELECT cm_queries.id as id
-    FROM cm_queries INNER JOIN cm_monitors ON cm_queries.monitor = cm_monitors.id
+    FROM cm_queries
+    JOIN cm_monitors ON cm_queries.monitor = cm_monitors.id
+    JOIN users ON cm_monitors.namespace_user_id = users.id
     WHERE (cm_queries.next_run <= clock_timestamp() OR cm_queries.next_run IS NULL)
-    AND cm_monitors.enabled = true
+        AND cm_monitors.enabled = true
+        AND users.deleted_at IS NULL
 ),
 busy AS (
     SELECT DISTINCT query as id FROM cm_trigger_jobs

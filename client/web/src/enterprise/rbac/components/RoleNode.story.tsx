@@ -6,7 +6,7 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { DELETE_ROLE } from '../backend'
+import { DELETE_ROLE, SET_PERMISSIONS } from '../backend'
 import { mockRoles, mockPermissionsMap } from '../mock'
 
 import { RoleNode } from './RoleNode'
@@ -29,6 +29,14 @@ const mocks = new WildcardMockLink([
         result: { data: { deleteRole: { alwaysNil: null } } },
         nMatches: Number.POSITIVE_INFINITY,
     },
+    {
+        request: {
+            query: getDocumentNode(SET_PERMISSIONS),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: { setPermissions: { alwaysNil: null } } },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
 ])
 
 const [systemRole, nonSystemRole] = mockRoles.roles.nodes
@@ -37,7 +45,7 @@ export const SystemRole: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={mocks}>
-                <RoleNode allPermissions={mockPermissionsMap} node={systemRole} afterDelete={noop} />
+                <RoleNode allPermissions={mockPermissionsMap} node={systemRole} refetch={noop} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -49,7 +57,7 @@ export const NonSystemRole: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={mocks}>
-                <RoleNode allPermissions={mockPermissionsMap} node={nonSystemRole} afterDelete={noop} />
+                <RoleNode node={nonSystemRole} refetch={noop} allPermissions={mockPermissionsMap} />
             </MockedTestProvider>
         )}
     </WebStory>

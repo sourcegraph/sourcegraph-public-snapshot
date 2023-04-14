@@ -290,7 +290,7 @@ func CodeIntelRankingStaleResultAge() time.Duration {
 	if val := Get().CodeIntelRankingStaleResultsAge; val > 0 {
 		return time.Duration(val) * time.Hour
 	}
-	return 72 * time.Hour
+	return 24 * time.Hour
 }
 
 func EmbeddingsEnabled() bool {
@@ -330,8 +330,19 @@ func IsBuiltinSignupAllowed() bool {
 
 // IsAccessRequestEnabled returns whether request access experimental feature is enabled or not.
 func IsAccessRequestEnabled() bool {
-	experimentalFeatures := Get().ExperimentalFeatures
-	return experimentalFeatures == nil || experimentalFeatures.AccessRequestEnabled == nil || *experimentalFeatures.AccessRequestEnabled
+	authAccessRequest := Get().AuthAccessRequest
+	return authAccessRequest == nil || authAccessRequest.Enabled == nil || *authAccessRequest.Enabled
+}
+
+// AuthPrimaryLoginProvidersCount returns the number of primary login providers
+// configured, or 3 (the default) if not explicitly configured.
+// This is only used for the UI
+func AuthPrimaryLoginProvidersCount() int {
+	c := Get().AuthPrimaryLoginProvidersCount
+	if c == 0 {
+		return 3 // default to 3
+	}
+	return c
 }
 
 // SearchSymbolsParallelism returns 20, or the site config

@@ -18,6 +18,8 @@ Batch Changes is compatible with the following code hosts:
 
 In order for Sourcegraph to interface with these, admins and users must first [configure credentials](../how-tos/configuring_credentials.md) for each relevant code host.
 
+> WARNING: Currently, for customers on an instance of GitHub Enterprise Cloud that uses [SSH certificate authorities](https://docs.github.com/en/enterprise-cloud@latest/organizations/managing-git-access-to-your-organizations-repositories/about-ssh-certificate-authorities) and requires SSH certificates to authenticate, we are unable to provide a means of authenticating Batch Changes to your code host.
+
 ### Batch Changes effect on code host rate limits
 
 For each changeset, Sourcegraph periodically makes API requests to its code host to update its status. Sourcegraph intelligently schedules these requests to avoid overwhelming the code host's rate limits. In environments with many open batch changes, this can result in outdated changesets as they await their turn in the update queue.

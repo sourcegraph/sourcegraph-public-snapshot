@@ -14,6 +14,13 @@
 
     .suggestions {
         overflow-y: auto;
+        margin: 0 var(--suggestions-padding) var(--suggestions-padding);
+
+        // Don't render the suggestions panel if we don't have any suggestions
+        // in order to avoid extra paddings appearance
+        &:empty {
+            display: none;
+        }
 
         ul {
             margin: 0;
@@ -24,7 +31,8 @@
 
         [role='rowgroup'] {
             border-bottom: 1px solid var(--border-color);
-            padding: 0.75rem;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
 
             &:first-of-type {
                 padding-top: 0;
@@ -32,6 +40,7 @@
 
             &:last-of-type {
                 border: none;
+                padding-bottom: 0;
             }
 
             // group header
@@ -46,7 +55,7 @@
             /*
                 Layout of a row
                 The icon is always top aligned next to the label.
-                Label and description can wrap around if necessary, in which case the 
+                Label and description can wrap around if necessary, in which case the
                 action labels are centered.
                 On small screens the action labels are shown on a separate row.
 

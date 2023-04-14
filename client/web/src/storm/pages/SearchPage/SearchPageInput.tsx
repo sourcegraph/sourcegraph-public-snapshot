@@ -55,7 +55,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
 
     const {
         authenticatedUser,
-        globbing,
         isSourcegraphDotCom,
         telemetryService,
         platformContext,
@@ -140,6 +139,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             isSourcegraphDotCom={isSourcegraphDotCom}
             submitSearch={submitSearchOnChange}
             selectedSearchContextSpec={selectedSearchContextSpec}
+            className="flex-grow-1"
         >
             <Toggles
                 patternType={patternType}
@@ -157,7 +157,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     ) : (
         <SearchBox
             platformContext={platformContext}
-            globbing={globbing}
             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
             fetchSearchContexts={fetchSearchContexts}
             selectedSearchContextSpec={selectedSearchContextSpec}

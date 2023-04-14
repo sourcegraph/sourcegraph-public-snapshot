@@ -1,6 +1,7 @@
 import { groupBy } from 'lodash'
 
 import { AllPermissionsResult, PermissionNamespace, AllRolesResult } from '../../graphql-operations'
+import { BatchChangesWritePermission, BatchChangesReadPermission } from '../../rbac/constants'
 
 import { PermissionsMap } from './backend'
 
@@ -12,14 +13,35 @@ export const mockPermissions: AllPermissionsResult = {
                 id: 'perm-1',
                 namespace: PermissionNamespace.BATCH_CHANGES,
                 action: 'WRITE',
-                displayName: 'BATCH_CHANGES#WRITE',
+                displayName: BatchChangesWritePermission,
             },
             {
                 __typename: 'Permission',
                 id: 'perm-2',
                 namespace: PermissionNamespace.BATCH_CHANGES,
                 action: 'READ',
-                displayName: 'BATCH_CHANGES#READ',
+                displayName: BatchChangesReadPermission,
+            },
+            {
+                __typename: 'Permission',
+                id: 'perm-3',
+                namespace: 'CODE_INSIGHTS' as PermissionNamespace,
+                action: 'READ',
+                displayName: 'CODE_INSIGHTS#READ',
+            },
+            {
+                __typename: 'Permission',
+                id: 'perm-4',
+                namespace: 'CODE_INSIGHTS' as PermissionNamespace,
+                action: 'WRITE',
+                displayName: 'CODE_INSIGHTS#WRITE',
+            },
+            {
+                __typename: 'Permission',
+                id: 'perm-5',
+                namespace: 'REPO_MANAGEMENT' as PermissionNamespace,
+                action: 'ADD',
+                displayName: 'REPO_MANAGEMENT#ADD',
             },
         ],
     },
@@ -37,7 +59,7 @@ export const mockRoles: AllRolesResult = {
             {
                 __typename: 'Role',
                 id: 'role-1',
-                name: 'Site Administrator',
+                name: 'SITE_ADMINISTRATOR',
                 system: true,
                 permissions: {
                     nodes: mockPermissions.permissions.nodes,
@@ -54,8 +76,8 @@ export const mockRoles: AllRolesResult = {
                             __typename: 'Permission',
                             id: 'perm-1',
                             namespace: PermissionNamespace.BATCH_CHANGES,
-                            action: 'READ',
-                            displayName: 'BATCH_CHANGES#WRITE',
+                            action: 'WRITE',
+                            displayName: BatchChangesWritePermission,
                         },
                     ],
                 },

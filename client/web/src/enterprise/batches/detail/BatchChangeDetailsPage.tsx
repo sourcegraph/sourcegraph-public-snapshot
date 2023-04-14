@@ -92,7 +92,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
         throw new Error(error.message)
     }
     // If there weren't any errors and we just didn't receive any data
-    if (!data || !data.batchChange) {
+    if (!data?.batchChange) {
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 

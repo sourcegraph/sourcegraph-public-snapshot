@@ -20,12 +20,10 @@ import { useUpdateExternalService, FETCH_EXTERNAL_SERVICE } from './backend'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { resolveExternalServiceCategory } from './externalServices'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
-import { isAppLocalFileService } from './isAppLocalFileService'
 
 interface Props extends TelemetryProps {
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
-    isSourcegraphApp: boolean
 
     /** For testing only. */
     autoFocusForm?: boolean
@@ -39,7 +37,6 @@ export const ExternalServiceEditPage: FC<Props> = ({
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
     autoFocusForm,
-    isSourcegraphApp,
 }) => {
     const { externalServiceID } = useParams()
 
@@ -127,17 +124,18 @@ export const ExternalServiceEditPage: FC<Props> = ({
                             { icon: mdiCog },
                             { to: '/site-admin/external-services', text: 'Code hosts' },
                             {
+                                to: `/site-admin/external-services/${externalService.id}`,
                                 text: (
                                     <>
-                                        {externalService.displayName}
                                         {externalServiceCategory && (
                                             <Icon
                                                 inline={true}
                                                 as={externalServiceCategory.icon}
                                                 aria-label="Code host logo"
-                                                className="ml-2"
+                                                className="mr-2"
                                             />
                                         )}
+                                        {externalService.displayName}
                                     </>
                                 ),
                             },
@@ -173,8 +171,6 @@ export const ExternalServiceEditPage: FC<Props> = ({
                             autoFocus={autoFocusForm}
                             externalServicesFromFile={externalServicesFromFile}
                             allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
-                            isSourcegraphApp={isSourcegraphApp}
-                            isAppLocalFileService={isAppLocalFileService(externalService)}
                         />
                     )}
                     <ExternalServiceWebhook externalService={externalService} className="mt-3" />

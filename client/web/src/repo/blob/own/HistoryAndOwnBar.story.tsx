@@ -34,6 +34,7 @@ const barData: FetchOwnersAndHistoryResult = {
                                     displayName: 'Philip Withnall',
                                     url: '/users/pwithnall',
                                     username: 'pwithnall',
+                                    primaryEmail: null,
                                 },
                                 __typename: 'Person',
                             },

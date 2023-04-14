@@ -47,10 +47,10 @@ export const oncePageEvent = <E extends keyof PageEventObject>(page: Page, event
 
 export const extractStyles = (page: puppeteer.Page): Promise<string> =>
     page.evaluate(() =>
-        [...document.styleSheets].reduce(
+        Array.from(document.styleSheets).reduce(
             (styleSheetRules, styleSheet) =>
                 styleSheetRules.concat(
-                    [...styleSheet.cssRules].reduce((rules, rule) => rules.concat(rule.cssText), '')
+                    Array.from(styleSheet.cssRules).reduce((rules, rule) => rules.concat(rule.cssText), '')
                 ),
             ''
         )
@@ -147,9 +147,18 @@ function findElementRegexpStrings(
 }
 
 function findElementMatchingRegexps(tag: string, regexps: string[]): HTMLElement | null {
-    for (const regexpString of regexps) {
-        const regexp = new RegExp(regexpString)
-        for (const element of document.querySelectorAll<HTMLElement>(tag)) {
+    // This method is invoked via puppeteer.Page.eval* and runs in the browser context.
+    // This method must not use anything outside its own scope such as variables or functions,
+    // including babel helpers from transpilation. Therefore this method must be written in
+    // legacy-compatible JavaScript.
+    const elements = document.querySelectorAll<HTMLElement>(tag)
+
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
+    for (let regexI = 0; regexI < regexps.length; regexI++) {
+        const regexp = new RegExp(regexps[regexI])
+        // eslint-disable-next-line @typescript-eslint/prefer-for-of
+        for (let elementI = 0; elementI < elements.length; elementI++) {
+            const element = elements[elementI]
             if (!element.offsetParent) {
                 // Ignore hidden elements
                 continue
@@ -509,9 +518,7 @@ export class Driver {
     }
 
     public async paste(value: string): Promise<void> {
-        await this.page.evaluate(async (value: string) => {
-            await navigator.clipboard.writeText(value)
-        }, value)
+        await this.page.evaluate((value: string) => navigator.clipboard.writeText(value), value)
         const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
         await this.page.keyboard.down(modifier)
         await this.page.keyboard.press('v')

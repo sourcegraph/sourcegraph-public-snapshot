@@ -18,6 +18,7 @@ go_library(
 
 go_test(
     name = "httptestutil_test",
+    timeout = "short",
     srcs = ["recorder_test.go"],
     embed = [":httptestutil"],
     deps = [

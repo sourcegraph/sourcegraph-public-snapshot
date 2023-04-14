@@ -25,6 +25,7 @@ go_library(
 
 go_test(
     name = "integration_tests_test",
+    timeout = "short",
     srcs = [
         "commits_test.go",
         "main_test.go",

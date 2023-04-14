@@ -5,7 +5,11 @@ import { Observable, of, Subscription } from 'rxjs'
 import { requestGraphQLCommon } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { fetchSearchContexts, getUserSearchContextNamespaces, QueryState } from '@sourcegraph/shared/src/search'
+import {
+    fetchSearchContexts as sharedFetchSearchContexts,
+    getUserSearchContextNamespaces,
+    QueryState,
+} from '@sourcegraph/shared/src/search'
 import {
     aggregateStreamingSearch,
     AggregateStreamingSearchResults,
@@ -23,6 +27,8 @@ import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 import { SearchPatternType } from '../graphql-operations'
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
+import { getInstanceURL } from '.'
+import { fetchSearchContextsCompat } from './compat/fetchSearchContexts'
 import { GlobalKeyboardListeners } from './GlobalKeyboardListeners'
 import { JetBrainsSearchBox } from './input/JetBrainsSearchBox'
 import { saveLastSearch } from './js-to-java-bridge'
@@ -30,14 +36,11 @@ import { SearchResultList } from './results/SearchResultList'
 import { StatusBar } from './StatusBar'
 import { Search } from './types'
 
-import { getInstanceURL } from '.'
-
 import styles from './App.module.scss'
 
 interface Props {
     isDarkTheme: boolean
     instanceURL: string
-    isGlobbingEnabled: boolean
     accessToken: string | null
     customRequestHeaders: Record<string, string> | null
     onPreviewChange: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
@@ -52,6 +55,20 @@ interface Props {
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
     return fetchStreamSuggestions(query, getInstanceURL() + '.api')
+}
+
+const fetchSearchContexts = (backendVersion: string | null): typeof sharedFetchSearchContexts => {
+    if (backendVersion === null || backendVersion === '0.0.0+dev') {
+        return sharedFetchSearchContexts
+    }
+    const [major, minor] = backendVersion.split('.').map(Number)
+    // This is the case for dotcom
+    if (Number.isNaN(major) || Number.isNaN(minor)) {
+        return sharedFetchSearchContexts
+    }
+    // The shared fetchSearchContexts was updated to query additional fields starting from 4.3.
+    const isAfterOrOn4_3 = major > 4 || (major === 4 && minor >= 3)
+    return isAfterOrOn4_3 ? sharedFetchSearchContexts : fetchSearchContextsCompat
 }
 
 function fallbackToLiteralSearchIfNeeded(
@@ -70,7 +87,6 @@ function fallbackToLiteralSearchIfNeeded(
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isDarkTheme,
     instanceURL,
-    isGlobbingEnabled,
     accessToken,
     customRequestHeaders,
     onPreviewChange,
@@ -273,11 +289,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                                 showSearchContextManagement={false}
                                 setSelectedSearchContextSpec={contextSpec => onSubmit({ contextSpec })}
                                 selectedSearchContextSpec={lastSearch.selectedSearchContextSpec}
-                                fetchSearchContexts={fetchSearchContexts}
+                                fetchSearchContexts={fetchSearchContexts(backendVersion)}
                                 getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                                 fetchStreamSuggestions={fetchStreamSuggestionsWithStaticUrl}
                                 settingsCascade={settingsCascade}
-                                globbing={isGlobbingEnabled}
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
                                 className=""

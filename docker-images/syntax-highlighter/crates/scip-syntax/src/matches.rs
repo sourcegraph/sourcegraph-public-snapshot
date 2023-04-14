@@ -296,9 +296,9 @@ fn dbg_format_descriptors(descriptors: &[Descriptor]) -> Vec<String> {
 #[cfg(test)]
 mod test {
     use scip::types::Document;
+    use scip_treesitter::snapshot::dump_document;
 
     use super::*;
-    use crate::snapshot::dump_document;
 
     fn parse_file_for_lang(config: &mut TagConfiguration, source_code: &str) -> Result<Document> {
         let source_bytes = source_code.as_bytes();
@@ -325,7 +325,7 @@ mod test {
         let source_code = include_str!("../testdata/scopes.rs");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
-        let dumped = dump_document(&doc, source_code);
+        let dumped = dump_document(&doc, source_code)?;
         insta::assert_snapshot!(dumped);
 
         Ok(())
@@ -337,7 +337,7 @@ mod test {
         let source_code = include_str!("../testdata/example.go");
         let doc = dbg!(parse_file_for_lang(&mut config, source_code)?);
 
-        let dumped = dump_document(&doc, source_code);
+        let dumped = dump_document(&doc, source_code)?;
         insta::assert_snapshot!(dumped);
 
         Ok(())

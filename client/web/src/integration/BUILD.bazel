@@ -1,5 +1,6 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:defs.bzl", "ts_project")
+load("//dev:mocha.bzl", "mocha_test")
 
 # integration/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
@@ -31,7 +32,9 @@ ts_project(
     tsconfig = ":tsconfig",
     # TODO(bazel): type-only imports
     deps = [
+        "//:node_modules/@types/lodash",
         "//:node_modules/@types/pollyjs__core",  #keep
+        "//:node_modules/lodash",
         "//:node_modules/puppeteer",  #keep
         "//client/web:graphql_operations",
         "//client/web:node_modules/@sourcegraph/common",
@@ -81,6 +84,7 @@ ts_project(
         "sign-in.test.ts",
     ],
     tsconfig = ":tsconfig",
+    use_preset_env = False,
     deps = [
         ":integration",
         "//:node_modules/@types/lodash",
@@ -96,4 +100,23 @@ ts_project(
         "//client/web:node_modules/@sourcegraph/common",
         "//client/web:node_modules/@sourcegraph/shared",
     ],
+)
+
+mocha_test(
+    name = "integration-tests",
+    timeout = "moderate",
+    args = [
+        "--parallel",
+        "--jobs 16",
+    ],
+    data = ["//client/web:app-enterprise"],
+    env = {
+        "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
+    },
+    flaky = True,
+    tags = [
+        "no-sandbox",
+    ],
+    tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
+    deps = [":integration_tests"],
 )

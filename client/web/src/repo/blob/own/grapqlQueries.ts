@@ -13,6 +13,9 @@ const OWNER_FIELDS = gql`
                 username
                 displayName
                 url
+                primaryEmail {
+                    email
+                }
             }
         }
         ... on Team {

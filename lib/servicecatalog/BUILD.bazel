@@ -14,6 +14,7 @@ go_library(
 
 go_test(
     name = "servicecatalog_test",
+    timeout = "short",
     srcs = ["servicecatalog_test.go"],
     embed = [":servicecatalog"],
     deps = [

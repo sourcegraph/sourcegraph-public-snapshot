@@ -15,6 +15,7 @@ func TestCheckTestPlan(t *testing.T) {
 	tests := []struct {
 		name            string
 		bodyFile        string
+		labels          []string
 		baseBranch      string
 		protectedBranch string
 		want            checkResult
@@ -102,6 +103,49 @@ And a little complicated; there's also the following reasons:
 				TestPlan: "This is still a plan! No review required: just trust me",
 			},
 		},
+		{
+			name:     "no review required via automerge label",
+			bodyFile: "testdata/pull_request_body/has-plan.md",
+			labels:   []string{"automerge"},
+			want: checkResult{
+				Reviewed: true,
+				TestPlan: "I have a plan!",
+			},
+		},
+		{
+			name:     "no review required via no-review-required label",
+			bodyFile: "testdata/pull_request_body/has-plan.md",
+			labels:   []string{"no-review-required"},
+			want: checkResult{
+				Reviewed: true,
+				TestPlan: "I have a plan!",
+			},
+		},
+		{
+			name:     "no review required via automerge label but no plan",
+			bodyFile: "testdata/pull_request_body/no-plan.md",
+			labels:   []string{"automerge"},
+			want: checkResult{
+				Reviewed: false,
+			},
+		},
+		{
+			name:     "no review required via no-review-required label but no plan",
+			bodyFile: "testdata/pull_request_body/no-plan.md",
+			labels:   []string{"no-review-required"},
+			want: checkResult{
+				Reviewed: false,
+			},
+		},
+		{
+			name:     "no review required but with the wrong label",
+			bodyFile: "testdata/pull_request_body/has-plan.md",
+			labels:   []string{"random-label"},
+			want: checkResult{
+				Reviewed: false,
+				TestPlan: "I have a plan!",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -112,6 +156,12 @@ And a little complicated; there's also the following reasons:
 				PullRequest: PullRequestPayload{
 					Body: string(body),
 				},
+			}
+			if tt.labels != nil {
+				payload.PullRequest.Labels = make([]Label, len(tt.labels))
+				for i, label := range tt.labels {
+					payload.PullRequest.Labels[i] = Label{Name: label}
+				}
 			}
 			checkOpts := checkOpts{
 				ValidateReviews: false,

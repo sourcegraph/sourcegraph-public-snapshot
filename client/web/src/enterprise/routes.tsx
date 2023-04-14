@@ -7,6 +7,8 @@ import { LegacyRoute } from '../LegacyRouteContext'
 import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
 
+import { isSentinelEnabled } from './sentinel/utils/isSentinelEnabled'
+
 const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
 const GlobalBatchChangesArea = lazyComponent(
     () => import('./batches/global/GlobalBatchChangesArea'),
@@ -21,6 +23,7 @@ const SearchContextsListPage = lazyComponent(
     () => import('./searchContexts/SearchContextsListPage'),
     'SearchContextsListPage'
 )
+const SentinelRouter = lazyComponent(() => import('./sentinel/SentinelRouter'), 'SentinelRouter')
 const CreateSearchContextPage = lazyComponent(
     () => import('./searchContexts/CreateSearchContextPage'),
     'CreateSearchContextPage'
@@ -30,8 +33,10 @@ const EditSearchContextPage = lazyComponent(
     'EditSearchContextPage'
 )
 const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
-const GlobalCodyArea = lazyComponent(() => import('./cody/GlobalCodyArea'), 'GlobalCodyArea')
+const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'), 'CodySearchPage')
 const OwnPage = lazyComponent(() => import('./own/OwnPage'), 'OwnPage')
+const AppComingSoonPage = lazyComponent(() => import('./app/AppComingSoonPage'), 'AppComingSoonPage')
+const AppAuthCallbackPage = lazyComponent(() => import('./app/AppAuthCallbackPage'), 'AppAuthCallbackPage')
 
 export const enterpriseRoutes: RouteObject[] = [
     {
@@ -60,6 +65,15 @@ export const enterpriseRoutes: RouteObject[] = [
         ),
     },
     {
+        path: EnterprisePageRoutes.Sentinel,
+        element: (
+            <LegacyRoute
+                render={props => <SentinelRouter {...props} />}
+                condition={props => isSentinelEnabled(props)}
+            />
+        ),
+    },
+    {
         path: EnterprisePageRoutes.Contexts,
         element: <LegacyRoute render={props => <SearchContextsListPage {...props} />} />,
     },
@@ -84,12 +98,27 @@ export const enterpriseRoutes: RouteObject[] = [
         element: <LegacyRoute render={props => <GlobalNotebooksArea {...props} />} />,
     },
     {
-        path: EnterprisePageRoutes.Cody,
-        element: <LegacyRoute render={props => <GlobalCodyArea />} />,
+        path: EnterprisePageRoutes.CodySearch,
+        element: <LegacyRoute render={props => <CodySearchPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.Own,
-        element: <LegacyRoute render={props => <OwnPage />} />,
+        element: <OwnPage />,
+    },
+    {
+        path: EnterprisePageRoutes.AppComingSoon,
+        element: (
+            <LegacyRoute render={() => <AppComingSoonPage />} condition={({ isSourcegraphApp }) => isSourcegraphApp} />
+        ),
+    },
+    {
+        path: EnterprisePageRoutes.AppAuthCallback,
+        element: (
+            <LegacyRoute
+                render={() => <AppAuthCallbackPage />}
+                condition={({ isSourcegraphApp }) => isSourcegraphApp}
+            />
+        ),
     },
     ...routes,
 ]

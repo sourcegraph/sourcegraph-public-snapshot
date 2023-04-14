@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useMemo, useState } from 'react'
 
-import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown, mdiCheckBold, mdiAlertOctagram } from '@mdi/js'
+import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
@@ -28,7 +28,6 @@ import {
     CollapseHeader,
     CollapsePanel,
     H3,
-    H4,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../components/LogOutput'
@@ -38,7 +37,9 @@ import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS } from './backend'
 
 import styles from './SiteAdminUpdatesPage.module.scss'
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps {
+    isSourcegraphApp: boolean
+}
 
 const SiteUpdateCheck: React.FC = () => {
     const { data, loading, error } = useQuery<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK, {})
@@ -121,39 +122,47 @@ const SiteUpdateCheck: React.FC = () => {
 }
 
 const SiteUpgradeReadiness: FunctionComponent = () => {
-    const { data, loading, error } = useQuery<SiteUpgradeReadinessResult, SiteUpgradeReadinessVariables>(
+    const { data, loading, error, refetch } = useQuery<SiteUpgradeReadinessResult, SiteUpgradeReadinessVariables>(
         SITE_UPGRADE_READINESS,
         {}
     )
-    const [isExpanded, setIsExpanded] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(true)
     return (
         <>
             {error && !loading && <ErrorAlert error={error} />}
             {loading && !error && <LoadingSpinner />}
-            {data && (
+            {data && !loading && (
                 <>
-                    <H3 as={H4}>Schema drift</H3>
+                    <div className="d-flex flex-row justify-content-between">
+                        <H3>Schema drift</H3>
+                        <Button onClick={() => refetch()} variant="primary" size="sm">
+                            {' '}
+                            Refresh{' '}
+                        </Button>
+                    </div>
                     {data.site.upgradeReadiness.schemaDrift.length > 0 ? (
                         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={false}>
-                            <span>
-                                <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" /> There are
-                                schema drifts detected, please contact{' '}
-                                <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
-                                    Sourcegraph support
-                                </Link>{' '}
-                                for assistance.
-                            </span>
+                            <Alert className={classNames('mb-0', styles.alert)} variant="danger">
+                                <span>
+                                    There are schema drifts detected, please contact{' '}
+                                    <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
+                                        Sourcegraph support
+                                    </Link>{' '}
+                                    for assistance.
+                                </span>
+                            </Alert>
                             <CollapseHeader
                                 as={Button}
                                 variant="secondary"
                                 outline={true}
-                                className="p-0 m-0 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
+                                className="p-0 m-0 mt-2 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
                             >
                                 Click to view the drift output:
                                 <Icon
                                     aria-hidden={true}
                                     svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
                                     className="mr-1"
+                                    size="md"
                                 />
                             </CollapseHeader>
                             <CollapsePanel>
@@ -165,20 +174,21 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                         </Collapse>
                     ) : (
                         <Text>
-                            <Icon aria-hidden={true} svgPath={mdiCheckBold} className="text-success" /> There is no
-                            schema drift detected.
+                            <Alert className={classNames('mb-0', styles.alert)} variant="success">
+                                There is no schema drift detected.
+                            </Alert>
                         </Text>
                     )}
-
-                    <H3 as={H4} className="mt-3">
-                        Required out-of-band migrations
-                    </H3>
+                    <hr className="my-3" />
+                    <H3>Required out-of-band migrations</H3>
                     {data.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ? (
                         <>
                             <span>
-                                <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" /> There are
-                                pending out-of-band migrations that need to complete, please go to{' '}
-                                <Link to="/site-admin/migrations?filters=pending">migrations</Link> to check details.
+                                <Alert className={classNames('mb-0', styles.alert)} variant="warning">
+                                    There are pending out-of-band migrations that need to complete, please go to{' '}
+                                    <Link to="/site-admin/migrations?filters=pending">migrations</Link> to check
+                                    details.
+                                </Alert>
                             </span>
                             <ul className="mt-2 pl-3">
                                 {data.site.upgradeReadiness.requiredOutOfBandMigrations.map(oobm => (
@@ -188,8 +198,9 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                         </>
                     ) : (
                         <Text>
-                            <Icon aria-hidden={true} svgPath={mdiCheckBold} className="text-success" /> There are no
-                            pending out-of-band migrations that need to complete.
+                            <Alert className={classNames('mb-0', styles.alert)} variant="success">
+                                There are no pending out-of-band migrations that need to complete.
+                            </Alert>
                         </Text>
                     )}
                 </>
@@ -199,9 +210,9 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
 }
 
 /**
- * A page displaying information about available updates for the server.
+ * A page displaying information about available updates for the Sourcegraph instance. As well as the readiness status of the instance for upgrade.
  */
-export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService }) => {
+export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService, isSourcegraphApp }) => {
     useMemo(() => {
         telemetryService.logViewEvent('SiteAdminUpdates')
     }, [telemetryService])
@@ -212,13 +223,28 @@ export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService }) => {
 
             <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
             <Container className="mb-3">
-                <SiteUpdateCheck />
+                {isSourcegraphApp ? (
+                    <Text className="mb-1">
+                        We're making regular improvements to the Sourcegraph app.
+                        <br /> For information on how to upgrade to the latest version, see{' '}
+                        <Link to="/help/app#upgrading" target="_blank" rel="noopener">
+                            our docs
+                        </Link>
+                        .
+                    </Text>
+                ) : (
+                    <SiteUpdateCheck />
+                )}
             </Container>
 
-            <PageHeader path={[{ text: 'Readiness' }]} headingElement="h2" className="mb-3" />
-            <Container className="mb-3">
-                <SiteUpgradeReadiness />
-            </Container>
+            {!isSourcegraphApp && (
+                <>
+                    <PageHeader path={[{ text: 'Upgrade Readiness' }]} headingElement="h2" className="mb-3" />
+                    <Container className="mb-3">
+                        <SiteUpgradeReadiness />
+                    </Container>
+                </>
+            )}
         </div>
     )
 }

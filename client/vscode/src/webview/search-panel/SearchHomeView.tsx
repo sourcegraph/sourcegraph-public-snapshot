@@ -11,7 +11,6 @@ import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { appendContextFilter, sanitizeQueryForTelemetry } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 
 import { SearchPatternType } from '../../graphql-operations'
 import { SearchHomeState } from '../../state'
@@ -22,6 +21,7 @@ import { BrandHeader } from './components/BrandHeader'
 import { HomeFooter } from './components/HomeFooter'
 
 import styles from './index.module.scss'
+
 export interface SearchHomeViewProps extends WebviewPageProps {
     context: SearchHomeState['context']
 }
@@ -135,8 +135,6 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
         }
     }, [context.searchSidebarQueryState.proposedQueryState?.queryState])
 
-    const globbing = useMemo(() => globbingEnabledFromSettings(settingsCascade), [settingsCascade])
-
     const setSelectedSearchContextSpec = useCallback(
         (spec: string) => {
             extensionCoreAPI.setSelectedSearchContextSpec(spec).catch(error => {
@@ -187,7 +185,6 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                         getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                         fetchStreamSuggestions={fetchStreamSuggestions}
                         settingsCascade={settingsCascade}
-                        globbing={globbing}
                         telemetryService={platformContext.telemetryService}
                         platformContext={platformContext}
                         className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}

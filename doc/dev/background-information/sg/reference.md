@@ -100,6 +100,7 @@ Available commands in `sg.config.yaml`:
 * codeintel-executor
 * codeintel-executor-firecracker
 * codeintel-worker
+* cody-slack: Start Cody-Slack locally server locally
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
 * embeddings
@@ -552,7 +553,7 @@ $ sg db reset-pg -db=all
 $ sg db reset-redis
 
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
-$ sg db add-user -name=foo
+$ sg db add-user -username=foo
 ```
 
 ### sg db delete-test-dbs

@@ -21,7 +21,7 @@ import { TreePage } from './tree/TreePage'
 
 import styles from './RepositoryFileTreePage.module.scss'
 
-interface RepositoryFileTreePageProps extends RepoRevisionContainerContext, NotebookProps, OwnConfigProps {
+export interface RepositoryFileTreePageProps extends RepoRevisionContainerContext, NotebookProps, OwnConfigProps {
     objectType: 'blob' | 'tree' | undefined
 }
 
@@ -31,7 +31,7 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 /** A page that shows a file or a directory (tree view) in a repository at the
  * current revision. */
 export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => {
-    const { repo, resolvedRevision, repoName, globbing, objectType: maybeObjectType, ...context } = props
+    const { repo, resolvedRevision, repoName, objectType: maybeObjectType, ...context } = props
 
     const location = useLocation()
     const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
@@ -95,7 +95,6 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                     {...context}
                                     commitID={resolvedRevision?.commitID}
                                     filePath={filePath}
-                                    globbing={globbing}
                                     repoID={repo?.id}
                                     repoName={repoName}
                                     repoUrl={repo?.url}
@@ -114,7 +113,6 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                 {...props}
                                 commitID={resolvedRevision?.commitID}
                                 filePath={filePath}
-                                globbing={globbing}
                                 repo={repo}
                                 repoName={repoName}
                                 isSourcegraphDotCom={context.isSourcegraphDotCom}

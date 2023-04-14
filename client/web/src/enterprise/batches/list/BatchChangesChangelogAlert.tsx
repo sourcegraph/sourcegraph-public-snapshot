@@ -13,7 +13,7 @@ import styles from './BatchChangesListIntro.module.scss'
  * Ie. After 5.0 is cut, this should be bumped to 5.1, and so on. This ensures we
  * always render the right changelog.
  */
-const CURRENT_VERSION = '4.4'
+const CURRENT_VERSION = '5.1'
 /**
  * SHOW_CHANGELOG has to be set to true when a changelog entry is added for a release.
  * After every release, this will be set back to `false`. Chromatic will also verify
@@ -39,7 +39,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWith
                     <ul className="mb-0 pl-3">
                         <li>
                             <Link
-                                to="/help/admin/deploy_executors#using-private-registries"
+                                to="/help/admin/executors/deploy_executors#using-private-registries"
                                 rel="noopener"
                                 target="_blank"
                             >

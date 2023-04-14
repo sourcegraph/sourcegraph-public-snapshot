@@ -29,9 +29,10 @@ const (
 	SecurityEventNameSignInFailed    SecurityEventName = "SignInFailed"
 	SecurityEventNameSignInSucceeded SecurityEventName = "SignInSucceeded"
 
-	SecurityEventNameAccountCreated SecurityEventName = "AccountCreated"
-	SecurityEventNameAccountDeleted SecurityEventName = "AccountDeleted"
-	SecurityEventNameAccountNuked   SecurityEventName = "AccountNuked"
+	SecurityEventNameAccountCreated  SecurityEventName = "AccountCreated"
+	SecurityEventNameAccountDeleted  SecurityEventName = "AccountDeleted"
+	SecurityEventNameAccountModified SecurityEventName = "AccountModified"
+	SecurityEventNameAccountNuked    SecurityEventName = "AccountNuked"
 
 	SecurityEventNamPasswordResetRequested SecurityEventName = "PasswordResetRequested"
 	SecurityEventNamPasswordRandomized     SecurityEventName = "PasswordRandomized"

@@ -18,6 +18,7 @@ go_library(
 
 go_test(
     name = "scip_test",
+    timeout = "short",
     srcs = [
         "document_test.go",
         "index_test.go",

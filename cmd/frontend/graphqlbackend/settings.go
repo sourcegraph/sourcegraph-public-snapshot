@@ -52,7 +52,7 @@ func (o *settingsResolver) Author(ctx context.Context) (*UserResolver, error) {
 			return nil, err
 		}
 	}
-	return NewUserResolver(o.db, o.user), nil
+	return NewUserResolver(ctx, o.db, o.user), nil
 }
 
 var globalSettingsAllowEdits, _ = strconv.ParseBool(env.Get("GLOBAL_SETTINGS_ALLOW_EDITS", "false", "When GLOBAL_SETTINGS_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))

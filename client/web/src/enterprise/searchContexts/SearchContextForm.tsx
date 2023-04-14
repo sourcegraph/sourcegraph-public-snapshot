@@ -449,7 +449,6 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                                 caseSensitive={true}
                                 queryState={queryState}
                                 onChange={setQueryState}
-                                globbing={false}
                                 preventNewLine={false}
                                 applySuggestionsOnEnter={applySuggestionsOnEnter}
                             />

@@ -1,8 +1,16 @@
 use std::{path::Path, time::Instant};
 
+use clap::Parser;
 use scip_syntax::locals::parse_tree;
 use scip_treesitter_languages::parsers::BundledParser;
 use walkdir::WalkDir;
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Arguments {
+    /// Root directory to run local navigation over
+    root_dir: String,
+}
 
 struct ParseTiming {
     pub filepath: String,
@@ -43,16 +51,12 @@ fn parse_files(dir: &Path) -> Vec<ParseTiming> {
 }
 
 fn measure_parsing() {
+    let args = Arguments::parse();
     println!("Measuring parsing");
     let start = Instant::now();
 
-    let root = Path::new(
-        // "/home/tjdevries/sourcegraph/sourcegraph.git/main/",
-        "/home/tjdevries/sourcegraph/sourcegraph.git/main/internal/database/mocks_temp.go",
-        // "/home/tjdevries/sourcegraph/scip-semantic/testdata/locals-nested.go",
-        // "/home/tjdevries/sourcegraph/scip-semantic/testdata/funcs.go",
-        // "/home/tjdevries/sourcegraph/scip-semantic/testdata/multi-scopes.go",
-    );
+    let root = Path::new(&args.root_dir);
+
     let mut timings = parse_files(root);
     timings.sort_by(|a, b| a.duration.cmp(&b.duration));
     println!("Slowest files:");

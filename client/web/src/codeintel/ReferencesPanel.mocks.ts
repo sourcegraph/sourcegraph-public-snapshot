@@ -365,7 +365,7 @@ export const defaultProps: ReferencesPanelProps = {
             skip: !result.loading,
             onCompleted: result => {
                 const data = dataOrThrowErrors(asGraphQLResult({ data: result, errors: [] }))
-                if (!data || !data.repository?.commit?.blob?.lsif) {
+                if (!data?.repository?.commit?.blob?.lsif) {
                     return
                 }
                 const lsif = data.repository.commit.blob.lsif

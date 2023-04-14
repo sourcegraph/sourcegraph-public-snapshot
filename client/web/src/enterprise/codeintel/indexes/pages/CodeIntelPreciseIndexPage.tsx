@@ -55,6 +55,7 @@ export interface CodeIntelPreciseIndexPageProps extends TelemetryProps {
     queryPreciseIndex?: typeof defaultQueryPreciseIndex
     useDeletePreciseIndex?: typeof defaultUseDeletePreciseIndex
     useReindexPreciseIndex?: typeof defaultUseReindexPreciseIndex
+    indexingEnabled?: boolean
 }
 
 const variantByState = new Map<PreciseIndexState, AlertProps['variant']>([
@@ -68,6 +69,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     queryPreciseIndex = defaultQueryPreciseIndex,
     useDeletePreciseIndex = defaultUseDeletePreciseIndex,
     useReindexPreciseIndex = defaultUseReindexPreciseIndex,
+    indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     telemetryService,
 }) => {
     const { id } = useParams<{ id: string }>()
@@ -169,7 +171,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     }, [id, indexOrError, handleReindexPreciseIndex, navigate])
 
     return deletionOrError === 'deleted' ? (
-        <Navigate to="." replace={true} />
+        <Navigate to="../indexes" replace={true} />
     ) : isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting precise index" error={deletionOrError} />
     ) : isErrorLike(reindexOrError) ? (
@@ -275,7 +277,9 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                             deletionOrError={deletionOrError}
                         />
 
-                        <CodeIntelReindexUpload reindexUpload={reindexUpload} reindexOrError={reindexOrError} />
+                        {indexingEnabled && (
+                            <CodeIntelReindexUpload reindexUpload={reindexUpload} reindexOrError={reindexOrError} />
+                        )}
                     </div>
                 )}
 

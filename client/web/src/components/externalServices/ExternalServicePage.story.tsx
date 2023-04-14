@@ -15,7 +15,10 @@ import { ExternalServicePage } from './ExternalServicePage'
 
 const decorator: DecoratorFn = story => (
     <div className="p-3 container">
-        <WebStory path="/:externalServiceID" initialEntries={['service123']}>
+        <WebStory
+            path="/site-admin/external-services/:externalServiceID"
+            initialEntries={['/site-admin/external-services/service123']}
+        >
             {story}
         </WebStory>
     </div>
@@ -135,7 +138,6 @@ export const ExternalServiceWithRepos: Story<WebStoryChildrenProps> = props => (
             telemetryService={NOOP_TELEMETRY_SERVICE}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
-            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )

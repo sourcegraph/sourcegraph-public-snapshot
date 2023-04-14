@@ -125,6 +125,31 @@ type SuggestionSource<R, C extends SuggestionContext> = (
 
 export type StandardSuggestionSource = SuggestionSource<CompletionResult | null, SuggestionContext>
 
+const theme = EditorView.theme({
+    '.completion-type-queryfilter > .cm-completionLabel': {
+        fontWeight: 'bold',
+    },
+    '.cm-tooltip-autocomplete svg': {
+        width: '1rem',
+        height: '1rem',
+        display: 'inline-block',
+        boxSizing: 'content-box',
+        textAlign: 'center',
+        paddingRight: '0.5rem',
+
+        '& path': {
+            fillOpacity: 0.6,
+        },
+    },
+    '.completion-type-searchhistory > .cm-completionLabel': {
+        display: 'none',
+    },
+    'li.completion-type-searchhistory': {
+        height: 'initial !important',
+        minHeight: '1.3rem',
+    },
+})
+
 /**
  * searchQueryAutocompletion registers extensions for automcompletion, using the
  * provided suggestion sources.
@@ -266,29 +291,7 @@ export function searchQueryAutocompletion(
                       )
             )
         ),
-        EditorView.theme({
-            '.completion-type-queryfilter > .cm-completionLabel': {
-                fontWeight: 'bold',
-            },
-            '.cm-tooltip-autocomplete svg': {
-                width: '1rem',
-                height: '1rem',
-                display: 'inline-block',
-                boxSizing: 'content-box',
-                textAlign: 'center',
-                paddingRight: '0.5rem',
-            },
-            '.cm-tooltip-autocomplete svg path': {
-                fillOpacity: 0.6,
-            },
-            '.completion-type-searchhistory > .cm-completionLabel': {
-                display: 'none',
-            },
-            'li.completion-type-searchhistory': {
-                height: 'initial !important',
-                minHeight: '1.3rem',
-            },
-        }),
+        theme,
         EditorView.updateListener.of(update => {
             // If a filter was completed, show the completion list again for
             // filter values.
@@ -316,7 +319,6 @@ export function searchQueryAutocompletion(
 export interface DefaultSuggestionSourcesOptions {
     fetchSuggestions: (query: string, onAbort: (listener: () => void) => void) => Promise<SearchMatch[]>
     isSourcegraphDotCom: boolean
-    globbing: boolean
     applyOnEnter?: boolean
     disableFilterCompletion?: true
     disableSymbolCompletion?: true
@@ -462,7 +464,7 @@ export function createDefaultSuggestionSources(
                     to: token.value?.range.end,
                     filter: false,
                     options: filteredResults,
-                    getMatch: insidePredicate || options.globbing ? undefined : createMatchFunction(token),
+                    getMatch: insidePredicate ? undefined : createMatchFunction(token),
                 }
             })
         )
@@ -576,7 +578,7 @@ function completionFromSearchMatch(
                               revision: match.commit,
                               repoName: match.repository,
                           }),
-                    apply: (params?.isDefaultSource ? 'file:' : '') + regexInsertText(match.path, options) + ' ',
+                    apply: (params?.isDefaultSource ? 'file:' : '') + regexInsertText(match.path) + ' ',
                     info: match.repository,
                 },
             ]
@@ -587,10 +589,7 @@ function completionFromSearchMatch(
                     type: 'repository',
                     url: hasNonActivePatternTokens ? undefined : `/${match.repository}`,
                     detail: formatRepositoryStars(match.repoStars),
-                    apply:
-                        (params?.isDefaultSource ? 'repo:' : '') +
-                        repositoryInsertText(match, { ...options, filterValue: params?.filterValue }) +
-                        ' ',
+                    apply: (params?.isDefaultSource ? 'repo:' : '') + repositoryInsertText(match) + ' ',
                 },
             ]
         case 'symbol':

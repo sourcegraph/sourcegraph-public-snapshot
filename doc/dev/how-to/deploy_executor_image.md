@@ -1,6 +1,6 @@
 # How to deploy a new executor image
 
-This guide documents how to deploy a new image of [executors](../../../admin/executors.md) to the following [Sourcegraph instances](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/deployments/instances):
+This guide documents how to deploy a new image of [executors](../../../admin/executors/index.md) to the following [Sourcegraph instances](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/deployments/instances):
 
 * [Sourcegraph.com](https://sourcegraph.com)
 * [k8s.sgdev.org](https://k8s.sgdev.org)

@@ -37,7 +37,7 @@ The testing pyramid is a helpful way to determine the most appropriate type of t
 
 ![Testing pyramid](testing-pyramid.svg)
 
-The closer a test is to the bottom, the larger the scope of that test is. It means that failures will be harder to link to the actual cause. Tests at the bottom are notoriously slower than at the top.
+The closer a test is to the top, the larger the scope of that test is. It means that failures will be harder to link to the actual cause. Tests at the top are notoriously slower than at the bottom.
 
 It's important to take these trade-offs into account when deciding at which level to implement a test. Please refer to each testing level below for more details.
 
@@ -145,6 +145,9 @@ For these PRs a review may not be required. This can be indicated by creating a 
 
 No review required: deploys tested changes.
 ```
+
+Or, you may also attach `automerge` or `no-review-required` label to the PR to indicate the status of the PR and include a normal test plan without the `No review required:` prefix.
+
 
 ## Test health
 

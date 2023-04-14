@@ -56,7 +56,6 @@ export const dynamicWebAppConfig = {
 } satisfies DynamicSourcegraphWebAppContext
 
 export const legacyRouteComputedContext = {
-    globbing: false,
     batchChangesExecutionEnabled: true,
     isMacPlatform: true,
 } satisfies LegacyRouteComputedContext

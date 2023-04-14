@@ -10,7 +10,7 @@ import { CustomNextButton } from './setup-steps'
 interface SyncRepositoriesStep extends TelemetryProps {}
 
 export function SyncRepositoriesStep(props: SyncRepositoriesStep): ReactElement {
-    const { telemetryService } = props
+    const { telemetryService, ...attributes } = props
 
     useEffect(() => {
         telemetryService.log('SetupWizardLandedSyncRepositories')
@@ -21,9 +21,9 @@ export function SyncRepositoriesStep(props: SyncRepositoriesStep): ReactElement 
     }
 
     return (
-        <section {...props}>
+        <section {...attributes}>
             <Text className="mb-2">
-                It may take a few moments to clone and index each repository. Repository statuses are displayed below.
+                It may take a few moments to clone and index each repository. View statuses below.
             </Text>
             <SiteAdminRepositoriesContainer />
 

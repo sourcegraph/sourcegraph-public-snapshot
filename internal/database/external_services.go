@@ -502,25 +502,16 @@ func validatePerforceConnection(perforceValidators []func(*schema.PerforceConnec
 	return err
 }
 
-// upsertAuthorizationToExternalService adds "authorization" field to the
-// external service config when not yet present for GitHub and GitLab.
-func upsertAuthorizationToExternalService(kind, config string) (string, error) {
-	switch kind {
-	case extsvc.KindGitHub:
-		return jsonc.Edit(config, &schema.GitHubAuthorization{}, "authorization")
-
-	case extsvc.KindGitLab:
-		return jsonc.Edit(config,
-			&schema.GitLabAuthorization{
-				IdentityProvider: schema.IdentityProvider{
-					Oauth: &schema.OAuthIdentity{
-						Type: "oauth",
-					},
-				},
-			},
-			"authorization")
+// disablePermsSyncingForExternalService removes "authorization" or
+// "enforcePermissions" fields from the external service config
+// when present on the external service config.
+func disablePermsSyncingForExternalService(config string) (string, error) {
+	withoutEnforcePermissions, err := jsonc.Remove(config, "enforcePermissions")
+	// in case removing "enforcePermissions" fails, we try to remove "authorization" anyway
+	if err != nil {
+		withoutEnforcePermissions = config
 	}
-	return config, nil
+	return jsonc.Remove(withoutEnforcePermissions, "authorization")
 }
 
 func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
@@ -538,11 +529,11 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
-	// Cloud, we always want to enforce repository permissions using OAuth to
-	// prevent unexpected resource leaking.
+	// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
+	// we always want to disable repository permissions to prevent
+	// permission syncing from trying to sync permissions from public code.
 	if envvar.SourcegraphDotComMode() {
-		rawConfig, err = upsertAuthorizationToExternalService(es.Kind, rawConfig)
+		rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
 		if err != nil {
 			return err
 		}
@@ -623,11 +614,11 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
 		}
 
-		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
-		// Cloud, we always want to enforce repository permissions using OAuth to
-		// prevent unexpected resource leaking.
+		// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
+		// we always want to disable repository permissions to prevent
+		// permission syncing from trying to sync permissions from public code.
 		if envvar.SourcegraphDotComMode() {
-			rawConfig, err = upsertAuthorizationToExternalService(s.Kind, rawConfig)
+			rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
 			if err != nil {
 				return err
 			}
@@ -849,11 +840,11 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			return err
 		}
 
-		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
-		// Cloud, we always want to enforce repository permissions using OAuth to
-		// prevent unexpected resource leaking.
+		// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
+		// we always want to disable repository permissions to prevent
+		// permission syncing from trying to sync permissions from public code.
 		if envvar.SourcegraphDotComMode() {
-			unredactedConfig, err = upsertAuthorizationToExternalService(externalService.Kind, unredactedConfig)
+			unredactedConfig, err = disablePermsSyncingForExternalService(unredactedConfig)
 			if err != nil {
 				return err
 			}
@@ -1099,24 +1090,7 @@ func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opt ExternalServ
 
 	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Join(preds, "AND"), opt.LimitOffset.SQL())
 
-	rows, err := e.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		err = basestore.CloseRows(rows, err)
-	}()
-
-	jobs := make([]*types.ExternalServiceSyncJob, 0)
-	for rows.Next() {
-		var job types.ExternalServiceSyncJob
-		if err := scanExternalServiceSyncJob(rows, &job); err != nil {
-			return nil, errors.Wrap(err, "scanning external service job row")
-		}
-		jobs = append(jobs, &job)
-	}
-
-	return jobs, nil
+	return scanExternalServiceSyncJobs(e.Query(ctx, q))
 }
 
 const countSyncJobsQueryFmtstr = `
@@ -1164,15 +1138,15 @@ func (errSyncJobNotFound) NotFound() bool {
 func (e *externalServiceStore) GetSyncJobByID(ctx context.Context, id int64) (*types.ExternalServiceSyncJob, error) {
 	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Sprintf("id = %s", id), (&LimitOffset{Limit: 1}).SQL())
 
-	var job types.ExternalServiceSyncJob
-	if err := scanExternalServiceSyncJob(e.QueryRow(ctx, q), &job); err != nil {
+	job, err := scanExternalServiceSyncJob(e.QueryRow(ctx, q))
+	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &errSyncJobNotFound{id: id}
 		}
 		return nil, errors.Wrap(err, "scanning external service job row")
 	}
 
-	return &job, nil
+	return job, nil
 }
 
 // UpdateSyncJobCounters persists only the sync job counters for the supplied job.
@@ -1205,8 +1179,11 @@ WHERE
     id = %d
 `
 
-func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyncJob) error {
-	return sc.Scan(
+var scanExternalServiceSyncJobs = basestore.NewSliceScanner(scanExternalServiceSyncJob)
+
+func scanExternalServiceSyncJob(sc dbutil.Scanner) (*types.ExternalServiceSyncJob, error) {
+	var job types.ExternalServiceSyncJob
+	err := sc.Scan(
 		&job.ID,
 		&job.State,
 		&dbutil.NullString{S: &job.FailureMessage},
@@ -1225,6 +1202,7 @@ func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyn
 		&job.ReposUnmodified,
 		&job.ReposDeleted,
 	)
+	return &job, err
 }
 
 func (e *externalServiceStore) GetLastSyncError(ctx context.Context, id int64) (string, error) {
@@ -1473,45 +1451,37 @@ WHERE %s
 		opt.LimitOffset.SQL(),
 	)
 
-	rows, err := e.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+	return scanExternalServiceRepos(e.Query(ctx, q))
+}
 
-	var repos []*types.ExternalServiceRepo
-	for rows.Next() {
-		var (
-			repo   types.ExternalServiceRepo
-			userID sql.NullInt32
-			orgID  sql.NullInt32
-		)
+var scanExternalServiceRepos = basestore.NewSliceScanner(scanExternalServiceRepo)
 
-		if err := rows.Scan(
-			&repo.ExternalServiceID,
-			&repo.RepoID,
-			&repo.CloneURL,
-			&userID,
-			&orgID,
-			&repo.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
+func scanExternalServiceRepo(s dbutil.Scanner) (*types.ExternalServiceRepo, error) {
+	var (
+		repo   types.ExternalServiceRepo
+		userID sql.NullInt32
+		orgID  sql.NullInt32
+	)
 
-		if userID.Valid {
-			repo.UserID = userID.Int32
-		}
-		if orgID.Valid {
-			repo.OrgID = orgID.Int32
-		}
-
-		repos = append(repos, &repo)
-	}
-	if err = rows.Err(); err != nil {
+	if err := s.Scan(
+		&repo.ExternalServiceID,
+		&repo.RepoID,
+		&repo.CloneURL,
+		&userID,
+		&orgID,
+		&repo.CreatedAt,
+	); err != nil {
 		return nil, err
 	}
 
-	return repos, nil
+	if userID.Valid {
+		repo.UserID = userID.Int32
+	}
+	if orgID.Valid {
+		repo.OrgID = orgID.Int32
+	}
+
+	return &repo, nil
 }
 
 func (e *externalServiceStore) DistinctKinds(ctx context.Context) ([]string, error) {

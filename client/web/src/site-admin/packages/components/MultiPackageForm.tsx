@@ -19,7 +19,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
-import { SiteAdminPackageFields, PackageRepoReferenceKind } from '../../../graphql-operations'
+import { PackageRepoReferenceKind } from '../../../graphql-operations'
 import { prettyBytesBigint } from '../../../util/prettyBytesBigint'
 import { useMatchingPackages } from '../hooks/useMatchingPackages'
 import { BlockType } from '../modal-content/AddPackageFilterModalContent'
@@ -33,30 +33,22 @@ export interface MultiPackageState {
     ecosystem: PackageRepoReferenceKind
 }
 
-interface BaseMultiPackageFormProps {
+interface MultiPackageFormProps {
+    initialState: MultiPackageState
     filters: FilteredConnectionFilterValue[]
     setType: (type: BlockType) => void
     onDismiss: () => void
     onSave: (state: MultiPackageState) => Promise<unknown>
 }
 
-interface AddMultiPackageFormProps extends BaseMultiPackageFormProps {
-    node: SiteAdminPackageFields
-}
-
-interface EditMultiPackageFormProps extends BaseMultiPackageFormProps {
-    initialState: MultiPackageState
-}
-
-type MultiPackageFormProps = AddMultiPackageFormProps | EditMultiPackageFormProps
-
-export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = props => {
-    const defaultNameFilter = 'initialState' in props ? props.initialState.nameFilter : '*'
-    const defaultEcosystem = 'initialState' in props ? props.initialState.ecosystem : props.node.kind
-    const [blockState, setBlockState] = useState<MultiPackageState>({
-        nameFilter: defaultNameFilter,
-        ecosystem: defaultEcosystem,
-    })
+export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = ({
+    initialState,
+    filters,
+    setType,
+    onDismiss,
+    onSave,
+}) => {
+    const [blockState, setBlockState] = useState<MultiPackageState>(initialState)
     const query = useDebounce(blockState.nameFilter, 200)
 
     const isValid = useCallback((): boolean => {
@@ -75,9 +67,9 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                 return Promise.resolve()
             }
 
-            return props.onSave(blockState)
+            return onSave(blockState)
         },
-        [blockState, isValid, props]
+        [blockState, isValid, onSave]
     )
 
     return (
@@ -101,7 +93,7 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                             isCustomStyle={true}
                             aria-label="Ecosystem"
                         >
-                            {props.filters.map(({ label, value }) => (
+                            {filters.map(({ label, value }) => (
                                 <option value={value} key={label}>
                                     {label}
                                 </option>
@@ -118,14 +110,11 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                             <Button
                                 className={classNames('text-danger', styles.inputRowButton)}
                                 variant="icon"
-                                onClick={() => props.setType('single')}
+                                onClick={() => setType('single')}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiClose} />
                             </Button>
                         </Tooltip>
-                    </div>
-                    <div className={styles.listContainer}>
-                        <PackageList query={query} blockState={blockState} />
                     </div>
                 </div>
                 <div className="mt-3">
@@ -134,7 +123,10 @@ export const MultiPackageForm: React.FunctionComponent<MultiPackageFormProps> = 
                         All versions of all matching packages are blocked when using a name filter.
                     </Alert>
                 </div>
-                <FilterPackagesActions valid={isValid()} onDismiss={props.onDismiss} />
+                <div className={styles.listContainer}>
+                    <PackageList query={query} blockState={blockState} />
+                </div>
+                <FilterPackagesActions valid={isValid()} onDismiss={onDismiss} />
             </Form>
         </>
     )
@@ -167,25 +159,24 @@ const PackageList: React.FunctionComponent<PackageListProps> = ({ blockState, qu
         return <ErrorAlert error={error} className="mt-2" />
     }
 
-    if (nodes.length === 0) {
-        return (
-            <Alert variant="warning" className="mt-2">
-                This filter does not match any current package.
-            </Alert>
-        )
-    }
-
     return (
-        <div className="mt-2">
+        <div className="mt-3">
+            <Label className="mb-2">Summary</Label>
             <div className="d-flex justify-content-between text-muted">
                 <span>
-                    {totalCount === 1 ? (
-                        <>{totalCount} package currently matches</>
+                    {totalCount === 0 ? (
+                        <>No package currently matches this filter</>
                     ) : (
-                        <>{totalCount} packages currently match</>
-                    )}{' '}
-                    this filter
-                    {nodes.length < totalCount && <> (showing only {nodes.length})</>}:
+                        <>
+                            {totalCount === 1 ? (
+                                <>{totalCount} package currently matches</>
+                            ) : (
+                                <>{totalCount} packages currently match</>
+                            )}{' '}
+                            this filter
+                            {nodes.length < totalCount && <> (showing only {nodes.length})</>}
+                        </>
+                    )}
                 </span>
                 {nodes.length < totalCount && (
                     <Button variant="link" className="p-0 mr-3" onClick={() => setPackageFetchLimit(nextFetchLimit)}>
@@ -193,30 +184,32 @@ const PackageList: React.FunctionComponent<PackageListProps> = ({ blockState, qu
                     </Button>
                 )}
             </div>
-            <ul className={classNames('list-group mt-1', styles.list)}>
-                {nodes.map(node => (
-                    <li className="list-group-item" key={node.id}>
-                        {node.blocked ? (
-                            <div className="d-flex justify-content-between">
-                                <>{node.name}</>
-                                <small className="text-danger">This package is already blocked by a filter.</small>
-                            </div>
-                        ) : node.repository ? (
-                            <div className="d-flex justify-content-between">
-                                <RepoLink repoName={node.name} to={node.repository.url} />
-                                <small className="text-muted">
-                                    Size: {prettyBytesBigint(BigInt(node.repository.mirrorInfo.byteSize))}
-                                </small>
-                            </div>
-                        ) : (
-                            <div className="d-flex justify-content-between">
-                                <>{node.name}</>
-                                <small className="text-muted">This package has not yet been synced.</small>
-                            </div>
-                        )}
-                    </li>
-                ))}
-            </ul>
+            {nodes.length > 0 && (
+                <ul className={classNames('list-group mt-1', styles.list)}>
+                    {nodes.map(node => (
+                        <li className="list-group-item" key={node.id}>
+                            {node.blocked ? (
+                                <div className="d-flex justify-content-between">
+                                    <>{node.name}</>
+                                    <small className="text-danger">This package is already blocked by a filter.</small>
+                                </div>
+                            ) : node.repository ? (
+                                <div className="d-flex justify-content-between">
+                                    <RepoLink repoName={node.name} to={node.repository.url} />
+                                    <small className="text-muted">
+                                        Size: {prettyBytesBigint(BigInt(node.repository.mirrorInfo.byteSize))}
+                                    </small>
+                                </div>
+                            ) : (
+                                <div className="d-flex justify-content-between">
+                                    <>{node.name}</>
+                                    <small className="text-muted">This package has not yet been synced.</small>
+                                </div>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
     )
 }

@@ -426,10 +426,23 @@ pub fn parse_tree<'a>(
 mod test {
     use anyhow::Result;
     use scip::types::Document;
+    use scip_treesitter::snapshot::{dump_document_with_config, EmitSymbol, SnapshotOptions};
     use scip_treesitter_languages::parsers::BundledParser;
 
     use super::*;
-    use crate::{languages::LocalConfiguration, snapshot::dump_document};
+    use crate::languages::LocalConfiguration;
+
+    fn snapshot_syntax_document(doc: &Document, source: &str) -> String {
+        dump_document_with_config(
+            doc,
+            source,
+            SnapshotOptions {
+                emit_symbol: EmitSymbol::All,
+                ..Default::default()
+            },
+        )
+        .expect("dump document")
+    }
 
     fn parse_file_for_lang(config: &mut LocalConfiguration, source_code: &str) -> Result<Document> {
         let source_bytes = source_code.as_bytes();
@@ -456,7 +469,7 @@ mod test {
         let source_code = include_str!("../testdata/locals.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
-        let dumped = dump_document(&doc, source_code);
+        let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
 
         Ok(())
@@ -468,7 +481,7 @@ mod test {
         let source_code = include_str!("../testdata/locals-nested.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
-        let dumped = dump_document(&doc, source_code);
+        let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
 
         Ok(())
@@ -480,7 +493,7 @@ mod test {
         let source_code = include_str!("../testdata/funcs.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
-        let dumped = dump_document(&doc, source_code);
+        let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
 
         Ok(())
@@ -492,7 +505,7 @@ mod test {
         let source_code = include_str!("../testdata/perl.pm");
         let doc = parse_file_for_lang(&mut config, source_code)?;
 
-        let dumped = dump_document(&doc, source_code);
+        let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
 
         Ok(())

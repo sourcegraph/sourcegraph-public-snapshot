@@ -13,7 +13,10 @@ import { ExternalServiceEditPage } from './ExternalServiceEditPage'
 
 const decorator: DecoratorFn = story => (
     <div className="p-3 container">
-        <WebStory path="/:externalServiceID" initialEntries={['service123']}>
+        <WebStory
+            path="/site-admin/external-services/:externalServiceID/edit"
+            initialEntries={['/site-admin/external-services/service123/edit']}
+        >
             {story}
         </WebStory>
     </div>
@@ -74,7 +77,6 @@ export const ViewConfig: Story<WebStoryChildrenProps> = props => (
             autoFocusForm={false}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
-            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )
@@ -88,7 +90,6 @@ export const ConfigWithInvalidUrl: Story<WebStoryChildrenProps> = props => (
             autoFocusForm={false}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
-            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )
@@ -102,7 +103,6 @@ export const ConfigWithWarning: Story<WebStoryChildrenProps> = props => (
             autoFocusForm={false}
             externalServicesFromFile={false}
             allowEditExternalServicesWithFile={false}
-            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )
@@ -116,7 +116,6 @@ export const EditingDisabled: Story<WebStoryChildrenProps> = props => (
             autoFocusForm={false}
             externalServicesFromFile={true}
             allowEditExternalServicesWithFile={false}
-            isSourcegraphApp={false}
         />
     </MockedTestProvider>
 )

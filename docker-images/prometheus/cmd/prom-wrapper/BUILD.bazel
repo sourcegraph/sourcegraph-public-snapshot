@@ -46,6 +46,7 @@ go_binary(
 
 go_test(
     name = "prom-wrapper_test",
+    timeout = "short",
     srcs = [
         "receivers_test.go",
         "silence_test.go",

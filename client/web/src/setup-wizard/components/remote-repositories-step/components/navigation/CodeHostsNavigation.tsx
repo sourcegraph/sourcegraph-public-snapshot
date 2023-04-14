@@ -1,11 +1,22 @@
 import { FC, ReactElement } from 'react'
 
 import { QueryResult } from '@apollo/client'
-import { mdiDelete, mdiInformationOutline, mdiPlus } from '@mdi/js'
+import { mdiDelete, mdiInformationOutline, mdiPlus, mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, ErrorAlert, Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Button,
+    ErrorAlert,
+    Icon,
+    Link,
+    LoadingSpinner,
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    PopoverTail,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import { CodeHost, ExternalServiceKind, GetCodeHostsResult } from '../../../../../graphql-operations'
 import { CodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
@@ -62,7 +73,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                         className={styles.emptyStateIcon}
                     />
                 </span>
-                <span>Choose at least one of the code host providers from the list on the right.</span>
+                <span>Choose at least one of the code host providers from the list.</span>
             </small>
         )
     }
@@ -93,8 +104,10 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                                 )}
                             </span>
                             <small className={styles.itemDescriptionStatus}>
-                                {codeHost.lastSyncAt !== null && <>Synced, {codeHost.repoCount} repositories found</>}
-                                {codeHost.lastSyncAt === null && (
+                                {codeHost.lastSyncAt !== null && codeHost.lastSyncError === null && (
+                                    <>Synced, {codeHost.repoCount} repositories found</>
+                                )}
+                                {codeHost.lastSyncAt === null && codeHost.lastSyncError === null && (
                                     <>
                                         Syncing
                                         {codeHost.repoCount > 0 && (
@@ -104,6 +117,24 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                                             </>
                                         )}
                                     </>
+                                )}
+                                {codeHost.lastSyncError !== null && (
+                                    <Popover>
+                                        <PopoverTrigger as="span" className={styles.errorButton}>
+                                            Sync error appeared{' '}
+                                            <Icon svgPath={mdiAlertCircle} aria-label="Sync error icon" />
+                                        </PopoverTrigger>
+
+                                        <PopoverContent position="right" className={styles.errorPopover}>
+                                            <ErrorAlert
+                                                error={codeHost.lastSyncError}
+                                                variant="danger"
+                                                className="m-3"
+                                            />
+                                        </PopoverContent>
+
+                                        <PopoverTail size="sm" />
+                                    </Popover>
                                 )}
                             </small>
                         </span>

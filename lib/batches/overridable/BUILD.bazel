@@ -17,6 +17,7 @@ go_library(
 
 go_test(
     name = "overridable_test",
+    timeout = "short",
     srcs = [
         "bool_or_string_test.go",
         "bool_test.go",

@@ -18,6 +18,7 @@ go_library(
 
 go_test(
     name = "anthropic_test",
+    timeout = "short",
     srcs = [
         "anthropic_test.go",
         "decoder_test.go",

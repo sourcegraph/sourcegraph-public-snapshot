@@ -1,17 +1,22 @@
 package scim
 
 import (
+	"github.com/elimity-com/scim"
 	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
 )
 
 // createCoreSchema creates a SCIM core schema for users.
-func createCoreSchema() schema.Schema {
+func (u *UserSCIMService) Schema() schema.Schema {
 	return schema.Schema{
 		ID:          "urn:ietf:params:scim:schemas:core:2.0:User",
 		Name:        optional.NewString("User"),
 		Description: optional.NewString("User Account"),
 		Attributes: []schema.CoreAttribute{
+			schema.SimpleCoreAttribute(schema.SimpleBooleanParams(schema.BooleanParams{
+				Description: optional.NewString("A Boolean value indicating the User's administrative status."),
+				Name:        "active",
+			})),
 			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
 				Description: optional.NewString("Unique identifier for the User, typically used by the user to directly authenticate to the service provider. Each User MUST include a non-empty userName value. This identifier MUST be unique across the service provider's entire set of Users. REQUIRED."),
 				Name:        "userName",
@@ -74,4 +79,8 @@ func createCoreSchema() schema.Schema {
 			}),
 		},
 	}
+}
+
+func (u *UserSCIMService) SchemaExtensions() []scim.SchemaExtension {
+	return []scim.SchemaExtension{}
 }

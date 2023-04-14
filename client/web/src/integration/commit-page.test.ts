@@ -290,6 +290,7 @@ describe('RepositoryCommitPage', () => {
                         url: '/github.com/sourcegraph/sourcegraph',
                     },
                 },
+                isFork: false,
             },
         }),
     }

@@ -192,7 +192,7 @@ function fetchSettingsCascade(subject: Scalars['ID']): Observable<SettingsSubjec
         { subject }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.settingsSubject) {
+            if (!data?.settingsSubject) {
                 throw createAggregateError(errors)
             }
             return data.settingsSubject.settingsCascade as SettingsSubjects

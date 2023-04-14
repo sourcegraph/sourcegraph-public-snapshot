@@ -29,16 +29,16 @@ export const ConfirmDeleteRoleModal: React.FunctionComponent<React.PropsWithChil
                 </H3>
             </div>
             <Text>
-                Please confirm that you want to delete the role. Once deleted, all users assigned the{' '}
-                <span className="font-weight-bold">"{role.name}"</span> role will lose access to the permissions
-                associated with the role.
+                Delete the role <span className="font-weight-bold">"{role.name}"</span>? Once deleted, any user
+                previously assigned this role will lose any permissions associated with it that are not also granted by
+                their other roles.
             </Text>
             <Form onSubmit={onConfirm}>
                 <div className="d-flex justify-content-end">
                     <Button className="mr-2" onClick={onCancel} outline={true} variant="secondary">
                         Cancel
                     </Button>
-                    <LoaderButton type="submit" variant="primary" alwaysShowLabel={true} label="Delete" />
+                    <LoaderButton type="submit" variant="danger" alwaysShowLabel={true} label="Delete" />
                 </div>
             </Form>
         </Modal>

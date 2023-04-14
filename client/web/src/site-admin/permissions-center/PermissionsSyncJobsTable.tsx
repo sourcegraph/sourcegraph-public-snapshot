@@ -1,11 +1,16 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useState } from 'react'
+import React, { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ApolloError } from '@apollo/client/errors'
-import { mdiCancel, mdiClose, mdiMapSearch, mdiReload, mdiSecurity } from '@mdi/js'
+import { mdiCancel, mdiClose, mdiDetails, mdiMapSearch, mdiReload, mdiSecurity } from '@mdi/js'
 import classNames from 'classnames'
-import { noop } from 'lodash'
+import { intervalToDuration } from 'date-fns'
+import formatDuration from 'date-fns/formatDuration'
+import { capitalize, noop } from 'lodash'
+import { animated, useSpring } from 'react-spring'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation } from '@sourcegraph/http-client'
+import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -14,11 +19,16 @@ import {
     Icon,
     Input,
     Link,
+    Modal,
     PageHeader,
     PageSwitcher,
     Select,
+    Text,
+    Tooltip,
     useDebounce,
     useLocalStorage,
+    Badge,
+    BadgeVariantType,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -28,12 +38,15 @@ import {
     CancelPermissionsSyncJobResult,
     CancelPermissionsSyncJobResultMessage,
     CancelPermissionsSyncJobVariables,
+    CodeHostState,
+    CodeHostStatus,
     PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
     PermissionsSyncJobsResult,
     PermissionsSyncJobsSearchType,
     PermissionsSyncJobState,
     PermissionsSyncJobsVariables,
+    PermissionsSyncJobPriority,
     ScheduleRepoPermissionsSyncResult,
     ScheduleRepoPermissionsSyncVariables,
     ScheduleUserPermissionsSyncResult,
@@ -49,15 +62,17 @@ import {
     TRIGGER_USER_SYNC,
 } from './backend'
 import {
+    JOB_STATE_METADATA_MAPPING,
     PermissionsSyncJobNumbers,
     PermissionsSyncJobReasonByline,
     PermissionsSyncJobStatusBadge,
     PermissionsSyncJobSubject,
 } from './PermissionsSyncJobNode'
+import { PermissionsSyncStats } from './PermissionsSyncStats'
 
 import styles from './styles.module.scss'
 
-interface Filters {
+export interface Filters {
     reason: string
     state: string
     searchType: string
@@ -74,8 +89,9 @@ const DEFAULT_FILTERS = {
     state: '',
     searchType: '',
     query: '',
+    partial: '',
 }
-const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 5000
+export const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 2000
 
 interface Props extends TelemetryProps {
     minimal?: boolean
@@ -96,7 +112,8 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const debouncedQuery = useDebounce(filters.query, 300)
     const [polling, setPolling] = useLocalStorage<boolean>('polling_for_permissions_sync_jobs', true)
-
+    const [showModal, setShowModal] = useState<boolean>(false)
+    const [selectedJob, setSelectedJob] = useState<PermissionsSyncJob | undefined>(undefined)
     const { connection, loading, startPolling, stopPolling, error, variables, ...paginationProps } =
         usePageSwitcherPagination<PermissionsSyncJobsResult, PermissionsSyncJobsVariables, PermissionsSyncJob>({
             query: PERMISSIONS_SYNC_JOBS_QUERY,
@@ -106,6 +123,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 state: stringToState(filters.state),
                 searchType: stringToSearchType(filters.searchType),
                 query: debouncedQuery,
+                partial: filters.partial === 'true',
                 userID,
                 repoID,
             } as PermissionsSyncJobsVariables,
@@ -138,9 +156,14 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         (searchType: PermissionsSyncJobsSearchType | null) => setFilters({ searchType: searchType?.toString() || '' }),
         [setFilters]
     )
+    const setPartial = useCallback((partial: boolean) => setFilters({ partial: partial.toString() }), [setFilters])
 
     const [notification, setNotification] = useState<Notification | undefined>(undefined)
-    const dismissNotification = useCallback(() => setNotification(undefined), [])
+    const [showNotification, setShowNotification] = useState<boolean>(false)
+    const toggleNotification = useCallback((notification?: Notification) => {
+        setNotification(notification)
+        setShowNotification(true)
+    }, [])
 
     const [triggerUserSync] = useMutation<ScheduleUserPermissionsSyncResult, ScheduleUserPermissionsSyncVariables>(
         TRIGGER_USER_SYNC
@@ -152,14 +175,22 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         CANCEL_PERMISSIONS_SYNC_JOB
     )
 
-    const onError = (error: ApolloError): void => setNotification({ text: error.message, isError: true })
+    const onError = useCallback(
+        (error: ApolloError): void =>
+            toggleNotification({
+                text: error.message,
+                isError: true,
+            }),
+        [toggleNotification]
+    )
 
     const handleTriggerPermsSync = useCallback(
         ([job]: PermissionsSyncJob[]) => {
             if (job.subject.__typename === 'Repository') {
                 triggerRepoSync({
                     variables: { repo: job.subject.id },
-                    onCompleted: () => setNotification({ text: 'Repository permissions sync successfully scheduled' }),
+                    onCompleted: () =>
+                        toggleNotification({ text: 'Repository permissions sync successfully scheduled' }),
                     onError,
                 }).catch(
                     // noop here is used because an error is handled in `onError` option of `useMutation` above.
@@ -168,7 +199,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
             } else {
                 triggerUserSync({
                     variables: { user: job.subject.id },
-                    onCompleted: () => setNotification({ text: 'User permissions sync successfully scheduled' }),
+                    onCompleted: () => toggleNotification({ text: 'User permissions sync successfully scheduled' }),
                     onError,
                 }).catch(
                     // noop here is used because an error is handled in `onError` option of `useMutation` above.
@@ -176,7 +207,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 )
             }
         },
-        [triggerUserSync, triggerRepoSync]
+        [triggerUserSync, triggerRepoSync, onError, toggleNotification]
     )
 
     const handleCancelSyncJob = useCallback(
@@ -184,14 +215,22 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
             cancelSyncJob({
                 variables: { job: syncJob.id },
                 onCompleted: ({ cancelPermissionsSyncJob }) =>
-                    setNotification({ text: prettyPrintCancelSyncJobMessage(cancelPermissionsSyncJob) }),
+                    toggleNotification({ text: prettyPrintCancelSyncJobMessage(cancelPermissionsSyncJob) }),
                 onError,
             }).catch(
                 // noop here is used because an error is handled in `onError` option of `useMutation` above.
                 noop
             )
         },
-        [cancelSyncJob]
+        [cancelSyncJob, onError, toggleNotification]
+    )
+
+    const handleViewJobDetails = useCallback(
+        ([syncJob]: PermissionsSyncJob[]) => {
+            setShowModal(true)
+            setSelectedJob(syncJob)
+        },
+        [setShowModal, setSelectedJob]
     )
 
     if (minimal) {
@@ -200,12 +239,28 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 {error && <ConnectionError errors={[error.message]} />}
                 {!connection && <ConnectionLoading />}
                 {connection?.nodes?.length === 0 && <EmptyList />}
+                {showModal && selectedJob && renderModal(selectedJob, () => setShowModal(false))}
                 {!!connection?.nodes?.length && (
                     <Table<PermissionsSyncJob>
                         columns={TableColumns}
                         getRowId={node => node.id}
                         data={connection.nodes}
                         rowClassName={styles.tableRow}
+                        actions={[
+                            {
+                                key: 'Cancel job',
+                                label: 'Cancel job',
+                                icon: mdiCancel,
+                                onClick: handleCancelSyncJob,
+                                condition: ([node]) => node.state === PermissionsSyncJobState.QUEUED,
+                            },
+                            {
+                                key: 'View Job Details',
+                                label: 'View Job Details',
+                                icon: mdiDetails,
+                                onClick: handleViewJobDetails,
+                            },
+                        ]}
                     />
                 )}
                 <PageSwitcher
@@ -232,34 +287,46 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                     </>
                 }
                 actions={
-                    <Button variant="secondary" onClick={() => setPolling(oldValue => !oldValue)}>
-                        {polling ? 'Pause polling' : 'Resume polling'}
-                    </Button>
+                    <Tooltip
+                        content={
+                            polling
+                                ? 'Pausing polling will stop the automatic update of the jobs list on this page until polling is resumed.'
+                                : 'Resume polling to automatic update the jobs list on this page.'
+                        }
+                    >
+                        <Button variant="secondary" onClick={() => setPolling(oldValue => !oldValue)}>
+                            {polling ? 'Pause polling' : 'Resume polling'}
+                        </Button>
+                    </Tooltip>
                 }
-                className="mb-3"
+                className={classNames(styles.pageHeader, 'mb-3')}
             />
+            {showModal && selectedJob && renderModal(selectedJob, () => setShowModal(false))}
+            <PermissionsSyncStats filters={filters} setFilters={setFilters} polling={polling} />
             <Container>
                 {error && <ConnectionError errors={[error.message]} />}
-                {!connection && <ConnectionLoading />}
+                {!connection && !error && <ConnectionLoading />}
                 {connection?.nodes && (
                     <div className={styles.filtersGrid}>
                         <PermissionsSyncJobReasonGroupPicker value={filters.reason} onChange={setReason} />
-                        <PermissionsSyncJobStatePicker value={filters.state} onChange={setState} />
+                        <PermissionsSyncJobStatePicker
+                            value={filters.partial === 'true' ? 'partial' : filters.state}
+                            onChange={setState}
+                            onPartialSuccessChange={setPartial}
+                        />
                         <PermissionsSyncJobSearchTypePicker value={filters.searchType} onChange={setSearchType} />
                         <PermissionsSyncJobSearchPane filters={filters} setFilters={setFilters} />
                     </div>
                 )}
-                {notification && (
-                    <Alert
-                        className="mt-2 d-flex justify-content-between align-items-center"
-                        variant={notification.isError ? 'danger' : 'success'}
-                    >
-                        {notification.text}
-                        <Button variant="secondary" outline={true} onClick={dismissNotification}>
-                            <Icon aria-label="Close notification" svgPath={mdiClose} />
-                        </Button>
-                    </Alert>
-                )}
+                <AnimatedAlert
+                    className="mt-2 d-flex justify-content-between align-items-center"
+                    visible={showNotification}
+                >
+                    {notification?.text}
+                    <Button variant="secondary" outline={true} onClick={() => setShowNotification(false)}>
+                        <Icon aria-label="Close notification" svgPath={mdiClose} />
+                    </Button>
+                </AnimatedAlert>
                 {connection?.nodes?.length === 0 && <EmptyList />}
                 {!!connection?.nodes?.length && (
                     <Table<PermissionsSyncJob>
@@ -292,6 +359,12 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                                         : `/users/${node.subject.username}/settings/permissions`,
                                 target: '_blank',
                             },
+                            {
+                                key: 'View Job Details',
+                                label: 'View Job Details',
+                                icon: mdiDetails,
+                                onClick: handleViewJobDetails,
+                            },
                         ]}
                     />
                 )}
@@ -306,11 +379,38 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     )
 }
 
+// The Alert banner has a 1rem bottom margin
+const ONE_REM_IN_PX = convertREMToPX(1)
+const APPROX_BANNER_HEIGHT_PX = 40
+
+// TODO(sashaostrikov): extract as a separate wildcard component later
+const AnimatedAlert: React.FunctionComponent<React.PropsWithChildren<{ className?: string; visible: boolean }>> = ({
+    className,
+    visible,
+    children,
+}) => {
+    const ref = useRef<HTMLDivElement>(null)
+    const style = useSpring({
+        height: visible ? `${(ref.current?.offsetHeight || APPROX_BANNER_HEIGHT_PX) + ONE_REM_IN_PX}px` : '0px',
+        opacity: visible ? 1 : 0,
+    })
+    return (
+        <animated.div style={style}>
+            {/* Keep this in sync with calculation above: mb-3 = 1rem */}
+            {visible && (
+                <Alert ref={ref} variant="success" className={classNames(className, 'mb-3')}>
+                    {children}
+                </Alert>
+            )}
+        </animated.div>
+    )
+}
+
 const TableColumns: IColumn<PermissionsSyncJob>[] = [
     {
         key: 'Status',
         header: 'Status',
-        render: ({ state }: PermissionsSyncJob) => <PermissionsSyncJobStatusBadge state={state} />,
+        render: job => <PermissionsSyncJobStatusBadge job={job} />,
     },
     {
         key: 'Name',
@@ -326,19 +426,22 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
     },
     {
         key: 'Added',
-        header: 'Added',
+        header: { label: 'Added', align: 'right' },
+        align: 'right',
         render: (node: PermissionsSyncJob) => <PermissionsSyncJobNumbers job={node} added={true} />,
     },
     {
         key: 'Removed',
-        header: 'Removed',
+        header: { label: 'Removed', align: 'right' },
+        align: 'right',
         render: (node: PermissionsSyncJob) => <PermissionsSyncJobNumbers job={node} added={false} />,
     },
     {
         key: 'Total',
-        header: 'Total',
+        header: { label: 'Total', align: 'right' },
+        align: 'right',
         render: ({ permissionsFound }: PermissionsSyncJob) => (
-            <div className="text-secondary">
+            <div className={classNames('text-right', permissionsFound === 0 ? styles.textTotalNumber : 'text-muted')}>
                 <b>{permissionsFound}</b>
             </div>
         ),
@@ -381,18 +484,31 @@ const PermissionsSyncJobReasonGroupPicker: FC<PermissionsSyncJobReasonGroupPicke
 interface PermissionsSyncJobStatePickerProps {
     value: string
     onChange: (state: PermissionsSyncJobState | null) => void
+    onPartialSuccessChange: (partial: boolean) => void
 }
 
 const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProps> = props => {
-    const { onChange, value } = props
+    const { onChange, onPartialSuccessChange, value } = props
 
     const handleSelect = (event: ChangeEvent<HTMLSelectElement>): void => {
-        const nextValue = event.target.value === '' ? null : (event.target.value as PermissionsSyncJobState)
+        let nextValue = null
+        let partial = false
+        switch (event.target.value) {
+            case '':
+                break
+            case 'partial':
+                partial = true
+                break
+            default:
+                nextValue = event.target.value as PermissionsSyncJobState
+        }
         onChange(nextValue)
+        onPartialSuccessChange(partial)
     }
 
+    const selectedValue = value === 'partial' ? 'partial' : stringToState(value) || ''
     return (
-        <Select id="stateSelector" value={stringToState(value) || ''} label="State" onChange={handleSelect}>
+        <Select id="stateSelector" value={selectedValue} label="State" onChange={handleSelect}>
             <option value="">Any</option>
             <option value={PermissionsSyncJobState.CANCELED}>Canceled</option>
             <option value={PermissionsSyncJobState.COMPLETED}>Completed</option>
@@ -400,6 +516,7 @@ const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProps> = pr
             <option value={PermissionsSyncJobState.FAILED}>Failed</option>
             <option value={PermissionsSyncJobState.PROCESSING}>Processing</option>
             <option value={PermissionsSyncJobState.QUEUED}>Queued</option>
+            <option value="partial">Partial</option>
         </Select>
     )
 }
@@ -435,27 +552,29 @@ const PermissionsSyncJobSearchPane: FC<PermissionsSyncJobSearchPaneProps> = prop
     const { filters, setFilters } = props
 
     return (
-        <Input
-            type="search"
-            placeholder={
-                filters.searchType === ''
-                    ? 'Select a search context'
-                    : filters.searchType === PermissionsSyncJobsSearchType.USER
-                    ? 'Search users...'
-                    : 'Search repositories...'
-            }
-            name="query"
-            value={filters.query}
-            onChange={event => setFilters({ ...filters, query: event.currentTarget.value })}
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck={false}
-            aria-label="Search sync jobs..."
-            variant="regular"
-            disabled={filters.searchType === ''}
-            className={styles.searchInput}
-        />
+        <Tooltip content={filters.searchType === '' ? 'First select the search context on the left.' : undefined}>
+            <Input
+                type="search"
+                placeholder={
+                    filters.searchType === ''
+                        ? 'Select a search context'
+                        : filters.searchType === PermissionsSyncJobsSearchType.USER
+                        ? 'Search users...'
+                        : 'Search repositories...'
+                }
+                name="query"
+                value={filters.query}
+                onChange={event => setFilters({ ...filters, query: event.currentTarget.value })}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                aria-label="Search sync jobs..."
+                variant="regular"
+                disabled={filters.searchType === ''}
+                className={styles.searchInput}
+            />
+        </Tooltip>
     )
 }
 
@@ -479,3 +598,128 @@ const prettyPrintCancelSyncJobMessage = (message: CancelPermissionsSyncJobResult
             return 'Error during permissions sync job cancelling.'
     }
 }
+
+const CodeHostStatesTableColumns: IColumn<CodeHostState>[] = [
+    {
+        key: 'ProviderID',
+        header: 'Provider ID',
+        accessor: (state: CodeHostState) => state.providerID,
+    },
+    {
+        key: 'ProviderType',
+        header: 'Provider type',
+        accessor: (state: CodeHostState) => capitalize(state.providerType),
+    },
+    {
+        key: 'Status',
+        header: 'Status',
+        render: (state: CodeHostState) => (
+            <Badge
+                tooltip={state.status === CodeHostStatus.ERROR ? state.message : undefined}
+                variant={CodeHostStateStatusVariants[state.status]}
+            >
+                {state.status}
+            </Badge>
+        ),
+    },
+]
+
+const CodeHostStateStatusVariants: Record<CodeHostStatus, BadgeVariantType> = {
+    SUCCESS: 'success',
+    ERROR: 'danger',
+}
+
+const JobPriorityBadgeVariants: Record<PermissionsSyncJobPriority, BadgeVariantType> = {
+    LOW: 'secondary',
+    MEDIUM: 'primary',
+    HIGH: 'success',
+}
+
+const renderModal = (job: PermissionsSyncJob, hideModal: () => void): React.ReactNode => (
+    <Modal onDismiss={hideModal} aria-labelledby="permissions-sync-job-modal">
+        {job.cancellationReason && <Alert variant="info">Cancellation reason: {job.cancellationReason}</Alert>}
+        {job.failureMessage && <Alert variant="danger">{job.failureMessage}</Alert>}
+        <div className={styles.modalGrid}>
+            <Text className="mb-0" weight="bold">
+                Priority
+            </Text>
+            <div>
+                <Badge variant={JobPriorityBadgeVariants[job.priority]}>{job.priority}</Badge>
+            </div>
+            <Text className="mb-0" weight="bold">
+                Queued at
+            </Text>
+            <Timestamp date={job.queuedAt} />
+
+            {job.startedAt && (
+                <>
+                    <Text className="mb-0" weight="bold">
+                        Started at
+                    </Text>
+                    <Timestamp date={job.startedAt} />
+                </>
+            )}
+
+            {job.finishedAt && (
+                <>
+                    <Text className="mb-0" weight="bold">
+                        {JOB_STATE_METADATA_MAPPING[job.state].temporalWording} at
+                    </Text>
+                    <Timestamp date={job.finishedAt} />
+                </>
+            )}
+
+            {job.ranForMs !== null && job.ranForMs > 0 && (
+                <>
+                    <Text className="mb-0" weight="bold">
+                        Ran for
+                    </Text>
+                    <Text className="mb-0">
+                        {job.ranForMs < 1000
+                            ? `${job.ranForMs}ms`
+                            : formatDuration(intervalToDuration({ start: 0, end: job.ranForMs }))}
+                    </Text>
+                </>
+            )}
+        </div>
+        {finalState(job.state) && (
+            <>
+                <hr className="my-3" />
+                <div className={styles.modalGrid}>
+                    <Text className="mb-0" weight="bold">
+                        Permissions added
+                    </Text>
+                    <Text className="text-success mb-0" weight="bold">
+                        {job.permissionsAdded}
+                    </Text>
+
+                    <Text className="mb-0" weight="bold">
+                        Permissions removed
+                    </Text>
+                    <Text className="text-danger mb-0" weight="bold">
+                        {job.permissionsRemoved}
+                    </Text>
+
+                    <Text className="mb-0" weight="bold">
+                        Permissions found
+                    </Text>
+                    <Text className="mb-0" weight="bold">
+                        {job.permissionsFound}
+                    </Text>
+                </div>
+            </>
+        )}
+        {job.codeHostStates?.length > 0 && (
+            <>
+                <hr className="my-3" />
+                <div>
+                    <Table<CodeHostState>
+                        columns={CodeHostStatesTableColumns}
+                        data={job.codeHostStates}
+                        getRowId={state => state.providerID}
+                    />
+                </div>
+            </>
+        )}
+    </Modal>
+)

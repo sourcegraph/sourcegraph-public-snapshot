@@ -1,6 +1,13 @@
 import React, { useState, useMemo } from 'react'
 
-import { mdiInformation, mdiAlert, mdiSync, mdiCheckboxMarkedCircle, mdiDatabaseSyncOutline } from '@mdi/js'
+import {
+    mdiInformation,
+    mdiAlert,
+    mdiSync,
+    mdiCheckboxMarkedCircle,
+    mdiDatabaseSyncOutline,
+    mdiInformationOutline,
+} from '@mdi/js'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -8,6 +15,7 @@ import {
     CloudAlertIconRefresh,
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
+    CloudInfoIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
 import {
     Button,
@@ -24,13 +32,13 @@ import {
     ErrorAlert,
 } from '@sourcegraph/wildcard'
 
-import { StatusMessagesResult } from '../graphql-operations'
+import { StatusAndRepoCountResult } from '../graphql-operations'
 
-import { STATUS_MESSAGES } from './StatusMessagesNavItemQueries'
+import { STATUS_AND_REPO_COUNT } from './StatusMessagesNavItemQueries'
 
 import styles from './StatusMessagesNavItem.module.scss'
 
-type EntryType = 'progress' | 'warning' | 'success' | 'error' | 'indexing'
+type EntryType = 'progress' | 'warning' | 'success' | 'error' | 'indexing' | 'info'
 
 interface StatusMessageEntryProps {
     title: string
@@ -91,6 +99,15 @@ function entryIcon(entryType: EntryType): JSX.Element {
                     aria-label="Indexing"
                 />
             )
+        case 'info':
+            return (
+                <Icon
+                    {...sharedProps}
+                    className={classNames('text-primary', styles.icon)}
+                    svgPath={mdiInformationOutline}
+                    aria-label="Information"
+                />
+            )
     }
 }
 
@@ -117,6 +134,8 @@ const getBorderClassname = (entryType: EntryType): string => {
             return styles.entryBorderProgress
         case 'indexing':
             return styles.entryBorderProgress
+        case 'info':
+            return styles.entryBorderInfo
         default:
             return ''
     }
@@ -163,7 +182,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = (): void => setIsOpen(old => !old)
 
-    const { data, error } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
+    const { data, error } = useQuery<StatusAndRepoCountResult>(STATUS_AND_REPO_COUNT, {
         fetchPolicy: 'no-cache',
         pollInterval: props.disablePolling !== true ? STATUS_MESSAGES_POLL_INTERVAL : undefined,
     })
@@ -191,6 +210,9 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         } else if (data.statusMessages?.some(({ __typename: type }) => type === 'IndexingProgress')) {
             codeHostMessage = 'Indexing repositories...'
             iconProps = { as: CloudSyncIconRefresh }
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'NoRepositoriesDetected')) {
+            codeHostMessage = 'No repositories'
+            iconProps = { as: CloudInfoIconRefresh }
         } else {
             codeHostMessage = 'Repositories up to date'
             iconProps = { as: CloudCheckIconRefresh }
@@ -241,6 +263,19 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 linkText="View site configuration"
                                 linkOnClick={toggleIsOpen}
                                 entryType="warning"
+                            />
+                        )
+                    }
+                    if (status.__typename === 'NoRepositoriesDetected') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key="no-repositories"
+                                title="No repositories"
+                                message="Connect a code host to connect repositories to Sourcegraph."
+                                linkTo="/setup"
+                                linkText="Setup code hosts"
+                                linkOnClick={toggleIsOpen}
+                                entryType="info"
                             />
                         )
                     }

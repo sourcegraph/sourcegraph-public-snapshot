@@ -24,7 +24,7 @@ export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChanges
         fetchPolicy: 'cache-first',
     })
 
-    if (!data || !data.repository) {
+    if (!data?.repository) {
         return null
     }
 

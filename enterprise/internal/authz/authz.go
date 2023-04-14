@@ -3,8 +3,6 @@ package authz
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -16,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -170,22 +169,6 @@ func ProvidersFromConfig(
 	initResult.Append(gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders))
 	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns))
 
-	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
-	if cfg.SiteConfig().PermissionsUserMapping != nil &&
-		cfg.SiteConfig().PermissionsUserMapping.Enabled {
-		allowAccessByDefault = false
-		if len(initResult.Providers) > 0 {
-			serviceTypes := make([]string, len(initResult.Providers))
-			for i := range initResult.Providers {
-				serviceTypes[i] = strconv.Quote(initResult.Providers[i].ServiceType())
-			}
-			msg := fmt.Sprintf(
-				"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
-				strings.Join(serviceTypes, ", "))
-			initResult.Problems = append(initResult.Problems, msg)
-		}
-	}
-
 	return allowAccessByDefault, initResult.Providers, initResult.Problems, initResult.Warnings, initResult.InvalidConnections
 }
 
@@ -195,4 +178,16 @@ func RefreshInterval() time.Duration {
 		return 5 * time.Second
 	}
 	return time.Duration(interval) * time.Second
+}
+
+// PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
+// It is not enabled if:
+//   - There are no code host connections with authorization or enforcePermissions enabled
+//   - Not purchased with the current license
+//   - `disableAutoCodeHostSyncs` site setting is set to true
+func PermissionSyncingDisabled() bool {
+	_, p := authz.GetProviders()
+	return len(p) == 0 ||
+		licensing.Check(licensing.FeatureACLs) != nil ||
+		conf.Get().DisableAutoCodeHostSyncs
 }

@@ -160,7 +160,7 @@ func normalizeFiletype(filetype string) string {
 }
 
 func IsTreesitterSupported(filetype string) bool {
-	_, contained := supportedFiletypes[normalizeFiletype(filetype)]
+	_, contained := treesitterSupportedFiletypes[normalizeFiletype(filetype)]
 	return contained
 }
 

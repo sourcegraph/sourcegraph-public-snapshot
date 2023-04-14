@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -129,25 +130,8 @@ var engineConfig = syntaxEngineConfig{
 // Eventually, we will switch from having `Default` be EngineSyntect and move
 // to having it be EngineTreeSitter.
 var baseEngineConfig = syntaxEngineConfig{
-	Default: EngineSyntect,
+	Default: EngineTreeSitter,
 	Overrides: map[string]EngineType{
-		// Languages enabled for tree-sitter highlighting
-		"c":          EngineTreeSitter,
-		"c#":         EngineTreeSitter,
-		"c++":        EngineTreeSitter,
-		"cpp":        EngineTreeSitter,
-		"go":         EngineTreeSitter,
-		"java":       EngineTreeSitter,
-		"javascript": EngineTreeSitter,
-		"jsonnet":    EngineTreeSitter,
-		"jsx":        EngineTreeSitter,
-		"nickel":     EngineTreeSitter,
-		"rust":       EngineTreeSitter,
-		"scala":      EngineTreeSitter,
-		"tsx":        EngineTreeSitter,
-		"typescript": EngineTreeSitter,
-		"xlsg":       EngineTreeSitter,
-
 		// Languages enabled for advanced syntax features
 		"perl": EngineScipSyntax,
 	},
@@ -263,7 +247,43 @@ func getLanguage(path string, contents string) (string, bool) {
 		return lang, true
 	}
 
-	return enry.GetLanguage(path, []byte(contents)), false
+	// Force the use of the shebang.
+	if shebangLang, ok := overrideViaShebang(path, contents); ok {
+		return shebangLang, false
+	}
+
+	// Lastly, fall back to whatever enry decides is a useful algorithm for calculating.
+	lang = enry.GetLanguage(path, []byte(contents))
+
+	return lang, false
+}
+
+// overrideViaShebang handles explicitly using the shebang whenever possible.
+//
+// It also covers some edge cases when enry eagerly returns more languages
+// than necessary, which ends up overriding the shebang completely (which,
+// IMO is the highest priority match we can have).
+//
+// For example, enry will return "Perl" and "Pod" for a shebang of `#!/usr/bin/env perl`.
+// This is actually unhelpful, because then enry will *not* select "Perl" as the
+// language (which is our desired behavior).
+func overrideViaShebang(path, content string) (lang string, ok bool) {
+	shebangs := enry.GetLanguagesByShebang(path, []byte(content), []string{})
+	if len(shebangs) == 0 {
+		return "", false
+	}
+
+	if len(shebangs) == 1 {
+		return shebangs[0], true
+	}
+
+	// There are some shebangs that enry returns that are not really
+	// useful for our syntax highlighters to distinguish between.
+	if slices.Equal(shebangs, []string{"Perl", "Pod"}) {
+		return "Perl", true
+	}
+
+	return "", false
 }
 
 // DetectSyntaxHighlightingLanguage will calculate the SyntaxEngineQuery from a given

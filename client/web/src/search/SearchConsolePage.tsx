@@ -23,8 +23,10 @@ import { PageTitle } from '../components/PageTitle'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../graphql-operations'
 import { OwnConfigProps } from '../own/OwnConfigProps'
+import { setSearchMode, useNavbarQueryState } from '../stores'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
+import { submitSearch } from './helpers'
 
 import styles from './SearchConsolePage.module.scss'
 
@@ -35,14 +37,13 @@ interface SearchConsolePageProps
             'allExpanded' | 'executedQuery' | 'showSearchContext' | 'enableOwnershipSearch'
         >,
         OwnConfigProps {
-    globbing: boolean
     isMacPlatform: boolean
 }
 
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const location = useLocation()
     const navigate = useNavigate()
-    const { globbing, streamSearch, isSourcegraphDotCom, ownEnabled } = props
+    const { streamSearch, isSourcegraphDotCom, ownEnabled } = props
     const { applySuggestionsOnEnter } = useExperimentalFeatures(features => ({
         applySuggestionsOnEnter: features.applySearchQuerySuggestionOnEnter ?? true,
     }))
@@ -59,6 +60,9 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         [location.search]
     )
 
+    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
+    const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
+
     const triggerSearch = useCallback(() => {
         navigate('/search/console?q=' + encodeURIComponent(searchQuery.value))
     }, [navigate, searchQuery])
@@ -74,11 +78,10 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         () =>
             createDefaultSuggestions({
                 fetchSuggestions: query => fetchStreamSuggestions(query),
-                globbing,
                 isSourcegraphDotCom,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
-        [globbing, isSourcegraphDotCom, applySuggestionsOnEnter]
+        [isSourcegraphDotCom, applySuggestionsOnEnter]
     )
 
     const extensions = useMemo(
@@ -132,8 +135,11 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 enableOwnershipSearch={enableOwnershipSearch}
                                 allExpanded={false}
                                 results={results}
-                                assetsRoot={window.context?.assetsRoot || ''}
                                 executedQuery={location.search}
+                                setSearchMode={setSearchMode}
+                                submitSearch={submitSearch}
+                                caseSensitive={caseSensitive}
+                                searchQueryFromURL={submittedURLQuery}
                             />
                         ))}
                 </div>

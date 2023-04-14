@@ -11,8 +11,8 @@ import { Alert, Button, FormChangeEvent, H4, Link, useLocalStorage } from '@sour
 import { defaultExternalServices } from '../../../../../components/externalServices/externalServices'
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { AddRemoteCodeHostResult, AddRemoteCodeHostVariables } from '../../../../../graphql-operations'
+import { ADD_CODE_HOST, CODE_HOST_FRAGMENT } from '../../../../queries'
 import { getCodeHostKindFromURLParam } from '../../helpers'
-import { ADD_CODE_HOST, CODE_HOST_FRAGMENT } from '../../queries'
 
 import { CodeHostConnectFormFields, CodeHostJSONForm, CodeHostJSONFormState } from './common'
 import { GithubConnectView } from './github/GithubConnectView'
@@ -113,7 +113,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
     const handleFormSubmit = async (values: CodeHostConnectFormFields): Promise<void> => {
         await addRemoteCodeHost({
             variables: { input: { ...values, kind: codeHostKind } },
-            refetchQueries: ['RepositoryStats', 'StatusMessages'],
+            refetchQueries: ['StatusAndRepoStats'],
             update: (cache, result) => {
                 const { data } = result
 

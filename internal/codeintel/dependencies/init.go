@@ -4,6 +4,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background"
 	dependenciesstore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -27,7 +28,7 @@ func CrateSyncerJob(
 	observationCtx *observation.Context,
 	autoindexingSvc background.AutoIndexingService,
 	dependenciesSvc background.DependenciesService,
-	gitserverClient background.GitserverClient,
+	gitserverClient gitserver.Client,
 	extSvcStore background.ExternalServiceStore,
 ) goroutine.CombinedRoutine {
 	return []goroutine.BackgroundRoutine{

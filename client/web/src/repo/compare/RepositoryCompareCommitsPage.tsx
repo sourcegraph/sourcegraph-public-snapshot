@@ -48,11 +48,11 @@ function queryRepositoryComparisonCommits(args: {
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.node) {
+            if (!data?.node) {
                 throw createAggregateError(errors)
             }
             const repo = data.node as RepositoryComparisonRepository
-            if (!repo.comparison || !repo.comparison.commits || errors) {
+            if (!repo.comparison?.commits || errors) {
                 throw createAggregateError(errors)
             }
             return repo.comparison.commits

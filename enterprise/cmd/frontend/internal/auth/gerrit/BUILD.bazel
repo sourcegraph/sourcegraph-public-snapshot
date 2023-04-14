@@ -17,6 +17,7 @@ go_library(
 
 go_test(
     name = "gerrit_test",
+    timeout = "short",
     srcs = ["config_test.go"],
     embed = [":gerrit"],
     deps = [

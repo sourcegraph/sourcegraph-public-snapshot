@@ -9,13 +9,12 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	logger "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -25,9 +24,9 @@ import (
 type Service struct {
 	store           store.Store
 	repoStore       RepoStore
-	workerutilStore dbworkerstore.Store[types.Upload]
-	lsifstore       lsifstore.LsifStore
-	gitserverClient GitserverClient
+	workerutilStore dbworkerstore.Store[shared.Upload]
+	lsifstore       lsifstore.Store
+	gitserverClient gitserver.Client
 	rankingBucket   *storage.BucketHandle
 	policySvc       PolicyService
 	policyMatcher   PolicyMatcher
@@ -41,8 +40,8 @@ func newService(
 	observationCtx *observation.Context,
 	store store.Store,
 	repoStore RepoStore,
-	lsifstore lsifstore.LsifStore,
-	gsc GitserverClient,
+	lsifstore lsifstore.Store,
+	gsc gitserver.Client,
 	rankingBucket *storage.BucketHandle,
 	policySvc PolicyService,
 	policyMatcher PolicyMatcher,
@@ -74,29 +73,23 @@ func (s *Service) GetCommitGraphMetadata(ctx context.Context, repositoryID int) 
 	return s.store.GetCommitGraphMetadata(ctx, repositoryID)
 }
 
-// TODO(#48681) - Move to autoindexing/internal/background
-func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error) {
-	return s.store.GetRepositoriesForIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, now)
-}
-
-func (s *Service) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error) {
+func (s *Service) GetDirtyRepositories(ctx context.Context) (_ []shared.DirtyRepository, err error) {
 	return s.store.GetDirtyRepositories(ctx)
 }
 
-// TODO(#48681) - Used by autoindexing/transport/graphql
 func (s *Service) GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error) {
 	return s.store.GetIndexers(ctx, opts)
 }
 
-func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]types.Upload, int, error) {
+func (s *Service) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]shared.Upload, int, error) {
 	return s.store.GetUploads(ctx, opts)
 }
 
-func (s *Service) GetUploadByID(ctx context.Context, id int) (types.Upload, bool, error) {
+func (s *Service) GetUploadByID(ctx context.Context, id int) (shared.Upload, bool, error) {
 	return s.store.GetUploadByID(ctx, id)
 }
 
-func (s *Service) GetUploadsByIDs(ctx context.Context, ids ...int) ([]types.Upload, error) {
+func (s *Service) GetUploadsByIDs(ctx context.Context, ids ...int) ([]shared.Upload, error) {
 	return s.store.GetUploadsByIDs(ctx, ids...)
 }
 
@@ -135,11 +128,16 @@ const numAncestors = 100
 // the graph. This will not always produce the full set of visible commits - some responses may not contain
 // all results while a subsequent request made after the lsif_nearest_uploads has been updated to include
 // this commit will.
-func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []types.Dump, err error) {
+func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []shared.Dump, err error) {
 	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path), log.Bool("exactPath", exactPath), log.String("indexer", indexer)},
 	})
 	defer endObservation(1, observation.Args{})
+
+	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
+	if err != nil {
+		return nil, err
+	}
 
 	// The parameters exactPath and rootMustEnclosePath align here: if we're looking for dumps
 	// that can answer queries for a directory (e.g. diagnostics), we want any dump that happens
@@ -170,7 +168,7 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 	// and try to link it with what we have in the database. Then mark the repository's commit
 	// graph as dirty so it's updated for subsequent requests.
 
-	graph, err := s.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
+	graph, err := s.gitserverClient.CommitGraph(ctx, repo.Name, gitserver.CommitGraphOptions{
 		Commit: commit,
 		Limit:  numAncestors,
 	})
@@ -190,11 +188,11 @@ func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, com
 	return dumps, nil
 }
 
-func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]types.Dump, error) {
+func (s *Service) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) ([]shared.Dump, error) {
 	return s.store.GetDumpsWithDefinitionsForMonikers(ctx, monikers)
 }
 
-func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) ([]types.Dump, error) {
+func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) ([]shared.Dump, error) {
 	return s.store.GetDumpsByIDs(ctx, ids)
 }
 
@@ -202,13 +200,13 @@ func (s *Service) ReferencesForUpload(ctx context.Context, uploadID int) (shared
 	return s.store.ReferencesForUpload(ctx, uploadID)
 }
 
-func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]types.UploadLog, error) {
+func (s *Service) GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]shared.UploadLog, error) {
 	return s.store.GetAuditLogsForUpload(ctx, uploadID)
 }
 
-func (s *Service) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error) {
-	return s.lsifstore.GetUploadDocumentsForPath(ctx, bundleID, pathPattern)
-}
+// func (s *Service) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error) {
+// 	return s.lsifstore.GetUploadDocumentsForPath(ctx, bundleID, pathPattern)
+// }
 
 func (s *Service) GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]shared.UploadsWithRepositoryNamespace, error) {
 	return s.store.GetRecentUploadsSummary(ctx, repositoryID)
@@ -218,14 +216,50 @@ func (s *Service) GetLastUploadRetentionScanForRepository(ctx context.Context, r
 	return s.store.GetLastUploadRetentionScanForRepository(ctx, repositoryID)
 }
 
-func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error) {
-	return s.gitserverClient.ListTags(ctx, repo, commitObjs...)
-}
-
 func (s *Service) ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error {
 	return s.store.ReindexUploads(ctx, opts)
 }
 
 func (s *Service) ReindexUploadByID(ctx context.Context, id int) error {
 	return s.store.ReindexUploadByID(ctx, id)
+}
+
+func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]uploadsshared.Index, int, error) {
+	return s.store.GetIndexes(ctx, opts)
+}
+
+func (s *Service) GetIndexByID(ctx context.Context, id int) (uploadsshared.Index, bool, error) {
+	return s.store.GetIndexByID(ctx, id)
+}
+
+func (s *Service) GetIndexesByIDs(ctx context.Context, ids ...int) ([]uploadsshared.Index, error) {
+	return s.store.GetIndexesByIDs(ctx, ids...)
+}
+
+func (s *Service) DeleteIndexByID(ctx context.Context, id int) (bool, error) {
+	return s.store.DeleteIndexByID(ctx, id)
+}
+
+func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) error {
+	return s.store.DeleteIndexes(ctx, opts)
+}
+
+func (s *Service) ReindexIndexByID(ctx context.Context, id int) error {
+	return s.store.ReindexIndexByID(ctx, id)
+}
+
+func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) error {
+	return s.store.ReindexIndexes(ctx, opts)
+}
+
+func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error) {
+	return s.store.GetRecentIndexesSummary(ctx, repositoryID)
+}
+
+func (s *Service) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error) {
+	return s.store.NumRepositoriesWithCodeIntelligence(ctx)
+}
+
+func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithCount, int, error) {
+	return s.store.RepositoryIDsWithErrors(ctx, offset, limit)
 }

@@ -35,7 +35,7 @@ export const AllInsightsView: FC<AllInsightsViewProps> = props => {
 
             return insightViews
         },
-        options: { fetchPolicy: 'cache-first' },
+        options: { fetchPolicy: 'cache-and-network' },
     })
 
     if (connection === undefined) {
@@ -50,7 +50,12 @@ export const AllInsightsView: FC<AllInsightsViewProps> = props => {
 
     return insights.length > 0 ? (
         <div className={styles.content}>
-            <SmartInsightsViewGrid insights={insights} telemetryService={props.telemetryService} />
+            <SmartInsightsViewGrid
+                id="all-insights-dashboard"
+                insights={insights}
+                persistSizeAndOrder={false}
+                telemetryService={props.telemetryService}
+            />
 
             <footer className={styles.footer}>
                 {hasNextPage && (

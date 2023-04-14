@@ -1,6 +1,7 @@
 package bitbucketcloud
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -216,9 +217,16 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 	// If the request doesn't expect a body, then including a content-type can
 	// actually cause errors on the Bitbucket side. So we need to pick apart the
 	// request just a touch to figure out if we should add the header.
+	var reqBody []byte
+	var err error
 	if req.Body != nil {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return err
+		}
 	}
+	req.Body = io.NopCloser(bytes.NewReader(reqBody))
 
 	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		req.WithContext(ctx),
@@ -226,7 +234,7 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	if err := c.rateLimit.Wait(ctx); err != nil {
+	if err = c.rateLimit.Wait(ctx); err != nil {
 		return err
 	}
 
@@ -234,7 +242,6 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 	// back-off and retry for requests where we recieve a 429 Too Many Requests.
 	// If we still don't succeed after waiting a total of 5 min, we give up.
 	var resp *http.Response
-	var err error
 	sleepTime := 10 * time.Second
 	for {
 		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
@@ -251,6 +258,7 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 		if sleepTime.Seconds() > 160 {
 			break
 		}
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
 	}
 
 	defer resp.Body.Close()

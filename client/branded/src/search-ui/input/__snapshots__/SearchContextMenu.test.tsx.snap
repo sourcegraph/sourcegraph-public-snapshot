@@ -4,7 +4,7 @@ exports[`SearchContextMenu should filter list by spec when searching 1`] = `
 Array [
   <li
     aria-selected="false"
-    class="item item"
+    class="item"
     data-reach-combobox-option=""
     data-search-context-spec="@username/test-version-1.5"
     data-testid="search-context-menu-item"

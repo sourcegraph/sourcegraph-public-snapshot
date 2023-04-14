@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Text, Tooltip } from '@sourcegraph/wildcard'
+import { Code, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { MirrorRepositoryInfoFields } from '../../graphql-operations'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
@@ -18,8 +18,13 @@ export const RepoMirrorInfo: React.FunctionComponent<
                     <>Not yet synced from code host.</>
                 ) : (
                     <>
-                        Last synced <Timestamp date={mirrorInfo.updatedAt} />. Size:{' '}
-                        {prettyBytesBigint(BigInt(mirrorInfo.byteSize))}.
+                        Last synced <Timestamp date={mirrorInfo.updatedAt} />. Next sync time:{' '}
+                        {mirrorInfo.nextSyncAt === null ? (
+                            <>No update scheduled</>
+                        ) : (
+                            <Timestamp date={mirrorInfo.nextSyncAt} />
+                        )}
+                        . Size: {prettyBytesBigint(BigInt(mirrorInfo.byteSize))}.
                         {mirrorInfo.shard !== null && <> Shard: {mirrorInfo.shard}</>}
                         {mirrorInfo.shard === null && (
                             <>
@@ -29,6 +34,14 @@ export const RepoMirrorInfo: React.FunctionComponent<
                                     <span>not assigned</span>
                                 </Tooltip>
                             </>
+                        )}
+                        {mirrorInfo.cloneInProgress && (mirrorInfo.cloneProgress ?? '').trim() !== '' ? (
+                            <>
+                                <br />
+                                <Code>{mirrorInfo.cloneProgress}</Code>
+                            </>
+                        ) : (
+                            ''
                         )}
                     </>
                 )}

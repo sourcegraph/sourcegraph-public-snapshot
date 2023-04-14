@@ -134,7 +134,9 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "READ",
-    "RepositoryTopics": {},
+    "RepositoryTopics": {
+     "Nodes": []
+    },
     "StargazerCount": 10098,
     "ForkCount": 1316
    },
@@ -153,7 +155,9 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "READ",
-    "RepositoryTopics": {},
+    "RepositoryTopics": {
+     "Nodes": []
+    },
     "StargazerCount": 10094,
     "ForkCount": 2261
    },
@@ -276,7 +280,9 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "READ",
-    "RepositoryTopics": {},
+    "RepositoryTopics": {
+     "Nodes": []
+    },
     "StargazerCount": 10087,
     "ForkCount": 1307
    },
@@ -295,7 +301,9 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "READ",
-    "RepositoryTopics": {},
+    "RepositoryTopics": {
+     "Nodes": []
+    },
     "StargazerCount": 10085,
     "ForkCount": 531
    },

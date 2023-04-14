@@ -12,8 +12,10 @@ go_library(
     deps = [
         "//enterprise/internal/embeddings",
         "//enterprise/internal/embeddings/split",
+        "//enterprise/internal/paths",
         "//internal/api",
         "//internal/binary",
+        "//internal/codeintel/types",
         "//internal/conf",
         "//internal/httpcli",
         "//lib/errors",
@@ -23,11 +25,16 @@ go_library(
 
 go_test(
     name = "embed_test",
-    srcs = ["embed_test.go"],
+    timeout = "short",
+    srcs = [
+        "embed_test.go",
+        "files_test.go",
+    ],
     embed = [":embed"],
     deps = [
         "//enterprise/internal/embeddings/split",
         "//internal/api",
+        "//internal/codeintel/types",
         "//lib/errors",
         "@com_github_stretchr_testify//require",
     ],

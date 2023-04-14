@@ -106,8 +106,8 @@ func (r *RepoLookupArgs) ToProto() *proto.RepoLookupRequest {
 	}
 }
 
-func (a *RepoLookupArgs) String() string {
-	return fmt.Sprintf("RepoLookupArgs{Repo: %s, Update: %t}", a.Repo, a.Update)
+func (r *RepoLookupArgs) String() string {
+	return fmt.Sprintf("RepoLookupArgs{Repo: %s, Update: %t}", r.Repo, r.Update)
 }
 
 // RepoLookupResult is the response to a repository information request (RepoLookupArgs).
@@ -177,24 +177,24 @@ type RepoInfo struct {
 	ExternalRepo api.ExternalRepoSpec
 }
 
-func (ri *RepoInfo) ToProto() *proto.RepoInfo {
-	if ri == nil {
+func (r *RepoInfo) ToProto() *proto.RepoInfo {
+	if r == nil {
 		return nil
 	}
 
 	return &proto.RepoInfo{
-		Id:          int32(ri.ID),
-		Name:        string(ri.Name),
-		Description: ri.Description,
-		Fork:        ri.Fork,
-		Archived:    ri.Archived,
-		Private:     ri.Private,
-		VcsInfo:     ri.VCS.ToProto(),
-		Links:       ri.Links.ToProto(),
+		Id:          int32(r.ID),
+		Name:        string(r.Name),
+		Description: r.Description,
+		Fork:        r.Fork,
+		Archived:    r.Archived,
+		Private:     r.Private,
+		VcsInfo:     r.VCS.ToProto(),
+		Links:       r.Links.ToProto(),
 		ExternalRepo: &proto.ExternalRepoSpec{
-			Id:          ri.ExternalRepo.ID,
-			ServiceType: ri.ExternalRepo.ServiceType,
-			ServiceId:   ri.ExternalRepo.ServiceID,
+			Id:          r.ExternalRepo.ID,
+			ServiceType: r.ExternalRepo.ServiceType,
+			ServiceId:   r.ExternalRepo.ServiceID,
 		},
 	}
 }
@@ -411,23 +411,6 @@ type PermsSyncRequest struct {
 	Reason            database.PermissionsSyncJobReason `json:"reason"`
 	TriggeredByUserID int32                             `json:"triggered_by_user_id"`
 	ProcessAfter      time.Time                         `json:"process_after"`
-}
-
-func (p *PermsSyncRequest) ToProto() *proto.SchedulePermsSyncRequest {
-	repoIDs := make([]int32, len(p.RepoIDs))
-	for i, id := range p.RepoIDs {
-		repoIDs[i] = int32(id)
-	}
-	return &proto.SchedulePermsSyncRequest{
-		UserIds: p.UserIDs,
-		RepoIds: repoIDs,
-		Options: &proto.FetchPermsOptions{
-			InvalidateCaches: p.Options.InvalidateCaches,
-		},
-		Reason:            string(p.Reason),
-		TriggeredByUserId: p.TriggeredByUserID,
-		ProcessAfter:      timestamppb.New(p.ProcessAfter),
-	}
 }
 
 // PermsSyncResponse is a response to sync permissions.

@@ -77,7 +77,7 @@ export function updatePassword(args: UpdatePasswordVariables): Observable<void> 
         args
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.updatePassword) {
+            if (!data?.updatePassword) {
                 eventLogger.log('UpdatePasswordFailed')
                 throw createAggregateError(errors)
             }

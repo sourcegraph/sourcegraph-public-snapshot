@@ -10,7 +10,7 @@ import {
     PageHeader,
     ProductStatusBadge,
     Text,
-    useMatchMedia,
+    useReducedMotion,
 } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
@@ -22,7 +22,7 @@ import { PageTitle } from '../../components/PageTitle'
  * feature flag has been enabled.
  */
 export const OwnPage: React.FunctionComponent<{}> = () => {
-    const allowAutoplay = useMatchMedia('(prefers-reduced-motion: no-preference)')
+    const allowAutoplay = !useReducedMotion()
 
     return (
         <Page>

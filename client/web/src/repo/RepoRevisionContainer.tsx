@@ -62,8 +62,6 @@ export interface RepoRevisionContainerContext
 
     repoName: string
 
-    globbing: boolean
-
     isMacPlatform: boolean
 
     isSourcegraphDotCom: boolean
@@ -102,8 +100,6 @@ interface RepoRevisionContainerProps
 
     /** The repoName from the URL */
     repoName: string
-
-    globbing: boolean
 
     isMacPlatform: boolean
 

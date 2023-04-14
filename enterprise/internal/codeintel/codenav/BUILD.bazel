@@ -17,15 +17,14 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/codenav/internal/lsifstore",
-        "//enterprise/internal/codeintel/codenav/internal/store",
         "//enterprise/internal/codeintel/codenav/shared",
         "//enterprise/internal/codeintel/shared",
-        "//enterprise/internal/codeintel/shared/gitserver",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
         "//internal/database",
+        "//internal/gitserver",
         "//internal/metrics",
         "//internal/observation",
         "//internal/types",
@@ -35,12 +34,14 @@ go_library(
         "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_go_diff//diff",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
 go_test(
     name = "codenav_test",
+    timeout = "short",
     srcs = [
         "gittree_translator_test.go",
         "mocks_test.go",
@@ -51,14 +52,13 @@ go_test(
         "service_ranges_test.go",
         "service_references_test.go",
         "service_stencil_test.go",
+        "service_test.go",
     ],
     embed = [":codenav"],
     deps = [
         "//enterprise/internal/codeintel/codenav/internal/lsifstore",
-        "//enterprise/internal/codeintel/codenav/internal/store",
         "//enterprise/internal/codeintel/codenav/shared",
-        "//enterprise/internal/codeintel/shared/gitserver",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
@@ -69,5 +69,6 @@ go_test(
         "//lib/codeintel/precise",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_go_diff//diff",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
     ],
 )

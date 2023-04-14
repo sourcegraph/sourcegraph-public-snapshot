@@ -1,13 +1,14 @@
 import { useState } from 'react'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { ErrorAlert, PageHeader } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/wildcard'
 
 import { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
 import {
     AddPackageRepoFilterResult,
     AddPackageRepoFilterVariables,
     PackageMatchBehaviour,
+    PackageRepoReferenceKind,
     SiteAdminPackageFields,
 } from '../../../graphql-operations'
 import { addPackageRepoFilterMutation } from '../backend'
@@ -18,7 +19,7 @@ import { SinglePackageForm } from '../components/SinglePackageForm'
 import styles from './AddPackageFilterModalContent.module.scss'
 
 export interface AddPackageFilterModalContentProps {
-    node: SiteAdminPackageFields
+    node?: SiteAdminPackageFields
     filters: FilteredConnectionFilterValue[]
     onDismiss: () => void
 }
@@ -31,7 +32,7 @@ export const AddPackageFilterModalContent: React.FunctionComponent<AddPackageFil
     onDismiss,
 }) => {
     const [behaviour, setBehaviour] = useState<PackageMatchBehaviour>(PackageMatchBehaviour.BLOCK)
-    const [blockType, setBlockType] = useState<BlockType>('single')
+    const [blockType, setBlockType] = useState<BlockType>(node ? 'single' : 'multiple')
 
     const [addPackageRepoFilter, { error }] = useMutation<AddPackageRepoFilterResult, AddPackageRepoFilterVariables>(
         addPackageRepoFilterMutation,
@@ -40,12 +41,15 @@ export const AddPackageFilterModalContent: React.FunctionComponent<AddPackageFil
 
     return (
         <>
-            <PageHeader path={[{ text: 'Add package filter' }]} headingElement="h2" className={styles.header} />
             <div className={styles.content}>
                 <BehaviourSelect value={behaviour} onChange={setBehaviour} />
                 {blockType === 'single' ? (
                     <SinglePackageForm
-                        node={node}
+                        initialState={{
+                            name: node?.name ?? '',
+                            versionFilter: '*',
+                            ecosystem: node?.kind ?? (filters[0].value as PackageRepoReferenceKind),
+                        }}
                         filters={filters}
                         setType={setBlockType}
                         onDismiss={onDismiss}
@@ -66,7 +70,10 @@ export const AddPackageFilterModalContent: React.FunctionComponent<AddPackageFil
                     />
                 ) : (
                     <MultiPackageForm
-                        node={node}
+                        initialState={{
+                            nameFilter: '*',
+                            ecosystem: node?.kind ?? (filters[0].value as PackageRepoReferenceKind),
+                        }}
                         filters={filters}
                         setType={setBlockType}
                         onDismiss={onDismiss}

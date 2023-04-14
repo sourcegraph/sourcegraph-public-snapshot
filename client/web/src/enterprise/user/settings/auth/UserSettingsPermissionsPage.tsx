@@ -110,7 +110,11 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                             <tr>
                                 <th>Last incremental sync</th>
                                 <td>
-                                    <Timestamp date={permissionsInfo.updatedAt} />
+                                    {permissionsInfo.updatedAt === null ? (
+                                        'Never'
+                                    ) : (
+                                        <Timestamp date={permissionsInfo.updatedAt} />
+                                    )}
                                 </td>
                                 <td className="text-muted">Updated by repository permissions syncing</td>
                             </tr>
@@ -140,7 +144,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                 className="my-3 pt-3"
             />
             <Container className="mb-3">
-                <div className="d-flex">
+                <div className="d-flex mb-3">
                     <Input
                         type="search"
                         placeholder="Search repositories..."

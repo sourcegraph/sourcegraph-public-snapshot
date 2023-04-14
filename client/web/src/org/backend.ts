@@ -80,7 +80,7 @@ export function createOrganization(args: {
     )
         .pipe(
             mergeMap(({ data, errors }) => {
-                if (!data || !data.createOrganization) {
+                if (!data?.createOrganization) {
                     eventLogger.log('NewOrgFailed')
                     throw createAggregateError(errors)
                 }

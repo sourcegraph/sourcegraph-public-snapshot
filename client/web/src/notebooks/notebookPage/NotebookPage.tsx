@@ -51,6 +51,7 @@ import { NotebookPageHeaderActions } from './NotebookPageHeaderActions'
 import { NotebookTitle } from './NotebookTitle'
 
 import styles from './NotebookPage.module.scss'
+
 interface NotebookPageProps
     extends SearchStreamingProps,
         TelemetryProps,
@@ -61,7 +62,6 @@ interface NotebookPageProps
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
-    globbing: boolean
     fetchNotebook?: typeof _fetchNotebook
     updateNotebook?: typeof _updateNotebook
     deleteNotebook?: typeof _deleteNotebook
@@ -83,7 +83,6 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     createNotebookStar = _createNotebookStar,
     deleteNotebookStar = _deleteNotebookStar,
     copyNotebook = _copyNotebook,
-    globbing,
     streamSearch,
     telemetryService,
     searchContextsEnabled,
@@ -311,7 +310,6 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                 onUpdateBlocks={onUpdateBlocks}
                                 onCopyNotebook={onCopyNotebook}
                                 exportedFileName={exportedFileName}
-                                globbing={globbing}
                                 streamSearch={streamSearch}
                                 telemetryService={telemetryService}
                                 searchContextsEnabled={searchContextsEnabled}

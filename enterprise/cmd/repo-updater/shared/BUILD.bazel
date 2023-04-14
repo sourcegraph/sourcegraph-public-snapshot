@@ -20,17 +20,13 @@ go_library(
         "//enterprise/internal/database",
         "//enterprise/internal/licensing",
         "//internal/actor",
-        "//internal/api",
         "//internal/authz",
-        "//internal/authz/permssync",
         "//internal/conf",
         "//internal/database",
-        "//internal/debugserver",
         "//internal/encryption/keyring",
         "//internal/goroutine",
         "//internal/httpcli",
         "//internal/observation",
-        "//internal/ratelimit",
         "//internal/repos",
         "//internal/service",
         "//internal/timeutil",
@@ -41,6 +37,7 @@ go_library(
 
 go_test(
     name = "shared_test",
+    timeout = "short",
     srcs = ["licensing_test.go"],
     embed = [":shared"],
     deps = [

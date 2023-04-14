@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -244,19 +245,27 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
 	}
 
+	var reqBody []byte
+	if req.Body != nil {
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+	req.Body = io.NopCloser(bytes.NewReader(reqBody))
 	req.URL = c.baseURL.ResolveReference(req.URL)
 	respHeader, respCode, err := c.doWithBaseURL(ctx, req, result)
 
 	// GitLab responds with a 429 Too Many Requests if rate limits are exceeded
 	numRetries := 0
 	for c.waitForRateLimit && numRetries < c.maxRateLimitRetries && respCode == http.StatusTooManyRequests {
-		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
-			respHeader, respCode, err = c.doWithBaseURL(ctx, req, result)
-			numRetries += 1
-		} else {
-			// We did not wait because of rate limiting, so we break the loop
-			break
-		}
+		// We always retry since we got a StatusTooManyRequests. This is safe
+		// since we bound retries by maxRateLimitRetries.
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
+		respHeader, respCode, err = c.doWithBaseURL(ctx, req, result)
+		numRetries += 1
 	}
 
 	return respHeader, respCode, err

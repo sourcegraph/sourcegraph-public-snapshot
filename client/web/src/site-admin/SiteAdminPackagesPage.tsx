@@ -49,8 +49,9 @@ import {
 
 import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from './backend'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
+import { AddFilterModal } from './packages/AddFilterModal'
 import { ExternalServicePackageMap } from './packages/constants'
-import { PackagesModal } from './packages/PackagesModal'
+import { ManageFiltersModal } from './packages/ManageFiltersModal'
 
 import styles from './SiteAdminPackagesPage.module.scss'
 
@@ -150,6 +151,11 @@ interface SiteAdminPackagesPageProps extends TelemetryProps {}
 
 const DEFAULT_FIRST = 15
 
+interface PackagesModalState {
+    type: 'add' | 'manage' | null
+    node?: SiteAdminPackageFields
+}
+
 /**
  * A page displaying the packages on this instance.
  */
@@ -158,8 +164,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
 }) => {
     const location = useLocation()
     const navigate = useNavigate()
-    const [filterPackage, setFilterPackage] = useState<SiteAdminPackageFields | null>(null)
-    const [manageFilters, setManageFilters] = useState(false)
+    const [modalState, setModalState] = useState<PackagesModalState>({ type: null })
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminPackages')
@@ -281,20 +286,20 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
 
     return (
         <>
-            {filterPackage && (
-                <PackagesModal
-                    type="add"
-                    node={filterPackage}
+            {modalState.type === 'add' ? (
+                <AddFilterModal
+                    node={modalState.node}
                     filters={ecosystemFilterValues}
-                    onDismiss={() => setFilterPackage(null)}
+                    onDismiss={() => setModalState({ type: null })}
                 />
-            )}
-            {manageFilters && (
-                <PackagesModal
-                    type="manage"
+            ) : modalState.type === 'manage' ? (
+                <ManageFiltersModal
                     filters={ecosystemFilterValues}
-                    onDismiss={() => setManageFilters(false)}
+                    onDismiss={() => setModalState({ type: null })}
+                    onAdd={() => setModalState({ type: 'add' })}
                 />
+            ) : (
+                <></>
             )}
             <div>
                 <PageTitle title="Packages - Admin" />
@@ -309,7 +314,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                     }
                     className="mb-3"
                     actions={
-                        <Button variant="secondary" onClick={() => setManageFilters(true)}>
+                        <Button variant="secondary" onClick={() => setModalState({ type: 'manage' })}>
                             Manage package filters
                         </Button>
                     }
@@ -359,7 +364,11 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                     {connection?.nodes && connection.nodes.length > 0 && (
                         <ul className="list-group list-group-flush mt-2">
                             {(connection?.nodes || []).map(node => (
-                                <PackageNode node={node} key={node.id} setFilterPackage={setFilterPackage} />
+                                <PackageNode
+                                    node={node}
+                                    key={node.id}
+                                    setFilterPackage={node => setModalState({ type: 'add', node })}
+                                />
                             ))}
                         </ul>
                     )}

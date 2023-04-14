@@ -21,6 +21,7 @@ go_library(
 
 go_test(
     name = "window_test",
+    timeout = "short",
     srcs = [
         "config_test.go",
         "rate_test.go",

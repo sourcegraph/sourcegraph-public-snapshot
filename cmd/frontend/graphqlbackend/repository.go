@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -85,6 +86,14 @@ func (r *RepositoryResolver) ID() graphql.ID {
 
 func (r *RepositoryResolver) IDInt32() api.RepoID {
 	return r.RepoMatch.ID
+}
+
+func (r *RepositoryResolver) EmbeddingExists(ctx context.Context) (bool, error) {
+	if !conf.EmbeddingsEnabled() {
+		return false, nil
+	}
+
+	return r.db.Repos().RepoEmbeddingExists(ctx, r.IDInt32())
 }
 
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
@@ -284,6 +293,7 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 
 func (r *RepositoryResolver) Enabled() bool { return true }
 
+// CreatedAt is deprecated and will be removed in a future release.
 // No clients that we know of read this field. Additionally on performance profiles
 // the marshalling of timestamps is significant in our postgres client. So we
 // deprecate the fields and return fake data for created_at.
@@ -392,20 +402,6 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	})
 
 	return r.err
-}
-
-func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *resolverstubs.LSIFUploadsQueryArgs) (resolverstubs.LSIFUploadConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &resolverstubs.LSIFRepositoryUploadsQueryArgs{
-		LSIFUploadsQueryArgs: args,
-		RepositoryID:         r.ID(),
-	})
-}
-
-func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *resolverstubs.LSIFIndexesQueryArgs) (resolverstubs.LSIFIndexConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &resolverstubs.LSIFRepositoryIndexesQueryArgs{
-		LSIFIndexesQueryArgs: args,
-		RepositoryID:         r.ID(),
-	})
 }
 
 func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (resolverstubs.IndexConfigurationResolver, error) {

@@ -516,7 +516,7 @@ const suggestionsStateField = StateField.define<SuggestionsState>({
             const suggestionState = state.field(field)
             const groupRowIndex = suggestionState.result.groupRowIndex(suggestionState.selectedOption)
             return {
-                'aria-expanded': suggestionState.result.empty() ? 'false' : 'true',
+                'aria-expanded': suggestionState.open && !suggestionState.result.empty() ? 'true' : 'false',
                 'aria-activedescendant': groupRowIndex ? `${id}-${groupRowIndex[0]}x${groupRowIndex[1]}` : '',
             }
         })
@@ -570,9 +570,10 @@ function applyAction(view: EditorView, action: Action, option: Option, source: S
                     view.dispatch({
                         ...changeSet,
                         effects: changeSet.effects.concat(setModeEffect.of(null)),
+                        scrollIntoView: true,
                     })
-                    notifySelectionListeners(view.state, option, action, source)
                 }
+                notifySelectionListeners(view.state, option, action, source)
             }
             break
         case 'command':
@@ -585,6 +586,7 @@ function applyAction(view: EditorView, action: Action, option: Option, source: S
                 if (historyOrNavigate) {
                     notifySelectionListeners(view.state, option, action, source)
                     compatNavigate(historyOrNavigate, action.url)
+                    view.contentDOM.blur()
                 }
             }
             break

@@ -477,6 +477,7 @@ Referenced by:
  detached_at              | timestamp with time zone                     |           |          | 
  computed_state           | text                                         |           | not null | 
  external_fork_name       | citext                                       |           |          | 
+ previous_failure_message | text                                         |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -535,6 +536,7 @@ Triggers:
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
     "cm_action_jobs_state_idx" btree (state)
+    "cm_action_jobs_trigger_event" btree (trigger_event)
 Check constraints:
     "cm_action_jobs_only_one_action_type" CHECK ((
 CASE
@@ -824,6 +826,41 @@ Maps commits within a repository to the commit date as reported by gitserver.
 
 Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.
 
+# Table "public.codeintel_initial_path_ranks"
+```
+     Column      |           Type           | Collation | Nullable |                         Default                          
+-----------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id              | bigint                   |           | not null | nextval('codeintel_initial_path_ranks_id_seq'::regclass)
+ upload_id       | integer                  |           | not null | 
+ document_path   | text                     |           | not null | ''::text
+ graph_key       | text                     |           | not null | 
+ last_scanned_at | timestamp with time zone |           |          | 
+ document_paths  | text[]                   |           | not null | '{}'::text[]
+Indexes:
+    "codeintel_initial_path_ranks_pkey" PRIMARY KEY, btree (id)
+    "codeintel_initial_path_ranks_graph_key_id" btree (graph_key, id)
+    "codeintel_initial_path_ranks_graph_key_last_scanned_at" btree (graph_key, last_scanned_at NULLS FIRST, id)
+    "codeintel_initial_path_upload_id" btree (upload_id)
+Referenced by:
+    TABLE "codeintel_initial_path_ranks_processed" CONSTRAINT "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
+
+```
+
+# Table "public.codeintel_initial_path_ranks_processed"
+```
+             Column              |  Type  | Collation | Nullable |                              Default                               
+---------------------------------+--------+-----------+----------+--------------------------------------------------------------------
+ id                              | bigint |           | not null | nextval('codeintel_initial_path_ranks_processed_id_seq'::regclass)
+ graph_key                       | text   |           | not null | 
+ codeintel_initial_path_ranks_id | bigint |           | not null | 
+Indexes:
+    "codeintel_initial_path_ranks_processed_pkey" PRIMARY KEY, btree (id)
+    "codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini" UNIQUE, btree (graph_key, codeintel_initial_path_ranks_id)
+Foreign-key constraints:
+    "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
+
+```
+
 # Table "public.codeintel_langugage_support_requests"
 ```
    Column    |  Type   | Collation | Nullable |                             Default                              
@@ -905,6 +942,7 @@ Foreign-key constraints:
  repository_id | integer |           | not null | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
     "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) WHERE NOT processed
 
 ```
@@ -934,12 +972,13 @@ References for a given upload proceduced by background job consuming SCIP indexe
 ```
              Column             |  Type   | Collation | Nullable |                              Default                               
 --------------------------------+---------+-----------+----------+--------------------------------------------------------------------
- id                             | integer |           | not null | nextval('codeintel_ranking_references_processed_id_seq'::regclass)
  graph_key                      | text    |           | not null | 
  codeintel_ranking_reference_id | integer |           | not null | 
+ id                             | bigint  |           | not null | nextval('codeintel_ranking_references_processed_id_seq'::regclass)
 Indexes:
     "codeintel_ranking_references_processed_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_references_processed_graph_key_codeintel_rank" UNIQUE, btree (graph_key, codeintel_ranking_reference_id)
+    "codeintel_ranking_references_processed_reference_id" btree (codeintel_ranking_reference_id)
 Foreign-key constraints:
     "fk_codeintel_ranking_reference" FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
 
@@ -1533,18 +1572,19 @@ Indexes:
 
 # Table "public.gitserver_repos"
 ```
-     Column      |           Type           | Collation | Nullable |      Default       
------------------+--------------------------+-----------+----------+--------------------
- repo_id         | integer                  |           | not null | 
- clone_status    | text                     |           | not null | 'not_cloned'::text
- shard_id        | text                     |           | not null | 
- last_error      | text                     |           |          | 
- updated_at      | timestamp with time zone |           | not null | now()
- last_fetched    | timestamp with time zone |           | not null | now()
- last_changed    | timestamp with time zone |           | not null | now()
- repo_size_bytes | bigint                   |           |          | 
- corrupted_at    | timestamp with time zone |           |          | 
- corruption_logs | jsonb                    |           | not null | '[]'::jsonb
+      Column      |           Type           | Collation | Nullable |      Default       
+------------------+--------------------------+-----------+----------+--------------------
+ repo_id          | integer                  |           | not null | 
+ clone_status     | text                     |           | not null | 'not_cloned'::text
+ shard_id         | text                     |           | not null | 
+ last_error       | text                     |           |          | 
+ updated_at       | timestamp with time zone |           | not null | now()
+ last_fetched     | timestamp with time zone |           | not null | now()
+ last_changed     | timestamp with time zone |           | not null | now()
+ repo_size_bytes  | bigint                   |           |          | 
+ corrupted_at     | timestamp with time zone |           |          | 
+ corruption_logs  | jsonb                    |           | not null | '[]'::jsonb
+ cloning_progress | text                     |           |          | ''::text
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repo_size_bytes" btree (repo_size_bytes)
@@ -1809,7 +1849,7 @@ Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
     "lsif_dependency_repos_unique_scheme_name" UNIQUE, btree (scheme, name)
     "lsif_dependency_repos_blocked" btree (blocked)
-    "lsif_dependency_repos_last_checked_at" btree (last_checked_at)
+    "lsif_dependency_repos_last_checked_at" btree (last_checked_at NULLS FIRST)
     "lsif_dependency_repos_name_id" btree (name, id)
     "lsif_dependency_repos_scheme_id" btree (scheme, id)
 Referenced by:
@@ -2739,7 +2779,7 @@ Indexes:
     "package_repo_versions_pkey" PRIMARY KEY, btree (id)
     "package_repo_versions_unique_version_per_package" UNIQUE, btree (package_id, version)
     "package_repo_versions_blocked" btree (blocked)
-    "package_repo_versions_last_checked_at" btree (last_checked_at)
+    "package_repo_versions_last_checked_at" btree (last_checked_at NULLS FIRST)
 Foreign-key constraints:
     "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
 
@@ -2774,6 +2814,7 @@ Foreign-key constraints:
  permissions_removed  | integer                  |           | not null | 0
  permissions_found    | integer                  |           | not null | 0
  code_host_states     | json[]                   |           |          | 
+ is_partial_success   | boolean                  |           |          | false
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_unique" UNIQUE, btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
@@ -4202,7 +4243,8 @@ Foreign-key constraints:
     c.last_heartbeat_at,
     c.external_fork_name,
     c.external_fork_namespace,
-    c.detached_at
+    c.detached_at,
+    c.previous_failure_message
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1

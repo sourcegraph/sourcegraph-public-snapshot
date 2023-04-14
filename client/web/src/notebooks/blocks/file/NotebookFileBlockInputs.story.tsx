@@ -30,7 +30,6 @@ const defaultProps = {
     editor: undefined,
     onEditorCreated: noop,
     isSourcegraphDotCom: false,
-    globbing: false,
 }
 
 export const Default: Story = () => (

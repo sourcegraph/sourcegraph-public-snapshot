@@ -32,6 +32,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("constant.null",           SyntaxKind::IdentifierNull),
     ("float",                   SyntaxKind::NumericLiteral),
     ("function",                SyntaxKind::IdentifierFunction),
+    ("method",                  SyntaxKind::IdentifierFunction),
     ("identifier.function",     SyntaxKind::IdentifierFunction),
     ("function.builtin",        SyntaxKind::IdentifierBuiltin),
     ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
@@ -42,7 +43,6 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("keyword",                 SyntaxKind::IdentifierKeyword),
     ("keyword.function",        SyntaxKind::IdentifierKeyword),
     ("keyword.return",          SyntaxKind::IdentifierKeyword),
-    ("method",                  SyntaxKind::IdentifierFunction),
     ("number",                  SyntaxKind::NumericLiteral),
     ("operator",                SyntaxKind::IdentifierOperator),
     ("identifier.operator",     SyntaxKind::IdentifierOperator),
@@ -138,7 +138,7 @@ macro_rules! create_configurations {
 }
 
 lazy_static::lazy_static! {
-    static ref CONFIGURATIONS: HashMap<BundledParser, HighlightConfiguration> = {
+    pub static ref CONFIGURATIONS: HashMap<BundledParser, HighlightConfiguration> = {
         // NOTE: typescript/tsx crates are included, even though not listed below.
 
         // You can add any new crate::parsers::Parser variants here.
@@ -158,7 +158,8 @@ lazy_static::lazy_static! {
             Rust,
             Scala,
             Sql,
-            Xlsg
+            Xlsg,
+            Zig
         )
     };
 }

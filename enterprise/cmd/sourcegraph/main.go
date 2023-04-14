@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph/enterprisecmd"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
@@ -8,6 +10,7 @@ import (
 	blobstore_shared "github.com/sourcegraph/sourcegraph/cmd/blobstore/shared"
 	githubproxy_shared "github.com/sourcegraph/sourcegraph/cmd/github-proxy/shared"
 	searcher_shared "github.com/sourcegraph/sourcegraph/cmd/searcher/shared"
+	embeddings_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/shared"
 	executor_singlebinary "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/singlebinary"
 	frontend_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/shared"
 	gitserver_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver/shared"
@@ -30,8 +33,9 @@ var services = []service.Service{
 	precise_code_intel_worker_shared.Service,
 	executor_singlebinary.Service,
 	servegit.Service,
+	embeddings_shared.Service,
 }
 
 func main() {
-	enterprisecmd.MainEnterprise(services)
+	enterprisecmd.MainEnterprise(services, os.Args)
 }

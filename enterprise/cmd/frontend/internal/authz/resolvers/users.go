@@ -104,7 +104,7 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.U
 	}
 	resolvers := make([]*graphqlbackend.UserResolver, len(users))
 	for i := range users {
-		resolvers[i] = graphqlbackend.NewUserResolver(r.db, users[i])
+		resolvers[i] = graphqlbackend.NewUserResolver(ctx, r.db, users[i])
 	}
 	return resolvers, nil
 }

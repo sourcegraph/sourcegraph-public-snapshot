@@ -44,6 +44,7 @@ go_library(
 
 go_test(
     name = "inference_test",
+    timeout = "short",
     srcs = [
         "infer_test.go",
         "lang_clang_test.go",

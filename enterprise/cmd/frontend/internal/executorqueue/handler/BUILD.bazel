@@ -29,6 +29,7 @@ go_library(
 
 go_test(
     name = "handler_test",
+    timeout = "short",
     srcs = [
         "handler_test.go",
         "routes_test.go",

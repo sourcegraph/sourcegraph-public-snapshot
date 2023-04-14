@@ -24,6 +24,7 @@ go_library(
 
 go_test(
     name = "externallink_test",
+    timeout = "short",
     srcs = ["repository_test.go"],
     embed = [":externallink"],
     deps = [

@@ -48,6 +48,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         needServerRestart: false,
         needsSiteInit: false,
         needsRepositoryConfiguration: false,
+        localFilePickerAvailable: true,
         resetPasswordEnabled: true,
         runningOnMacOS: true,
         sentryDSN: null,
@@ -58,6 +59,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         siteGQLID: 'TestGQLSiteID',
         sourcegraphDotComMode: ENVIRONMENT_CONFIG.SOURCEGRAPHDOTCOM_MODE,
         sourcegraphAppMode: false,
+        srcServeGitUrl: 'http://127.0.0.1:3434',
         userAgentIsBot: false,
         version: '0.0.0',
         xhrHeaders: {},
@@ -73,6 +75,8 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
             endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
         },
         embeddingsEnabled: false,
+        primaryLoginProvidersCount: 5,
+        batchChangesRolloutWindows: null,
         // Site-config overrides default JS context
         ...siteConfig,
     }

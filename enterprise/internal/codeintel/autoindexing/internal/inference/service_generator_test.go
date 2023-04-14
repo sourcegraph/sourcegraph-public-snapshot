@@ -80,16 +80,18 @@ func TestOverrideGenerators(t *testing.T) {
 				local recognizer = require("sg.autoindex.recognizer")
 
 				local custom_recognizer = recognizer.new_path_recognizer {
-					patterns = { pattern.new_path_basename("sg-test") },
+					patterns = {
+						pattern.new_path_basename("acme-custom.yaml")
+					},
 
-					-- Invoked when go.mod files exist
+					-- Invoked with paths matching acme-custom.yaml anywhere in repo
 					generate = function(_, paths)
 						local jobs = {}
 						for i = 1, #paths do
 							table.insert(jobs, {
 								steps = {},
 								root = path.dirname(paths[i]),
-								indexer = "test-override",
+								indexer = "acme/custom-indexer",
 								indexer_args = {},
 								outfile = "",
 							})
@@ -101,24 +103,24 @@ func TestOverrideGenerators(t *testing.T) {
 
 				return require("sg.autoindex.config").new({
 					["sg.test"] = false,
-					["mycompany.test"] = custom_recognizer,
+					["acme.custom"] = custom_recognizer,
 				})
 			`,
 			repositoryContents: map[string]string{
-				"sg-test":     "",
-				"foo/sg-test": "",
-				"bar/sg-test": "",
-				"baz/sg-test": "",
+				"acme-custom.yaml":     "",
+				"foo/acme-custom.yaml": "",
+				"bar/acme-custom.yaml": "",
+				"baz/acme-custom.yaml": "",
 			},
 			expected: []config.IndexJob{
 				// sg.test -> emits jobs with `test` indexer
 				// No jobs should have been generated
 
-				// mycompany.test -> emits jobs with `text-override` indexer
-				{Indexer: "test-override", Root: ""},
-				{Indexer: "test-override", Root: "bar"},
-				{Indexer: "test-override", Root: "baz"},
-				{Indexer: "test-override", Root: "foo"},
+				// acme.custom -> emits jobs with `acme/custom-indexer` indexer
+				{Indexer: "acme/custom-indexer", Root: ""},
+				{Indexer: "acme/custom-indexer", Root: "bar"},
+				{Indexer: "acme/custom-indexer", Root: "baz"},
+				{Indexer: "acme/custom-indexer", Root: "foo"},
 			},
 		},
 	)

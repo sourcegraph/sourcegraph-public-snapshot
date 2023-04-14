@@ -1,5 +1,5 @@
 export type { CodeMirrorQueryInputWrapperProps } from './CodeMirrorQueryInputWrapper'
-export { CodeMirrorQueryInputWrapper } from './CodeMirrorQueryInputWrapper'
+export { CodeMirrorQueryInputWrapper, QueryInputVisualMode } from './CodeMirrorQueryInputWrapper'
 export type {
     Group,
     Option,
@@ -15,4 +15,5 @@ export * from './optionRenderer'
 export * from './utils'
 export * from './codemirror/history'
 export * from './codemirror/searchcontext'
+export * from './codemirror/example-suggestions'
 export * from './filters'

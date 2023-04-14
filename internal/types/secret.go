@@ -94,9 +94,7 @@ func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
 	case *schema.RubyPackagesConnection:
 		es.redactString(c.Repository, "repository")
 	case *schema.JVMPackagesConnection:
-		if c.Maven != nil {
-			es.redactString(c.Maven.Credentials, "maven", "credentials")
-		}
+		es.redactString(c.Maven.Credentials, "maven", "credentials")
 	case *schema.PagureConnection:
 		es.redactString(c.Token, "token")
 	case *schema.NpmPackagesConnection:
@@ -229,28 +227,25 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		es.unredactString(c.Repository, o.Repository, "repository")
 	case *schema.JVMPackagesConnection:
 		o := oldCfg.(*schema.JVMPackagesConnection)
-		if c.Maven != nil && o.Maven != nil {
-			// credentials didn't change check if repositories did
-			if c.Maven.Credentials == RedactedSecret {
-				oldRepos := o.Maven.Repositories
-				sort.Strings(oldRepos)
+		// credentials didn't change check if repositories did
+		if c.Maven.Credentials == RedactedSecret {
+			oldRepos := o.Maven.Repositories
+			sort.Strings(oldRepos)
 
-				newRepos := c.Maven.Repositories
-				sort.Strings(newRepos)
+			newRepos := c.Maven.Repositories
+			sort.Strings(newRepos)
 
-				// if we only remove a known repo, it's fine
-				if len(newRepos) < len(oldRepos) {
-					for _, r := range newRepos {
-						// we have a new repo in the list, return error
-						if !slices.Contains(oldRepos, r) {
-							return errCodeHostIdentityChanged{"repositories", "credentials"}
-						}
+			// if we only remove a known repo, it's fine
+			if len(newRepos) < len(oldRepos) {
+				for _, r := range newRepos {
+					// we have a new repo in the list, return error
+					if !slices.Contains(oldRepos, r) {
+						return errCodeHostIdentityChanged{"repositories", "credentials"}
 					}
-				} else if !slices.Equal(oldRepos, newRepos) {
-					return errCodeHostIdentityChanged{"repositories", "credentials"}
 				}
+			} else if !slices.Equal(oldRepos, newRepos) {
+				return errCodeHostIdentityChanged{"repositories", "credentials"}
 			}
-
 		}
 		es.unredactString(c.Maven.Credentials, o.Maven.Credentials, "maven", "credentials")
 	case *schema.PagureConnection:
@@ -397,6 +392,7 @@ func (es *edits) unredactURLs(new, old []string) (err error) {
 
 	return nil
 }
+
 func (es *edits) unredactURL(new, old string, path ...any) error {
 	if new == "" || old == "" {
 		return nil

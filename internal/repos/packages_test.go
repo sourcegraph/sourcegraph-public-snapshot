@@ -17,7 +17,7 @@ func TestPackagesSource_GetRepo(t *testing.T) {
 		{
 			Scheme:   "go",
 			Name:     "github.com/sourcegraph-testing/go-repo-a",
-			Versions: []string{"1.0.0"},
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "1.0.0"}},
 		},
 	})
 

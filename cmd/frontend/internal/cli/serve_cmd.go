@@ -95,7 +95,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	db := database.NewDB(logger, sqlDB)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		logger.Warn("Skipping out-of-band migrations check")
+		if !deploy.IsApp() {
+			logger.Warn("Skipping out-of-band migrations check")
+		}
 	} else {
 		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(observationCtx, db, oobmigration.RefreshInterval)
 
@@ -249,7 +251,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	ready()
 
 	// We only want to run this task once Sourcegraph is ready to serve user requests.
-	goroutine.Go(func() { bg.AppReady(logger) })
+	goroutine.Go(func() { bg.AppReady(db, logger) })
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 	return nil
 }
@@ -285,6 +287,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
 			CodeInsightsDataExportHandler:   enterprise.CodeInsightsDataExportHandler,
 			NewCompletionsStreamHandler:     enterprise.NewCompletionsStreamHandler,
+			NewCodeCompletionsHandler:       enterprise.NewCodeCompletionsHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,

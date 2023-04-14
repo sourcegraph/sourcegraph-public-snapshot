@@ -2,6 +2,34 @@
 
 Sourcegraph is currently migrating to Bazel as its build system and this page is targeted for early adopters which are helping the [#job-fair-bazel](https://sourcegraph.slack.com/archives/C03LUEB7TJS) team to test their work.
 
+## 📅 Timeline
+
+- 2023-04-03 Bazel steps are required to pass on all PR builds.
+  - Run `bazel run :update-gazelle-repos` if you changed the `go.mod`.
+  - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
+  - Add `[no-bazel]` in your commit description if you want to bypass Bazel. 
+    - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
+- 2023-04-06 Bazel steps are required to pass on main.
+  - Run `bazel run :update-gazelle-repos` if you changed the `go.mod`.
+  - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
+  - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
+    - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
+- 2023-04-10 You cannot opt out of Bazel anymore
+
+The above timeline affects the following CI jobs:
+
+- Go unit tests.
+- Client unit tests (Jest).
+  - with the exception of Cody, which has not been ported yet to build with Bazel.
+
+Other jobs will follow-up shortly, but as long as you're following instructions mentioned in that doc (TL;DR run `bazel configure`) this won't change anything for you.
+
+You may find the build and tests to be slow at first, either locally or in CI. This is because to be efficient, Bazel cache needs to be warm.
+
+- ➡️  [Cheat sheet](#bazel-cheat-sheet)
+- ➡️  [FAQ](#faq)
+- 📽️ [Bazel Status Update](https://go/bazel-status)
+
 ## Why do we need a build system?
 
 Building Sourcegraph is a non-trivial task, as it not only ships a frontend and a backend, but also a variety of third parties and components that makes the building process complicated, not only locally but also in CI. Historically, this always have been solved with ad-hoc solutions, such as shell scripts, and caching in various point of the process.
@@ -123,7 +151,7 @@ Bazel ships with a tool named `Gazelle` whose purpose is to take a look at your 
 
 Gazelle and Go: It works almost transparently with Go, it will find all your Go code and infer your dependencies from inspecting your imports. Similarly, it will inspect the `go.mod` to lock down the third parties dependencies required. Because of how well Gazelle-go works, it means that most of the time, you can still rely on your normal Go commands to work. But it's recommended to use Bazel because that's what will be used in CI to build the app and ultimately have the final word in saying if yes or no a PR can be merged. See the [cheat sheet section](#bazel-cheat-sheet) for the commands.
 
-Gazelle and the frontend: TODO
+Gazelle and the frontend: see [Bazel for Web bundle](./bazel_web.md).
 
 ### Bazel cheat sheet
 
@@ -139,7 +167,7 @@ Gazelle and the frontend: TODO
   - ex `bazel build //lib/...` will build everything under the `/lib/...` folder in the Sourcegraph repository.
 - `bazel test [path-to-target]` tests a target.
   - ex `bazel test //lib/...` will run all tests under the `/lib/...` folder in the Sourcegraph repository.
-- `bazel run :gazelle` automatically inspect the source tree and update the buildfiles if needed.
+- `bazel configure` automatically inspect the source tree and update the buildfiles if needed.
 - `bazel run //:gazelle-update-repos` automatically inspect the `go.mod` and update the third parties dependencies if needed.
 
 #### Debugging buildfiles
@@ -156,9 +184,11 @@ Gazelle and the frontend: TODO
 
 > For early adopters only.
 
-First you need to have `bazel` installed obviously, but also `iBazel` which will watch your files and rebuild if needed.
+First you need to have `bazel` installed obviously, but also `iBazel` which will watch your files and rebuild if needed. We use a tool called `bazelisk` (which is also part of Bazel) to manage the version of `bazel`. It inspects a bunch of files to determine what `bazel` version to use for your repo.
 
-- `brew install bazel`
+If you want the setup automated run `sg setup`, otherwise you can install it manually by executing the following commands:
+
+- `brew install bazelisk`
 - `brew install ibazel`
 
 Then instead of running `sg start oss` you can use the `bazel` variant instead.
@@ -178,10 +208,43 @@ So when a change is detected, `iBazel` will build the affected target and it wil
 
 ##### Caveats
 
-- You still need to run `bazel run :gazelle -- fix` if you add/remove files or packages.
+- You still need to run `bazel configure` if you add/remove files or packages.
 - Error handling is not perfect, so if a build fails, that might stop the whole thing. We'll improve this in the upcoming days, as we gather feedback.
 
 ## FAQ
+
+### General
+
+#### I just used `[no-bazel]` to merge my PR 
+
+While using `[no-bazel]` will enable you to get your pull request merged, the subsequent builds will be with Bazel unless they also have that flag. 
+
+Therefore you need to follow-up quickly with a fix to ensure `main` is not broken. 
+
+#### The analysis cache is being busted because of `--action_env`
+
+Typically you'll see this (in CI or locally):
+
+```
+INFO: Build option --action_env has changed, discarding analysis cache.
+```
+
+- If you added a `build --action_env=VAR` to one of the `bazelrc`s, and `$VAR` is not stable across builds, it will break the analysis cache. You should never pass a variable that is not stable, otherwise, the cache being busted is totally expected and there is no way around it.
+  - Use `build --action_env=VAR=123` instead to pin it down if it's not stable in your environment.
+- If you added a `test --action_env=VAR`, running `bazel build [...]` will have a different `--action_env` and because the analysis cache is the same for `build` and `test` that will automatically bust the cache.
+  - Use `build --test_env=VAR` instead, so that env is used only in tests, and doesn't affect builds, while avoiding to bust the cache.
+
+#### My JetBrains IDE becomes unresponsive after Bazel builds
+
+By default, JetBrains IDEs such as GoLand will try and index the files in your project workspace. If you run Bazel locally, the resulting artifacts will be indexed, which will likely hog the full heap size that the IDE is allocated.  
+
+There is no reason to index these files, so you can just exclude them from indexing by right-clicking artifact directories, then choosing **Mark directory as** &rarr; **Excluded** from the context menu. A restart is required to stop the indexing process. 
+
+#### My local `bazel configure` or `./dev/ci/bazel-configure.sh` run has diff with a result of Bazel CI step
+
+This could happen when there are any files which are not tracked by Git. These files affect the run of `bazel configure` and typically add more items to `BUILD.bazel` file.
+
+Solution: run `git clean -ffdx` then run `bazel configure` again. 
 
 ### Go
 
@@ -215,7 +278,7 @@ INFO: 36 processes: 2 internal, 34 darwin-sandbox.
 ```
 
 
-Solution: run `bazel run //:gazelle` to update the buildfiles automatically.
+Solution: run `bazel configure` to update the buildfiles automatically.
 
 
 #### My go tests complains about missing testdata
@@ -259,7 +322,7 @@ ERROR: /Users/william/code/sourcegraph/WORKSPACE:197:18: fetching crates_reposit
 Error in path: Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/fake.lock
 ERROR: Error computing the main repository mapping: no such package '@crate_index//': Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/Cargo.Bazel.lock
 ```
-The error happens when the file specified in the lockfiles attribute of `crates_repository` (see WORKSPACE file for the definition) does not exist on disk. Currently this rule does not generate the file, instead it just generates the _content_ of the file. So to get passed this error you should create the file `touch docker-images/syntax-highlighter/Cargo.Bazel.lock`. With the file create it we can now populate `Cargo.Bazel.lock` with content using bazel by running `CARGO_BAZEL_REPIN=1 bazel sync --only=crates_index`.
+The error happens when the file specified in the lockfiles attribute of `crates_repository` (see WORKSPACE file for the definition) does not exist on disk. Currently this rule does not generate the file, instead it just generates the _content_ of the file. So to get passed this error you should create the file `touch docker-images/syntax-highlighter/Cargo.Bazel.lock`. With the file create it we can now populate `Cargo.Bazel.lock` with content using bazel by running `CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index`.
 
 ### When I build `syntax-highlighter` it complains that the current `lockfile` is out of date
 The error will look like this:
@@ -292,7 +355,67 @@ ERROR: Error computing the main repository mapping: no such package '@crate_inde
 
 The current `lockfile` is out of date for 'crate_index'. Please re-run bazel using `CARGO_BAZEL_REPIN=true` if this is expected and the lockfile should be updated.
 ```
-Bazel uses a separate lock file to keep track of the dependencies and needs to be updated. To update the `lockfile` run `CARGO_BAZEL_REPIN=1 bazel sync --only=crates_index`. This command takes a while to execute as it fetches all the dependencies specified in `Cargo.lock` and populates `Cargo.Bazel.lock`.
+Bazel uses a separate lock file to keep track of the dependencies and needs to be updated. To update the `lockfile` run `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index`. This command takes a while to execute as it fetches all the dependencies specified in `Cargo.lock` and populates `Cargo.Bazel.lock`.
+
+### `syntax-highlighter` fails to build and has the error `failed to resolve: use of undeclared crate or module`
+The error looks something like this:
+```
+error[E0433]: failed to resolve: use of undeclared crate or module `scip_treesitter_languages`
+  --> docker-images/syntax-highlighter/src/main.rs:56:5
+   |
+56 |     scip_treesitter_languages::highlights::CONFIGURATIONS
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^ use of undeclared crate or module `scip_treesitter_languages`
+
+error[E0433]: failed to resolve: use of undeclared crate or module `scip_treesitter_languages`
+  --> docker-images/syntax-highlighter/src/main.rs:57:15
+   |
+57 |         .get(&scip_treesitter_languages::parsers::BundledParser::Go);
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^ use of undeclared crate or module `scip_treesitter_languages`
+
+error: aborting due to 2 previous errors
+```
+Bazel doesn't know about the module/crate being use in the rust code. If you do a git blame `Cargo.toml` you'll probably see that a new dependency has been added, but the build files were not updated. There are two ways to solve this:
+1. Run `bazel configure` and `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index`. Once the commands have completed you can check that the dependency has been picked up and syntax-highlighter can be built by running `bazel build //docker-images/syntax-highlighter/...`. **Note** this will usually work if the dependency is an *external* dependency.
+2. You're going to have to update the `BUILD.bazel` file yourself. Which one you might ask? From the above error we can see the file `src/main.rs` is where the error is encountered, so we need to tell *its BUILD.bazel* about the new dependency. 
+For the above dependency, the crate is defined in `docker-images/syntax-highlighter/crates`. You'll also see that each of those crates have their own `BUILD.bazel` files in them, which means we can reference them as targets! Take a peak at `scip-treesitter-languages` `BUILD.bazel` file and take note of the name - that is its target. Now that we have the name of the target we can add it as a dep to `docker-images/syntax-highlighter`. In the snippet below the `syntax-highlighter` `rust_binary` rule is updated with the `scip-treesitter-languages` dependency. Note that we need to refer to the full target path when adding it to the dep list in the `BUILD.bazel` file.
+```
+rust_binary(
+    name = "syntect_server",
+    srcs = ["src/main.rs"],
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/sg-syntax:sg-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages:scip-treesitter-languages",
+    ],
+)
+```
+
+### When using nix, when protobuf gets compiled I get a C/C++ compiler issue `fatal error: 'algorithm' file not found` or some core header files are not found
+Nix sets the CC environment variable to a clang version use by nix which is independent of the host system. You can verify this by running the following commands in your nix shell.
+```
+$ echo $CC
+clang
+
+$ which $CC
+/nix/store/agjhf1m0xsvmdjkk8kc7bp3pic9lsfrb-clang-wrapper-11.1.0/bin/clang
+
+$ cat bazel-sourcegraph/external/local_config_cc/cc_wrapper.sh | grep "# Call the C++ compiler" -A 2
+# Call the C++ compiler
+/nix/store/agjhf1m0xsvmdjkk8kc7bp3pic9lsfrb-clang-wrapper-11.1.0/bin/clang "$@"
+```
+Bazel runs a target called `locate_cc_config` which adheres to the CC environment variable. The variable defines the compiler to be used to perform C/C++ compilation. At time of writing, the compiler is incorrectly configured and the stdlib doesn't get referenced properly. Therefore, we currently recommend to unset the `CC` variable in your nix shell. The `locate_cc_config` will then find the system C/C++ compiler (which on my system resolved to `/usr/bin/gcc`) and compile protobuf.
+
+You can also verify that the correct compiler is used by running the following command:
+```
+cat bazel-sourcegraph/external/local_config_cc/cc_wrapper.sh | grep "# Call the C++ compiler" -A 2
+# Call the C++ compiler
+/usr/bin/gcc "$@"
+```
 
 ## Resources
 

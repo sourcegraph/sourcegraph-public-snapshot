@@ -2,14 +2,12 @@ package graphql
 
 import (
 	"context"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
-	sglog "github.com/sourcegraph/log"
 
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -17,23 +15,21 @@ import (
 )
 
 type configurationPolicyResolver struct {
-	logger              sglog.Logger
 	repoStore           database.RepoStore
-	configurationPolicy types.ConfigurationPolicy
+	configurationPolicy shared.ConfigurationPolicy
 	errTracer           *observation.ErrCollector
 }
 
-func NewConfigurationPolicyResolver(repoStore database.RepoStore, configurationPolicy types.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(repoStore database.RepoStore, configurationPolicy shared.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		repoStore:           repoStore,
-		logger:              sglog.Scoped("configurationPolicyResolver", ""),
 		configurationPolicy: configurationPolicy,
 		errTracer:           errTracer,
 	}
 }
 
 func (r *configurationPolicyResolver) ID() graphql.ID {
-	return marshalConfigurationPolicyGQLID(int64(r.configurationPolicy.ID))
+	return resolverstubs.MarshalID("CodeIntelligenceConfigurationPolicy", r.configurationPolicy.ID)
 }
 
 func (r *configurationPolicyResolver) Name() string {
@@ -51,7 +47,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ resolve
 		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 	)
 
-	return sharedresolvers.NewRepositoryFromID(ctx, r.repoStore, *r.configurationPolicy.RepositoryID)
+	return gitresolvers.NewRepositoryFromID(ctx, r.repoStore, *r.configurationPolicy.RepositoryID)
 }
 
 func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {
@@ -66,11 +62,11 @@ func (r *configurationPolicyResolver) Type() (_ resolverstubs.GitObjectType, err
 	)
 
 	switch r.configurationPolicy.Type {
-	case types.GitObjectTypeCommit:
+	case shared.GitObjectTypeCommit:
 		return resolverstubs.GitObjectTypeCommit, nil
-	case types.GitObjectTypeTag:
+	case shared.GitObjectTypeTag:
 		return resolverstubs.GitObjectTypeTag, nil
-	case types.GitObjectTypeTree:
+	case shared.GitObjectTypeTree:
 		return resolverstubs.GitObjectTypeTree, nil
 	default:
 		return "", errors.Errorf("unknown git object type %s", r.configurationPolicy.Type)
@@ -107,13 +103,4 @@ func (r *configurationPolicyResolver) IndexCommitMaxAgeHours() *int32 {
 
 func (r *configurationPolicyResolver) IndexIntermediateCommits() bool {
 	return r.configurationPolicy.IndexIntermediateCommits
-}
-
-func toHours(duration *time.Duration) *int32 {
-	if duration == nil {
-		return nil
-	}
-
-	v := int32(*duration / time.Hour)
-	return &v
 }

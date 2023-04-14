@@ -18,6 +18,7 @@ go_library(
 
 go_test(
     name = "cache_test",
+    timeout = "short",
     srcs = ["cache_test.go"],
     embed = [":cache"],
     deps = [

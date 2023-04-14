@@ -46,7 +46,6 @@ export const Default: Story = () => (
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 ownEnabled={true}
-                globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
@@ -71,7 +70,6 @@ export const DefaultReadOnly: Story = () => (
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 ownEnabled={true}
-                globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}

@@ -60,7 +60,7 @@ func Init(
 			return nil
 		}
 
-		if info.Plan() == licensing.PlanFree0 {
+		if info.Plan().IsFree() {
 			// We don't enforce anything on the free plan
 			return nil
 		}
@@ -136,7 +136,7 @@ func Init(
 
 	graphqlbackend.IsFreePlan = func(info *graphqlbackend.ProductLicenseInfo) bool {
 		for _, tag := range info.Tags() {
-			if tag == fmt.Sprintf("plan:%s", licensing.PlanFree0) {
+			if tag == fmt.Sprintf("plan:%s", licensing.PlanFree0) || tag == fmt.Sprintf("plan:%s", licensing.PlanFree1) {
 				return true
 			}
 		}

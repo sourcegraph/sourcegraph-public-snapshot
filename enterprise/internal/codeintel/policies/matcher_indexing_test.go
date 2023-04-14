@@ -7,7 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -16,8 +17,8 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 	mainGitserverClient := testUploadExpirerMockGitserverClient("main", now)
 	developGitserverClient := testUploadExpirerMockGitserverClient("develop", now)
 
-	runTest := func(t *testing.T, gitserverClient GitserverClient, policies []types.ConfigurationPolicy, expectedPolicyMatches map[string][]PolicyMatch) {
-		policyMatches, err := NewMatcher(gitserverClient, IndexingExtractor, false, true).CommitsDescribedByPolicy(context.Background(), 50, policies, now)
+	runTest := func(t *testing.T, gitserverClient gitserver.Client, policies []policiesshared.ConfigurationPolicy, expectedPolicyMatches map[string][]PolicyMatch) {
+		policyMatches, err := NewMatcher(gitserverClient, IndexingExtractor, false, true).CommitsDescribedByPolicy(context.Background(), 50, "r50", policies, now)
 		if err != nil {
 			t.Fatalf("unexpected error finding matches: %s", err)
 		}
@@ -35,7 +36,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 	testDuration := time.Hour * 10
 
 	t.Run("matches tag policies", func(t *testing.T) {
-		policies := []types.ConfigurationPolicy{
+		policies := []policiesshared.ConfigurationPolicy{
 			{
 				ID:                policyID,
 				Type:              "GIT_TAG",
@@ -52,7 +53,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 	})
 
 	t.Run("matches branches tip policies", func(t *testing.T) {
-		policies := []types.ConfigurationPolicy{
+		policies := []policiesshared.ConfigurationPolicy{
 			{
 				ID:                policyID,
 				Type:              "GIT_TREE",
@@ -69,7 +70,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 	})
 
 	t.Run("matches commits on branch policies", func(t *testing.T) {
-		policies := []types.ConfigurationPolicy{
+		policies := []policiesshared.ConfigurationPolicy{
 			{
 				ID:                       policyID,
 				Type:                     "GIT_TREE",
@@ -96,7 +97,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 		testDuration2 := time.Hour * 13
 		testDuration3 := time.Hour * 20
 
-		policies := []types.ConfigurationPolicy{
+		policies := []policiesshared.ConfigurationPolicy{
 			{
 				ID:                       policyID1,
 				Type:                     "GIT_TREE",
@@ -147,7 +148,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 	})
 
 	t.Run("matches commit policies", func(t *testing.T) {
-		policies := []types.ConfigurationPolicy{
+		policies := []policiesshared.ConfigurationPolicy{
 			{
 				ID:                policyID,
 				Type:              "GIT_COMMIT",
@@ -162,7 +163,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 	})
 
 	t.Run("does not match commit policies outside of policy duration", func(t *testing.T) {
-		policies := []types.ConfigurationPolicy{
+		policies := []policiesshared.ConfigurationPolicy{
 			{
 				ID:                policyID,
 				Type:              "GIT_COMMIT",

@@ -25,7 +25,6 @@ go_library(
         "@com_github_cockroachdb_redact//:redact",
         "@com_github_felixge_httpsnoop//:httpsnoop",
         "@com_github_gorilla_mux//:mux",
-        "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_opentracing_opentracing_go//:opentracing-go",
         "@com_github_opentracing_opentracing_go//ext",
         "@com_github_opentracing_opentracing_go//log",

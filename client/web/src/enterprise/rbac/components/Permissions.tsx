@@ -1,62 +1,84 @@
-import React, { useMemo } from 'react'
+import React, { ChangeEvent, FocusEventHandler } from 'react'
 
-import { mdiMapSearch } from '@mdi/js'
-import { groupBy } from 'lodash'
+import { mdiInformationOutline } from '@mdi/js'
 
-import { Icon, Text, Checkbox, Grid, Form } from '@sourcegraph/wildcard'
+import { Text, Checkbox, Grid, Tooltip, Icon } from '@sourcegraph/wildcard'
 
-import { RoleFields } from '../../../graphql-operations'
+import { BatchChangesReadPermission } from '../../../rbac/constants'
+import { prettifyAction, prettifyNamespace } from '../../../util/settings'
 import { PermissionsMap, allNamespaces } from '../backend'
 
-const EmptyPermissionList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
-    <div className="text-muted text-center m-3 w-100">
-        <Icon className="icon" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
-        <div className="pt-2">No permissions associated with this role.</div>
-    </div>
-)
-
 interface PermissionListProps {
-    role: RoleFields
     allPermissions: PermissionsMap
+    isChecked: (value: string) => boolean
+    onChange?: (event: ChangeEvent<HTMLInputElement>) => void
+    onBlur?: FocusEventHandler<HTMLInputElement>
+    disabled?: boolean
+    roleName: string
 }
 
-export const PermissionList: React.FunctionComponent<React.PropsWithChildren<PermissionListProps>> = ({
-    role,
+export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<PermissionListProps>> = ({
     allPermissions,
-}) => {
-    const rolePermissions = role.permissions.nodes
-    // We create a map for the role permissions using their ID, so we can perform an easy lookup when rendering
-    // the list of all permissions.
-    const rolePermissionsMap = useMemo(() => groupBy(rolePermissions, 'id'), [rolePermissions])
+    isChecked,
+    onChange,
+    onBlur,
+    disabled,
+    roleName,
+}) => (
+    <>
+        {allNamespaces.map(namespace => {
+            const namespacePermissions = allPermissions[namespace]
+            return (
+                <div key={namespace}>
+                    <Text className="font-weight-bold">{prettifyNamespace(namespace)}</Text>
+                    <Grid columnCount={4}>
+                        {namespacePermissions.map(permission => {
+                            // The checkbox component keeps its own state and because we reuse this component when rendering
+                            // multiple roles on a pege, we have to ensure the `id` and `key` are unique across all instances
+                            // rendered on a page.
+                            const checkboxId = `${permission.id}-${roleName}`
 
-    // We display EmptyPermissionList when the role has no permissions assigned to it.
-    if (rolePermissions.length === 0) {
-        return <EmptyPermissionList />
-    }
-
-    return (
-        <>
-            {allNamespaces.map(namespace => {
-                const namespacePermissions = allPermissions[namespace]
-                return (
-                    <Form key={namespace}>
-                        <Text className="font-weight-bold">{namespace}</Text>
-                        <Grid columnCount={4}>
-                            {namespacePermissions.map(permission => {
-                                const isChecked = Boolean(rolePermissionsMap[permission.id])
+                            // This is a hack to disable the BatchChangesReadPermission
+                            // from the UI for now until it's fully implemented.
+                            if (permission.displayName === BatchChangesReadPermission) {
                                 return (
                                     <Checkbox
                                         key={permission.id}
-                                        label={permission.action}
-                                        id={permission.displayName}
-                                        defaultChecked={isChecked}
+                                        label={
+                                            <>
+                                                {prettifyAction(permission.action)}
+                                                <Tooltip content="Coming soon">
+                                                    <Icon
+                                                        aria-label="Batch changes read access restrictions coming soon"
+                                                        className="ml-2"
+                                                        svgPath={mdiInformationOutline}
+                                                    />
+                                                </Tooltip>
+                                            </>
+                                        }
+                                        id={checkboxId}
+                                        checked={isChecked(permission.id)}
+                                        value={permission.id}
+                                        disabled={true}
                                     />
                                 )
-                            })}
-                        </Grid>
-                    </Form>
-                )
-            })}
-        </>
-    )
-}
+                            }
+                            return (
+                                <Checkbox
+                                    key={permission.id}
+                                    label={prettifyAction(permission.action)}
+                                    id={checkboxId}
+                                    checked={isChecked(permission.id)}
+                                    value={permission.id}
+                                    onChange={onChange}
+                                    onBlur={onBlur}
+                                    disabled={disabled}
+                                />
+                            )
+                        })}
+                    </Grid>
+                </div>
+            )
+        })}
+    </>
+)

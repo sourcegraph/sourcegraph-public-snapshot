@@ -157,10 +157,10 @@ mutation {
 	updateSiteConfiguration(input: "", lastID: 0)
 }`,
 			}, {
-				name: "deleteLSIFUpload",
+				name: "deletePreciseIndex",
 				query: `
 mutation {
-	deleteLSIFUpload(id: "TFNJRjox") {
+	deletePreciseIndex(id: "TFNJRjox") {
 		alwaysNil
 	}
 }`,
@@ -343,14 +343,6 @@ mutation {
 mutation {
 	randomizeUserPassword(user: "VXNlcjox") {
 		resetPasswordURL
-	}
-}`,
-			}, {
-				name: "setTag",
-				query: `
-mutation {
-	setTag(node: "VXNlcjox", tag: "tag", present: true) {
-		alwaysNil
 	}
 }`,
 			},

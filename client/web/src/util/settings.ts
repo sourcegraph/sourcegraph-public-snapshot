@@ -1,3 +1,5 @@
+import { startCase } from 'lodash'
+
 import { isErrorLike } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode } from '@sourcegraph/shared/src/search'
@@ -76,3 +78,7 @@ function getFromSettings<T>(settingsCascade: SettingsCascadeOrError, setting: st
 
     return undefined
 }
+
+export const prettifySystemRole = (role: string): string => startCase(role.replace(/_/g, ' ').toLowerCase())
+export const prettifyNamespace = (namespace: string): string => startCase(namespace.replace(/_/g, ' ').toLowerCase())
+export const prettifyAction = (action: string): string => startCase(action.replace(/_/g, ' ').toLowerCase())

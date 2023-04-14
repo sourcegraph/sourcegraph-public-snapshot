@@ -39,11 +39,12 @@ import (
 var BillingPublishableKey string
 
 type authProviderInfo struct {
-	IsBuiltin         bool   `json:"isBuiltin"`
-	DisplayName       string `json:"displayName"`
-	ServiceType       string `json:"serviceType"`
-	AuthenticationURL string `json:"authenticationURL"`
-	ServiceID         string `json:"serviceID"`
+	IsBuiltin         bool    `json:"isBuiltin"`
+	DisplayName       string  `json:"displayName"`
+	DisplayPrefix     *string `json:"displayPrefix"`
+	ServiceType       string  `json:"serviceType"`
+	AuthenticationURL string  `json:"authenticationURL"`
+	ServiceID         string  `json:"serviceID"`
 }
 
 // GenericPasswordPolicy a generic password policy that holds password requirements
@@ -104,7 +105,6 @@ type CurrentUser struct {
 	URL                 string     `json:"url"`
 	SettingsURL         string     `json:"settingsURL"`
 	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
-	Tags                []string   `json:"tags"`
 	TosAccepted         bool       `json:"tosAccepted"`
 	Searchable          bool       `json:"searchable"`
 
@@ -165,13 +165,17 @@ type JSContext struct {
 	AuthMinPasswordLength int                `json:"authMinPasswordLength"`
 	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
 
-	AuthProviders []authProviderInfo `json:"authProviders"`
+	AuthProviders                  []authProviderInfo `json:"authProviders"`
+	AuthPrimaryLoginProvidersCount int                `json:"primaryLoginProvidersCount"`
+
+	AuthAccessRequest *schema.AuthAccessRequest `json:"authAccessRequest"`
 
 	Branding *schema.Branding `json:"branding"`
 
-	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
-	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
-	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
+	BatchChangesEnabled                bool                                `json:"batchChangesEnabled"`
+	BatchChangesDisableWebhooksWarning bool                                `json:"batchChangesDisableWebhooksWarning"`
+	BatchChangesWebhookLogsEnabled     bool                                `json:"batchChangesWebhookLogsEnabled"`
+	BatchChangesRolloutWindows         *[]*schema.BatchChangeRolloutWindow `json:"batchChangesRolloutWindows"`
 
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
@@ -226,20 +230,22 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	siteID := siteid.Get()
 
 	// Show the site init screen?
-	globalState, err := db.GlobalState().Get(ctx)
-	needsSiteInit := err == nil && !globalState.Initialized
+	siteInitialized, err := db.GlobalState().SiteInitialized(ctx)
+	needsSiteInit := err == nil && !siteInitialized
 
 	// Auth providers
 	var authProviders []authProviderInfo
-	for _, p := range providers.Providers() {
-		if p.Config().Github != nil && p.Config().Github.Hidden {
+	for _, p := range providers.SortedProviders() {
+		commonConfig := providers.GetAuthProviderCommon(p)
+		if commonConfig.Hidden {
 			continue
 		}
 		info := p.CachedInfo()
 		if info != nil {
 			authProviders = append(authProviders, authProviderInfo{
 				IsBuiltin:         p.Config().Builtin != nil,
-				DisplayName:       info.DisplayName,
+				DisplayName:       commonConfig.DisplayName,
+				DisplayPrefix:     commonConfig.DisplayPrefix,
 				ServiceType:       p.ConfigID().Type,
 				AuthenticationURL: info.AuthenticationURL,
 				ServiceID:         info.ServiceID,
@@ -341,13 +347,17 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AuthMinPasswordLength: conf.AuthMinPasswordLength(),
 		AuthPasswordPolicy:    authPasswordPolicy,
 
-		AuthProviders: authProviders,
+		AuthProviders:                  authProviders,
+		AuthPrimaryLoginProvidersCount: conf.AuthPrimaryLoginProvidersCount(),
+
+		AuthAccessRequest: conf.Get().AuthAccessRequest,
 
 		Branding: globals.Branding(),
 
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
+		BatchChangesRolloutWindows:         conf.Get().BatchChangesRolloutWindows,
 
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
@@ -391,17 +401,13 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		return nil
 	}
 
-	userResolver := graphqlbackend.NewUserResolver(db, user)
+	userResolver := graphqlbackend.NewUserResolver(ctx, db, user)
 
-	siteAdmin, err := userResolver.SiteAdmin(ctx)
+	siteAdmin, err := userResolver.SiteAdmin()
 	if err != nil {
 		return nil
 	}
-	canAdminister, err := userResolver.ViewerCanAdminister(ctx)
-	if err != nil {
-		return nil
-	}
-	tags, err := userResolver.Tags(ctx)
+	canAdminister, err := userResolver.ViewerCanAdminister()
 	if err != nil {
 		return nil
 	}
@@ -424,7 +430,6 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		Searchable:          userResolver.Searchable(ctx),
 		SettingsURL:         derefString(userResolver.SettingsURL()),
 		SiteAdmin:           siteAdmin,
-		Tags:                tags,
 		TosAccepted:         userResolver.TosAccepted(ctx),
 		URL:                 userResolver.URL(),
 		Username:            userResolver.Username(),
@@ -446,7 +451,7 @@ func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.Us
 		Nodes:           []Permission{},
 	}
 
-	permissionResolver, err := userResolver.Permissions(ctx)
+	permissionResolver, err := userResolver.Permissions()
 	if err != nil {
 		return connection
 	}

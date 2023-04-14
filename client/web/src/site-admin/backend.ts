@@ -110,7 +110,9 @@ const mirrorRepositoryInfoFieldsFragment = gql`
     fragment MirrorRepositoryInfoFields on MirrorRepositoryInfo {
         cloned
         cloneInProgress
+        cloneProgress @include(if: $displayCloneProgress)
         updatedAt
+        nextSyncAt
         isCorrupted
         corruptionLogs {
             timestamp
@@ -163,6 +165,7 @@ export const REPOSITORIES_QUERY = gql`
         $orderBy: RepositoryOrderBy
         $descending: Boolean
         $externalService: ID
+        $displayCloneProgress: Boolean = false
     ) {
         repositories(
             first: $first
@@ -713,8 +716,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
     )
 }
 
-export const REPOSITORY_STATS = gql`
-    query RepositoryStats {
+export const STATUS_AND_REPO_STATS = gql`
+    query StatusAndRepoStats {
         repositoryStats {
             __typename
             total
@@ -724,6 +727,47 @@ export const REPOSITORY_STATS = gql`
             failedFetch
             corrupted
             indexed
+        }
+        statusMessages {
+            ... on GitUpdatesDisabled {
+                __typename
+
+                message
+            }
+
+            ... on NoRepositoriesDetected {
+                __typename
+
+                message
+            }
+
+            ... on CloningProgress {
+                __typename
+
+                message
+            }
+
+            ... on IndexingProgress {
+                __typename
+
+                notIndexed
+                indexed
+            }
+
+            ... on SyncError {
+                __typename
+
+                message
+            }
+
+            ... on ExternalServiceSyncError {
+                __typename
+
+                externalService {
+                    id
+                    displayName
+                }
+            }
         }
     }
 `
@@ -938,7 +982,13 @@ const siteAdminPackageFieldsFragment = gql`
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
+    query Packages(
+        $kind: PackageRepoReferenceKind
+        $name: String
+        $first: Int!
+        $after: String
+        $displayCloneProgress: Boolean = false
+    ) {
         packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields
@@ -952,4 +1002,40 @@ export const PACKAGES_QUERY = gql`
     }
 
     ${siteAdminPackageFieldsFragment}
+`
+
+export const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
+    query SiteConfigurationHistory($first: Int, $last: Int, $after: String, $before: String) {
+        site {
+            __typename
+            configuration {
+                history(first: $first, last: $last, after: $after, before: $before) {
+                    __typename
+                    totalCount
+                    nodes {
+                        __typename
+                        ...SiteConfigurationChangeNode
+                    }
+                    pageInfo {
+                        hasNextPage
+                        hasPreviousPage
+                        endCursor
+                        startCursor
+                    }
+                }
+            }
+        }
+    }
+
+    fragment SiteConfigurationChangeNode on SiteConfigurationChange {
+        id
+        author {
+            id
+            username
+            displayName
+            avatarURL
+        }
+        diff
+        createdAt
+    }
 `

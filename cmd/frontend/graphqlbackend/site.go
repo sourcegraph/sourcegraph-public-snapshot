@@ -12,6 +12,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
@@ -30,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
@@ -147,6 +149,70 @@ func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
 
 func (r *siteResolver) AllowSiteSettingsEdits() bool {
 	return canUpdateSiteConfiguration()
+}
+
+func (r *siteResolver) ExternalServicesCounts(ctx context.Context) (*externalServicesCountsResolver, error) {
+	// 🚨 SECURITY: Only admins can view repositories counts
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	return &externalServicesCountsResolver{db: r.db}, nil
+}
+
+type externalServicesCountsResolver struct {
+	remoteExternalServicesCount int32
+	localExternalServicesCount  int32
+
+	db   database.DB
+	once sync.Once
+	err  error
+}
+
+func (r *externalServicesCountsResolver) compute(ctx context.Context) (int32, int32, error) {
+	r.once.Do(func() {
+		remoteCount, localCount, err := backend.NewAppExternalServices(r.db).ExternalServicesCounts(ctx)
+		if err != nil {
+			r.err = err
+		}
+
+		// if this is not sourcegraph app then local repos count should be zero because
+		// serve-git service only runs in sourcegraph app
+		// see /internal/service/servegit/serve.go
+		if !deploy.IsApp() {
+			localCount = 0
+		}
+
+		r.remoteExternalServicesCount = int32(remoteCount)
+		r.localExternalServicesCount = int32(localCount)
+	})
+
+	return r.remoteExternalServicesCount, r.localExternalServicesCount, r.err
+}
+
+func (r *externalServicesCountsResolver) RemoteExternalServicesCount(ctx context.Context) (int32, error) {
+	remoteCount, _, err := r.compute(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return remoteCount, nil
+}
+
+func (r *externalServicesCountsResolver) LocalExternalServicesCount(ctx context.Context) (int32, error) {
+	_, localCount, err := r.compute(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return localCount, nil
+}
+
+func (r *siteResolver) AppHasConnectedDotComAccount() bool {
+	if !deploy.IsApp() {
+		return false
+	}
+
+	appConfig := conf.SiteConfig().App
+	return appConfig != nil && appConfig.DotcomAuthToken != ""
 }
 
 type siteConfigurationResolver struct {
@@ -394,4 +460,28 @@ func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Conte
 		}
 	}
 	return requiredMigrations, nil
+}
+
+// Return the enablement of auto upgrades
+func (r *siteResolver) AutoUpgradeEnabled(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: Only site admins can set auto_upgrade readiness
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return false, err
+	}
+	_, enabled, err := upgradestore.NewWith(r.db.Handle()).GetAutoUpgrade(ctx)
+	if err != nil {
+		return false, err
+	}
+	return enabled, nil
+}
+
+func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
+	Enable bool
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can set auto_upgrade readiness
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return &EmptyResponse{}, err
+	}
+	err := upgradestore.NewWith(r.db.Handle()).SetAutoUpgrade(ctx, args.Enable)
+	return &EmptyResponse{}, err
 }

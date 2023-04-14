@@ -139,7 +139,7 @@ function queryProductSubscription(uuid: string): Observable<ProductSubscriptionF
         { uuid }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.dotcom || !data.dotcom.productSubscription || (errors && errors.length > 0)) {
+            if (!data?.dotcom?.productSubscription || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.dotcom.productSubscription

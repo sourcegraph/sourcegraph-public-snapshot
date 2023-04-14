@@ -58,6 +58,7 @@ ts_project(
         "utils.ts",
     ],
     tsconfig = "//client/shared:tsconfig",
+    use_preset_env = False,
     deps = [
         "//:node_modules/@apollo/client",
         "//:node_modules/@axe-core/puppeteer",
@@ -80,6 +81,7 @@ ts_project(
         "//:node_modules/@types/react",
         "//:node_modules/@types/sinon",
         "//:node_modules/@types/uuid",
+        "//:node_modules/axe-core",  #keep
         "//:node_modules/chalk",
         "//:node_modules/date-fns",
         "//:node_modules/delay",
@@ -89,7 +91,6 @@ ts_project(
         "//:node_modules/jest-mock-extended",
         "//:node_modules/jsonc-parser",
         "//:node_modules/lodash",
-        "//:node_modules/message-port-polyfill",
         "//:node_modules/mime-types",
         "//:node_modules/mocha",
         "//:node_modules/mz",

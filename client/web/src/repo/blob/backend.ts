@@ -17,6 +17,8 @@ const applyDefaultValuesToFetchBlobOptions = ({
     format = HighlightResponseFormat.HTML_HIGHLIGHT,
     startLine = null,
     endLine = null,
+    visibleIndexID = null,
+    scipSnapshot = false,
     ...options
 }: FetchBlobOptions): Required<FetchBlobOptions> => ({
     ...options,
@@ -24,12 +26,16 @@ const applyDefaultValuesToFetchBlobOptions = ({
     format,
     startLine,
     endLine,
+    visibleIndexID,
+    scipSnapshot,
 })
 
 function fetchBlobCacheKey(options: FetchBlobOptions): string {
-    const { disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
+    const { disableTimeout, format, scipSnapshot, visibleIndexID } = applyDefaultValuesToFetchBlobOptions(options)
 
-    return `${makeRepoURI(options)}?disableTimeout=${disableTimeout}&=${format}`
+    return `${makeRepoURI(
+        options
+    )}?disableTimeout=${disableTimeout}&=${format}&snap=${scipSnapshot}&visible=${visibleIndexID}`
 }
 
 interface FetchBlobOptions {
@@ -40,71 +46,120 @@ interface FetchBlobOptions {
     format?: HighlightResponseFormat
     startLine?: number | null
     endLine?: number | null
+    scipSnapshot?: boolean
+    visibleIndexID?: string | null
 }
 
-export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
-    const { repoName, revision, filePath, disableTimeout, format, startLine, endLine } =
-        applyDefaultValuesToFetchBlobOptions(options)
+export const fetchBlob = memoizeObservable(
+    (
+        options: FetchBlobOptions
+    ): Observable<(BlobFileFields & { snapshot?: { offset: number; data: string }[] | null }) | null> => {
+        const {
+            repoName,
+            revision,
+            filePath,
+            disableTimeout,
+            format,
+            startLine,
+            endLine,
+            scipSnapshot,
+            visibleIndexID,
+        } = applyDefaultValuesToFetchBlobOptions(options)
 
-    // We only want to include HTML data if explicitly requested. We always
-    // include LSIF because this is used for languages that are configured
-    // to be processed with tree sitter (and is used when explicitly
-    // requested via JSON_SCIP).
-    const html = [HighlightResponseFormat.HTML_PLAINTEXT, HighlightResponseFormat.HTML_HIGHLIGHT].includes(format)
-    return requestGraphQL<BlobResult, BlobVariables>(
-        gql`
-            query Blob(
-                $repoName: String!
-                $revision: String!
-                $filePath: String!
-                $disableTimeout: Boolean!
-                $format: HighlightResponseFormat!
-                $html: Boolean!
-                $startLine: Int
-                $endLine: Int
-            ) {
-                repository(name: $repoName) {
-                    commit(rev: $revision) {
-                        file(path: $filePath) {
-                            ...BlobFileFields
+        // We only want to include HTML data if explicitly requested. We always
+        // include LSIF because this is used for languages that are configured
+        // to be processed with tree sitter (and is used when explicitly
+        // requested via JSON_SCIP).
+        const html = [HighlightResponseFormat.HTML_PLAINTEXT, HighlightResponseFormat.HTML_HIGHLIGHT].includes(format)
+        return requestGraphQL<BlobResult, BlobVariables>(
+            gql`
+                query Blob(
+                    $repoName: String!
+                    $revision: String!
+                    $filePath: String!
+                    $disableTimeout: Boolean!
+                    $format: HighlightResponseFormat!
+                    $html: Boolean!
+                    $startLine: Int
+                    $endLine: Int
+                    $snapshot: Boolean!
+                    $visibleIndexID: ID!
+                ) {
+                    repository(name: $repoName) {
+                        commit(rev: $revision) {
+                            file(path: $filePath) {
+                                ...BlobFileFields
+                            }
+                            blob(path: $filePath) @include(if: $snapshot) {
+                                lsif {
+                                    snapshot(indexID: $visibleIndexID) {
+                                        offset
+                                        data
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-            }
 
-            fragment BlobFileFields on File2 {
-                __typename
-                content(startLine: $startLine, endLine: $endLine)
-                richHTML(startLine: $startLine, endLine: $endLine)
-                highlight(disableTimeout: $disableTimeout, format: $format, startLine: $startLine, endLine: $endLine) {
-                    aborted
-                    html @include(if: $html)
-                    lsif
-                }
-                totalLines
-                ... on GitBlob {
-                    lfs {
-                        byteSize
+                fragment BlobFileFields on File2 {
+                    __typename
+                    content(startLine: $startLine, endLine: $endLine)
+                    richHTML(startLine: $startLine, endLine: $endLine)
+                    highlight(
+                        disableTimeout: $disableTimeout
+                        format: $format
+                        startLine: $startLine
+                        endLine: $endLine
+                    ) {
+                        aborted
+                        html @include(if: $html)
+                        lsif
                     }
-                    externalURLs {
-                        url
-                        serviceKind
+                    totalLines
+                    ... on GitBlob {
+                        lfs {
+                            byteSize
+                        }
+                        externalURLs {
+                            url
+                            serviceKind
+                        }
                     }
                 }
+            `,
+            {
+                repoName,
+                revision,
+                filePath,
+                disableTimeout,
+                format,
+                html,
+                startLine,
+                endLine,
+                snapshot: scipSnapshot,
+                visibleIndexID: visibleIndexID ?? '',
             }
-        `,
-        { repoName, revision, filePath, disableTimeout, format, html, startLine, endLine }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.repository?.commit) {
-                throw new Error('Commit not found')
-            }
+        ).pipe(
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.repository?.commit) {
+                    throw new Error('Commit not found')
+                }
 
-            return data.repository.commit.file
-        })
-    )
-}, fetchBlobCacheKey)
+                if (!data.repository.commit.file) {
+                    throw new Error('File not found')
+                }
+
+                return {
+                    ...data.repository.commit.file,
+                    snapshot: data.repository.commit.blob?.lsif?.snapshot,
+                }
+            })
+        )
+    },
+    fetchBlobCacheKey
+)
 
 /**
  * Returns the preferred blob prefetch format.

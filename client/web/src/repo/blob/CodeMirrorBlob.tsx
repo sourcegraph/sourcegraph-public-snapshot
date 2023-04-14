@@ -36,9 +36,11 @@ import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
+import { buildLinks } from './codemirror/links'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
+import { scipSnapshot } from './codemirror/scip-snapshot'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { pin, updatePin, selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
@@ -105,6 +107,8 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** External URLs for the file */
     externalURLs?: ExternalLinkFields[]
+
+    snapshotData?: { offset: number; data: string }[] | null
 }
 
 const staticExtensions: Extension = [
@@ -143,9 +147,10 @@ const staticExtensions: Extension = [
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
-        },
-        '.selected-line:focus': {
-            boxShadow: 'none',
+
+            '&:focus': {
+                boxShadow: 'none',
+            },
         },
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
@@ -267,6 +272,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         },
         [customHistoryAction]
     )
+
     const extensions = useMemo(
         () => [
             // Log uncaught errors that happen in callbacks that we pass to
@@ -281,10 +287,12 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
+            scipSnapshot(blobInfo.snapshotData),
             codeFoldingExtension(),
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
+            buildLinks.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({

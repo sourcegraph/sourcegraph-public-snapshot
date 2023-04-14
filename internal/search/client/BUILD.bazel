@@ -34,6 +34,7 @@ go_library(
 
 go_test(
     name = "client_test",
+    timeout = "short",
     srcs = ["client_test.go"],
     embed = [":client"],
     deps = [

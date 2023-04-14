@@ -134,6 +134,8 @@ func Test_regexpPatterns(t *testing.T) {
 		`(ab)*`,
 		`c++`,
 		`my.yaml.conf`,
+		`(using|struct)`,
+		`test.get(id)`,
 	}
 
 	for _, c := range cases {

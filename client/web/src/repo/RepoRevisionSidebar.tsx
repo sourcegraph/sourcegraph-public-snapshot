@@ -28,6 +28,7 @@ import { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 
+import { RepoRevisionSidebarCody } from './repoRevisionSidebar/cody/RepoRevisionSidebarCody'
 import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
@@ -87,6 +88,10 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     const [fileTreeFocusKey, setFileTreeFocusKey] = useState('')
     const [symbolsFocusKey, setSymbolsFocusKey] = useState('')
 
+    const [codyEnabled] = useFeatureFlag('cody-experimental')
+    const focusCodyShortcut = useKeyboardShortcut('focusCody')
+    const [codyFocusKey, setCodyFocusKey] = useState('')
+
     return (
         <>
             {isVisible ? (
@@ -99,7 +104,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
                         />
                         <Tabs
-                            className="w-100 test-repo-revision-sidebar pr-3 h-25 d-flex flex-column flex-grow-1"
+                            className="w-100 test-repo-revision-sidebar h-25 d-flex flex-column flex-grow-1"
                             index={persistedTabIndex}
                             onChange={setPersistedTabIndex}
                             lazy={true}
@@ -108,6 +113,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             behavior="memoize"
                         >
                             <TabList
+                                wrapperClassName="mr-3"
                                 actions={
                                     <Tooltip content="Hide sidebar" placement="right">
                                         <Button
@@ -130,14 +136,19 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                 <Tab data-tab-content="symbols">
                                     <span className="tablist-wrapper--tab-label">Symbols</span>
                                 </Tab>
+                                {codyEnabled && (
+                                    <Tab data-tab-content="cody">
+                                        <span className="tablist-wrapper--tab-label">Cody</span>
+                                    </Tab>
+                                )}
                             </TabList>
                             <div
-                                className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)}
+                                className={classNames('flex w-100 overflow-auto explorer pr-2', styles.tabpanels)}
                                 tabIndex={-1}
                             >
                                 {/* TODO: See if we can render more here, instead of waiting for these props */}
                                 {props.repoID && props.commitID && (
-                                    <TabPanels>
+                                    <TabPanels className="h-100">
                                         <TabPanel>
                                             <RepoRevisionSidebarFileTree
                                                 key={initialFilePath}
@@ -163,6 +174,17 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                                 onHandleSymbolClick={handleSymbolClick}
                                             />
                                         </TabPanel>
+                                        {codyEnabled && (
+                                            <TabPanel className="h-100">
+                                                <RepoRevisionSidebarCody
+                                                    repoName={props.repoName}
+                                                    repoID={props.repoID}
+                                                    revision={props.revision}
+                                                    activePath={props.filePath}
+                                                    focusKey={codyFocusKey}
+                                                />
+                                            </TabPanel>
+                                        )}
                                     </TabPanels>
                                 )}
                             </div>
@@ -208,6 +230,18 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                 handleSidebarToggle(true)
                                 setPersistedTabIndex(1)
                                 setSymbolsFocusKey(Date.now().toString())
+                            }}
+                        />
+                    ))}
+                    {focusCodyShortcut?.keybindings.map((keybinding, index) => (
+                        <Shortcut
+                            key={index}
+                            {...keybinding}
+                            allowDefault={true}
+                            onMatch={() => {
+                                handleSidebarToggle(true)
+                                setPersistedTabIndex(2)
+                                setCodyFocusKey(Date.now().toString())
                             }}
                         />
                     ))}

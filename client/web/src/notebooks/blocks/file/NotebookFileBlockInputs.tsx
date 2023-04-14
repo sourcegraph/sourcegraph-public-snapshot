@@ -28,7 +28,6 @@ interface NotebookFileBlockInputsProps extends Pick<BlockProps, 'onRunBlock'> {
     onLineRangeChange: (lineRange: HighlightLineRange | null) => void
     onFileSelected: (file: FileBlockInput) => void
     isSourcegraphDotCom: boolean
-    globbing: boolean
 }
 
 function getFileSuggestionsQuery(queryInput: string): string {
@@ -46,7 +45,7 @@ const editorAttributes = [
 
 export const NotebookFileBlockInputs: React.FunctionComponent<
     React.PropsWithChildren<NotebookFileBlockInputsProps>
-> = ({ id, lineRange, onFileSelected, onLineRangeChange, globbing, isSourcegraphDotCom, ...inputProps }) => {
+> = ({ id, lineRange, onFileSelected, onLineRangeChange, isSourcegraphDotCom, ...inputProps }) => {
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -99,11 +98,10 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
         () =>
             createDefaultSuggestions({
                 isSourcegraphDotCom,
-                globbing,
                 fetchSuggestions: fetchStreamSuggestions,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
-        [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
+        [isSourcegraphDotCom, applySuggestionsOnEnter]
     )
 
     return (

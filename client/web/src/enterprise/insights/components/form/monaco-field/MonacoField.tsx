@@ -85,7 +85,6 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             onChange={onChange}
             patternType={patternType}
             caseSensitive={false}
-            globbing={false}
             placeholder={placeholder}
             className={classNames(className, styles.monacoField, 'form-control', 'with-invalid-icon', {
                 [styles.focusContainer]: !renderedWithinFocusContainer,

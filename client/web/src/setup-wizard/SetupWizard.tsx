@@ -1,4 +1,4 @@
-import { FC, ReactElement, useCallback, useMemo } from 'react'
+import { FC, useCallback, useMemo } from 'react'
 
 import { ApolloClient } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
@@ -11,6 +11,7 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 
+import { LocalRepositoriesStep } from './components/local-repositories-step'
 import { RemoteRepositoriesStep } from './components/remote-repositories-step'
 import { SetupStepsRoot, SetupStepsContent, SetupStepsFooter, StepConfiguration } from './components/setup-steps'
 import { SyncRepositoriesStep } from './components/SyncRepositoriesStep'
@@ -19,20 +20,16 @@ import styles from './Setup.module.scss'
 
 const CORE_STEPS: StepConfiguration[] = [
     {
-        id: 'remote-repositoires',
+        id: 'remote-repositories',
         name: 'Add remote repositories',
         path: '/setup/remote-repositories',
         component: RemoteRepositoriesStep,
-    },
-    {
-        id: 'sync-repositories',
-        name: 'Sync repositories',
-        path: '/setup/sync-repositories',
-        nextURL: '/search',
-        component: SyncRepositoriesStep,
+        // If user clicked next button in setup remote repositories
+        // this mean that setup was completed, and they're ready to go
+        // to app UI. See https://github.com/sourcegraph/sourcegraph/issues/50122
         onNext: (client: ApolloClient<{}>) => {
             // Mutate initial needsRepositoryConfiguration value
-            // in order to avoid loop in redirection logic
+            // in order to avoid loop in Layout page redirection logic
             // TODO Remove this as soon as we have a proper Sourcegraph context store
             window.context.needsRepositoryConfiguration = false
 
@@ -43,6 +40,13 @@ const CORE_STEPS: StepConfiguration[] = [
                 () => {}
             )
         },
+    },
+    {
+        id: 'sync-repositories',
+        name: 'Sync repositories',
+        path: '/setup/sync-repositories',
+        nextURL: '/search',
+        component: SyncRepositoriesStep,
     },
 ]
 
@@ -74,10 +78,15 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     const steps = useMemo(() => (isSourcegraphApp ? SOURCEGRAPH_APP_STEPS : CORE_STEPS), [isSourcegraphApp])
 
     const handleStepChange = useCallback(
-        (step: StepConfiguration): void => {
-            setStepId(step.id)
+        (nextStep: StepConfiguration): void => {
+            const currentStepIndex = steps.findIndex(step => step.id === nextStep.id)
+            const isLastStep = currentStepIndex === steps.length - 1
+
+            // Reset the last visited step if you're on the last step in the
+            // setup pipeline
+            setStepId(!isLastStep ? nextStep.id : '')
         },
-        [setStepId]
+        [setStepId, steps]
     )
 
     const handleSkip = useCallback(() => {
@@ -115,8 +124,4 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
             </SetupStepsRoot>
         </div>
     )
-}
-
-function LocalRepositoriesStep(props: any): ReactElement {
-    return <H2 {...props}>Hello local repositories step</H2>
 }

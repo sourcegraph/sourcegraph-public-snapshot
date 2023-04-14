@@ -83,9 +83,8 @@
         color: $value !important;
     }
 
-    a.text-#{$color} {
-        &:hover,
-        &:focus {
+    a.text-#{$color}:hover {
+        .theme-light & {
             color: darken($value, 15%) !important;
         }
     }

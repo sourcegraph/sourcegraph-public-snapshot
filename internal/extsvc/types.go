@@ -635,7 +635,7 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 		}
 	case *schema.JVMPackagesConnection:
 		limit = rate.Limit(2)
-		if c != nil && c.Maven != nil && c.Maven.RateLimit != nil {
+		if c != nil && c.Maven.RateLimit != nil {
 			limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
 		}
 	case *schema.PagureConnection:

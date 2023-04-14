@@ -87,8 +87,6 @@ go_test(
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/extsvc",
-        "//internal/insights",
-        "//internal/jsonc",
         "//internal/types",
         "//lib/errors",
         "@com_github_derision_test_glock//:glock",

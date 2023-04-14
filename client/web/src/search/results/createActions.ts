@@ -16,6 +16,7 @@ export interface CreateAction {
     icon: IconType
     label: string
     tooltip: string
+    disabled?: boolean
     eventToLog?: string
 }
 
@@ -37,7 +38,7 @@ export function getSearchContextCreateAction(
     searchParameters.set('q', sanitizedQuery)
     const url = `/contexts/new?${searchParameters.toString()}`
 
-    return { url, icon: mdiMagnify, label: 'Create context', tooltip: 'Create a search context based on this query' }
+    return { url, icon: mdiMagnify, label: 'Create context', tooltip: 'Create a search context based on this query.' }
 }
 
 export function getInsightsCreateAction(
@@ -57,7 +58,7 @@ export function getInsightsCreateAction(
         url,
         icon: CodeInsightsIcon,
         label: 'Create insight',
-        tooltip: 'Create Insight based on this search query',
+        tooltip: 'Create Insight based on this search query.',
     }
 }
 
@@ -77,18 +78,26 @@ export function getCodeMonitoringCreateAction(
         url,
         icon: CodeMonitoringLogo,
         label: 'monitor',
-        tooltip: 'Create a code monitor based on this query',
+        tooltip: 'Create a code monitor based on this query.',
     }
 }
 
 export function getBatchChangeCreateAction(
     query: string | undefined,
     patternType: SearchPatternType,
-    canCreateBatchChange: boolean
+    canCreateBatchChange: boolean | string
 ): CreateAction | null {
-    if (!canCreateBatchChange) {
+    if (canCreateBatchChange === false) {
         return null
     }
+
+    let disabled = false
+    let tooltip: string | undefined
+    if (typeof canCreateBatchChange === 'string') {
+        disabled = true
+        tooltip = canCreateBatchChange
+    }
+
     const searchParameters = new URLSearchParams(location.search)
     searchParameters.set('trigger-query', `${query} patterntype:${patternType}`)
     const url = `/batch-changes/create?${searchParameters.toString()}`
@@ -97,7 +106,8 @@ export function getBatchChangeCreateAction(
         url,
         icon: BatchChangesIcon,
         label: 'Create batch change',
-        tooltip: 'Create a batch change based on this query',
+        tooltip: tooltip || 'Create a batch change based on this query.',
         eventToLog: 'search_result_page:create_batch_change:clicked',
+        disabled,
     }
 }

@@ -20,6 +20,7 @@ go_library(
 
 go_test(
     name = "scheduler_test",
+    timeout = "short",
     srcs = ["ticker_test.go"],
     embed = [":scheduler"],
     deps = [

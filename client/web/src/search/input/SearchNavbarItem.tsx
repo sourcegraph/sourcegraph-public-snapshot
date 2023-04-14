@@ -25,7 +25,6 @@ interface Props
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     isLightTheme: boolean
@@ -89,6 +88,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 onSubmit={onSubmit}
             >
                 <LazyExperimentalSearchInput
+                    visualMode="compact"
                     telemetryService={props.telemetryService}
                     patternType={searchPatternType}
                     interpretComments={false}
@@ -103,6 +103,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     submitSearch={submitSearchOnChange}
                     selectedSearchContextSpec={props.selectedSearchContextSpec}
+                    className="flex-grow-1"
                 >
                     <Toggles
                         patternType={searchPatternType}
@@ -113,6 +114,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                         setSearchMode={setSearchMode}
                         settingsCascade={props.settingsCascade}
                         navbarSearchQuery={queryState.query}
+                        submitSearch={submitSearchOnChange}
                     />
                 </LazyExperimentalSearchInput>
             </Form>

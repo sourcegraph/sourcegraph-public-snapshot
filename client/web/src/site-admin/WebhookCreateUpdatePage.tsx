@@ -134,14 +134,14 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
     const [createWebhook, { error: createWebhookError, loading: creationLoading }] = useMutation<
         CreateWebhookResult,
         CreateWebhookVariables
-    >(CREATE_WEBHOOK_QUERY, { onCompleted: data => navigate(`/site-admin/webhooks/${data.createWebhook.id}`) })
+    >(CREATE_WEBHOOK_QUERY, { onCompleted: data => navigate(`/site-admin/webhooks/incoming/${data.createWebhook.id}`) })
 
     const [updateWebhook, { error: updateWebhookError, loading: updateLoading }] = useMutation<
         UpdateWebhookResult,
         UpdateWebhookVariables
     >(UPDATE_WEBHOOK_QUERY, {
         variables: buildUpdateWebhookVariables(webhook, existingWebhook?.id),
-        onCompleted: data => navigate(`/site-admin/webhooks/${data.updateWebhook.id}`),
+        onCompleted: data => navigate(`/site-admin/webhooks/incoming/${data.updateWebhook.id}`),
     })
 
     return (
@@ -254,7 +254,7 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
                                     </div>
                                     <div className="ml-1">
                                         <ButtonLink
-                                            to={`/site-admin/webhooks/${existingWebhook.id}`}
+                                            to={`/site-admin/webhooks/incoming/${existingWebhook.id}`}
                                             variant="secondary"
                                         >
                                             Cancel

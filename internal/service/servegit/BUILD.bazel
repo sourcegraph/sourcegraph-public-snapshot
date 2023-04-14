@@ -30,6 +30,7 @@ go_library(
 
 go_test(
     name = "servegit_test",
+    timeout = "short",
     srcs = [
         "extsvc_test.go",
         "serve_test.go",

@@ -26,11 +26,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -346,7 +348,7 @@ func serveHome(db database.DB) handlerFunc {
 }
 
 func serveSignIn(db database.DB) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
+	handler := func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, db, "", index, serveError)
 		if err != nil {
 			return err
@@ -358,6 +360,14 @@ func serveSignIn(db database.DB) handlerFunc {
 
 		return renderTemplate(w, "app.html", common)
 	}
+
+	// For app we use an extra middleware to handle passwordless signin via a
+	// nonce.
+	if deploy.IsApp() {
+		return userpasswd.AppSignInMiddleware(db, handler)
+	}
+
+	return handler
 }
 
 func serveEmbed(db database.DB) handlerFunc {

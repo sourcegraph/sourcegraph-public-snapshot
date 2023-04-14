@@ -51,6 +51,8 @@
 
 .legend {
     display: flex;
+    overflow-x: auto;
+    gap: 1.25rem;
     justify-content: space-between;
 
     &-left-panel {

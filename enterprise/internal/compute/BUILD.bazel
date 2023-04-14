@@ -32,6 +32,7 @@ go_library(
 
 go_test(
     name = "compute_test",
+    timeout = "short",
     srcs = [
         "match_only_command_test.go",
         "output_command_test.go",

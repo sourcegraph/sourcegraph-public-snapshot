@@ -20,7 +20,7 @@ const decorator: DecoratorFn = story => (
 )
 
 const config: Meta = {
-    title: 'web/src/site-admin/WebhookInfoLogPageHeader',
+    title: 'web/site-admin/webhooks/incoming/WebhookInfoLogPageHeader',
     decorators: [decorator],
     argTypes: {
         erroredWebhookCount: {

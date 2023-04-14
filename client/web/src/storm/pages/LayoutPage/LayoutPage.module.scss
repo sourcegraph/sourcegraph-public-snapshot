@@ -20,3 +20,7 @@
     flex-direction: column;
     background-color: var(--color-bg-1);
 }
+
+:global(#references-panel-react-portal) {
+    display: contents;
+}

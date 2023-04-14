@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -130,39 +129,12 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, enterpriseJo
 		return nil, errcode.MakeNonRetryable(err)
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
-		hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
-			return hookWithID(ctx, db, logger, gs, monitorID, repoID, args, doSearch)
-		}
-		{
-			// This block is a transitional block that can be removed in a
-			// future version. We need this block to exist when we transition
-			// from timestamp-based code monitors to commit-hash-based
-			// (repo-aware) code monitors.
-			//
-			// When we flip the switch to repo-aware, all existing code
-			// monitors will start executing as repo-aware code monitors.
-			// Without this block, this  would mean all repos would be detected
-			// as "unsearched" and we would start searching from the beginning
-			// of the repo's history, flooding every code monitor user with a
-			// notification with many results.
-			//
-			// Instead, this detects if this monitor has ever been run as a
-			// repo-aware monitor before and snapshots the current state of the
-			// searched repos rather than searching them.
-			hasAnyLastSearched, err := edb.NewEnterpriseDB(db).CodeMonitors().HasAnyLastSearched(ctx, monitorID)
-			if err != nil {
-				return nil, err
-			} else if !hasAnyLastSearched {
-				hook = func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
-					return snapshotHook(ctx, db, gs, args, monitorID, repoID)
-				}
-			}
-		}
-		planJob, err = addCodeMonitorHook(planJob, hook)
-		if err != nil {
-			return nil, errcode.MakeNonRetryable(err)
-		}
+	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
+		return hookWithID(ctx, db, logger, gs, monitorID, repoID, args, doSearch)
+	}
+	planJob, err = addCodeMonitorHook(planJob, hook)
+	if err != nil {
+		return nil, errcode.MakeNonRetryable(err)
 	}
 
 	// Execute the search

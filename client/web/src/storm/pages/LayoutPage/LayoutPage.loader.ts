@@ -19,6 +19,9 @@ export const siteFlagFieldsFragment = gql`
             }
             noLicenseWarningUserCount
         }
+        externalServicesCounts {
+            remoteExternalServicesCount
+        }
     }
 
     fragment SiteFlagAlertFields on Alert {
@@ -41,6 +44,7 @@ const LAYOUT_PAGE_QUERY = gql`
         flag1: evaluateFeatureFlag(flagName: "contrast-compliant-syntax-highlighting")
         flag2: evaluateFeatureFlag(flagName: "cody")
         flag3: evaluateFeatureFlag(flagName: "search-ownership")
+        flag4: evaluateFeatureFlag(flagName: "blob-page-switch-areas-shortcuts")
     }
 
     ${siteFlagFieldsFragment}

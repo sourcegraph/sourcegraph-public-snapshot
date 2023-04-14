@@ -1,16 +1,20 @@
-import { Extension, StateField } from '@codemirror/state'
+import { EditorState, Extension, StateField } from '@codemirror/state'
 import { mdiFilterOutline } from '@mdi/js'
 import { inRange } from 'lodash'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { FilterKind, findFilter, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { isFilterType } from '@sourcegraph/shared/src/search/query/validate'
 
-import { getQueryInformation } from '../../codemirror/parsedQuery'
+import { getQueryInformation, tokens } from '../../codemirror/parsedQuery'
 import { filterValueRenderer } from '../optionRenderer'
 import { suggestionSources } from '../suggestionsExtension'
 
+/**
+ * A suggestion extension which will show most recently entered context: filter if the
+ * current query doesn't contain a context: filter.
+ */
 export function lastUsedContextSuggestion(config: { getContext: () => string | undefined }): Extension {
     return [
         lastContextField,
@@ -85,4 +89,38 @@ const lastContextField = StateField.define<string | undefined>({
         }
         return value
     },
+})
+
+/**
+ * When the user pastes a new value into the input, this extension tries to be smart about
+ * using the correct context: filter.
+ */
+export const overrideContextOnPaste = EditorState.transactionFilter.of(transaction => {
+    if (!transaction.isUserEvent('input.paste')) {
+        return transaction
+    }
+
+    const currentGlobalContext = getGlobalSearchContextFilter(transaction.startState.sliceDoc(0))
+    if (!currentGlobalContext) {
+        return transaction
+    }
+
+    const newValue = transaction.newDoc.sliceString(0)
+    const newGlobalContext = getGlobalSearchContextFilter(newValue)
+    if (newGlobalContext) {
+        // Only a single (global) context: filter present -> nothing to do
+        return transaction
+    }
+
+    // New query is pasted into "empty" input (only contains context: filter)
+    // We assume that the pasted query is always "complete" and clear the current input
+    if (
+        tokens(transaction.startState).every(
+            token => token.type === 'whitespace' || isFilterType(token, FilterType.context)
+        )
+    ) {
+        return [{ changes: { from: 0, to: transaction.startState.doc.length } }, transaction]
+    }
+
+    return transaction
 })

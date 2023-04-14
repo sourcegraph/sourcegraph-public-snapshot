@@ -53,7 +53,7 @@ func redisLoggerMiddleware() Middleware {
 
 			// Read body
 			var requestBody []byte
-			if req != nil && req.Body != nil {
+			if req != nil && req.GetBody != nil {
 				body, _ := req.GetBody()
 				if body != nil {
 					var readErr error

@@ -15,6 +15,7 @@ import (
 	"github.com/graph-gophers/graphql-go/trace/otel"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/log"
 
 	oteltracer "go.opentelemetry.io/otel"
@@ -45,6 +46,7 @@ var (
 	}, []string{"type", "field", "error", "source", "request_name"})
 )
 
+// Note: we have both pointer and value receivers on this type, and we are fine with that.
 type requestTracer struct {
 	DB     database.DB
 	tracer *otel.Tracer
@@ -418,11 +420,16 @@ func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema,
 	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{OwnResolver: own})
 }
 
+func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver CompletionsResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{CompletionsResolver: completionsResolver})
+}
+
 func NewSchema(
 	db database.DB,
 	gitserverClient gitserver.Client,
 	enterpriseJobs jobutil.EnterpriseJobs,
 	optional OptionalResolver,
+	graphqlOpts ...graphql.SchemaOpt,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db, gitserverClient, enterpriseJobs)
 	schemas := []string{mainSchema, outboundWebhooksSchema}
@@ -440,7 +447,20 @@ func NewSchema(
 	if codeIntel := optional.CodeIntelResolver; codeIntel != nil {
 		EnterpriseResolvers.codeIntelResolver = codeIntel
 		resolver.CodeIntelResolver = codeIntel
-		schemas = append(schemas, codeIntelSchema)
+
+		entires, err := codeIntelSchema.ReadDir(".")
+		if err != nil {
+			return nil, err
+		}
+		for _, entry := range entires {
+			content, err := codeIntelSchema.ReadFile(entry.Name())
+			if err != nil {
+				return nil, err
+			}
+
+			schemas = append(schemas, string(content))
+		}
+
 		// Register NodeByID handlers.
 		for kind, res := range codeIntel.NodeResolvers() {
 			resolver.nodeByIDFns[kind] = res
@@ -549,6 +569,12 @@ func NewSchema(
 		}
 	}
 
+	if completionsResolver := optional.CompletionsResolver; completionsResolver != nil {
+		EnterpriseResolvers.completionsResolver = completionsResolver
+		resolver.CompletionsResolver = completionsResolver
+		schemas = append(schemas, completionSchema)
+	}
+
 	if appResolver := optional.AppResolver; appResolver != nil {
 		// Not under enterpriseResolvers, as this is a OSS schema extension.
 		resolver.AppResolver = appResolver
@@ -556,9 +582,7 @@ func NewSchema(
 	}
 
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
-	return graphql.ParseSchema(
-		strings.Join(schemas, "\n"),
-		resolver,
+	opts := []graphql.SchemaOpt{
 		graphql.Tracer(&requestTracer{
 			DB: db,
 			tracer: &otel.Tracer{
@@ -567,7 +591,12 @@ func NewSchema(
 			logger: logger,
 		}),
 		graphql.UseStringDescriptions(),
-	)
+	}
+	opts = append(opts, graphqlOpts...)
+	return graphql.ParseSchema(
+		strings.Join(schemas, "\n"),
+		resolver,
+		opts...)
 }
 
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
@@ -605,6 +634,7 @@ type OptionalResolver struct {
 	RBACResolver
 	OwnResolver
 	AppResolver
+	CompletionsResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -713,8 +743,11 @@ var EnterpriseResolvers = struct {
 	embeddingsResolver          EmbeddingsResolver
 	rbacResolver                RBACResolver
 	ownResolver                 OwnResolver
+	completionsResolver         CompletionsResolver
 }{}
 
+// Root returns a new schemaResolver.
+//
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
 	return newSchemaResolver(r.db, r.gitserverClient, r.enterpriseSearchJobs)

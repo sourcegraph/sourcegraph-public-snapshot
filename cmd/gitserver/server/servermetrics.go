@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/mountinfo"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -42,8 +43,12 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 		return
 	}
 
+	logger := s.Logger
+	if deploy.IsApp() {
+		logger = logger.IncreaseLevel("mountinfo", "", log.LevelError)
+	}
 	opts := mountinfo.CollectorOpts{Namespace: "gitserver"}
-	m := mountinfo.NewCollector(s.Logger, opts, map[string]string{"reposDir": s.ReposDir})
+	m := mountinfo.NewCollector(logger, opts, map[string]string{"reposDir": s.ReposDir})
 	observationCtx.Registerer.MustRegister(m)
 
 	metrics.MustRegisterDiskMonitor(s.ReposDir)

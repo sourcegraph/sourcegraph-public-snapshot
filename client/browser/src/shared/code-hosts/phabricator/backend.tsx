@@ -13,9 +13,8 @@ import { addPhabricatorRepoResult, ResolveStagingRevResult } from '../../../grap
 import { isExtension } from '../../context'
 import { resolveRepo } from '../../repo/backend'
 
-import { normalizeRepoName } from './util'
-
 import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
+import { normalizeRepoName } from './util'
 
 interface PhabEntity {
     id: string // e.g. "48"
@@ -250,7 +249,7 @@ export function getRepoDetailsFromCallsign(
             if (!repo) {
                 throw new Error(`could not locate repo with callsign ${callsign}`)
             }
-            if (!repo.attachments || !repo.attachments.uris) {
+            if (!repo.attachments?.uris) {
                 throw new Error(`could not locate git uri for repo with callsign ${callsign}`)
             }
             return convertConduitRepoToRepoDetails(repo)
@@ -304,7 +303,7 @@ const getRepoDetailsFromRepoPHID = memoizeObservable(
                 if (!repo) {
                     throw new Error(`could not locate repo with phid ${phid}`)
                 }
-                if (!repo.attachments || !repo.attachments.uris) {
+                if (!repo.attachments?.uris) {
                     throw new Error(`could not locate git uri for repo with phid ${phid}`)
                 }
                 return from(convertConduitRepoToRepoDetails(repo)).pipe(
@@ -312,7 +311,7 @@ const getRepoDetailsFromRepoPHID = memoizeObservable(
                         if (!details) {
                             return throwError(new Error('could not parse repo details'))
                         }
-                        if (!repo.fields || !repo.fields.callsign) {
+                        if (!repo.fields?.callsign) {
                             return throwError(new Error('callsign not found'))
                         }
                         return createPhabricatorRepo({

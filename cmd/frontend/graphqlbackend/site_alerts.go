@@ -122,6 +122,18 @@ func init() {
 		log15.Warn("WARNING: possibly misconfigured Prometheus", "error", err)
 	}
 
+	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
+		var alerts []*Alert
+		for _, notification := range conf.Get().Notifications {
+			alerts = append(alerts, &Alert{
+				TypeValue:                 AlertTypeInfo,
+				MessageValue:              notification.Message,
+				IsDismissibleWithKeyValue: notification.Key,
+			})
+		}
+		return alerts
+	})
+
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
 		// 🚨 SECURITY: Only the site admin should care about the site configuration being invalid, as they

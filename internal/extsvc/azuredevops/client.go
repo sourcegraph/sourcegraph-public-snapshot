@@ -2,6 +2,7 @@
 package azuredevops
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -107,9 +108,16 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	queryParams.Set("api-version", apiVersion)
 	req.URL.RawQuery = queryParams.Encode()
 	req.URL = u.ResolveReference(req.URL)
+
+	var reqBody []byte
 	if req.Body != nil {
 		req.Header.Set("Content-Type", "application/json")
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			return "", err
+		}
 	}
+	req.Body = io.NopCloser(bytes.NewReader(reqBody))
 
 	// Add authentication headers for authenticated requests.
 	if err := c.auth.Authenticate(req); err != nil {
@@ -135,12 +143,13 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	numRetries := 0
 	for c.waitForRateLimit && resp.StatusCode == http.StatusTooManyRequests &&
 		numRetries < c.maxRateLimitRetries {
-		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
-			resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
-			numRetries++
-		} else {
-			break
-		}
+		// We always retry since we got a StatusTooManyRequests. This is safe
+		// since we bound retries by maxRateLimitRetries.
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
+		resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
+		numRetries++
 	}
 
 	defer resp.Body.Close()

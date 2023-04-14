@@ -13,6 +13,17 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Fix view on Sourcegraph links on GitHub (global navigation update feature enabled): https://github.com/sourcegraph/sourcegraph/pull/50551
+- Bump code-intel extensions bundles version: https://github.com/sourcegraph/sourcegraph/pull/50631
+
+## Chrome & Firefox 23.3.10.1712, Safari 1.23
+
+- Fix code intelligence popup actions: [pull/49025](https://github.com/sourcegraph/sourcegraph/pull/49025)
+
+## Chrome & Firefox 23.3.8.2218, Safari 1.22
+
+- Fix code intelligence popup actions: [issues/48918](https://github.com/sourcegraph/sourcegraph/issues/48918)
+
 ## Chrome 23.3.1.1624, Firefox 23.3.1.1623, Safari 1.21
 
 - Remove deprecated code-intel endpoints usage.

@@ -240,7 +240,7 @@ export function createProviders(
 
         // Get the first definition and ensure it has a range
         const def = asArray(await (from(result) as Observable<sourcegraph.Definition>).pipe(take(1)).toPromise())[0]
-        if (!def || !def.range) {
+        if (!def?.range) {
             return null
         }
 

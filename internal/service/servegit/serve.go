@@ -236,6 +236,11 @@ func (s *Serve) Repos(root string) ([]Repo, error) {
 
 // Walk is the core repos finding routine.
 func (s *Serve) Walk(root string, repoC chan<- Repo) error {
+	if root == "" {
+		s.Logger.Warn("root path cannot be searched if it is not an absolute path", log.String("path", root))
+		return nil
+	}
+
 	root, err := filepath.EvalSymlinks(root)
 	if err != nil {
 		s.Logger.Warn("ignoring error searching", log.String("path", root), log.Error(err))

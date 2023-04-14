@@ -452,7 +452,11 @@ class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Con
                     map(({ queryConnection }) => queryConnection),
                     distinctUntilChanged(),
                     skip(1), // prevent from triggering on initial mount
-                    tap(() => this.focusFilter())
+                    tap(() => {
+                        if (this.props.autoFocus) {
+                            this.focusFilter()
+                        }
+                    })
                 )
                 .subscribe(() =>
                     this.setState({ loading: true, connectionOrError: undefined }, () =>

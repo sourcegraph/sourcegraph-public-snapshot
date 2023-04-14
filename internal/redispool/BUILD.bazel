@@ -26,6 +26,7 @@ go_library(
 
 go_test(
     name = "redispool_test",
+    timeout = "short",
     srcs = [
         "keyvalue_test.go",
         "naive_test.go",

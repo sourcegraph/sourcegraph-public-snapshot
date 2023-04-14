@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -22,12 +23,13 @@ import (
 )
 
 func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
-	return &repositoryMirrorInfoResolver{repository: r, db: r.db}
+	return &repositoryMirrorInfoResolver{repository: r, db: r.db, gitServerClient: r.gitserverClient}
 }
 
 type repositoryMirrorInfoResolver struct {
-	repository *RepositoryResolver
-	db         database.DB
+	repository      *RepositoryResolver
+	db              database.DB
+	gitServerClient gitserver.Client
 
 	// memoize the repo-updater RepoUpdateSchedulerInfo call
 	repoUpdateSchedulerInfoOnce   sync.Once
@@ -125,7 +127,17 @@ func (r *repositoryMirrorInfoResolver) CloneInProgress(ctx context.Context) (boo
 }
 
 func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*string, error) {
-	progress, err := gitserver.NewClient().RepoCloneProgress(ctx, r.repository.RepoName())
+	if featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false) {
+		info, err := r.computeGitserverRepo(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if info.CloneStatus != types.CloneStatusCloning {
+			return nil, nil
+		}
+		return strptr(info.CloningProgress), nil
+	}
+	progress, err := r.gitServerClient.RepoCloneProgress(ctx, r.repository.RepoName())
 	if err != nil {
 		return nil, err
 	}
@@ -158,6 +170,18 @@ func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*gqlutil.
 	}
 
 	return &gqlutil.DateTime{Time: info.LastFetched}, nil
+}
+
+func (r *repositoryMirrorInfoResolver) NextSyncAt(ctx context.Context) (*gqlutil.DateTime, error) {
+	info, err := r.repoUpdateSchedulerInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if info == nil || info.Schedule == nil || info.Schedule.Due.IsZero() {
+		return nil, nil
+	}
+	return &gqlutil.DateTime{Time: info.Schedule.Due}, nil
 }
 
 func (r *repositoryMirrorInfoResolver) IsCorrupted(ctx context.Context) (bool, error) {
@@ -298,7 +322,6 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		return nil, errors.New("exactly one of the repository and name arguments must be set")
 	}
 
-	gsClient := gitserver.NewClient()
 	var repo *types.Repo
 	switch {
 	case args.Repository != nil:
@@ -306,7 +329,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		if err != nil {
 			return nil, err
 		}
-		repo, err = backend.NewRepos(r.logger, r.db, gsClient).Get(ctx, repoID)
+		repo, err = backend.NewRepos(r.logger, r.db, r.gitserverClient).Get(ctx, repoID)
 		if err != nil {
 			return nil, err
 		}
@@ -316,7 +339,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 	}
 
 	var result checkMirrorRepositoryConnectionResult
-	if err := gsClient.IsRepoCloneable(ctx, repo.Name); err != nil {
+	if err := r.gitserverClient.IsRepoCloneable(ctx, repo.Name); err != nil {
 		result.errorMessage = err.Error()
 	}
 	return &result, nil

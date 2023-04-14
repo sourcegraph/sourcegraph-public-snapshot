@@ -18,6 +18,7 @@ go_library(
 
 go_test(
     name = "rcache_test",
+    timeout = "short",
     srcs = [
         "fifo_list_test.go",
         "rcache_test.go",

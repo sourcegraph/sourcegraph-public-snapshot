@@ -8,7 +8,6 @@ import (
 )
 
 type operations struct {
-	scanDocuments                             *observation.Operation
 	insertDefinitionsAndReferencesForDocument *observation.Operation
 }
 
@@ -33,7 +32,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		scanDocuments: op("ScanDocuments"),
 		insertDefinitionsAndReferencesForDocument: op("InsertDefinitionsAndReferencesForDocument"),
 	}
 }

@@ -1911,8 +1911,8 @@ def go_dependencies():
         build_file_proto_mode = "disable_global",
         importpath = "github.com/fergusstrange/embedded-postgres",
         replace = "github.com/sourcegraph/embedded-postgres",
-        sum = "h1:ZK8uyI3diAyKDlmQx6OioXa0uEwyPMkiCXBVRRlX2uc=",
-        version = "v1.19.1-0.20230222065424-1cc470c429e1",
+        sum = "h1:WBKvD5L1KCrrVsjDRlLU3kiErfMdnDiD4Qbg9URTcAo=",
+        version = "v1.19.1-0.20230313141935-8f62b6947f2c",
     )
 
     go_repository(
@@ -3288,6 +3288,14 @@ def go_dependencies():
         version = "v0.5.4",
     )
     go_repository(
+        name = "com_github_hashicorp_golang_lru_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/hashicorp/golang-lru/v2",
+        sum = "h1:Dwmkdr5Nc/oBiXgJS3CDHNhJtIHkuZ3DZF5twqnfBdU=",
+        version = "v2.0.2",
+    )
+
+    go_repository(
         name = "com_github_hashicorp_hcl",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/hashicorp/hcl",
@@ -3730,8 +3738,8 @@ def go_dependencies():
         name = "com_github_jonboulle_clockwork",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/jonboulle/clockwork",
-        sum = "h1:UOGuzwb1PwsrDAObMuhUnj0p5ULPj8V/xJ7Kx9qUBdQ=",
-        version = "v0.2.2",
+        sum = "h1:9BSCMi8C+0qdApAp4auwX0RkLGUjs956h0EkuQymUhg=",
+        version = "v0.3.0",
     )
     go_repository(
         name = "com_github_jordan_wright_email",
@@ -5328,15 +5336,15 @@ def go_dependencies():
         name = "com_github_russellhaering_gosaml2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/russellhaering/gosaml2",
-        sum = "h1:CNMnH42z/GirrKjdmNrSS6bAAs47F9bPdl4PfRmVOIk=",
-        version = "v0.9.0",
+        sum = "h1:H/whrl8NuSoxyW46Ww5lKPskm+5K+qYLw9afqJ/Zef0=",
+        version = "v0.9.1",
     )
     go_repository(
         name = "com_github_russellhaering_goxmldsig",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/russellhaering/goxmldsig",
-        sum = "h1:Y6GTTc9Un5hCxSzVz4UIWQ/zuVwDvzJk80guqzwx6Vg=",
-        version = "v1.2.0",
+        sum = "h1:DllIWUgMy0cRUMfGiASiYEa35nsieyD3cigIwLonTPM=",
+        version = "v1.3.0",
     )
 
     go_repository(
@@ -5715,16 +5723,16 @@ def go_dependencies():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/scip",
-        sum = "h1:fWPxLkDObzzKTGe9vb6wpzK0FYkwcfSxmxUBvAOc8aw=",
-        version = "v0.2.4-0.20221213205653-aa0e511dcfef",
+        sum = "h1:nl0JdCmCkQYTM1gQWbDJkdaiXyoZiluUzJbyeBDGFe0=",
+        version = "v0.2.4-0.20230403145725-e720fb88e6fd",
     )
 
     go_repository(
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:O834DoaXIyOiQ27/qrev1Pjd79njJru1Kqjwf59ahpg=",
-        version = "v0.0.0-20230308131753-939eb52f3486",
+        sum = "h1:dZN5lUWLL4I3jkxQG9SAtF+Ufv92JnQhNiGoXJfRHjU=",
+        version = "v0.0.0-20230328081101-02541e61dd57",
     )
 
     go_repository(

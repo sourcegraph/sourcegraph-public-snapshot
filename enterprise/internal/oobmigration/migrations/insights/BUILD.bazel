@@ -30,6 +30,7 @@ go_library(
 
 go_test(
     name = "insights_test",
+    timeout = "short",
     srcs = ["migrator_test.go"],
     data = glob(["testdata/**"]),
     embed = [":insights"],

@@ -103,8 +103,15 @@ func (o OrderBy) SQL(ascending bool) *sqlf.Query {
 
 type OrderByOption struct {
 	Field string
-	Nulls string
+	Nulls OrderByNulls
 }
+
+type OrderByNulls string
+
+const (
+	OrderByNullsFirst OrderByNulls = "FIRST"
+	OrderByNullsLast  OrderByNulls = "LAST"
+)
 
 func (o OrderByOption) SQL(ascending bool) *sqlf.Query {
 	var sb strings.Builder
@@ -117,8 +124,8 @@ func (o OrderByOption) SQL(ascending bool) *sqlf.Query {
 		sb.WriteString(" DESC")
 	}
 
-	if o.Nulls == "FIRST" || o.Nulls == "LAST" {
-		sb.WriteString(" NULLS " + o.Nulls)
+	if o.Nulls == OrderByNullsFirst || o.Nulls == OrderByNullsLast {
+		sb.WriteString(" NULLS " + string(o.Nulls))
 	}
 
 	return sqlf.Sprintf(sb.String())

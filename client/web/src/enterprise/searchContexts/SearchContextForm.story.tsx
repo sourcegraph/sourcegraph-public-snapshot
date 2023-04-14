@@ -81,7 +81,6 @@ const authUser: AuthenticatedUser = {
             { id: '1', settingsURL: '#', name: 'BETA', displayName: 'Beta Inc' },
         ] as OrgAreaOrganizationFields[],
     },
-    tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
     tosAccepted: true,

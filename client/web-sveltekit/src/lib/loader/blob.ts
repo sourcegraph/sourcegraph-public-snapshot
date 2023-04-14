@@ -1,8 +1,6 @@
 import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-export { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-
 import { memoizeObservable } from '$lib/common'
 import type {
     BlobFileFields,
@@ -15,6 +13,8 @@ import type {
 import { dataOrThrowErrors, gql } from '$lib/http-client'
 import { makeRepoURI } from '$lib/shared'
 import { requestGraphQL } from '$lib/web'
+
+export { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 
 interface FetchBlobOptions {
     repoName: string

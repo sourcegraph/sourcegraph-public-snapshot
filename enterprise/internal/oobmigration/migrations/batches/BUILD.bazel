@@ -24,6 +24,7 @@ go_library(
 
 go_test(
     name = "batches_test",
+    timeout = "short",
     srcs = [
         "empty_spec_id_migrator_test.go",
         "external_fork_name_migrator_test.go",

@@ -46,8 +46,11 @@ See [GitHub API token and access](#github-api-token-and-access) for more details
 
 The GitHub service requires a `token` in order to access their API. There are two different types of tokens you can supply:
 
-- **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of access to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token.
+- **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of access to repositories as the account that created the token. If you don't want to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token or a fine-grained access token.
+- **[Fine-grained access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#creating-a-fine-grained-personal-access-token)**:<br>Allows scoping access tokens to specific repositories with specific permissions. Consult the [table below](#fine-grained-access-token-permissions) for the required permissions.
 - **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
+
+### Personal access token scopes
 
 No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes) are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
 
@@ -55,7 +58,6 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | [Sync private repositories](#private-repositories)    | `repo`                                                                                                         |
 | [Sync repository permissions][permissions]            | `repo`                                                                                                         |
-| [Repository permissions caching][permissions-caching] | `repo`, `write:org`                                                                                            |
 | [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, `read:discussion`, and `workflow` ([learn more][batch-changes-interactions]) |
 
 [permissions]: #repository-permissions
@@ -73,17 +75,29 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 >
 > Learn more about how the GitHub API is used and what level of access is required in the corresponding feature documentation.
 
-### Fine-grained personal access tokens
+### Fine-grained access token permissions
 
-GitHub's fine-grained personal access tokens are not yet supported.
+Fine-grained tokens can access public repositories, but can only access the private repositories of the account they are scoped to.
 
-## GitHub.com rate limits
+When creating your fine-grained access token, select the following permissions depending on the purpose of the token:
 
-You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
+| Feature                                               | Required token permissions                                  |
+| ----------------------------------------------------- | ------------------------------------------------------ |
+| [Sync private repositories](#private-repositories)    | `Repository permissions: Contents - Access: Read-only` |
+| [Sync repository permissions][permissions]            | `Repository permissions: Contents - Access: Read-only` |
+| [Batch changes][batch-changes]                        | `Unsupported`                                          |
 
-If Sourcegraph hits a rate limit imposed by GitHub.com, Sourcegraph will wait the appropriate amount of time specified by GitHub.com before retrying the request. This can be several minutes in extreme cases.
+<br>
 
-## GitHub Enterprise Server rate limits
+> WARNING: Fine-grained tokens don't support the `repositoryQuery` code host connection option or batch changes. Both of these features rely on GitHub's GraphQL API, which is [unsupported by fine-grained access tokens](https://docs.github.com/en/graphql/guides/forming-calls-with-graphql#authenticating-with-graphql).
+
+## Rate limits
+
+Always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
+
+When Sourcegraph hits a rate limit imposed by GitHub, Sourcegraph waits the appropriate amount of time specified by GitHub before retrying the request. This can be several minutes in extreme cases.
+
+### GitHub Enterprise Server rate limits
 
 Rate limiting may not be enabled by default. To check and verify the current rate limit settings, you may make a request to the `/rate_limit` endpoint like this:
 
@@ -97,14 +111,7 @@ $ curl -s https://<github-enterprise-url>/api/v3/rate_limit -H "Authorization: B
 
 ### Internal rate limits
 
-Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitHub. 
-
-If enabled, the default rate is set at 5000 per hour which can be configured via the `requestsPerHour` field (see below):
-
-- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
-- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
-
-**NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
+See [Internal rate limits](./rate_limits.md#internal-rate-limits).
 
 ## Repository permissions
 
@@ -130,7 +137,7 @@ A [token that has the prerequisite scopes](#github-api-token-and-access) and bot
 
 <span class="virtual-br"></span>
 
-> IMPORTANT: Optional, but strongly recommended - [continue with configuring webhoooks for permissions](../config/webhooks.md#user-permissions).
+> IMPORTANT: Optional, but strongly recommended - [continue with configuring webhoooks for permissions](../config/webhooks/incoming.md#user-permissions).
 
 <span class="virtual-br"></span>
 
@@ -138,13 +145,13 @@ A [token that has the prerequisite scopes](#github-api-token-and-access) and bot
 
 ### Trigger permissions sync from GitHub webhooks
 
-Follow the link to [configure webhooks for permissions for Github](../config/webhooks.md#user-permissions)
+Follow the link to [configure webhooks for permissions for Github](../config/webhooks/incoming.md#user-permissions)
 
 ### Teams and organizations permissions caching
 
 <span class="badge badge-experimental">Experimental</span>
 
-> WARNING: The following section is experimental and might not work properly anymore on new Sourcegraph versions (post 4.0+). Please prefer [configuring webhooks for permissions instead](../config/webhooks.md#user-permissions)
+> WARNING: The following section is experimental and might not work properly anymore on new Sourcegraph versions (post 4.0+). Please prefer [configuring webhooks for permissions instead](../config/webhooks/incoming.md#user-permissions)
 
 Github code host can leverage caching mechanisms to reduce the number of API calls used when syncing permissions. This can significantly reduce the amount of time it takes to perform a full cycle of permissions sync due to reduced instances of being rate limited by the code host, and is useful for code hosts with very large numbers of users and repositories.
 
@@ -209,7 +216,7 @@ To configure GitHub as an authentication provider (which will enable sign-in via
 
 Using the `webhooks` property on the external service has been deprecated.
 
-Please consult [this page](../config/webhooks.md) in order to configure webhooks.
+Please consult [this page](../config/webhooks/incoming.md) in order to configure webhooks.
 
 ## Configuration
 
@@ -234,7 +241,7 @@ When the search rate limit quota is exhausted, an error like `failed to list Git
 
 The  `repositoryQuery` option `"public"` is valuable in that it allows sourcegraph to sync all public repositories, however, it does not return whether or not a repo is archived. This can result in archived repos appearing in normal search. You can see an example of what is returned by the GitHub API for a query to "public" [here](https://docs.github.com/en/rest/reference/repos#list-public-repositories).
 
-If you would like to sync all public repositories while omitting archived repos, consider generating a GitHub token with access to only public repositories, then use `respositoryQuery` with option `affiliated` and an `exclude` argument with option `public` as seen in the example below:
+If you would like to sync all public repositories while omitting archived repos, consider generating a GitHub token with access to only public repositories, then use `repositoryQuery` with option `affiliated` and an `exclude` argument with option `public` as seen in the example below:
 ```
 {
     "url": "https://github.example.com",

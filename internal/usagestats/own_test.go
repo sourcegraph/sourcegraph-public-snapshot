@@ -101,7 +101,7 @@ func TestGetOwnershipUsageStatsReposCountNoRepos(t *testing.T) {
 	}
 }
 
-func TestGetOwnershipUsageStatsReposCountNoStats(t *testing.T) {
+func TestGetOwnershipUsageStatsReposCountStatsNotCompacted(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -130,11 +130,11 @@ func TestGetOwnershipUsageStatsReposCountNoStats(t *testing.T) {
 	iptr := func(i int32) *int32 { return &i }
 	want := &types.OwnershipUsageReposCounts{
 		// Can have zero repos and one ingested ownership then.
-		Total:                 iptr(0),
+		Total:                 iptr(2),
 		WithIngestedOwnership: iptr(1),
 	}
 	if diff := cmp.Diff(want, stats.ReposCount); diff != "" {
-		t.Errorf("GetOwnershipUsageStates.ReposCount, +want,-got:\n%s", diff)
+		t.Errorf("GetOwnershipUsageStates.ReposCount, -want,+got:\n%s", diff)
 	}
 }
 

@@ -1,35 +1,37 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { isEqual } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Container, Input, LoadingSpinner, ErrorAlert, PageSwitcher } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, Input, LoadingSpinner, PageSwitcher } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
     buildFilterArgs,
     FilterControl,
-    FilteredConnectionFilterValue,
     FilteredConnectionFilter,
+    FilteredConnectionFilterValue,
 } from '../components/FilteredConnection'
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import {
+    ExternalServiceIDsAndNamesResult,
+    ExternalServiceIDsAndNamesVariables,
     RepositoriesResult,
     RepositoriesVariables,
     RepositoryOrderBy,
-    RepositoryStatsResult,
-    ExternalServiceIDsAndNamesVariables,
-    ExternalServiceIDsAndNamesResult,
-    RepositoryStatsVariables,
     SiteAdminRepositoryFields,
+    StatusAndRepoStatsResult,
 } from '../graphql-operations'
 import { PageRoutes } from '../routes.constants'
 
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
-import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
+import { REPOSITORIES_QUERY, REPO_PAGE_POLL_INTERVAL, STATUS_AND_REPO_STATS } from './backend'
 import { RepositoryNode } from './RepositoryNode'
+
+import styles from './SiteAdminRepositoriesContainer.module.scss'
 
 const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
     All: {
@@ -141,9 +143,10 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
         error: repoStatsError,
         startPolling,
         stopPolling,
-    } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {})
+    } = useQuery<StatusAndRepoStatsResult>(STATUS_AND_REPO_STATS, {})
     const location = useLocation()
     const navigate = useNavigate()
+    const [displayCloneProgress] = useFeatureFlag('clone-progress-logging')
 
     useEffect(() => {
         if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
@@ -248,8 +251,9 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             corrupted: args.corrupted ?? false,
             cloneStatus: args.cloneStatus ?? null,
             externalService: args.externalService ?? null,
+            displayCloneProgress,
         } as RepositoriesVariables
-    }, [searchQuery, filterValues])
+    }, [searchQuery, filterValues, displayCloneProgress])
 
     const {
         connection,
@@ -378,11 +382,11 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
         <>
             <Container className="py-3 mb-1">
                 {error && !loading && <ErrorAlert error={error} />}
-                {legends && <ValueLegendList items={legends} />}
+                {legends && <ValueLegendList items={legends} className={styles.legend} />}
             </Container>
             {extSvcs && (
                 <Container>
-                    <div className="d-flex justify-content-center">
+                    <div className="d-flex flex-sm-row flex-column-reverse justify-content-center">
                         <FilterControl
                             filters={filters}
                             values={filterValues}
@@ -396,7 +400,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
                         />
                         <Input
                             type="search"
-                            className="flex-1 ml-5"
+                            className="flex-1 md-ml-5 mb-1"
                             placeholder="Search repositories..."
                             name="query"
                             value={searchQuery}

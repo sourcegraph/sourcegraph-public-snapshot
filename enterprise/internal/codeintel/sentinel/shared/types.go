@@ -2,11 +2,6 @@ package shared
 
 import "time"
 
-type GetVulnerabilitiesArgs struct {
-	Limit  int
-	Offset int
-}
-
 type Vulnerability struct {
 	ID               int    // internal ID
 	SourceID         string // external ID
@@ -49,14 +44,42 @@ type AffectedSymbol struct {
 	Symbols []string `json:"symbols"`
 }
 
-type GetVulnerabilityMatchesArgs struct {
-	Limit  int
-	Offset int
-}
-
 type VulnerabilityMatch struct {
 	ID              int
 	UploadID        int
 	VulnerabilityID int
 	AffectedPackage AffectedPackage
+}
+
+type GetVulnerabilitiesArgs struct {
+	Limit  int
+	Offset int
+}
+
+type GetVulnerabilityMatchesArgs struct {
+	Limit          int
+	Offset         int
+	Severity       string
+	Language       string
+	RepositoryName string
+}
+
+type GetVulnerabilityMatchesSummaryCounts struct {
+	Critical     int32
+	High         int32
+	Medium       int32
+	Low          int32
+	Repositories int32
+}
+
+type GetVulnerabilityMatchesCountByRepositoryArgs struct {
+	RepositoryName string
+	Limit          int
+	Offset         int
+}
+
+type VulnerabilityMatchesByRepository struct {
+	ID             int
+	RepositoryName string
+	MatchCount     int32
 }

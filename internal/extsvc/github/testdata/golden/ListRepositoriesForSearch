@@ -11,6 +11,8 @@
    "IsLocked": false,
    "IsDisabled": false,
    "ViewerPermission": "READ",
-   "RepositoryTopics": {}
+   "RepositoryTopics": {
+    "Nodes": []
+   }
   }
  ]

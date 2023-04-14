@@ -29,6 +29,7 @@ go_library(
 
 go_test(
     name = "store_test",
+    timeout = "short",
     srcs = ["store_test.go"],
     embed = [":store"],
     tags = [
@@ -40,6 +41,7 @@ go_test(
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/observation",
+        "//internal/timeutil",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//logtest",
     ],

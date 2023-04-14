@@ -50,7 +50,7 @@ func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {
 		return errors.Wrap(err, "failed to list package repo filters")
 	}
 
-	allowlist, blocklist, err := packagefilters.NewFilterLists(filters)
+	packageFilters, err := packagefilters.NewFilterLists(filters)
 	if err != nil {
 		return err
 	}
@@ -78,9 +78,9 @@ func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {
 		lastID = pkgs[len(pkgs)-1].ID
 
 		for i, pkg := range pkgs {
-			pkg.Blocked = !packagefilters.IsPackageAllowed(pkg.Name, allowlist, blocklist)
+			pkg.Blocked = !packagefilters.IsPackageAllowed(pkg.Scheme, pkg.Name, packageFilters)
 			for j, version := range pkg.Versions {
-				pkg.Versions[j].Blocked = !packagefilters.IsVersionedPackageAllowed(pkg.Name, version.Version, allowlist, blocklist)
+				pkg.Versions[j].Blocked = !packagefilters.IsVersionedPackageAllowed(pkg.Scheme, pkg.Name, version.Version, packageFilters)
 			}
 			pkgs[i] = pkg
 		}

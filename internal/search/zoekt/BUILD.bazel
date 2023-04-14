@@ -48,6 +48,7 @@ go_library(
 
 go_test(
     name = "zoekt_test",
+    timeout = "short",
     srcs = [
         "indexed_search_test.go",
         "query_test.go",

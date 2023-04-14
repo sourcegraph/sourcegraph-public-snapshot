@@ -6,11 +6,13 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestRolePermissionAssign(t *testing.T) {
@@ -20,6 +22,15 @@ func TestRolePermissionAssign(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.RolePermissions()
+	roleStore := db.Roles()
+
+	siteAdminRole, err := roleStore.Get(ctx, GetRoleOpts{Name: string(types.SiteAdministratorSystemRole)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if siteAdminRole == nil {
+		t.Fatal("site admin role not found")
+	}
 
 	r, p := createRoleAndPermission(ctx, t, db)
 
@@ -35,6 +46,24 @@ func TestRolePermissionAssign(t *testing.T) {
 			PermissionID: p.ID,
 		})
 		require.ErrorContains(t, err, "missing role id")
+	})
+
+	t.Run("with non-existent role", func(t *testing.T) {
+		err := store.Assign(ctx, AssignRolePermissionOpts{
+			RoleID:       999999,
+			PermissionID: p.ID,
+		})
+		require.Error(t, err)
+		require.Equal(t, err, &RoleNotFoundErr{ID: 999999})
+	})
+
+	t.Run("with site admin role", func(t *testing.T) {
+		err := store.Assign(ctx, AssignRolePermissionOpts{
+			RoleID:       siteAdminRole.ID,
+			PermissionID: p.ID,
+		})
+		require.Error(t, err)
+		require.ErrorContains(t, err, "cannot modify permissions for site admin role")
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -74,7 +103,7 @@ func TestRolePermissionAssignToSystemRole(t *testing.T) {
 
 	t.Run("without permission id", func(t *testing.T) {
 		err := store.AssignToSystemRole(ctx, AssignToSystemRoleOpts{
-			Role: types.SiteAdministratorSystemRole,
+			Role: types.UserSystemRole,
 		})
 		require.ErrorContains(t, err, "permission id is required")
 	})
@@ -86,10 +115,18 @@ func TestRolePermissionAssignToSystemRole(t *testing.T) {
 		require.ErrorContains(t, err, "role is required")
 	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("with site admin role", func(t *testing.T) {
 		err := store.AssignToSystemRole(ctx, AssignToSystemRoleOpts{
 			PermissionID: p.ID,
 			Role:         types.SiteAdministratorSystemRole,
+		})
+		require.ErrorContains(t, err, "site administrator role cannot be modified")
+	})
+
+	t.Run("success", func(t *testing.T) {
+		err := store.AssignToSystemRole(ctx, AssignToSystemRoleOpts{
+			PermissionID: p.ID,
+			Role:         types.UserSystemRole,
 		})
 		require.NoError(t, err)
 
@@ -103,7 +140,7 @@ func TestRolePermissionAssignToSystemRole(t *testing.T) {
 		// This shouldn't fail the second time since we're upserting.
 		err = store.AssignToSystemRole(ctx, AssignToSystemRoleOpts{
 			PermissionID: p.ID,
-			Role:         types.SiteAdministratorSystemRole,
+			Role:         types.UserSystemRole,
 		})
 		require.NoError(t, err)
 	})
@@ -306,10 +343,19 @@ func TestRolePermissionRevoke(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.RolePermissions()
+	roleStore := db.Roles()
+
+	siteAdminRole, err := roleStore.Get(ctx, GetRoleOpts{Name: string(types.SiteAdministratorSystemRole)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if siteAdminRole == nil {
+		t.Fatal("site admin role not found")
+	}
 
 	r, p := createRoleAndPermission(ctx, t, db)
 
-	err := store.Assign(ctx, AssignRolePermissionOpts{
+	err = store.Assign(ctx, AssignRolePermissionOpts{
 		RoleID:       r.ID,
 		PermissionID: p.ID,
 	})
@@ -333,12 +379,29 @@ func TestRolePermissionRevoke(t *testing.T) {
 		require.Equal(t, err.Error(), "missing role id")
 	})
 
+	t.Run("with non-existent role", func(t *testing.T) {
+		err := store.Revoke(ctx, RevokeRolePermissionOpts{
+			RoleID:       999999,
+			PermissionID: p.ID,
+		})
+		require.Error(t, err)
+		require.Equal(t, err, &RoleNotFoundErr{ID: 999999})
+	})
+
+	t.Run("with site admin role", func(t *testing.T) {
+		err := store.Revoke(ctx, RevokeRolePermissionOpts{
+			RoleID:       siteAdminRole.ID,
+			PermissionID: p.ID,
+		})
+		require.Error(t, err)
+		require.ErrorContains(t, err, "cannot modify permissions for site admin role")
+	})
+
 	t.Run("with non-existent role permission", func(t *testing.T) {
-		roleID := int32(1234)
 		permissionID := int32(4321)
 
 		err := store.Revoke(ctx, RevokeRolePermissionOpts{
-			RoleID:       roleID,
+			RoleID:       r.ID,
 			PermissionID: permissionID,
 		})
 		require.Error(t, err)
@@ -372,6 +435,15 @@ func TestBulkAssignPermissionsToRole(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.RolePermissions()
+	roleStore := db.Roles()
+
+	siteAdminRole, err := roleStore.Get(ctx, GetRoleOpts{Name: string(types.SiteAdministratorSystemRole)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if siteAdminRole == nil {
+		t.Fatal("site admin role not found")
+	}
 
 	numberOfPerms := 4
 	var perms []int32
@@ -392,6 +464,24 @@ func TestBulkAssignPermissionsToRole(t *testing.T) {
 			RoleID: role.ID,
 		})
 		require.ErrorContains(t, err, "missing permissions")
+	})
+
+	t.Run("with non-existent role", func(t *testing.T) {
+		err := store.BulkAssignPermissionsToRole(ctx, BulkAssignPermissionsToRoleOpts{
+			RoleID:      999999,
+			Permissions: perms,
+		})
+		require.Error(t, err)
+		require.Equal(t, err, &RoleNotFoundErr{ID: 999999})
+	})
+
+	t.Run("with site admin role", func(t *testing.T) {
+		err := store.BulkAssignPermissionsToRole(ctx, BulkAssignPermissionsToRoleOpts{
+			RoleID:      siteAdminRole.ID,
+			Permissions: perms,
+		})
+		require.Error(t, err)
+		require.ErrorContains(t, err, "cannot modify permissions for site admin role")
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -420,11 +510,20 @@ func TestBulkRevokePermissionsForRole(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.RolePermissions()
+	roleStore := db.Roles()
+
+	siteAdminRole, err := roleStore.Get(ctx, GetRoleOpts{Name: string(types.SiteAdministratorSystemRole)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if siteAdminRole == nil {
+		t.Fatal("site admin role not found")
+	}
 
 	role, permission := createRoleAndPermission(ctx, t, db)
 	permissionTwo := createTestPermissionForRolePermission(ctx, "READ-1-2", t, db)
 
-	err := store.BulkAssignPermissionsToRole(ctx, BulkAssignPermissionsToRoleOpts{
+	err = store.BulkAssignPermissionsToRole(ctx, BulkAssignPermissionsToRoleOpts{
 		RoleID:      role.ID,
 		Permissions: []int32{permission.ID, permissionTwo.ID},
 	})
@@ -440,6 +539,24 @@ func TestBulkRevokePermissionsForRole(t *testing.T) {
 			RoleID: role.ID,
 		})
 		require.ErrorContains(t, err, "missing permissions")
+	})
+
+	t.Run("with non-existent role", func(t *testing.T) {
+		err := store.BulkRevokePermissionsForRole(ctx, BulkRevokePermissionsForRoleOpts{
+			RoleID:      999999,
+			Permissions: []int32{permission.ID, permissionTwo.ID},
+		})
+		require.Error(t, err)
+		require.Equal(t, err, &RoleNotFoundErr{ID: 999999})
+	})
+
+	t.Run("with site admin role", func(t *testing.T) {
+		err := store.BulkRevokePermissionsForRole(ctx, BulkRevokePermissionsForRoleOpts{
+			RoleID:      siteAdminRole.ID,
+			Permissions: []int32{permission.ID, permissionTwo.ID},
+		})
+		require.Error(t, err)
+		require.ErrorContains(t, err, "cannot modify permissions for site admin role")
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -462,6 +579,15 @@ func TestSetPermissionsForRole(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.RolePermissions()
+	roleStore := db.Roles()
+
+	siteAdminRole, err := roleStore.Get(ctx, GetRoleOpts{Name: string(types.SiteAdministratorSystemRole)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if siteAdminRole == nil {
+		t.Fatal("site admin role not found")
+	}
 
 	role := createTestRoleForRolePermission(ctx, "TEST-ROLE-1", t, db)
 	role2 := createTestRoleForRolePermission(ctx, "TEST-ROLE-2", t, db)
@@ -470,7 +596,7 @@ func TestSetPermissionsForRole(t *testing.T) {
 	permissionOne := createTestPermissionForRolePermission(ctx, "READ-1-1", t, db)
 	permissionTwo := createTestPermissionForRolePermission(ctx, "READ-1-2", t, db)
 
-	err := store.BulkAssignPermissionsToRole(ctx, BulkAssignPermissionsToRoleOpts{
+	err = store.BulkAssignPermissionsToRole(ctx, BulkAssignPermissionsToRoleOpts{
 		RoleID:      role.ID,
 		Permissions: []int32{permissionOne.ID},
 	})
@@ -485,6 +611,35 @@ func TestSetPermissionsForRole(t *testing.T) {
 	t.Run("without role id", func(t *testing.T) {
 		err := store.SetPermissionsForRole(ctx, SetPermissionsForRoleOpts{})
 		require.ErrorContains(t, err, "missing role id")
+	})
+
+	t.Run("with non-existent role", func(t *testing.T) {
+		err := store.SetPermissionsForRole(ctx, SetPermissionsForRoleOpts{
+			RoleID:      999999,
+			Permissions: []int32{},
+		})
+
+		expected := []error{&RoleNotFoundErr{ID: 999999}}
+		var errs errors.MultiError
+		if !errors.As(err, &errs) {
+			t.Errorf("unexpected error of type %T: %+v", err, err)
+		} else if diff := cmp.Diff(expected, errs.Errors()); diff != "" {
+			t.Errorf("unexpected error (-want +have):\n%s", diff)
+		}
+	})
+
+	t.Run("with site admin role", func(t *testing.T) {
+		err := store.SetPermissionsForRole(ctx, SetPermissionsForRoleOpts{
+			RoleID:      siteAdminRole.ID,
+			Permissions: []int32{permissionOne.ID},
+		})
+
+		var errs errors.MultiError
+		if !errors.As(err, &errs) {
+			t.Errorf("unexpected error of type %T: %+v", err, err)
+		} else if len(errs.Errors()) != 1 || errs.Errors()[0].Error() != "cannot modify permissions for site admin role" {
+			t.Errorf("got wrong error. got %v, want: %v", errs.Errors(), "cannot modify permissions for site admin role")
+		}
 	})
 
 	t.Run("revoke only", func(t *testing.T) {

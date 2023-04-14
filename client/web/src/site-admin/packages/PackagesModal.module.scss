@@ -3,3 +3,10 @@
     max-width: 60rem;
     margin: 5rem 0;
 }
+
+.header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    flex-flow: nowrap;
+}

@@ -1,5 +1,3 @@
-import 'message-port-polyfill'
-
 import { Remote } from 'comlink'
 import { throwError, of, Subscription, Unsubscribable, Subscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'

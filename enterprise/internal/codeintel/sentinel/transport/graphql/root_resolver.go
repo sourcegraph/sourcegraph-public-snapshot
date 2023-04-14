@@ -2,150 +2,175 @@ package graphql
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
+	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type rootResolver struct {
-	sentinelSvc             SentinelService
-	autoindexSvc            sharedresolvers.AutoIndexingService
-	uploadSvc               sharedresolvers.UploadsService
-	policySvc               sharedresolvers.PolicyService
-	siteAdminChecker        sharedresolvers.SiteAdminChecker
-	repoStore               database.RepoStore
-	prefetcherFactory       *sharedresolvers.PrefetcherFactory
-	bulkLoaderFactory       *bulkLoaderFactory
-	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory
-	operations              *operations
+	sentinelSvc                 SentinelService
+	vulnerabilityLoaderFactory  VulnerabilityLoaderFactory
+	uploadLoaderFactory         uploadsgraphql.UploadLoaderFactory
+	indexLoaderFactory          uploadsgraphql.IndexLoaderFactory
+	locationResolverFactory     *gitresolvers.CachedLocationResolverFactory
+	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
+	operations                  *operations
 }
 
 func NewRootResolver(
 	observationCtx *observation.Context,
 	sentinelSvc SentinelService,
-	autoindexSvc sharedresolvers.AutoIndexingService,
-	uploadSvc sharedresolvers.UploadsService,
-	policySvc sharedresolvers.PolicyService,
-	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	repoStore database.RepoStore,
-	prefetcherFactory *sharedresolvers.PrefetcherFactory,
-	locationResolverFactory *sharedresolvers.CachedLocationResolverFactory,
+	uploadLoaderFactory uploadsgraphql.UploadLoaderFactory,
+	indexLoaderFactory uploadsgraphql.IndexLoaderFactory,
+	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
+	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
 ) resolverstubs.SentinelServiceResolver {
 	return &rootResolver{
-		sentinelSvc:             sentinelSvc,
-		autoindexSvc:            autoindexSvc,
-		uploadSvc:               uploadSvc,
-		policySvc:               policySvc,
-		siteAdminChecker:        siteAdminChecker,
-		repoStore:               repoStore,
-		prefetcherFactory:       prefetcherFactory,
-		bulkLoaderFactory:       &bulkLoaderFactory{sentinelSvc},
-		locationResolverFactory: locationResolverFactory,
-		operations:              newOperations(observationCtx),
+		sentinelSvc:                 sentinelSvc,
+		vulnerabilityLoaderFactory:  NewVulnerabilityLoaderFactory(sentinelSvc),
+		uploadLoaderFactory:         uploadLoaderFactory,
+		indexLoaderFactory:          indexLoaderFactory,
+		locationResolverFactory:     locationResolverFactory,
+		preciseIndexResolverFactory: preciseIndexResolverFactory,
+		operations:                  newOperations(observationCtx),
 	}
 }
 
 func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.GetVulnerabilitiesArgs) (_ resolverstubs.VulnerabilityConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.getVulnerabilities.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := r.operations.getVulnerabilities.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int32("first", resolverstubs.Deref(args.First, 0)),
+		log.String("after", resolverstubs.Deref(args.After, "")),
+	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	limit := 50
-	if args.First != nil {
-		limit = int(*args.First)
-	}
-
-	offset := 0
-	if args.After != nil {
-		after, err := strconv.Atoi(*args.After)
-		if err != nil {
-			return nil, err
-		}
-
-		offset = after
+	limit, offset, err := args.ParseLimitOffset(50)
+	if err != nil {
+		return nil, err
 	}
 
 	vulnerabilities, totalCount, err := r.sentinelSvc.GetVulnerabilities(ctx, shared.GetVulnerabilitiesArgs{
-		Limit:  limit,
-		Offset: offset,
+		Limit:  int(limit),
+		Offset: int(offset),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &vulnerabilityConnectionResolver{
-		vulnerabilities: vulnerabilities,
-		offset:          offset,
-		totalCount:      totalCount,
-	}, nil
+	var resolvers []resolverstubs.VulnerabilityResolver
+	for _, v := range vulnerabilities {
+		resolvers = append(resolvers, &vulnerabilityResolver{v: v})
+	}
+
+	return resolverstubs.NewTotalCountConnectionResolver(resolvers, offset, int32(totalCount)), nil
 }
 
 func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.GetVulnerabilityMatchesArgs) (_ resolverstubs.VulnerabilityMatchConnectionResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.getMatches.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, errTracer, endObservation := r.operations.getMatches.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int32("first", resolverstubs.Deref(args.First, 0)),
+		log.String("after", resolverstubs.Deref(args.After, "")),
+	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	limit := 50
-	if args.First != nil {
-		limit = int(*args.First)
+	limit, offset, err := args.ParseLimitOffset(50)
+	if err != nil {
+		return nil, err
 	}
 
-	offset := 0
-	if args.After != nil {
-		after, err := strconv.Atoi(*args.After)
-		if err != nil {
-			return nil, err
-		}
+	language := ""
+	if args.Language != nil {
+		language = *args.Language
+	}
 
-		offset = after
+	severity := ""
+	if args.Severity != nil {
+		severity = *args.Severity
+	}
+
+	repositoryName := ""
+	if args.RepositoryName != nil {
+		repositoryName = *args.RepositoryName
 	}
 
 	matches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatches(ctx, shared.GetVulnerabilityMatchesArgs{
-		Limit:  limit,
-		Offset: offset,
+		Limit:          int(limit),
+		Offset:         int(offset),
+		Language:       language,
+		Severity:       severity,
+		RepositoryName: repositoryName,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := r.prefetcherFactory.Create()
-	bulkLoader := r.bulkLoaderFactory.Create()
+	// Pre-submit vulnerability and upload ids for loading
+	vulnerabilityLoader := r.vulnerabilityLoaderFactory.Create()
+	uploadLoader := r.uploadLoaderFactory.Create()
+	PresubmitMatches(vulnerabilityLoader, uploadLoader, matches...)
 
-	for _, match := range matches {
-		prefetcher.MarkUpload(match.UploadID)
-		bulkLoader.MarkVulnerability(match.VulnerabilityID)
+	// No data to load for associated indexes or git data (yet)
+	indexLoader := r.indexLoaderFactory.Create()
+	locationResolver := r.locationResolverFactory.Create()
+
+	var resolvers []resolverstubs.VulnerabilityMatchResolver
+	for _, m := range matches {
+		resolvers = append(resolvers, &vulnerabilityMatchResolver{
+			uploadLoader:        uploadLoader,
+			indexLoader:         indexLoader,
+			locationResolver:    locationResolver,
+			errTracer:           errTracer,
+			vulnerabilityLoader: vulnerabilityLoader,
+			m:                   m,
+		})
 	}
 
-	return &vulnerabilityMatchConnectionResolver{
-		sentinelSvc:      r.sentinelSvc,
-		autoindexSvc:     r.autoindexSvc,
-		uploadSvc:        r.uploadSvc,
-		policySvc:        r.policySvc,
-		siteAdminChecker: r.siteAdminChecker,
-		prefetcher:       prefetcher,
-		locationResolver: r.locationResolverFactory.Create(),
-		errTracer:        errTracer,
-		bulkLoader:       bulkLoader,
-		matches:          matches,
-		offset:           offset,
-		totalCount:       totalCount,
-	}, nil
+	return resolverstubs.NewTotalCountConnectionResolver(resolvers, offset, int32(totalCount)), nil
 }
 
-func (r *rootResolver) VulnerabilityByID(ctx context.Context, gqlID graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
-	ctx, _, endObservation := r.operations.vulnerabilityByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+func (r *rootResolver) VulnerabilityMatchesCountByRepository(ctx context.Context, args resolverstubs.GetVulnerabilityMatchCountByRepositoryArgs) (_ resolverstubs.VulnerabilityMatchCountByRepositoryConnectionResolver, err error) {
+	ctx, _, endObservation := r.operations.vulnerabilityMatchesCountByRepository.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	id, err := unmarshalVulnerabilityGQLID(gqlID)
+	limit, offset, err := args.ParseLimitOffset(50)
+	if err != nil {
+		return nil, err
+	}
+
+	repositoryName := ""
+	if args.RepositoryName != nil {
+		repositoryName = *args.RepositoryName
+	}
+
+	vulnerabilityCounts, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesCountByRepository(ctx, shared.GetVulnerabilityMatchesCountByRepositoryArgs{
+		Limit:          int(limit),
+		Offset:         int(offset),
+		RepositoryName: repositoryName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var resolvers []resolverstubs.VulnerabilityMatchCountByRepositoryResolver
+	for _, v := range vulnerabilityCounts {
+		resolvers = append(resolvers, &vulnerabilityMatchCountByRepositoryResolver{v: v})
+	}
+
+	return resolverstubs.NewTotalCountConnectionResolver(resolvers, offset, int32(totalCount)), nil
+}
+
+func (r *rootResolver) VulnerabilityByID(ctx context.Context, vulnerabilityID graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
+	ctx, _, endObservation := r.operations.vulnerabilityByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("vulnerabilityID", string(vulnerabilityID)),
+	}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	id, err := resolverstubs.UnmarshalID[int](vulnerabilityID)
 	if err != nil {
 		return nil, err
 	}
@@ -158,11 +183,13 @@ func (r *rootResolver) VulnerabilityByID(ctx context.Context, gqlID graphql.ID) 
 	return &vulnerabilityResolver{vulnerability}, nil
 }
 
-func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, gqlID graphql.ID) (_ resolverstubs.VulnerabilityMatchResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, vulnerabilityMatchID graphql.ID) (_ resolverstubs.VulnerabilityMatchResolver, err error) {
+	ctx, errTracer, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("vulnerabilityMatchID", string(vulnerabilityMatchID)),
+	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	id, err := unmarshalVulnerabilityMatchGQLID(gqlID)
+	id, err := resolverstubs.UnmarshalID[int](vulnerabilityMatchID)
 	if err != nil {
 		return nil, err
 	}
@@ -172,18 +199,42 @@ func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, gqlID graphql
 		return nil, err
 	}
 
+	// Pre-submit vulnerability and upload ids for loading
+	vulnerabilityLoader := r.vulnerabilityLoaderFactory.Create()
+	uploadLoader := r.uploadLoaderFactory.Create()
+	PresubmitMatches(vulnerabilityLoader, uploadLoader, match)
+
+	// No data to load for associated indexes or git data (yet)
+	indexLoader := r.indexLoaderFactory.Create()
+	locationResolver := r.locationResolverFactory.Create()
+
 	return &vulnerabilityMatchResolver{
-		sentinelSvc:      r.sentinelSvc,
-		autoindexSvc:     r.autoindexSvc,
-		uploadSvc:        r.uploadSvc,
-		policySvc:        r.policySvc,
-		siteAdminChecker: r.siteAdminChecker,
-		repoStore:        r.repoStore,
-		prefetcher:       r.prefetcherFactory.Create(),
-		locationResolver: r.locationResolverFactory.Create(),
-		errTracer:        errTracer,
-		bulkLoader:       r.bulkLoaderFactory.Create(),
-		m:                match,
+		uploadLoader:     uploadLoader,
+		indexLoader:      indexLoader,
+		locationResolver: locationResolver,
+
+		errTracer:                   errTracer,
+		vulnerabilityLoader:         vulnerabilityLoader,
+		m:                           match,
+		preciseIndexResolverFactory: r.preciseIndexResolverFactory,
+	}, nil
+}
+
+func (r *rootResolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ resolverstubs.VulnerabilityMatchesSummaryCountResolver, err error) {
+	ctx, _, endObservation := r.operations.vulnerabilityMatchesSummaryCounts.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	counts, err := r.sentinelSvc.GetVulnerabilityMatchesSummaryCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &vulnerabilityMatchesSummaryCountResolver{
+		critical:   counts.Critical,
+		high:       counts.High,
+		medium:     counts.Medium,
+		low:        counts.Low,
+		repository: counts.Repositories,
 	}, nil
 }
 
@@ -194,7 +245,9 @@ type vulnerabilityResolver struct {
 	v shared.Vulnerability
 }
 
-func (r *vulnerabilityResolver) ID() graphql.ID     { return marshalVulnerabilityGQLID(r.v.ID) }
+func (r *vulnerabilityResolver) ID() graphql.ID {
+	return resolverstubs.MarshalID("Vulnerability", r.v.ID)
+}
 func (r *vulnerabilityResolver) SourceID() string   { return r.v.SourceID }
 func (r *vulnerabilityResolver) Summary() string    { return r.v.Summary }
 func (r *vulnerabilityResolver) Details() string    { return r.v.Details }
@@ -262,57 +315,22 @@ type vulnerabilityAffectedSymbolResolver struct {
 func (r *vulnerabilityAffectedSymbolResolver) Path() string      { return r.s.Path }
 func (r *vulnerabilityAffectedSymbolResolver) Symbols() []string { return r.s.Symbols }
 
-//
-//
-
-type bulkLoaderFactory struct {
-	sentinelSvc SentinelService
-}
-
-func (f *bulkLoaderFactory) Create() *bulkLoader {
-	return NewBulkLoader(f.sentinelSvc)
-}
-
-type bulkLoader struct {
-	loader *sharedresolvers.DataLoader[int, shared.Vulnerability]
-}
-
-func NewBulkLoader(sentinelSvc SentinelService) *bulkLoader {
-	return &bulkLoader{
-		loader: sharedresolvers.NewDataLoader[int, shared.Vulnerability](sharedresolvers.DataLoaderBackingServiceFunc[int, shared.Vulnerability](func(ctx context.Context, ids ...int) ([]shared.Vulnerability, error) {
-			return sentinelSvc.GetVulnerabilitiesByIDs(ctx, ids...)
-		})),
-	}
-}
-
-func (l *bulkLoader) MarkVulnerability(id int) {
-	l.loader.Presubmit(id)
-}
-
-func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (shared.Vulnerability, bool, error) {
-	return l.loader.GetByID(ctx, id)
-}
-
 type vulnerabilityMatchResolver struct {
-	sentinelSvc      SentinelService
-	autoindexSvc     sharedresolvers.AutoIndexingService
-	uploadSvc        sharedresolvers.UploadsService
-	policySvc        sharedresolvers.PolicyService
-	siteAdminChecker sharedresolvers.SiteAdminChecker
-	repoStore        database.RepoStore
-	prefetcher       *sharedresolvers.Prefetcher
-	locationResolver *sharedresolvers.CachedLocationResolver
-	errTracer        *observation.ErrCollector
-	bulkLoader       *bulkLoader
-	m                shared.VulnerabilityMatch
+	uploadLoader                uploadsgraphql.UploadLoader
+	indexLoader                 uploadsgraphql.IndexLoader
+	locationResolver            *gitresolvers.CachedLocationResolver
+	errTracer                   *observation.ErrCollector
+	vulnerabilityLoader         VulnerabilityLoader
+	m                           shared.VulnerabilityMatch
+	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
 }
 
 func (r *vulnerabilityMatchResolver) ID() graphql.ID {
-	return marshalVulnerabilityMatchGQLID(r.m.ID)
+	return resolverstubs.MarshalID("VulnerabilityMatch", r.m.ID)
 }
 
 func (r *vulnerabilityMatchResolver) Vulnerability(ctx context.Context) (resolverstubs.VulnerabilityResolver, error) {
-	vulnerability, ok, err := r.bulkLoader.GetVulnerabilityByID(ctx, r.m.VulnerabilityID)
+	vulnerability, ok, err := r.vulnerabilityLoader.GetByID(ctx, r.m.VulnerabilityID)
 	if err != nil || !ok {
 		return nil, err
 	}
@@ -325,125 +343,45 @@ func (r *vulnerabilityMatchResolver) AffectedPackage(ctx context.Context) (resol
 }
 
 func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolverstubs.PreciseIndexResolver, error) {
-	upload, ok, err := r.prefetcher.GetUploadByID(ctx, r.m.UploadID)
+	upload, ok, err := r.uploadLoader.GetByID(ctx, r.m.UploadID)
 	if err != nil || !ok {
 		return nil, err
 	}
 
-	return sharedresolvers.NewPreciseIndexResolver(
-		ctx,
-		r.autoindexSvc,
-		r.uploadSvc,
-		r.policySvc,
-		r.prefetcher,
-		r.siteAdminChecker,
-		r.repoStore,
-		r.locationResolver,
-		r.errTracer,
-		&upload,
-		nil,
-	)
+	return r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.indexLoader, r.locationResolver, r.errTracer, &upload, nil)
 }
 
 //
 //
 
-func unmarshalVulnerabilityGQLID(id graphql.ID) (vulnerabilityID int, err error) {
-	err = relay.UnmarshalSpec(id, &vulnerabilityID)
-	return vulnerabilityID, err
+type vulnerabilityMatchesSummaryCountResolver struct {
+	critical   int32
+	high       int32
+	medium     int32
+	low        int32
+	repository int32
 }
 
-func marshalVulnerabilityGQLID(vulnerabilityID int) graphql.ID {
-	return relay.MarshalID("Vulnerability", vulnerabilityID)
+func (v *vulnerabilityMatchesSummaryCountResolver) Critical() int32 { return v.critical }
+func (v *vulnerabilityMatchesSummaryCountResolver) High() int32     { return v.high }
+func (v *vulnerabilityMatchesSummaryCountResolver) Medium() int32   { return v.medium }
+func (v *vulnerabilityMatchesSummaryCountResolver) Low() int32      { return v.low }
+func (v *vulnerabilityMatchesSummaryCountResolver) Repository() int32 {
+	return v.repository
 }
 
-func unmarshalVulnerabilityMatchGQLID(id graphql.ID) (vulnerabilityMatchID int, err error) {
-	err = relay.UnmarshalSpec(id, &vulnerabilityMatchID)
-	return vulnerabilityMatchID, err
+type vulnerabilityMatchCountByRepositoryResolver struct {
+	v shared.VulnerabilityMatchesByRepository
 }
 
-func marshalVulnerabilityMatchGQLID(vulnerabilityMatchID int) graphql.ID {
-	return relay.MarshalID("VulnerabilityMatch", vulnerabilityMatchID)
+func (v vulnerabilityMatchCountByRepositoryResolver) ID() graphql.ID {
+	return resolverstubs.MarshalID("VulnerabilityMatchCountByRepository", v.v.ID)
 }
 
-//
-//
-
-type vulnerabilityConnectionResolver struct {
-	vulnerabilities []shared.Vulnerability
-	offset          int
-	totalCount      int
+func (v vulnerabilityMatchCountByRepositoryResolver) RepositoryName() string {
+	return v.v.RepositoryName
 }
 
-func (r *vulnerabilityConnectionResolver) Nodes() []resolverstubs.VulnerabilityResolver {
-	var resolvers []resolverstubs.VulnerabilityResolver
-	for _, v := range r.vulnerabilities {
-		resolvers = append(resolvers, &vulnerabilityResolver{v: v})
-	}
-
-	return resolvers
-}
-
-func (r *vulnerabilityConnectionResolver) TotalCount() *int32 {
-	v := int32(r.totalCount)
-	return &v
-}
-
-func (r *vulnerabilityConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	if r.offset+len(r.vulnerabilities) < r.totalCount {
-		return sharedresolvers.NextPageCursor(strconv.Itoa(r.offset + len(r.vulnerabilities)))
-	}
-
-	return sharedresolvers.HasNextPage(false)
-}
-
-//
-//
-
-type vulnerabilityMatchConnectionResolver struct {
-	sentinelSvc      SentinelService
-	autoindexSvc     sharedresolvers.AutoIndexingService
-	uploadSvc        sharedresolvers.UploadsService
-	policySvc        sharedresolvers.PolicyService
-	siteAdminChecker sharedresolvers.SiteAdminChecker
-	prefetcher       *sharedresolvers.Prefetcher
-	locationResolver *sharedresolvers.CachedLocationResolver
-	errTracer        *observation.ErrCollector
-	bulkLoader       *bulkLoader
-	matches          []shared.VulnerabilityMatch
-	offset           int
-	totalCount       int
-}
-
-func (r *vulnerabilityMatchConnectionResolver) Nodes() []resolverstubs.VulnerabilityMatchResolver {
-	var resolvers []resolverstubs.VulnerabilityMatchResolver
-	for _, m := range r.matches {
-		resolvers = append(resolvers, &vulnerabilityMatchResolver{
-			sentinelSvc:      r.sentinelSvc,
-			autoindexSvc:     r.autoindexSvc,
-			uploadSvc:        r.uploadSvc,
-			policySvc:        r.policySvc,
-			siteAdminChecker: r.siteAdminChecker,
-			prefetcher:       r.prefetcher,
-			locationResolver: r.locationResolver,
-			errTracer:        r.errTracer,
-			bulkLoader:       r.bulkLoader,
-			m:                m,
-		})
-	}
-
-	return resolvers
-}
-
-func (r *vulnerabilityMatchConnectionResolver) TotalCount() *int32 {
-	v := int32(r.totalCount)
-	return &v
-}
-
-func (r *vulnerabilityMatchConnectionResolver) PageInfo() resolverstubs.PageInfo {
-	if r.offset+len(r.matches) < r.totalCount {
-		return sharedresolvers.NextPageCursor(strconv.Itoa(r.offset + len(r.matches)))
-	}
-
-	return sharedresolvers.HasNextPage(false)
+func (v vulnerabilityMatchCountByRepositoryResolver) MatchCount() int32 {
+	return v.v.MatchCount
 }

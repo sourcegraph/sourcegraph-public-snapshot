@@ -105,7 +105,7 @@ exports[`GlobalNavbar default 1`] = `
                 aria-label="Show search menu"
                 class="btn navDropdownIconButton itemFocusable"
                 data-reach-menu-button=""
-                id="menu-button-2"
+                id="menu-button-test-id"
                 type="button"
               >
                 <span
@@ -291,7 +291,7 @@ exports[`GlobalNavbar default 1`] = `
     </ul>
   </nav>
   <div
-    class="w-100 px-3 py-2 border-bottom"
+    class="searchNavBar"
   >
     <searchnavbaritem
       platformcontext="[object Object]"

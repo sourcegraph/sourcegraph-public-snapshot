@@ -152,7 +152,7 @@ func ownerToResult(o codeowners.ResolvedOwner) result.Owner {
 	if v, ok := o.(*codeowners.Person); ok {
 		return &result.OwnerPerson{
 			Handle: v.Handle,
-			Email:  v.Email,
+			Email:  v.GetEmail(),
 			User:   v.User,
 		}
 	}

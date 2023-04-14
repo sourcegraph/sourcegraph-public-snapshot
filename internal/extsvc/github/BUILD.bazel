@@ -40,6 +40,7 @@ go_library(
 
 go_test(
     name = "github_test",
+    timeout = "short",
     srcs = [
         "common_test.go",
         "v3_test.go",

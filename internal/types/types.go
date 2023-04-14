@@ -271,9 +271,10 @@ func (r *Repo) Update(n *Repo) (modified RepoModified) {
 		modified |= RepoModifiedStars
 	}
 
-	// We don't compare the Metadata fields to determine whether or not a repo
-	// has been modified. The reflect.DeepEqual always returns false for
-	// some code hosts (i.e. GitHub).
+	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
+		r.Metadata = n.Metadata
+		modified |= RepoModifiedMetadata
+	}
 
 	for urn, info := range n.Sources {
 		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqual(info, old) {
@@ -554,8 +555,9 @@ func ParseCloneStatusFromGraphQL(s string) CloneStatus {
 type GitserverRepo struct {
 	RepoID api.RepoID
 	// Usually represented by a gitserver hostname
-	ShardID     string
-	CloneStatus CloneStatus
+	ShardID         string
+	CloneStatus     CloneStatus
+	CloningProgress string
 	// The last error that occurred or empty if the last action was successful
 	LastError string
 	// The last time fetch was called.
@@ -820,7 +822,6 @@ type User struct {
 	UpdatedAt             time.Time
 	SiteAdmin             bool
 	BuiltinAuth           bool
-	Tags                  []string
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
 	Searchable            bool
@@ -833,6 +834,7 @@ type UserForSCIM struct {
 	Emails          []string
 	SCIMExternalID  string
 	SCIMAccountData string
+	Active          bool
 }
 
 type SystemRole string
@@ -851,6 +853,14 @@ type Role struct {
 	Name      string
 	System    bool
 	CreatedAt time.Time
+}
+
+func (r Role) IsSiteAdmin() bool {
+	return r.Name == string(SiteAdministratorSystemRole)
+}
+
+func (r Role) IsUser() bool {
+	return r.Name == string(UserSystemRole)
 }
 
 // A PermissionNamespace represents a distinct context within which permission policies
@@ -974,9 +984,10 @@ type UserDates struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type SiteUsageStatistics struct {
-	DAUs []*SiteActivityPeriod
-	WAUs []*SiteActivityPeriod
-	MAUs []*SiteActivityPeriod
+	DAUs  []*SiteActivityPeriod
+	WAUs  []*SiteActivityPeriod
+	MAUs  []*SiteActivityPeriod
+	RMAUs []*SiteActivityPeriod
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -1299,18 +1310,22 @@ type SearchEventLatencies struct {
 // SiteUsageSummary is an alternate view of SiteUsageStatistics which is
 // calculated in the database layer.
 type SiteUsageSummary struct {
-	Month                   time.Time
-	Week                    time.Time
-	Day                     time.Time
-	UniquesMonth            int32
-	UniquesWeek             int32
-	UniquesDay              int32
-	RegisteredUniquesMonth  int32
-	RegisteredUniquesWeek   int32
-	RegisteredUniquesDay    int32
-	IntegrationUniquesMonth int32
-	IntegrationUniquesWeek  int32
-	IntegrationUniquesDay   int32
+	RollingMonth                   time.Time
+	Month                          time.Time
+	Week                           time.Time
+	Day                            time.Time
+	UniquesRollingMonth            int32
+	UniquesMonth                   int32
+	UniquesWeek                    int32
+	UniquesDay                     int32
+	RegisteredUniquesRollingMonth  int32
+	RegisteredUniquesMonth         int32
+	RegisteredUniquesWeek          int32
+	RegisteredUniquesDay           int32
+	IntegrationUniquesRollingMonth int32
+	IntegrationUniquesMonth        int32
+	IntegrationUniquesWeek         int32
+	IntegrationUniquesDay          int32
 }
 
 // SearchAggregatedEvent represents the total events, unique users, and

@@ -13,6 +13,7 @@ import {
     StandardSuggestionSource,
 } from './completion'
 import { loadingIndicator } from './loading-indicator'
+
 export { tokenAt, tokens } from './parsedQuery'
 export { placeholder } from './placeholder'
 
@@ -75,7 +76,6 @@ interface CreateDefaultSuggestionsOptions extends Omit<DefaultSuggestionSourcesO
  */
 export const createDefaultSuggestions = ({
     isSourcegraphDotCom,
-    globbing,
     fetchSuggestions,
     disableFilterCompletion,
     disableSymbolCompletion,
@@ -86,7 +86,6 @@ export const createDefaultSuggestions = ({
     searchQueryAutocompletion(
         createDefaultSuggestionSources({
             fetchSuggestions: createCancelableFetchSuggestions(fetchSuggestions),
-            globbing,
             isSourcegraphDotCom,
             disableSymbolCompletion,
             disableFilterCompletion,

@@ -1,0 +1,74 @@
+.bubble-footer {
+    font-size: var(--vscode-editor-font-size);
+    color: var(--vscode-descriptionForeground);
+}
+
+.bubble-content {
+    font-size: var(--vscode-editor-font-size);
+    font-family: var(--vscode-font-family);
+    font-weight: var(--vscode-font-weight);
+    color: var(--bubble-text-color);
+}
+
+:global(.token-hallucinated) {
+    border-bottom: 2px solid var(--vscode-testing-iconQueued);
+    word-break: break-all;
+}
+
+:global(.token-not-hallucinated) {
+    border-bottom: 2px solid var(--vscode-testing-iconPassed);
+    word-break: break-all;
+}
+
+.bubble-content pre,
+.bubble-content span > code,
+.bubble-content p > code {
+    /* Our syntax highlighter emits colors intended for dark backgrounds only. */
+    background-color: var(--code-background);
+}
+
+.bubble-content pre,
+.bubble-content code {
+    color: var(--vscode-input-foreground);
+}
+
+.human-bubble-content {
+    background-color: var(--human-bubble-color);
+    color: var(--human-text-color);
+}
+
+.bot-bubble-content {
+    background-color: var(--bot-bubble-color);
+}
+
+.bubble-loader-dot {
+    background-color: var(--vscode-icon-foreground);
+}
+
+.code-blocks-copy-button {
+    color: var(--vscode-button-secondaryForeground);
+    background-color: var(--vscode-button-secondaryBackground);
+    border: none;
+}
+
+.chat-input {
+    outline: none;
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-input-background);
+}
+
+.transcript-container {
+    display: flex;
+    flex-direction: column-reverse;
+    flex: 1;
+    overflow: auto;
+}
+
+.empty-transcript-container {
+    overflow: auto;
+}
+
+.inner-container {
+    height: 100%;
+    overflow: auto;
+}

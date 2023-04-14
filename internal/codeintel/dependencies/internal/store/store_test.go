@@ -11,13 +11,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func TestUpsertDependencyRepo(t *testing.T) {
+func TestInsertDependencyRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
+	instant := timeutil.Now()
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -26,16 +27,19 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	batches := [][]shared.MinimalPackageRepoRef{
 		{
 			// Test same-set flushes
-			shared.MinimalPackageRepoRef{Scheme: "npm", Name: "bar", Versions: []string{"2.0.0"}},
-			shared.MinimalPackageRepoRef{Scheme: "npm", Name: "bar", Versions: []string{"2.0.0"}},
+			shared.MinimalPackageRepoRef{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
+			shared.MinimalPackageRepoRef{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
 		},
 		{
-			shared.MinimalPackageRepoRef{Scheme: "npm", Name: "bar", Versions: []string{"3.0.0"}}, // id=3
-			shared.MinimalPackageRepoRef{Scheme: "npm", Name: "foo", Versions: []string{"1.0.0"}}, // id=4
+			shared.MinimalPackageRepoRef{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "3.0.0"}}}, // id=3
+			shared.MinimalPackageRepoRef{Scheme: "npm", Name: "foo", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}}, // id=4
 		},
 		{
 			// Test different-set flushes
-			shared.MinimalPackageRepoRef{Scheme: "npm", Name: "foo", Versions: []string{"1.0.0", "2.0.0"}},
+			shared.MinimalPackageRepoRef{Scheme: "npm", Name: "foo", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}, {Version: "2.0.0"}}},
+		},
+		{
+			shared.MinimalPackageRepoRef{Scheme: "npm", Name: "zasdf", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "0.0.0"}}, Blocked: true, LastCheckedAt: &instant},
 		},
 	}
 
@@ -54,6 +58,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	want := []shared.PackageRepoReference{
 		{ID: 1, Scheme: "npm", Name: "bar"},
 		{ID: 2, Scheme: "npm", Name: "foo"},
+		{ID: 3, Scheme: "npm", Name: "zasdf", Blocked: true, LastCheckedAt: &instant},
 	}
 	if diff := cmp.Diff(want, allNewDeps); diff != "" {
 		t.Fatalf("mismatch (-want, +got): %s", diff)
@@ -64,13 +69,15 @@ func TestUpsertDependencyRepo(t *testing.T) {
 		{ID: 2, PackageRefID: 1, Version: "3.0.0"},
 		{ID: 3, PackageRefID: 2, Version: "1.0.0"},
 		{ID: 4, PackageRefID: 2, Version: "2.0.0"},
+		{ID: 5, PackageRefID: 3, Version: "0.0.0"},
 	}
 	if diff := cmp.Diff(wantV, allNewVersions); diff != "" {
 		t.Fatalf("mismatch (-want, +got): %s", diff)
 	}
 
 	have, _, hasMore, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
-		Scheme: shared.NpmPackagesScheme,
+		Scheme:         shared.NpmPackagesScheme,
+		IncludeBlocked: true,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -82,6 +89,7 @@ func TestUpsertDependencyRepo(t *testing.T) {
 
 	want[0].Versions = []shared.PackageRepoRefVersion{{ID: 1, PackageRefID: 1, Version: "2.0.0"}, {ID: 2, PackageRefID: 1, Version: "3.0.0"}}
 	want[1].Versions = []shared.PackageRepoRefVersion{{ID: 3, PackageRefID: 2, Version: "1.0.0"}, {ID: 4, PackageRefID: 2, Version: "2.0.0"}}
+	want[2].Versions = []shared.PackageRepoRefVersion{{ID: 5, PackageRefID: 3, Version: "0.0.0"}}
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatalf("mismatch (-want, +got): %s", diff)
 	}
@@ -99,24 +107,24 @@ func TestListPackageRepoRefs(t *testing.T) {
 
 	batches := [][]shared.MinimalPackageRepoRef{
 		{
-			{Scheme: "npm", Name: "bar", Versions: []string{"2.0.0"}},
-			{Scheme: "npm", Name: "foo", Versions: []string{"1.0.0"}},
-			{Scheme: "npm", Name: "bar", Versions: []string{"2.0.1"}},
-			{Scheme: "npm", Name: "foo", Versions: []string{"1.0.0"}},
+			{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
+			{Scheme: "npm", Name: "foo", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}},
+			{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.1"}}},
+			{Scheme: "npm", Name: "foo", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}},
 		},
 		{
-			{Scheme: "npm", Name: "bar", Versions: []string{"3.0.0"}},
-			{Scheme: "npm", Name: "banana", Versions: []string{"2.0.0"}},
-			{Scheme: "npm", Name: "turtle", Versions: []string{"4.2.0"}},
+			{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "3.0.0"}}},
+			{Scheme: "npm", Name: "banana", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
+			{Scheme: "npm", Name: "turtle", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "4.2.0"}}},
 		},
 		// catch lack of ordering by ID at the right place
 		{
-			{Scheme: "npm", Name: "applesauce", Versions: []string{"1.2.3"}},
-			{Scheme: "somethingelse", Name: "banana", Versions: []string{"0.1.2"}},
+			{Scheme: "npm", Name: "applesauce", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.2.3"}}},
+			{Scheme: "somethingelse", Name: "banana", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "0.1.2"}}},
 		},
 		// should not be listed due to no versions
 		{
-			{Scheme: "npm", Name: "burger", Versions: []string{}},
+			{Scheme: "npm", Name: "burger", Versions: []shared.MinimalPackageRepoRefVersion{}},
 		},
 	}
 
@@ -189,16 +197,26 @@ func TestDeletePackageRepoRefsByID(t *testing.T) {
 
 	repos := []shared.MinimalPackageRepoRef{
 		// Test same-set flushes
-		{Scheme: "npm", Name: "bar", Versions: []string{"2.0.0"}},
-		{Scheme: "npm", Name: "bar", Versions: []string{"3.0.0"}}, // deleted
-		{Scheme: "npm", Name: "foo", Versions: []string{"1.0.0"}}, // deleted
-		{Scheme: "npm", Name: "foo", Versions: []string{"2.0.0"}},
-		{Scheme: "npm", Name: "banan", Versions: []string{"4.2.0"}}, // deleted
+		{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
+		{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "3.0.0"}}}, // version deleted
+		{Scheme: "npm", Name: "foo", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}}, // version deleted
+		{Scheme: "npm", Name: "foo", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
+		{Scheme: "npm", Name: "banan", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "4.2.0"}}}, // package deleted
 	}
 
-	if _, _, err := store.InsertPackageRepoRefs(ctx, repos); err != nil {
+	newDeps, newVersions, err := store.InsertPackageRepoRefs(ctx, repos)
+	if err != nil {
 		t.Fatal(err)
 	}
+
+	if len(newDeps) != 3 {
+		t.Fatalf("unexpected number of inserted package repos: (want=%d,got=%d)", 3, len(newDeps))
+	}
+
+	if len(newVersions) != 5 {
+		t.Fatalf("unexpected number of inserted package repo versions: (want=%d,got=%d)", 5, len(newVersions))
+	}
+
 	if err := store.DeletePackageRepoRefsByID(ctx, 1); err != nil {
 		t.Fatal(err)
 	}

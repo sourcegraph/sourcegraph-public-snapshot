@@ -31,6 +31,7 @@ go_library(
 
 go_test(
     name = "azuredevops_test",
+    timeout = "short",
     srcs = [
         "client_test.go",
         "events_test.go",

@@ -61,6 +61,7 @@ export const UserAvatar = React.forwardRef(function UserAvatar(
             src: url,
             id: targetID,
             role: 'presentation',
+            width: size,
             ...otherProps,
         }
 

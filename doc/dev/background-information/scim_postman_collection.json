@@ -1,0 +1,464 @@
+{
+	"info": {
+		"_postman_id": "e328dec5-cc3c-43f5-b51c-4f6943cb05d6",
+		"name": "SCIM",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "8185968"
+	},
+	"item": [
+		{
+			"name": "ServiceProviderConfig",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"accept": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept-Charset",
+						"value": "utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/scim+json; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/scim+json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{scim_base_url}}/Schemas",
+					"host": [
+						"{{scim_base_url}}"
+					],
+					"path": [
+						"Schemas"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "User get all",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"accept": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept-Charset",
+						"value": "utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/scim+json; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/scim+json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{scim_base_url}}/Users",
+					"host": [
+						"{{scim_base_url}}"
+					],
+					"path": [
+						"Users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "User get filter",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"accept": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept-Charset",
+						"value": "utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/scim+json; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/scim+json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "scim_base_url}}/Users?filter=name.formatted co \"test\"",
+					"host": [
+						"{{scim_base_url}}"
+					],
+					"path": [
+						"Users"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": "name.formatted co \"test\""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "User create",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"pm.collectionVariables.set(\"user_id\", jsonData.id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"accept": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept-Charset",
+						"value": "utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/scim+json; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/scim+json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"active\": true,\n  \"userName\": \"test+user@company.com\",\n  \"displayName\": \"User Test\",\n  \"name\": {\n    \"givenName\": \"User\",\n    \"familyName\": \"Test\"\n  },\n  \"nickName\": \"Testy\",\n  \"emails\": [\n    {\n      \"value\": \"test2@company.com\",\n      \"primary\": true\n    }\n  ],\n  \"addresses\": [\n    {\n      \"type\": \"work\",\n      \"streetAddress\": \"11336 Crona Trail\",\n      \"locality\": \"Turmoil\",\n      \"region\": \"Winston\",\n      \"postalCode\": \"dn1 6nt\",\n      \"country\": \"Norfolk Island\"\n    }\n  ],\n  \"schemas\": [\n    \"urn:ietf:params:scim:schemas:core:2.0:User\",\n    \"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\"\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{scim_base_url}}/Users",
+					"host": [
+						"{{scim_base_url}}"
+					],
+					"path": [
+						"Users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "User get",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"accept": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept-Charset",
+						"value": "utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/scim+json; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/scim+json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{scim_base_url}}/Users/{{user_id}}",
+					"host": [
+						"{{scim_base_url}}"
+					],
+					"path": [
+						"Users",
+						"{{user_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "User patch",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"accept": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Accept-Charset",
+						"value": "utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/scim+json; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/scim+json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Operations\": [\n    {\n      \"op\": \"replace\",\n      \"value\": {\n        \"userName\": \"euna@borer.ca\",\n        \"displayName\": \"Y9SN5MS0O5FV\",\n        \"name.givenName\": \"Leilani\",\n        \"name.familyName\": \"Salvador\",\n        \"name.formatted\": \"Chyna\",\n        \"name.middleName\": \"Ibrahim\",\n        \"nickName\": \"L3TA6I9XJ7W5\"\n      }\n    }\n  ],\n  \"schemas\": [\n    \"urn:ietf:params:scim:api:messages:2.0:PatchOp\"\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{scim_base_url}}/Users/{{user_id}}",
+					"host": [
+						"{{scim_base_url}}"
+					],
+					"path": [
+						"Users",
+						"{{user_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "User replace",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"accept": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Accept-Charset",
+						"value": "utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/scim+json; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/scim+json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"active\": true,\n  \"userName\": \"test+user@company.com\",\n  \"displayName\": \"User Test\",\n  \"name\": {\n    \"givenName\": \"User\",\n    \"familyName\": \"Test\"\n  },\n  \"nickName\": \"Testy2\",\n  \"emails\": [\n    {\n      \"value\": \"test+user@company.com\",\n      \"primary\": true\n    }\n  ],\n  \"schemas\": [\n    \"urn:ietf:params:scim:schemas:core:2.0:User\",\n    \"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\"\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{scim_base_url}}/Users/{{user_id}}",
+					"host": [
+						"{{scim_base_url}}"
+					],
+					"path": [
+						"Users",
+						"{{user_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "User delete (ngrok)",
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"accept": true
+				}
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Accept-Charset",
+						"value": "utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/scim+json; charset=utf-8",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/scim+json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{scim_base_url}}/Users/{{user_id}}",
+					"host": [
+						"{{scim_base_url}}"
+					],
+					"path": [
+						"Users",
+						"{{user_id}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "scim_base_url",
+			"value": "https://sourcegraph.test:3443/.api/scim/v2",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "TODO paste random token here",
+		},
+		{
+			"key": "user_id",
+			"value": "{CREATE will write this}",
+			"type": "string"
+		}
+	]
+}

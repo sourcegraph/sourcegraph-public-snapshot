@@ -7,11 +7,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -19,22 +19,21 @@ import (
 
 func TestDefinitions(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(&observation.TestContext, database.NewMockDB())
+	mockGitserverClient := gitserver.NewMockClient()
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockGitserverClient)
+	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
 
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: mockCommit, Root: "sub1/"},
 		{ID: 51, Commit: mockCommit, Root: "sub2/"},
 		{ID: 52, Commit: mockCommit, Root: "sub3/"},
@@ -51,7 +50,7 @@ func TestDefinitions(t *testing.T) {
 	}
 	mockLsifStore.GetDefinitionLocationsFunc.PushReturn(locations, len(locations), nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 51,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -62,7 +61,7 @@ func TestDefinitions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
-	expectedLocations := []types.UploadLocation{
+	expectedLocations := []shared.UploadLocation{
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: mockCommit, TargetRange: testRange1},
 		{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: mockCommit, TargetRange: testRange2},
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: mockCommit, TargetRange: testRange3},
@@ -77,21 +76,20 @@ func TestDefinitions(t *testing.T) {
 
 func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(&observation.TestContext, database.NewMockDB())
+	mockGitserverClient := gitserver.NewMockClient()
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: mockCommit, Root: "sub1/"},
 		{ID: 51, Commit: mockCommit, Root: "sub2/"},
 		{ID: 52, Commit: mockCommit, Root: "sub3/"},
@@ -122,7 +120,7 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetDefinitionLocationsFunc.PushReturn(locations, len(locations), nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 51,
 		Commit:       "deadbeef",
 		Path:         "s1/main.go",
@@ -134,7 +132,7 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
 
-	expectedLocations := []types.UploadLocation{
+	expectedLocations := []shared.UploadLocation{
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
 	}
@@ -145,25 +143,24 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 
 func TestDefinitionsRemote(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(&observation.TestContext, database.NewMockDB())
+	mockGitserverClient := gitserver.NewMockClient()
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	err := mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
+	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+	err := mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
 	if err != nil {
 		t.Fatalf("unexpected error setting local git tree translator: %s", err)
 	}
 	mockRequestState.GitTreeTranslator = mockedGitTreeTranslator()
-	uploads := []types.Dump{
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -171,7 +168,7 @@ func TestDefinitionsRemote(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 
-	dumps := []types.Dump{
+	dumps := []uploadsshared.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
@@ -180,9 +177,9 @@ func TestDefinitionsRemote(t *testing.T) {
 	mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(dumps, nil)
 
 	// upload #150's commit no longer exists; all others do
-	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []codeintelgitserver.RepositoryCommit) (exists []bool, _ error) {
+	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, rcs []api.RepoCommit) (exists []bool, _ error) {
 		for _, rc := range rcs {
-			exists = append(exists, rc.Commit != "deadbeef1")
+			exists = append(exists, rc.CommitID != "deadbeef1")
 		}
 		return
 	})
@@ -212,7 +209,7 @@ func TestDefinitionsRemote(t *testing.T) {
 	}
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
 
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
 		Path:         mockPath,
@@ -225,7 +222,7 @@ func TestDefinitionsRemote(t *testing.T) {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
 
-	xLocations := []types.UploadLocation{
+	xLocations := []shared.UploadLocation{
 		{Dump: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange1},
 		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
 		{Dump: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange3},
@@ -268,21 +265,20 @@ func TestDefinitionsRemote(t *testing.T) {
 
 func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	// Set up mocks
-	mockStore := NewMockStore()
+	mockRepoStore := defaultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
-	mockGitserverClient := NewMockGitserverClient()
-	mockGitServer := codeintelgitserver.New(&observation.TestContext, database.NewMockDB())
+	mockGitserverClient := gitserver.NewMockClient()
 	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
-	uploads := []types.Dump{
+	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
+	uploads := []uploadsshared.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
@@ -304,7 +300,7 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	})
 	mockRequestState.SetAuthChecker(checker)
 
-	dumps := []types.Dump{
+	dumps := []uploadsshared.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
@@ -313,9 +309,9 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(dumps, nil)
 
 	// upload #150's commit no longer exists; all others do
-	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []codeintelgitserver.RepositoryCommit) (exists []bool, _ error) {
+	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, rcs []api.RepoCommit) (exists []bool, _ error) {
 		for _, rc := range rcs {
-			exists = append(exists, rc.Commit != "deadbeef1")
+			exists = append(exists, rc.CommitID != "deadbeef1")
 		}
 		return
 	})
@@ -347,7 +343,7 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockRequest := shared.RequestArgs{
+	mockRequest := RequestArgs{
 		RepositoryID: 42,
 		Commit:       "deadbeef",
 		Path:         "s1/main.go",
@@ -359,7 +355,7 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
 
-	expectedLocations := []types.UploadLocation{
+	expectedLocations := []shared.UploadLocation{
 		{Dump: dumps[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
 		{Dump: dumps[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
 	}
@@ -401,10 +397,10 @@ func mockedGitTreeTranslator() GitTreeTranslator {
 	mockPositionAdjuster.GetTargetCommitPathFromSourcePathFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, _ bool) (string, bool, error) {
 		return commit, true, nil
 	})
-	mockPositionAdjuster.GetTargetCommitPositionFromSourcePositionFunc.SetDefaultHook(func(ctx context.Context, commit string, pos types.Position, _ bool) (string, types.Position, bool, error) {
+	mockPositionAdjuster.GetTargetCommitPositionFromSourcePositionFunc.SetDefaultHook(func(ctx context.Context, commit string, pos shared.Position, _ bool) (string, shared.Position, bool, error) {
 		return commit, pos, true, nil
 	})
-	mockPositionAdjuster.GetTargetCommitRangeFromSourceRangeFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, rx types.Range, _ bool) (string, types.Range, bool, error) {
+	mockPositionAdjuster.GetTargetCommitRangeFromSourceRangeFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, rx shared.Range, _ bool) (string, shared.Range, bool, error) {
 		return commit, rx, true, nil
 	})
 

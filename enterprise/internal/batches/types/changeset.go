@@ -298,6 +298,8 @@ type Changeset struct {
 	NumFailures      int64
 	SyncErrorMessage *string
 
+	PreviousFailureMessage *string
+
 	// Closing is set to true (along with the ReocncilerState) when the
 	// reconciler should close the changeset.
 	Closing bool
@@ -497,6 +499,8 @@ func (c *Changeset) AuthorName() (string, error) {
 	case *gitlab.MergeRequest:
 		return m.Author.Username, nil
 	case *bbcs.AnnotatedPullRequest:
+		// Bitbucket Cloud no longer exposes username in its API, but we can still try to
+		// check this field for backwards compatibility.
 		return m.Author.Username, nil
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
@@ -522,6 +526,8 @@ func (c *Changeset) AuthorEmail() (string, error) {
 		}
 		return m.Author.User.EmailAddress, nil
 	case *gitlab.MergeRequest:
+		// This doesn't seem to be available in the GitLab response anymore, but we can
+		// still try to check this field for backwards compatibility.
 		return m.Author.Email, nil
 	case *bbcs.AnnotatedPullRequest:
 		// Bitbucket Cloud does not provide the e-mail of the author under any
@@ -1031,6 +1037,8 @@ func (c *Changeset) ResetReconcilerState(state ReconcilerState) {
 	c.ReconcilerState = state
 	c.NumResets = 0
 	c.NumFailures = 0
+	// Copy over and reset the previous failure message
+	c.PreviousFailureMessage = c.FailureMessage
 	c.FailureMessage = nil
 	// The reconciler syncs where needed, so we reset this message.
 	c.SyncErrorMessage = nil

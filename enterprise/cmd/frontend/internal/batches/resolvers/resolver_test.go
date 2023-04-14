@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	br "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/rbac"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
@@ -190,7 +189,7 @@ func TestCreateBatchSpec(t *testing.T) {
 		userID         int32
 		unauthorized   bool
 	}{
-		"unauthorized user": {
+		"unauthorized access": {
 			changesetSpecs: []*btypes.ChangesetSpec{},
 			licenseInfo:    licensingInfo("starter"),
 			wantErr:        true,
@@ -257,7 +256,7 @@ func TestCreateBatchSpec(t *testing.T) {
 					t.Error("unexpected lack of errors")
 				}
 
-				if tc.unauthorized && !errors.Is(errs[0], &rbac.ErrNotAuthorized{Permission: br.BatchChangesWritePermission}) {
+				if tc.unauthorized && !errors.Is(errs[0], &rbac.ErrNotAuthorized{Permission: rbac.BatchChangesWritePermission}) {
 					t.Errorf("expected unauthorized error, got %v", errs)
 				}
 			} else {
@@ -399,7 +398,7 @@ func TestCreateBatchSpecFromRaw(t *testing.T) {
 		"batchChange": batchChangeID,
 	}
 
-	t.Run("unauthorized user", func(t *testing.T) {
+	t.Run("unauthorized access", func(t *testing.T) {
 		var response struct{ CreateBatchSpecFromRaw apitest.BatchSpec }
 		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
 
@@ -408,7 +407,7 @@ func TestCreateBatchSpecFromRaw(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -507,7 +506,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 		"changesetSpec": bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f"),
 	}
 
-	t.Run("unauthorized user", func(t *testing.T) {
+	t.Run("unauthorized access", func(t *testing.T) {
 		var response struct{ CreateChangesetSpec apitest.ChangesetSpec }
 		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetSpec)
@@ -515,7 +514,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -605,7 +604,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		},
 	}
 
-	t.Run("unauthorized user", func(t *testing.T) {
+	t.Run("unauthorized access", func(t *testing.T) {
 		var response struct{ CreateChangesetSpecs []apitest.ChangesetSpec }
 		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetSpecs)
@@ -613,7 +612,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -748,7 +747,7 @@ func TestApplyBatchChange(t *testing.T) {
 		"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
 	}
 
-	t.Run("unauthorized user", func(t *testing.T) {
+	t.Run("unauthorized access", func(t *testing.T) {
 		var response struct{ ApplyBatchChange apitest.BatchChange }
 		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
@@ -756,7 +755,7 @@ func TestApplyBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -887,7 +886,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 		"name":      "my-batch-change",
 	}
 
-	t.Run("unauthorized user", func(t *testing.T) {
+	t.Run("unauthorized access", func(t *testing.T) {
 		var response struct{ CreateEmptyBatchChange apitest.BatchChange }
 		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
@@ -895,7 +894,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -995,7 +994,7 @@ func TestUpsertEmptyBatchChange(t *testing.T) {
 		"name":      "my-batch-change",
 	}
 
-	t.Run("unauthorized user", func(t *testing.T) {
+	t.Run("unauthorized access", func(t *testing.T) {
 		var response struct{ UpsertEmptyBatchChange apitest.BatchChange }
 		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationUpsertEmptyBatchChange)
@@ -1003,7 +1002,7 @@ func TestUpsertEmptyBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -1095,7 +1094,7 @@ func TestCreateBatchChange(t *testing.T) {
 		"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
 	}
 
-	t.Run("unauthorized user", func(t *testing.T) {
+	t.Run("unauthorized access", func(t *testing.T) {
 		var response struct{ CreateBatchChange apitest.BatchChange }
 		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
@@ -1103,7 +1102,7 @@ func TestCreateBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -1256,7 +1255,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			Published: true,
 		})
 
-		t.Run("unauthorized user", func(t *testing.T) {
+		t.Run("unauthorized access", func(t *testing.T) {
 			input := map[string]any{
 				"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
 				"publicationStates": map[string]any{
@@ -1268,7 +1267,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected error")
 			}
-			if !strings.Contains(err.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+			if !strings.Contains(err.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 				t.Fatalf("expected unauthorized error, got %+v", err)
 			}
 		})
@@ -1453,7 +1452,7 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 			numChangesets: 11,
 		},
 		{
-			name:           "Unauthorized user",
+			name:           "unauthorized access",
 			numChangesets:  1,
 			isunauthorized: true,
 		},
@@ -1495,7 +1494,7 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 					t.Fatal("expected error")
 				}
 				firstErr := errs[0]
-				if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+				if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 					t.Fatalf("expected unauthorized error, got %+v", err)
 				}
 				return
@@ -1568,7 +1567,7 @@ func TestMoveBatchChange(t *testing.T) {
 		"newName":     newBatchChagneName,
 	}
 
-	t.Run("unauthorized user", func(t *testing.T) {
+	t.Run("unauthorized access", func(t *testing.T) {
 		var response struct{ MoveBatchChange apitest.BatchChange }
 		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMoveBatchChange)
@@ -1576,7 +1575,7 @@ func TestMoveBatchChange(t *testing.T) {
 			t.Fatal("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", br.BatchChangesWritePermission)) {
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
 			t.Fatalf("expected unauthorized error, got %+v", err)
 		}
 	})
@@ -2053,6 +2052,12 @@ func TestCreateChangesetComments(t *testing.T) {
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
+	// to create Batch Changes.
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+
+	unauthorizedUser := bt.CreateTestUser(t, db, false)
+
 	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-comments", userID, 0)
 	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-comments-other", userID, 0)
 	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-comments", userID, batchSpec.ID)
@@ -2087,6 +2092,19 @@ func TestCreateChangesetComments(t *testing.T) {
 		CreateChangesetComments apitest.BulkOperation
 	}
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	t.Run("unauthorized access", func(t *testing.T) {
+		input := generateInput()
+		unauthorizedCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
+		errs := apitest.Exec(unauthorizedCtx, t, s, input, &response, mutationCreateChangesetComments)
+		if errs == nil {
+			t.Fatal("expected error")
+		}
+		firstErr := errs[0]
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
+		}
+	})
 
 	t.Run("empty body fails", func(t *testing.T) {
 		input := generateInput()
@@ -2154,6 +2172,12 @@ func TestReenqueueChangesets(t *testing.T) {
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
+	// to create Batch Changes.
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+
+	unauthorizedUser := bt.CreateTestUser(t, db, false)
+
 	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-reenqueue", userID, 0)
 	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-reenqueue-other", userID, 0)
 	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-reenqueue", userID, batchSpec.ID)
@@ -2196,6 +2220,20 @@ func TestReenqueueChangesets(t *testing.T) {
 		ReenqueueChangesets apitest.BulkOperation
 	}
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	t.Run("unauthorized access", func(t *testing.T) {
+		unauthorizedCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
+		input := generateInput()
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(successfulChangeset.ID))}
+		errs := apitest.Exec(unauthorizedCtx, t, s, input, &response, mutationReenqueueChangesets)
+		if errs == nil {
+			t.Fatal("expected error")
+		}
+		firstErr := errs[0]
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
+		}
+	})
 
 	t.Run("0 changesets fails", func(t *testing.T) {
 		input := generateInput()
@@ -2263,6 +2301,12 @@ func TestMergeChangesets(t *testing.T) {
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
+	// to create Batch Changes.
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+
+	unauthorizedUser := bt.CreateTestUser(t, db, false)
+
 	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-merge", userID, 0)
 	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-merge-other", userID, 0)
 	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-merge", userID, batchSpec.ID)
@@ -2307,6 +2351,19 @@ func TestMergeChangesets(t *testing.T) {
 		MergeChangesets apitest.BulkOperation
 	}
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	t.Run("unauthorized access", func(t *testing.T) {
+		unauthorizedCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
+		input := generateInput()
+		errs := apitest.Exec(unauthorizedCtx, t, s, input, &response, mutationMergeChangesets)
+		if errs == nil {
+			t.Fatal("expected error")
+		}
+		firstErr := errs[0]
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
+		}
+	})
 
 	t.Run("0 changesets fails", func(t *testing.T) {
 		input := generateInput()
@@ -2374,6 +2431,12 @@ func TestCloseChangesets(t *testing.T) {
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
+	// to create Batch Changes.
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+
+	unauthorizedUser := bt.CreateTestUser(t, db, false)
+
 	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close", userID, 0)
 	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close-other", userID, 0)
 	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close", userID, batchSpec.ID)
@@ -2418,6 +2481,19 @@ func TestCloseChangesets(t *testing.T) {
 		CloseChangesets apitest.BulkOperation
 	}
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	t.Run("unauthorized access", func(t *testing.T) {
+		unauthorizedCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
+		input := generateInput()
+		errs := apitest.Exec(unauthorizedCtx, t, s, input, &response, mutationCloseChangesets)
+		if errs == nil {
+			t.Fatal("expected error")
+		}
+		firstErr := errs[0]
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
+		}
+	})
 
 	t.Run("0 changesets fails", func(t *testing.T) {
 		input := generateInput()
@@ -2485,6 +2561,12 @@ func TestPublishChangesets(t *testing.T) {
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
+	// to create Batch Changes.
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+
+	unauthorizedUser := bt.CreateTestUser(t, db, false)
+
 	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close", userID, 0)
 	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close-other", userID, 0)
 	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close", userID, batchSpec.ID)
@@ -2555,6 +2637,19 @@ func TestPublishChangesets(t *testing.T) {
 		PublishChangesets apitest.BulkOperation
 	}
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	t.Run("unauthorized access", func(t *testing.T) {
+		unauthorizedCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
+		input := generateInput()
+		errs := apitest.Exec(unauthorizedCtx, t, s, input, &response, mutationPublishChangesets)
+		if errs == nil {
+			t.Fatal("expected error")
+		}
+		firstErr := errs[0]
+		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
+			t.Fatalf("expected unauthorized error, got %+v", err)
+		}
+	})
 
 	t.Run("0 changesets fails", func(t *testing.T) {
 		input := generateInput()
@@ -2799,7 +2894,7 @@ func assignBatchChangesWritePermissionToUser(ctx context.Context, t *testing.T, 
 	role := bt.CreateTestRole(ctx, t, db, "TEST-ROLE-1")
 	bt.AssignRoleToUser(ctx, t, db, userID, role.ID)
 
-	perm := bt.CreateTestPermission(ctx, t, db, br.BatchChangesWritePermission)
+	perm := bt.CreateTestPermission(ctx, t, db, rbac.BatchChangesWritePermission)
 	bt.AssignPermissionToRole(ctx, t, db, perm.ID, role.ID)
 
 	return role, perm

@@ -321,6 +321,7 @@ func sendEvents(ctx context.Context, events []*database.Event, config topicConfi
 	if err != nil {
 		return errors.Wrap(err, "pubsub.NewClient")
 	}
+	defer client.Close()
 
 	var toSend []*bigQueryEvent
 	for _, event := range events {

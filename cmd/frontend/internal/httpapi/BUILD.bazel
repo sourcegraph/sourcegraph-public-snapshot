@@ -89,6 +89,7 @@ go_library(
 
 go_test(
     name = "httpapi_test",
+    timeout = "short",
     srcs = [
         "api_test.go",
         "auth_test.go",

@@ -162,6 +162,7 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
                             nodeComponent={MigrationNode}
                             nodeComponentProps={{ now }}
                             filters={filters}
+                            autoFocus={false}
                         />
                     </Container>
                 </>

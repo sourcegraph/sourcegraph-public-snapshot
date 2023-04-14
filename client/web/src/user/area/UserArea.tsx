@@ -50,6 +50,7 @@ export const UserAreaGQLFragment = gql`
         roles @skip(if: $isSourcegraphDotCom) {
             nodes {
                 name
+                system
             }
         }
     }

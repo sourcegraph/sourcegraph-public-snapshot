@@ -105,13 +105,20 @@ To finish configuring the new credentials, you will need to create a new persona
 
 #### GitHub.com
 
-On GitHub.com, [you can create a code host token with the correct scopes at this link](https://github.com/settings/tokens/new?scopes=repo,read:org,user:email,read:discussion,workflow).
+On GitHub.com, [create a personal access token (classic) with the correct scopes](https://github.com/settings/tokens/new?scopes=repo,read:org,user:email,read:discussion,workflow).
+
+The `workflow` scope is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing errors at a later time.
 
 When working with organizations that have SAML SSO (Single Sign On) enabled, configuring credentials requires an additional step that [involves white-listing the token for use in that organization](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on).
 
+> NOTE: At present, only classic personal access tokens (PATs) are supported. The following alternative token types are untested or unsupported:
+> * OAuth Access Tokens (e.g. OAuth Apps)
+> * Installation Access Token (e.g. GitHub Apps)
+> * Fine-grained personal access tokens (PATv2)
+
 #### GitHub Enterprise
 
-Follow the steps to [create a personal access token](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token) on GitHub Enterprise. Batch Changes requires the following scopes:
+Follow the steps to [create a personal access token (classic)](https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token) on GitHub Enterprise. Batch Changes requires the following scopes:
 
 - `repo`
 - `read:org`
@@ -123,9 +130,16 @@ This is done by selecting the relevant checkboxes when creating the token:
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/github-token.png" alt="The GitHub token creation page, with the repo scope selected">
 
-> NOTE: `workflow` is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing errors at a later time.
+The `workflow` scope is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing errors at a later time.
 
 When working with organizations that have SAML SSO (Single Sign On) enabled, configuring credentials requires an additional step that [involves white-listing the token for use in that organization](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-saml-single-sign-on/authorizing-a-personal-access-token-for-use-with-saml-single-sign-on).
+
+> WARNING: Currently, for customers on an instance of GitHub Enterprise Cloud that uses [SSH certificate authorities](https://docs.github.com/en/enterprise-cloud@latest/organizations/managing-git-access-to-your-organizations-repositories/about-ssh-certificate-authorities) and requires SSH certificates to authenticate, we are unable to provide a means of authenticating Batch Changes to your code host.
+
+> NOTE: At present, only classic personal access tokens (PATs) are supported. The following alternative token types are untested or unsupported:
+> * OAuth Access Tokens (e.g. OAuth Apps)
+> * Installation Access Token (e.g. GitHub Apps)
+> * Fine-grained personal access tokens (PATv2)
 
 ### GitLab
 

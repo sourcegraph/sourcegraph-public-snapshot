@@ -1,4 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@npm//:graphql-schema-linter/package_json.bzl", linter_bin = "bin")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
 package(default_visibility = [
@@ -12,6 +13,12 @@ js_library(
     srcs = glob([
         "*.graphql",
     ]),
+)
+
+linter_bin.graphql_schema_linter_test(
+    name = "graphql_schema_lint_test",
+    size = "small",
+    data = ["//:graphql_schema_config"] + glob(["*.graphql"]),
 )
 
 go_library(
@@ -31,9 +38,9 @@ go_library(
         "code_monitors.go",
         "codeintel.go",
         "commit_search_result.go",
+        "completions.go",
         "compute.go",
         "default_settings.go",
-        "directives.go",
         "doc.go",
         "dotcom.go",
         "email_invitation.go",
@@ -155,7 +162,6 @@ go_library(
         "survey_response.go",
         "survey_responses.go",
         "symbols.go",
-        "tags.go",
         "teams.go",
         "temporary_settings.go",
         "testing.go",
@@ -176,7 +182,6 @@ go_library(
         "authz.graphql",
         "batches.graphql",
         "code_monitors.graphql",
-        "codeintel.graphql",
         "compute.graphql",
         "dotcom.graphql",
         "insights.graphql",
@@ -190,9 +195,16 @@ go_library(
         "own.graphql",
         "embeddings.graphql",
         "app.graphql",
+        "codeintel.autoindexing.graphql",
+        "codeintel.codenav.graphql",
+        "codeintel.policies.graphql",
+        "codeintel.sentinel.graphql",
+        "codeintel.graphql",
+        "completions.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [
+        "//cmd/frontend/auth",
         "//cmd/frontend/auth/providers",
         "//cmd/frontend/backend",
         "//cmd/frontend/envvar",
@@ -285,6 +297,7 @@ go_library(
         "//internal/usagestats",
         "//internal/users",
         "//internal/version",
+        "//internal/version/upgradestore",
         "//internal/webhooks/outbound",
         "//lib/batches",
         "//lib/errors",

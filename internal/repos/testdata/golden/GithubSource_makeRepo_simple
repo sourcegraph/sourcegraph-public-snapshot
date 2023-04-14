@@ -33,7 +33,9 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "",
-    "RepositoryTopics": {}
+    "RepositoryTopics": {
+     "Nodes": null
+    }
    }
   },
   {
@@ -70,7 +72,9 @@
     "IsLocked": false,
     "IsDisabled": false,
     "ViewerPermission": "",
-    "RepositoryTopics": {}
+    "RepositoryTopics": {
+     "Nodes": null
+    }
    }
   }
  ]

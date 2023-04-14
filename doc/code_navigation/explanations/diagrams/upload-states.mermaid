@@ -1,9 +1,9 @@
 stateDiagram-v2
-    UPLOADING  --> QUEUED: Finished uploading
-    QUEUED     --> PROCESSING: Dequeued by worker
-    PROCESSING --> COMPLETED: Finished processing
-    PROCESSING --> ERRORED: Failed processing (retryable)
-    ERRORED    --> PROCESSING: Retry
-    PROCESSING --> FAILED: Failed processing (non-retryable)
-    PROCESSING --> QUEUED: Record reset from dead worker
-    COMPLETED  --> DELETING: Deleted, replaced, or evicted
+    UPLOADING_INDEX       --> QUEUED_FOR_PROCESSING: Finished uploading
+    QUEUED_FOR_PROCESSING --> PROCESSING: Dequeued by worker
+    PROCESSING            --> COMPLETED: Finished processing
+    PROCESSING            --> PROCESSING_ERRORED: Failed processing (retryable)
+    PROCESSING_ERRORED    --> PROCESSING: Retry
+    PROCESSING            --> PROCESSING_ERRORED: Failed processing (non-retryable)
+    PROCESSING            --> QUEUED_FOR_PROCESSING: Record reset from dead worker
+    COMPLETED             --> DELETING: Deleted, replaced, or evicted

@@ -68,7 +68,7 @@
 .pill {
     display: flex;
     gap: 0.25rem;
-    padding: 0.25rem 0.25rem 0.25rem 0.5rem;
+    padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
     min-width: 0;
 
@@ -90,7 +90,7 @@
 
 .remove-pill {
     border: none;
-    margin-right: -0.25rem;
+    margin-right: -0.5rem;
     margin-top: -0.25rem;
     margin-bottom: -0.25rem;
     width: 1.75rem;

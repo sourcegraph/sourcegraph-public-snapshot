@@ -27,10 +27,11 @@ interface InsightCreateEvent {
 
 interface InsightCreationPageProps extends TelemetryProps {
     mode: InsightCreationPageType
+    isSourcegraphApp: boolean
 }
 
 export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
-    const { mode, telemetryService } = props
+    const { mode, telemetryService, isSourcegraphApp } = props
 
     const navigate = useNavigate()
     const { createInsight } = useContext(CodeInsightsBackendContext)
@@ -75,6 +76,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
                 onCancel={handleCancel}
+                isSourcegraphApp={isSourcegraphApp}
             />
         )
     }
@@ -87,6 +89,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
                 onCancel={handleCancel}
+                isSourcegraphApp={isSourcegraphApp}
             />
         )
     }
@@ -99,6 +102,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
                 onCancel={handleCancel}
+                isSourcegraphApp={isSourcegraphApp}
             />
         )
     }
@@ -110,6 +114,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
             onInsightCreateRequest={handleInsightCreateRequest}
             onSuccessfulCreation={handleInsightSuccessfulCreation}
             onCancel={handleCancel}
+            isSourcegraphApp={isSourcegraphApp}
         />
     )
 }

@@ -20,6 +20,7 @@ export const globalCodeIntelStatusQuery = gql`
             repositoriesWithErrors {
                 nodes {
                     repository {
+                        id
                         name
                         url
                         externalRepository {
@@ -33,6 +34,7 @@ export const globalCodeIntelStatusQuery = gql`
             repositoriesWithConfiguration {
                 nodes {
                     repository {
+                        id
                         name
                         url
                         externalRepository {
@@ -75,41 +77,6 @@ export const inferredAvailableIndexersWithKeysFieldsFragment = gql`
     }
 `
 
-export const gitTreeCodeIntelInfoFragment = gql`
-    fragment GitTreeCodeIntelInfoFields on GitTreeCodeIntelInfo {
-        preciseSupport {
-            coverage {
-                support {
-                    ...PreciseSupportFields
-                }
-                confidence
-            }
-            limitError
-        }
-        searchBasedSupport {
-            support {
-                ...SearchBasedCodeIntelSupportFields
-            }
-        }
-    }
-`
-
-export const preciseSupportFragment = gql`
-    fragment PreciseSupportFields on PreciseCodeIntelSupport {
-        supportLevel
-        indexers {
-            ...CodeIntelIndexerFields
-        }
-    }
-`
-
-export const searchBasedCodeIntelSupportFragment = gql`
-    fragment SearchBasedCodeIntelSupportFields on SearchBasedCodeIntelSupport {
-        language
-        supportLevel
-    }
-`
-
 export const repoCodeIntelStatusCommitGraphFragment = gql`
     fragment RepoCodeIntelStatusCommitGraphFields on CodeIntelligenceCommitGraph {
         stale
@@ -136,6 +103,7 @@ export const repoCodeIntelStatusSummaryFragment = gql`
 export const repoCodeIntelStatusQuery = gql`
     query RepoCodeIntelStatus($repository: String!) {
         repository(name: $repository) {
+            id
             codeIntelSummary {
                 ...RepoCodeIntelStatusSummaryFields
             }
@@ -147,4 +115,26 @@ export const repoCodeIntelStatusQuery = gql`
 
     ${repoCodeIntelStatusSummaryFragment}
     ${repoCodeIntelStatusCommitGraphFragment}
+`
+
+export const visibleIndexesQuery = gql`
+    query VisibleIndexes($repository: String!, $commit: String!, $path: String!) {
+        repository(name: $repository) {
+            commit(rev: $commit) {
+                blob(path: $path) {
+                    lsif {
+                        visibleIndexes {
+                            id
+                            uploadedAt
+                            inputCommit
+                            indexer {
+                                name
+                                url
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 `

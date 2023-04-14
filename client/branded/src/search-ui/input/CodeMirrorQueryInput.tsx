@@ -84,7 +84,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     onFocus,
     onBlur,
     isSourcegraphDotCom,
-    globbing,
     onEditorCreated,
     interpretComments,
     className,
@@ -128,19 +127,11 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
             createDefaultSuggestions({
                 fetchSuggestions: query =>
                     fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
-                globbing,
                 isSourcegraphDotCom,
                 navigate,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
-        [
-            globbing,
-            isSourcegraphDotCom,
-            navigate,
-            applySuggestionsOnEnter,
-            fetchStreamSuggestions,
-            selectedSearchContextSpec,
-        ]
+        [isSourcegraphDotCom, navigate, applySuggestionsOnEnter, fetchStreamSuggestions, selectedSearchContextSpec]
     )
 
     const extensions = useMemo(() => {
@@ -430,6 +421,9 @@ export function useUpdateEditorFromQueryState(
             }
             if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
                 startCompletionRef.current(editor)
+            }
+            if ((queryState.hint & EditorHint.Blur) === EditorHint.Blur) {
+                editor.contentDOM.blur()
             }
         }
     }, [editorRef, queryState])

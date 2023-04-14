@@ -266,6 +266,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 				Commands: []string{
 					// Hide commands from stderr.
 					"{ set +x; } 2>/dev/null",
+					"{ set -eo pipefail; } 2>/dev/null",
 					fmt.Sprintf(`(exec "%s/step%d.sh" | tee %s/stdout%d.log) 3>&1 1>&2 2>&3 | tee %s/stderr%d.log`, runDirToScriptDir, i, runDirToScriptDir, i, runDirToScriptDir, i),
 				},
 			})

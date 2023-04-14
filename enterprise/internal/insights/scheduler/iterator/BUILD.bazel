@@ -18,6 +18,7 @@ go_library(
 
 go_test(
     name = "iterator_test",
+    timeout = "short",
     srcs = ["repo_iterator_test.go"],
     embed = [":iterator"],
     tags = [

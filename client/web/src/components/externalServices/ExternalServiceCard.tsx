@@ -8,6 +8,7 @@ import { Icon, Link, H3, Text, Tooltip, Badge, ProductStatusBadge } from '@sourc
 import { AddExternalServiceOptions } from './externalServices'
 
 import styles from './ExternalServiceCard.module.scss'
+
 interface ExternalServiceCardProps extends AddExternalServiceOptions {
     to?: string
 

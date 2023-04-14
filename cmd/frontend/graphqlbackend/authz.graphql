@@ -210,7 +210,16 @@ extend type Query {
         Optional filter to find permissions sync jobs for a repository. Please provide either this or userID, but not both.
         """
         repoID: ID
+        """
+        Optional filter to filter only partially successful sync jobs.
+        """
+        partial: Boolean
     ): PermissionsSyncJobsConnection!
+
+    """
+    Returns various permissions syncing statistics.
+    """
+    permissionsSyncingStats: PermissionsSyncingStats!
 
     """
     Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
@@ -352,7 +361,7 @@ type PermissionsInfo {
     The last updated time of permissions, the value is updated whenever there is a
     change to the database row (i.e. incremental update).
     """
-    updatedAt: DateTime!
+    updatedAt: DateTime
     """
     If true for a repo, it indicates access to the repo is allowed for all users.
     It will always be false for users.
@@ -553,7 +562,7 @@ type PermissionsSyncJobReasonWithGroup {
     """
     Reason with details about why/how the sync was triggered.
     """
-    reason: PermissionsSyncJobReason!
+    reason: PermissionsSyncJobReason
 }
 
 """
@@ -583,6 +592,8 @@ enum PermissionsSyncJobReason {
     REASON_GITHUB_REPO_MADE_PRIVATE_EVENT
     REASON_MANUAL_REPO_SYNC
     REASON_MANUAL_USER_SYNC
+    REASON_EXTERNAL_ACCOUNT_ADDED
+    REASON_EXTERNAL_ACCOUNT_DELETED
 }
 
 """
@@ -593,6 +604,7 @@ enum PermissionsSyncJobReasonGroup {
     WEBHOOK
     SCHEDULE
     SOURCEGRAPH
+    UNKNOWN
 }
 
 """
@@ -610,6 +622,14 @@ enum PermissionsSyncJobPriority {
 }
 
 """
+Describes the status of a permissions sync for a given provider (code host).
+"""
+enum CodeHostStatus {
+    SUCCESS
+    ERROR
+}
+
+"""
 Describes the state of a provider (code host) during a permission sync job.
 """
 type CodeHostState {
@@ -624,7 +644,7 @@ type CodeHostState {
     """
     Status of permission sync of a given provider.
     """
-    status: String!
+    status: CodeHostStatus!
     """
     Status message.
     """
@@ -731,37 +751,14 @@ type PermissionsSyncJob implements Node {
     State of providers (code hosts) during permission sync job.
     """
     codeHostStates: [CodeHostState!]!
-}
-
-"""
-Status types of permissions providers.
-"""
-enum PermissionsProviderStatus {
-    ERROR
-    SUCCESS
-}
-
-"""
-State of a permissions provider during a sync job.
-"""
-type PermissionsProviderState {
     """
-    Type of the provider.
+    Show if the job has finished with a partially successful result.
     """
-    type: String!
+    partialSuccess: Boolean!
     """
-    ID representing the provider.
+    Rank of the permissions syncing job in processing queue.
     """
-    id: String!
-    """
-    Type of the sync job.
-    """
-    status: PermissionsProviderStatus!
-    """
-    Message describing the status of the provider during a sync job - for example, the
-    contents of any errors and during which operation they occured.
-    """
-    message: String!
+    placeInQueue: Int
 }
 
 """
@@ -834,4 +831,38 @@ type BitbucketProjectPermissionJob {
     Shows that current project is accessible by any user of the project.
     """
     Unrestricted: Boolean!
+}
+
+"""
+Various permissions syncing statistics.
+"""
+type PermissionsSyncingStats {
+    """
+    The number of permissions sync jobs in the queue.
+    """
+    queueSize: Int!
+    """
+    The number of users with latest permissions sync job failing.
+    """
+    usersWithLatestJobFailing: Int!
+    """
+    The number of repositories with latest permissions sync job failing.
+    """
+    reposWithLatestJobFailing: Int!
+    """
+    The number of users with no permissions.
+    """
+    usersWithNoPermissions: Int!
+    """
+    The number of repositories with no permissions.
+    """
+    reposWithNoPermissions: Int!
+    """
+    The number of users with old permissions.
+    """
+    usersWithStalePermissions: Int!
+    """
+    The number of repository with old permissions.
+    """
+    reposWithStalePermissions: Int!
 }

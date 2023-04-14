@@ -37,21 +37,23 @@ func TestCrateSyncer(t *testing.T) {
 	// dont need any functionality for this
 	autoindexSvc := NewMockAutoIndexingService()
 
-	refs := make(map[reposource.PackageName][]string)
+	refs := make(map[reposource.PackageName][]shared.MinimalPackageRepoRefVersion)
 	dependenciesSvc := NewMockDependenciesService()
 	dependenciesSvc.InsertPackageRepoRefsFunc.SetDefaultHook(func(ctx context.Context, refList []shared.MinimalPackageRepoRef) (newRef []shared.PackageRepoReference, newV []shared.PackageRepoRefVersion, err error) {
 		for _, r := range refList {
 			if versions, ok := refs[r.Name]; ok {
 				refs[r.Name] = append(versions, r.Versions...)
 				for _, v := range r.Versions {
-					if slices.Contains(versions, v) {
-						newV = append(newV, shared.PackageRepoRefVersion{Version: v})
+					if slices.ContainsFunc(versions, func(v2 shared.MinimalPackageRepoRefVersion) bool {
+						return v.Version == v2.Version && v.Blocked == v2.Blocked
+					}) {
+						newV = append(newV, shared.PackageRepoRefVersion{Version: v.Version})
 					}
 				}
 			} else {
 				newRef = append(newRef, shared.PackageRepoReference{Name: r.Name})
 				for _, v := range r.Versions {
-					newV = append(newV, shared.PackageRepoRefVersion{Version: v})
+					newV = append(newV, shared.PackageRepoRefVersion{Version: v.Version})
 				}
 				refs[r.Name] = r.Versions
 			}
@@ -59,7 +61,7 @@ func TestCrateSyncer(t *testing.T) {
 		return
 	})
 
-	gitclient := NewMockGitserverClient()
+	gitclient := gitserver.NewMockClient()
 	gitclient.LsFilesFunc.SetDefaultReturn([]string{"petgraph", "percent"}, nil)
 	gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, sub authz.SubRepoPermissionChecker, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 		var archive io.ReadCloser
@@ -169,7 +171,7 @@ func TestCrateSyncer(t *testing.T) {
 		}
 
 		if len(extsvcStore.GetByIDFunc.History()) != 1 {
-			t.Errorf("unexpected number of calls to GetByID (want=%d, got=%d)", 0, len(extsvcStore.GetByIDFunc.History()))
+			t.Errorf("unexpected number of calls to GetByID (want=%d, got=%d)", 1, len(extsvcStore.GetByIDFunc.History()))
 		}
 
 		if len(autoindexSvc.QueueIndexesForPackageFunc.History()) != 2 {
@@ -184,13 +186,7 @@ func createArchive(t *testing.T, info fileInfo) io.ReadCloser {
 	var buf bytes.Buffer
 	tarWriter := tar.NewWriter(&buf)
 
-	// switch path {
-	// case "petgraph":
-	// 	addFileToTarball(t, tarWriter, fileInfo{"petgraph", []byte(petgraphJSON)})
-	// case "percent":
-	//  addFileToTarball(t, tarWriter, fileInfo{"percent", []byte(percentEncJSON)})
 	addFileToTarball(t, tarWriter, info)
-	// }
 
 	return io.NopCloser(&buf)
 }

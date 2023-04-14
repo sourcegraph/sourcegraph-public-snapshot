@@ -1,9 +1,9 @@
-import type { PageLoad } from './$types'
-
 import { isErrorLike } from '$lib/common'
 import { GitRefType } from '$lib/graphql-operations'
 import { queryGitReferences } from '$lib/loader/repo'
 import { asStore } from '$lib/utils'
+
+import type { PageLoad } from './$types'
 
 export const load: PageLoad = ({ parent }) => ({
     tags: asStore(

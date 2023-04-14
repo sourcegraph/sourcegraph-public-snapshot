@@ -17,10 +17,11 @@ const (
 
 func GetOwnershipUsageStats(ctx context.Context, db database.DB) (*types.OwnershipUsageStatistics, error) {
 	var stats types.OwnershipUsageStatistics
-	var totalReposCount int32
-	if err := db.QueryRowContext(ctx, `SELECT total FROM repo_statistics`).Scan(&totalReposCount); err != nil {
+	rs, err := db.RepoStatistics().GetRepoStatistics(ctx)
+	if err != nil {
 		return nil, err
 	}
+	totalReposCount := int32(rs.Total)
 	var ingestedOwnershipReposCount int32
 	if err := db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT repo_id) FROM codeowners`).Scan(&ingestedOwnershipReposCount); err != nil {
 		return nil, err

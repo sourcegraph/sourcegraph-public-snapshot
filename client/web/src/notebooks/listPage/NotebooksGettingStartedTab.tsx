@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -8,7 +8,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
-import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Container, Icon, Link, H2, H3, Text, useReducedMotion } from '@sourcegraph/wildcard'
 
 import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { EnterprisePageRoutes } from '../../routes.constants'
@@ -66,10 +66,8 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
         setHasSeenGettingStartedTab(true)
     }, [setHasSeenGettingStartedTab])
 
-    const videoAutoplayAttributes = useMemo(() => {
-        const canAutoplay = window.matchMedia('(prefers-reduced-motion: no-preference)').matches
-        return canAutoplay ? { autoPlay: true, loop: true, controls: false } : { controls: true }
-    }, [])
+    const canAutoplay = !useReducedMotion()
+    const videoAutoplayAttributes = canAutoplay ? { autoPlay: true, loop: true, controls: false } : { controls: true }
 
     const isLightTheme = useIsLightTheme()
 

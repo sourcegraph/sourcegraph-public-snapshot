@@ -13,6 +13,7 @@ go_library(
 
 go_test(
     name = "changed_test",
+    timeout = "short",
     srcs = [
         "diff_test.go",
         "linters_test.go",

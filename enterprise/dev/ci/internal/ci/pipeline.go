@@ -56,6 +56,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 	bk.FeatureFlags.ApplyEnv(env)
 
+	// If we detect the author to be a folk from Aspect.dev, force the Bazel flag.
+	// This is to avoid incorrectly assuming that the CI will run Bazel task and
+	// missing regressions being introduced in a PR.
+	authorEmail := os.Getenv("BUILDKITE_BUILD_AUTHOR_EMAIL")
+	if strings.HasSuffix(authorEmail, "@aspect.dev") {
+		c.MessageFlags.NoBazel = false
+	}
+
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
@@ -76,7 +84,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "4.5.0"
+	const minimumUpgradeableVersion = "5.0.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -115,6 +123,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
 			ClientLintOnlyChangedFiles: false,
 			CreateBundleSizeDiff:       true,
+			ForceBazel:                 !c.MessageFlags.NoBazel,
 		}))
 
 		// At this stage, we don't break builds because of a Bazel failure.
@@ -133,17 +142,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			if !c.Diff.Has(changed.Go) && !c.Diff.Has(changed.GraphQL) {
 				ops.Append(prPreview())
 			}
-		}
-		if c.Diff.Has(changed.DockerImages) {
-			// Build and scan docker images
-			testBuilds := operations.NewNamedSet("Test builds")
-			scanBuilds := operations.NewNamedSet("Scan test builds")
-			for _, image := range images.SourcegraphDockerImages {
-				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag(), false))
-				scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
-			}
-			ops.Merge(testBuilds)
-			ops.Merge(scanBuilds)
 		}
 
 	case runtype.ReleaseNightly:
@@ -179,6 +177,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addVsceTests,
 			wait,
 			addVsceReleaseSteps)
+
+	case runtype.CodyReleaseBranch:
+		// If this is the Cody VS Code extension release branch, run the Cody tests and release
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addCodyExtensionTests,
+			wait,
+			addCodyReleaseSteps)
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
@@ -277,10 +283,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 			triggerAsync(buildOptions)))
 
-		// At this stage, we don't break builds because of a Bazel failure.
-		// TODO(JH) disabled until I re-enable this with a flag
-		// ops.Merge(BazelOperations(true))
-
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
 		for _, dockerImage := range images.SourcegraphDockerImages {
@@ -311,10 +313,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Core tests
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
-			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch),
+			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
+			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
 
 		// Integration tests

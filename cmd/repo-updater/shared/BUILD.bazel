@@ -16,7 +16,6 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
-        "//internal/authz/permssync",
         "//internal/batches",
         "//internal/codeintel/dependencies",
         "//internal/conf",
@@ -53,6 +52,7 @@ go_library(
 
 go_test(
     name = "shared_test",
+    timeout = "short",
     srcs = ["main_test.go"],
     embed = [":shared"],
     deps = [

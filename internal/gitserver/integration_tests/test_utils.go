@@ -52,8 +52,8 @@ func InitGitserver() {
 	}
 
 	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
-	db.GitserverReposFunc.SetDefaultReturn(gr)
+	db.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
+	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 
 	s := server.Server{
 		Logger:         sglog.Scoped("server", "the gitserver service"),
@@ -70,7 +70,7 @@ func InitGitserver() {
 	}
 
 	grpcServer := defaults.NewServer(logger)
-	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 
 	srv := &http.Server{

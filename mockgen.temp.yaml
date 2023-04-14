@@ -78,14 +78,11 @@
     - UserRoleStore
     - PermissionStore
     - RolePermissionStore
+    - RepoStatisticsStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:
     - Client
-- filename: internal/insights/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/internal/insights
-  interfaces:
-    - Loader
 - filename: internal/repos/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/repos
   interfaces:
@@ -116,10 +113,6 @@
   interfaces:
     - UserEmailsService
     - ReposService
-- filename: enterprise/internal/embeddings/background/repo/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo
-  interfaces:
-    - RepoEmbeddingJobsStore
 - filename: enterprise/internal/executor/store/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store
   interfaces:

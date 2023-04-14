@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { startCase } from 'lodash'
+
 import 'storybook-addon-designs'
 
 import { Icon } from '../../Icon'

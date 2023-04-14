@@ -9,7 +9,7 @@ import {
     analyticsGroup,
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
-    repositoriesGroup as ossRepositoriesGroup,
+    repositoriesGroup,
     usersGroup as ossUsersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
@@ -25,6 +25,16 @@ const configurationGroup: SiteAdminSideBarGroup = {
 
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
+        {
+            label: 'Incoming webhooks',
+            to: '/site-admin/webhooks/incoming',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
+        {
+            label: 'Outgoing webhooks',
+            to: '/site-admin/webhooks/outgoing',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
     ],
 }
 
@@ -35,6 +45,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code Insights jobs',
             to: '/site-admin/code-insights-jobs',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }
@@ -72,15 +83,6 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             label: 'Batch specs',
             to: '/site-admin/batch-changes/specs',
             condition: props => props.batchChangesExecutionEnabled,
-        },
-        {
-            label: 'Incoming webhooks',
-            to: '/site-admin/batch-changes/webhook-logs',
-            condition: props => props.batchChangesWebhookLogsEnabled,
-        },
-        {
-            label: 'Outgoing webhooks',
-            to: '/site-admin/outbound-webhooks',
         },
     ],
     condition: ({ batchChangesEnabled, isSourcegraphApp }) => batchChangesEnabled && !isSourcegraphApp,
@@ -127,18 +129,7 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/code-graph/inference-configuration',
             label: 'Inference',
-        },
-    ],
-}
-
-const repositoriesGroup: SiteAdminSideBarGroup = {
-    ...ossRepositoriesGroup,
-    items: [
-        ...ossRepositoriesGroup.items,
-        {
-            label: 'Incoming webhooks',
-            to: '/site-admin/webhooks',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+            condition: () => window.context?.codeIntelAutoIndexingEnabled,
         },
     ],
 }

@@ -236,7 +236,8 @@ export const bitbucketServerCodeHost: CodeHost = {
         listItemClass: styles.actionNavItem,
     },
     hoverOverlayClassProps: {
-        className: 'aui-dialog',
+        className: classNames('aui-dialog', styles.hoverOverlay),
+        actionsClassName: styles.hoverActions,
         actionItemClassName: classNames('aui-button', styles.hoverActionItem),
         iconClassName,
     },

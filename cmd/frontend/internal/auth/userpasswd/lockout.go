@@ -36,7 +36,7 @@ type LockoutStore interface {
 	// SendUnlockAccountEmail sends an email to the locked account email providing a
 	// temporary unlock link.
 	SendUnlockAccountEmail(ctx context.Context, userID int32, userEmail string) error
-	// Returns true if the unlock account email has already been sent
+	// UnlockEmailSent returns true if the unlock account email has already been sent
 	UnlockEmailSent(userID int32) bool
 }
 

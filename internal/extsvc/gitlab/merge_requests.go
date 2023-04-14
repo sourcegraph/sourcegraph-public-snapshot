@@ -46,7 +46,10 @@ type MergeRequest struct {
 	WebURL                 string            `json:"web_url"`
 	WorkInProgress         bool              `json:"work_in_progress"`
 	Draft                  bool              `json:"draft"`
-	Author                 User              `json:"author"`
+	// We only get a partial User object back from the REST API. For example, it lacks
+	// `Email` and `Identities`. If we need more, we need to issue an additional API
+	// request. Otherwise, we should use a different type here.
+	Author User `json:"author"`
 
 	DiffRefs DiffRefs `json:"diff_refs"`
 

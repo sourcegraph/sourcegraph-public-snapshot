@@ -1,7 +1,8 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-expression: "dump_document(&document, src)"
+assertion_line: 299
+expression: "snapshot_treesitter_syntax_kinds(&document, src)"
 ---
   // Hello World
-//^^^^^^^^^^^^^^ Comment 
+//^^^^^^^^^^^^^^ Comment
 

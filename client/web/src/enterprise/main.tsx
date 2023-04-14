@@ -3,7 +3,9 @@
 // Order is important here
 // Don't remove the empty lines between these imports
 
+// prettier-ignore-start
 import '@sourcegraph/shared/src/polyfills'
+// prettier-ignore-end
 
 import '../initBuildInfo'
 import '../monitoring/initMonitoring'
@@ -33,3 +35,9 @@ window.addEventListener('DOMContentLoaded', async () => {
         logger.error('Failed to initialize the app shell', error)
     }
 })
+
+if (process.env.DEV_WEB_BUILDER === 'esbuild' && process.env.NODE_ENV === 'development') {
+    new EventSource('/.assets/esbuild').addEventListener('change', () => {
+        location.reload()
+    })
+}

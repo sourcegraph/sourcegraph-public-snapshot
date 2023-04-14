@@ -23,6 +23,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
@@ -121,8 +122,12 @@ func (s *Store) Start() {
 		_ = os.MkdirAll(s.Path, 0o700)
 		metrics.MustRegisterDiskMonitor(s.Path)
 
+		logger := s.Log
+		if deploy.IsApp() {
+			logger = logger.IncreaseLevel("mountinfo", "", log.LevelError)
+		}
 		o := mountinfo.CollectorOpts{Namespace: "searcher"}
-		m := mountinfo.NewCollector(s.Log, o, map[string]string{"cacheDir": s.Path})
+		m := mountinfo.NewCollector(logger, o, map[string]string{"cacheDir": s.Path})
 		s.ObservationCtx.Registerer.MustRegister(m)
 
 		go s.watchAndEvict()

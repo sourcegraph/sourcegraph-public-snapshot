@@ -18,22 +18,22 @@ func TestGoPackagesSource_ListRepos(t *testing.T) {
 		{
 			Scheme: dependencies.GoPackagesScheme,
 			Name:   "github.com/foo/barbaz",
-			Versions: []string{
-				"v0.0.1",
+			Versions: []dependencies.MinimalPackageRepoRefVersion{
+				{Version: "v0.0.1"},
 			}, // test that we create a repo for this module even if it's missing.
 		},
 		{
 			Scheme: dependencies.GoPackagesScheme,
 			Name:   "github.com/gorilla/mux",
-			Versions: []string{
-				"v1.8.0", // test deduplication with version from config
-				"v1.7.4", // test multiple versions of the same module
+			Versions: []dependencies.MinimalPackageRepoRefVersion{
+				{Version: "v1.8.0"}, // test deduplication with version from config
+				{Version: "v1.7.4"}, // test multiple versions of the same module
 			},
 		},
 		{
 			Scheme:   dependencies.GoPackagesScheme,
 			Name:     "github.com/goware/urlx",
-			Versions: []string{"v0.3.1"},
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "v0.3.1"}},
 		},
 	})
 

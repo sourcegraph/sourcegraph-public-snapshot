@@ -28,9 +28,11 @@ type CoreTestOperationsOptions struct {
 	MinimumUpgradeableVersion  string
 	ClientLintOnlyChangedFiles bool
 	ForceReadyForReview        bool
-	// for addWebApp
+	// for addWebAppOSSBuild
 	CacheBundleSize      bool
 	CreateBundleSizeDiff bool
+	// ForceBazel replaces vanilla jobs with Bazel ones if enabled.
+	ForceBazel bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -47,28 +49,56 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	// Base set
 	ops := operations.NewSet()
 
+	if opts.ForceBazel {
+		ops.Merge(BazelOperations(false)) // non soft-failing
+	}
+
 	// Simple, fast-ish linter checks
 	linterOps := operations.NewNamedSet("Linters and static analysis")
-	if diff.Has(changed.GraphQL) {
-		linterOps.Append(addGraphQLLint)
-	}
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
 		linterOps.Append(addSgLints(targets))
 	}
 	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
-		// If there are any Graphql changes, they are impacting the client as well.
-		clientChecks := operations.NewNamedSet("Client checks",
-			clientIntegrationTests,
-			clientChromaticTests(opts),
-			frontendTests,                // ~4.5m
-			addWebApp(opts),              // ~5.5m
-			addBrowserExtensionUnitTests, // ~4.5m
-			addJetBrainsUnitTests,        // ~2.5m
-			addTypescriptCheck,           // ~4m
-			addVsceTests,                 // ~3.0m
-		)
+		var clientChecks *operations.Set
+		// TODO(Bazel) clean this once we go GA.
+		if opts.ForceBazel {
+			// If there are any Graphql changes, they are impacting the client as well.
+			clientChecks = operations.NewNamedSet("Client checks",
+				// clientIntegrationTests is now covered by Bazel
+				// clientIntegrationTests,
+				clientChromaticTests(opts),
+				// frontendTests is now covered by Bazel
+				// frontendTests,                // ~4.5m
+				// addWebAppOSSBuild is now covered by Bazel
+				// addWebAppOSSBuild(opts),
+				addWebAppEnterpriseBuild(opts),
+				// addWebAppTests is now covered by Bazel
+				// addWebAppTests(opts),
+				// addBrowserExtensionsUnitTests is now covered by Bazel
+				// addBrowserExtensionUnitTests, // ~4.5m
+				addJetBrainsUnitTests, // ~2.5m
+				// addTypescriptCheck is now covered by Bazel
+				// addTypescriptCheck,    // ~4m
+				addVsceTests,          // ~3.0m
+				addCodyExtensionTests, // ~2.5m
+			)
+		} else {
+			// If there are any Graphql changes, they are impacting the client as well.
+			clientChecks = operations.NewNamedSet("Client checks",
+				clientIntegrationTests,
+				clientChromaticTests(opts),
+				frontendTests, // ~4.5m
+				addWebAppOSSBuild(opts),
+				addWebAppTests(opts),
+				addBrowserExtensionUnitTests, // ~4.5m
+				addJetBrainsUnitTests,        // ~2.5m
+				addTypescriptCheck,           // ~4m
+				addVsceTests,                 // ~3.0m
+				addCodyExtensionTests,        // ~2.5m
+			)
+		}
 
 		if opts.ClientLintOnlyChangedFiles {
 			clientChecks.Append(addClientLintersForChangedFiles)
@@ -79,7 +109,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 		ops.Merge(clientChecks)
 	}
 
-	if diff.Has(changed.Go | changed.GraphQL) {
+	if diff.Has(changed.Go|changed.GraphQL) && !opts.ForceBazel {
 		// If there are any Graphql changes, they are impacting the backend as well.
 		ops.Merge(operations.NewNamedSet("Go checks",
 			addGoTests,
@@ -172,14 +202,7 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 //	pipeline.AddStep(":lock: Checkov Terraform scanning",
 //		bk.Cmd("dev/ci/ci-checkov.sh"),
 //		bk.SoftFail(222))
-//}
-
-// pnpm ~41s + ~1s
-func addGraphQLLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :graphql: GraphQL lint",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:graphql"))
-}
+// }
 
 // Adds Typescript check.
 func addTypescriptCheck(pipeline *bk.Pipeline) {
@@ -193,6 +216,10 @@ func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint: ESLint (all)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:js:all"))
+
+	pipeline.AddStep(":eslint: ESLint (web)",
+		withPnpmCache(),
+		bk.Cmd("dev/ci/pnpm-run.sh lint:js:web"))
 
 	pipeline.AddStep(":stylelint: Stylelint (all)",
 		withPnpmCache(),
@@ -211,7 +238,7 @@ func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
-func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
+func addWebAppOSSBuild(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		// Webapp build
 		pipeline.AddStep(":webpack::globe_with_meridians: Build",
@@ -219,9 +246,11 @@ func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
 			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", ""))
+	}
+}
 
-		addWebEnterpriseBuild(pipeline, opts)
-
+func addWebAppTests(opts CoreTestOperationsOptions) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
 		// Webapp tests
 		pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
 			withPnpmCache(),
@@ -235,38 +264,38 @@ func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
 }
 
 // Webapp enterprise build
-func addWebEnterpriseBuild(pipeline *bk.Pipeline, opts CoreTestOperationsOptions) {
-	commit := os.Getenv("BUILDKITE_COMMIT")
-	branch := os.Getenv("BUILDKITE_BRANCH")
+func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		commit := os.Getenv("BUILDKITE_COMMIT")
+		branch := os.Getenv("BUILDKITE_BRANCH")
 
-	cmds := []bk.StepOpt{
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-build.sh client/web"),
-		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "1"),
-		bk.Env("CHECK_BUNDLESIZE", "1"),
-		// To ensure the Bundlesize output can be diffed to the baseline on main
-		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
+		cmds := []bk.StepOpt{
+			withPnpmCache(),
+			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
+			bk.Env("NODE_ENV", "production"),
+			bk.Env("ENTERPRISE", "1"),
+			bk.Env("CHECK_BUNDLESIZE", "1"),
+		}
+
+		if opts.CacheBundleSize {
+			cmds = append(cmds,
+				// Emit a stats.json file for bundle size diffs
+				bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
+				withBundleSizeCache(commit))
+		}
+
+		if opts.CreateBundleSizeDiff {
+			cmds = append(cmds,
+				// Emit a stats.json file for bundle size diffs
+				bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
+				bk.Env("BRANCH", branch),
+				bk.Env("COMMIT", commit),
+				bk.Cmd("dev/ci/report-bundle-diff.sh"),
+			)
+		}
+
+		pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
 	}
-
-	if opts.CacheBundleSize {
-		cmds = append(cmds,
-			// Emit a stats.json file for bundle size diffs
-			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
-			withBundleSizeCache(commit))
-	}
-
-	if opts.CreateBundleSizeDiff {
-		cmds = append(cmds,
-			// Emit a stats.json file for bundle size diffs
-			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
-			bk.Env("BRANCH", branch),
-			bk.Env("COMMIT", commit),
-			bk.Cmd("dev/ci/report-bundle-diff.sh"),
-		)
-	}
-
-	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
 }
 
 var browsers = []string{"chrome"}
@@ -286,6 +315,16 @@ func addVsceTests(pipeline *bk.Pipeline) {
 		// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
 		// bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
 		// bk.AutomaticRetry(1),
+	)
+}
+
+func addCodyExtensionTests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(
+		":vscode::robot_face: Integration tests for the Cody VS Code extension",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("pnpm --filter cody-ai run test:integration"),
+		bk.AutomaticRetry(1),
 	)
 }
 
@@ -603,6 +642,15 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
 }
 
+// Release the Cody extension.
+func addCodyReleaseSteps(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":vscode::robot_face: Cody release",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("pnpm generate"),
+		bk.Cmd("pnpm --filter cody-ai run release"))
+}
+
 // Release a snapshot of App.
 func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
 	// The version scheme we use for App is one of:
@@ -619,7 +667,7 @@ func addAppReleaseSteps(c Config, insiders bool) operations.Operation {
 	if insiders {
 		insidersStr = "-insiders"
 	}
-	version := fmt.Sprintf("%s%s+%d.%.6s", c.Time.Format("2006.01.06"), insidersStr, c.BuildNumber, c.Commit)
+	version := fmt.Sprintf("%s%s+%d.%.6s", c.Time.Format("2006.01.02"), insidersStr, c.BuildNumber, c.Commit)
 
 	return func(pipeline *bk.Pipeline) {
 		// Release App (.zip/.deb/.rpm to Google Cloud Storage, new tap for Homebrew, etc.).
@@ -656,6 +704,8 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 		previousMinorVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1)
 		if version.Major() == 4 && version.Minor() == 0 {
 			previousMinorVersion = "3.43"
+		} else if version.Major() == 5 && version.Minor() == 0 {
+			previousMinorVersion = "4.5"
 		}
 
 		for _, branch := range []string{
@@ -852,7 +902,7 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 				folder := app
 				if app == "blobstore2" {
 					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
-					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get publishe
+					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get published
 					// under the same name.
 					// https://github.com/sourcegraph/sourcegraph/issues/45594
 					// TODO(blobstore): remove this when making Go blobstore the default

@@ -22,11 +22,7 @@ import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/teleme
 import { Badge, Button, Container, ErrorAlert, H3, Icon, Link, PageHeader, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
-import {
-    FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
-} from '../../../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
 import { CreatePolicyButtons } from '../components/CreatePolicyButtons'
@@ -38,31 +34,6 @@ import { useDeletePolicies } from '../hooks/useDeletePolicies'
 import { hasGlobalPolicyViolation } from '../shared'
 
 import styles from './CodeIntelConfigurationPage.module.scss'
-
-const filters: FilteredConnectionFilter[] = [
-    {
-        id: 'filters',
-        label: 'Show',
-        type: 'select',
-        values: [
-            {
-                label: 'All policies',
-                value: 'all',
-                args: {},
-            },
-            {
-                label: 'Policies affecting auto-indexing',
-                value: 'indexing',
-                args: { forIndexing: true },
-            },
-            {
-                label: 'Policies affecting data retention',
-                value: 'data-retention',
-                args: { forDataRetention: true },
-            },
-        ],
-    },
-]
 
 export interface CodeIntelConfigurationPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -182,7 +153,36 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                     nodeComponentProps={{ isDeleting, onDelete, indexingEnabled }}
                     queryConnection={queryCustomPoliciesCallback}
                     cursorPaging={true}
-                    filters={filters}
+                    filters={[
+                        {
+                            id: 'filters',
+                            label: 'Show',
+                            type: 'select',
+                            values: [
+                                {
+                                    label: 'All policies',
+                                    value: 'all',
+                                    args: {},
+                                },
+                                ...(indexingEnabled
+                                    ? [
+                                          {
+                                              label: 'Policies affecting auto-indexing',
+                                              value: 'indexing',
+                                              args: { forIndexing: true },
+                                          },
+                                      ]
+                                    : []),
+                                ...[
+                                    {
+                                        label: 'Policies affecting data retention',
+                                        value: 'data-retention',
+                                        args: { forDataRetention: true },
+                                    },
+                                ],
+                            ],
+                        },
+                    ]}
                     inputClassName="ml-2 flex-1"
                     emptyElement={<EmptyPoliciesList repo={repo} showCta={authenticatedUser?.siteAdmin} />}
                     updates={updates}

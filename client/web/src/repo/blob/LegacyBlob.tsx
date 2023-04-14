@@ -97,7 +97,7 @@ const domFunctions = {
             throw new Error('Could not find closest row for codeCell')
         }
         const numberCell = row.querySelector<HTMLTableCellElement>('td.line')
-        if (!numberCell || !numberCell.dataset.line) {
+        if (!numberCell?.dataset?.line) {
             throw new Error('Could not find line number')
         }
         return parseInt(numberCell.dataset.line, 10)

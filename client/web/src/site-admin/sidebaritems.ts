@@ -115,14 +115,9 @@ export const usersGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/users',
         },
         {
-            label: 'Access requests',
-            to: '/site-admin/access-requests',
-            condition: context =>
-                checkRequestAccessAllowed(
-                    context.isSourcegraphDotCom,
-                    window.context.allowSignup,
-                    window.context.experimentalFeatures
-                ),
+            label: 'Account requests',
+            to: '/site-admin/account-requests',
+            condition: () => checkRequestAccessAllowed(window.context),
         },
         {
             label: 'Organizations',
@@ -135,62 +130,80 @@ export const usersGroup: SiteAdminSideBarGroup = {
     ],
 }
 
+export const maintenanceGroupHeaderLabel = 'Maintenance'
+
+export const maintenanceGroupMonitoringItemLabel = 'Monitoring'
+
+export const maintenanceGroupInstrumentationItemLabel = 'Instrumentation'
+
+export const maintenanceGroupUpdatesItemLabel = 'Updates'
+
+export const maintenanceGroupMigrationsItemLabel = 'Migrations'
+
+export const maintenanceGroupTracingItemLabel = 'Tracing'
+
 export const maintenanceGroup: SiteAdminSideBarGroup = {
     header: {
-        label: 'Maintenance',
+        label: maintenanceGroupHeaderLabel,
         icon: MonitorStarIcon,
     },
-    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
-            label: 'Updates',
+            label: maintenanceGroupUpdatesItemLabel,
             to: '/site-admin/updates',
         },
         {
             label: 'Documentation',
             to: '/help',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Pings',
             to: '/site-admin/pings',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Report a bug',
             to: '/site-admin/report-bug',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Migrations',
+            label: maintenanceGroupMigrationsItemLabel,
             to: '/site-admin/migrations',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Instrumentation',
+            label: maintenanceGroupInstrumentationItemLabel,
             to: '/-/debug/',
             source: 'server',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Monitoring',
+            label: maintenanceGroupMonitoringItemLabel,
             to: '/-/debug/grafana',
             source: 'server',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Tracing',
+            label: maintenanceGroupTracingItemLabel,
             to: '/-/debug/jaeger',
             source: 'server',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Outbound requests',
             to: '/site-admin/outbound-requests',
-            source: 'server',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Slow requests',
             to: '/site-admin/slow-requests',
-            source: 'server',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Background jobs',
             to: '/site-admin/background-jobs',
-            source: 'server',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }

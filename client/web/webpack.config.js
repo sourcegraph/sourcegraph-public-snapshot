@@ -110,7 +110,7 @@ const config = {
           chunks: 'all',
         },
         [initialChunkNames.opentelemetry]: {
-          test: /[/\\]node_modules[/\\](@opentelemetry)[/\\]/,
+          test: /[/\\]node_modules[/\\](@opentelemetry|zone.js)[/\\]/,
           name: initialChunkNames.opentelemetry,
           chunks: 'all',
         },
@@ -278,6 +278,17 @@ const config = {
         test: /\.(sass|scss)$/,
         exclude: /\.module\.(sass|scss)$/,
         use: getCSSLoaders(styleLoader, getBasicCSSLoader()),
+      },
+      {
+        test: /\.css$/,
+        include: [path.resolve(__dirname, '../cody-ui')],
+        exclude: /\.module\.css$/,
+        use: getCSSLoaders(styleLoader, getBasicCSSLoader()),
+      },
+      {
+        test: /\.module\.css$/,
+        include: [path.resolve(__dirname, '../cody-ui')],
+        use: getCSSLoaders(styleLoader, getCSSModulesLoader({ sourceMap: IS_DEVELOPMENT })),
       },
       getMonacoCSSRule(),
       getMonacoTTFRule(),

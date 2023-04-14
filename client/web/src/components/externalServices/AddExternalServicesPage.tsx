@@ -28,7 +28,6 @@ export interface AddExternalServicesPageProps extends TelemetryProps {
 
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
-    isSourcegraphApp: boolean
 
     /** For testing only. */
     autoFocusForm?: boolean
@@ -44,7 +43,6 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
-    isSourcegraphApp,
 }) => {
     const { search } = useLocation()
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
@@ -66,7 +64,6 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                     autoFocusForm={autoFocusForm}
                     externalServicesFromFile={externalServicesFromFile}
                     allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
-                    isSourcegraphApp={isSourcegraphApp}
                 />
             )
         }

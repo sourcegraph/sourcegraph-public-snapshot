@@ -39,21 +39,24 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
      * (every location change, for example). This prevents it from flickering.
      */
     const path = useMemo(
-        () => ({
-            text: (
-                <span className="align-middle">
-                    {props.user.displayName ? (
-                        <>
-                            {props.user.displayName} ({props.user.username})
-                        </>
-                    ) : (
-                        props.user.username
-                    )}
-                </span>
-            ),
-            icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
-        }),
-        [props.user]
+        () =>
+            props.isSourcegraphApp
+                ? { text: 'Settings' }
+                : {
+                      text: (
+                          <span className="align-middle">
+                              {props.user.displayName ? (
+                                  <>
+                                      {props.user.displayName} ({props.user.username})
+                                  </>
+                              ) : (
+                                  props.user.username
+                              )}
+                          </span>
+                      ),
+                      icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
+                  },
+        [props.user, props.isSourcegraphApp]
     )
 
     return (

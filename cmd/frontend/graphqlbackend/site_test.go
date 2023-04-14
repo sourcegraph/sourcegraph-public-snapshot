@@ -51,17 +51,17 @@ func TestSiteConfigurationHistory(t *testing.T) {
 		{
 			name:                  "first: 2",
 			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(2)},
-			expectedSiteConfigIDs: []int32{5, 4},
+			expectedSiteConfigIDs: []int32{6, 4},
 		},
 		{
-			name:                  "first: 5 (exact number of items that exist in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(5)},
-			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
+			name:                  "first: 6 (exact number of items that exist in the database)",
+			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(6)},
+			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name:                  "first: 20 (more items than what exists in the database)",
 			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(20)},
-			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
+			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name:                  "last: 2",
@@ -69,14 +69,14 @@ func TestSiteConfigurationHistory(t *testing.T) {
 			expectedSiteConfigIDs: []int32{2, 1},
 		},
 		{
-			name:                  "last: 5 (exact number of items that exist in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(5)},
-			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
+			name:                  "last: 6 (exact number of items that exist in the database)",
+			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(6)},
+			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name:                  "last: 20 (more items than what exists in the database)",
 			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(20)},
-			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
+			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name: "first: 2, after: 4",
@@ -95,12 +95,12 @@ func TestSiteConfigurationHistory(t *testing.T) {
 			expectedSiteConfigIDs: []int32{3, 2, 1},
 		},
 		{
-			name: "first: 10, after: 6 (same as get all items, but latest ID in DB is 5)",
+			name: "first: 10, after: 7 (same as get all items, but latest ID in DB is 6)",
 			args: &graphqlutil.ConnectionResolverArgs{
 				First: int32Ptr(10),
-				After: stringPtr(string(marshalSiteConfigurationChangeID(6))),
+				After: stringPtr(string(marshalSiteConfigurationChangeID(7))),
 			},
-			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
+			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name: "first: 10, after: 1 (beyond the last cursor in DB which is 1)",
@@ -124,7 +124,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 				Last:   int32Ptr(10),
 				Before: stringPtr(string(marshalSiteConfigurationChangeID(1))),
 			},
-			expectedSiteConfigIDs: []int32{5, 4, 3, 2},
+			expectedSiteConfigIDs: []int32{6, 4, 3, 2},
 		},
 		{
 			name: "last: 10, before: 0 (same as get all items, but oldest ID in DB is 1)",
@@ -132,13 +132,13 @@ func TestSiteConfigurationHistory(t *testing.T) {
 				Last:   int32Ptr(10),
 				Before: stringPtr(string(marshalSiteConfigurationChangeID(0))),
 			},
-			expectedSiteConfigIDs: []int32{5, 4, 3, 2, 1},
+			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
-			name: "last: 10, before: 6 (beyond the latest cursor in DB which is 5)",
+			name: "last: 10, before: 7 (beyond the latest cursor in DB which is 6)",
 			args: &graphqlutil.ConnectionResolverArgs{
 				Last:   int32Ptr(10),
-				Before: stringPtr(string(marshalSiteConfigurationChangeID(6))),
+				Before: stringPtr(string(marshalSiteConfigurationChangeID(7))),
 			},
 			expectedSiteConfigIDs: []int32{},
 		},

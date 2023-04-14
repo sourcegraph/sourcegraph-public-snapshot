@@ -11,7 +11,9 @@
    "IsLocked": false,
    "IsDisabled": false,
    "ViewerPermission": "ADMIN",
-   "RepositoryTopics": {}
+   "RepositoryTopics": {
+    "Nodes": []
+   }
   },
   {
    "ID": "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
@@ -25,6 +27,8 @@
    "IsLocked": false,
    "IsDisabled": false,
    "ViewerPermission": "ADMIN",
-   "RepositoryTopics": {}
+   "RepositoryTopics": {
+    "Nodes": []
+   }
   }
  ]

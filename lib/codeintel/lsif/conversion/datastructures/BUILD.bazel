@@ -15,6 +15,7 @@ go_library(
 
 go_test(
     name = "datastructures_test",
+    timeout = "short",
     srcs = [
         "default_idset_map_test.go",
         "disjoint_idset_test.go",

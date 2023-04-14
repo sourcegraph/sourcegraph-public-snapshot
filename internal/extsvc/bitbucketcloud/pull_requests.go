@@ -15,6 +15,7 @@ type PullRequestInput struct {
 	Title        string
 	Description  string
 	SourceBranch string
+	Reviewers    []Account
 
 	// The following fields are optional.
 	//

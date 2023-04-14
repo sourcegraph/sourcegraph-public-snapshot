@@ -8,14 +8,19 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/exp/slices"
+	"google.golang.org/grpc"
+
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/exp/slices"
-	"google.golang.org/grpc"
 )
+
+const maxMessageSizeBytes = 64 * 1024 * 1024 // 64MiB
 
 var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_gitserver_addr_for_repo_invoked",
@@ -137,11 +142,20 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 		a.conns.Store(&after)
 		return
 	}
+	log.Scoped("", "gitserver gRPC connections").Info(
+		"new gitserver addresses",
+		log.Strings("before", before.Addresses),
+		log.Strings("after", after.Addresses),
+	)
 
 	// Open connections for each address
 	after.grpcConns = make(map[string]connAndErr, len(after.Addresses))
 	for _, addr := range after.Addresses {
-		conn, err := defaults.Dial(addr)
+		conn, err := defaults.Dial(
+			addr,
+			// Allow large messages to accomodate large diffs
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSizeBytes)),
+		)
 		after.grpcConns[addr] = connAndErr{conn: conn, err: err}
 	}
 

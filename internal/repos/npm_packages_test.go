@@ -132,7 +132,7 @@ var testDependencyRepos = func() []dependencies.MinimalPackageRepoRef {
 		dependencyRepos = append(dependencyRepos, dependencies.MinimalPackageRepoRef{
 			Scheme:   dependencies.NpmPackagesScheme,
 			Name:     dep.PackageSyntax(),
-			Versions: []string{dep.Version},
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: dep.Version}},
 		})
 	}
 
@@ -145,20 +145,20 @@ func TestNPMPackagesSource_ListRepos(t *testing.T) {
 		{
 			Scheme: dependencies.NpmPackagesScheme,
 			Name:   "@sourcegraph/sourcegraph.proposed",
-			Versions: []string{
-				"12.0.0", // test deduplication with version from config
-				"12.0.1", // test deduplication with version from config
+			Versions: []dependencies.MinimalPackageRepoRefVersion{
+				{Version: "12.0.0"}, // test deduplication with version from config
+				{Version: "12.0.1"}, // test deduplication with version from config
 			},
 		},
 		{
 			Scheme:   dependencies.NpmPackagesScheme,
 			Name:     "@sourcegraph/web-ext",
-			Versions: []string{"3.0.0-fork.1"},
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "3.0.0-fork.1"}},
 		},
 		{
 			Scheme:   dependencies.NpmPackagesScheme,
 			Name:     "fastq",
-			Versions: []string{"0.9.9"}, // test missing modules still create a repo.
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "0.9.9"}}, // test missing modules still create a repo.
 		},
 	})
 

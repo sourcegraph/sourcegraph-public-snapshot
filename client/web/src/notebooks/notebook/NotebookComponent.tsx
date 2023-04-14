@@ -24,11 +24,10 @@ import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 
+import { Notebook, CopyNotebookProps } from '.'
 import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
 import { NotebookOutline } from './NotebookOutline'
 import { focusBlockElement, useNotebookEventHandlers } from './useNotebookEventHandlers'
-
-import { Notebook, CopyNotebookProps } from '.'
 
 import styles from './NotebookComponent.module.scss'
 
@@ -37,7 +36,6 @@ export interface NotebookComponentProps
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery' | 'enableOwnershipSearch'>,
         OwnConfigProps {
-    globbing: boolean
     isReadOnly?: boolean
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
@@ -89,7 +87,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         platformContext,
         blocks: initialBlocks,
         fetchHighlightedFileLineRanges,
-        globbing,
         searchContextsEnabled,
         ownEnabled,
         settingsCascade,
@@ -393,7 +390,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...blockProps}
                                 telemetryService={telemetryService}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                globbing={globbing}
                             />
                         )
                     case 'query':
@@ -402,7 +398,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...block}
                                 {...blockProps}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                globbing={globbing}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 searchContextsEnabled={searchContextsEnabled}
                                 ownEnabled={ownEnabled}
@@ -418,7 +413,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...block}
                                 {...blockProps}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                globbing={globbing}
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
                             />
@@ -439,7 +433,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 isEmbedded,
                 telemetryService,
                 isSourcegraphDotCom,
-                globbing,
                 fetchHighlightedFileLineRanges,
                 searchContextsEnabled,
                 ownEnabled,

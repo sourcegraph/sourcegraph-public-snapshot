@@ -42,6 +42,7 @@ go_library(
 
 go_test(
     name = "oauth_test",
+    timeout = "short",
     srcs = ["provider_test.go"],
     embed = [":oauth"],
 )

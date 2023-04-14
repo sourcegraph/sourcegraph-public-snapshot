@@ -39,6 +39,7 @@ export interface HoverOverlayClassProps {
     actionItemPressedClassName?: string
 
     contentClassName?: string
+    actionsClassName?: string
 }
 
 export interface HoverOverlayProps
@@ -105,6 +106,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
         actionItemClassName,
         actionItemPressedClassName,
         contentClassName,
+        actionsClassName,
 
         actionItemStyleProps,
 
@@ -172,7 +174,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                     !isErrorLike(actionsOrError) &&
                     actionsOrError.length > 0 && (
                         <div className={hoverOverlayStyle.actions}>
-                            <div className={hoverOverlayStyle.actionsInner}>
+                            <div className={classNames(hoverOverlayStyle.actionsInner, actionsClassName)}>
                                 {actionsOrError.map((action, index) => (
                                     <ActionItem
                                         key={index}

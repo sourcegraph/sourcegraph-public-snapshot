@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import {
     mdiAccountReactivate,
     mdiArchive,
+    mdiBadgeAccount,
     mdiChevronDown,
     mdiClipboardMinus,
     mdiClipboardPlus,
@@ -57,6 +58,12 @@ const LIMIT = 25
 
 interface UsersListProps {
     onActionEnd?: () => void
+    isEnterprise: boolean
+    renderAssignmentModal: (
+        onCancel: () => void,
+        onSuccess: (user: { username: string }) => void,
+        user: SiteUser
+    ) => React.ReactNode
 }
 
 interface DateRangeQueryParameter {
@@ -122,7 +129,11 @@ const dateRangeQueryParameterToVariable = (
     }
 }
 
-export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd }) => {
+export const UsersList: React.FunctionComponent<UsersListProps> = ({
+    onActionEnd,
+    renderAssignmentModal,
+    isEnterprise,
+}) => {
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const debouncedSearchText = useDebounce(filters.searchText, 300)
 
@@ -168,17 +179,27 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         [onActionEnd, refetch, variables]
     )
 
+    const [roleAssignmentModal, setRoleAssignmentModal] = useState<React.ReactNode>(null)
+
+    const openRoleAssignmentModal = (selectedUsers: SiteUser[]): void => {
+        setRoleAssignmentModal(
+            renderAssignmentModal(closeRoleAssignmentModal, onRoleAssignmentSuccess, selectedUsers[0])
+        )
+    }
+    const closeRoleAssignmentModal = (): void => setRoleAssignmentModal(null)
+
     const {
+        notification,
+        handleForceSignOutUsers,
         handleDeleteUsers,
         handleDeleteUsersForever,
-        handleForceSignOutUsers,
-        handleRevokeSiteAdmin,
-        handleRecoverUsers,
         handlePromoteToSiteAdmin,
         handleUnlockUser,
+        handleRecoverUsers,
+        handleRevokeSiteAdmin,
         handleResetUserPassword,
-        notification,
         handleDismissNotification,
+        handleDisplayNotification,
     } = useUserListActions(handleActionEnd)
 
     const setFiltersWithOffset = useCallback(
@@ -201,9 +222,19 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         }
     }, [limit, offset, setFilters, users?.totalCount])
 
+    const onRoleAssignmentSuccess = (user: { username: string }): void => {
+        handleDisplayNotification(
+            <Text as="span">
+                Role(s) successfully updated for user <strong>{user.username}</strong>.
+            </Text>
+        )
+        closeRoleAssignmentModal()
+    }
+
     return (
         <div className="position-relative">
             <H2 className="my-4 ml-2">Users</H2>
+            {roleAssignmentModal}
             {notification && (
                 <Alert
                     className="mt-2 d-flex justify-content-between align-items-center"
@@ -295,6 +326,13 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                                 condition: ([user]) => !user?.siteAdmin && !user?.deletedAt,
                             },
                             {
+                                key: 'manage-roles',
+                                label: 'Manage roles',
+                                icon: mdiBadgeAccount,
+                                onClick: openRoleAssignmentModal,
+                                condition: ([user]) => isEnterprise && !user?.deletedAt,
+                            },
+                            {
                                 key: 'unlock-user',
                                 label: 'Unlock user',
                                 icon: mdiLockOpen,
@@ -303,7 +341,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                             },
                             {
                                 key: 'view-permissions',
-                                label: 'View Permissions',
+                                label: 'View permissions',
                                 icon: mdiSecurity,
                                 href: ([user]) => `/users/${user.username}/settings/permissions`,
                                 target: '_blank',
@@ -568,16 +606,17 @@ function RenderUsernameAndEmail({
 type ActionHandler = (users: SiteUser[]) => void
 
 export interface UseUserListActionReturnType {
+    notification: { text: React.ReactNode; isError?: boolean } | undefined
     handleForceSignOutUsers: ActionHandler
     handleDeleteUsers: ActionHandler
     handleDeleteUsersForever: ActionHandler
     handlePromoteToSiteAdmin: ActionHandler
-    handleRevokeSiteAdmin: ActionHandler
-    handleRecoverUsers: ActionHandler
     handleUnlockUser: ActionHandler
-    notification: { text: React.ReactNode; isError?: boolean } | undefined
-    handleDismissNotification: () => void
+    handleRecoverUsers: ActionHandler
+    handleRevokeSiteAdmin: ActionHandler
     handleResetUserPassword: ActionHandler
+    handleDismissNotification: () => void
+    handleDisplayNotification: (text: React.ReactNode) => void
 }
 
 export const getUsernames = (users: SiteUser[]): string => users.map(user => user.username).join(', ')

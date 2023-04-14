@@ -3,7 +3,9 @@ import { createPath } from 'react-router-dom'
 
 import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
+
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { ReferencesPanel } from './ReferencesPanel'
@@ -70,7 +72,7 @@ describe('ReferencesPanel', () => {
         const referenceButton = within(referencesList).getByTestId('reference-item-diff/diff.go-0')
         const fullReferenceURL =
             '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2-16:10'
-        expect(referenceButton).toHaveAttribute('data-href', fullReferenceURL)
+        expect(referenceButton).toHaveAttribute('href', fullReferenceURL)
         expect(referenceButton).not.toHaveClass('locationActive')
 
         // Click on reference

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { ErrorAlert, PageHeader } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/wildcard'
 
 import { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
 import {
@@ -61,56 +61,53 @@ export const EditPackageFilterModalContent: React.FunctionComponent<EditPackageF
     >(updatePackageRepoFilterMutation, { onCompleted: onDismiss })
 
     return (
-        <>
-            <PageHeader path={[{ text: 'Edit package filter' }]} headingElement="h2" className={styles.header} />
-            <div className={styles.content}>
-                <BehaviourSelect value={behaviour} onChange={setBehaviour} />
-                {blockType === 'single' ? (
-                    <SinglePackageForm
-                        initialState={initialState as SinglePackageState}
-                        filters={filters}
-                        setType={setBlockType}
-                        onDismiss={onDismiss}
-                        onSave={blockState =>
-                            updatePackageRepoFilter({
-                                variables: {
-                                    behaviour,
-                                    id: packageFilter.id,
-                                    kind: blockState.ecosystem,
-                                    filter: {
-                                        versionFilter: {
-                                            packageName: blockState.name,
-                                            versionGlob: blockState.versionFilter,
-                                        },
+        <div className={styles.content}>
+            <BehaviourSelect value={behaviour} onChange={setBehaviour} />
+            {blockType === 'single' ? (
+                <SinglePackageForm
+                    initialState={initialState as SinglePackageState}
+                    filters={filters}
+                    setType={setBlockType}
+                    onDismiss={onDismiss}
+                    onSave={blockState =>
+                        updatePackageRepoFilter({
+                            variables: {
+                                behaviour,
+                                id: packageFilter.id,
+                                kind: blockState.ecosystem,
+                                filter: {
+                                    versionFilter: {
+                                        packageName: blockState.name,
+                                        versionGlob: blockState.versionFilter,
                                     },
                                 },
-                            })
-                        }
-                    />
-                ) : (
-                    <MultiPackageForm
-                        initialState={initialState as MultiPackageState}
-                        filters={filters}
-                        setType={setBlockType}
-                        onDismiss={onDismiss}
-                        onSave={blockState =>
-                            updatePackageRepoFilter({
-                                variables: {
-                                    behaviour,
-                                    id: packageFilter.id,
-                                    kind: blockState.ecosystem,
-                                    filter: {
-                                        nameFilter: {
-                                            packageGlob: blockState.nameFilter,
-                                        },
+                            },
+                        })
+                    }
+                />
+            ) : (
+                <MultiPackageForm
+                    initialState={initialState as MultiPackageState}
+                    filters={filters}
+                    setType={setBlockType}
+                    onDismiss={onDismiss}
+                    onSave={blockState =>
+                        updatePackageRepoFilter({
+                            variables: {
+                                behaviour,
+                                id: packageFilter.id,
+                                kind: blockState.ecosystem,
+                                filter: {
+                                    nameFilter: {
+                                        packageGlob: blockState.nameFilter,
                                     },
                                 },
-                            })
-                        }
-                    />
-                )}
-                {error && <ErrorAlert error={error} />}
-            </div>
-        </>
+                            },
+                        })
+                    }
+                />
+            )}
+            {error && <ErrorAlert error={error} />}
+        </div>
     )
 }

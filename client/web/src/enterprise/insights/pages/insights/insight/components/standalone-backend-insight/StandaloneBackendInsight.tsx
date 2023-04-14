@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
@@ -27,7 +27,6 @@ import {
     DrillDownInsightCreationFormValues,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import {
-    BackendInsightData,
     BackendInsight,
     CodeInsightsBackendContext,
     InsightFilters,
@@ -54,7 +53,6 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const [saveAsNewView] = useSaveInsightAsNewView({ dashboard: null })
 
     const seriesToggleState = useSeriesToggle()
-    const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
@@ -82,30 +80,32 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
     }
 
-    const { error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
+    const { data, error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
         GET_INSIGHT_VIEW_GQL,
         {
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions },
             fetchPolicy: 'cache-and-network',
             pollInterval: insightPollingInterval(insight),
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
-            onCompleted: data => {
-                const node = data.insightViews.nodes[0]
-                if (node === null) {
-                    stopPolling()
-                    return
-                }
-                const parsedData = createBackendInsightData({ ...insight, filters }, node)
-                if (!parsedData.isFetchingHistoricalData) {
-                    stopPolling()
-                }
-                setInsightData(parsedData)
-            },
             onError: () => {
                 stopPolling()
             },
         }
     )
+
+    const insightData = useMemo(() => {
+        const node = data?.insightViews.nodes[0]
+
+        if (!node) {
+            stopPolling()
+            return
+        }
+        const parsedData = createBackendInsightData({ ...insight, filters }, node)
+        if (!parsedData.isFetchingHistoricalData) {
+            stopPolling()
+        }
+        return parsedData
+    }, [data, filters, insight, stopPolling])
 
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,

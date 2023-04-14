@@ -75,7 +75,6 @@ export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformCo
                     blocks={notebookOrError.blocks}
                     onUpdateBlocks={noop}
                     viewerCanManage={false}
-                    globbing={true}
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     streamSearch={aggregateStreamingSearch}
                     telemetryService={eventLogger}

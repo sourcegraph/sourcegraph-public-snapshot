@@ -16,7 +16,8 @@ import {
     UpdateRemoteCodeHostResult,
     UpdateRemoteCodeHostVariables,
 } from '../../../../../graphql-operations'
-import { GET_CODE_HOST_BY_ID, UPDATE_CODE_HOST } from '../../queries'
+import { UPDATE_CODE_HOST } from '../../../../queries'
+import { GET_CODE_HOST_BY_ID } from '../../queries'
 
 import { CodeHostConnectFormFields, CodeHostJSONForm, CodeHostJSONFormState } from './common'
 import { GithubConnectView } from './github/GithubConnectView'
@@ -143,7 +144,7 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
     const handleSubmit = async (values: CodeHostConnectFormFields): Promise<void> => {
         await updateRemoteCodeHost({
             variables: { input: { id: codeHostId, ...values } },
-            refetchQueries: ['RepositoryStats', 'StatusMessages'],
+            refetchQueries: ['StatusAndRepoStats'],
         })
 
         navigate('/setup/remote-repositories')

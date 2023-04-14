@@ -20,6 +20,7 @@ go_library(
 
 go_test(
     name = "buildkite_test",
+    timeout = "short",
     srcs = ["buildkite_test.go"],
     deps = [
         ":buildkite",

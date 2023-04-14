@@ -3,7 +3,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "policies",
     srcs = [
-        "config.go",
         "extractor.go",
         "iface.go",
         "init.go",
@@ -15,12 +14,15 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/policies/internal/background",
+        "//enterprise/internal/codeintel/policies/internal/background/repository_matcher",
         "//enterprise/internal/codeintel/policies/internal/store",
         "//enterprise/internal/codeintel/policies/shared",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
+        "//internal/api",
+        "//internal/authz",
         "//internal/conf",
         "//internal/database",
-        "//internal/env",
+        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/goroutine",
         "//internal/metrics",
@@ -33,6 +35,7 @@ go_library(
 
 go_test(
     name = "policies_test",
+    timeout = "short",
     srcs = [
         "helpers_test.go",
         "matcher_common_test.go",
@@ -45,10 +48,15 @@ go_test(
     deps = [
         "//enterprise/internal/codeintel/policies/internal/store",
         "//enterprise/internal/codeintel/policies/shared",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/database",
+        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
         "//internal/timeutil",
+        "//internal/types",
         "@com_github_derision_test_glock//:glock",
         "@com_github_google_go_cmp//cmp",
     ],

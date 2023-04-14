@@ -498,7 +498,7 @@ pollIndexStatusLoop:
 				if err == nil {
 					return err
 				}
-				if !errors.As(err, pgErr) || pgErr.Code != "42P07" {
+				if !errors.As(err, &pgErr) || pgErr.Code != "42P07" {
 					return err
 				}
 

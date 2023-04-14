@@ -24,9 +24,11 @@ import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
 import { useEditPageHandlers } from './hooks/use-edit-page-handlers'
 
-export interface EditInsightPageProps {}
+export interface EditInsightPageProps {
+    isSourcegraphApp: boolean
+}
 
-export const EditInsightPage: FC<EditInsightPageProps> = () => {
+export const EditInsightPage: FC<EditInsightPageProps> = props => {
     /** Normalized insight id <type insight>.insight.<name of insight> */
     const { insightId } = useParams()
 
@@ -49,7 +51,7 @@ export const EditInsightPage: FC<EditInsightPageProps> = () => {
     }
 
     return (
-        <CodeInsightsPage>
+        <CodeInsightsPage isSourcegraphApp={props.isSourcegraphApp}>
             <PageTitle title="Edit insight - Code Insights" />
 
             <PageHeader
