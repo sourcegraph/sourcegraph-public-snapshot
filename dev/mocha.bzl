@@ -96,6 +96,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
             "exec",
             "--quiet",
             "--",
+            # TODO: figure out how to get this path from "//:node_modules/mocha"
             "node_modules/mocha/bin/mocha",
         ]
 
