@@ -19,10 +19,10 @@ import (
 
 func main() {
 	if err := doMain(); err != nil {
-		fmt.Fprintf(os.Stderr, err.Error())
 		if errors.Is(err, run.ErrStepSkipped) {
 			os.Exit(125)
 		}
+		fmt.Fprintf(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 	os.Exit(0)
@@ -49,6 +49,7 @@ func doMain() error {
 	if err != nil {
 		return err
 	}
+	fmt.Printf("previousResult: %+v\n", previousResult)
 
 	logger := &log.Logger{Writer: os.Stdout}
 
@@ -113,26 +114,18 @@ func parseInput(inputPath string) (batcheslib.WorkspacesExecutionInput, error) {
 }
 
 func parsePreviousStepResult(path string, step int, skippedSteps map[int]struct{}) (execution.AfterStepResult, error) {
-	var previousResult execution.AfterStepResult
 	if step > 0 {
 		// Get the last actually executed step index.
 		previousStepIndex := getPreviousStepIndex(step, skippedSteps)
 		if previousStepIndex == -1 {
 			// No previous step was executed.
-			return previousResult, nil
+			return execution.AfterStepResult{}, nil
 		}
 
 		// Read the previous step's result file.
-		stepResultPath := filepath.Join(path, util.StepJSONFile(previousStepIndex))
-		stepJSON, err := os.ReadFile(stepResultPath)
-		if err != nil {
-			return previousResult, errors.Wrap(err, "failed to read step result file")
-		}
-		if err = json.Unmarshal(stepJSON, &previousResult); err != nil {
-			return previousResult, errors.Wrap(err, "failed to unmarshal step result file")
-		}
+		return getPreviouslyExecutedStep(path, previousStepIndex)
 	}
-	return previousResult, nil
+	return execution.AfterStepResult{}, nil
 }
 
 func getPreviousStepIndex(step int, skippedSteps map[int]struct{}) int {
@@ -145,4 +138,22 @@ func getPreviousStepIndex(step int, skippedSteps map[int]struct{}) int {
 		}
 	}
 	return -1
+}
+
+func getPreviouslyExecutedStep(path string, previousStep int) (execution.AfterStepResult, error) {
+	for i := previousStep; i >= 0; i-- {
+		var previousResult execution.AfterStepResult
+		stepResultPath := filepath.Join(path, util.StepJSONFile(i))
+		stepJSON, err := os.ReadFile(stepResultPath)
+		if err != nil {
+			return previousResult, errors.Wrap(err, "failed to read step result file")
+		}
+		if err = json.Unmarshal(stepJSON, &previousResult); err != nil {
+			return previousResult, errors.Wrap(err, "failed to unmarshal step result file")
+		}
+		if !previousResult.Skipped {
+			return previousResult, nil
+		}
+	}
+	return execution.AfterStepResult{}, nil
 }
