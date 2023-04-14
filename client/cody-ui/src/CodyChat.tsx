@@ -16,11 +16,10 @@ import styles from './CodyChat.module.scss'
 export const SCROLL_THRESHOLD = 100
 
 interface CodyChatProps {
-    repoName: string
     onClose: () => void
 }
 
-export const CodyChat = ({ repoName, onClose }: CodyChatProps): JSX.Element => {
+export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
     const { onSubmit, messageInProgress, transcript } = useChatStoreState()
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
@@ -28,8 +27,6 @@ export const CodyChat = ({ repoName, onClose }: CodyChatProps): JSX.Element => {
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
     const [showScrollDownButton, setShowScrollDownButton] = useState(false)
-
-    const chatTitle = 'Ask Cody'
 
     const handleScroll = useCallback(() => {
         if (codySidebarRef.current) {
@@ -63,7 +60,7 @@ export const CodyChat = ({ repoName, onClose }: CodyChatProps): JSX.Element => {
                 <div className={styles.codySidebarHeader}>
                     <div>
                         <CodyLogo />
-                        {chatTitle}
+                        Ask Cody
                     </div>
                     <div>
                         <Button variant="icon" aria-label="Close" onClick={onClose}>

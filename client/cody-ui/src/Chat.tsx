@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import classNames from 'classnames'
+import useResizeObserver from 'use-resize-observer'
 
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -269,8 +270,9 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
     className,
 }) => {
     const textAreaRef = useRef<HTMLTextAreaElement>(null)
+    const { width = 0 } = useResizeObserver({ ref: textAreaRef })
 
-    const adjustTextAreaHeight = () => {
+    const adjustTextAreaHeight = useCallback((): void => {
         if (textAreaRef.current) {
             textAreaRef.current.style.height = '0px'
             const scrollHeight = textAreaRef.current.scrollHeight
@@ -279,7 +281,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
             // Hide scroll if the textArea isn't overflowing.
             textAreaRef.current.style.overflowY = scrollHeight < 200 ? 'hidden' : 'auto'
         }
-    }
+    }, [])
 
     const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>): void => {
         onChange(event.target.value)
@@ -288,7 +290,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
 
     useEffect(() => {
         adjustTextAreaHeight()
-    }, [value])
+    }, [adjustTextAreaHeight, value, width])
 
     return (
         <textarea
