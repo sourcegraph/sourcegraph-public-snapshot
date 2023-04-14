@@ -1615,6 +1615,12 @@ extend type Mutation {
         TODO: Not implemented yet.
         """
         autoApply: Boolean = false
+        """
+        Execute the batch spec using the V2 execution model. False by default.
+        This flag is temporary and will be removed in a future release, it is
+        only used for A/B testing.
+        """
+        useExperimentalExecution: Boolean = false
     ): BatchSpec!
 
     """
@@ -1775,7 +1781,17 @@ extend type Mutation {
     the executions are _replaced_. The workspaces must be in a final state (COMPLETED, FAILED)
     to be retryable.
     """
-    retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [ID!]!): EmptyResponse!
+    retryBatchSpecWorkspaceExecution(
+        batchSpecWorkspaces: [ID!]!
+        """
+        If set, overwrite the execution mode. Otherwise, will default to the previous setting
+        of each workspace.
+        This flag is temporary and will be removed in a future release, it is
+        only used for A/B testing and debugging, or to temporarily switch back to the old
+        execution mode.
+        """
+        useExperimentalExecution: Boolean
+    ): EmptyResponse!
 
     """
     Requeue all workspaces in the batch spec for execution. Previous results and
@@ -1785,7 +1801,18 @@ extend type Mutation {
     If includeCompleted is set, then workspaces that successfully completed
     execution will also be retried and their changeset specs deleted.
     """
-    retryBatchSpecExecution(batchSpec: ID!, includeCompleted: Boolean = false): BatchSpec!
+    retryBatchSpecExecution(
+        batchSpec: ID!
+        includeCompleted: Boolean = false
+        """
+        If set, overwrite the execution mode. Otherwise, will default to the previous setting
+        of each workspace.
+        This flag is temporary and will be removed in a future release, it is
+        only used for A/B testing and debugging, or to temporarily switch back to the old
+        execution mode.
+        """
+        useExperimentalExecution: Boolean
+    ): BatchSpec!
 
     """
     Enqueue the workspace for execution. The workspace must not be running, and
@@ -2084,6 +2111,10 @@ type BatchSpecWorkspacesStats {
     Number of ignored workspaces.
     """
     ignored: Int!
+    """
+    Number of workspaces using V2 execution.
+    """
+    usingV2Execution: Int!
 }
 
 """
@@ -2248,6 +2279,11 @@ interface BatchSpecWorkspace {
     failed.
     """
     diffStat: DiffStat
+
+    """
+    True, if the workspace is run using V2 execution mode.
+    """
+    isV2Execution: Boolean!
 }
 
 """
@@ -2383,6 +2419,11 @@ type VisibleBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     Only available to site-admins.
     """
     executor: Executor
+
+    """
+    True, if the workspace is run using V2 execution mode.
+    """
+    isV2Execution: Boolean!
 }
 
 """
@@ -2463,6 +2504,11 @@ type HiddenBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     failed.
     """
     diffStat: DiffStat
+
+    """
+    True, if the workspace is run using V2 execution mode.
+    """
+    isV2Execution: Boolean!
 }
 
 """

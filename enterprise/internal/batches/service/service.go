@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -511,8 +512,9 @@ func (e ErrBatchSpecResolutionErrored) Error() string {
 var ErrBatchSpecResolutionIncomplete = errors.New("cannot execute batch spec, workspaces still being resolved")
 
 type ExecuteBatchSpecOpts struct {
-	BatchSpecRandID string
-	NoCache         *bool
+	BatchSpecRandID          string
+	NoCache                  *bool
+	UseExperimentalExecution bool
 }
 
 // ExecuteBatchSpec creates BatchSpecWorkspaceExecutionJobs for every created
@@ -581,7 +583,7 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 		}
 	}
 
-	err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+	err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID, opts.UseExperimentalExecution)
 	if err != nil {
 		return nil, err
 	}
@@ -1435,104 +1437,89 @@ func computeBatchSpecState(ctx context.Context, s *store.Store, spec *btypes.Bat
 	return btypes.ComputeBatchSpecState(spec, stats), nil
 }
 
+type RetryBatchSpecWorkspacesOpts struct {
+	WorkspaceIDs   []int64
+	UseV2Execution *bool
+}
+
 // RetryBatchSpecWorkspaces retries the BatchSpecWorkspaceExecutionJobs
 // attached to the given BatchSpecWorkspaces.
 // It only deletes changeset_specs created by workspaces. The imported changeset_specs
 // will not be altered.
-func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []int64) (err error) {
+func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, opts RetryBatchSpecWorkspacesOpts) (err error) {
 	ctx, _, endObservation := s.operations.retryBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if len(workspaceIDs) == 0 {
+	if len(opts.WorkspaceIDs) == 0 {
 		return errors.New("no workspaces specified")
 	}
 
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+	return basestore.InTransaction[*store.Store](ctx, s.store, func(tx *store.Store) error {
+		// Load workspaces and verify they're all in the same batch spec.
+		workspaces, _, err := tx.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{IDs: opts.WorkspaceIDs})
+		if err != nil {
+			return errors.Wrap(err, "loading batch spec workspaces")
+		}
+		var batchSpecID int64 = -1
+		for _, w := range workspaces {
+			if batchSpecID == -1 {
+				batchSpecID = w.BatchSpecID
+			}
 
-	// Load workspaces
-	workspaces, _, err := tx.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{IDs: workspaceIDs})
-	if err != nil {
-		return errors.Wrap(err, "loading batch spec workspaces")
-	}
-
-	var batchSpecID int64 = -1
-	var changesetSpecIDs []int64
-
-	for _, w := range workspaces {
-		// Check that batch spec is the same
-		if batchSpecID != -1 && w.BatchSpecID != batchSpecID {
-			return errors.New("workspaces do not belong to the same batch spec")
+			// Check that batch spec is the same
+			if w.BatchSpecID != batchSpecID {
+				return errors.New("workspaces do not belong to the same batch spec")
+			}
 		}
 
-		batchSpecID = w.BatchSpecID
-		changesetSpecIDs = append(changesetSpecIDs, w.ChangesetSpecIDs...)
-	}
+		// Make sure the user has access to retry it.
+		batchSpec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: batchSpecID})
+		if err != nil {
+			return errors.Wrap(err, "loading batch spec")
+		}
 
-	// Make sure the user has access to retry it.
-	batchSpec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: batchSpecID})
-	if err != nil {
-		return errors.Wrap(err, "loading batch spec")
-	}
+		// Check whether the current user has access to either one of the namespaces.
+		err = s.checkNamespaceAccessWithDB(ctx, tx.DatabaseDB(), batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+		if err != nil {
+			return errors.Wrap(err, "checking whether user has access")
+		}
 
-	// Check whether the current user has access to either one of the namespaces.
-	err = s.checkNamespaceAccessWithDB(ctx, tx.DatabaseDB(), batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
-	if err != nil {
-		return errors.Wrap(err, "checking whether user has access")
-	}
+		// Check that batch spec is not applied
+		batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpecID})
+		if err != nil && err != store.ErrNoResults {
+			return errors.Wrap(err, "checking whether batch spec has been applied")
+		}
+		if err == nil && !batchChange.IsDraft() {
+			return errors.New("batch spec already applied")
+		}
 
-	// Check that batch spec is not applied
-	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpecID})
-	if err != nil && err != store.ErrNoResults {
-		return errors.Wrap(err, "checking whether batch spec has been applied")
-	}
-	if err == nil && !batchChange.IsDraft() {
-		return errors.New("batch spec already applied")
-	}
+		// Load jobs and check their state
+		jobs, err := tx.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
+			BatchSpecWorkspaceIDs: opts.WorkspaceIDs,
+		})
+		if err != nil {
+			return errors.Wrap(err, "loading batch spec workspace execution jobs")
+		}
 
-	// Load jobs and check their state
-	jobs, err := tx.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
-		BatchSpecWorkspaceIDs: workspaceIDs,
+		var errs error
+		for _, j := range jobs {
+			if !j.State.Retryable() {
+				errs = errors.Append(errs, errors.Newf("job %d not retryable", j.ID))
+			}
+		}
+		if err := errs; err != nil {
+			return err
+		}
+
+		o := store.RetryWorkspacesOpts{
+			BatchSpecWorkspaceIDs: opts.WorkspaceIDs,
+			KeepExecutionVersion:  opts.UseV2Execution == nil,
+		}
+		if opts.UseV2Execution != nil {
+			o.UseV2Execution = *opts.UseV2Execution
+		}
+		return tx.RetryWorkspaces(ctx, o)
 	})
-	if err != nil {
-		return errors.Wrap(err, "loading batch spec workspace execution jobs")
-	}
-
-	var errs error
-	jobIDs := make([]int64, len(jobs))
-
-	for i, j := range jobs {
-		if !j.State.Retryable() {
-			errs = errors.Append(errs, errors.Newf("job %d not retryable", j.ID))
-		}
-		jobIDs[i] = j.ID
-	}
-
-	if err := errs; err != nil {
-		return err
-	}
-
-	// Delete the old execution jobs.
-	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, store.DeleteBatchSpecWorkspaceExecutionJobsOpts{IDs: jobIDs}); err != nil {
-		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
-	}
-
-	// Delete the changeset specs they have created.
-	if len(changesetSpecIDs) > 0 {
-		if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecIDs}); err != nil {
-			return errors.Wrap(err, "deleting batch spec workspace changeset specs")
-		}
-	}
-
-	// Create new jobs
-	if err := tx.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, workspaceIDs); err != nil {
-		return errors.Wrap(err, "creating new batch spec workspace execution jobs")
-	}
-
-	return nil
 }
 
 // ErrRetryNonFinal is returned by RetryBatchSpecExecution if the batch spec is
@@ -1540,9 +1527,9 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 var ErrRetryNonFinal = errors.New("batch spec execution has not finished; retry not possible")
 
 type RetryBatchSpecExecutionOpts struct {
-	BatchSpecRandID string
-
+	BatchSpecRandID  string
 	IncludeCompleted bool
+	UseV2Execution   *bool
 }
 
 // RetryBatchSpecExecution retries all BatchSpecWorkspaceExecutionJobs
@@ -1553,74 +1540,48 @@ func (s *Service) RetryBatchSpecExecution(ctx context.Context, opts RetryBatchSp
 	ctx, _, endObservation := s.operations.retryBatchSpecExecution.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	// Make sure the user has access to retry it.
-	batchSpec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
-	if err != nil {
-		return errors.Wrap(err, "loading batch spec")
-	}
-
-	// Check whether the current user has access to either one of the namespaces.
-	err = s.checkNamespaceAccessWithDB(ctx, tx.DatabaseDB(), batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
-	if err != nil {
-		return errors.Wrap(err, "checking whether user has access")
-	}
-
-	// Check that batch spec is in final state
-	state, err := computeBatchSpecState(ctx, tx, batchSpec)
-	if err != nil {
-		return errors.Wrap(err, "computing state of batch spec")
-	}
-
-	if !state.Finished() {
-		return ErrRetryNonFinal
-	}
-
-	// Check that batch spec is not applied
-	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpec.ID})
-	if err != nil && err != store.ErrNoResults {
-		return errors.Wrap(err, "checking whether batch spec has been applied")
-	}
-	if err == nil && !batchChange.IsDraft() {
-		return errors.New("batch spec already applied")
-	}
-
-	workspaces, err := tx.ListRetryBatchSpecWorkspaces(ctx, store.ListRetryBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID, IncludeCompleted: opts.IncludeCompleted})
-	if err != nil {
-		return errors.Wrap(err, "loading batch spec workspace execution jobs")
-	}
-
-	var changesetSpecsIDs []int64
-	workspaceIDs := make([]int64, len(workspaces))
-
-	for i, w := range workspaces {
-		changesetSpecsIDs = append(changesetSpecsIDs, w.ChangesetSpecIDs...)
-		workspaceIDs[i] = w.ID
-	}
-
-	// Delete the old execution jobs.
-	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, store.DeleteBatchSpecWorkspaceExecutionJobsOpts{WorkspaceIDs: workspaceIDs}); err != nil {
-		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
-	}
-
-	// Delete the changeset specs they have created.
-	if len(changesetSpecsIDs) > 0 {
-		if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecsIDs}); err != nil {
-			return errors.Wrap(err, "deleting batch spec workspace changeset specs")
+	return basestore.InTransaction[*store.Store](ctx, s.store, func(tx *store.Store) error {
+		// Make sure the user has access to retry it.
+		batchSpec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
+		if err != nil {
+			return errors.Wrap(err, "loading batch spec")
 		}
-	}
 
-	// Create new jobs
-	if err := tx.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, workspaceIDs); err != nil {
-		return errors.Wrap(err, "creating new batch spec workspace execution jobs")
-	}
+		// Check whether the current user has access to either one of the namespaces.
+		err = s.checkNamespaceAccessWithDB(ctx, tx.DatabaseDB(), batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+		if err != nil {
+			return errors.Wrap(err, "checking whether user has access")
+		}
 
-	return nil
+		// Check that batch spec is in final state
+		state, err := computeBatchSpecState(ctx, tx, batchSpec)
+		if err != nil {
+			return errors.Wrap(err, "computing state of batch spec")
+		}
+
+		if !state.Finished() {
+			return ErrRetryNonFinal
+		}
+
+		// Check that batch spec is not applied
+		batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpec.ID})
+		if err != nil && err != store.ErrNoResults {
+			return errors.Wrap(err, "checking whether batch spec has been applied")
+		}
+		if err == nil && !batchChange.IsDraft() {
+			return errors.New("batch spec already applied")
+		}
+
+		o := store.RetryWorkspacesOpts{
+			BatchSpecID:          batchSpec.ID,
+			IncludeCompleted:     opts.IncludeCompleted,
+			KeepExecutionVersion: opts.UseV2Execution == nil,
+		}
+		if opts.UseV2Execution != nil {
+			o.UseV2Execution = *opts.UseV2Execution
+		}
+		return tx.RetryWorkspaces(ctx, o)
+	})
 }
 
 type GetAvailableBulkOperationsOpts struct {

@@ -409,6 +409,13 @@ func (r *batchSpecWorkspaceResolver) State() string {
 	return r.execution.State.ToGraphQL()
 }
 
+func (r *batchSpecWorkspaceResolver) IsV2Execution() bool {
+	if r.execution == nil {
+		return false
+	}
+	return r.execution.Version == 2
+}
+
 func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]graphqlbackend.VisibleChangesetSpecResolver, error) {
 	// If this is a hidden resolver, we don't return changeset specs, since we only return visible changeset spec resolvers here.
 	if _, ok := r.ToHiddenBatchSpecWorkspace(); ok {

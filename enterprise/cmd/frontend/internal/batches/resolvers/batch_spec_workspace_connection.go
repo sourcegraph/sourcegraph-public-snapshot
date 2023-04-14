@@ -113,6 +113,7 @@ func (r *batchSpecWorkspaceConnectionResolver) Stats(ctx context.Context) (graph
 		// TODO: Handle more ignored cases here.
 		// Cached workspaces should not be considered ignored, although they
 		// were skipped for execution.
-		ignored: int32(stat.SkippedWorkspaces - stat.CachedWorkspaces),
+		ignored:          int32(stat.SkippedWorkspaces - stat.CachedWorkspaces),
+		usingV2Execution: int32(stat.UsingV2Execution),
 	}, nil
 }

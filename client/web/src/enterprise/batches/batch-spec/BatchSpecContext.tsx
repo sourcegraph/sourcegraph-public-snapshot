@@ -66,10 +66,12 @@ type WorkspacesPreviewState = UseWorkspacesPreviewResult & {
 // because it determines whether or not to use cached results for the workspaces.
 export interface ExecutionOptions {
     runWithoutCache: boolean
+    forceExperimentalV2Execution?: boolean
 }
 
 const DEFAULT_EXECUTION_OPTIONS: ExecutionOptions = {
     runWithoutCache: false,
+    forceExperimentalV2Execution: undefined,
 }
 
 export interface BatchSpecContextState<BatchSpecFields extends MinimalBatchSpecFields = MinimalBatchSpecFields> {
@@ -173,7 +175,11 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
         executeBatchSpec,
         isLoading: isExecutionRequestInProgress,
         error: executeError,
-    } = useExecuteBatchSpec(batchSpec.id, executionOptions.runWithoutCache)
+    } = useExecuteBatchSpec(
+        batchSpec.id,
+        executionOptions.runWithoutCache,
+        executionOptions.forceExperimentalV2Execution
+    )
 
     // Disable triggering a new execution if any of the following are true:
     // - The batch spec code is invalid.

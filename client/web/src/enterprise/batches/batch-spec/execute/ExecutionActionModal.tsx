@@ -1,25 +1,28 @@
 import React from 'react'
 
 import { Button, Modal, H3 } from '@sourcegraph/wildcard'
+import { BUTTON_VARIANTS } from '@sourcegraph/wildcard/src/components/Button'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 
-interface CancelExecutionModalProps {
+interface ExecutionActionModalProps {
     isOpen: boolean
-    modalHeader?: string
+    modalHeader: string
     modalBody: React.ReactNode
     isLoading?: boolean
-    confirmLabel?: string
+    confirmLabel: string
+    confirmVariant?: typeof BUTTON_VARIANTS[number]
     onCancel: () => void
     onConfirm: () => void
 }
 
-export const CancelExecutionModal: React.FunctionComponent<React.PropsWithChildren<CancelExecutionModalProps>> = ({
+export const ExecutionActionModal: React.FunctionComponent<React.PropsWithChildren<ExecutionActionModalProps>> = ({
     isOpen,
-    modalHeader = 'Cancel execution',
+    modalHeader,
     modalBody,
     isLoading,
-    confirmLabel = 'Cancel execution',
+    confirmLabel,
+    confirmVariant = 'danger',
     onCancel,
     onConfirm,
 }) => (
@@ -33,7 +36,7 @@ export const CancelExecutionModal: React.FunctionComponent<React.PropsWithChildr
             <LoaderButton
                 onClick={onConfirm}
                 disabled={isLoading}
-                variant="danger"
+                variant={confirmVariant}
                 loading={isLoading}
                 alwaysShowLabel={true}
                 label={confirmLabel}

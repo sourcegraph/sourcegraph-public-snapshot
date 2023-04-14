@@ -61,8 +61,12 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
 `
 
 export const EXECUTE_BATCH_SPEC = gql`
-    mutation ExecuteBatchSpec($batchSpec: ID!, $noCache: Boolean) {
-        executeBatchSpec(batchSpec: $batchSpec, noCache: $noCache) {
+    mutation ExecuteBatchSpec($batchSpec: ID!, $noCache: Boolean, $useExperimentalExecution: Boolean) {
+        executeBatchSpec(
+            batchSpec: $batchSpec
+            noCache: $noCache
+            useExperimentalExecution: $useExperimentalExecution
+        ) {
             ...BatchSpecExecutionFields
         }
     }

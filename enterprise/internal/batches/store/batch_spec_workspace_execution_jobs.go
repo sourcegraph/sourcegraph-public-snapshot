@@ -2,16 +2,15 @@ package store
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -103,95 +102,113 @@ const executableWorkspaceJobsConditionFmtstr = `
 )`
 
 // CreateBatchSpecWorkspaceExecutionJobs creates the given batch spec workspace jobs.
-func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batchSpecID int64) (err error) {
+func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batchSpecID int64, useV2 bool) (err error) {
 	ctx, _, endObservation := s.operations.createBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchSpecID", int(batchSpecID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	cond := sqlf.Sprintf(executableWorkspaceJobsConditionFmtstr)
-	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, versionForExecution(ctx, s), batchSpecID, cond)
+	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, versionForExecution(useV2), batchSpecID, cond)
 	return s.Exec(ctx, q)
 }
 
-const createBatchSpecWorkspaceExecutionJobsForWorkspacesQueryFmtstr = `
+type RetryWorkspacesOpts struct {
+	BatchSpecWorkspaceIDs []int64
+	BatchSpecID           int64
+	IncludeCompleted      bool
+	KeepExecutionVersion  bool
+	UseV2Execution        bool
+}
+
+// RetryWorkspaces deletes existing execution jobs and associated changeset specs,
+// and creates fresh jobs to re-run them.
+func (s *Store) RetryWorkspaces(ctx context.Context, opts RetryWorkspacesOpts) (err error) {
+	ctx, _, endObservation := s.operations.retryWorkspaces.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	if len(opts.BatchSpecWorkspaceIDs) == 0 && opts.BatchSpecID == 0 {
+		return errors.New("invalid options: would delete all jobs")
+	}
+
+	q := getRetryWorkspacesQuery(opts)
+	fmt.Printf("RetryWorkspaces Q: %s\n\nArgs: %#+v\n", q.Query(sqlf.PostgresBindVar), q.Args())
+	return s.Exec(ctx, q)
+}
+
+func getRetryWorkspacesQuery(opts RetryWorkspacesOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+
+	if len(opts.BatchSpecWorkspaceIDs) > 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.id = ANY (%s)", pq.Array(opts.BatchSpecWorkspaceIDs)))
+	}
+
+	if opts.BatchSpecID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %s", opts.BatchSpecID))
+	}
+
+	if !opts.IncludeCompleted {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state != %s", btypes.BatchSpecWorkspaceExecutionJobStateCompleted))
+	}
+
+	versionExpression := sqlf.Sprintf("%s", versionForExecution(opts.UseV2Execution))
+	if opts.KeepExecutionVersion {
+		versionExpression = sqlf.Sprintf("previous_workspace.version")
+	}
+
+	return sqlf.Sprintf(
+		retryWorkspacesQueryFmtstr,
+		sqlf.Join(preds, "\n AND "),
+		versionExpression,
+	)
+}
+
+const retryWorkspacesQueryFmtstr = `
+WITH workspaces AS (
+	SELECT
+		batch_spec_workspaces.id,
+		batch_spec_workspaces.changeset_spec_ids,
+		batch_spec_workspace_execution_jobs.version
+	FROM batch_spec_workspaces
+	INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
+	INNER JOIN batch_spec_workspace_execution_jobs
+		ON batch_spec_workspaces.id = batch_spec_workspace_execution_jobs.batch_spec_workspace_id
+	WHERE
+		repo.deleted_at IS NULL
+		AND
+		%s
+),
+candidates AS (
+	SELECT id, version
+	FROM batch_spec_workspace_execution_jobs
+	WHERE
+		batch_spec_workspace_id IN (SELECT id FROM workspaces)
+),
+deleted_changeset_specs AS (
+	DELETE FROM changeset_specs
+	WHERE
+		id IN (SELECT jsonb_object_keys(changeset_spec_ids)::bigint FROM workspaces)
+),
+deleted AS (
+	DELETE FROM batch_spec_workspace_execution_jobs
+	WHERE
+		id IN (SELECT id FROM candidates)
+)
 INSERT INTO
 	batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id, version)
 SELECT
 	batch_spec_workspaces.id,
 	batch_specs.user_id,
-	%s
+	%s -- version expression
 FROM
 	batch_spec_workspaces
-JOIN
+INNER JOIN
 	batch_specs ON batch_specs.id = batch_spec_workspaces.batch_spec_id
+INNER JOIN
+	workspaces AS previous_workspace ON previous_workspace.id = batch_spec_workspaces.id
 WHERE
-	batch_spec_workspaces.id = ANY (%s)
+	batch_spec_workspaces.id IN (SELECT id FROM workspaces)
 `
-
-// CreateBatchSpecWorkspaceExecutionJobsForWorkspaces creates the batch spec workspace jobs for the given workspaces.
-func (s *Store) CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx context.Context, workspaceIDs []int64) (err error) {
-	ctx, _, endObservation := s.operations.createBatchSpecWorkspaceExecutionJobsForWorkspaces.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
-	defer endObservation(1, observation.Args{})
-
-	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsForWorkspacesQueryFmtstr, versionForExecution(ctx, s), pq.Array(workspaceIDs))
-	return s.Exec(ctx, q)
-}
-
-// DeleteBatchSpecWorkspaceExecutionJobsOpts options used to determine which jobs to delete.
-type DeleteBatchSpecWorkspaceExecutionJobsOpts struct {
-	IDs          []int64
-	WorkspaceIDs []int64
-}
-
-const deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
-DELETE FROM
-	batch_spec_workspace_execution_jobs
-WHERE
-	%s
-RETURNING id
-`
-
-// DeleteBatchSpecWorkspaceExecutionJobs deletes jobs based on the provided options.
-func (s *Store) DeleteBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts DeleteBatchSpecWorkspaceExecutionJobsOpts) (err error) {
-	ctx, _, endObservation := s.operations.deleteBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
-	defer endObservation(1, observation.Args{})
-
-	if len(opts.IDs) == 0 && len(opts.WorkspaceIDs) == 0 {
-		return errors.New("invalid options: would delete all jobs")
-	}
-	if len(opts.IDs) > 0 && len(opts.WorkspaceIDs) > 0 {
-		return errors.New("invalid options: multiple options not supported")
-	}
-
-	q := getDeleteBatchSpecWorkspaceExecutionJobsQuery(&opts)
-	deleted, err := basestore.ScanInts(s.Query(ctx, q))
-	if err != nil {
-		return err
-	}
-	numIds := len(opts.IDs) + len(opts.WorkspaceIDs)
-	if len(deleted) != numIds {
-		return errors.Newf("wrong number of jobs deleted: %d instead of %d", len(deleted), numIds)
-	}
-	return nil
-}
-
-func getDeleteBatchSpecWorkspaceExecutionJobsQuery(opts *DeleteBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
-	var preds []*sqlf.Query
-
-	if len(opts.IDs) > 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = ANY (%s)", pq.Array(opts.IDs)))
-	}
-
-	if len(opts.WorkspaceIDs) > 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.batch_spec_workspace_id = ANY (%s)", pq.Array(opts.WorkspaceIDs)))
-	}
-
-	return sqlf.Sprintf(
-		deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr,
-		sqlf.Join(preds, "\n AND "),
-	)
-}
 
 // GetBatchSpecWorkspaceExecutionJobOpts captures the query options needed for getting a BatchSpecWorkspaceExecutionJob
 type GetBatchSpecWorkspaceExecutionJobOpts struct {
@@ -508,11 +525,9 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 	return nil
 }
 
-func versionForExecution(ctx context.Context, s *Store) int {
-	version := 1
-	if featureflag.FromContext(featureflag.WithFlags(ctx, s.DatabaseDB().FeatureFlags())).GetBoolOr("native-ssbc-execution", false) {
-		version = 2
+func versionForExecution(useV2 bool) int {
+	if useV2 {
+		return 2
 	}
-
-	return version
+	return 1
 }

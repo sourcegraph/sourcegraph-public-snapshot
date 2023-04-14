@@ -561,6 +561,7 @@ func (s *Store) GetBatchSpecStats(ctx context.Context, ids []int64) (stats map[i
 			&s.Failed,
 			&s.Canceled,
 			&s.Canceling,
+			&s.UsingV2Execution,
 		); err != nil {
 			return err
 		}
@@ -591,12 +592,13 @@ SELECT
 	MIN(jobs.started_at) AS started_at,
 	MAX(jobs.finished_at) AS finished_at,
 	COUNT(jobs.id) AS executions,
-	COUNT(jobs.id) FILTER (WHERE jobs.state = 'completed') AS completed,
-	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = FALSE) AS processing,
-	COUNT(jobs.id) FILTER (WHERE jobs.state = 'queued') AS queued,
-	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed') AS failed,
-	COUNT(jobs.id) FILTER (WHERE jobs.state = 'canceled') AS canceled,
-	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = TRUE) AS canceling
+	COUNT(jobs.id) FILTER (WHERE jobs.state   = 'completed') AS completed,
+	COUNT(jobs.id) FILTER (WHERE jobs.state   = 'processing' AND jobs.cancel = FALSE) AS processing,
+	COUNT(jobs.id) FILTER (WHERE jobs.state   = 'queued') AS queued,
+	COUNT(jobs.id) FILTER (WHERE jobs.state   = 'failed') AS failed,
+	COUNT(jobs.id) FILTER (WHERE jobs.state   = 'canceled') AS canceled,
+	COUNT(jobs.id) FILTER (WHERE jobs.state   = 'processing' AND jobs.cancel = TRUE) AS canceling,
+	COUNT(jobs.id) FILTER (WHERE jobs.version = 2) AS using_v2_execution
 FROM batch_specs
 LEFT JOIN batch_spec_resolution_jobs res_job ON res_job.batch_spec_id = batch_specs.id
 LEFT JOIN batch_spec_workspaces ws ON ws.batch_spec_id = batch_specs.id

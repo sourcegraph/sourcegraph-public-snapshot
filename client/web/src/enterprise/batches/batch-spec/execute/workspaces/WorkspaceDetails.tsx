@@ -236,9 +236,7 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
     queryBatchSpecWorkspaceStepFileDiffs,
     queryChangesetSpecFileDiffs,
 }) => {
-    const [retryWorkspaceExecution, { loading: retryLoading, error: retryError }] = useRetryWorkspaceExecution(
-        workspace.id
-    )
+    const [retryWorkspaceExecution, { loading: retryLoading, error: retryError }] = useRetryWorkspaceExecution()
 
     const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false)
     const toggleShowDiagnostics = useCallback(() => {
@@ -247,6 +245,14 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
     const onDismissDiagnostics = useCallback(() => {
         setShowDiagnostics(false)
     }, [])
+    const retry = useCallback(
+        (forceDisable: boolean = false) => {
+            retryWorkspaceExecution({
+                variables: { id: workspace.id, useExperimentalExecution: forceDisable ? false : null },
+            })
+        },
+        [retryWorkspaceExecution, workspace.id]
+    )
 
     if (workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.ignored) {
         return <IgnoredWorkspaceDetails workspace={workspace} deselectWorkspace={deselectWorkspace} />
@@ -273,13 +279,34 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
                         <ErrorAlert error={workspace.failureMessage} className="flex-grow-1 mb-0" />
                         <Button
                             className="ml-2"
-                            onClick={() => retryWorkspaceExecution()}
+                            onClick={() => retry()}
                             disabled={retryLoading}
                             outline={true}
-                            variant="danger"
+                            variant="secondary"
                         >
                             <Icon aria-hidden={true} svgPath={mdiSync} /> Retry
                         </Button>
+                    </div>
+                    <div className="d-flex my-3 w-100">
+                        {workspace.isV2Execution && (
+                            <>
+                                <Alert variant="info" className="flex-grow-1 mb-0">
+                                    <Text className="mb-2">
+                                        This workspace used the new execution infrastructure of Batch Changes. If this
+                                        failure is likely caused by this new infrastructure, retry with the old
+                                        execution model. If this fixes it, please report the issue.
+                                    </Text>
+                                    <Button
+                                        onClick={() => retry(true)}
+                                        disabled={retryLoading}
+                                        outline={true}
+                                        variant="secondary"
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiSync} /> Retry with old execution model
+                                    </Button>
+                                </Alert>
+                            </>
+                        )}
                     </div>
                     {retryError && <ErrorAlert error={retryError} />}
                 </>
@@ -660,15 +687,19 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                         {!step.startedAt && (
                                             <Text className="text-muted mb-0">Step not started yet</Text>
                                         )}
-                                        {step.startedAt && (
-                                            <WorkspaceStepFileDiffConnection
-                                                step={step}
-                                                workspaceID={workspaceID}
-                                                queryBatchSpecWorkspaceStepFileDiffs={
-                                                    queryBatchSpecWorkspaceStepFileDiffs
-                                                }
-                                            />
+                                        {step.startedAt && typeof step.exitCode === 'number' && step.exitCode !== 0 && (
+                                            <Text className="text-muted mb-0">Diff not available, step failed</Text>
                                         )}
+                                        {step.startedAt &&
+                                            (typeof step.exitCode !== 'number' || step.exitCode === 0) && (
+                                                <WorkspaceStepFileDiffConnection
+                                                    step={step}
+                                                    workspaceID={workspaceID}
+                                                    queryBatchSpecWorkspaceStepFileDiffs={
+                                                        queryBatchSpecWorkspaceStepFileDiffs
+                                                    }
+                                                />
+                                            )}
                                     </TabPanel>
                                     <TabPanel className="pt-2" key="files-env">
                                         {step.environment.length === 0 && (
@@ -742,6 +773,7 @@ const WorkspaceStepFileDiffConnection: React.FunctionComponent<
             }),
         [workspaceID, step, queryBatchSpecWorkspaceStepFileDiffs]
     )
+
     return (
         <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
             listClassName="list-group list-group-flush"

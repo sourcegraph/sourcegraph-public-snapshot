@@ -1,10 +1,11 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
+import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
 import { ExecuteBatchSpecResult, ExecuteBatchSpecVariables } from '../../../../graphql-operations'
 import { EXECUTE_BATCH_SPEC } from '../../create/backend'
 
@@ -22,10 +23,21 @@ interface UseExecuteBatchSpecResult {
  *
  * @param batchSpecID The current batch spec ID.
  */
-export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID'], noCache?: boolean): UseExecuteBatchSpecResult => {
+export const useExecuteBatchSpec = (
+    batchSpecID?: Scalars['ID'],
+    noCache?: boolean,
+    experimentalV2Execution?: boolean
+): UseExecuteBatchSpecResult => {
     const [submitBatchSpec, { loading }] = useMutation<ExecuteBatchSpecResult, ExecuteBatchSpecVariables>(
         EXECUTE_BATCH_SPEC
     )
+    const [useExperimentalExecution, _, featureFlagError] = useFeatureFlag('native-ssbc-execution', false)
+
+    useEffect(() => {
+        if (featureFlagError) {
+            console.error('failed to get feature flag', featureFlagError)
+        }
+    }, [featureFlagError])
 
     const [executionError, setExecutionError] = useState<Error>()
 
@@ -39,6 +51,8 @@ export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID'], noCache?: boole
             variables: {
                 batchSpec: batchSpecID,
                 noCache: noCache === undefined ? null : noCache,
+                useExperimentalExecution:
+                    experimentalV2Execution !== undefined ? experimentalV2Execution : useExperimentalExecution,
             },
         })
             .then(({ data }) => {
@@ -50,7 +64,7 @@ export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID'], noCache?: boole
                 }
             })
             .catch(setExecutionError)
-    }, [submitBatchSpec, noCache, navigate, batchSpecID])
+    }, [submitBatchSpec, noCache, experimentalV2Execution, navigate, batchSpecID, useExperimentalExecution])
 
     return {
         executeBatchSpec,

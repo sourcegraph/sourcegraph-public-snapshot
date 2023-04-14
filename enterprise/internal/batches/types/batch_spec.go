@@ -74,6 +74,8 @@ type BatchSpecStats struct {
 	Canceled   int
 	Failed     int
 
+	UsingV2Execution int
+
 	StartedAt  time.Time
 	FinishedAt time.Time
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { mdiInformationOutline, mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
@@ -19,6 +19,7 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
+import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { ExecutionOptions } from '../BatchSpecContext'
 
@@ -42,6 +43,14 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
     onChangeOptions,
 }) => {
     const [isOpen, setIsOpen] = useState(false)
+
+    const [useExperimentalExecution, _, featureFlagError] = useFeatureFlag('native-ssbc-execution', false)
+
+    useEffect(() => {
+        if (featureFlagError) {
+            console.error('failed to get feature flag', featureFlagError)
+        }
+    }, [featureFlagError])
 
     return (
         // We need to use `Popover` instead of `Menu` because `MenuList` doesn't support
@@ -80,10 +89,44 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
                         name="run-without-cache"
                         id="run-without-cache"
                         checked={options.runWithoutCache}
-                        onChange={() => onChangeOptions({ runWithoutCache: !options.runWithoutCache })}
+                        onChange={() => onChangeOptions({ ...options, runWithoutCache: !options.runWithoutCache })}
                         label="Run without cache"
                     />
                 </ExecutionOption>
+                {useExperimentalExecution && (
+                    <ExecutionOption moreInfo="Toggle to disable execution using the new execution infrastructure.">
+                        <Checkbox
+                            name="force-v2-execution"
+                            id="force-v2-execution"
+                            checked={options.forceExperimentalV2Execution}
+                            onChange={() =>
+                                onChangeOptions({
+                                    ...options,
+                                    forceExperimentalV2Execution:
+                                        options.forceExperimentalV2Execution === false ? undefined : false,
+                                })
+                            }
+                            label="Old execution infrastructure"
+                        />
+                    </ExecutionOption>
+                )}
+                {!useExperimentalExecution && (
+                    <ExecutionOption moreInfo="Toggle to run execution using the new execution infrastructure.">
+                        <Checkbox
+                            name="force-v2-execution"
+                            id="force-v2-execution"
+                            checked={options.forceExperimentalV2Execution}
+                            onChange={() =>
+                                onChangeOptions({
+                                    ...options,
+                                    forceExperimentalV2Execution:
+                                        options.forceExperimentalV2Execution === true ? undefined : true,
+                                })
+                            }
+                            label="Experimental execution infrastructure"
+                        />
+                    </ExecutionOption>
+                )}
                 <ExecutionOption disabled={true} disabledTooltip="Coming soon">
                     <Checkbox
                         name="apply-when-complete"

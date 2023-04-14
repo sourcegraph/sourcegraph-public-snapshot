@@ -1,11 +1,12 @@
 package resolvers
 
 type batchSpecWorkspacesStatsResolver struct {
-	errored    int32
-	completed  int32
-	processing int32
-	queued     int32
-	ignored    int32
+	errored          int32
+	completed        int32
+	processing       int32
+	queued           int32
+	ignored          int32
+	usingV2Execution int32
 }
 
 func (r *batchSpecWorkspacesStatsResolver) Errored() int32 {
@@ -26,4 +27,8 @@ func (r *batchSpecWorkspacesStatsResolver) Queued() int32 {
 
 func (r *batchSpecWorkspacesStatsResolver) Ignored() int32 {
 	return r.ignored
+}
+
+func (r *batchSpecWorkspacesStatsResolver) UsingV2Execution() int32 {
+	return r.usingV2Execution
 }

@@ -55,6 +55,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
         ignored
         unsupported
         cachedResultFound
+        isV2Execution
     }
 
     fragment VisibleBatchSpecWorkspaceFields on VisibleBatchSpecWorkspace {
@@ -177,6 +178,7 @@ const batchSpecWorkspaceStatsFragment = gql`
         processing
         queued
         ignored
+        usingV2Execution
     }
 `
 
@@ -492,20 +494,23 @@ export const queryWorkspacesList = ({
     )
 
 const RETRY_WORKSPACE_EXECUTION = gql`
-    mutation RetryWorkspaceExecution($id: ID!) {
-        retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [$id]) {
+    mutation RetryWorkspaceExecution($id: ID!, $useExperimentalExecution: Boolean) {
+        retryBatchSpecWorkspaceExecution(
+            batchSpecWorkspaces: [$id]
+            useExperimentalExecution: $useExperimentalExecution
+        ) {
             alwaysNil
         }
     }
 `
-export const useRetryWorkspaceExecution = (
-    workspaceID: Scalars['ID']
-): MutationTuple<RetryWorkspaceExecutionResult, RetryWorkspaceExecutionVariables> =>
-    useMutation(RETRY_WORKSPACE_EXECUTION, { variables: { id: workspaceID } })
+export const useRetryWorkspaceExecution = (): MutationTuple<
+    RetryWorkspaceExecutionResult,
+    RetryWorkspaceExecutionVariables
+> => useMutation(RETRY_WORKSPACE_EXECUTION)
 
 export const RETRY_BATCH_SPEC_EXECUTION = gql`
-    mutation RetryBatchSpecExecution($id: ID!) {
-        retryBatchSpecExecution(batchSpec: $id) {
+    mutation RetryBatchSpecExecution($id: ID!, $useExperimentalExecution: Boolean) {
+        retryBatchSpecExecution(batchSpec: $id, useExperimentalExecution: $useExperimentalExecution) {
             ...BatchSpecExecutionFields
         }
     }

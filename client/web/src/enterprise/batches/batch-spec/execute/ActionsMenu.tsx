@@ -6,7 +6,10 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import {
+    Alert,
     Button,
+    Checkbox,
+    Form,
     Icon,
     Link,
     Menu,
@@ -31,7 +34,7 @@ import { eventLogger } from '../../../../tracking/eventLogger'
 import { BatchSpecContextState, useBatchSpecContext } from '../BatchSpecContext'
 
 import { CANCEL_BATCH_SPEC_EXECUTION, RETRY_BATCH_SPEC_EXECUTION } from './backend'
-import { CancelExecutionModal } from './CancelExecutionModal'
+import { ExecutionActionModal } from './ExecutionActionModal'
 
 import styles from './ActionsMenu.module.scss'
 
@@ -71,6 +74,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
     const { isExecuting, state } = batchSpec
 
     const [showCancelModal, setShowCancelModal] = useState(false)
+    const [showRetryExecutionModeModal, setShowRetryExecutionModeModal] = useState(false)
     const [cancelModalType, setCancelModalType] = useState<'cancel' | 'edit'>('cancel')
     const [cancelBatchSpecExecution, { loading: isCancelLoading }] = useMutation<
         CancelBatchSpecExecutionResult,
@@ -80,6 +84,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
         onError: setActionsError,
         onCompleted: () => setShowCancelModal(false),
     })
+    const [retryWithOldExecutionMode, setRetryWithOldExecutionMode] = useState(false)
 
     const cancelAndEdit = useCallback(() => {
         cancelBatchSpecExecution()
@@ -90,7 +95,16 @@ const MemoizedActionsMenu: React.FunctionComponent<
     const [retryBatchSpecExecution, { loading: isRetryLoading }] = useMutation<
         RetryBatchSpecExecutionResult,
         RetryBatchSpecExecutionVariables
-    >(RETRY_BATCH_SPEC_EXECUTION, { variables: { id: batchSpec.id }, onError: setActionsError })
+    >(RETRY_BATCH_SPEC_EXECUTION, {
+        onError: setActionsError,
+        onCompleted: () => setShowRetryExecutionModeModal(false),
+    })
+
+    const onSelectRetryExecution = useCallback(() => {
+        // Init to false.
+        setRetryWithOldExecutionMode(false)
+        setShowRetryExecutionModeModal(true)
+    }, [])
 
     const onSelectEdit = useCallback(() => {
         if (isExecuting) {
@@ -202,7 +216,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
                                 </MenuItem>
                             )}
                             {batchSpec.viewerCanRetry && (
-                                <MenuItem onSelect={retryBatchSpecExecution} disabled={isRetryLoading}>
+                                <MenuItem onSelect={onSelectRetryExecution} disabled={isRetryLoading}>
                                     <Icon aria-hidden={true} svgPath={mdiSync} /> Retry failed workspaces
                                 </MenuItem>
                             )}
@@ -214,7 +228,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
                     </MenuLink>
                 </MenuList>
             </Menu>
-            <CancelExecutionModal
+            <ExecutionActionModal
                 isOpen={showCancelModal}
                 onCancel={() => setShowCancelModal(false)}
                 onConfirm={
@@ -236,7 +250,50 @@ const MemoizedActionsMenu: React.FunctionComponent<
                             : 'You are unable to edit the spec when an execution is running.'}
                     </Text>
                 }
+                confirmLabel="Cancel"
                 isLoading={isCancelLoading}
+            />
+            <ExecutionActionModal
+                isOpen={showRetryExecutionModeModal}
+                onCancel={() => setShowRetryExecutionModeModal(false)}
+                onConfirm={() =>
+                    retryBatchSpecExecution({
+                        variables: {
+                            id: batchSpec.id,
+                            useExperimentalExecution: retryWithOldExecutionMode ? false : null,
+                        },
+                    })
+                }
+                modalHeader="Retry failed workspaces"
+                modalBody={
+                    <>
+                        <Text>
+                            This enqueues all workspaces in this batch spec execution that failed for re-execution.
+                        </Text>
+                        {batchSpec.workspaceResolution &&
+                            batchSpec.workspaceResolution.workspaces.stats.usingV2Execution > 0 && (
+                                <Form>
+                                    <Alert variant="info">
+                                        Some workspaces in this execution used the new execution infrastructure. If this
+                                        failure is likely caused by this new infrastructure, retry with the old
+                                        execution model. If this fixes it, please report the issue.
+                                    </Alert>
+                                    <div className="form-group">
+                                        <Checkbox
+                                            id="retry-old-execution-mode-toggle"
+                                            checked={retryWithOldExecutionMode}
+                                            onChange={() => setRetryWithOldExecutionMode(old => !old)}
+                                            disabled={isRetryLoading}
+                                            label="Use old execution infrastructure"
+                                        />
+                                    </div>
+                                </Form>
+                            )}
+                    </>
+                }
+                confirmLabel="Retry"
+                confirmVariant="primary"
+                isLoading={isRetryLoading}
             />
         </div>
     )

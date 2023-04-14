@@ -5,7 +5,7 @@ import { Text } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../components/WebStory'
 
-import { CancelExecutionModal } from './CancelExecutionModal'
+import { ExecutionActionModal } from './ExecutionActionModal'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
@@ -24,11 +24,13 @@ const config: Meta = {
 
 export default config
 
-export const CancelExecutionModalStory: Story = args => (
+export const ExecutionActionModalStory: Story = args => (
     <WebStory>
         {props => (
-            <CancelExecutionModal
+            <ExecutionActionModal
                 {...props}
+                modalHeader="Cancel execution"
+                confirmLabel="Cancel"
                 modalBody={<Text>Are you sure you want to cancel the current execution?</Text>}
                 isOpen={true}
                 isLoading={args.isLoading}
@@ -39,4 +41,4 @@ export const CancelExecutionModalStory: Story = args => (
     </WebStory>
 )
 
-CancelExecutionModalStory.storyName = 'CancelExecutionModal'
+ExecutionActionModalStory.storyName = 'ExecutionActionModal'

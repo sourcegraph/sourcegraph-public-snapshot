@@ -113,9 +113,10 @@ type DeleteBatchSpecArgs struct {
 }
 
 type ExecuteBatchSpecArgs struct {
-	BatchSpec graphql.ID
-	NoCache   *bool
-	AutoApply bool
+	BatchSpec                graphql.ID
+	NoCache                  *bool
+	AutoApply                bool
+	UseExperimentalExecution bool
 }
 
 type CancelBatchSpecExecutionArgs struct {
@@ -127,12 +128,14 @@ type CancelBatchSpecWorkspaceExecutionArgs struct {
 }
 
 type RetryBatchSpecWorkspaceExecutionArgs struct {
-	BatchSpecWorkspaces []graphql.ID
+	BatchSpecWorkspaces      []graphql.ID
+	UseExperimentalExecution *bool
 }
 
 type RetryBatchSpecExecutionArgs struct {
-	BatchSpec        graphql.ID
-	IncludeCompleted bool
+	BatchSpec                graphql.ID
+	IncludeCompleted         bool
+	UseExperimentalExecution *bool
 }
 
 type EnqueueBatchSpecWorkspaceExecutionArgs struct {
@@ -858,6 +861,7 @@ type BatchSpecWorkspacesStatsResolver interface {
 	Processing() int32
 	Queued() int32
 	Ignored() int32
+	UsingV2Execution() int32
 }
 
 type BatchSpecWorkspaceResolver interface {
@@ -876,6 +880,7 @@ type BatchSpecWorkspaceResolver interface {
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	PlaceInQueue() *int32
 	PlaceInGlobalQueue() *int32
+	IsV2Execution() bool
 
 	ToHiddenBatchSpecWorkspace() (HiddenBatchSpecWorkspaceResolver, bool)
 	ToVisibleBatchSpecWorkspace() (VisibleBatchSpecWorkspaceResolver, bool)

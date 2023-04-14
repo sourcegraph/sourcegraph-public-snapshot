@@ -3,7 +3,7 @@ import React, { useMemo } from 'react'
 import { mdiClose, mdiTimerSand, mdiCheck, mdiAlertCircle, mdiProgressClock } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
-import { Button, Modal, Icon, H3, H4 } from '@sourcegraph/wildcard'
+import { Button, Modal, Icon, H3, H4, Alert } from '@sourcegraph/wildcard'
 
 import { isDefined } from '../../../../codeintel/util/helpers'
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
@@ -31,6 +31,12 @@ export const DiagnosticsModal: React.FunctionComponent<React.PropsWithChildren<D
             </Button>
         </div>
         <div className={styles.modalContent}>
+            {node.isV2Execution && (
+                <Alert variant="info">
+                    This execution has been run by the new execution infrastructure. Please report bugs if you find
+                    them.
+                </Alert>
+            )}
             <ExecutionTimeline node={node} />
             {node.executor && (
                 <>

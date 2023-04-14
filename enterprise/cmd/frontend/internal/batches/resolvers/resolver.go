@@ -1772,7 +1772,8 @@ func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.Ex
 	batchSpec, err := svc.ExecuteBatchSpec(ctx, service.ExecuteBatchSpecOpts{
 		BatchSpecRandID: batchSpecRandID,
 		// TODO: args not yet implemented: AutoApply
-		NoCache: args.NoCache,
+		NoCache:                  args.NoCache,
+		UseExperimentalExecution: args.UseExperimentalExecution,
 	})
 	if err != nil {
 		return nil, err
@@ -1847,7 +1848,10 @@ func (r *Resolver) RetryBatchSpecWorkspaceExecution(ctx context.Context, args *g
 	// so the check makes sure the current user is the creator of the batch
 	// spec or an admin.
 	svc := service.New(r.store)
-	err = svc.RetryBatchSpecWorkspaces(ctx, workspaceIDs)
+	err = svc.RetryBatchSpecWorkspaces(ctx, service.RetryBatchSpecWorkspacesOpts{
+		WorkspaceIDs:   workspaceIDs,
+		UseV2Execution: args.UseExperimentalExecution,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -1981,6 +1985,7 @@ func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbac
 	if err = svc.RetryBatchSpecExecution(ctx, service.RetryBatchSpecExecutionOpts{
 		BatchSpecRandID:  batchSpecRandID,
 		IncludeCompleted: args.IncludeCompleted,
+		UseV2Execution:   args.UseExperimentalExecution,
 	}); err != nil {
 		return nil, err
 	}

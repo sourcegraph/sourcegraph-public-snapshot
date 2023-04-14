@@ -17,7 +17,7 @@ import { LibraryPane } from '../edit/library/LibraryPane'
 import { WorkspacesPreviewPanel } from '../edit/workspaces-preview/WorkspacesPreviewPanel'
 
 import { CANCEL_BATCH_SPEC_EXECUTION } from './backend'
-import { CancelExecutionModal } from './CancelExecutionModal'
+import { ExecutionActionModal } from './ExecutionActionModal'
 import { ReadOnlyBatchSpecAlert } from './ReadOnlyBatchSpecAlert'
 
 import editorStyles from '../edit/EditBatchSpecPage.module.scss'
@@ -125,10 +125,12 @@ const MemoizedReadOnlyBatchSpecForm: FC<MemoizedReadOnlyBatchSpecFormProps> = Re
                 </div>
                 {/* Hide the workspaces preview panel for locally-executed batch specs. */}
                 {batchSpec.source === BatchSpecSource.REMOTE && <WorkspacesPreviewPanel isReadOnly={true} />}
-                <CancelExecutionModal
+                <ExecutionActionModal
                     isOpen={showCancelModal}
                     onCancel={() => setShowCancelModal(false)}
                     onConfirm={cancelBatchSpecExecution}
+                    modalHeader="Cancel execution"
+                    confirmLabel="Cancel"
                     modalBody={<Text>Are you sure you want to cancel the current execution?</Text>}
                     isLoading={isCancelLoading}
                 />
