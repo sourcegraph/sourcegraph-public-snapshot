@@ -244,6 +244,8 @@ There is no reason to index these files, so you can just exclude them from index
 
 This could happen when there are any files which are not tracked by Git. These files affect the run of `bazel configure` and typically add more items to `BUILD.bazel` file.
 
+Solution: run `git clean -ffdx` then run `bazel configure` again. 
+
 ### Go
 
 #### It complains about some missing symbols, but I'm sure they are there since I can see my files
