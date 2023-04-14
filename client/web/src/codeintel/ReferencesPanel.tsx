@@ -486,7 +486,7 @@ const ReferencesList: React.FunctionComponent<
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
-          <CollapsibleLocationList
+                    <CollapsibleLocationList
                         {...props}
                         name="prototypes"
                         locations={prototypes}
@@ -501,7 +501,6 @@ const ReferencesList: React.FunctionComponent<
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
-
                 </div>
             </div>
             {sideblob && (
