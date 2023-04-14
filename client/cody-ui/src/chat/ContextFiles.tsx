@@ -2,6 +2,8 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useState } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
+
 import styles from './ContextFiles.module.css'
 
 export interface FileLinkProps {
@@ -30,7 +32,7 @@ export const ContextFiles: React.FunctionComponent<{
         return (
             <div className={styles.contextFilesExpanded}>
                 <span className={styles.contextFilesToggleIcon} onClick={() => setIsExpanded(false)}>
-                    ▼
+                    <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                 </span>
                 <div>
                     <div className={styles.contextFilesListTitle} onClick={() => setIsExpanded(false)}>
@@ -50,7 +52,9 @@ export const ContextFiles: React.FunctionComponent<{
 
     return (
         <div className={styles.contextFilesCollapsed} onClick={() => setIsExpanded(true)}>
-            <span className={styles.contextFilesToggleIcon}>▸</span>
+            <span className={styles.contextFilesToggleIcon}>
+                <Icon aria-hidden={true} svgPath={mdiChevronRight} />
+            </span>
             <div className={styles.contextFilesCollapsedText}>
                 <span>
                     Cody read <span className={styles.contextFile}>{contextFiles[0].split('/').pop()}</span> and{' '}
@@ -60,3 +64,9 @@ export const ContextFiles: React.FunctionComponent<{
         </div>
     )
 }
+
+const Icon: React.FC<{ svgPath: string }> = ({ svgPath }) => (
+    <svg role="img" height={24} width={24} viewBox="0 0 24 24" fill="currentColor">
+        <path d={svgPath} />
+    </svg>
+)

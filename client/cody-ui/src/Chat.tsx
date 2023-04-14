@@ -12,7 +12,6 @@ import { Tips } from './Tips'
 import styles from './Chat.module.css'
 
 const SCROLL_THRESHOLD = 15
-
 interface ChatProps extends ChatClassNames {
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
@@ -32,6 +31,8 @@ interface ChatProps extends ChatClassNames {
 interface ChatClassNames {
     transcriptContainerClassName?: string
     bubbleContentClassName?: string
+    bubbleClassName?: string
+    bubbleRowClassName?: string
     humanBubbleContentClassName?: string
     botBubbleContentClassName?: string
     codeBlocksCopyButtonClassName?: string
@@ -72,6 +73,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     className,
     transcriptContainerClassName,
     bubbleContentClassName,
+    bubbleClassName,
+    bubbleRowClassName,
     humanBubbleContentClassName,
     botBubbleContentClassName,
     codeBlocksCopyButtonClassName,
@@ -85,7 +88,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
 
     const inputHandler = useCallback(
-        (inputValue: string) => {
+        (inputValue: string): void => {
             const rowsCount = inputValue.match(/\n/g)?.length
             if (rowsCount) {
                 setInputRows(rowsCount < 5 ? 5 : rowsCount > 25 ? 25 : rowsCount)
@@ -100,7 +103,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [historyIndex, inputHistory, setFormInput]
     )
 
-    const onChatSubmit = useCallback(() => {
+    const onChatSubmit = useCallback((): void => {
         // Submit chat only when input is not empty
         if (formInput !== undefined) {
             onSubmit(formInput)
@@ -145,11 +148,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             // Only scroll if the user didn't scroll up manually more than the scrolling threshold.
             // That is so that you can freely copy content or read up on older content while new
             // content is being produced.
-            // We allow some small threshold for "what is considered not scrolled up" so that minimal
-            // scroll doesn't affect it (ie. if I'm not all the way scrolled down by like a pixel or two,
-            // I probably still want it to scroll).
-            // Sice this container uses flex-direction: column-reverse, the scrollTop starts in the negatives
-            // and ends at 0.
+            //
+            // We allow some small threshold for "what is considered not scrolled up" so that
+            // minimal scroll doesn't affect it (ie. if I'm not all the way scrolled down by like a
+            // pixel or two, I probably still want it to scroll).
+            //
+            // Since this container uses flex-direction: column-reverse, the scrollTop starts in the
+            // negatives and ends at 0.
             if (transcriptContainerRef.current.scrollTop >= -SCROLL_THRESHOLD) {
                 transcriptContainerRef.current.scrollTo({ behavior: 'smooth', top: 0 })
             }
@@ -174,10 +179,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                 key={`message-${index}`}
                                 className={classNames(
                                     styles.bubbleRow,
+                                    bubbleRowClassName,
                                     styles[`${getBubbleClassName(message.speaker)}BubbleRow`]
                                 )}
                             >
-                                <div className={styles.bubble}>
+                                <div className={classNames(styles.bubble, bubbleClassName)}>
                                     <div
                                         className={classNames(
                                             styles.bubbleContent,
@@ -265,6 +271,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     </div>
                 )}
             </div>
+
             <form className={classNames(styles.inputRow, inputRowClassName)}>
                 <TextArea
                     className={classNames(styles.chatInput, chatInputClassName)}
@@ -278,6 +285,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     }}
                     onKeyDown={onChatKeyDown}
                 />
+
                 <SubmitButton className={styles.submitButton} onClick={onChatSubmit} disabled={!!messageInProgress} />
             </form>
         </div>

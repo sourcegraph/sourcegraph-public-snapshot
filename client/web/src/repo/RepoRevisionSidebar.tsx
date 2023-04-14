@@ -28,7 +28,6 @@ import { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 
-import { RepoRevisionSidebarCody } from './repoRevisionSidebar/cody/RepoRevisionSidebarCody'
 import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
@@ -88,10 +87,6 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     const [fileTreeFocusKey, setFileTreeFocusKey] = useState('')
     const [symbolsFocusKey, setSymbolsFocusKey] = useState('')
 
-    const [codyEnabled] = useFeatureFlag('cody-experimental')
-    const focusCodyShortcut = useKeyboardShortcut('focusCody')
-    const [codyFocusKey, setCodyFocusKey] = useState('')
-
     return (
         <>
             {isVisible ? (
@@ -136,11 +131,6 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                 <Tab data-tab-content="symbols">
                                     <span className="tablist-wrapper--tab-label">Symbols</span>
                                 </Tab>
-                                {codyEnabled && (
-                                    <Tab data-tab-content="cody">
-                                        <span className="tablist-wrapper--tab-label">Cody</span>
-                                    </Tab>
-                                )}
                             </TabList>
                             <div
                                 className={classNames('flex w-100 overflow-auto explorer pr-2', styles.tabpanels)}
@@ -174,17 +164,6 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                                 onHandleSymbolClick={handleSymbolClick}
                                             />
                                         </TabPanel>
-                                        {codyEnabled && (
-                                            <TabPanel className="h-100">
-                                                <RepoRevisionSidebarCody
-                                                    repoName={props.repoName}
-                                                    repoID={props.repoID}
-                                                    revision={props.revision}
-                                                    activePath={props.filePath}
-                                                    focusKey={codyFocusKey}
-                                                />
-                                            </TabPanel>
-                                        )}
                                     </TabPanels>
                                 )}
                             </div>
@@ -230,18 +209,6 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                 handleSidebarToggle(true)
                                 setPersistedTabIndex(1)
                                 setSymbolsFocusKey(Date.now().toString())
-                            }}
-                        />
-                    ))}
-                    {focusCodyShortcut?.keybindings.map((keybinding, index) => (
-                        <Shortcut
-                            key={index}
-                            {...keybinding}
-                            allowDefault={true}
-                            onMatch={() => {
-                                handleSidebarToggle(true)
-                                setPersistedTabIndex(2)
-                                setCodyFocusKey(Date.now().toString())
                             }}
                         />
                     ))}
