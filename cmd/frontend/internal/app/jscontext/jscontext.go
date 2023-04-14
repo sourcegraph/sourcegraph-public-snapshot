@@ -4,11 +4,9 @@ package jscontext
 
 import (
 	"context"
-	"net"
 	"net/http"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	logger "github.com/sourcegraph/log"
@@ -145,7 +143,6 @@ type JSContext struct {
 	EmailEnabled  bool   `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
-	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
 	NeedServerRestart bool                     `json:"needServerRestart"`
 	DeployType        string                   `json:"deployType"`
 
@@ -325,7 +322,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedsSiteInit:     needsSiteInit,
 		EmailEnabled:      conf.CanSendEmail(),
 		Site:              publicSiteConfiguration(),
-		LikelyDockerOnMac: likelyDockerOnMac(),
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
@@ -548,15 +544,4 @@ var isBotPat = lazyregexp.New(`(?i:googlecloudmonitoring|pingdom.com|go .* packa
 
 func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)
-}
-
-func likelyDockerOnMac() bool {
-	r := net.DefaultResolver
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	addrs, err := r.LookupHost(ctx, "host.docker.internal")
-	if err != nil || len(addrs) == 0 {
-		return false //  Assume we're not docker for mac.
-	}
-	return true
 }
