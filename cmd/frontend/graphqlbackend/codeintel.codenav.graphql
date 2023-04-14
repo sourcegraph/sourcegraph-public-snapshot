@@ -211,7 +211,7 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
         first: Int
 
         """
-        When specified, it filters implementation by filename.
+        When specified, it filters prototypes by filename.
         """
         filter: String
     ): LocationConnection!
