@@ -3,7 +3,7 @@ import { truncateText } from '../../prompt/truncation'
 import { getShortTimestamp } from '../../timestamp'
 import { Interaction } from '../transcript/interaction'
 
-import { getNormalizedLanguageName, } from './helpers'
+import { getNormalizedLanguageName } from './helpers'
 import { Recipe, RecipeContext } from './recipe'
 
 export class FindCodeSmells implements Recipe {
@@ -25,7 +25,8 @@ export class FindCodeSmells implements Recipe {
 If you have no ideas because the code looks fine, feel free to say that it already looks fine.`
 
         // Use the whole context window for the prompt because we're attaching no files
-        const maxTokenCount = MAX_AVAILABLE_PROMPT_LENGTH - (promptPrefix.length + promptSuffix.length) / CHARS_PER_TOKEN
+        const maxTokenCount =
+            MAX_AVAILABLE_PROMPT_LENGTH - (promptPrefix.length + promptSuffix.length) / CHARS_PER_TOKEN
         const truncatedSelectedText = truncateText(selection.selectedText, maxTokenCount)
         const promptMessage = `${promptPrefix}\n\n\`\`\`\n${truncatedSelectedText}\n\`\`\`\n\n${promptSuffix}`
 
@@ -40,7 +41,8 @@ If you have no ideas because the code looks fine, feel free to say that it alrea
                 text: assistantResponsePrefix,
                 displayText: '',
                 timestamp,
-            }, new Promise(resolve => resolve([]))
+            },
+            new Promise(resolve => resolve([]))
         )
     }
 }

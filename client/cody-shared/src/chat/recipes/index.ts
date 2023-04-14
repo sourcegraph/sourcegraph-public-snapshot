@@ -1,6 +1,7 @@
 import { ChatQuestion } from './chat-question'
 import { ExplainCodeDetailed } from './explain-code-detailed'
 import { ExplainCodeHighLevel } from './explain-code-high-level'
+import { FindCodeSmells } from './find-code-smells'
 import { GenerateDocstring } from './generate-docstring'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
@@ -8,7 +9,6 @@ import { ImproveVariableNames } from './improve-variable-names'
 import { Recipe } from './recipe'
 import { Replace } from './replace'
 import { TranslateToLanguage } from './translate'
-import { FindCodeSmells } from './find-code-smells'
 
 const registeredRecipes: { [id: string]: Recipe } = {}
 
