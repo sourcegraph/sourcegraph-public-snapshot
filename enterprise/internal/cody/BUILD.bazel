@@ -5,5 +5,9 @@ go_library(
     srcs = ["feature_flag.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/cody",
     visibility = ["//enterprise:__subpackages__"],
-    deps = ["//internal/featureflag"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/conf",
+        "//internal/featureflag",
+    ],
 )
