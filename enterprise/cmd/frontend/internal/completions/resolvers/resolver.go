@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
@@ -24,11 +23,8 @@ func NewCompletionsResolver() graphqlbackend.CompletionsResolver {
 }
 
 func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (string, error) {
-	if envvar.SourcegraphDotComMode() {
-		isEnabled := cody.IsCodyExperimentalFeatureFlagEnabled(ctx)
-		if !isEnabled {
-			return "", errors.New("cody experimental feature flag is not enabled for current user")
-		}
+	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
+		return "", errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
 	completionsConfig := conf.Get().Completions
