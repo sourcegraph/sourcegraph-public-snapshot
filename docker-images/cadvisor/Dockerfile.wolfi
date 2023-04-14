@@ -1,8 +1,7 @@
 # TODO: Experimental cAdvisor Dockerfile. Entirely untested, and may require additional libraries
 
 # NOTE: Check the README before updating
-# FROM us.gcr.io/sourcegraph-dev/wolfi-sourcegraph-base:latest
-FROM --platform=x86_64 sourcegraph-wolfi/cadvisor-base:latest-amd64
+FROM us.gcr.io/sourcegraph-dev/wolfi-sourcegraph-base:latest
 LABEL com.sourcegraph.cadvisor.version=v0.47.0
 
 ARG COMMIT_SHA="unknown"
