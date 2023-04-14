@@ -28,13 +28,32 @@ export class Replace implements Recipe {
             return null
         }
 
+        context.responseMultiplexer.sub(
+            'selection',
+            new BufferedBotResponseSubscriber(async content => {
+                if (!content) {
+                    await context.editor.showWarningMessage(
+                        'Cody did not suggest any replacement.\nTry starting a new conversation with Cody.'
+                    )
+                    return
+                }
+                await context.editor.replaceSelection(selection.fileName, selection.selectedText, content)
+            })
+        )
+
         const prompt = `This is part of the file ${
             selection.fileName
         }. The part of the file I have selected is highlighted with <selection> tags. You are helping me to work on that part.
-Follow the instructions in the selected part and produce a rewritten replacement for only that part. Put the rewritten replacement inside <selection> tags.\n\n\`\`\`\n${truncateTextStart(
-            selection.precedingText,
-            quarterFileContext
-        )}<selection>${selection.selectedText}</selection>${truncateText(
+
+Follow the instructions in the selected part and produce a rewritten replacement for only that part. Put the rewritten replacement inside <selection> tags.
+
+I only want to see the code within <selection>. Do not move code from outside the selection into the selection in your reply.
+
+It is OK to provide some commentary before you tell me the replacement <selection>. If it doesn't make sense, you do not need to provide <selection>.
+
+\`\`\`\n${truncateTextStart(selection.precedingText, quarterFileContext)}<selection>${
+            selection.selectedText
+        }</selection>${truncateText(
             selection.followingText,
             quarterFileContext
         )}\n\`\`\`\n\n${context.responseMultiplexer.prompt()}`
@@ -42,32 +61,12 @@ Follow the instructions in the selected part and produce a rewritten replacement
 
         const timestamp = getShortTimestamp()
 
-        context.responseMultiplexer.sub(
-            'selection',
-            new BufferedBotResponseSubscriber(async content => {
-                if (!content) {
-                    await context.editor.showWarningMessage('Cody did not suggest any replacement.')
-                    return
-                }
-                await context.editor.replaceSelection(selection.fileName, selection.selectedText, content)
-            })
-        )
-
-        const displayTexts = [
-            '"Codificus Adaptus!"',
-            '"Scriptomorphus Intelligus!"',
-            'Enhance 224 to 176.\nTrack 45 right.\nCenter in.\nEnhance.\nStop.\n',
-            'Replace me up, Cody.',
-            'Upload Code-Fu.',
-        ]
-        const displayText = displayTexts[Math.floor(Math.random() * displayTexts.length)]
-
         return Promise.resolve(
             new Interaction(
                 {
                     speaker: 'human',
                     text: prompt,
-                    displayText,
+                    displayText: 'Replace the instructions in the selection.',
                     timestamp,
                 },
                 { speaker: 'assistant', text: '', displayText: '', timestamp },
