@@ -108,7 +108,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
 }
 
 interface OwnExplanationProps {
-    owners?: Array<OwnerFields>
+    owners?: OwnerFields[]
 }
 
 const OwnExplanation: React.FunctionComponent<OwnExplanationProps> = ({ owners }) => {
@@ -167,7 +167,7 @@ const OwnExplanation: React.FunctionComponent<OwnExplanationProps> = ({ owners }
     )
 }
 
-const resolveOwnerSearchPredicate = (owners?: Array<OwnerFields>): string => {
+const resolveOwnerSearchPredicate = (owners?: OwnerFields[]): string => {
     if (owners) {
         for (const owner of owners) {
             if (owner.__typename === 'Person' && owner.user?.username) {
