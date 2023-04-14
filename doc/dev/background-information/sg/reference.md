@@ -352,6 +352,19 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--step="<value>"`: Filter by step name (--step STEP_NAME will translate to '.*STEP_NAME.*')
 
+### sg ci cody
+
+Ask Cody about the failure of a build on CI.
+
+
+Flags:
+
+* `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
+* `--build, -n="<value>"`: Override branch detection with a specific build `number`
+* `--commit, -c="<value>"`: Override branch detection with the latest build for `commit`
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
+
 ## sg test
 
 Run the given test suite.

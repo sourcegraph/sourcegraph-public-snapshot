@@ -119,6 +119,7 @@ go_library(
         "@com_github_masterminds_semver//:semver",
         "@com_github_opsgenie_opsgenie_go_sdk_v2//alert",
         "@com_github_opsgenie_opsgenie_go_sdk_v2//client",
+        "@com_github_pjlast_llmsp//claude",
         "@com_github_slack_go_slack//:slack",
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
