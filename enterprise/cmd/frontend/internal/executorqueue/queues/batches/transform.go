@@ -246,10 +246,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 				return apiclient.Job{}, err
 			}
 
-			index := i
-
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
-				Index: &index,
 				Key:   fmt.Sprintf("step.%d.pre", i),
 				Image: helperImage,
 				Env:   secretEnvVars,
@@ -262,7 +259,6 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			})
 
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
-				Index: &index,
 				Key:   fmt.Sprintf("step.%d.run", i),
 				Image: step.Container,
 				Dir:   runDir,
@@ -278,7 +274,6 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 
 			// This step gets the diff, reads stdout and stderr, renders the outputs and builds the AfterStepResult.
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
-				Index: &index,
 				Key:   fmt.Sprintf("step.%d.post", i),
 				Image: helperImage,
 				Env:   secretEnvVars,

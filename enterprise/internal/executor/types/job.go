@@ -246,8 +246,6 @@ func (j Job) RecordID() int {
 }
 
 type DockerStep struct {
-	Index *int `json:"index"`
-
 	// Key is a unique identifier of the step. It can be used to retrieve the
 	// associated log entry.
 	Key string `json:"key,omitempty"`

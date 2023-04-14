@@ -2,10 +2,14 @@ package runner
 
 import (
 	"context"
+	"strconv"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Runner is the interface between an executor and the host on which commands
@@ -33,10 +37,23 @@ type Runner interface {
 type Spec struct {
 	JobID       int
 	Queue       string
-	Index       int
 	CommandSpec command.Spec
 	Image       string
 	ScriptPath  string
+}
+
+var indexRegex = regexp.MustCompile("step\\.(docker|kubernetes)\\.(%d)")
+
+func (s Spec) Index() (int, error) {
+	matches := indexRegex.FindStringSubmatch(s.CommandSpec.Key)
+	if len(matches) != 3 {
+		return -1, errors.New("failed to parse index from key")
+	}
+	index, err := strconv.Atoi(matches[2])
+	if err != nil {
+		return -1, errors.Wrap(err, "failed to parse index from key")
+	}
+	return index, nil
 }
 
 type Options struct {

@@ -54,10 +54,6 @@ func (r *dockerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types.Doc
 		} else {
 			key = fmt.Sprintf("step.docker.%d", i)
 		}
-		index := i
-		if step.Index != nil {
-			index = *step.Index
-		}
 
 		runnerSpecs[i] = runner.Spec{
 			CommandSpec: command.Spec{
@@ -67,7 +63,6 @@ func (r *dockerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types.Doc
 				Env:       step.Env,
 				Operation: r.operations.Exec,
 			},
-			Index:      index,
 			Image:      step.Image,
 			ScriptPath: ws.ScriptFilenames()[i],
 		}
