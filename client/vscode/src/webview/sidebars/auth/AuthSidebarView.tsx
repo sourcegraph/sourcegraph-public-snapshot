@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Text, Link, Input, H5, Button, Form } from '@sourcegraph/wildcard'
+import { Alert, Text, Link, Input, H5, Form } from '@sourcegraph/wildcard'
 
 import {
     VSCE_LINK_DOTCOM,
