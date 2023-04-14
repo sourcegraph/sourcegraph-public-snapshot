@@ -107,14 +107,13 @@ func ZoektDialHTTP(endpoint string) zoekt.Streamer {
 	return NewMeteredSearcher(endpoint, streamClient)
 }
 
+// ZoektDialGRPC connects to a Searcher gRPC server at address (host:port).
 func ZoektDialGRPC(endpoint string) zoekt.Streamer {
 	conn, err := defaults.Dial(endpoint)
-	if err != nil {
-		panic("dial failure: " + err.Error())
-	}
 	return NewMeteredSearcher(endpoint, &zoektGRPCClient{
 		endpoint: endpoint,
 		client:   v1.NewWebserverServiceClient(conn),
+		dialErr:  err,
 	})
 }
 

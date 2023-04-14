@@ -55,11 +55,20 @@ func (c *switchableZoektGRPCClient) String() string {
 type zoektGRPCClient struct {
 	endpoint string
 	client   v1.WebserverServiceClient
+
+	// We capture the dial error to return it lazily.
+	// This allows us to treat Dial as infallible, which is
+	// required by the interface this is being used behind.
+	dialErr error
 }
 
 var _ zoekt.Streamer = (*zoektGRPCClient)(nil)
 
 func (z *zoektGRPCClient) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, sender zoekt.Sender) error {
+	if z.dialErr != nil {
+		return z.dialErr
+	}
+
 	req := &v1.SearchRequest{
 		Query: query.QToProto(q),
 		Opts:  opts.ToProto(),
@@ -81,6 +90,10 @@ func (z *zoektGRPCClient) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 }
 
 func (z *zoektGRPCClient) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+	if z.dialErr != nil {
+		return nil, z.dialErr
+	}
+
 	req := &v1.SearchRequest{
 		Query: query.QToProto(q),
 		Opts:  opts.ToProto(),
@@ -97,6 +110,10 @@ func (z *zoektGRPCClient) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 // List lists repositories. The query `q` can only contain
 // query.Repo atoms.
 func (z *zoektGRPCClient) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
+	if z.dialErr != nil {
+		return nil, z.dialErr
+	}
+
 	req := &v1.ListRequest{
 		Query: query.QToProto(q),
 		Opts:  opts.ToProto(),
