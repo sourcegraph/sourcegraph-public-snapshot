@@ -1,4 +1,5 @@
-load("@npm//:percy/package_json.bzl", percy_bin = "bin")
+load("@npm//:@percy/cli/package_json.bzl", percy_bin = "bin")
+load("@npm//:mocha/package_json.bzl", mocha_bin = "bin")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 
 NON_BUNDLED = [
@@ -95,11 +96,11 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
             "exec",
             "--quiet",
             "--",
-            "mocha",
+            "node_modules/mocha/bin/mocha",
         ]
 
         percy_bin.percy_test(
-            name = "%s_percy" % name,
+            name = name,
             args = percy_args + args,
             data = data + args_data + NON_BUNDLED_DEPS + ["//:node_modules/mocha"],
             env = env,
