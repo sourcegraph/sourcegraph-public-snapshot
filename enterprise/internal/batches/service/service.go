@@ -156,7 +156,7 @@ func (s *Service) WithStore(store *store.Store) *Service {
 }
 
 func handleOrgLevelAccess() error {
-
+	return nil
 }
 
 type CreateEmptyBatchChangeOpts struct {
