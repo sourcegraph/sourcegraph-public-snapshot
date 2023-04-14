@@ -4,6 +4,7 @@ import { Configuration, OpenAIApi } from 'openai'
 
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import {
+    CodeCompletionResponse,
     CompletionCallbacks,
     CompletionParameters,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
@@ -81,5 +82,9 @@ export class OpenAICompletionsClient extends SourcegraphCompletionsClient {
             .catch(console.error)
 
         return () => {}
+    }
+
+    public complete(): Promise<CodeCompletionResponse> {
+        throw new Error('SourcegraphBrowserCompletionsClient.complete not implemented')
     }
 }
