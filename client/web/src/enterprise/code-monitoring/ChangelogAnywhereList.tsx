@@ -76,7 +76,6 @@ const codyRules = `
 5. Do not mention details like specific files changed or commit hashes.
 6. Note that the diff is only a small preview of the most relevant parts of the change. Avoid assuming too much.
 7. Don't try to provide your own introduction or conclusion. The summary should be a standalone list of changes. For example, don't prefix your response with "Here is a summary of the changes" or any other similar introduction.
-8. Omit any information that is irrelevant or unimportant to the user's goal.
 `
 
 const humanCommitPreamble = `
@@ -89,7 +88,6 @@ ${JSON.stringify(markdownPreamble1.input)}
 Generate a high-level summary of this change in a readable, plaintext, bullet-point list.
 
 Additional information to help you build your summary:
-- The user is trying to answer the question: ${markdownPreamble1.input.question}
 - The summary should have the following granularity: ${markdownPreamble1.input.granularity}
 
 Follow these rules strictly:
@@ -106,7 +104,6 @@ ${JSON.stringify(markdownPreamble2.input)}
 Generate a high-level summary of this change in a readable, plaintext, bullet-point list.
 
 Additional information to help you build your summary:
-- The user is trying to answer the question: ${markdownPreamble2.input.question}
 - The summary should have the following granularity: ${markdownPreamble2.input.granularity}
 
 Follow these rules strictly:
@@ -136,7 +133,6 @@ ${JSON.stringify(input)}
 Generate a summary of this change in a readable, plaintext, bullet-point list.
 
 Additional information to help you build your summary:
-- The user is trying to answer the question: ${question}
 - The summary should have the following granularity: ${granularity}
 
 Follow these rules strictly:
@@ -300,43 +296,42 @@ const ExampleChangelog: React.FunctionComponent<ExampleChangelogProps> = ({ name
             })
         )
 
+        // Flatten results and limit to 10 to avoid sending too many queries to Cody
+        const flattenedResults = searchResults.flat().slice(0, 10)
+
         // Group and deduplicate results by repo
         const filteredGroupedResults: {
             [repo: string]: ChangelogChange[]
         } = {}
 
-        for (const searchResult of searchResults) {
-            for (const { focus, result } of searchResult) {
-                const repo = result.commit.repository.name
+        for (const { focus, result } of flattenedResults) {
+            const repo = result.commit.repository.name
 
-                if (!filteredGroupedResults[repo]) {
-                    filteredGroupedResults[repo] = []
-                }
-
-                const existingResult = filteredGroupedResults[repo].find(
-                    existingResult => existingResult.result.commit.id === result.commit.id
-                )
-
-                if (existingResult) {
-                    // If we have conflicting a focus, we want to use the more general one
-                    // We probably want to revise this to support using both in the future.
-                    existingResult.focus = existingResult.focus !== focus ? 'commits and diffs' : existingResult.focus
-                    continue
-                }
-
-                filteredGroupedResults[repo].push({
-                    focus,
-                    result,
-                })
+            if (!filteredGroupedResults[repo]) {
+                filteredGroupedResults[repo] = []
             }
+
+            const existingResult = filteredGroupedResults[repo].find(
+                existingResult => existingResult.result.commit.id === result.commit.id
+            )
+
+            if (existingResult) {
+                // If we have conflicting a focus, we want to use the more general one
+                // We probably want to revise this to support using both in the future.
+                existingResult.focus = existingResult.focus !== focus ? 'commits and diffs' : existingResult.focus
+                continue
+            }
+
+            filteredGroupedResults[repo].push({
+                focus,
+                result,
+            })
         }
 
         const changelogSummaries: ChangelogSummary = {}
 
         setSearchLoading(false)
         setCodyLoading(true)
-
-        // TODO: Add limit to 10
 
         await Promise.all(
             Object.entries(filteredGroupedResults).map(async ([repo, changes]) => {
