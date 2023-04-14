@@ -68,8 +68,13 @@ batcheshelper pre 0
 
 ## Build
 
-To build the image for local development, run:
+When running on Kubernetes, the image can be built with the following command.
 
 ```shell
 IMAGE=sourcegraph/batcheshelper:insiders ./build.sh
 ```
+
+When running the following `sg` commands, `batcheshelper` will automatically be built on any changes to the binary.
+
+- `batcheshelper-builder`
+- `batches`
