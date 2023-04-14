@@ -146,11 +146,15 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	// Run all the things.
 	logger.Info("Running commands")
 	skippedSteps := make(map[int]bool)
-	for _, spec := range commands {
+	for i, spec := range commands {
 		if len(skippedSteps) > 0 {
 			index, err := spec.Index()
 			if err != nil {
-				return err
+				if errors.Is(err, runner.ErrNoIndex) {
+					index = i
+				} else {
+					return err
+				}
 			}
 			if skippedSteps[index] {
 				continue
@@ -162,7 +166,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 			if errors.Is(err, command.ErrStepSkipped) {
 				index, err := spec.Index()
 				if err != nil {
-					return err
+					if errors.Is(err, runner.ErrNoIndex) {
+						index = i
+					} else {
+						return err
+					}
 				}
 				logger.Debug("Step skipped", log.Int("index", index), log.String("key", spec.CommandSpec.Key))
 				skippedSteps[index] = true

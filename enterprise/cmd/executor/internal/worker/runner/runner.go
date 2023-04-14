@@ -42,19 +42,21 @@ type Spec struct {
 	ScriptPath  string
 }
 
-var indexRegex = regexp.MustCompile("step\\.(docker|kubernetes)\\.(%d)")
+var indexRegex = regexp.MustCompile("step\\.(\\d+)")
 
 func (s Spec) Index() (int, error) {
 	matches := indexRegex.FindStringSubmatch(s.CommandSpec.Key)
-	if len(matches) != 3 {
-		return -1, errors.New("failed to parse index from key")
+	if len(matches) != 2 {
+		return -1, ErrNoIndex
 	}
-	index, err := strconv.Atoi(matches[2])
+	index, err := strconv.Atoi(matches[1])
 	if err != nil {
 		return -1, errors.Wrap(err, "failed to parse index from key")
 	}
 	return index, nil
 }
+
+var ErrNoIndex = errors.New("no index found")
 
 type Options struct {
 	DockerOptions      command.DockerOptions
