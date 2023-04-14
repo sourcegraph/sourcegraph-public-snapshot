@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiClose, mdiSend, mdiArrowDown } from '@mdi/js'
+import useResizeObserver from 'use-resize-observer'
 
-import { Chat, ChatUISubmitButtonProps } from '@sourcegraph/cody-ui/src/Chat'
+import { Chat, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
 import { Terms } from '@sourcegraph/cody-ui/src/Terms'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, TextArea } from '@sourcegraph/wildcard'
 
 import { useChatStoreState } from '../stores/codyChat'
 
@@ -91,6 +92,7 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                     bubbleLoaderDotClassName={styles.bubbleLoaderDot}
                     inputRowClassName={styles.inputRow}
                     chatInputClassName={styles.chatInput}
+                    textAreaComponent={AutoResizableTextArea}
                 />
             </div>
             {showScrollDownButton && <ScrollDownButton onClick={() => scrollToBottom('smooth')} />}
@@ -100,16 +102,61 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
 
 const ScrollDownButton = ({ onClick }: { onClick: () => void }): JSX.Element => (
     <div className={styles.scrollButtonWrapper}>
-        <div className={styles.scrollButton} onClick={onClick}>
-            <Icon svgPath={mdiArrowDown} />
-        </div>
+        <Button className={styles.scrollButton} onClick={onClick}>
+            <Icon aria-label="Scroll down" svgPath={mdiArrowDown} />
+        </Button>
     </div>
 )
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <button className={className} type="submit" disabled={disabled} onClick={onClick}>
-        <Icon svgPath={mdiSend} />
+        <Icon aria-label="Submit" svgPath={mdiSend} />
     </button>
 )
 
 const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => <>{path}</>
+
+interface AutoResizableTextAreaProps extends ChatUITextAreaProps {}
+
+export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
+    value,
+    onInput,
+    onKeyDown,
+    className,
+}) => {
+    const textAreaRef = useRef<HTMLTextAreaElement>(null)
+    const { width = 0 } = useResizeObserver({ ref: textAreaRef })
+
+    const adjustTextAreaHeight = useCallback((): void => {
+        if (textAreaRef.current) {
+            textAreaRef.current.style.height = '0px'
+            const scrollHeight = textAreaRef.current.scrollHeight
+            textAreaRef.current.style.height = `${scrollHeight}px`
+
+            // Hide scroll if the textArea isn't overflowing.
+            textAreaRef.current.style.overflowY = scrollHeight < 200 ? 'hidden' : 'auto'
+        }
+    }, [])
+
+    const handleChange = (): void => {
+        adjustTextAreaHeight()
+    }
+
+    useEffect(() => {
+        adjustTextAreaHeight()
+    }, [adjustTextAreaHeight, value, width])
+
+    return (
+        <TextArea
+            ref={textAreaRef}
+            className={className}
+            value={value}
+            onChange={handleChange}
+            rows={1}
+            autoFocus={true}
+            required={true}
+            onKeyDown={onKeyDown}
+            onInput={onInput}
+        />
+    )
+}
