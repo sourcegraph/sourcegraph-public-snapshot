@@ -13,23 +13,6 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "codeInsights": {
-          "description": "Enables code insights on directory pages.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "codeInsightsLandingPage": {
-          "deprecated": true,
-          "description": "DEPRECATED: Enables code insights landing page layout.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "codeInsightsRepoUI": {
           "description": "Specifies which (code insight repo) editor to use for repo query UI",
           "type": "string",
@@ -520,27 +503,6 @@
         "pointer": true
       }
     },
-    "insights.displayLocation.insightsPage": {
-      "type": "boolean",
-      "default": true,
-      "!go": {
-        "pointer": true
-      }
-    },
-    "insights.displayLocation.directory": {
-      "type": "boolean",
-      "default": true,
-      "!go": {
-        "pointer": true
-      }
-    },
-    "insights.displayLocation.homepage": {
-      "type": "boolean",
-      "default": true,
-      "!go": {
-        "pointer": true
-      }
-    },
     "insights.aggregations.extendedTimeout": {
       "description": "The number of seconds to execute the aggregation for when running in extended timeout mode. This value should always be less than any proxy timeout if one exists. The maximum value is equal to searchLimits.maxTimeoutSeconds",
       "type": "integer",
@@ -557,137 +519,6 @@
     }
   },
   "definitions": {
-    "BackendInsight": {
-      "type": "object",
-      "required": ["title", "series"],
-      "properties": {
-        "title": {
-          "type": "string",
-          "description": "The short title of this insight"
-        },
-        "description": {
-          "type": "string",
-          "description": "The description of this insight"
-        },
-        "series": {
-          "type": "array",
-          "description": "Each query will be represented by one line on the chart.",
-          "items": {
-            "$ref": "#/definitions/BackendInsightSeries"
-          }
-        },
-        "filters": {
-          "$ref": "#/definitions/InsightFilters"
-        }
-      }
-    },
-    "BackendInsightSeries": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["name", "query"],
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "The name to use for the series in the graph."
-        },
-        "query": {
-          "type": "string",
-          "description": "Performs a search query and shows the number of results returned."
-        },
-        "stroke": {
-          "type": "string",
-          "description": "The color of the line for the series."
-        }
-      }
-    },
-    "InsightFilters": {
-      "type": "object",
-      "description": "Performs a filter",
-      "required": ["includeRepoRegexp", "excludeRepoRegexp"],
-      "properties": {
-        "includeRepoRegexp": {
-          "type": "string"
-        },
-        "excludeRepoRegexp": {
-          "type": "string"
-        },
-        "repositories": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "InsightDashboard": {
-      "type": "object",
-      "required": ["id", "title"],
-      "properties": {
-        "title": {
-          "description": "Title of the dashboard.",
-          "type": "string"
-        },
-        "id": {
-          "type": "string"
-        },
-        "insightIds": {
-          "description": "Insights ids that will be included in the dashboard.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "Insight": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["title", "description", "series", "id"],
-      "properties": {
-        "title": {
-          "type": "string",
-          "description": "The short title of this insight"
-        },
-        "description": {
-          "type": "string",
-          "description": "The description of this insight"
-        },
-        "series": {
-          "type": "array",
-          "description": "Series of data to show for this insight",
-          "items": {
-            "$ref": "#/definitions/InsightSeries"
-          }
-        },
-        "id": {
-          "type": "string",
-          "description": "A globally  unique identifier for this insight."
-        }
-      }
-    },
-    "InsightSeries": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["label"],
-      "properties": {
-        "label": {
-          "type": "string",
-          "description": "The label to use for the series in the graph."
-        },
-        "repositoriesList": {
-          "type": "array",
-          "description": "Performs a search query and shows the number of results returned."
-        },
-        "search": {
-          "type": "string",
-          "description": "Performs a search query and shows the number of results returned."
-        },
-        "webhook": {
-          "type": "string",
-          "description": "(not yet supported) Fetch data from a webhook URL."
-        }
-      }
-    },
     "SearchScope": {
       "type": "object",
       "additionalProperties": false,
