@@ -1494,6 +1494,7 @@ dependencies = [
  "scip-treesitter",
  "scip-treesitter-languages",
  "serde",
+ "serde_json",
  "tree-sitter",
  "walkdir",
 ]
