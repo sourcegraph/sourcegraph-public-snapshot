@@ -90,7 +90,7 @@ option `authz.enforceForSiteAdmins` to `true`.
 E.g. trying to figure out if a specific repository is syncing source code to Sourcegraph correctly 
 might become an impossible task if the site admin cannot access that repository.
 
-## Permission mechanisms in parallel
+## Permissions mechanisms in parallel
 
 <span class="badge badge-experimental">Experimental</span>
 <span class="badge badge-note">Sourcegraph 5.0+</span>
@@ -127,9 +127,9 @@ what was previously impossible.
 
 ### Permission updates
 
-Each permission mechanism is going to update only it's own data. This means, that permission syncing is not 
+Each permission mechanism is going to update only its own data. This means, that permission syncing is not 
 going to touch permissions created by explicit permissions API and vice versa. We consider webhooks permissions 
-as part of the permission syncing mechanism as well, since it's using the same underlying database operations. 
+as part of the permission syncing mechanism as well, since it is using the same underlying database operations. 
 
 What the above paragraph means is, that when an updated set of accessible repositories for a user is given via 
 permission sync, it will replace the existing set of synced permissions for that user, but not the explicit permissions.
