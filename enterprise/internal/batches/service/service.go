@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -33,6 +34,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // ErrNameNotUnique is returned by CreateEmptyBatchChange if the combination of name and
@@ -155,7 +157,44 @@ func (s *Service) WithStore(store *store.Store) *Service {
 	return &Service{logger: s.logger, store: store, sourcer: s.sourcer, clock: s.clock, operations: s.operations}
 }
 
-func handleOrgLevelAccess() error {
+// checkBatchChangeAccess checks if the current user has access to perform operation on the batchChange. The logic for this is dependent
+// on the namespace the batch change belongs to.
+//
+// If it belongs to a user, we check if the current user is the same as the creator of the Batch Change or they're a site admin.
+// If it belongs to an org, we check the org settings for the `orgs.allMembersBatchChangesAdmin,omitempty` boolean:
+//   - If true, we allow all org members / site admins / the creator of the batch change to perform the operation
+//   - If false, we only allow site admins / the creator of the batch change to perform the operation.
+func (s *Service) checkBatchChangeAccess(ctx context.Context, db database.DB, batchChange *btypes.BatchChange) error {
+	if batchChange.NamespaceOrgID != 0 {
+		orgID := batchChange.NamespaceOrgID
+		settings, err := db.Settings().GetLatest(ctx, api.SettingsSubject{Org: &orgID})
+		if err != nil {
+			return err
+		}
+
+		var orgSettings schema.Settings
+		if err := jsonc.Unmarshal(settings.Contents, &orgSettings); err != nil {
+			return err
+		}
+
+		var allMembersBatchChangesAdmin bool
+		if orgSettings.OrgsAllMembersBatchChangesAdmin != nil {
+			allMembersBatchChangesAdmin = *orgSettings.OrgsAllMembersBatchChangesAdmin
+		}
+
+		if allMembersBatchChangesAdmin {
+			if err := auth.CheckOrgAccessOrSiteAdminOrSameUser(ctx, db, batchChange.CreatorID, orgID); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	// 🚨 SECURITY: Only the author of the batch change or a site admin should be able to access this operation.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, batchChange.CreatorID); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -1283,8 +1322,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 		return bulkGroupID, errors.Wrap(err, "loading batch change")
 	}
 
-	// 🚨 SECURITY: Only the author of the batch change can create jobs.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
+	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange); err != nil {
 		return bulkGroupID, err
 	}
 
