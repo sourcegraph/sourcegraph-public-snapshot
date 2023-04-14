@@ -2,7 +2,7 @@ package:
   name: cadvisor
   version: 0.47.0
   epoch: 0
-  description: "A code rewrite tool for structural search and replace that supports ~every language."
+  description: "Analyzes resource usage and performance characteristics of running containers"
   target-architecture:
     - x86_64
   copyright:
