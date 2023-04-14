@@ -145,9 +145,9 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 
 	// Run all the things.
 	logger.Info("Running commands")
-	skippedSteps := make(map[int]bool)
+	skippedIndex := -1
 	for i, spec := range commands {
-		if len(skippedSteps) > 0 {
+		if skippedIndex >= 0 {
 			index, err := spec.Index()
 			if err != nil {
 				if errors.Is(err, runner.ErrNoIndex) {
@@ -156,9 +156,10 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 					return err
 				}
 			}
-			if skippedSteps[index] {
+			if index == skippedIndex {
 				continue
 			}
+			skippedIndex = -1
 		}
 		spec.Queue = h.options.QueueName
 		spec.JobID = job.ID
@@ -173,7 +174,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 					}
 				}
 				logger.Debug("Step skipped", log.Int("index", index), log.String("key", spec.CommandSpec.Key))
-				skippedSteps[index] = true
+				skippedIndex = index
 				continue
 			}
 			return errors.Wrapf(err, "running command %q", spec.CommandSpec.Key)
