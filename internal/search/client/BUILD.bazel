@@ -28,7 +28,7 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_zoekt//:zoekt",
+        "@com_github_sourcegraph_zoekt//:go_default_library",
     ],
 )
 

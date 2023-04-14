@@ -198,6 +198,11 @@ go_repository(
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()
 
+local_repository(
+    name = "com_github_sourcegraph_zoekt",
+    path = "/Users/camdencheek/src/sourcegraph/zoekt",
+)
+
 go_rules_dependencies()
 
 go_register_toolchains(
@@ -212,11 +217,6 @@ gazelle_dependencies()
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
-
-local_repository(
-    name = "com_github_sourcegraph_zoekt",
-    path = "/Users/camdencheek/src/sourcegraph/zoekt",
-)
 
 # rust toolchain setup
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
