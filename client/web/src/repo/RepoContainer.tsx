@@ -209,7 +209,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     useMemo(() => {
         initializeClient(config)
-    }, [config, repoName, initializeClient])
+    }, [config, initializeClient])
 
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
@@ -487,7 +487,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         maxSize={codySidebarSizes.max}
                         minSize={codySidebarSizes.min}
                         defaultSize={codySidebarSizes.default}
-                        storageKey={'size-cache-cody-sidebar'}
+                        storageKey="size-cache-cody-sidebar"
                     >
                         <CodyChat onClose={() => setCodySidebarOpen(false)} repoName={repoName} />
                     </Panel>

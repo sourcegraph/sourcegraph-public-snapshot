@@ -40,10 +40,10 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             set({ messageInProgress: null })
             set({ transcript: [] })
             createClient({
-                config: config,
+                config,
                 accessToken: null,
                 setMessageInProgress: message => set({ messageInProgress: message }),
-                setTranscript: transcript => set({ transcript: transcript }),
+                setTranscript: transcript => set({ transcript }),
             })
                 .then(client => {
                     set({ client })
