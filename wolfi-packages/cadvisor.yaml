@@ -32,4 +32,5 @@ pipeline:
       extract: false
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/bin/
+      chmod +x cadvisor-v${{package.version}}-linux-amd64
       cp cadvisor-v${{package.version}}-linux-amd64 ${{targets.destdir}}/usr/bin/cadvisor
