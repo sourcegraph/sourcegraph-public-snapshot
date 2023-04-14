@@ -293,10 +293,13 @@ const ReferencesList: React.FunctionComponent<
         loading,
         referencesHasNextPage,
         implementationsHasNextPage,
+        prototypesHasNextPage,
         fetchMoreReferences,
         fetchMoreImplementations,
+        fetchMorePrototypes,
         fetchMoreReferencesLoading,
         fetchMoreImplementationsLoading,
+        fetchMorePrototypesLoading,
     } = props.useCodeIntel({
         variables: {
             repository: props.token.repoName,
@@ -311,6 +314,8 @@ const ReferencesList: React.FunctionComponent<
             afterReferences: null,
             firstImplementations: 100,
             afterImplementations: null,
+            firstPrototypes: 100,
+            afterPrototypes: null,
         },
         fileContent: props.fileContent,
         searchToken: props.searchToken,
@@ -333,6 +338,7 @@ const ReferencesList: React.FunctionComponent<
     const references = useMemo(() => data?.references.nodes ?? [], [data])
     const definitions = useMemo(() => data?.definitions.nodes ?? [], [data])
     const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
+    const prototypes = useMemo(() => data?.prototypes.nodes ?? [], [data])
 
     // The "active URL" is the URL of the highlighted line number in SideBlob,
     // which also influences which item gets highlighted inside
@@ -480,6 +486,22 @@ const ReferencesList: React.FunctionComponent<
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
+          <CollapsibleLocationList
+                        {...props}
+                        name="prototypes"
+                        locations={prototypes}
+                        hasMore={prototypesHasNextPage}
+                        fetchMore={fetchMorePrototypes}
+                        loadingMore={fetchMorePrototypesLoading}
+                        setActiveLocation={setActiveLocation}
+                        filter={debouncedFilter}
+                        isActiveLocation={isActiveLocation}
+                        activeURL={activeURL || ''}
+                        navigateToUrl={navigateToUrl}
+                        handleOpenChange={handleOpenChange}
+                        isOpen={isOpen}
+                    />
+
                 </div>
             </div>
             {sideblob && (
