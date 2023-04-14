@@ -74,6 +74,7 @@ export interface TemporarySettingsSchema {
     'repo.commitPage.diffMode': DiffMode
     'setup.activeStepId': string
     'own.panelExplanationHidden': boolean
+    'cody.showSidebar': boolean
 }
 
 /**
