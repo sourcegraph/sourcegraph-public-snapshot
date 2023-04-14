@@ -18,7 +18,7 @@
 
 .bubble-row {
     display: flex;
-    padding: .3rem 1rem .3rem 1rem;
+    padding: 0.3rem 1rem 0.3rem 1rem;
 }
 
 .human-bubble-row {
@@ -131,11 +131,9 @@
     background: none;
     border: none;
     cursor: pointer;
-    color:var(--body-color)
-
+    color: var(--body-color);
 }
 
 .submit-button:hover {
     opacity: 1;
 }
-

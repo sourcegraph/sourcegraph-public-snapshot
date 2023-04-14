@@ -2,42 +2,42 @@
     --human-bubble-color: var(--input-bg);
     --human-text-color: --dark-text;
     --bot-bubble-color: linear-gradient(var(--input-bg), var(--input-bg)) padding-box,
-                        linear-gradient(130deg, #00CBEC, #A112FF) border-box;
+        linear-gradient(130deg, #00cbec, #a112ff) border-box;
     --bot-text-color: --dark-text;
-  }
+}
 
-  .container {
+.container {
     font-size: 0.9rem;
     padding-top: 1rem;
     flex-grow: 1;
-  }
+}
 
-  .bubble-content pre,
-  .bubble-content span > code,
-  .bubble-content p > code {
+.bubble-content pre,
+.bubble-content span > code,
+.bubble-content p > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
-  }
+}
 
-  .bubble-content pre {
+.bubble-content pre {
     border-top: solid 1px var(--border-color-2);
     border-bottom: solid 1px var(--border-color-2);
     border-radius: 2px !important;
     padding: 0.625rem !important;
     background: var(--body-bg);
-  }
+}
 
-  .bubble-content code {
+.bubble-content code {
     color: var(--code-background);
-  }
+}
 
-  .main-wrapper {
+.main-wrapper {
     height: 100%;
     overflow: hidden;
     filter: drop-shadow(0 0 4px rgba(36, 41, 54, 0.1));
-  }
+}
 
-  .scroll-button-wrapper {
+.scroll-button-wrapper {
     display: flex;
     justify-content: flex-end;
     padding-right: 1.25rem;
@@ -45,9 +45,9 @@
     z-index: 5;
     width: 100%;
     position: sticky;
-  }
+}
 
-  .scroll-button {
+.scroll-button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -62,41 +62,41 @@
     background-color: var(--input-bg);
 
     cursor: pointer;
-  }
+}
 
-  .bot-bubble-content {
+.bot-bubble-content {
     background: var(--bot-bubble-color);
     color: var(--bot-text-color);
     border: 1px solid transparent;
-  }
+}
 
-  .human-bubble-content {
+.human-bubble-content {
     border: solid 1px var(--border-color-2);
     background-color: var(--human-bubble-color);
     color: var(--human-text-color);
-  }
+}
 
-  .bubble-loader-dot {
+.bubble-loader-dot {
     background-color: var(--dark-text);
-  }
+}
 
-  .input-row {
+.input-row {
     position: sticky;
     bottom: 0;
     padding: 0.8rem 0.6rem;
     border-top: 1px solid var(--border-color);
     background-color: var(--input-bg);
     margin: 0 8px;
-  }
+}
 
-  .chat-input {
-    padding: .6rem 1.5rem .8rem .8rem;
+.chat-input {
+    padding: 0.6rem 1.5rem 0.8rem 0.8rem;
     max-height: 200px;
     border-color: var(--border-color-2);
     background-color: var(--body-bg);
-  }
+}
 
-  .cody-sidebar-header {
+.cody-sidebar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -108,12 +108,13 @@
     top: 0;
     background-color: var(--input-bg);
     z-index: 3;
-  }
+}
 
-  .cody-sidebar {
+.cody-sidebar {
     background-color: var(--input-bg);
-
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
     height: 100%;
-  }
+    display: flex;
+    flex-direction: column;
+}
