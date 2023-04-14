@@ -992,7 +992,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 	}
 
 	// 🚨 SECURITY: Only the Author of the batch change can move it.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
+	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange); err != nil {
 		return nil, err
 	}
 	// Check if current user has access to target namespace if set.
@@ -1032,7 +1032,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		return batchChange, nil
 	}
 
-	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
+	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange); err != nil {
 		return nil, err
 	}
 
@@ -1083,7 +1083,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.CreatorID); err != nil {
+	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange); err != nil {
 		return err
 	}
 
@@ -1124,7 +1124,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	)
 
 	for _, c := range batchChanges {
-		err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.CreatorID)
+		err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), c)
 		if err != nil {
 			authErr = err
 		} else {
@@ -1175,7 +1175,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 	)
 
 	for _, c := range attachedBatchChanges {
-		err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.CreatorID)
+		err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), c)
 		if err != nil {
 			authErr = err
 		} else {

@@ -51,60 +51,130 @@ func TestServicePermissionLevels(t *testing.T) {
 	admin := bt.CreateTestUser(t, db, true)
 	user := bt.CreateTestUser(t, db, false)
 	otherUser := bt.CreateTestUser(t, db, false)
+	otherUser2 := bt.CreateTestUser(t, db, false)
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
-	createTestData := func(t *testing.T, s *store.Store, author int32) (*btypes.BatchChange, *btypes.Changeset, *btypes.BatchSpec) {
-		spec := testBatchSpec(author)
-		if err := s.CreateBatchSpec(ctx, spec); err != nil {
-			t.Fatal(err)
-		}
+	org := bt.CreateTestOrg(t, db, "test-org-1", admin.ID, user.ID, otherUser.ID)
 
-		batchChange := testBatchChange(author, spec)
-		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
-			t.Fatal(err)
-		}
+	createTestData := func(t *testing.T, s *store.Store, author int32, isUserNamespace bool) (batchChange *btypes.BatchChange, changeset *btypes.Changeset, spec *btypes.BatchSpec) {
+		spec = testBatchSpec(author)
 
-		changeset := testChangeset(repo.ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
-		if err := s.CreateChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
+		if isUserNamespace {
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange = testBatchChange(author, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			changeset = testChangeset(repo.ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
+			if err := s.CreateChangeset(ctx, changeset); err != nil {
+				t.Fatal(err)
+			}
+		} else {
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange = testOrgBatchChange(author, org.ID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			changeset = testChangeset(repo.ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
+			if err := s.CreateChangeset(ctx, changeset); err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		return batchChange, changeset, spec
 	}
 
 	tests := []struct {
-		name              string
-		batchChangeAuthor int32
-		currentUser       int32
-		assertFunc        func(t *testing.T, err error)
+		name                            string
+		batchChangeAuthor               int32
+		currentUser                     int32
+		assertFunc                      func(t *testing.T, err error)
+		isUserNamespace                 bool
+		allowOrgMembersBatchChangeAdmin bool
 	}{
 		{
-			name:              "unauthorized user",
+			name:              "unauthorized user (user namespace)",
 			batchChangeAuthor: user.ID,
 			currentUser:       otherUser.ID,
 			assertFunc:        assertAuthError,
+			isUserNamespace:   true,
 		},
 		{
-			name:              "batch change author",
+			name:              "batch change author (user namespace)",
 			batchChangeAuthor: user.ID,
 			currentUser:       user.ID,
 			assertFunc:        assertNoAuthError,
+			isUserNamespace:   true,
 		},
 
 		{
-			name:              "site-admin",
+			name:              "site-admin (user namespace)",
 			batchChangeAuthor: user.ID,
 			currentUser:       admin.ID,
 			assertFunc:        assertNoAuthError,
+			isUserNamespace:   true,
+		},
+		{
+			name:              "non-org member (org namespace)",
+			batchChangeAuthor: user.ID,
+			currentUser:       otherUser2.ID,
+			assertFunc:        assertAuthError,
+			isUserNamespace:   false,
+		},
+		{
+			name:              "org member (org namespace)",
+			batchChangeAuthor: user.ID,
+			currentUser:       otherUser.ID,
+			assertFunc:        assertAuthError,
+			isUserNamespace:   false,
+		},
+		{
+			name:                            "org member (org namespace - all members admin)",
+			batchChangeAuthor:               user.ID,
+			currentUser:                     otherUser.ID,
+			assertFunc:                      assertNoAuthError,
+			allowOrgMembersBatchChangeAdmin: true,
+			isUserNamespace:                 false,
+		},
+		{
+			name:              "batch change author (org namespace)",
+			batchChangeAuthor: user.ID,
+			currentUser:       user.ID,
+			assertFunc:        assertNoAuthError,
+			isUserNamespace:   false,
+		},
+		{
+			name:              "site-admin (org namespace)",
+			batchChangeAuthor: user.ID,
+			currentUser:       admin.ID,
+			assertFunc:        assertNoAuthError,
+			isUserNamespace:   false,
 		},
 	}
 
 	for _, tc := range tests {
+		fmt.Println(otherUser2.ID)
 		t.Run(tc.name, func(t *testing.T) {
-			batchChange, changeset, batchSpec := createTestData(t, s, tc.batchChangeAuthor)
+			batchChange, changeset, batchSpec := createTestData(t, s, tc.batchChangeAuthor, tc.isUserNamespace)
 			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
+
+			if tc.allowOrgMembersBatchChangeAdmin {
+				contents := "{\"orgs.allMembersBatchChangesAdmin\": true}"
+				_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{Org: &org.ID}, nil, nil, contents)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
 
 			t.Run("EnqueueChangesetSync", func(t *testing.T) {
 				// The cases that don't result in auth errors will fall through

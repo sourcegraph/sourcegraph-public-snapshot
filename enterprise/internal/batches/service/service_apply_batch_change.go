@@ -10,7 +10,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -65,17 +64,6 @@ func (s *Service) ApplyBatchChange(
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchSpec.UserID); err != nil {
-		return nil, err
-	}
-
-	// Validate ChangesetSpecs and return error if they're invalid and the
-	// BatchSpec can't be applied safely.
-	if err := s.ValidateChangesetSpecs(ctx, batchSpec.ID); err != nil {
-		return nil, err
-	}
-
 	batchChange, previousSpecID, err := s.ReconcileBatchChange(ctx, batchSpec)
 	if err != nil {
 		return nil, err
@@ -83,6 +71,16 @@ func (s *Service) ApplyBatchChange(
 
 	if batchChange.ID != 0 && opts.FailIfBatchChangeExists {
 		return nil, ErrMatchingBatchChangeExists
+	}
+
+	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange); err != nil {
+		return nil, err
+	}
+
+	// Validate ChangesetSpecs and return error if they're invalid and the
+	// BatchSpec can't be applied safely.
+	if err := s.ValidateChangesetSpecs(ctx, batchSpec.ID); err != nil {
+		return nil, err
 	}
 
 	if opts.EnsureBatchChangeID != 0 && batchChange.ID != opts.EnsureBatchChangeID {
