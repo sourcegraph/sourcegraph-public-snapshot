@@ -247,23 +247,6 @@ type AzureDevOpsConnection struct {
 	// Username description: A username for authentication with the Azure DevOps code host.
 	Username string `json:"username"`
 }
-type BackendInsight struct {
-	// Description description: The description of this insight
-	Description string          `json:"description,omitempty"`
-	Filters     *InsightFilters `json:"filters,omitempty"`
-	// Series description: Each query will be represented by one line on the chart.
-	Series []*BackendInsightSeries `json:"series"`
-	// Title description: The short title of this insight
-	Title string `json:"title"`
-}
-type BackendInsightSeries struct {
-	// Name description: The name to use for the series in the graph.
-	Name string `json:"name"`
-	// Query description: Performs a search query and shows the number of results returned.
-	Query string `json:"query"`
-	// Stroke description: The color of the line for the series.
-	Stroke string `json:"stroke,omitempty"`
-}
 type BatchChangeRolloutWindow struct {
 	// Days description: Day(s) the window applies to. If omitted, this rule applies to all days of the week.
 	Days []string `json:"days,omitempty"`
@@ -1343,40 +1326,6 @@ type ImportChangesets struct {
 	// Repository description: The repository name as configured on your Sourcegraph instance.
 	Repository string `json:"repository"`
 }
-type Insight struct {
-	// Description description: The description of this insight
-	Description string `json:"description"`
-	// Id description: A globally  unique identifier for this insight.
-	Id string `json:"id"`
-	// Series description: Series of data to show for this insight
-	Series []*InsightSeries `json:"series"`
-	// Title description: The short title of this insight
-	Title string `json:"title"`
-}
-type InsightDashboard struct {
-	Id string `json:"id"`
-	// InsightIds description: Insights ids that will be included in the dashboard.
-	InsightIds []string `json:"insightIds,omitempty"`
-	// Title description: Title of the dashboard.
-	Title string `json:"title"`
-}
-
-// InsightFilters description: Performs a filter
-type InsightFilters struct {
-	ExcludeRepoRegexp string   `json:"excludeRepoRegexp"`
-	IncludeRepoRegexp string   `json:"includeRepoRegexp"`
-	Repositories      []string `json:"repositories,omitempty"`
-}
-type InsightSeries struct {
-	// Label description: The label to use for the series in the graph.
-	Label string `json:"label"`
-	// RepositoriesList description: Performs a search query and shows the number of results returned.
-	RepositoriesList []any `json:"repositoriesList,omitempty"`
-	// Search description: Performs a search query and shows the number of results returned.
-	Search string `json:"search,omitempty"`
-	// Webhook description: (not yet supported) Fetch data from a webhook URL.
-	Webhook string `json:"webhook,omitempty"`
-}
 
 // JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.
 type JVMPackagesConnection struct {
@@ -2059,10 +2008,7 @@ type Settings struct {
 	// HistoryPreferAbsoluteTimestamps description: Show absolute timestamps in the history panel and only show relative timestamps (e.g.: "5 days ago") in tooltip when hovering.
 	HistoryPreferAbsoluteTimestamps bool `json:"history.preferAbsoluteTimestamps,omitempty"`
 	// InsightsAggregationsExtendedTimeout description: The number of seconds to execute the aggregation for when running in extended timeout mode. This value should always be less than any proxy timeout if one exists. The maximum value is equal to searchLimits.maxTimeoutSeconds
-	InsightsAggregationsExtendedTimeout int   `json:"insights.aggregations.extendedTimeout,omitempty"`
-	InsightsDisplayLocationDirectory    *bool `json:"insights.displayLocation.directory,omitempty"`
-	InsightsDisplayLocationHomepage     *bool `json:"insights.displayLocation.homepage,omitempty"`
-	InsightsDisplayLocationInsightsPage *bool `json:"insights.displayLocation.insightsPage,omitempty"`
+	InsightsAggregationsExtendedTimeout int `json:"insights.aggregations.extendedTimeout,omitempty"`
 	// Motd description: DEPRECATED: Use `notices` instead.
 	//
 	// An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).
@@ -2152,9 +2098,6 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "history.defaultPageSize")
 	delete(m, "history.preferAbsoluteTimestamps")
 	delete(m, "insights.aggregations.extendedTimeout")
-	delete(m, "insights.displayLocation.directory")
-	delete(m, "insights.displayLocation.homepage")
-	delete(m, "insights.displayLocation.insightsPage")
 	delete(m, "motd")
 	delete(m, "notices")
 	delete(m, "openInEditor")
@@ -2186,12 +2129,8 @@ type SettingsExperimentalFeatures struct {
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
 	// ClientSearchResultRanking description: How to rank search results in the client
 	ClientSearchResultRanking *string `json:"clientSearchResultRanking,omitempty"`
-	// CodeInsights description: Enables code insights on directory pages.
-	CodeInsights *bool `json:"codeInsights,omitempty"`
 	// CodeInsightsCompute description: Enables Compute powered Code Insights
 	CodeInsightsCompute *bool `json:"codeInsightsCompute,omitempty"`
-	// CodeInsightsLandingPage description: DEPRECATED: Enables code insights landing page layout.
-	CodeInsightsLandingPage *bool `json:"codeInsightsLandingPage,omitempty"`
 	// CodeInsightsRepoUI description: Specifies which (code insight repo) editor to use for repo query UI
 	CodeInsightsRepoUI *string `json:"codeInsightsRepoUI,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
@@ -2272,9 +2211,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "applySearchQuerySuggestionOnEnter")
 	delete(m, "batchChangesExecution")
 	delete(m, "clientSearchResultRanking")
-	delete(m, "codeInsights")
 	delete(m, "codeInsightsCompute")
-	delete(m, "codeInsightsLandingPage")
 	delete(m, "codeInsightsRepoUI")
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "enableCodeMirrorFileView")
