@@ -32,6 +32,11 @@ func (s *store) GetImplementationLocations(ctx context.Context, bundleID int, pa
 	return s.getLocations(ctx, "implementation_ranges", extractImplementationRanges, s.operations.getImplementationLocations, bundleID, path, line, character, limit, offset)
 }
 
+// GetPrototypeLocations returns the set of locations that are the prototypes of the symbol at the given position.
+func (s *store) GetPrototypeLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
+	return s.getLocations(ctx, "implementation_ranges", extractPrototypesRanges, s.operations.getPrototypesLocations, bundleID, path, line, character, limit, offset)
+}
+
 // GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
 // whose scheme+identifier matches one of the given monikers. This method also returns the size of the
 // complete result set to aid in pagination.
@@ -236,6 +241,7 @@ type extractedOccurrenceData struct {
 	definitions     []*scip.Range
 	references      []*scip.Range
 	implementations []*scip.Range
+	prototypes      []*scip.Range
 	hoverText       []string
 }
 
@@ -249,6 +255,10 @@ func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence
 
 func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
 	return extractOccurrenceData(document, occurrence).implementations
+}
+
+func extractPrototypesRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+	return extractOccurrenceData(document, occurrence).prototypes
 }
 
 func extractHoverData(document *scip.Document, occurrence *scip.Occurrence) []string {
@@ -292,6 +302,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	definitions := []*scip.Range{}
 	references := []*scip.Range{}
 	implementations := []*scip.Range{}
+	prototypes := []*scip.Range{}
 
 	// Include original symbol names for reference search below
 	referencesBySymbol[occurrence.Symbol] = struct{}{}
@@ -313,8 +324,13 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		}
 
 		// This occurrence is a definition of a symbol with an implementation relationship
-		if _, ok := implementationsBySymbol[occ.Symbol]; ok && isDefinition {
+		if _, ok := implementationsBySymbol[occ.Symbol]; ok && !isDefinition && definitionSymbol != occ.Symbol {
 			implementations = append(implementations, scip.NewRange(occ.Range))
+		}
+
+		// This occurrence is a definition of a symbol with a prototype relationship
+		if _, ok := implementationsBySymbol[occ.Symbol]; ok && isDefinition {
+			prototypes = append(prototypes, scip.NewRange(occ.Range))
 		}
 	}
 

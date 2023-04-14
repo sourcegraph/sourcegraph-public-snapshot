@@ -19,6 +19,7 @@ type operations struct {
 	definitions     *observation.Operation
 	references      *observation.Operation
 	implementations *observation.Operation
+	prototypes      *observation.Operation
 	diagnostics     *observation.Operation
 	stencil         *observation.Operation
 	ranges          *observation.Operation
@@ -48,6 +49,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		definitions:     op("Definitions"),
 		references:      op("References"),
 		implementations: op("Implementations"),
+		prototypes:      op("Prototypes"),
 		diagnostics:     op("Diagnostics"),
 		stencil:         op("Stencil"),
 		ranges:          op("Ranges"),
