@@ -91,13 +91,13 @@ func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolver
 		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
 
-	prototypes, implsCursor, err := r.codeNavSvc.GetPrototypes(ctx, requestArgs, r.requestState, cursor)
+	prototypes, protoCursor, err := r.codeNavSvc.GetPrototypes(ctx, requestArgs, r.requestState, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "codeNavSvc.GetPrototypes")
 	}
 
-	if implsCursor.Phase != "done" {
-		nextCursor = encodeImplementationsCursor(implsCursor)
+	if protoCursor.Phase != "done" {
+		nextCursor = encodeImplementationsCursor(protoCursor)
 	}
 
 	if args.Filter != nil && *args.Filter != "" {

@@ -731,12 +731,6 @@ func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requ
 			attribute.Int("numGetUploadsWithDefinitionsForMonikers", len(uploads)),
 			attribute.String("getUploadsWithDefinitionsForMonikers", uploadIDsToString(uploads)))
 
-		// definitionLocations, _, err := s.getBulkMonikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "definitions", DefinitionsLimit, 0)
-		// if err != nil {
-		// 	return nil, cursor, err
-		// }
-		// locations = append(locations, definitionLocations...)
-
 		implementationLocations, _, err := s.getBulkMonikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "implementations", DefinitionsLimit, 0)
 		if err != nil {
 			return nil, cursor, err
