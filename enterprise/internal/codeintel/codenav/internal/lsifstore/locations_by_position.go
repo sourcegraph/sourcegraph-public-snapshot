@@ -344,6 +344,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		references:      references,
 		implementations: implementations,
 		hoverText:       hoverText,
+		prototypes:      prototypes,
 	}
 }
 
