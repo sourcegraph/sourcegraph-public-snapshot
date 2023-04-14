@@ -83,7 +83,7 @@ Sourcegraph app is early-stages, if you run into any trouble or have ideas/feedb
 
 #### macOS (app .dmg installer)
 
-Navigate to your Applications directory using Finder, and delete the old version of Sourcegraph. Then [download and run the latest version](about.sourcegraph.com/app).
+Navigate to your Applications directory using Finder, and delete the old version of Sourcegraph. Then [download and run the latest version](https://about.sourcegraph.com/app).
 
 #### macOS (homebrew)
 
