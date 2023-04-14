@@ -31,6 +31,8 @@ interface ChatProps extends ChatClassNames {
 interface ChatClassNames {
     transcriptContainerClassName?: string
     bubbleContentClassName?: string
+    bubbleClassName?: string
+    bubbleRowClassName?: string
     humanBubbleContentClassName?: string
     botBubbleContentClassName?: string
     codeBlocksCopyButtonClassName?: string
@@ -71,6 +73,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     className,
     transcriptContainerClassName,
     bubbleContentClassName,
+    bubbleClassName,
+    bubbleRowClassName,
     humanBubbleContentClassName,
     botBubbleContentClassName,
     codeBlocksCopyButtonClassName,
@@ -175,10 +179,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                 key={`message-${index}`}
                                 className={classNames(
                                     styles.bubbleRow,
+                                    bubbleRowClassName,
                                     styles[`${getBubbleClassName(message.speaker)}BubbleRow`]
                                 )}
                             >
-                                <div className={styles.bubble}>
+                                <div className={classNames(styles.bubble, bubbleClassName)}>
                                     <div
                                         className={classNames(
                                             styles.bubbleContent,

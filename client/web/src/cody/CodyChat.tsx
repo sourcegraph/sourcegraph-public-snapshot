@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiClose, mdiSend, mdiArrowDown } from '@mdi/js'
+import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
 import { Chat, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
@@ -86,9 +87,11 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                         </details>
                     }
                     bubbleContentClassName={styles.bubbleContent}
+                    bubbleClassName={styles.bubble}
+                    bubbleRowClassName={styles.bubbleRow}
                     humanBubbleContentClassName={styles.humanBubbleContent}
                     botBubbleContentClassName={styles.botBubbleContent}
-                    bubbleFooterClassName="text-muted small"
+                    bubbleFooterClassName={classNames('text-muted', 'small', 'mt-0', styles.bubbleFooter)}
                     bubbleLoaderDotClassName={styles.bubbleLoaderDot}
                     inputRowClassName={styles.inputRow}
                     chatInputClassName={styles.chatInput}
@@ -109,7 +112,7 @@ const ScrollDownButton = ({ onClick }: { onClick: () => void }): JSX.Element => 
 )
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
-    <button className={className} type="submit" disabled={disabled} onClick={onClick}>
+    <button className={classNames(className, styles.submitButton)} type="submit" disabled={disabled} onClick={onClick}>
         <Icon aria-label="Submit" svgPath={mdiSend} />
     </button>
 )
@@ -153,7 +156,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
             value={value}
             onChange={handleChange}
             rows={1}
-            autoFocus={true}
+            autoFocus={false}
             required={true}
             onKeyDown={onKeyDown}
             onInput={onInput}

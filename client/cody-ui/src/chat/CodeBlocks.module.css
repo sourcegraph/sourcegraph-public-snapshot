@@ -1,19 +1,14 @@
 .container {
     position: relative;
-    margin-bottom: var(--paragraph-margin-bottom);
 }
 
 .copy-button {
     position: absolute;
-    top: 8px !important;
-    right: 8px !important;
+    top: 0;
+    right: 0;
     visibility: hidden;
     cursor: pointer;
-    border: 1px solid var(--border-color-2);
-    border-radius: 4px;
-    font-size: 0.8rem;
-    padding: 1px 8px;
-    background-color: var(--color-bg-2);
+    padding: 0.5rem;
 }
 
 .container:hover .copy-button {

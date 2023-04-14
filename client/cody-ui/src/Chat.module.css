@@ -1,5 +1,5 @@
 :root {
-    --chat-bubble-border-radius: 6px;
+    --chat-bubble-border-radius: 16px;
 }
 
 .inner-container {
@@ -18,7 +18,7 @@
 
 .bubble-row {
     display: flex;
-    padding: 0.3rem 1rem 0.3rem 1rem;
+    padding: 1rem;
 }
 
 .human-bubble-row {
@@ -31,7 +31,7 @@
 
 .bubble {
     min-width: 0;
-    max-width: min(93%, 980px);
+    max-width: min(93%, 800px);
 }
 
 .bubble-content {
@@ -68,9 +68,9 @@
 
 .bubble-footer {
     display: flex;
+    margin-top: 0.5rem;
     align-content: center;
     justify-content: space-between;
-    font-size: 0.63rem;
 }
 
 .human-bubble-footer {
@@ -78,7 +78,7 @@
 }
 
 .bubble-footer-timestamp {
-    margin-top: 0.1rem;
+    margin-top: 0.5rem;
     align-self: center;
 }
 
@@ -117,21 +117,22 @@
 
 .chat-input {
     flex: 1;
-    border-radius: var(--border-radius);
+    border-radius: 1rem;
     resize: none;
 }
 
 .submit-button {
     position: absolute;
-    right: 0.6rem;
-    bottom: 0.46rem;
+    right: 0.25rem;
+    bottom: 0.25rem;
     fill: currentColor;
     opacity: 0.8;
     margin: 1rem;
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--body-color);
+    height: 2rem;
+    width: 2rem;
 }
 
 .submit-button:hover {

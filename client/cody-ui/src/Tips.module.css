@@ -14,3 +14,7 @@
     padding: 1em;
     white-space: break-spaces;
 }
+
+.blockquote {
+    margin-left: 0;
+}

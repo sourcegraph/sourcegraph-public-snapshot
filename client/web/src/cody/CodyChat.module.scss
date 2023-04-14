@@ -4,12 +4,21 @@
     --bot-bubble-color: linear-gradient(var(--input-bg), var(--input-bg)) padding-box,
         linear-gradient(130deg, #00cbec, #a112ff) border-box;
     --bot-text-color: --dark-text;
+    --chat-bubble-border-radius: 6px;
 }
 
 .container {
     font-size: 0.9rem;
     padding-top: 1rem;
     flex-grow: 1;
+}
+
+.bubble {
+    max-width: min(93%, 980px) !important;
+}
+
+.bubble-row {
+    padding: 0.3rem 1rem 0.3rem 1rem !important;
 }
 
 .bubble-content pre,
@@ -34,6 +43,10 @@
 .bubble-content ul,
 .bubble-content ol {
     padding-left: 1rem;
+}
+
+.bubble-footer > div {
+    margin-top: 0.1rem;
 }
 
 .main-wrapper {
@@ -99,6 +112,7 @@
     max-height: 200px;
     border-color: var(--border-color-2);
     background-color: var(--body-bg);
+    border-radius: var(--border-radius) !important;
 }
 
 .cody-sidebar-header {
@@ -121,4 +135,10 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+}
+
+.submit-button {
+    right: 0.6rem !important;
+    bottom: 0.1rem !important;
+    color: var(--body-color) !important;
 }
