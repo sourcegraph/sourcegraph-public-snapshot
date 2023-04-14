@@ -24,6 +24,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { EditorHint, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
@@ -193,7 +194,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     useChatStore(isCodyEnabled, repoName)
 
     const focusCodyShortcut = useKeyboardShortcut('focusCody')
-    const [isCodySidebarOpen, setCodySidebarOpen] = useState(true)
+    const [isCodySidebarOpen, setCodySidebarOpen] = useTemporarySetting('cody.showSidebar', false)
 
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
@@ -357,24 +358,22 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                 ))}
             <div className={classNames('w-100 d-flex flex-row')}>
                 <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
-                    <div className={styles.headerBar}>
-                        <RepoHeader
-                            actionButtons={props.repoHeaderActionButtons}
-                            breadcrumbs={props.breadcrumbs}
-                            repoName={repoName}
-                            revision={revision}
-                            onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
-                            settingsCascade={props.settingsCascade}
-                            authenticatedUser={authenticatedUser}
-                            platformContext={props.platformContext}
-                            telemetryService={props.telemetryService}
-                        />
-                    </div>
+                    <RepoHeader
+                        actionButtons={props.repoHeaderActionButtons}
+                        breadcrumbs={props.breadcrumbs}
+                        repoName={repoName}
+                        revision={revision}
+                        onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
+                        settingsCascade={props.settingsCascade}
+                        authenticatedUser={authenticatedUser}
+                        platformContext={props.platformContext}
+                        telemetryService={props.telemetryService}
+                    />
 
                     {isCodyEnabled ? (
                         <RepoHeaderContributionPortal
                             position="right"
-                            priority={3}
+                            priority={1}
                             id="cody"
                             {...repoHeaderContributionsLifecycleProps}
                         >
