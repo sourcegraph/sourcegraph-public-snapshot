@@ -205,7 +205,7 @@ pub fn parse_tree<'a>(
 
     let mut matched = vec![];
     for m in cursor.matches(&config.query, root_node, source_bytes) {
-        println!("\n==== NEW MATCH ====");
+        // eprintln!("\n==== NEW MATCH ====");
 
         let mut node = None;
         let mut scope = None;
@@ -226,11 +226,11 @@ pub fn parse_tree<'a>(
                 scope = Some(capture);
             }
 
-            println!(
-                "{}: {}",
-                capture_name,
-                capture.node.utf8_text(source_bytes).unwrap()
-            );
+            // eprintln!(
+            //     "{}: {}",
+            //     capture_name,
+            //     capture.node.utf8_text(source_bytes).unwrap()
+            // );
         }
 
         let descriptors = descriptors
@@ -241,7 +241,7 @@ pub fn parse_tree<'a>(
             .collect::<Vec<_>>();
 
         let node = node.expect("there must always be at least one descriptor");
-        dbg!(node);
+        // dbg!(node);
 
         matched.push(match scope {
             Some(scope) => Matched::Scope(Scope {
@@ -254,7 +254,7 @@ pub fn parse_tree<'a>(
         })
     }
 
-    dbg!(&matched);
+    // dbg!(&matched);
 
     let mut root = Matched::Root(Root {
         root: root_node,
@@ -269,10 +269,11 @@ pub fn parse_tree<'a>(
     while let Some(m) = matched.pop() {
         root.insert(m);
     }
-    dbg!(&root);
+    // dbg!(&root);
 
     let tags = root.into_occurences();
-    Ok(dbg!(tags))
+    // dbg!(tags);
+    Ok(tags)
 }
 
 fn dbg_format_descriptors(descriptors: &[Descriptor]) -> Vec<String> {
@@ -324,7 +325,8 @@ mod test {
     fn test_can_parse_go_tree() -> Result<()> {
         let mut config = crate::languages::go();
         let source_code = include_str!("../testdata/example.go");
-        let doc = dbg!(parse_file_for_lang(&mut config, source_code)?);
+        let doc = parse_file_for_lang(&mut config, source_code)?;
+        // dbg!(doc);
 
         let dumped = dump_document(&doc, source_code)?;
         insta::assert_snapshot!(dumped);

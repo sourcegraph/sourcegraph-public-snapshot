@@ -70,6 +70,14 @@ fn perl_locals() -> LocalConfiguration {
     }
 }
 
+pub fn get_tag_configuration(parser: BundledParser) -> Option<TagConfiguration> {
+    match parser {
+        BundledParser::Rust => Some(rust()),
+        BundledParser::Go => Some(go()),
+        _ => None,
+    }
+}
+
 pub fn get_local_configuration(parser: BundledParser) -> Option<LocalConfiguration> {
     match parser {
         BundledParser::Go => Some(go_locals()),
