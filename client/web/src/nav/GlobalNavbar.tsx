@@ -8,7 +8,7 @@ import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
 import { RouteObject, useLocation } from 'react-router-dom'
 
-import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
+import { isMacPlatform } from '@sourcegraph/common'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -385,11 +385,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 authenticatedUser={props.authenticatedUser}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isSourcegraphApp={isSourcegraphApp}
-                                codeHostIntegrationMessaging={
-                                    (!isErrorLike(props.settingsCascade.final) &&
-                                        props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
-                                    'browser-extension'
-                                }
                                 showFeedbackModal={showFeedbackModal}
                             />
                         </NavAction>
