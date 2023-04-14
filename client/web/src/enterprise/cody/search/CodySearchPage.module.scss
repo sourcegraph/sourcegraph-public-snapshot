@@ -21,9 +21,3 @@
     background-color: var(--violet-08);
     border-color: var(--violet-06);
 }
-
-.slogan {
-    @media (--sm-breakpoint-up) {
-        border-right: var(--border-width) solid var(--border-color);
-    }
-}
