@@ -12,6 +12,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// switchableZoektGRPCClient is a zoekt.Streamer that can switch between
+// gRPC and HTTP backends.
 type switchableZoektGRPCClient struct {
 	httpClient zoekt.Streamer
 	grpcClient zoekt.Streamer
