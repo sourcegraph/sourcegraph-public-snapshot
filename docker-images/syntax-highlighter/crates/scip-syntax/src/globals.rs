@@ -1,195 +1,128 @@
+use std::collections::HashMap;
+
 use anyhow::Result;
 use protobuf::Enum;
-use scip::types::Descriptor;
+use scip::types::{descriptor::Suffix, Descriptor, Occurrence};
 use scip_treesitter::prelude::*;
 use tree_sitter::Node;
 
-use crate::languages::TagConfiguration;
+use crate::{byterange::ByteRange, languages::TagConfiguration, locals::ScopeModifier};
 
 #[derive(Debug)]
-pub struct Root<'a> {
-    pub root: Node<'a>,
-    pub children: Vec<Matched<'a>>,
-}
-
 pub struct Scope<'a> {
-    pub definer: Node<'a>,
     pub scope: Node<'a>,
+    pub range: ByteRange,
+    pub globals: Vec<Global<'a>>,
+    pub children: Vec<Scope<'a>>,
     pub descriptors: Vec<Descriptor>,
-    pub children: Vec<Matched<'a>>,
 }
 
-impl<'a> std::fmt::Debug for Scope<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let descriptors = dbg_format_descriptors(&self.descriptors);
-
-        write!(
-            f,
-            "({}, {}, {:?}) -> {:?}",
-            self.scope.kind(),
-            self.scope.start_position(),
-            descriptors,
-            self.children
-        )
-    }
-}
-
+#[derive(Debug)]
 pub struct Global<'a> {
     pub node: Node<'a>,
+    pub range: ByteRange,
     pub descriptors: Vec<Descriptor>,
 }
 
-impl<'a> std::fmt::Debug for Global<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let descriptors = dbg_format_descriptors(&self.descriptors);
-
-        write!(
-            f,
-            "({}, {}, {:?})",
-            self.node.kind(),
-            self.node.start_position(),
-            descriptors
-        )
-    }
-}
-
-#[derive(Debug)]
-// TODO: Root as it's own type?
-pub enum Matched<'a> {
-    /// The root node of a file
-    Root(Root<'a>),
-
-    /// Does not generate a definition, simply a place ot add new descriptors
-    /// TODO: Haven't done this one for real yet
-    // Namespace(Namespace),
-
-    /// Generates a new definition, and is itself a place to add additional descriptors
-    Scope(Scope<'a>),
-
-    /// Generates a new definition, but does not generate a new scope
-    Global(Global<'a>),
-}
-
-impl<'a> ContainsNode for Matched<'a> {
-    fn contains_node(&self, node: &Node) -> bool {
-        self.node().contains_node(node)
-    }
-}
-
-impl<'a> Matched<'a> {
-    pub fn node(&self) -> &Node<'a> {
-        match self {
-            Matched::Root(m) => &m.root,
-            Matched::Scope(m) => &m.scope,
-            Matched::Global(m) => &m.node,
+impl<'a> Scope<'a> {
+    pub fn insert_scope(&mut self, scope: Scope<'a>) {
+        if let Some(child) = self
+            .children
+            .iter_mut()
+            .find(|child| child.range.contains(&scope.range))
+        {
+            child.insert_scope(scope);
+        } else {
+            self.children.push(scope);
         }
     }
 
-    pub fn insert(&mut self, m: Matched<'a>) {
-        match self {
-            Matched::Root(root) => {
-                if let Some(child) = root
-                    .children
-                    .iter_mut()
-                    .find(|child| child.contains_node(m.node()))
-                {
-                    child.insert(m);
-                } else {
-                    root.children.push(m);
-                }
-            }
-            Matched::Scope(scope) => {
-                if let Some(child) = scope
-                    .children
-                    .iter_mut()
-                    .find(|child| child.contains_node(m.node()))
-                {
-                    child.insert(m);
-                } else {
-                    scope.children.push(m);
-                }
-            }
-            Matched::Global(_) => unreachable!(),
+    pub fn insert_global(&mut self, global: Global<'a>) {
+        if let Some(child) = self
+            .children
+            .iter_mut()
+            .find(|child| child.range.contains(&global.range))
+        {
+            child.insert_global(global)
+        } else {
+            self.globals.push(global);
         }
     }
 
-    pub fn into_occurences(&self) -> Vec<scip::types::Occurrence> {
-        self.rec_into_occurrences(&[])
+    pub fn into_occurrences(
+        &mut self,
+        hint: usize,
+        base_descriptors: Vec<Descriptor>,
+    ) -> Vec<Occurrence> {
+        let mut descriptor_stack = base_descriptors;
+        let mut occs = Vec::with_capacity(hint);
+        self.rec_into_occurrences(true, &mut occs, &mut descriptor_stack);
+        occs
     }
 
-    // TODO: Could we use a dequeue for this to pop on and off quickly?
-    // TODO: Could we use a way to format the symbol w/out all the preamble?
-    //  Perhaps just a "format_descriptors" function in the lib, that I didn't expose beforehand
-    fn rec_into_occurrences(&self, descriptors: &[Descriptor]) -> Vec<scip::types::Occurrence> {
-        match self {
-            Matched::Root(root) => {
-                assert!(descriptors.is_empty(), "root should not have descriptors");
-                root.children
-                    .iter()
-                    .flat_map(|c| c.rec_into_occurrences(descriptors))
-                    .collect()
-            }
-            Matched::Scope(scope) => {
-                let mut these_descriptors = descriptors.to_vec();
-                these_descriptors.extend(scope.descriptors.iter().cloned());
+    fn rec_into_occurrences(
+        &self,
+        is_root: bool,
+        occurrences: &mut Vec<Occurrence>,
+        descriptor_stack: &mut Vec<Descriptor>,
+    ) {
+        descriptor_stack.extend(self.descriptors.clone());
 
-                let symbol = scip::symbol::format_symbol(scip::types::Symbol {
+        if !is_root {
+            occurrences.push(scip::types::Occurrence {
+                range: vec![
+                    self.scope.start_position().row as i32,
+                    self.scope.start_position().column as i32,
+                    self.scope.end_position().column as i32,
+                ],
+                symbol: scip::symbol::format_symbol(scip::types::Symbol {
                     scheme: "scip-ctags".into(),
                     // TODO: Package?
                     package: None.into(),
-                    descriptors: these_descriptors,
+                    descriptors: descriptor_stack.clone(),
                     ..Default::default()
-                });
-
-                let symbol_roles = scip::types::SymbolRole::Definition.value();
-                let mut children = vec![scip::types::Occurrence {
-                    range: vec![
-                        scope.definer.start_position().row as i32,
-                        scope.definer.start_position().column as i32,
-                        scope.definer.end_position().column as i32,
-                    ],
-                    symbol,
-                    symbol_roles,
-                    // TODO:
-                    // syntax_kind: todo!(),
-                    ..Default::default()
-                }];
-
-                children.extend(scope.children.iter().flat_map(|c| {
-                    let mut descriptors = descriptors.to_vec();
-                    descriptors.extend(scope.descriptors.iter().cloned());
-                    c.rec_into_occurrences(&descriptors)
-                }));
-
-                children
-            }
-            Matched::Global(global) => {
-                let mut these_descriptors = descriptors.to_vec();
-                these_descriptors.extend(global.descriptors.iter().cloned());
-
-                let symbol = scip::symbol::format_symbol(scip::types::Symbol {
-                    scheme: "scip-ctags".into(),
-                    // TODO: Package?
-                    package: None.into(),
-                    descriptors: these_descriptors,
-                    ..Default::default()
-                });
-
-                let symbol_roles = scip::types::SymbolRole::Definition.value();
-                vec![scip::types::Occurrence {
-                    range: vec![
-                        global.node.start_position().row as i32,
-                        global.node.start_position().column as i32,
-                        global.node.end_position().column as i32,
-                    ],
-                    symbol,
-                    symbol_roles,
-                    // TODO:
-                    // syntax_kind: todo!(),
-                    ..Default::default()
-                }]
-            }
+                }),
+                symbol_roles: scip::types::SymbolRole::Definition.value(),
+                // TODO:
+                // syntax_kind: todo!(),
+                ..Default::default()
+            });
         }
+
+        for global in &self.globals {
+            let mut global_descriptors = descriptor_stack.clone();
+            global_descriptors.extend(global.descriptors.clone());
+
+            let symbol = scip::symbol::format_symbol(scip::types::Symbol {
+                scheme: "scip-ctags".into(),
+                // TODO: Package?
+                package: None.into(),
+                descriptors: global_descriptors,
+                ..Default::default()
+            });
+
+            let symbol_roles = scip::types::SymbolRole::Definition.value();
+            occurrences.push(scip::types::Occurrence {
+                range: vec![
+                    global.node.start_position().row as i32,
+                    global.node.start_position().column as i32,
+                    global.node.end_position().column as i32,
+                ],
+                symbol,
+                symbol_roles,
+                // TODO:
+                // syntax_kind: todo!(),
+                ..Default::default()
+            });
+        }
+
+        self.children
+            .iter()
+            .for_each(|c| c.rec_into_occurrences(false, occurrences, descriptor_stack));
+
+        self.descriptors.iter().for_each(|_| {
+            descriptor_stack.pop();
+        });
     }
 }
 
@@ -197,13 +130,16 @@ pub fn parse_tree<'a>(
     config: &mut TagConfiguration,
     tree: &'a tree_sitter::Tree,
     source_bytes: &'a [u8],
+    base_descriptors: Vec<Descriptor>,
 ) -> Result<Vec<scip::types::Occurrence>> {
     let mut cursor = tree_sitter::QueryCursor::new();
 
     let root_node = tree.root_node();
     let capture_names = config.query.capture_names();
 
-    let mut matched = vec![];
+    let mut scopes = vec![];
+    let mut globals = vec![];
+
     for m in cursor.matches(&config.query, root_node, source_bytes) {
         // eprintln!("\n==== NEW MATCH ====");
 
@@ -234,53 +170,70 @@ pub fn parse_tree<'a>(
         }
 
         let descriptors = descriptors
-            .into_iter()
+            .iter()
             .map(|(capture, name)| {
                 crate::ts_scip::capture_name_to_descriptor(capture, name.to_string())
             })
-            .collect::<Vec<_>>();
+            .collect();
 
         let node = node.expect("there must always be at least one descriptor");
         // dbg!(node);
 
-        matched.push(match scope {
-            Some(scope) => Matched::Scope(Scope {
-                definer: node,
-                scope: scope.node,
-                descriptors,
+        match scope {
+            Some(scope_ident) => scopes.push(Scope {
+                scope: node,
+                range: ByteRange {
+                    start: scope_ident.node.start_byte(),
+                    end: scope_ident.node.end_byte(),
+                },
+                globals: vec![],
                 children: vec![],
+                descriptors,
             }),
-            None => Matched::Global(Global { node, descriptors }),
-        })
+            None => globals.push(Global {
+                node,
+                range: ByteRange {
+                    start: node.start_byte(),
+                    end: node.end_byte(),
+                },
+                descriptors,
+            }),
+        }
     }
 
     // dbg!(&matched);
 
-    let mut root = Matched::Root(Root {
-        root: root_node,
+    let mut root = Scope {
+        scope: root_node,
+        range: ByteRange {
+            start: root_node.start_byte(),
+            end: root_node.end_byte(),
+        },
+        globals: vec![],
         children: vec![],
+        descriptors: vec![],
+    };
+
+    scopes.sort_by_key(|m| {
+        (
+            std::cmp::Reverse(m.range.start),
+            m.range.end - m.range.start,
+        )
     });
 
-    matched.sort_by_key(|m| {
-        let node = m.node();
-        node.end_byte() - node.start_byte()
-    });
+    // Add all the scopes to our tree
+    while let Some(m) = scopes.pop() {
+        root.insert_scope(m);
+    }
 
-    while let Some(m) = matched.pop() {
-        root.insert(m);
+    while let Some(m) = globals.pop() {
+        root.insert_global(m);
     }
     // dbg!(&root);
 
-    let tags = root.into_occurences();
+    let tags = root.into_occurrences(globals.len(), base_descriptors);
     // dbg!(tags);
     Ok(tags)
-}
-
-fn dbg_format_descriptors(descriptors: &[Descriptor]) -> Vec<String> {
-    descriptors
-        .iter()
-        .map(|d| format!("{} ({:?})", d.name, d.suffix))
-        .collect::<Vec<_>>()
 }
 
 #[cfg(test)]
@@ -294,7 +247,7 @@ mod test {
         let source_bytes = source_code.as_bytes();
         let tree = config.parser.parse(source_bytes, None).unwrap();
 
-        let occ = parse_tree(config, &tree, source_bytes)?;
+        let occ = parse_tree(config, &tree, source_bytes, vec![])?;
         let mut doc = Document::new();
         doc.occurrences = occ;
         doc.symbols = doc
@@ -325,6 +278,19 @@ mod test {
     fn test_can_parse_go_tree() -> Result<()> {
         let mut config = crate::languages::go();
         let source_code = include_str!("../testdata/example.go");
+        let doc = parse_file_for_lang(&mut config, source_code)?;
+        // dbg!(doc);
+
+        let dumped = dump_document(&doc, source_code)?;
+        insta::assert_snapshot!(dumped);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_parse_go_internal_tree() -> Result<()> {
+        let mut config = crate::languages::go();
+        let source_code = include_str!("../testdata/internal_go.go");
         let doc = parse_file_for_lang(&mut config, source_code)?;
         // dbg!(doc);
 
