@@ -65,7 +65,7 @@ func (s fakeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeo
 // fakeGitServer is a limited gitserver.Client that returns a file for every Stat call.
 type fakeGitserver struct {
 	gitserver.Client
-	files map[repoPath]string
+	files repoFiles
 }
 
 type repoPath struct {
@@ -89,7 +89,7 @@ func (g fakeGitserver) ReadFile(_ context.Context, _ authz.SubRepoPermissionChec
 
 // Stat is a fake implementation that returns a FileInfo
 // indicating a regular file for every path it is given.
-func (g fakeGitserver) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+func (g fakeGitserver) Stat(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, path string) (fs.FileInfo, error) {
 	return graphqlbackend.CreateFileInfo(path, false), nil
 }
 
@@ -98,9 +98,9 @@ func (g fakeGitserver) Stat(ctx context.Context, checker authz.SubRepoPermission
 // it as `displayName`.
 func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	logger := logtest.Scoped(t)
-	fs := fakedb.New()
+	fakeDB := fakedb.New()
 	db := database.NewMockDB()
-	fs.Wire(db)
+	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
 	own := fakeOwnService{
 		Ruleset: codeowners.NewRuleset(
@@ -117,7 +117,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 				},
 			}),
 	}
-	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
@@ -216,9 +216,9 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 
 func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 	logger := logtest.Scoped(t)
-	fs := fakedb.New()
+	fakeDB := fakedb.New()
 	db := database.NewMockDB()
-	fs.Wire(db)
+	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
 	own := fakeOwnService{
 		Ruleset: codeowners.NewRuleset(
@@ -235,7 +235,7 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 				},
 			}),
 	}
-	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
@@ -319,17 +319,17 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	var parameterRevision = "revision-parameter"
 	var resolvedRevision api.CommitID = "revision-resolved"
 	git := fakeGitserver{
-		files: map[repoPath]string{
+		files: repoFiles{
 			{repo.Name, resolvedRevision, "CODEOWNERS"}: "*.js @fake-team",
 		},
 	}
-	fs := fakedb.New()
+	fakeDB := fakedb.New()
 	db := enterprisedb.NewMockEnterpriseDB()
-	db.TeamsFunc.SetDefaultReturn(fs.TeamStore)
-	db.UsersFunc.SetDefaultReturn(fs.UserStore)
+	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
+	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
 	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
 	own := own.NewService(git, db)
-	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
@@ -340,7 +340,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 		}
 		return resolvedRevision, nil
 	}
-	if err := fs.TeamStore.CreateTeam(ctx, team); err != nil {
+	if err := fakeDB.TeamStore.CreateTeam(ctx, team); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
 	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
@@ -472,9 +472,9 @@ func (r paginationResponse) ownerNames() []string {
 // *  each request returns correct pageInfo and totalCount;
 func TestOwnershipPagination(t *testing.T) {
 	logger := logtest.Scoped(t)
-	fs := fakedb.New()
+	fakeDB := fakedb.New()
 	db := database.NewMockDB()
-	fs.Wire(db)
+	fakeDB.Wire(db)
 	rule := &codeownerspb.Rule{
 		Pattern: "*.js",
 		Owner: []*codeownerspb.Owner{
@@ -493,7 +493,7 @@ func TestOwnershipPagination(t *testing.T) {
 				Rule: []*codeownerspb.Rule{rule},
 			}),
 	}
-	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
@@ -547,7 +547,7 @@ func TestOwnershipPagination(t *testing.T) {
 	if lastResponseData == nil {
 		t.Error("No response received.")
 	} else if lastResponseData.hasNextPage() {
-		t.Error("Last responce has next page information - result is not exhaustive.")
+		t.Error("Last response has next page information - result is not exhaustive.")
 	}
 	wantPaginatedOwners := [][]string{
 		{

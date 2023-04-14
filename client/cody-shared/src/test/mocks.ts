@@ -1,3 +1,4 @@
+import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
 import { RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
 import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
@@ -60,6 +61,10 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
     }
 
+    public replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
+        return this.mocks.replaceSelection?.(fileName, selectedText, replacement) ?? Promise.resolve()
+    }
+
     public showQuickPick(labels: string[]): Promise<string | undefined> {
         return this.mocks.showQuickPick?.(labels) ?? Promise.resolve(undefined)
     }
@@ -84,5 +89,6 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
         intentDetector: args.intentDetector || defaultIntentDetector,
         codebaseContext:
             args.codebaseContext || new CodebaseContext('none', defaultEmbeddingsClient, defaultKeywordContextFetcher),
+        responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
     }
 }

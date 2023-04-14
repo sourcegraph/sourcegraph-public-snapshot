@@ -18,6 +18,7 @@ ts_project(
     name = "cody-shared_lib",
     srcs = [
         "package.json",
+        "src/chat/bot-response-multiplexer.ts",
         "src/chat/chat.ts",
         "src/chat/client.ts",
         "src/chat/markdown.ts",
@@ -33,6 +34,7 @@ ts_project(
         "src/chat/recipes/index.ts",
         "src/chat/recipes/langs.ts",
         "src/chat/recipes/recipe.ts",
+        "src/chat/recipes/replace.ts",
         "src/chat/recipes/translate.ts",
         "src/chat/transcript/index.ts",
         "src/chat/transcript/interaction.ts",
@@ -87,6 +89,7 @@ ts_project(
     name = "cody-shared_tests",
     testonly = True,
     srcs = [
+        "src/chat/bot-response-multiplexer.test.ts",
         "src/chat/transcript/transcript.test.ts",
         "src/hallucinations-detector/index.test.ts",
         "src/test/mocks.ts",

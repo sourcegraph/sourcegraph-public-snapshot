@@ -1,17 +1,20 @@
-.tips-container {
-    padding: 1rem;
-    padding-top: 0;
+.tipsContainer {
+    padding: 0 23px;
 }
 
-.tips-container ul {
+.tipsContainer ul {
     padding-inline-start: 1rem;
 }
 
-.tips-container li {
+.tipsContainer li {
     line-height: 1.5rem;
 }
 
 .code-block {
     padding: 1em;
     white-space: break-spaces;
+}
+
+.blockquote {
+    margin-left: 0;
 }

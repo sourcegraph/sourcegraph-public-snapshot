@@ -6,6 +6,7 @@ import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
 import { ImproveVariableNames } from './improve-variable-names'
 import { Recipe } from './recipe'
+import { Replace } from './replace'
 import { TranslateToLanguage } from './translate'
 
 const registeredRecipes: { [id: string]: Recipe } = {}
@@ -31,6 +32,7 @@ function init(): void {
         new GenerateTest(),
         new GitHistory(),
         new ImproveVariableNames(),
+        new Replace(),
         new TranslateToLanguage(),
     ]
 

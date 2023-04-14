@@ -30,6 +30,8 @@ ts_project(
         "src/chat/CodeBlocks.tsx",
         "src/chat/ContextFiles.tsx",
         "src/globals.d.ts",
+        "src/icons/AskCodyIcon.tsx",
+        "src/icons/CodyLogo.tsx",
         "src/index.ts",
         "src/utils/icons.tsx",
     ],
@@ -40,6 +42,7 @@ ts_project(
     # TODO(bazel): "#keep"s required for type-only imports
     deps = [
         ":node_modules/@sourcegraph/cody-shared",
+        "//:node_modules/@mdi/js",
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/react",
         "//:node_modules/classnames",
