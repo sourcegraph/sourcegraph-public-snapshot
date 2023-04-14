@@ -2024,8 +2024,6 @@ type Sentry struct {
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
-	// AlertsCodeHostIntegrationMessaging description: What in-app messaging to use around availability of Sourcegraph's code intelligence on code hosts. If the native code host integration is installed, this should be set to "native-integration" and users won't need to install the Sourcegraph browser extension to get code intelligence on code hosts.
-	AlertsCodeHostIntegrationMessaging string `json:"alerts.codeHostIntegrationMessaging,omitempty"`
 	// AlertsHideObservabilitySiteAlerts description: Disables observability-related site alert banners.
 	AlertsHideObservabilitySiteAlerts *bool `json:"alerts.hideObservabilitySiteAlerts,omitempty"`
 	// AlertsShowMajorMinorUpdates description: Whether to show alerts for major and minor version updates. Alerts for patch version updates will be shown if `alerts.showPatchUpdates` is true.
@@ -2136,7 +2134,6 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	delete(m, "alerts.codeHostIntegrationMessaging")
 	delete(m, "alerts.hideObservabilitySiteAlerts")
 	delete(m, "alerts.showMajorMinorUpdates")
 	delete(m, "alerts.showPatchUpdates")
