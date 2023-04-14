@@ -2,6 +2,7 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
+import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
@@ -26,8 +27,12 @@ import { sanitizeServerEndpoint } from '../sanitize'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
-async function isValidLogin(serverEndpoint: string, accessToken: string): Promise<boolean> {
-    const client = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(serverEndpoint), accessToken)
+async function isValidLogin(
+    serverEndpoint: string,
+    accessToken: string,
+    customHeaders: Record<string, string>
+): Promise<boolean> {
+    const client = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(serverEndpoint), accessToken, customHeaders)
     const userId = await client.getCurrentUserId()
     return !isError(userId)
 }
@@ -43,6 +48,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private inputHistory: string[] = []
     private chatHistory: ChatHistory = {}
 
+    // Allows recipes to hook up subscribers to process sub-streams of bot output
+    private multiplexer: BotResponseMultiplexer = new BotResponseMultiplexer()
+
     constructor(
         private extensionPath: string,
         private codebase: string,
@@ -56,7 +64,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         private rgPath: string,
         private mode: 'development' | 'production',
-        private localStorage: LocalStorage
+        private localStorage: LocalStorage,
+        private customHeaders: Record<string, string>
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
@@ -77,7 +86,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         mode: 'development' | 'production',
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext,
-        chatClient: ChatClient
+        chatClient: ChatClient,
+        customHeaders: Record<string, string>
     ): ChatViewProvider {
         return new ChatViewProvider(
             extensionPath,
@@ -92,7 +102,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             contextType,
             rgPath,
             mode,
-            localStorage
+            localStorage,
+            customHeaders
         )
     }
 
@@ -117,7 +128,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 await this.acceptTOS(message.version)
                 break
             case 'settings': {
-                const isValid = await isValidLogin(message.serverEndpoint, message.accessToken)
+                const isValid = await isValidLogin(message.serverEndpoint, message.accessToken, this.customHeaders)
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
@@ -182,11 +193,39 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
         this.cancelCompletion()
 
-        this.cancelCompletionCallback = this.chat.chat(promptMessages, {
-            onChange: text => this.onBotMessageChange(reformatBotMessage(text, responsePrefix)),
-            onComplete: () => {
-                void this.onBotMessageComplete()
+        let text = ''
+
+        this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
+            onResponse: (content: string) => {
+                text += content
+                this.transcript.addAssistantResponse(reformatBotMessage(text, responsePrefix))
+                this.sendTranscript()
+                return Promise.resolve()
             },
+            onTurnComplete: async () => {
+                const lastInteraction = this.transcript.getLastInteraction()
+                if (lastInteraction) {
+                    const { text, displayText } = lastInteraction.getAssistantMessage()
+                    const { text: highlightedDisplayText } = await highlightTokens(displayText, fileExists)
+                    this.transcript.addAssistantResponse(text, highlightedDisplayText)
+                }
+                this.isMessageInProgress = false
+                this.cancelCompletionCallback = null
+                this.sendTranscript()
+                await this.saveChatHistory()
+            },
+        })
+
+        let textConsumed = 0
+
+        this.cancelCompletionCallback = this.chat.chat(promptMessages, {
+            onChange: text => {
+                // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
+                text = text.slice(textConsumed)
+                textConsumed += text.length
+                return this.multiplexer.publish(text)
+            },
+            onComplete: () => this.multiplexer.notifyTurnComplete(),
             onError: err => {
                 void vscode.window.showErrorMessage(err)
             },
@@ -222,10 +261,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             return
         }
 
+        // Create a new multiplexer to drop any old subscribers
+        this.multiplexer = new BotResponseMultiplexer()
+
         const interaction = await recipe.getInteraction(humanChatInput, {
             editor: this.editor,
             intentDetector: this.intentDetector,
             codebaseContext: this.codebaseContext,
+            responseMultiplexer: this.multiplexer,
         })
         if (!interaction) {
             return
@@ -244,25 +287,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             { serverEndpoint: this.serverEndpoint },
             { serverEndpoint: this.serverEndpoint }
         )
-    }
-
-    private onBotMessageChange(text: string): void {
-        this.transcript.addAssistantResponse(text)
-        this.sendTranscript()
-    }
-
-    private async onBotMessageComplete(): Promise<void> {
-        const lastInteraction = this.transcript.getLastInteraction()
-        if (lastInteraction) {
-            const { text, displayText } = lastInteraction.getAssistantMessage()
-            const { text: highlightedDisplayText } = await highlightTokens(displayText, fileExists)
-            this.transcript.addAssistantResponse(text, highlightedDisplayText)
-        }
-
-        this.isMessageInProgress = false
-        this.cancelCompletionCallback = null
-        this.sendTranscript()
-        await this.saveChatHistory()
     }
 
     private showTab(tab: string): void {
@@ -373,7 +397,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     this.editor,
                     this.secretStorage,
                     this.contextType,
-                    this.mode
+                    this.mode,
+                    this.customHeaders
                 )
 
                 this.codebase = codebase

@@ -86,6 +86,35 @@ export class VSCodeEditor implements Editor {
         }
     }
 
+    public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
+        const activeEditor = vscode.window.activeTextEditor
+        if (
+            !activeEditor ||
+            activeEditor.document.uri.scheme !== 'file' ||
+            vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName
+        ) {
+            // TODO: should return something indicating success or failure
+            return
+        }
+        const selection = activeEditor.selection
+        if (!selection) {
+            return
+        }
+
+        if (activeEditor.document.getText(selection) !== selectedText) {
+            // TODO: Be robust to this.
+            await vscode.window.showErrorMessage(
+                'The selection changed while Cody was working. The text will not be edited.'
+            )
+            return
+        }
+
+        await activeEditor.edit(edit => {
+            edit.replace(selection, replacement)
+        })
+        return
+    }
+
     public async showQuickPick(labels: string[]): Promise<string | undefined> {
         const label = await vscode.window.showQuickPick(labels)
         return label

@@ -43,7 +43,8 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         editor,
         secretStorage,
         config.useContext,
-        mode
+        mode,
+        config.customHeaders
     )
 
     // Create chat webview
@@ -59,7 +60,8 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         mode,
         intentDetector,
         codebaseContext,
-        chatClient
+        chatClient,
+        config.customHeaders
     )
 
     vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
@@ -128,6 +130,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         vscode.commands.registerCommand('cody.recipe.generate-docstring', async () =>
             executeRecipe('generate-docstring')
         ),
+        vscode.commands.registerCommand('cody.recipe.replace', async () => executeRecipe('replace')),
         vscode.commands.registerCommand('cody.recipe.translate-to-language', async () =>
             executeRecipe('translate-to-language')
         ),

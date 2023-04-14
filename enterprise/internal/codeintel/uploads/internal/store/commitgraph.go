@@ -12,7 +12,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -128,17 +127,17 @@ func (s *store) UpdateUploadsVisibleToCommits(
 			return err
 		}
 
-		// Persist data to permenant table: t_lsif_nearest_uploads -> lsif_nearest_uploads
+		// Persist data to permanent table: t_lsif_nearest_uploads -> lsif_nearest_uploads
 		if err := s.persistNearestUploads(ctx, repositoryID, tx.db); err != nil {
 			return err
 		}
 
-		// Persist data to permenant table: t_lsif_nearest_uploads_links -> lsif_nearest_uploads_links
+		// Persist data to permanent table: t_lsif_nearest_uploads_links -> lsif_nearest_uploads_links
 		if err := s.persistNearestUploadsLinks(ctx, repositoryID, tx.db); err != nil {
 			return err
 		}
 
-		// Persist data to permenant table: t_lsif_uploads_visible_at_tip -> lsif_uploads_visible_at_tip
+		// Persist data to permanent table: t_lsif_uploads_visible_at_tip -> lsif_uploads_visible_at_tip
 		if err := s.persistUploadsVisibleAtTip(ctx, repositoryID, tx.db); err != nil {
 			return err
 		}
@@ -660,62 +659,98 @@ func (s *store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 	ctx, trace, endObservation := s.operations.writeVisibleUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	defer func() {
+		trace.AddEvent(
+			"TODO Domain Owner",
+			// Only read these after the associated channels are exhausted
+			attribute.Int("numNearestUploadsRecords", int(sanitizedInput.numNearestUploadsRecords)),
+			attribute.Int("numNearestUploadsLinksRecords", int(sanitizedInput.numNearestUploadsLinksRecords)),
+			attribute.Int("numUploadsVisibleAtTipRecords", int(sanitizedInput.numUploadsVisibleAtTipRecords)),
+		)
+	}()
+
 	if err := s.createTemporaryNearestUploadsTables(ctx, tx); err != nil {
 		return err
 	}
 
-	g, gctx := errgroup.WithContext(ctx)
+	return withTriplyNestedBatchInserters(
+		ctx,
+		tx.Handle(),
+		batch.MaxNumPostgresParameters,
+		"t_lsif_nearest_uploads", []string{"commit_bytea", "uploads"},
+		"t_lsif_nearest_uploads_links", []string{"commit_bytea", "ancestor_commit_bytea", "distance"},
+		"t_lsif_uploads_visible_at_tip", []string{"upload_id", "branch_or_tag_name", "is_default_branch"},
+		func(nearestUploadsInserter, nearestUploadsLinksInserter, uploadsVisibleAtTipInserter *batch.Inserter) error {
+			return populateInsertersFromChannels(
+				ctx,
+				nearestUploadsInserter, sanitizedInput.nearestUploadsRowValues,
+				nearestUploadsLinksInserter, sanitizedInput.nearestUploadsLinksRowValues,
+				uploadsVisibleAtTipInserter, sanitizedInput.uploadsVisibleAtTipRowValues,
+			)
+		},
+	)
+}
 
-	// Insert the set of uploads that are visible from each commit for a given repository into a temporary table.
-	nearestUploadsWriter := func() error {
-		return batch.InsertValues(
-			gctx,
-			tx.Handle(),
-			"t_lsif_nearest_uploads",
-			batch.MaxNumPostgresParameters,
-			[]string{"commit_bytea", "uploads"},
-			sanitizedInput.nearestUploadsRowValues,
-		)
+func withTriplyNestedBatchInserters(
+	ctx context.Context,
+	db dbutil.DB,
+	maxNumParameters int,
+	tableName1 string, columnNames1 []string,
+	tableName2 string, columnNames2 []string,
+	tableName3 string, columnNames3 []string,
+	f func(inserter1, inserter2, inserter3 *batch.Inserter) error,
+) error {
+	return batch.WithInserter(ctx, db, tableName1, maxNumParameters, columnNames1, func(inserter1 *batch.Inserter) error {
+		return batch.WithInserter(ctx, db, tableName2, maxNumParameters, columnNames2, func(inserter2 *batch.Inserter) error {
+			return batch.WithInserter(ctx, db, tableName3, maxNumParameters, columnNames3, func(inserter3 *batch.Inserter) error {
+				return f(inserter1, inserter2, inserter3)
+			})
+		})
+	})
+}
+
+func populateInsertersFromChannels(
+	ctx context.Context,
+	inserter1 *batch.Inserter, values1 <-chan []any,
+	inserter2 *batch.Inserter, values2 <-chan []any,
+	inserter3 *batch.Inserter, values3 <-chan []any,
+) error {
+	for values1 != nil || values2 != nil || values3 != nil {
+		select {
+		case rowValues, ok := <-values1:
+			if ok {
+				if err := inserter1.Insert(ctx, rowValues...); err != nil {
+					return err
+				}
+			} else {
+				// The loop continues until all three channels are nil. Setting this channel to
+				// nil now marks it not ready for communication, effectively blocking on the next
+				// loop iteration.
+				values1 = nil
+			}
+
+		case rowValues, ok := <-values2:
+			if ok {
+				if err := inserter2.Insert(ctx, rowValues...); err != nil {
+					return err
+				}
+			} else {
+				values2 = nil
+			}
+
+		case rowValues, ok := <-values3:
+			if ok {
+				if err := inserter3.Insert(ctx, rowValues...); err != nil {
+					return err
+				}
+			} else {
+				values3 = nil
+			}
+
+		case <-ctx.Done():
+			return ctx.Err()
+		}
 	}
-
-	// Insert the commits not inserted into the table above by adding links to a unique ancestor and their relative
-	// distance in the graph into another temporary table. We use this as a cheap way to reconstruct the full data
-	// set, which is multiplicative in the size of the commit graph AND the number of unique roots.
-	nearestUploadsLinksWriter := func() error {
-		return batch.InsertValues(
-			gctx,
-			tx.Handle(),
-			"t_lsif_nearest_uploads_links",
-			batch.MaxNumPostgresParameters,
-			[]string{"commit_bytea", "ancestor_commit_bytea", "distance"},
-			sanitizedInput.nearestUploadsLinksRowValues,
-		)
-	}
-
-	// Insert the set of uploads visible from the tip of the default branch into a temporary table. These values are
-	// used to determine which bundles for a repository we open during a global find references query.
-	uploadsVisibleAtTipWriter := func() error {
-		return batch.InsertValues(
-			gctx,
-			tx.Handle(),
-			"t_lsif_uploads_visible_at_tip",
-			batch.MaxNumPostgresParameters,
-			[]string{"upload_id", "branch_or_tag_name", "is_default_branch"},
-			sanitizedInput.uploadsVisibleAtTipRowValues,
-		)
-	}
-
-	g.Go(nearestUploadsWriter)
-	g.Go(nearestUploadsLinksWriter)
-	g.Go(uploadsVisibleAtTipWriter)
-
-	if err := g.Wait(); err != nil {
-		return err
-	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numNearestUploadsRecords", int(sanitizedInput.numNearestUploadsRecords)),
-		attribute.Int("numNearestUploadsLinksRecords", int(sanitizedInput.numNearestUploadsLinksRecords)),
-		attribute.Int("numUploadsVisibleAtTipRecords", int(sanitizedInput.numUploadsVisibleAtTipRecords)))
 
 	return nil
 }

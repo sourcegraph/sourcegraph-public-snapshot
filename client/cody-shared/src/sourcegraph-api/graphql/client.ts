@@ -61,7 +61,11 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
 
-    constructor(private instanceUrl: string, private accessToken: string | null) {}
+    constructor(
+        private instanceUrl: string,
+        private accessToken: string | null,
+        private customHeaders: Record<string, string> = {}
+    ) {}
 
     public async getCurrentUserId(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
@@ -136,10 +140,17 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
-        return fetch(`${this.instanceUrl}/.api/graphql`, {
-            headers: { ...(this.accessToken ? { Authorization: `token ${this.accessToken}` } : null) },
+        const endpointURL = new URL('/.api/graphql', this.instanceUrl).href
+        const headers = new Headers(this.customHeaders as HeadersInit)
+        headers.set('Content-Type', 'application/json; charset=utf-8')
+        if (this.accessToken) {
+            headers.set('Authorization', `token ${this.accessToken}`)
+        }
+
+        return fetch(endpointURL, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
+            headers,
         })
             .then(verifyResponseCode)
             .then(response => response.json() as T)
@@ -148,7 +159,8 @@ export class SourcegraphGraphQLAPIClient {
 
     // make an anonymous request to the dotcom API
     private async fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
-        return fetch(`${this.dotcomUrl}/.api/graphql`, {
+        const endpointURL = new URL('/.api/graphql', this.dotcomUrl).href
+        return fetch(endpointURL, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
         })

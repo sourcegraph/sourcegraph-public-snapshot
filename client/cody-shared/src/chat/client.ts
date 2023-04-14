@@ -8,6 +8,7 @@ import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completi
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
 import { isError } from '../utils'
 
+import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
 import { getPreamble } from './preamble'
 import { ChatQuestion } from './recipes/chat-question'
@@ -20,6 +21,7 @@ export interface ClientInit {
     accessToken: string | null
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: ChatMessage[]) => void
+    customHeaders?: Record<string, string>
 }
 
 export interface Client {
@@ -31,15 +33,17 @@ export async function createClient({
     accessToken,
     setMessageInProgress,
     setTranscript,
+    customHeaders,
 }: ClientInit): Promise<Client> {
     const completionsClient = new SourcegraphBrowserCompletionsClient(
         config.serverEndpoint,
         accessToken,
-        process.env.NODE_ENV === 'development' ? 'development' : 'production'
+        process.env.NODE_ENV === 'development' ? 'development' : 'production',
+        customHeaders
     )
     const chatClient = new ChatClient(completionsClient)
 
-    const graphqlClient = new SourcegraphGraphQLAPIClient(config.serverEndpoint, accessToken)
+    const graphqlClient = new SourcegraphGraphQLAPIClient(config.serverEndpoint, accessToken, customHeaders)
 
     const repoId = config.codebase ? await graphqlClient.getRepoId(config.codebase) : null
     if (isError(repoId)) {
@@ -69,6 +73,9 @@ export async function createClient({
         },
         getWorkspaceRootPath() {
             return null
+        },
+        replaceSelection(_fileName, _selectedText, _replacement) {
+            return Promise.resolve()
         },
         async showQuickPick(labels) {
             return window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || undefined
@@ -100,6 +107,7 @@ export async function createClient({
                 editor: fakeEditor,
                 intentDetector,
                 codebaseContext,
+                responseMultiplexer: new BotResponseMultiplexer(),
             })
             if (!interaction) {
                 throw new Error('No interaction')

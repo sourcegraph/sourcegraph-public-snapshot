@@ -10,15 +10,17 @@ import { CompletionParameters, CompletionCallbacks, CodeCompletionParameters, Co
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     public async complete(params: CodeCompletionParameters): Promise<CodeCompletionResponse> {
         const requestFn = this.codeCompletionsEndpoint.startsWith('https://') ? https.request : http.request
+        const headersInstance = new Headers(this.customHeaders as HeadersInit)
+        headersInstance.set('Content-Type', 'application/json')
+        if (this.accessToken) {
+            headersInstance.set('Authorization', `token ${this.accessToken}`)
+        }
         const completion = await new Promise<CodeCompletionResponse>((resolve, reject) => {
             const req = requestFn(
                 this.codeCompletionsEndpoint,
                 {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(this.accessToken ? { Authorization: `token ${this.accessToken}` } : null),
-                    },
+                    headers: Object.fromEntries(headersInstance.entries()),
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
                     rejectUnauthorized: this.mode === 'production',
                 },
@@ -71,6 +73,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 headers: {
                     'Content-Type': 'application/json',
                     ...(this.accessToken ? { Authorization: `token ${this.accessToken}` } : null),
+                    ...this.customHeaders,
                 },
                 // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
                 rejectUnauthorized: this.mode === 'production',
