@@ -8,6 +8,7 @@ import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completi
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
 import { isError } from '../utils'
 
+import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
 import { ChatQuestion } from './recipes/chat-question'
 import { Transcript } from './transcript'
@@ -72,6 +73,9 @@ export async function createClient({
         getWorkspaceRootPath() {
             return null
         },
+        replaceSelection(_fileName, _selectedText, _replacement) {
+            return Promise.resolve()
+        },
         async showQuickPick(labels) {
             return window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || undefined
         },
@@ -102,6 +106,7 @@ export async function createClient({
                 editor: fakeEditor,
                 intentDetector,
                 codebaseContext,
+                responseMultiplexer: new BotResponseMultiplexer(),
             })
             if (!interaction) {
                 throw new Error('No interaction')

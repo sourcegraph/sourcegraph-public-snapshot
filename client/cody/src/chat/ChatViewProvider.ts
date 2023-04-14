@@ -2,6 +2,7 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
+import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
@@ -46,6 +47,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private currentChatID = ''
     private inputHistory: string[] = []
     private chatHistory: ChatHistory = {}
+
+    // Allows recipes to hook up subscribers to process sub-streams of bot output
+    private multiplexer: BotResponseMultiplexer = new BotResponseMultiplexer()
 
     constructor(
         private extensionPath: string,
@@ -189,11 +193,39 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
         this.cancelCompletion()
 
-        this.cancelCompletionCallback = this.chat.chat(promptMessages, {
-            onChange: text => this.onBotMessageChange(reformatBotMessage(text, responsePrefix)),
-            onComplete: () => {
-                void this.onBotMessageComplete()
+        let text = ''
+
+        this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
+            onResponse: (content: string) => {
+                text += content
+                this.transcript.addAssistantResponse(reformatBotMessage(text, responsePrefix))
+                this.sendTranscript()
+                return Promise.resolve()
             },
+            onTurnComplete: async () => {
+                const lastInteraction = this.transcript.getLastInteraction()
+                if (lastInteraction) {
+                    const { text, displayText } = lastInteraction.getAssistantMessage()
+                    const { text: highlightedDisplayText } = await highlightTokens(displayText, fileExists)
+                    this.transcript.addAssistantResponse(text, highlightedDisplayText)
+                }
+                this.isMessageInProgress = false
+                this.cancelCompletionCallback = null
+                this.sendTranscript()
+                await this.saveChatHistory()
+            },
+        })
+
+        let textConsumed = 0
+
+        this.cancelCompletionCallback = this.chat.chat(promptMessages, {
+            onChange: text => {
+                // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
+                text = text.slice(textConsumed)
+                textConsumed += text.length
+                return this.multiplexer.publish(text)
+            },
+            onComplete: () => this.multiplexer.notifyTurnComplete(),
             onError: err => {
                 void vscode.window.showErrorMessage(err)
             },
@@ -229,10 +261,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             return
         }
 
+        // Create a new multiplexer to drop any old subscribers
+        this.multiplexer = new BotResponseMultiplexer()
+
         const interaction = await recipe.getInteraction(humanChatInput, {
             editor: this.editor,
             intentDetector: this.intentDetector,
             codebaseContext: this.codebaseContext,
+            responseMultiplexer: this.multiplexer,
         })
         if (!interaction) {
             return
@@ -251,25 +287,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             { serverEndpoint: this.serverEndpoint },
             { serverEndpoint: this.serverEndpoint }
         )
-    }
-
-    private onBotMessageChange(text: string): void {
-        this.transcript.addAssistantResponse(text)
-        this.sendTranscript()
-    }
-
-    private async onBotMessageComplete(): Promise<void> {
-        const lastInteraction = this.transcript.getLastInteraction()
-        if (lastInteraction) {
-            const { text, displayText } = lastInteraction.getAssistantMessage()
-            const { text: highlightedDisplayText } = await highlightTokens(displayText, fileExists)
-            this.transcript.addAssistantResponse(text, highlightedDisplayText)
-        }
-
-        this.isMessageInProgress = false
-        this.cancelCompletionCallback = null
-        this.sendTranscript()
-        await this.saveChatHistory()
     }
 
     private showTab(tab: string): void {
