@@ -1,3 +1,5 @@
+import { useEffect, useMemo } from 'react'
+
 import create from 'zustand'
 
 import { Client, createClient, ClientInit } from '@sourcegraph/cody-shared/src/chat/client'
@@ -10,6 +12,7 @@ interface CodyChatStore {
     client: Client | null
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    repo: string | null
     filePath: string
     setClient: (client: Client | null) => void
     setMessageInProgress: (message: ChatMessage | null) => void
@@ -20,9 +23,13 @@ interface CodyChatStore {
 
 export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore => {
     const onSubmit = (text: string): void => {
-        const client = get().client
+        const { client, repo, filePath } = get()
         if (client && !isErrorLike(client)) {
-            // eventLogger.log('web:codySidebar:submit', { repo: get().config?.codebase, path: get().filePath, text })
+            eventLogger.log('web:codySidebar:submit', {
+                repo,
+                path: filePath,
+                text,
+            })
             client.submitMessage(text)
         }
     }
@@ -32,13 +39,12 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         messageInProgress: null,
         transcript: [],
         filePath: '',
+        repo: '',
         setClient: client => set({ client }),
         setMessageInProgress: message => set({ messageInProgress: message }),
         setTranscript: transcript => set({ transcript }),
-
-        initializeClient: config => {
-            set({ messageInProgress: null })
-            set({ transcript: [] })
+        initializeClient: (config: ClientInit['config']): void => {
+            set({ messageInProgress: null, transcript: [], repo: config.codebase ?? null })
             createClient({
                 config,
                 accessToken: null,
@@ -57,3 +63,27 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         onSubmit,
     }
 })
+
+export const useChatStore = (isCodyEnabled: boolean, repoName: string): CodyChatStore => {
+    const store = useChatStoreState()
+
+    const config = useMemo<ClientInit['config']>(
+        () => ({
+            serverEndpoint: window.location.origin,
+            useContext: 'embeddings',
+            codebase: repoName,
+        }),
+        [repoName]
+    )
+
+    const { initializeClient } = store
+    useEffect(() => {
+        if (!isCodyEnabled) {
+            return
+        }
+
+        initializeClient(config)
+    }, [config, initializeClient, isCodyEnabled])
+
+    return store
+}

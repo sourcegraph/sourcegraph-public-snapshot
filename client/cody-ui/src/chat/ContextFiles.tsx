@@ -4,8 +4,6 @@ import React, { useState } from 'react'
 
 import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 
-import { Icon } from '@sourcegraph/wildcard'
-
 import styles from './ContextFiles.module.css'
 
 export interface FileLinkProps {
@@ -66,3 +64,9 @@ export const ContextFiles: React.FunctionComponent<{
         </div>
     )
 }
+
+const Icon: React.FC<{ svgPath: string }> = ({ svgPath }) => (
+    <svg role="img" height={24} width={24} viewBox="0 0 24 24" fill="currentColor">
+        <path d={svgPath} />
+    </svg>
+)

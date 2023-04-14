@@ -944,10 +944,8 @@ importers:
   client/cody-ui:
     specifiers:
       '@sourcegraph/cody-shared': workspace:*
-      '@sourcegraph/wildcard': workspace:*
     dependencies:
       '@sourcegraph/cody-shared': link:../cody-shared
-      '@sourcegraph/wildcard': link:../wildcard
 
   client/cody-web:
     specifiers:

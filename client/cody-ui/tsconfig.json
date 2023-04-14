@@ -14,8 +14,5 @@
     {
       "path": "../cody-shared",
     },
-    {
-      "path": "../wildcard",
-    },
   ],
 }

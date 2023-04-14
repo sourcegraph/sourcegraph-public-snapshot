@@ -18,7 +18,6 @@
     "test": "jest"
   },
   "dependencies": {
-    "@sourcegraph/cody-shared": "workspace:*",
-    "@sourcegraph/wildcard": "workspace:*"
+    "@sourcegraph/cody-shared": "workspace:*"
   }
 }

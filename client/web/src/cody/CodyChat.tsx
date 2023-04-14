@@ -2,14 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiClose, mdiSend, mdiArrowDown } from '@mdi/js'
 
+import { Chat, ChatUISubmitButtonProps } from '@sourcegraph/cody-ui/src/Chat'
+import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
+import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
+import { Terms } from '@sourcegraph/cody-ui/src/Terms'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
-import { useChatStoreState } from '../../web/src/stores/codyChat'
-
-import { Chat, ChatUISubmitButtonProps } from './Chat'
-import { FileLinkProps } from './chat/ContextFiles'
-import { CodyLogo } from './icons/CodyLogo'
-import { Terms } from './Terms'
+import { useChatStoreState } from '../stores/codyChat'
 
 import styles from './CodyChat.module.scss'
 
