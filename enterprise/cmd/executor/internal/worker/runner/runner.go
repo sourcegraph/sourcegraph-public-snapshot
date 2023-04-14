@@ -44,6 +44,7 @@ type Spec struct {
 
 var indexRegex = regexp.MustCompile("step\\.(\\d+)")
 
+// Index returns the index of the step in the job. If there is no index number in the key, ErrNoIndex is returned.
 func (s Spec) Index() (int, error) {
 	matches := indexRegex.FindStringSubmatch(s.CommandSpec.Key)
 	if len(matches) != 2 {
