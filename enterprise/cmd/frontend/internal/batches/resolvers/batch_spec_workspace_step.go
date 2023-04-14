@@ -179,8 +179,7 @@ type batchSpecWorkspaceStepV2Resolver struct {
 
 	stepInfo *btypes.StepInfo
 
-	cachedResult      *execution.AfterStepResult
-	cachedResultFound bool
+	cachedResult *execution.AfterStepResult
 }
 
 var _ graphqlbackend.BatchSpecWorkspaceStepResolver = &batchSpecWorkspaceStepV2Resolver{}
@@ -206,7 +205,7 @@ func (r *batchSpecWorkspaceStepV2Resolver) IfCondition() *string {
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) CachedResultFound() bool {
-	return r.cachedResultFound
+	return r.stepInfo.StartedAt.IsZero() && r.cachedResult != nil
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) Skipped() bool {

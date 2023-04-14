@@ -173,7 +173,6 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 
 			// See if we have a cache result for this step.
 			if cachedResult, ok := r.workspace.StepCacheResult(idx + 1); ok {
-				resolver.skipped = true
 				resolver.cachedResult = cachedResult.Value
 			} else if r.execution != nil {
 				logKeyRegex, err := regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.post$", idx))
@@ -194,7 +193,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 				}
 			}
 
-			if !resolver.skipped {
+			if !resolver.skipped && resolver.cachedResult != nil {
 				logKeyRegex, err := regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.pre$", idx))
 				if err != nil {
 					return nil, err
