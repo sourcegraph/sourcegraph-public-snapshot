@@ -18,7 +18,7 @@ go_library(
         "//internal/trace",
         "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_zoekt//:go_default_library",
+        "@com_github_sourcegraph_zoekt//:zoekt",
         "@io_opentelemetry_go_otel//attribute",
         "@org_uber_go_atomic//:atomic",
     ],
