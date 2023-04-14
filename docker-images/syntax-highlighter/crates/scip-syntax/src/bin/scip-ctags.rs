@@ -39,46 +39,50 @@ fn main() {
 
                 let parser = BundledParser::get_parser_from_extension(
                     path.extension().unwrap_or_default().to_str().unwrap(),
-                )
-                .unwrap();
-
-                let maybe_globals = get_globals(
-                    parser,
-                    &file_data,
-                    vec![Descriptor {
-                        name: filename.clone(),
-                        suffix: Suffix::Namespace.into(),
-                        ..Default::default()
-                    }],
                 );
-                match maybe_globals {
-                    Some(result) => match result {
-                        Ok(occurrences) => {
-                            for occurrence in occurrences {
-                                println!(
-                                    "{}\n",
-                                    serde_json::to_string(&Reply::Tag {
-                                        name: occurrence.symbol,
-                                        path: path
-                                            .file_name()
-                                            .unwrap()
-                                            .to_string_lossy()
-                                            .to_string(),
-                                        language: "Go".to_string(),
-                                        line: occurrence.range[0] as usize + 1,
-                                        kind: "variable".to_string(),
-                                        pattern: "/.*/".to_string(),
-                                        scope: Option::None,
-                                        scope_kind: Option::None,
-                                        signature: Option::None,
-                                    })
-                                    .unwrap()
-                                );
-                            }
-                        }
-                        Err(_) => {}
-                    },
+
+                match parser {
                     None => {}
+                    Some(parser) => {
+                        let maybe_globals = get_globals(
+                            parser,
+                            &file_data,
+                            vec![Descriptor {
+                                name: filename.clone(),
+                                suffix: Suffix::Namespace.into(),
+                                ..Default::default()
+                            }],
+                        );
+                        match maybe_globals {
+                            Some(result) => match result {
+                                Ok(occurrences) => {
+                                    for occurrence in occurrences {
+                                        println!(
+                                            "{}\n",
+                                            serde_json::to_string(&Reply::Tag {
+                                                name: occurrence.symbol,
+                                                path: path
+                                                    .file_name()
+                                                    .unwrap()
+                                                    .to_string_lossy()
+                                                    .to_string(),
+                                                language: "Go".to_string(),
+                                                line: occurrence.range[0] as usize + 1,
+                                                kind: "variable".to_string(),
+                                                pattern: "/.*/".to_string(),
+                                                scope: Option::None,
+                                                scope_kind: Option::None,
+                                                signature: Option::None,
+                                            })
+                                            .unwrap()
+                                        );
+                                    }
+                                }
+                                Err(_) => {}
+                            },
+                            None => {}
+                        }
+                    }
                 }
 
                 println!(
