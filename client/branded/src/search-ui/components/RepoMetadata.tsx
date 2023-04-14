@@ -21,9 +21,11 @@ export const RepoMetadata: React.FunctionComponent<{
                     <Badge small={small} variant="info" className={classNames({ [styles.repoMetadataKey]: value })}>
                         {key}
                     </Badge>
-                    <Badge small={small} variant="secondary" className={styles.repoMetadataValue}>
-                        {value}
-                    </Badge>
+                    {value && (
+                        <Badge small={small} variant="secondary" className={styles.repoMetadataValue}>
+                            {value}
+                        </Badge>
+                    )}
                 </span>
             ))}
         </div>

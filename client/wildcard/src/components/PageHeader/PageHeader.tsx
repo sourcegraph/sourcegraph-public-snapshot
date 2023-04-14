@@ -53,7 +53,16 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<PageHea
     Breadcrumb: typeof Breadcrumb
     Heading: typeof Heading
 } = props => {
-    const { annotation, byline, description, actions, className, rootClassName, children, headingElement = 'h1' } = props
+    const {
+        annotation,
+        byline,
+        description,
+        actions,
+        className,
+        rootClassName,
+        children,
+        headingElement = 'h1',
+    } = props
     const path: BreadcrumbItem[] = 'path' in props ? props.path : []
 
     if (path.length === 0 && !children) {
