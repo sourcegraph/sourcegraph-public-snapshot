@@ -161,12 +161,15 @@ func (s *Service) WithStore(store *store.Store) *Service {
 // on the namespace the batch change belongs to.
 //
 // If it belongs to a user, we check if the current user is the same as the creator of the Batch Change or they're a site admin.
-// If it belongs to an org, we check the org settings for the `orgs.allMembersBatchChangesAdmin,omitempty` boolean:
+// If it belongs to an org, we check the org settings for the `orgs.allMembersBatchChangesAdmin` field:
 //   - If true, we allow all org members / site admins / the creator of the batch change to perform the operation
 //   - If false, we only allow site admins / the creator of the batch change to perform the operation.
 func (s *Service) checkBatchChangeAccess(ctx context.Context, db database.DB, batchChange *btypes.BatchChange) error {
 	if batchChange.NamespaceOrgID != 0 {
 		orgID := batchChange.NamespaceOrgID
+		// We retrieve the setting for `orgs.allMembersBatchChangesAdmin` from Settings instead of SiteConfig because
+		// multiple orgs could have different values for the field. Because it's an org-specific field, it's added
+		// as part of org Settings.
 		settings, err := db.Settings().GetLatest(ctx, api.SettingsSubject{Org: &orgID})
 		if err != nil {
 			return err
