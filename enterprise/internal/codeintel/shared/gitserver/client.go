@@ -437,7 +437,7 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 }
 
 func (c *Client) ListFilesForRepo(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) (_ []string, err error) {
-	matching, err := c.gitserverClient.ListFiles(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), pattern)
+	matching, err := c.gitserverClient.ListFiles2(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), pattern)
 	if err == nil {
 		return matching, nil
 	}
