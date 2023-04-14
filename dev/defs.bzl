@@ -10,7 +10,7 @@ load(":babel.bzl", _babel = "babel")
 
 sass = _sass
 
-def ts_project(name, deps = [], usePresetEnv = True, **kwargs):
+def ts_project(name, deps = [], use_preset_env = True, **kwargs):
     """A wrapper around ts_project
 
     Args:
@@ -18,7 +18,7 @@ def ts_project(name, deps = [], usePresetEnv = True, **kwargs):
 
         deps: A list of dependencies
 
-        usePresetEnv: Controls if we transpile TS sources with babel-preset-env
+        use_preset_env: Controls if we transpile TS sources with babel-preset-env
 
         **kwargs: Additional arguments to pass to ts_project
     """
@@ -54,7 +54,7 @@ def ts_project(name, deps = [], usePresetEnv = True, **kwargs):
         # use babel as the transpiler
         transpiler = partial.make(
             _babel,
-            usePresetEnv = usePresetEnv,
+            use_preset_env = use_preset_env,
             module = kwargs.pop("module", None),
             tags = kwargs.get("tags", []),
             visibility = visibility,
