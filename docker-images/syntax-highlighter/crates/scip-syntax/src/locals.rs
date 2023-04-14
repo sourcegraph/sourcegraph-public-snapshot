@@ -8,19 +8,7 @@ use scip::{
 use scip_treesitter::prelude::*;
 use tree_sitter::Node;
 
-use crate::languages::LocalConfiguration;
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ByteRange {
-    start: usize,
-    end: usize,
-}
-
-impl ByteRange {
-    pub fn contains(&self, other: &Self) -> bool {
-        self.start <= other.start && self.end >= other.end
-    }
-}
+use crate::{byterange::ByteRange, languages::LocalConfiguration};
 
 #[derive(Debug)]
 pub struct Scope<'a> {
