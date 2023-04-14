@@ -88,7 +88,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     const [fileTreeFocusKey, setFileTreeFocusKey] = useState('')
     const [symbolsFocusKey, setSymbolsFocusKey] = useState('')
 
-    const codyEnabled = useFeatureFlag('cody-experimental')
+    const [codyEnabled] = useFeatureFlag('cody-experimental')
     const focusCodyShortcut = useKeyboardShortcut('focusCody')
     const [codyFocusKey, setCodyFocusKey] = useState('')
 
