@@ -164,9 +164,8 @@ func (s *Service) WithStore(store *store.Store) *Service {
 // If it belongs to an org, we check the org settings for the `orgs.allMembersBatchChangesAdmin` field:
 //   - If true, we allow all org members / site admins / the creator of the batch change to perform the operation
 //   - If false, we only allow site admins / the creator of the batch change to perform the operation.
-func (s *Service) checkBatchChangeAccess(ctx context.Context, db database.DB, batchChange *btypes.BatchChange) error {
-	if batchChange.NamespaceOrgID != 0 {
-		orgID := batchChange.NamespaceOrgID
+func (s *Service) checkBatchChangeAccess(ctx context.Context, db database.DB, orgID, creatorID int32) error {
+	if orgID != 0 {
 		// We retrieve the setting for `orgs.allMembersBatchChangesAdmin` from Settings instead of SiteConfig because
 		// multiple orgs could have different values for the field. Because it's an org-specific field, it's added
 		// as part of org Settings.
@@ -186,7 +185,7 @@ func (s *Service) checkBatchChangeAccess(ctx context.Context, db database.DB, ba
 		}
 
 		if allMembersBatchChangesAdmin {
-			if err := auth.CheckOrgAccessOrSiteAdminOrSameUser(ctx, db, batchChange.CreatorID, orgID); err != nil {
+			if err := auth.CheckOrgAccessOrSiteAdminOrSameUser(ctx, db, creatorID, orgID); err != nil {
 				return err
 			}
 			return nil
@@ -194,7 +193,7 @@ func (s *Service) checkBatchChangeAccess(ctx context.Context, db database.DB, ba
 	}
 
 	// 🚨 SECURITY: Only the author of the batch change or a site admin should be able to access this operation.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, db, batchChange.CreatorID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, creatorID); err != nil {
 		return err
 	}
 
@@ -992,7 +991,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 	}
 
 	// 🚨 SECURITY: Only the Author of the batch change can move it.
-	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange); err != nil {
+	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange.NamespaceOrgID, batchChange.CreatorID); err != nil {
 		return nil, err
 	}
 	// Check if current user has access to target namespace if set.
@@ -1032,7 +1031,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		return batchChange, nil
 	}
 
-	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange); err != nil {
+	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange.NamespaceOrgID, batchChange.CreatorID); err != nil {
 		return nil, err
 	}
 
@@ -1083,7 +1082,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange); err != nil {
+	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange.NamespaceOrgID, batchChange.CreatorID); err != nil {
 		return err
 	}
 
@@ -1124,7 +1123,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	)
 
 	for _, c := range batchChanges {
-		err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), c)
+		err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), c.NamespaceOrgID, c.CreatorID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -1175,7 +1174,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 	)
 
 	for _, c := range attachedBatchChanges {
-		err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), c)
+		err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), c.NamespaceOrgID, c.CreatorID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -1325,7 +1324,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 		return bulkGroupID, errors.Wrap(err, "loading batch change")
 	}
 
-	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange); err != nil {
+	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange.NamespaceOrgID, batchChange.CreatorID); err != nil {
 		return bulkGroupID, err
 	}
 

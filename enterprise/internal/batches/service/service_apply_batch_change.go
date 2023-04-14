@@ -64,16 +64,8 @@ func (s *Service) ApplyBatchChange(
 		return nil, err
 	}
 
-	batchChange, previousSpecID, err := s.ReconcileBatchChange(ctx, batchSpec)
-	if err != nil {
-		return nil, err
-	}
-
-	if batchChange.ID != 0 && opts.FailIfBatchChangeExists {
-		return nil, ErrMatchingBatchChangeExists
-	}
-
-	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchChange); err != nil {
+	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
+	if err := s.checkBatchChangeAccess(ctx, s.store.DatabaseDB(), batchSpec.NamespaceOrgID, batchSpec.UserID); err != nil {
 		return nil, err
 	}
 
@@ -81,6 +73,15 @@ func (s *Service) ApplyBatchChange(
 	// BatchSpec can't be applied safely.
 	if err := s.ValidateChangesetSpecs(ctx, batchSpec.ID); err != nil {
 		return nil, err
+	}
+
+	batchChange, previousSpecID, err := s.ReconcileBatchChange(ctx, batchSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchChange.ID != 0 && opts.FailIfBatchChangeExists {
+		return nil, ErrMatchingBatchChangeExists
 	}
 
 	if opts.EnsureBatchChangeID != 0 && batchChange.ID != opts.EnsureBatchChangeID {
