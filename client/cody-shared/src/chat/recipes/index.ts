@@ -8,6 +8,7 @@ import { ImproveVariableNames } from './improve-variable-names'
 import { Recipe } from './recipe'
 import { Replace } from './replace'
 import { TranslateToLanguage } from './translate'
+import { FindCodeSmells } from './find-code-smells'
 
 const registeredRecipes: { [id: string]: Recipe } = {}
 
@@ -34,6 +35,7 @@ function init(): void {
         new ImproveVariableNames(),
         new Replace(),
         new TranslateToLanguage(),
+        new FindCodeSmells(),
     ]
 
     for (const recipe of recipes) {

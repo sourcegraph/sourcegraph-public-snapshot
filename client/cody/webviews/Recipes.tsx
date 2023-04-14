@@ -12,6 +12,7 @@ export const recipesList = {
     'improve-variable-names': 'Improve variable names',
     'translate-to-language': 'Translate to different language',
     'git-history': 'Summarize recent code changes',
+    'find-code-smells': 'Find code smells',
 }
 
 export function Recipes(): React.ReactElement {
