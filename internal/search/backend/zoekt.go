@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/zoekt/grpc/v1"
 	"github.com/sourcegraph/zoekt/rpc"
 	zoektstream "github.com/sourcegraph/zoekt/stream"
+	"google.golang.org/grpc"
 )
 
 // We don't use the normal factory for internal requests because we disable
@@ -109,7 +110,7 @@ func ZoektDialHTTP(endpoint string) zoekt.Streamer {
 
 // ZoektDialGRPC connects to a Searcher gRPC server at address (host:port).
 func ZoektDialGRPC(endpoint string) zoekt.Streamer {
-	conn, err := defaults.Dial(endpoint)
+	conn, err := defaults.Dial(endpoint, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(128*1024*1024)))
 	return NewMeteredSearcher(endpoint, &zoektGRPCClient{
 		endpoint: endpoint,
 		client:   v1.NewWebserverServiceClient(conn),
