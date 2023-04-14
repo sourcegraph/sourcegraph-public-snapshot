@@ -32,11 +32,7 @@ pub enum Request {
 #[serde(tag = "_type")]
 pub enum Reply {
     #[serde(rename = "program")]
-    Program {
-        // init (typ == program)
-        name: String,
-        version: String,
-    },
+    Program { name: String, version: String },
     #[serde(rename = "completed")]
     Completed { command: String },
     #[serde(rename = "error")]

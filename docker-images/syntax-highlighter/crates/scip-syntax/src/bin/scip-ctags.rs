@@ -2,6 +2,8 @@ use std::io::Read;
 use std::{io, path};
 
 use scip_syntax::ctags::{Reply, Request};
+use scip_syntax::get_globals;
+use scip_treesitter_languages::parsers::BundledParser;
 
 fn main() {
     println!(
@@ -31,25 +33,43 @@ fn main() {
                     .read_exact(&mut file_data)
                     .expect("Could not read file data");
 
-                println!(
-                    "{}\n",
-                    serde_json::to_string(&Reply::Tag {
-                        name: "bruh".to_string(),
-                        path: path::Path::new(&filename)
-                            .file_name()
-                            .unwrap()
-                            .to_string_lossy()
-                            .to_string(),
-                        language: "Zig".to_string(),
-                        line: 1,
-                        kind: "variable".to_string(),
-                        pattern: "/.*/".to_string(),
-                        scope: Option::None,
-                        scope_kind: Option::None,
-                        signature: Option::None,
-                    })
-                    .unwrap()
-                );
+                let path = path::Path::new(&filename);
+
+                match path.extension().unwrap_or_default().to_str().unwrap() {
+                    "go" => {
+                        let maybe_globals = get_globals(BundledParser::Go, &file_data);
+                        match maybe_globals {
+                            Some(result) => match result {
+                                Ok(occurrences) => {
+                                    for occurrence in occurrences {
+                                        println!(
+                                            "{}\n",
+                                            serde_json::to_string(&Reply::Tag {
+                                                name: occurrence.symbol,
+                                                path: path
+                                                    .file_name()
+                                                    .unwrap()
+                                                    .to_string_lossy()
+                                                    .to_string(),
+                                                language: "Go".to_string(),
+                                                line: occurrence.range[0] as usize + 1,
+                                                kind: "variable".to_string(),
+                                                pattern: "/.*/".to_string(),
+                                                scope: Option::None,
+                                                scope_kind: Option::None,
+                                                signature: Option::None,
+                                            })
+                                            .unwrap()
+                                        );
+                                    }
+                                }
+                                Err(_) => {}
+                            },
+                            None => {}
+                        }
+                    }
+                    _ => {}
+                }
 
                 println!(
                     "{}\n",
