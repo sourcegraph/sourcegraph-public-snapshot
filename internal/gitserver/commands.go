@@ -26,7 +26,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -1024,7 +1023,29 @@ func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPe
 
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
-func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) (_ []string, err error) {
+func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, opts *protocol.ListFilesOpts) (_ []string, err error) {
+	files, err := c.ReadDir(ctx, checker, repo, commit, "", true)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading directory")
+	}
+	var filteredFiles []string
+
+	for _, file := range files {
+		if file.IsDir() && !opts.IncludeDirs {
+			continue
+		} else if opts.MaxFileSizeBytes != 0 && file.Size() > opts.MaxFileSizeBytes {
+			continue
+		}
+
+		filteredFiles = append(filteredFiles, file.Name())
+	}
+
+	return filterPaths(ctx, checker, repo, filteredFiles)
+}
+
+// ListFiles2 returns a list of root-relative file paths matching the given
+// pattern in a particular commit of a repository.
+func (c *clientImplementor) ListFiles2(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) (_ []string, err error) {
 	cmd := c.gitCommand(repo, "ls-tree", "-z", "--name-only", "-r", string(commit), "--")
 
 	out, err := cmd.CombinedOutput(ctx)

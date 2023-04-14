@@ -259,6 +259,12 @@ type ExecRequest struct {
 	NoTimeout      bool     `json:"noTimeout"`
 }
 
+// ListFilesOpts specifies options when calling gitserverClient.ListFiles.
+type ListFilesOpts struct {
+	IncludeDirs      bool
+	MaxFileSizeBytes int64
+}
+
 // BatchLogRequest is a request to execute a `git log` command inside a set of
 // git repositories present on the target shard.
 type BatchLogRequest struct {

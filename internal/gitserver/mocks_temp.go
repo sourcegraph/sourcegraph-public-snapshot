@@ -113,6 +113,9 @@ type MockClient struct {
 	// ListFilesFunc is an instance of a mock function object controlling
 	// the behavior of the method ListFiles.
 	ListFilesFunc *ClientListFilesFunc
+	// ListFiles2Func is an instance of a mock function object controlling
+	// the behavior of the method ListFiles2.
+	ListFiles2Func *ClientListFiles2Func
 	// ListRefsFunc is an instance of a mock function object controlling the
 	// behavior of the method ListRefs.
 	ListRefsFunc *ClientListRefsFunc
@@ -326,6 +329,11 @@ func NewMockClient() *MockClient {
 			},
 		},
 		ListFilesFunc: &ClientListFilesFunc{
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) (r0 []string, r1 error) {
+				return
+			},
+		},
+		ListFiles2Func: &ClientListFiles2Func{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) (r0 []string, r1 error) {
 				return
 			},
@@ -588,8 +596,13 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		ListFilesFunc: &ClientListFilesFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error) {
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error) {
 				panic("unexpected invocation of MockClient.ListFiles")
+			},
+		},
+		ListFiles2Func: &ClientListFiles2Func{
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error) {
+				panic("unexpected invocation of MockClient.ListFiles2")
 			},
 		},
 		ListRefsFunc: &ClientListRefsFunc{
@@ -795,6 +808,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		ListFilesFunc: &ClientListFilesFunc{
 			defaultHook: i.ListFiles,
+		},
+		ListFiles2Func: &ClientListFiles2Func{
+			defaultHook: i.ListFiles2,
 		},
 		ListRefsFunc: &ClientListRefsFunc{
 			defaultHook: i.ListRefs,
@@ -4006,15 +4022,15 @@ func (c ClientListDirectoryChildrenFuncCall) Results() []interface{} {
 // ClientListFilesFunc describes the behavior when the ListFiles method of
 // the parent MockClient instance is invoked.
 type ClientListFilesFunc struct {
-	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error)
-	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error)
+	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error)
+	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error)
 	history     []ClientListFilesFuncCall
 	mutex       sync.Mutex
 }
 
 // ListFiles delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) ListFiles(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 api.CommitID, v4 *regexp.Regexp) ([]string, error) {
+func (m *MockClient) ListFiles(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 api.CommitID, v4 *protocol.ListFilesOpts) ([]string, error) {
 	r0, r1 := m.ListFilesFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.ListFilesFunc.appendCall(ClientListFilesFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -4022,7 +4038,7 @@ func (m *MockClient) ListFiles(v0 context.Context, v1 authz.SubRepoPermissionChe
 
 // SetDefaultHook sets function that is called when the ListFiles method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientListFilesFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error)) {
+func (f *ClientListFilesFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error)) {
 	f.defaultHook = hook
 }
 
@@ -4030,7 +4046,7 @@ func (f *ClientListFilesFunc) SetDefaultHook(hook func(context.Context, authz.Su
 // ListFiles method of the parent MockClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientListFilesFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error)) {
+func (f *ClientListFilesFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4039,19 +4055,19 @@ func (f *ClientListFilesFunc) PushHook(hook func(context.Context, authz.SubRepoP
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientListFilesFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error) {
+	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientListFilesFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error) {
+	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientListFilesFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error) {
+func (f *ClientListFilesFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4098,7 +4114,7 @@ type ClientListFilesFuncCall struct {
 	Arg3 api.CommitID
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 *regexp.Regexp
+	Arg4 *protocol.ListFilesOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []string
@@ -4116,6 +4132,122 @@ func (c ClientListFilesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientListFilesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientListFiles2Func describes the behavior when the ListFiles2 method of
+// the parent MockClient instance is invoked.
+type ClientListFiles2Func struct {
+	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error)
+	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error)
+	history     []ClientListFiles2FuncCall
+	mutex       sync.Mutex
+}
+
+// ListFiles2 delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockClient) ListFiles2(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 api.CommitID, v4 *regexp.Regexp) ([]string, error) {
+	r0, r1 := m.ListFiles2Func.nextHook()(v0, v1, v2, v3, v4)
+	m.ListFiles2Func.appendCall(ClientListFiles2FuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListFiles2 method of
+// the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientListFiles2Func) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListFiles2 method of the parent MockClient instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientListFiles2Func) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientListFiles2Func) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientListFiles2Func) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientListFiles2Func) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *regexp.Regexp) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientListFiles2Func) appendCall(r0 ClientListFiles2FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientListFiles2FuncCall objects describing
+// the invocations of this function.
+func (f *ClientListFiles2Func) History() []ClientListFiles2FuncCall {
+	f.mutex.Lock()
+	history := make([]ClientListFiles2FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientListFiles2FuncCall is an object that describes an invocation of
+// method ListFiles2 on an instance of MockClient.
+type ClientListFiles2FuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 authz.SubRepoPermissionChecker
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoName
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 api.CommitID
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 *regexp.Regexp
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientListFiles2FuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientListFiles2FuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
