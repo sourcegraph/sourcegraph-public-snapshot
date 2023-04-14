@@ -17,18 +17,20 @@ export const Tips: React.FunctionComponent<{ recommendations?: JSX.Element[]; af
             <li>
                 Cody tells you which files it reads to respond to your message. If this list of files looks wrong, try
                 copying the relevant code (up to 20KB) into your message like this:
+                <br />
+                <blockquote className="ml-0">
+                    <pre className={classNames(styles.codeBlock)}>
+                        <div>```</div>
+                        <div>
+                            {'{'}code{'}'}
+                        </div>
+                        <div>```</div>
+                        <div>Explain the code above (or your question).</div>
+                    </pre>
+                </blockquote>
             </li>
         </ul>
-        <blockquote>
-            <pre className={classNames(styles.codeBlock)}>
-                <div>```</div>
-                <div>
-                    {'{'}code{'}'}
-                </div>
-                <div>```</div>
-                <div>Explain the code above (or your question).</div>
-            </pre>
-        </blockquote>
+
         <h4>
             <strong>Example questions</strong>
         </h4>

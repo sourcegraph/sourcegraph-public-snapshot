@@ -20,8 +20,7 @@
 }
 
 .bubble-content pre {
-    border-top: solid 1px var(--border-color-2);
-    border-bottom: solid 1px var(--border-color-2);
+    border: solid 1px var(--border-color-2);
     border-radius: 2px !important;
     padding: 0.625rem !important;
     background: var(--body-bg);
@@ -29,6 +28,11 @@
 
 .bubble-content code {
     color: var(--code-background);
+}
+
+.bubble-content ul,
+.bubble-content ol {
+    padding-left: 1rem;
 }
 
 .main-wrapper {
