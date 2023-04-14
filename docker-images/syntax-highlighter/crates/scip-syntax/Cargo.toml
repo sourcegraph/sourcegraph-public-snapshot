@@ -12,6 +12,7 @@ protobuf.workspace = true
 scip.workspace = true
 tree-sitter.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 
 scip-macros = { path = "../scip-macros" }
 scip-treesitter = { path = "../scip-treesitter" }

@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use scip::types::Descriptor;
 use serde::{Deserialize, Serialize};
 
@@ -20,18 +18,42 @@ pub struct TagEntry {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct CTagsEntry {
-    /// TODO(SuperAuguste): Handle _type != tag
-    name: String,
-    path: PathBuf,
-    pattern: String,
-    language: String,
-    line: i32,
-    /// TODO(SuperAuguste): Use enum
-    kind: String,
-    /// TODO(SuperAuguste): Use enum
-    scope: Option<String>,
-    #[serde(rename = "scopeKind")]
-    scope_kind: Option<String>,
-    roles: String,
+#[serde(tag = "command")]
+pub enum Request {
+    #[serde(rename = "generate-tags")]
+    GenerateTags {
+        // command == generate-tags
+        filename: String,
+        size: usize,
+    },
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "_type")]
+pub enum Reply {
+    #[serde(rename = "program")]
+    Program {
+        // init (typ == program)
+        name: String,
+        version: String,
+    },
+    #[serde(rename = "completed")]
+    Completed { command: String },
+    #[serde(rename = "error")]
+    Error { message: String, fatal: bool },
+    #[serde(rename = "tag")]
+    Tag {
+        name: String,
+        path: String,
+        language: String,
+        /// Starts at 1
+        line: usize,
+        kind: String,
+        pattern: String,
+        scope: Option<String>,
+        #[serde(rename = "scopeKind")]
+        scope_kind: Option<String>,
+        signature: Option<String>,
+        // TODO(SuperAuguste): Any other properties required? Roles? Access?
+    },
 }
