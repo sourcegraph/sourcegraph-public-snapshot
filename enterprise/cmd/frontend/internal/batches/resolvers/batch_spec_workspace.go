@@ -174,31 +174,14 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 			// See if we have a cache result for this step.
 			if cachedResult, ok := r.workspace.StepCacheResult(idx + 1); ok {
 				resolver.cachedResult = cachedResult.Value
-			} else if r.execution != nil {
-				logKeyRegex, err := regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.post$", idx))
-				if err != nil {
-					return nil, err
-				}
-				e, ok := findExecutionLogEntry(r.execution, logKeyRegex)
-				if ok {
-					ev := btypes.ParseJSONLogsFromOutput(e.Out)
-					for _, e := range ev {
-						if e.Operation == batcheslib.LogEventOperationCacheAfterStepResult {
-							m, ok := e.Metadata.(*batcheslib.CacheAfterStepResultMetadata)
-							if ok {
-								resolver.cachedResult = &m.Value
-							}
-						}
-					}
-				}
 			}
 
-			if !resolver.skipped && resolver.cachedResult != nil {
-				logKeyRegex, err := regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.pre$", idx))
+			if !resolver.skipped && resolver.cachedResult == nil {
+				logKeyPreRegex, err := regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.pre$", idx))
 				if err != nil {
 					return nil, err
 				}
-				e, ok := findExecutionLogEntry(r.execution, logKeyRegex)
+				e, ok := findExecutionLogEntry(r.execution, logKeyPreRegex)
 				if ok {
 					logLines := btypes.ParseJSONLogsFromOutput(e.Out)
 					stepInfo := &btypes.StepInfo{}
