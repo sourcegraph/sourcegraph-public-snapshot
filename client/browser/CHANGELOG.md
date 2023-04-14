@@ -14,6 +14,7 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 ## Unreleased
 
 - Fix view on Sourcegraph links on GitHub (global navigation update feature enabled): https://github.com/sourcegraph/sourcegraph/pull/50551
+- Bump code-intel extensions bundles version: https://github.com/sourcegraph/sourcegraph/pull/50631
 
 ## Chrome & Firefox 23.3.10.1712, Safari 1.23
 
