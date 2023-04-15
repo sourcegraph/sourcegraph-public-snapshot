@@ -21,9 +21,6 @@ body[data-vscode-theme-kind='vscode-light'],
 body[data-vscode-theme-kind='vscode-high-contrast-light'] {
     --human-bubble-color: var(--vscode-button-background);
     --human-text-color: var(--vscode-button-foreground);
-    --bot-bubble-color: var(--vscode-input-background);
-    --bubble-text-color: var(--vscode-input-foreground);
-    --code-background: var(--vscode-editor-background);
 }
 
 html,

@@ -15,7 +15,8 @@
     "build": "tsc -b",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
-    "test": "jest"
+    "test": "jest",
+    "storybook": "STORIES_GLOB='client/cody-ui/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start"
   },
   "dependencies": {
     "@sourcegraph/cody-shared": "workspace:*"
