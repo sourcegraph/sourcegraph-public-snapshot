@@ -54,7 +54,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     constructor(
         private extensionPath: string,
         private codebase: string,
-        private serverEndpoint: string,
         private transcript: Transcript,
         private chat: ChatClient,
         private intentDetector: IntentDetector,
@@ -77,7 +76,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     public static create(
         extensionPath: string,
         codebase: string,
-        serverEndpoint: string,
         contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         secretStorage: SecretStorage,
         localStorage: LocalStorage,
@@ -92,7 +90,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         return new ChatViewProvider(
             extensionPath,
             codebase,
-            serverEndpoint,
             new Transcript(),
             chatClient,
             intentDetector,
