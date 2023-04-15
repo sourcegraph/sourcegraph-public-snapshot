@@ -83,11 +83,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
                 !workspaceConfig.get('cody.enabled'),
                 vscode.ConfigurationTarget.Global
             )
-            logEvent(
-                'CodyVSCodeExtension:codyToggleEnabled:clicked',
-                { serverEndpoint: config.serverEndpoint },
-                { serverEndpoint: config.serverEndpoint }
-            )
+            logEvent('CodyVSCodeExtension:codyToggleEnabled:clicked')
         }),
         // Access token
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
@@ -97,20 +93,12 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
                 return
             }
             await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, tokenInput)
-            logEvent(
-                'CodyVSCodeExtension:codySetAccessToken:clicked',
-                { serverEndpoint: config.serverEndpoint },
-                { serverEndpoint: config.serverEndpoint }
-            )
+            logEvent('CodyVSCodeExtension:codySetAccessToken:clicked')
         }),
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
             const config = getConfiguration(vscode.workspace.getConfiguration())
             await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-            logEvent(
-                'CodyVSCodeExtension:codyDeleteAccessToken:clicked',
-                { serverEndpoint: config.serverEndpoint },
-                { serverEndpoint: config.serverEndpoint }
-            )
+            logEvent('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
         }),
         // TOS
         vscode.commands.registerCommand('cody.accept-tos', version =>

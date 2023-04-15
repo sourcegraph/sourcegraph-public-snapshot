@@ -132,22 +132,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
-                    logEvent(
-                        'CodyVSCodeExtension:login:clicked',
-                        { serverEndpoint: this.serverEndpoint },
-                        { serverEndpoint: this.serverEndpoint }
-                    )
+                    logEvent('CodyVSCodeExtension:login:clicked')
                 }
                 this.sendLogin(isValid)
                 break
             }
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-                logEvent(
-                    'CodyVSCodeExtension:codyDeleteAccessToken:clicked',
-                    { serverEndpoint: this.serverEndpoint },
-                    { serverEndpoint: this.serverEndpoint }
-                )
+                logEvent('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
                 break
             case 'removeHistory':
                 await this.localStorage.removeChatHistory()
@@ -179,11 +171,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private async acceptTOS(version: string): Promise<void> {
         this.tosVersion = version
         await vscode.commands.executeCommand('cody.accept-tos', version)
-        logEvent(
-            'CodyVSCodeExtension:acceptTerms:clicked',
-            { serverEndpoint: this.serverEndpoint },
-            { serverEndpoint: this.serverEndpoint }
-        )
+        logEvent('CodyVSCodeExtension:acceptTerms:clicked')
     }
 
     private createNewChatID(): void {
@@ -282,11 +270,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         const prompt = await this.transcript.toPrompt(getPreamble(this.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
 
-        logEvent(
-            `CodyVSCodeExtension:recipe:${recipe.getID()}:executed`,
-            { serverEndpoint: this.serverEndpoint },
-            { serverEndpoint: this.serverEndpoint }
-        )
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.getID()}:executed`)
     }
 
     private showTab(tab: string): void {
@@ -412,11 +396,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     'Reload Window'
                 )
 
-                logEvent(
-                    'CodyVSCodeExtension:updateEndpoint:clicked',
-                    { serverEndpoint: this.serverEndpoint },
-                    { serverEndpoint: this.serverEndpoint }
-                )
+                logEvent('CodyVSCodeExtension:updateEndpoint:clicked')
                 if (action === 'Reload Window') {
                     await vscode.commands.executeCommand('workbench.action.reloadWindow')
                 }
