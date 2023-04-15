@@ -27,6 +27,10 @@ ts_project(
         "src/Chat.tsx",
         "src/Terms.tsx",
         "src/Tips.tsx",
+        "src/chat/ChatMessageLoading.tsx",
+        "src/chat/ChatMessageRow.tsx",
+        "src/chat/ChatMessages.story.tsx",
+        "src/chat/ChatMessages.tsx",
         "src/chat/CodeBlocks.tsx",
         "src/chat/ContextFiles.tsx",
         "src/globals.d.ts",
@@ -43,6 +47,7 @@ ts_project(
     deps = [
         ":node_modules/@sourcegraph/cody-shared",
         "//:node_modules/@mdi/js",
+        "//:node_modules/@storybook/react",  #keep
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/react",
         "//:node_modules/classnames",
