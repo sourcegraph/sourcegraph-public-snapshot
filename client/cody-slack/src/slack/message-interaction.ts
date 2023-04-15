@@ -6,7 +6,6 @@ import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/me
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { MAX_HUMAN_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
-import { getShortTimestamp } from '@sourcegraph/cody-shared/src/timestamp'
 
 export async function interactionFromMessage(
     message: Message,
@@ -17,7 +16,6 @@ export async function interactionFromMessage(
         return Promise.resolve(null)
     }
 
-    const timestamp = getShortTimestamp()
     const textWithoutMentions = message.text?.replace(/<@[\dA-Z]+>/gm, '').trim()
     const text = truncateText(textWithoutMentions, MAX_HUMAN_INPUT_TOKENS)
 
@@ -26,8 +24,8 @@ export async function interactionFromMessage(
 
     return Promise.resolve(
         new Interaction(
-            { speaker: 'human', text, displayText: text, timestamp },
-            { speaker: 'assistant', text: '', displayText: '', timestamp },
+            { speaker: 'human', text, displayText: text },
+            { speaker: 'assistant', text: '', displayText: '' },
             contextMessages
         )
     )

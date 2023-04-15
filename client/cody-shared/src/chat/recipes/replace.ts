@@ -2,7 +2,6 @@ import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
 import { MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
-import { getShortTimestamp } from '../../timestamp'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
@@ -59,17 +58,14 @@ It is OK to provide some commentary before you tell me the replacement <selectio
         )}\n\`\`\`\n\n${context.responseMultiplexer.prompt()}`
         // TODO: Move the prompt suffix from the recipe to the chat view. It may have other subscribers.
 
-        const timestamp = getShortTimestamp()
-
         return Promise.resolve(
             new Interaction(
                 {
                     speaker: 'human',
                     text: prompt,
                     displayText: 'Replace the instructions in the selection.',
-                    timestamp,
                 },
-                { speaker: 'assistant', text: '', displayText: '', timestamp },
+                { speaker: 'assistant', text: '', displayText: '' },
                 this.getContextMessages(selection.selectedText, context.codebaseContext)
             )
         )

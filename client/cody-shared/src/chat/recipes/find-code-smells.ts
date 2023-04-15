@@ -1,6 +1,5 @@
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
-import { getShortTimestamp } from '../../timestamp'
 import { Interaction } from '../transcript/interaction'
 
 import { getNormalizedLanguageName } from './helpers'
@@ -17,8 +16,6 @@ export class FindCodeSmells implements Recipe {
             return Promise.resolve(null)
         }
 
-        const timestamp = getShortTimestamp()
-
         const languageName = getNormalizedLanguageName(selection.fileName)
         const promptPrefix = `Find code smells, potential bugs, and unhandled errors in my ${languageName} code:`
         const promptSuffix = `List maximum five of them as a list (if you have more in mind, mention that these are the top five), with a short context, reasoning, and suggestion on each.
@@ -34,13 +31,12 @@ If you have no ideas because the code looks fine, feel free to say that it alrea
 
         const assistantResponsePrefix = ''
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText, timestamp },
+            { speaker: 'human', text: promptMessage, displayText },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
                 displayText: '',
-                timestamp,
             },
             new Promise(resolve => resolve([]))
         )

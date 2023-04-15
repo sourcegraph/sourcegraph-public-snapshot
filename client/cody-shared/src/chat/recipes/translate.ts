@@ -1,6 +1,5 @@
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
-import { getShortTimestamp } from '../../timestamp'
 import { Interaction } from '../transcript/interaction'
 
 import { languageMarkdownID, languageNames } from './langs'
@@ -24,7 +23,6 @@ export class TranslateToLanguage implements Recipe {
             return null
         }
 
-        const timestamp = getShortTimestamp()
         const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS)
 
         const promptMessage = `Translate the following code into ${toLanguage}\n\`\`\`\n${truncatedSelectedText}\n\`\`\``
@@ -34,13 +32,12 @@ export class TranslateToLanguage implements Recipe {
         const assistantResponsePrefix = `Here is the code translated to ${toLanguage}:\n\`\`\`${markdownID}\n`
 
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText, timestamp },
+            { speaker: 'human', text: promptMessage, displayText },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
                 displayText: '',
-                timestamp,
             },
             Promise.resolve([])
         )

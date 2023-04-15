@@ -25,8 +25,8 @@ const config: Meta = {
 export default config
 
 const FIXTURE_TRANSCRIPT: ChatMessage[] = [
-    { speaker: 'human', text: 'Hello, world!', displayText: 'Hello, world!', timestamp: '2 min ago' },
-    { speaker: 'assistant', text: 'Thank you', displayText: 'Thank you', timestamp: 'now' },
+    { speaker: 'human', text: 'Hello, world!', displayText: 'Hello, world!' },
+    { speaker: 'assistant', text: 'Thank you', displayText: 'Thank you' },
 ]
 
 export const Simple: Story = () => (
