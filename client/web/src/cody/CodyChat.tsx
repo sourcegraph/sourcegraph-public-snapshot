@@ -98,12 +98,7 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                         submitButtonComponent={SubmitButton}
                         fileLinkComponent={FileLink}
                         className={styles.container}
-                        afterTips={
-                            <details className="small mt-2">
-                                <summary>Terms</summary>
-                                <Terms />
-                            </details>
-                        }
+                        afterTips={<Terms className="small" />}
                         transcriptItemClassName={styles.transcriptItem}
                         humanTranscriptItemClassName={styles.humanTranscriptItem}
                         transcriptItemParticipantClassName="text-muted"

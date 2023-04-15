@@ -4,7 +4,6 @@ import './App.css'
 
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { About } from './About'
 import { Chat } from './Chat'
 import { Debug } from './Debug'
 import { Header } from './Header'
@@ -103,7 +102,6 @@ export function App(): React.ReactElement {
             <Header showResetButton={view && view !== 'login'} onResetClick={onResetClick} />
             {view === 'login' && <Login onLogin={onLogin} isValidLogin={isValidLogin} />}
             {view && view !== 'login' && <NavBar view={view} setView={setView} devMode={devMode} />}
-            {view === 'about' && <About />}
             {view === 'debug' && devMode && <Debug debugLog={debugLog} />}
             {view === 'history' && (
                 <UserHistory
