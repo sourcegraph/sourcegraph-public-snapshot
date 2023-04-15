@@ -7,6 +7,7 @@ import { sanitizeServerEndpoint } from './sanitize'
 import { SecretStorage, getAccessToken } from './secret-storage'
 
 let eventLogger: EventLogger | null = null
+let eventServerEndpoint: string
 
 export async function updateEventLogger(
     config: Configuration,
@@ -14,11 +15,8 @@ export async function updateEventLogger(
     localStorage: LocalStorage
 ): Promise<void> {
     const accessToken = await getAccessToken(secretStorage)
-    const gqlAPIClient = new SourcegraphGraphQLAPIClient(
-        sanitizeServerEndpoint(config.serverEndpoint),
-        accessToken,
-        config.customHeaders
-    )
+    eventServerEndpoint = sanitizeServerEndpoint(config.serverEndpoint)
+    const gqlAPIClient = new SourcegraphGraphQLAPIClient(eventServerEndpoint, accessToken, config.customHeaders)
     eventLogger = await EventLogger.create(localStorage, gqlAPIClient)
 }
 
@@ -26,5 +24,21 @@ export function logEvent(eventName: string, eventProperties?: any, publicPropert
     if (!eventLogger) {
         return
     }
-    void eventLogger.log(eventName, eventProperties, publicProperties)
+
+    let eventPropertiesWithServerEndpoint = { serverEndpoint: eventServerEndpoint }
+    let publicPropertiesWithServerEndpoint = { serverEndpoint: eventServerEndpoint }
+
+    if (eventProperties) {
+        eventPropertiesWithServerEndpoint = {
+            ...eventProperties,
+            serverEndpoint: eventServerEndpoint,
+        }
+    }
+    if (publicProperties) {
+        publicPropertiesWithServerEndpoint = {
+            ...publicProperties,
+            serverEndpoint: eventServerEndpoint,
+        }
+    }
+    void eventLogger.log(eventName, eventPropertiesWithServerEndpoint, publicPropertiesWithServerEndpoint)
 }
