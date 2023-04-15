@@ -20,7 +20,6 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { version as packageVersion } from '../../package.json'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { updateConfiguration } from '../configuration'
-import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
 import { configureExternalServices } from '../external-services'
 import { sanitizeServerEndpoint } from '../sanitize'
@@ -48,6 +47,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private inputHistory: string[] = []
     private chatHistory: ChatHistory = {}
 
+    private transcript: Transcript = new Transcript()
+
     // Allows recipes to hook up subscribers to process sub-streams of bot output
     private multiplexer: BotResponseMultiplexer = new BotResponseMultiplexer()
 
@@ -55,7 +56,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         private extensionPath: string,
         private codebase: string,
         private serverEndpoint: string,
-        private transcript: Transcript,
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
@@ -72,39 +72,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
         // chat id is used to identify chat session
         this.createNewChatID()
-    }
-
-    public static create(
-        extensionPath: string,
-        codebase: string,
-        serverEndpoint: string,
-        contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
-        secretStorage: SecretStorage,
-        localStorage: LocalStorage,
-        editor: VSCodeEditor,
-        rgPath: string,
-        mode: 'development' | 'production',
-        intentDetector: IntentDetector,
-        codebaseContext: CodebaseContext,
-        chatClient: ChatClient,
-        customHeaders: Record<string, string>
-    ): ChatViewProvider {
-        return new ChatViewProvider(
-            extensionPath,
-            codebase,
-            serverEndpoint,
-            new Transcript(),
-            chatClient,
-            intentDetector,
-            codebaseContext,
-            editor,
-            secretStorage,
-            contextType,
-            rgPath,
-            mode,
-            localStorage,
-            customHeaders
-        )
     }
 
     private async onDidReceiveMessage(message: any): Promise<void> {
