@@ -9,14 +9,6 @@
     margin-bottom: 1rem !important;
 }
 
-.history-bubble-container:nth-child(odd) {
-    background: var(--human-bubble-color);
-}
-
-.history-bubble-container:nth-child(even) {
-    background: var(--bot-bubble-color);
-}
-
 .history-btn {
     width: 100%;
     justify-content: center;

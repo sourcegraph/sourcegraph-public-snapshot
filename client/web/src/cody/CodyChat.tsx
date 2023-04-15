@@ -104,13 +104,9 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                                 <Terms />
                             </details>
                         }
-                        bubbleContentClassName={styles.bubbleContent}
-                        bubbleClassName={styles.bubble}
-                        bubbleRowClassName={styles.bubbleRow}
-                        humanBubbleContentClassName={styles.humanBubbleContent}
-                        botBubbleContentClassName={styles.botBubbleContent}
-                        bubbleFooterClassName={classNames('text-muted', 'small', 'mt-0', styles.bubbleFooter)}
-                        bubbleLoaderDotClassName={styles.bubbleLoaderDot}
+                        transcriptItemClassName={styles.transcriptItem}
+                        humanTranscriptItemClassName={styles.humanTranscriptItem}
+                        transcriptItemParticipantClassName="text-muted"
                         inputRowClassName={styles.inputRow}
                         chatInputClassName={styles.chatInput}
                         textAreaComponent={AutoResizableTextArea}

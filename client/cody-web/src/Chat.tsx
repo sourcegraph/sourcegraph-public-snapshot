@@ -24,17 +24,10 @@ export const Chat: React.FunctionComponent<
         textAreaComponent={TextArea}
         submitButtonComponent={SubmitButton}
         fileLinkComponent={FileLink}
-        afterTips={
-            <details className={styles.terms}>
-                <summary>Terms</summary>
-                <Terms />
-            </details>
-        }
-        bubbleContentClassName={styles.bubbleContent}
-        humanBubbleContentClassName={styles.humanBubbleContent}
-        botBubbleContentClassName={styles.botBubbleContent}
-        bubbleFooterClassName={styles.bubbleFooter}
-        bubbleLoaderDotClassName={styles.bubbleLoaderDot}
+        afterTips={<Terms className={styles.terms} />}
+        transcriptItemClassName={styles.transcriptItem}
+        humanTranscriptItemClassName={styles.humanTranscriptItem}
+        transcriptItemParticipantClassName={styles.transcriptItemParticipant}
         inputRowClassName={styles.inputRow}
         chatInputClassName={styles.chatInput}
     />

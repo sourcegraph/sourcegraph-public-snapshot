@@ -2,11 +2,9 @@
 @import '@vscode/codicons/dist/codicon';
 
 :root {
-    --human-bubble-color: #565eb9;
-    --human-text-color: #e1e1e1;
-    --bot-bubble-color: var(--vscode-input-background);
-    --bubble-text-color: var(--vscode-input-foreground);
-    --code-background: var(--vscode-editor-background);
+    /* Our syntax highlighter expects a dark code background color, regardless of the VS Code color
+    theme. */
+    --code-background: #222222;
 }
 
 #root {
@@ -15,12 +13,6 @@
     color: var(--vscode-sideBar-foreground);
     background-color: var(--vscode-sideBar-background);
     height: 100%;
-}
-
-body[data-vscode-theme-kind='vscode-light'],
-body[data-vscode-theme-kind='vscode-high-contrast-light'] {
-    --human-bubble-color: var(--vscode-button-background);
-    --human-text-color: var(--vscode-button-foreground);
 }
 
 html,

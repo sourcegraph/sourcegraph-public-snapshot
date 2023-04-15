@@ -1,13 +1,16 @@
+body {
+    font-family: system-ui, sans-serif;
+}
+
 .container {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .header {
     background-color: Canvas;
-    position: sticky;
-    top: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -25,9 +28,9 @@
 }
 
 .main {
-    padding-top: 0.75rem;
     background-color: black;
     flex: 1;
+    overflow: hidden;
 }
 
 .alert {
