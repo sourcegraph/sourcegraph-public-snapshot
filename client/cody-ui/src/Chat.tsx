@@ -2,11 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { CodeBlocks } from './chat/CodeBlocks'
-import { ContextFiles, FileLinkProps } from './chat/ContextFiles'
+import { ChatMessages, ChatMessagesClassNames } from './chat/ChatMessages'
+import { FileLinkProps } from './chat/ContextFiles'
 import { Tips } from './Tips'
 
 import styles from './Chat.module.css'
@@ -28,16 +27,8 @@ interface ChatProps extends ChatClassNames {
     className?: string
 }
 
-interface ChatClassNames {
+interface ChatClassNames extends ChatMessagesClassNames {
     transcriptContainerClassName?: string
-    bubbleContentClassName?: string
-    bubbleClassName?: string
-    bubbleRowClassName?: string
-    humanBubbleContentClassName?: string
-    botBubbleContentClassName?: string
-    codeBlocksCopyButtonClassName?: string
-    bubbleFooterClassName?: string
-    bubbleLoaderDotClassName?: string
     inputRowClassName?: string
     chatInputClassName?: string
 }
@@ -141,8 +132,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput]
     )
 
-    const getBubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
-
     useEffect(() => {
         if (transcriptContainerRef.current) {
             // Only scroll if the user didn't scroll up manually more than the scrolling threshold.
@@ -172,103 +161,19 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     <Tips recommendations={tipsRecommendations} after={afterTips} />
                 )}
                 {transcript.length > 0 && (
-                    <div className={styles.bubbleContainer}>
-                        {transcript.map((message, index) => (
-                            <div
-                                // eslint-disable-next-line react/no-array-index-key
-                                key={`message-${index}`}
-                                className={classNames(
-                                    styles.bubbleRow,
-                                    bubbleRowClassName,
-                                    styles[`${getBubbleClassName(message.speaker)}BubbleRow`]
-                                )}
-                            >
-                                <div className={classNames(styles.bubble, bubbleClassName)}>
-                                    <div
-                                        className={classNames(
-                                            styles.bubbleContent,
-                                            styles[`${getBubbleClassName(message.speaker)}BubbleContent`],
-                                            bubbleContentClassName,
-                                            message.speaker === 'human'
-                                                ? humanBubbleContentClassName
-                                                : botBubbleContentClassName
-                                        )}
-                                    >
-                                        {message.displayText && (
-                                            <CodeBlocks
-                                                displayText={message.displayText}
-                                                copyButtonClassName={codeBlocksCopyButtonClassName}
-                                            />
-                                        )}
-                                        {message.contextFiles && message.contextFiles.length > 0 && (
-                                            <ContextFiles
-                                                contextFiles={message.contextFiles}
-                                                fileLinkComponent={fileLinkComponent}
-                                            />
-                                        )}
-                                    </div>
-                                    <div
-                                        className={classNames(
-                                            styles.bubbleFooter,
-                                            styles[`${getBubbleClassName(message.speaker)}BubbleFooter`],
-                                            bubbleFooterClassName
-                                        )}
-                                    >
-                                        <div className={styles.bubbleFooterTimestamp}>{`${
-                                            message.speaker === 'assistant' ? 'Cody' : 'Me'
-                                        } · ${message.timestamp}`}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-
-                        {messageInProgress && messageInProgress.speaker === 'assistant' && (
-                            <div className={classNames(styles.bubbleRow, styles.botBubbleRow)}>
-                                <div className={styles.bubble}>
-                                    <div
-                                        className={classNames(
-                                            styles.bubbleContent,
-                                            styles.botBubbleContent,
-                                            bubbleContentClassName,
-                                            botBubbleContentClassName
-                                        )}
-                                    >
-                                        {messageInProgress.displayText ? (
-                                            <p
-                                                dangerouslySetInnerHTML={{
-                                                    __html: renderMarkdown(messageInProgress.displayText),
-                                                }}
-                                            />
-                                        ) : (
-                                            <div className={styles.bubbleLoader}>
-                                                <div
-                                                    className={classNames(
-                                                        styles.bubbleLoaderDot,
-                                                        bubbleLoaderDotClassName
-                                                    )}
-                                                />
-                                                <div
-                                                    className={classNames(
-                                                        styles.bubbleLoaderDot,
-                                                        bubbleLoaderDotClassName
-                                                    )}
-                                                />
-                                                <div
-                                                    className={classNames(
-                                                        styles.bubbleLoaderDot,
-                                                        bubbleLoaderDotClassName
-                                                    )}
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className={styles.bubbleFooter}>
-                                        <span>Cody is typing...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    <ChatMessages
+                        messageInProgress={messageInProgress}
+                        transcript={transcript}
+                        fileLinkComponent={fileLinkComponent}
+                        bubbleContentClassName={bubbleContentClassName}
+                        bubbleClassName={bubbleClassName}
+                        bubbleRowClassName={bubbleRowClassName}
+                        humanBubbleContentClassName={humanBubbleContentClassName}
+                        botBubbleContentClassName={botBubbleContentClassName}
+                        codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                        bubbleFooterClassName={bubbleFooterClassName}
+                        bubbleLoaderDotClassName={bubbleLoaderDotClassName}
+                    />
                 )}
             </div>
 
