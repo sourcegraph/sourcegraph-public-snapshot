@@ -62,8 +62,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         private codebaseContext: CodebaseContext,
         private editor: Editor,
         private secretStorage: SecretStorage,
-        private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
-        private rgPath: string,
         private mode: 'development' | 'production',
         private localStorage: LocalStorage,
         private customHeaders: Record<string, string>

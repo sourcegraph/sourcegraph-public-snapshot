@@ -103,8 +103,6 @@ const register = async (
         codebaseContext,
         editor,
         secretStorage,
-        config.useContext,
-        rgPath,
         mode,
         localStorage,
         config.customHeaders
