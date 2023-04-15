@@ -1,6 +1,7 @@
 import { ChatQuestion } from './chat-question'
 import { ExplainCodeDetailed } from './explain-code-detailed'
 import { ExplainCodeHighLevel } from './explain-code-high-level'
+import { FindCodeSmells } from './find-code-smells'
 import { GenerateDocstring } from './generate-docstring'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
@@ -34,6 +35,7 @@ function init(): void {
         new ImproveVariableNames(),
         new Replace(),
         new TranslateToLanguage(),
+        new FindCodeSmells(),
     ]
 
     for (const recipe of recipes) {

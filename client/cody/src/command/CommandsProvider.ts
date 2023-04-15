@@ -137,7 +137,8 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         vscode.commands.registerCommand('cody.recipe.git-history', async () => executeRecipe('git-history')),
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', async () =>
             executeRecipe('improve-variable-names')
-        )
+        ),
+        vscode.commands.registerCommand('cody.recipe.find-code-smells', async () => executeRecipe('find-code-smells'))
     )
 
     if (config.experimentalSuggest) {

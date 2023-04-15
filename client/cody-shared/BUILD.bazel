@@ -26,6 +26,7 @@ ts_project(
         "src/chat/recipes/chat-question.ts",
         "src/chat/recipes/explain-code-detailed.ts",
         "src/chat/recipes/explain-code-high-level.ts",
+        "src/chat/recipes/find-code-smells.ts",
         "src/chat/recipes/generate-docstring.ts",
         "src/chat/recipes/generate-test.ts",
         "src/chat/recipes/git-log.ts",
