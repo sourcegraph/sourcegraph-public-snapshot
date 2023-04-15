@@ -20,6 +20,7 @@ interface StorageProvider {
 export class EventLogger {
     private version = packageVersion
     private serverEndpoint = _getServerEndpointFromConfig(config)
+    private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
 
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient, private uid: string) {}
 
@@ -49,8 +50,18 @@ export class EventLogger {
         if (this.uid === null) {
             return
         }
-        const argument = { ...eventProperties, version: this.version, serverEndpoint: this.serverEndpoint }
-        const publicArgument = { ...publicProperties, version: this.version, serverEndpoint: this.serverEndpoint }
+        const argument = {
+            ...eventProperties,
+            version: this.version,
+            serverEndpoint: this.serverEndpoint,
+            extensionDetails: this.extensionDetails,
+        }
+        const publicArgument = {
+            ...publicProperties,
+            version: this.version,
+            serverEndpoint: this.serverEndpoint,
+            extensionDetails: this.extensionDetails,
+        }
 
         try {
             await this.gqlAPIClient.logEvent({
