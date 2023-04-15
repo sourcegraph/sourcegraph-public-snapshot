@@ -21,7 +21,6 @@ import { version as packageVersion } from '../../package.json'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { updateConfiguration } from '../configuration'
 import { logEvent } from '../event-logger'
-import { configureExternalServices } from '../external-services'
 import { sanitizeServerEndpoint } from '../sanitize'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
@@ -36,7 +35,7 @@ async function isValidLogin(
     return !isError(userId)
 }
 
-export class ChatViewProvider implements vscode.WebviewViewProvider {
+export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
     private webview?: vscode.Webview
@@ -51,6 +50,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     // Allows recipes to hook up subscribers to process sub-streams of bot output
     private multiplexer: BotResponseMultiplexer = new BotResponseMultiplexer()
+
+    private disposables: vscode.Disposable[] = []
 
     constructor(
         private extensionPath: string,
@@ -341,7 +342,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             .replaceAll('./', `${resources.toString()}/`)
             .replace('/nonce/', nonce)
             .replace('/tos-version/', this.tosVersion.toString())
-        webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message))
+        this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
     }
 
     public transcriptForTesting(testing: TestSupport): ChatMessage[] {
@@ -352,46 +353,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         return this.transcript.toChat()
     }
 
-    // TODO(beyang): maybe move this into CommandsProvider (should maybe change that to a top-level controller class)
-    public async onConfigChange(change: string, codebase: string, serverEndpoint: string): Promise<void> {
-        switch (change) {
-            case 'token':
-            case 'endpoint': {
-                const { intentDetector, codebaseContext, chatClient } = await configureExternalServices(
-                    serverEndpoint,
-                    codebase,
-                    this.rgPath,
-                    this.editor,
-                    this.secretStorage,
-                    this.contextType,
-                    this.mode,
-                    this.customHeaders
-                )
-
-                this.codebase = codebase
-                this.serverEndpoint = serverEndpoint
-                this.intentDetector = intentDetector
-                this.codebaseContext = codebaseContext
-                this.chat = chatClient
-
-                const action = await vscode.window.showInformationMessage(
-                    'Cody configuration has been updated.',
-                    'Reload Window'
-                )
-
-                logEvent(
-                    'CodyVSCodeExtension:updateEndpoint:clicked',
-                    { serverEndpoint: this.serverEndpoint },
-                    { serverEndpoint: this.serverEndpoint }
-                )
-                if (action === 'Reload Window') {
-                    await vscode.commands.executeCommand('workbench.action.reloadWindow')
-                }
-                break
-            }
-        }
-    }
-
     private getNonce(): string {
         let text = ''
         const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -399,6 +360,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             text += possible.charAt(Math.floor(Math.random() * possible.length))
         }
         return text
+    }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
     }
 }
 
