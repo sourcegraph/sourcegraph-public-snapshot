@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import create from 'zustand'
 
@@ -37,7 +37,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         }
     }
 
-    const onReset = () => {
+    const onReset = (): void => {
         const { initializeClient, config } = get()
         if (config) {
             initializeClient(config as Required<ClientInit['config']>)
