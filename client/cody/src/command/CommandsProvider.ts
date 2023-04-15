@@ -76,6 +76,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         // Toggle Chat
         vscode.commands.registerCommand('cody.toggle-enabled', async () => {
             const workspaceConfig = vscode.workspace.getConfiguration()
+            const config = getConfiguration(workspaceConfig)
 
             await workspaceConfig.update(
                 'cody.enabled',
@@ -86,6 +87,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
         }),
         // Access token
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
+            const config = getConfiguration(vscode.workspace.getConfiguration())
             const tokenInput = args?.length ? (args[0] as string) : await vscode.window.showInputBox()
             if (tokenInput === undefined || tokenInput === '') {
                 return
@@ -94,6 +96,7 @@ export const CommandsProvider = async (context: vscode.ExtensionContext): Promis
             logEvent('CodyVSCodeExtension:codySetAccessToken:clicked')
         }),
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
+            const config = getConfiguration(vscode.workspace.getConfiguration())
             await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
             logEvent('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
         }),
