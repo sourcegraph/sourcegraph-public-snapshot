@@ -12,12 +12,12 @@ interface CodyChatStore {
     client: Client | null
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
-    repo: string | null
+    repo: string
     filePath: string
     setClient: (client: Client | null) => void
     setMessageInProgress: (message: ChatMessage | null) => void
     setTranscript: (transcript: ChatMessage[]) => void
-    initializeClient: (config: ClientInit['config']) => void
+    initializeClient: (config: Required<ClientInit['config']>) => void
     onSubmit: (text: string) => void
 }
 
@@ -43,8 +43,8 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         setClient: client => set({ client }),
         setMessageInProgress: message => set({ messageInProgress: message }),
         setTranscript: transcript => set({ transcript }),
-        initializeClient: (config: ClientInit['config']): void => {
-            set({ messageInProgress: null, transcript: [], repo: config.codebase ?? null })
+        initializeClient: (config: Required<ClientInit['config']>): void => {
+            set({ messageInProgress: null, transcript: [], repo: config.codebase })
             createClient({
                 config,
                 accessToken: null,
@@ -67,7 +67,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
 export const useChatStore = (isCodyEnabled: boolean, repoName: string): CodyChatStore => {
     const store = useChatStoreState()
 
-    const config = useMemo<ClientInit['config']>(
+    const config = useMemo<Required<ClientInit['config']>>(
         () => ({
             serverEndpoint: window.location.origin,
             useContext: 'embeddings',
