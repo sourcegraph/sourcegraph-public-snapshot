@@ -6,7 +6,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/resolvers",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//enterprise/cmd/frontend/internal/completions/streaming",
         "//enterprise/cmd/frontend/internal/completions/types",

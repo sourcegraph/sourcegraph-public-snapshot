@@ -18,7 +18,7 @@ I will answer questions, explain code, and generate code as concisely and clearl
 My responses will be formatted using Markdown syntax for code blocks.
 I will acknowledge when I don't know an answer or need more context.`
 
-export function getPreamble(codebase: string): Message[] {
+export function getPreamble(codebase: string | undefined): Message[] {
     const preamble = [actions, rules]
     const preambleResponse = [answer]
 

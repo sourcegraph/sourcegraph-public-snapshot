@@ -10,5 +10,9 @@
   },
   "include": ["**/*", ".*"],
   "exclude": ["out", "dist"],
-  "references": [{ "path": "../cody-shared" }],
+  "references": [
+    {
+      "path": "../cody-shared",
+    },
+  ],
 }

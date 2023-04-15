@@ -9,7 +9,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings/resolvers",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//enterprise/internal/cody",
