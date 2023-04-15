@@ -58,8 +58,8 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	org := bt.CreateTestOrg(t, db, "test-org-1", admin.ID, user.ID, otherUser.ID)
 
-	createTestData := func(t *testing.T, s *store.Store, author int32, isUserNamespace bool) (batchChange *btypes.BatchChange, changeset *btypes.Changeset, spec *btypes.BatchSpec) {
-		if isUserNamespace {
+	createTestData := func(t *testing.T, s *store.Store, author, orgNamespace int32) (batchChange *btypes.BatchChange, changeset *btypes.Changeset, spec *btypes.BatchSpec) {
+		if orgNamespace == 0 {
 			spec = testBatchSpec(author)
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
@@ -75,12 +75,12 @@ func TestServicePermissionLevels(t *testing.T) {
 				t.Fatal(err)
 			}
 		} else {
-			spec = testOrgBatchSpec(author, org.ID)
+			spec = testOrgBatchSpec(author, orgNamespace)
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
-			batchChange = testOrgBatchChange(author, org.ID, spec)
+			batchChange = testOrgBatchChange(author, orgNamespace, spec)
 			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 				t.Fatal(err)
 			}
@@ -99,7 +99,6 @@ func TestServicePermissionLevels(t *testing.T) {
 		batchChangeAuthor int32
 		currentUser       int32
 		assertFunc        func(t *testing.T, err error)
-		isUserNamespace   bool
 		orgMembersAdmin   bool
 		orgNamespace      int32
 	}{
@@ -108,14 +107,12 @@ func TestServicePermissionLevels(t *testing.T) {
 			batchChangeAuthor: user.ID,
 			currentUser:       otherUser.ID,
 			assertFunc:        assertAuthError,
-			isUserNamespace:   true,
 		},
 		{
 			name:              "batch change author (user namespace)",
 			batchChangeAuthor: user.ID,
 			currentUser:       user.ID,
 			assertFunc:        assertNoAuthError,
-			isUserNamespace:   true,
 		},
 
 		{
@@ -123,14 +120,20 @@ func TestServicePermissionLevels(t *testing.T) {
 			batchChangeAuthor: user.ID,
 			currentUser:       admin.ID,
 			assertFunc:        assertNoAuthError,
-			isUserNamespace:   true,
 		},
 		{
 			name:              "non-org member (org namespace)",
 			batchChangeAuthor: user.ID,
 			currentUser:       otherUser2.ID,
 			assertFunc:        assertAuthError,
-			isUserNamespace:   false,
+			orgNamespace:      org.ID,
+		},
+		{
+			name:              "non-org member (org namespace - all members admin)",
+			batchChangeAuthor: user.ID,
+			currentUser:       otherUser2.ID,
+			assertFunc:        assertOrgAuthError,
+			orgMembersAdmin:   true,
 			orgNamespace:      org.ID,
 		},
 		{
@@ -138,7 +141,6 @@ func TestServicePermissionLevels(t *testing.T) {
 			batchChangeAuthor: user.ID,
 			currentUser:       otherUser.ID,
 			assertFunc:        assertAuthError,
-			isUserNamespace:   false,
 			orgNamespace:      org.ID,
 		},
 		{
@@ -147,7 +149,6 @@ func TestServicePermissionLevels(t *testing.T) {
 			currentUser:       otherUser.ID,
 			assertFunc:        assertNoAuthError,
 			orgMembersAdmin:   true,
-			isUserNamespace:   false,
 			orgNamespace:      org.ID,
 		},
 		{
@@ -155,7 +156,14 @@ func TestServicePermissionLevels(t *testing.T) {
 			batchChangeAuthor: user.ID,
 			currentUser:       user.ID,
 			assertFunc:        assertNoAuthError,
-			isUserNamespace:   false,
+			orgNamespace:      org.ID,
+		},
+		{
+			name:              "batch change author (org namespace - all members admin)",
+			batchChangeAuthor: user.ID,
+			currentUser:       user.ID,
+			assertFunc:        assertNoAuthError,
+			orgMembersAdmin:   true,
 			orgNamespace:      org.ID,
 		},
 		{
@@ -163,20 +171,27 @@ func TestServicePermissionLevels(t *testing.T) {
 			batchChangeAuthor: user.ID,
 			currentUser:       admin.ID,
 			assertFunc:        assertNoAuthError,
-			isUserNamespace:   false,
+			orgNamespace:      org.ID,
+		},
+		{
+			name:              "site-admin (org namespace - all members admin)",
+			batchChangeAuthor: user.ID,
+			currentUser:       admin.ID,
+			assertFunc:        assertNoAuthError,
+			orgMembersAdmin:   true,
 			orgNamespace:      org.ID,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			batchChange, changeset, batchSpec := createTestData(t, s, tc.batchChangeAuthor, tc.isUserNamespace)
+			batchChange, changeset, batchSpec := createTestData(t, s, tc.batchChangeAuthor, tc.orgNamespace)
 			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
-			if tc.orgMembersAdmin {
+			if tc.orgNamespace != 0 && tc.orgMembersAdmin {
 				contents := "{\"orgs.allMembersBatchChangesAdmin\": true}"
-				_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{Org: &org.ID}, nil, nil, contents)
+				_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{Org: &tc.orgNamespace}, nil, nil, contents)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -3264,6 +3279,18 @@ func assertAuthError(t *testing.T, err error) {
 		if !errors.HasType(err, &auth.InsufficientAuthorizationError{}) {
 			t.Fatalf("wrong error: %s (%T)", err, err)
 		}
+	}
+}
+
+func assertOrgAuthError(t *testing.T, err error) {
+	t.Helper()
+
+	if err == nil {
+		t.Fatal("expected org authorization error, got none")
+	}
+
+	if !errors.Is(err, auth.ErrNotAnOrgMember) {
+		t.Fatalf("expected org authorization error, got %s", err.Error())
 	}
 }
 
