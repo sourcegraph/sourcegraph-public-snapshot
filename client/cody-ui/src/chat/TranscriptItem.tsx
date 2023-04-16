@@ -6,6 +6,7 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 
 import { CodySvg } from '../utils/icons'
 
+import { TranscriptAction } from './actions/TranscriptAction'
 import { BlinkingCursor } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
 import { ContextFiles, FileLinkProps } from './ContextFiles'
@@ -60,13 +61,31 @@ export const TranscriptItem: React.FunctionComponent<
                 )}
             </h2>
         </header>
-        {message.contextFiles && message.contextFiles.length > 0 && (
+        {((message.assistantActions?.contextFiles && message.assistantActions.contextFiles.length > 0) ||
+            message.assistantActions?.tmpDescription ||
+            message.humanActions?.recipeDescription) && (
             <div className={styles.actions}>
-                <ContextFiles
-                    contextFiles={message.contextFiles}
-                    fileLinkComponent={fileLinkComponent}
-                    className={transcriptActionClassName}
-                />
+                {message.assistantActions?.contextFiles && message.assistantActions.contextFiles.length > 0 && (
+                    <ContextFiles
+                        contextFiles={message.assistantActions.contextFiles}
+                        fileLinkComponent={fileLinkComponent}
+                        className={transcriptActionClassName}
+                    />
+                )}
+                {message.assistantActions?.tmpDescription && (
+                    <TranscriptAction
+                        title={message.assistantActions.tmpDescription}
+                        steps={null}
+                        className={transcriptActionClassName}
+                    />
+                )}
+                {message.humanActions?.recipeDescription && (
+                    <TranscriptAction
+                        title={message.humanActions.recipeDescription}
+                        steps={null}
+                        className={transcriptActionClassName}
+                    />
+                )}
             </div>
         )}
         <div className={classNames(styles.content)}>

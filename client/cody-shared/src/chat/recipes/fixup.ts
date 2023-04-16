@@ -1,3 +1,5 @@
+import { basename } from '@sourcegraph/common'
+
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
 import { MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
@@ -63,7 +65,9 @@ It is OK to provide some commentary before you tell me the replacement <selectio
                 {
                     speaker: 'human',
                     text: prompt,
-                    displayText: 'Replace the instructions in the selection.',
+                    humanActions: {
+                        recipeDescription: `Fixup ${basename(selection.fileName)}`,
+                    },
                 },
                 { speaker: 'assistant' },
                 this.getContextMessages(selection.selectedText, context.codebaseContext)

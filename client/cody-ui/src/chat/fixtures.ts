@@ -25,7 +25,9 @@ export const FIXTURE_TRANSCRIPT: Record<string, ChatMessage[]> = {
         {
             speaker: 'assistant',
             displayText: 'This code generates a random 32-character string (nonce) using characters A-Z, a-z, and 0-9.',
-            contextFiles: ['client/cody/src/chat/ChatViewProvider.ts', 'client/cody-shared/src/timestamp.ts'],
+            assistantActions: {
+                contextFiles: ['client/cody/src/chat/ChatViewProvider.ts', 'client/cody-shared/src/timestamp.ts'],
+            },
         },
         {
             speaker: 'human',

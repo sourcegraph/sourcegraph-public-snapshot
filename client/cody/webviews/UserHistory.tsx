@@ -77,12 +77,13 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                                 {message.displayText && (
                                                     <p dangerouslySetInnerHTML={{ __html: message.displayText }} />
                                                 )}
-                                                {message.contextFiles && message.contextFiles.length > 0 && (
-                                                    <ContextFiles
-                                                        contextFiles={message.contextFiles}
-                                                        fileLinkComponent={FileLink}
-                                                    />
-                                                )}
+                                                {message.assistantActions?.contextFiles &&
+                                                    message.assistantActions.contextFiles.length > 0 && (
+                                                        <ContextFiles
+                                                            contextFiles={message.assistantActions.contextFiles}
+                                                            fileLinkComponent={FileLink}
+                                                        />
+                                                    )}
                                             </div>
                                         ))}
                                     </div>

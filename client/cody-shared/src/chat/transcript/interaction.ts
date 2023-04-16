@@ -50,7 +50,16 @@ export class Interaction {
     }
 
     public toChat(): ChatMessage[] {
-        return [this.humanMessage, { ...this.assistantMessage, contextFiles: this.cachedContextFileNames }]
+        return [
+            this.humanMessage,
+            {
+                ...this.assistantMessage,
+                assistantActions: {
+                    ...this.assistantMessage.assistantActions,
+                    contextFiles: this.cachedContextFileNames,
+                },
+            },
+        ]
     }
 }
 

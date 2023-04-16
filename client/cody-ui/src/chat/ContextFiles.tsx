@@ -2,6 +2,7 @@ import React from 'react'
 
 import { mdiFileDocumentOutline, mdiMagnify } from '@mdi/js'
 
+import { AssistantActions } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { pluralize } from '@sourcegraph/common'
 
 import { TranscriptAction } from './actions/TranscriptAction'
@@ -11,7 +12,7 @@ export interface FileLinkProps {
 }
 
 export const ContextFiles: React.FunctionComponent<{
-    contextFiles: string[]
+    contextFiles: NonNullable<AssistantActions['contextFiles']>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     className?: string
 }> = ({ contextFiles, fileLinkComponent: FileLink, className }) => (

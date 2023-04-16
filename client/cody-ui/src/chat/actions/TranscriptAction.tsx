@@ -21,14 +21,15 @@ export interface TranscriptActionStep {
 
 export const TranscriptAction: React.FunctionComponent<{
     title: string | { verb: string; object: string }
-    steps: TranscriptActionStep[]
+    steps: TranscriptActionStep[] | null
     className?: string
 }> = ({ title, steps, className }) => {
+    const canOpen = steps !== null
     const [open, setOpen] = useState(false)
 
     return (
         <div className={classNames(className, styles.container, open && styles.containerOpen)}>
-            <button type="button" onClick={() => setOpen(!open)} className={styles.openCloseButton}>
+            <button type="button" onClick={() => setOpen(!open)} className={styles.openCloseButton} disabled={!canOpen}>
                 {typeof title === 'string' ? (
                     title
                 ) : (
@@ -36,13 +37,15 @@ export const TranscriptAction: React.FunctionComponent<{
                         {title.verb} <strong>{title.object}</strong>
                     </span>
                 )}
-                <Icon
-                    aria-hidden={true}
-                    svgPath={open ? mdiChevronUp : mdiChevronDown}
-                    className={styles.openCloseIcon}
-                />
+                {canOpen && (
+                    <Icon
+                        aria-hidden={true}
+                        svgPath={open ? mdiChevronUp : mdiChevronDown}
+                        className={styles.openCloseIcon}
+                    />
+                )}
             </button>
-            {open && (
+            {open && steps !== null && (
                 <ol className={styles.steps}>
                     {steps.map((step, index) => (
                         // eslint-disable-next-line react/no-array-index-key
