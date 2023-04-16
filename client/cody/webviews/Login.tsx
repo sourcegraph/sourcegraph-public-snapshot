@@ -3,7 +3,8 @@ import { useState } from 'react'
 import { TextFieldType } from '@vscode/webview-ui-toolkit/dist/text-field'
 import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { Terms } from '@sourcegraph/cody-ui/src/Terms'
+import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 
 import styles from './Login.module.css'
 
@@ -43,7 +44,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <VSCodeButton className={styles.button} type="submit" onClick={() => onLogin(token, endpoint)}>
                 Sign in
             </VSCodeButton>
-            <Terms className={styles.terms} />
+            <div className={styles.terms} dangerouslySetInnerHTML={{ __html: renderMarkdown(CODY_TERMS_MARKDOWN) }} />
 
             {isValidLogin === false && (
                 <p className={styles.error}>

@@ -13,6 +13,7 @@ ts_config(
     deps = [
         "//:tsconfig",
         "//client/cody-shared:tsconfig",
+        "//client/common:tsconfig",
     ],
 )
 
@@ -25,8 +26,6 @@ ts_project(
     name = "cody-ui_lib",
     srcs = [
         "src/Chat.tsx",
-        "src/Terms.tsx",
-        "src/Tips.tsx",
         "src/chat/BlinkingCursor.tsx",
         "src/chat/CodeBlocks.tsx",
         "src/chat/ContextFiles.tsx",
@@ -38,6 +37,7 @@ ts_project(
         "src/icons/AskCodyIcon.tsx",
         "src/icons/CodyLogo.tsx",
         "src/index.ts",
+        "src/terms.ts",
         "src/utils/icons.tsx",
     ],
     data = [
@@ -47,6 +47,7 @@ ts_project(
     # TODO(bazel): "#keep"s required for type-only imports
     deps = [
         ":node_modules/@sourcegraph/cody-shared",
+        ":node_modules/@sourcegraph/common",
         "//:node_modules/@mdi/js",
         "//:node_modules/@storybook/react",  #keep
         "//:node_modules/@types/classnames",

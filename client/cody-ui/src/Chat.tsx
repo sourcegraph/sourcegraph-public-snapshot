@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { isDefined } from '@sourcegraph/common'
 
 import { FileLinkProps } from './chat/ContextFiles'
 import { Transcript } from './chat/Transcript'
@@ -21,8 +22,8 @@ interface ChatProps extends ChatClassNames {
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
-    tipsRecommendations?: JSX.Element[]
-    afterTips?: JSX.Element
+    tipsRecommendations?: string[]
+    afterTips?: string
     className?: string
 }
 
@@ -128,10 +129,18 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput]
     )
 
+    const transcriptWithWelcome = useMemo<ChatMessage[]>(
+        () => [
+            { speaker: 'assistant', text: '', displayText: welcomeText(tipsRecommendations, afterTips) },
+            ...transcript,
+        ],
+        [afterTips, tipsRecommendations, transcript]
+    )
+
     return (
         <div className={classNames(className, styles.innerContainer)}>
             <Transcript
-                transcript={transcript}
+                transcript={transcriptWithWelcome}
                 messageInProgress={messageInProgress}
                 fileLinkComponent={fileLinkComponent}
                 codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
@@ -158,4 +167,21 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             </form>
         </div>
     )
+}
+
+function welcomeText(tipsRecommendations?: string[], afterTips?: string): string {
+    return [
+        "Hello! I'm Cody. I can write code and answer questions for you:",
+        ['Generate unit tests for code', 'Fix a bug in code', 'Explain code', 'Clean up code', 'Add a feature']
+            .map(item => `* ${item}`)
+            .join('\n'),
+        "I read through your codebase so that my code and answers are more accurate, but I'm not perfect.",
+        '**Tips**',
+        `* I'll tell you which files I read to learn about your codebase. If the list of files looks wrong, try pasting in the code manually (and report an issue).\n${
+            tipsRecommendations?.map(item => `* ${item}`).join('\n') ?? ''
+        }`,
+        afterTips,
+    ]
+        .filter(isDefined)
+        .join('\n\n')
 }

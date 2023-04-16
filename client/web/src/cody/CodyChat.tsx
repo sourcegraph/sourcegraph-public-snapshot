@@ -7,7 +7,7 @@ import useResizeObserver from 'use-resize-observer'
 import { Chat, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
-import { Terms } from '@sourcegraph/cody-ui/src/Terms'
+import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 import { useQuery } from '@sourcegraph/http-client'
 import { Button, ErrorAlert, Icon, LoadingSpinner, Text, TextArea } from '@sourcegraph/wildcard'
 
@@ -98,7 +98,7 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                         submitButtonComponent={SubmitButton}
                         fileLinkComponent={FileLink}
                         className={styles.container}
-                        afterTips={<Terms className="small" />}
+                        afterTips={CODY_TERMS_MARKDOWN}
                         transcriptItemClassName={styles.transcriptItem}
                         humanTranscriptItemClassName={styles.humanTranscriptItem}
                         transcriptItemParticipantClassName="text-muted"

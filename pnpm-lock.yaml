@@ -958,8 +958,10 @@ importers:
   client/cody-ui:
     specifiers:
       '@sourcegraph/cody-shared': workspace:*
+      '@sourcegraph/common': workspace:*
     dependencies:
       '@sourcegraph/cody-shared': link:../cody-shared
+      '@sourcegraph/common': link:../common
 
   client/cody-web:
     specifiers:

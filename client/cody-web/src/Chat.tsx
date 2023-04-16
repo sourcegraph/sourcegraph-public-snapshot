@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
-import { Terms } from '@sourcegraph/cody-ui/src/Terms'
+import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import styles from './Chat.module.css'
@@ -24,7 +24,7 @@ export const Chat: React.FunctionComponent<
         textAreaComponent={TextArea}
         submitButtonComponent={SubmitButton}
         fileLinkComponent={FileLink}
-        afterTips={<Terms className={styles.terms} />}
+        afterTips={CODY_TERMS_MARKDOWN}
         transcriptItemClassName={styles.transcriptItem}
         humanTranscriptItemClassName={styles.humanTranscriptItem}
         transcriptItemParticipantClassName={styles.transcriptItemParticipant}
