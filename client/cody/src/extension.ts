@@ -10,6 +10,12 @@ export function activate(context: vscode.ExtensionContext): Promise<ExtensionApi
 
     PromptMixin.add(languagePromptMixin(vscode.env.language))
 
+    if (process.env.CODY_FOCUS_ON_STARTUP) {
+        setTimeout(() => {
+            void vscode.commands.executeCommand('cody.chat.focus')
+        }, 250)
+    }
+
     // Register commands and webview
     return CommandsProvider(context)
 }
