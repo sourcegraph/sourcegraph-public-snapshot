@@ -22,7 +22,8 @@ export class Transcript {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',
             text,
-            displayText: displayText ?? text,
+            displayText: displayText?.includes('my attempt') ? '' : displayText ?? text, // TODO(sqs)
+            assistantActions: { tmpDescription: 'Fixup' },
         })
     }
 

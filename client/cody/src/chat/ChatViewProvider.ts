@@ -184,6 +184,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.cancelCompletionCallback = null
                 this.sendTranscript()
                 await this.saveChatHistory()
+
+                await vscode.commands.executeCommand('editor.action.formatDocument') // TODO(sqs)
             },
         })
 
