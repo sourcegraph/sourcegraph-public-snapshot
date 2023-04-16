@@ -1,0 +1,37 @@
+:global(.theme-light) {
+    --row-background-color: inherit;
+    --row-human-background-color: #efefef;
+    --row-foreground-color: black;
+    --row-participant-name-color: #777;
+    --row-border-color: #cccccc;
+}
+
+:global(.theme-dark) {
+    --row-background-color: inherit;
+    --row-human-background-color: #ffffff0c;
+    --row-foreground-color: #ffffffee;
+    --row-participant-name-color: #ffffff88;
+    --row-border-color: #ffffff33;
+}
+
+.transcript-item {
+    background-color: var(--row-background-color);
+    color: var(--row-foreground-color);
+    border-color: var(--row-border-color);
+}
+
+.transcript-item:first-child {
+    border-top: none;
+}
+
+.transcript-item:last-child {
+    border-bottom: none;
+}
+
+.human-transcript-item {
+    background-color: var(--row-human-background-color);
+}
+
+.transcript-item-participant {
+    color: var(--row-participant-name-color);
+}

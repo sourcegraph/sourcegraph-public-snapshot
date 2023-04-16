@@ -1,0 +1,70 @@
+:root {
+    --spacing: 1rem;
+}
+
+.row {
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+}
+
+.row:last-child {
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+}
+.row:last-child:not(:only-child) {
+    margin-bottom: -1px;
+}
+.row:only-child {
+    /* For the welcome message, make it visually consume the entire height instead of being a
+    discrete message. */
+    flex: 1;
+    border-bottom: none;
+}
+
+.participant {
+    font-weight: bold;
+}
+
+.participant-name {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+
+    margin: 0;
+    padding: var(--spacing) var(--spacing) 0 var(--spacing);
+
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.participant-avatar {
+    height: 1rem;
+    width: 1rem;
+}
+
+.content {
+    padding: 0 var(--spacing) var(--spacing) var(--spacing);
+    word-break: break-word;
+    line-height: 150%;
+}
+.content pre {
+    padding: calc(var(--spacing) * 0.5);
+    overflow-x: auto;
+}
+
+
+.content > div:first-child > *:first-child {
+    margin-top: 0;
+}
+.content > div:first-child > *:last-child {
+    margin-bottom: 0;
+}
+
+.context-files {
+    margin-top: var(--spacing);
+    font-size: 0.9rem;
+}

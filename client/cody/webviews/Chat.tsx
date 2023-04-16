@@ -55,15 +55,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             fileLinkComponent={FileLink}
             tipsRecommendations={TIPS_RECOMMENDATIONS}
             className={styles.innerContainer}
-            transcriptContainerClassName={
-                transcript.length > 0 ? styles.transcriptContainer : styles.emptyTranscriptContainer
-            }
-            bubbleContentClassName={styles.bubbleContent}
-            humanBubbleContentClassName={styles.humanBubbleContent}
-            botBubbleContentClassName={styles.botBubbleContent}
             codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
-            bubbleFooterClassName={styles.bubbleFooter}
-            bubbleLoaderDotClassName={styles.bubbleLoaderDot}
+            transcriptItemClassName={styles.transcriptItem}
+            humanTranscriptItemClassName={styles.humanTranscriptItem}
+            transcriptItemParticipantClassName={styles.transcriptItemParticipant}
             inputRowClassName={styles.inputRow}
             chatInputClassName={styles.chatInputClassName}
         />

@@ -1,19 +1,18 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ChatMessages, ChatMessagesClassNames } from './chat/ChatMessages'
 import { FileLinkProps } from './chat/ContextFiles'
-import { Tips } from './Tips'
+import { Transcript } from './chat/Transcript'
+import { TranscriptItemClassNames } from './chat/TranscriptItem'
 
 import styles from './Chat.module.css'
 
-const SCROLL_THRESHOLD = 15
 interface ChatProps extends ChatClassNames {
-    messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    messageInProgress: ChatMessage | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
@@ -27,8 +26,7 @@ interface ChatProps extends ChatClassNames {
     className?: string
 }
 
-interface ChatClassNames extends ChatMessagesClassNames {
-    transcriptContainerClassName?: string
+interface ChatClassNames extends TranscriptItemClassNames {
     inputRowClassName?: string
     chatInputClassName?: string
 }
@@ -48,6 +46,10 @@ export interface ChatUISubmitButtonProps {
     disabled: boolean
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
+
+/**
+ * The Cody chat interface, with a transcript of all messages and a message form.
+ */
 export const Chat: React.FunctionComponent<ChatProps> = ({
     messageInProgress,
     transcript,
@@ -62,21 +64,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     tipsRecommendations,
     afterTips,
     className,
-    transcriptContainerClassName,
-    bubbleContentClassName,
-    bubbleClassName,
-    bubbleRowClassName,
-    humanBubbleContentClassName,
-    botBubbleContentClassName,
     codeBlocksCopyButtonClassName,
-    bubbleFooterClassName,
-    bubbleLoaderDotClassName,
+    transcriptItemClassName,
+    humanTranscriptItemClassName,
+    transcriptItemParticipantClassName,
     inputRowClassName,
     chatInputClassName,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
-    const transcriptContainerRef = useRef<HTMLDivElement>(null)
 
     const inputHandler = useCallback(
         (inputValue: string): void => {
@@ -132,50 +128,18 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput]
     )
 
-    useEffect(() => {
-        if (transcriptContainerRef.current) {
-            // Only scroll if the user didn't scroll up manually more than the scrolling threshold.
-            // That is so that you can freely copy content or read up on older content while new
-            // content is being produced.
-            //
-            // We allow some small threshold for "what is considered not scrolled up" so that
-            // minimal scroll doesn't affect it (ie. if I'm not all the way scrolled down by like a
-            // pixel or two, I probably still want it to scroll).
-            //
-            // Since this container uses flex-direction: column-reverse, the scrollTop starts in the
-            // negatives and ends at 0.
-            if (transcriptContainerRef.current.scrollTop >= -SCROLL_THRESHOLD) {
-                transcriptContainerRef.current.scrollTo({ behavior: 'smooth', top: 0 })
-            }
-        }
-    }, [transcript, transcriptContainerRef])
-
     return (
         <div className={classNames(className, styles.innerContainer)}>
-            <div
-                ref={transcriptContainerRef}
-                className={classNames(styles.transcriptContainer, transcriptContainerClassName)}
-            >
-                {/* Show Tips view if no conversation has happened */}
-                {transcript.length === 0 && !messageInProgress && (
-                    <Tips recommendations={tipsRecommendations} after={afterTips} />
-                )}
-                {transcript.length > 0 && (
-                    <ChatMessages
-                        messageInProgress={messageInProgress}
-                        transcript={transcript}
-                        fileLinkComponent={fileLinkComponent}
-                        bubbleContentClassName={bubbleContentClassName}
-                        bubbleClassName={bubbleClassName}
-                        bubbleRowClassName={bubbleRowClassName}
-                        humanBubbleContentClassName={humanBubbleContentClassName}
-                        botBubbleContentClassName={botBubbleContentClassName}
-                        codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                        bubbleFooterClassName={bubbleFooterClassName}
-                        bubbleLoaderDotClassName={bubbleLoaderDotClassName}
-                    />
-                )}
-            </div>
+            <Transcript
+                transcript={transcript}
+                messageInProgress={messageInProgress}
+                fileLinkComponent={fileLinkComponent}
+                codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                transcriptItemClassName={transcriptItemClassName}
+                humanTranscriptItemClassName={humanTranscriptItemClassName}
+                transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                className={styles.transcriptContainer}
+            />
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
                 <TextArea
@@ -190,7 +154,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     }}
                     onKeyDown={onChatKeyDown}
                 />
-
                 <SubmitButton className={styles.submitButton} onClick={onChatSubmit} disabled={!!messageInProgress} />
             </form>
         </div>

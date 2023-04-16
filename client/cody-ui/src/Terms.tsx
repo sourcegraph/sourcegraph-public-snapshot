@@ -1,9 +1,12 @@
 import React from 'react'
 
+import classNames from 'classnames'
+
 export const Terms: React.FunctionComponent<{
     acceptTermsButton?: JSX.Element
-}> = ({ acceptTermsButton }) => (
-    <div className="non-transcript-container">
+    className?: string
+}> = ({ acceptTermsButton, className }) => (
+    <div className={classNames(className, 'non-transcript-container')}>
         <p className="terms-header-container">Notice and Usage Policies</p>
         <div className="terms-container">
             <p>

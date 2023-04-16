@@ -1,34 +1,27 @@
-:root {
-    --human-bubble-color: var(--input-bg);
-    --human-text-color: --dark-text;
-    --bot-bubble-color: linear-gradient(var(--input-bg), var(--input-bg)) padding-box,
-        linear-gradient(130deg, #00cbec, #a112ff) border-box;
-    --bot-text-color: --dark-text;
-    --chat-bubble-border-radius: 6px;
-}
-
 .container {
     font-size: 0.9rem;
-    padding-top: 1rem;
     flex-grow: 1;
 }
 
-.bubble {
-    max-width: min(93%, 980px) !important;
+.transcript-item {
+    background: linear-gradient(var(--input-bg), var(--input-bg)) padding-box,
+        linear-gradient(130deg, #00cbec, #a112ff) border-box;
+    border-color: transparent;
 }
 
-.bubble-row {
-    padding: 0.3rem 1rem 0.3rem 1rem !important;
+.human-transcript-item {
+    background-color: var(--input-bg);
+    border-color: var(--border-color-2);
 }
 
-.bubble-content pre,
-.bubble-content span > code,
-.bubble-content p > code {
+.transcript-item pre,
+.transcript-item span > code,
+.transcript-item p > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
 }
 
-.bubble-content pre {
+.transcript-item pre {
     border-top: solid 1px var(--border-color-2);
     border-bottom: solid 1px var(--border-color-2);
     border-radius: 0 !important;
@@ -36,17 +29,13 @@
     background: var(--body-bg);
 }
 
-.bubble-content code {
+.transcript-item code {
     color: var(--code-background);
 }
 
-.bubble-content ul,
-.bubble-content ol {
+.transcript-item ul,
+.transcript-item ol {
     padding-left: 1rem;
-}
-
-.bubble-footer > div {
-    margin-top: 0.1rem;
 }
 
 .main-wrapper {
@@ -80,23 +69,6 @@
     background-color: var(--input-bg);
 
     cursor: pointer;
-}
-
-.bot-bubble-content {
-    background: var(--bot-bubble-color);
-    color: var(--bot-text-color);
-    border: 1px solid transparent;
-}
-
-.human-bubble-content {
-    border: solid 1px var(--border-color-2);
-    background-color: var(--human-bubble-color);
-    color: var(--human-text-color);
-    white-space: pre-wrap;
-}
-
-.bubble-loader-dot {
-    background-color: var(--dark-text);
 }
 
 .input-row {

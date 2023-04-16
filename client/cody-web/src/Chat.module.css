@@ -1,14 +1,6 @@
-:root {
-    font-family: system-ui, sans-serif;
-
-    --human-bubble-color: #565eb9;
-    --human-text-color: #e1e1e1;
-    --bot-bubble-color: #dddddd;
-}
-
 .terms {
     margin-top: 1rem;
-    font-size: 0.85rem;
+    font-size: 85%;
 }
 
 .terms summary {
@@ -17,46 +9,33 @@
     font-size: 0.75rem;
 }
 
-.bubble-footer {
+.transcript-item {
+    background-color: Canvas;
+    border-color: ButtonBorder;
+}
+
+.human-transcript-item {
+    background-color: #1d1d1d;
+}
+
+.transcript-item-participant {
     color: GrayText;
 }
 
-.bubble-content pre,
-.bubble-content span > code,
-.bubble-content p > code {
+.transcript-item pre,
+.transcript-item span > code,
+.transcript-item p > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
-    background-color: #444444;
+    background-color: #282828;
 }
 
-.bubble-content pre,
-.bubble-content code {
-    background-color: #444444;
+.transcript-item pre,
+.transcript-item code {
+    background-color: #282828;
     color: #ffffff;
 }
 
-.human-bubble-content {
-    background-color: var(--human-bubble-color);
-    color: var(--human-text-color);
-}
-
-.bot-bubble-content {
-    background-color: #cccccc;
-    color: #000000;
-}
-
-@keyframes blink {
-    50% {
-        background-color: transparent;
-    }
-}
-
-.bubble-loader-dot {
-    background-color: GrayText;
-}
-
 .input-row {
-    position: sticky;
-    bottom: 0;
     background-color: Canvas;
     border-top: solid 1px ButtonBorder;
 }

@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 
 import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import classNames from 'classnames'
 
 import styles from './ContextFiles.module.css'
 
@@ -13,12 +14,13 @@ export interface FileLinkProps {
 export const ContextFiles: React.FunctionComponent<{
     contextFiles: string[]
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
-}> = ({ contextFiles, fileLinkComponent: FileLink }) => {
+    className?: string
+}> = ({ contextFiles, fileLinkComponent: FileLink, className }) => {
     const [isExpanded, setIsExpanded] = useState(false)
 
     if (contextFiles.length === 1) {
         return (
-            <p>
+            <p className={className}>
                 Cody read{' '}
                 <span className={styles.contextFile}>
                     <FileLink path={contextFiles[0]} />
@@ -30,7 +32,7 @@ export const ContextFiles: React.FunctionComponent<{
 
     if (isExpanded) {
         return (
-            <div className={styles.contextFilesExpanded}>
+            <div className={classNames(className, styles.contextFilesExpanded)}>
                 <span className={styles.contextFilesToggleIcon} onClick={() => setIsExpanded(false)}>
                     <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                 </span>
@@ -51,7 +53,7 @@ export const ContextFiles: React.FunctionComponent<{
     }
 
     return (
-        <div className={styles.contextFilesCollapsed} onClick={() => setIsExpanded(true)}>
+        <div className={classNames(className, styles.contextFilesCollapsed)} onClick={() => setIsExpanded(true)}>
             <span className={styles.contextFilesToggleIcon}>
                 <Icon aria-hidden={true} svgPath={mdiChevronRight} />
             </span>
