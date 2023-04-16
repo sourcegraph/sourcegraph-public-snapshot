@@ -21,6 +21,7 @@ ts_project(
         "src/chat/bot-response-multiplexer.ts",
         "src/chat/chat.ts",
         "src/chat/client.ts",
+        "src/chat/context.ts",
         "src/chat/markdown.ts",
         "src/chat/preamble.ts",
         "src/chat/recipes/chat-question.ts",

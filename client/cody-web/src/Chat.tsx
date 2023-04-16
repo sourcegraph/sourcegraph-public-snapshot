@@ -12,10 +12,20 @@ export const Chat: React.FunctionComponent<
         React.ComponentPropsWithoutRef<typeof ChatUI>,
         'textAreaComponent' | 'submitButtonComponent' | 'fileLinkComponent'
     >
-> = ({ messageInProgress, transcript, formInput, setFormInput, inputHistory, setInputHistory, onSubmit }) => (
+> = ({
+    messageInProgress,
+    transcript,
+    contextStatus,
+    formInput,
+    setFormInput,
+    inputHistory,
+    setInputHistory,
+    onSubmit,
+}) => (
     <ChatUI
         messageInProgress={messageInProgress}
         transcript={transcript}
+        contextStatus={contextStatus}
         formInput={formInput}
         setFormInput={setFormInput}
         inputHistory={inputHistory}

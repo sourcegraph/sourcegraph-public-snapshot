@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import './App.css'
 
+import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { Chat } from './Chat'
@@ -25,6 +26,7 @@ export function App(): React.ReactElement {
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
+    const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -63,6 +65,9 @@ export function App(): React.ReactElement {
                 case 'history':
                     setInputHistory(message.messages?.input ?? [])
                     setUserHistory(message.messages?.chat ?? null)
+                    break
+                case 'contextStatus':
+                    setContextStatus(message.contextStatus)
                     break
             }
         })
@@ -116,6 +121,7 @@ export function App(): React.ReactElement {
                 <Chat
                     messageInProgress={messageInProgress}
                     transcript={transcript}
+                    contextStatus={contextStatus}
                     formInput={formInput}
                     setFormInput={setFormInput}
                     inputHistory={inputHistory}
