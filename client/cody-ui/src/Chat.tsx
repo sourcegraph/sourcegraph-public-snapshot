@@ -1,8 +1,9 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { isDefined } from '@sourcegraph/common'
 
 import { FileLinkProps } from './chat/ContextFiles'
 import { Transcript } from './chat/Transcript'
@@ -21,8 +22,7 @@ interface ChatProps extends ChatClassNames {
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
-    tipsRecommendations?: JSX.Element[]
-    afterTips?: JSX.Element
+    afterTips?: string
     className?: string
 }
 
@@ -61,7 +61,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     textAreaComponent: TextArea,
     submitButtonComponent: SubmitButton,
     fileLinkComponent,
-    tipsRecommendations,
     afterTips,
     className,
     codeBlocksCopyButtonClassName,
@@ -128,10 +127,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput]
     )
 
+    const transcriptWithWelcome = useMemo<ChatMessage[]>(
+        () => [{ speaker: 'assistant', text: '', displayText: welcomeText(afterTips) }, ...transcript],
+        [afterTips, transcript]
+    )
+
     return (
         <div className={classNames(className, styles.innerContainer)}>
             <Transcript
-                transcript={transcript}
+                transcript={transcriptWithWelcome}
                 messageInProgress={messageInProgress}
                 fileLinkComponent={fileLinkComponent}
                 codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
@@ -158,4 +162,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             </form>
         </div>
     )
+}
+
+function welcomeText(afterTips?: string): string {
+    return [
+        "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.",
+        afterTips,
+    ]
+        .filter(isDefined)
+        .join('\n\n')
 }

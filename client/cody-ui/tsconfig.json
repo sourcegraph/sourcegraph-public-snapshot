@@ -12,6 +12,9 @@
   "exclude": ["out", "dist"],
   "references": [
     {
+      "path": "../common",
+    },
+    {
       "path": "../cody-shared",
     },
   ],

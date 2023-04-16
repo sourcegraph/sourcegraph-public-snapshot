@@ -19,6 +19,7 @@
     "storybook": "STORIES_GLOB='client/cody-ui/src/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start"
   },
   "dependencies": {
+    "@sourcegraph/common": "workspace:*",
     "@sourcegraph/cody-shared": "workspace:*"
   }
 }

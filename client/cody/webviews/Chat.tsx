@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
-import { SubmitSvg, ResetIcon } from '@sourcegraph/cody-ui/src/utils/icons'
+import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { FileLink } from './FileLink'
 import { vscodeAPI } from './utils/VSCodeApi'
@@ -20,14 +20,6 @@ interface ChatboxProps {
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
 }
-
-const TIPS_RECOMMENDATIONS: JSX.Element[] = [
-    <>Visit the `Recipes` tab for special actions like Generate a unit test or Summarize recent code changes.</>,
-    <>
-        Use the <ResetIcon /> button in the upper right to reset the chat when you want to start a new line of thought.
-        Cody does not remember anything outside the current chat.
-    </>,
-]
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
@@ -53,7 +45,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             textAreaComponent={TextArea}
             submitButtonComponent={SubmitButton}
             fileLinkComponent={FileLink}
-            tipsRecommendations={TIPS_RECOMMENDATIONS}
             className={styles.innerContainer}
             codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
             transcriptItemClassName={styles.transcriptItem}
