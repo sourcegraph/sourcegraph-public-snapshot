@@ -167,7 +167,7 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.recipe.generate-unit-test', () => executeRecipe('generate-unit-test')),
         vscode.commands.registerCommand('cody.recipe.generate-docstring', () => executeRecipe('generate-docstring')),
-        vscode.commands.registerCommand('cody.recipe.replace', () => executeRecipe('replace')),
+        vscode.commands.registerCommand('cody.recipe.fixup', () => executeRecipe('fixup')),
         vscode.commands.registerCommand('cody.recipe.translate-to-language', () =>
             executeRecipe('translate-to-language')
         ),
