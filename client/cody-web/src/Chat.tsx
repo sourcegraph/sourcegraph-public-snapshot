@@ -16,6 +16,7 @@ export const Chat: React.FunctionComponent<
     messageInProgress,
     transcript,
     contextStatus,
+    followups,
     formInput,
     setFormInput,
     inputHistory,
@@ -26,6 +27,7 @@ export const Chat: React.FunctionComponent<
         messageInProgress={messageInProgress}
         transcript={transcript}
         contextStatus={contextStatus}
+        followups={followups}
         formInput={formInput}
         setFormInput={setFormInput}
         inputHistory={inputHistory}

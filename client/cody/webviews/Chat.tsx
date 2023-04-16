@@ -17,6 +17,7 @@ interface ChatboxProps {
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
     contextStatus: ChatContextStatus | null
+    followups: string[] | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
@@ -27,6 +28,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     messageInProgress,
     transcript,
     contextStatus,
+    followups,
     formInput,
     setFormInput,
     inputHistory,
@@ -41,6 +43,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             messageInProgress={messageInProgress}
             transcript={transcript}
             contextStatus={contextStatus}
+            followups={followups}
             formInput={formInput}
             setFormInput={setFormInput}
             inputHistory={inputHistory}

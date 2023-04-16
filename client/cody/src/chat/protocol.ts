@@ -29,6 +29,7 @@ export type ExtensionMessage =
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean }
     | { type: 'debug'; message: string }
     | { type: 'contextStatus'; contextStatus: ChatContextStatus }
+    | { type: 'followups'; followups: string[] | null }
 
 /**
  * The subset of configuration that is visible to the webview.

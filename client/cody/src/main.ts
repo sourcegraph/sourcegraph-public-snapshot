@@ -92,6 +92,7 @@ const register = async (
         context.extensionPath,
         initialConfig,
         chatClient,
+        completionsClient,
         intentDetector,
         codebaseContext,
         editor,

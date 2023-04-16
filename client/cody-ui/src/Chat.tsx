@@ -7,6 +7,7 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 import { isDefined } from '@sourcegraph/common'
 
 import { FileLinkProps } from './chat/ContextFiles'
+import { Followups } from './chat/followups/Followups'
 import { ChatInputContext } from './chat/inputContext/ChatInputContext'
 import { Transcript } from './chat/Transcript'
 import { TranscriptItemClassNames } from './chat/TranscriptItem'
@@ -17,6 +18,7 @@ interface ChatProps extends ChatClassNames {
     transcript: ChatMessage[]
     messageInProgress: ChatMessage | null
     contextStatus?: ChatContextStatus | null
+    followups: string[] | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
@@ -58,6 +60,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     messageInProgress,
     transcript,
     contextStatus,
+    followups,
     formInput,
     setFormInput,
     inputHistory,
@@ -134,6 +137,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput]
     )
 
+    const onFollowupSelect = useCallback(
+        (followup: string): void => {
+            onSubmit(followup)
+        },
+        [onSubmit]
+    )
+
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
         () => [{ speaker: 'assistant', displayText: welcomeText(afterTips) }, ...transcript],
         [afterTips, transcript]
@@ -154,6 +164,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             />
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
+                {followups && followups.length > 0 && (
+                    <Followups followups={followups} onFollowupSelect={onFollowupSelect} />
+                )}
                 <div className={styles.textAreaContainer}>
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}

@@ -236,6 +236,10 @@
           "type": "boolean",
           "default": false
         },
+        "cody.experimental.followups": {
+          "type": "boolean",
+          "default": false
+        },
         "cody.experimental.keys.anthropic": {
           "type": "string"
         },

@@ -1,3 +1,5 @@
+import { basename, isDefined } from '@sourcegraph/common'
+
 import { CodebaseContext } from '../codebase-context'
 import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor } from '../editor'
@@ -20,13 +22,19 @@ export interface ClientInit {
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken'>
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: ChatMessage[]) => void
+    setFollowups: (followups: string[]) => void
 }
 
 export interface Client {
     submitMessage: (text: string) => void
 }
 
-export async function createClient({ config, setMessageInProgress, setTranscript }: ClientInit): Promise<Client> {
+export async function createClient({
+    config,
+    setMessageInProgress,
+    setTranscript,
+    setFollowups,
+}: ClientInit): Promise<Client> {
     const fullConfig = { ...config, debug: false, customHeaders: {} }
 
     const completionsClient = new SourcegraphBrowserCompletionsClient(fullConfig)
@@ -91,10 +99,14 @@ export async function createClient({ config, setMessageInProgress, setTranscript
         }
     }
 
+    setFollowups([config.codebase && `How do I use ${basename(config.codebase)}?`].filter(isDefined))
+
     const chatQuestionRecipe = new ChatQuestion()
 
     return {
         submitMessage: async (text: string) => {
+            setFollowups([])
+
             if (text === '/reset') {
                 transcript.reset()
                 sendTranscript()

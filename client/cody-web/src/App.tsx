@@ -18,6 +18,7 @@ export const App: React.FunctionComponent = () => {
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
+    const [followups, setFollowups] = useState<string[] | null>(null)
 
     const [client, setClient] = useState<Client | ErrorLike>()
     useEffect(() => {
@@ -27,6 +28,7 @@ export const App: React.FunctionComponent = () => {
             config,
             setMessageInProgress,
             setTranscript,
+            setFollowups,
         }).then(setClient, setClient)
     }, [config])
 
@@ -62,6 +64,7 @@ export const App: React.FunctionComponent = () => {
                             messageInProgress={messageInProgress}
                             transcript={transcript}
                             contextStatus={{ codebase: config.codebase }}
+                            followups={followups}
                             formInput={formInput}
                             setFormInput={setFormInput}
                             inputHistory={inputHistory}

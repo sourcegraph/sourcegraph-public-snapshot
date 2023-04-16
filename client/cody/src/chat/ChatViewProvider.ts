@@ -1,5 +1,6 @@
 import path from 'path'
 
+import { HUMAN_PROMPT } from '@anthropic-ai/sdk'
 import * as vscode from 'vscode'
 
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
@@ -15,11 +16,12 @@ import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { LocalStorage } from '../command/LocalStorageProvider'
-import { updateConfiguration } from '../configuration'
+import { getConfiguration, updateConfiguration } from '../configuration'
 import { logEvent } from '../event-logger'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
@@ -63,6 +65,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         private extensionPath: string,
         private config: Config,
         private chat: ChatClient,
+        private completionsClient: SourcegraphCompletionsClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
         private editor: Editor,
@@ -273,6 +276,49 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             messages: this.transcript.toChat(),
             isMessageInProgress: this.isMessageInProgress,
         })
+
+        if (!this.isMessageInProgress) {
+            void this.sendFollowups()
+        }
+    }
+
+    private async sendFollowups(): Promise<void> {
+        if (getConfiguration(vscode.workspace.getConfiguration()).experimentalFollowups) {
+            const transcript = this.transcript.toChat()
+            const lastMessage = transcript[transcript.length - 1]
+            if (!lastMessage) {
+                return
+            }
+            if (lastMessage.speaker === 'human') {
+                // Wait for the assistant to respond so we can generate some new recommended
+                // followups.
+                void this.webview?.postMessage({
+                    type: 'followups',
+                    followups: null,
+                })
+            } else {
+                try {
+                    const completions = await this.completionsClient.complete({
+                        temperature: 0.2,
+                        maxTokensToSample: 200,
+                        topK: -1,
+                        topP: -1,
+                        stopSequences: ['? ', '. ', HUMAN_PROMPT],
+                        prompt: `Assistant: ${lastMessage.text}\n\nHuman: What other code questions should I ask the AI code assistant? Do not suggest general or basic questions. Include only the question and nothing else.`,
+                        model: 'claude-instant-v1.0',
+                    })
+                    const followup = `${completions.completion}${completions.stop}`.trim()
+                    if (followup) {
+                        void this.webview?.postMessage({
+                            type: 'followups',
+                            followups: [followup],
+                        })
+                    }
+                } catch (error) {
+                    console.error('Error fetching followups:', error)
+                }
+            }
+        }
     }
 
     /**
