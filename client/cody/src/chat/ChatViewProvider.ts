@@ -25,6 +25,8 @@ import { sanitizeServerEndpoint } from '../sanitize'
 import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
+import { ExtensionMessage, WebviewMessage } from './protocol'
+
 async function isValidLogin(
     serverEndpoint: string,
     accessToken: string,
@@ -38,7 +40,9 @@ async function isValidLogin(
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
-    private webview?: vscode.Webview
+    private webview?: Omit<vscode.Webview, 'postMessage'> & {
+        postMessage(message: ExtensionMessage): Thenable<boolean>
+    }
 
     private tosVersion = packageVersion
 
@@ -73,7 +77,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.createNewChatID()
     }
 
-    private async onDidReceiveMessage(message: any): Promise<void> {
+    private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
                 await this.sendToken()

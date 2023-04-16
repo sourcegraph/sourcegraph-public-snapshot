@@ -29,14 +29,14 @@ export function App(): React.ReactElement {
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
-            switch (message.data.type) {
+            switch (message.type) {
                 case 'transcript': {
-                    if (message.data.isMessageInProgress) {
-                        const msgLength = message.data.messages.length - 1
-                        setTranscript(message.data.messages.slice(0, msgLength))
-                        setMessageInProgress(message.data.messages[msgLength])
+                    if (message.isMessageInProgress) {
+                        const msgLength = message.messages.length - 1
+                        setTranscript(message.messages.slice(0, msgLength))
+                        setMessageInProgress(message.messages[msgLength])
                     } else {
-                        setTranscript(message.data.messages)
+                        setTranscript(message.messages)
                         setMessageInProgress(null)
                     }
                     break
@@ -44,26 +44,26 @@ export function App(): React.ReactElement {
                 case 'token':
                     {
                         // Get the token from the extension.
-                        const hasToken = !!message.data.value
+                        const hasToken = !!message.value
                         setView(hasToken ? 'chat' : 'login')
-                        setDevMode(message.data.mode === 'development')
+                        setDevMode(message.mode === 'development')
                     }
                     break
                 case 'login':
-                    setIsValidLogin(message.data.isValid)
-                    setView(message.data.isValid ? 'chat' : 'login')
+                    setIsValidLogin(message.isValid)
+                    setView(message.isValid ? 'chat' : 'login')
                     break
                 case 'showTab':
-                    if (message.data.tab === 'chat') {
+                    if (message.tab === 'chat') {
                         setView('chat')
                     }
                     break
                 case 'debug':
-                    setDebugLog([...debugLog, message.data.message])
+                    setDebugLog([...debugLog, message.message])
                     break
                 case 'history':
-                    setInputHistory(message.data.messages.input)
-                    setUserHistory(message.data.messages.chat)
+                    setInputHistory(message.messages?.input ?? [])
+                    setUserHistory(message.messages?.chat ?? null)
                     break
             }
         })
