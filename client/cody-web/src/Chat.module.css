@@ -45,6 +45,7 @@
     height: 10vh;
     box-sizing: border-box;
     border: 1px solid ButtonBorder;
+    border-radius: 3px;
     min-height: 10vh;
     max-height: 30vh;
     font-family: system-ui, sans-serif;
