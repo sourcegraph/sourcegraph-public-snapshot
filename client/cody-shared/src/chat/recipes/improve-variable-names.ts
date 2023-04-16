@@ -38,7 +38,6 @@ export class ImproveVariableNames implements Recipe {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
-                displayText: '',
             },
             getContextMessagesFromSelection(
                 truncatedSelectedText,

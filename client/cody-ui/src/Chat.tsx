@@ -128,7 +128,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
-        () => [{ speaker: 'assistant', text: '', displayText: welcomeText(afterTips) }, ...transcript],
+        () => [{ speaker: 'assistant', displayText: welcomeText(afterTips) }, ...transcript],
         [afterTips, transcript]
     )
 

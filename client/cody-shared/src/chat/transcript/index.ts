@@ -83,5 +83,5 @@ function truncatePrompt(messages: Message[], maxTokens: number): Message[] {
 }
 
 function estimateTokensUsage(message: Message): number {
-    return Math.round(message.text.length / CHARS_PER_TOKEN)
+    return Math.round((message.text || '').length / CHARS_PER_TOKEN)
 }
