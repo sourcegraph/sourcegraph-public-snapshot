@@ -5,7 +5,6 @@ import { IntentDetector } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
-import { getShortTimestamp } from '../../timestamp'
 import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext } from './recipe'
@@ -16,13 +15,12 @@ export class ChatQuestion implements Recipe {
     }
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const timestamp = getShortTimestamp()
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
 
         return Promise.resolve(
             new Interaction(
-                { speaker: 'human', text: truncatedText, displayText: humanChatInput, timestamp },
-                { speaker: 'assistant', text: '', displayText: '', timestamp },
+                { speaker: 'human', text: truncatedText, displayText: humanChatInput },
+                { speaker: 'assistant', text: '', displayText: '' },
                 this.getContextMessages(truncatedText, context.editor, context.intentDetector, context.codebaseContext)
             )
         )

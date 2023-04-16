@@ -90,7 +90,7 @@ export const ChatMessageRow: React.FunctionComponent<
                     ) : (
                         <div className={styles.bubbleFooterTimestamp}>{`${
                             message.speaker === 'assistant' ? 'Cody' : 'Me'
-                        } · ${message.timestamp}`}</div>
+                        }`}</div>
                     )}
                 </div>
             </div>

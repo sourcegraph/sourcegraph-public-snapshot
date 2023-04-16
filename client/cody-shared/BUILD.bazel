@@ -65,7 +65,6 @@ ts_project(
         "src/sourcegraph-api/graphql/queries.ts",
         "src/sourcegraph-api/index.ts",
         "src/telemetry/EventLogger.ts",
-        "src/timestamp.ts",
         "src/utils.ts",
     ],
     tsconfig = ":tsconfig",

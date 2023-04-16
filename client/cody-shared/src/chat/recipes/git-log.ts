@@ -2,7 +2,6 @@ import { spawnSync } from 'child_process'
 
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
-import { getShortTimestamp } from '../../timestamp'
 import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext } from './recipe'
@@ -65,17 +64,15 @@ export class GitHistory implements Recipe {
             console.warn('Truncated extra long git log output, so summary may be incomplete.')
         }
 
-        const timestamp = getShortTimestamp()
         const promptMessage = `Summarize these commits:\n${truncatedGitLogOutput}\n\nProvide your response in the form of a bulleted list. Do not mention the commit hashes.`
         const assistantResponsePrefix = 'Here is a summary of recent changes:\n- '
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText: rawDisplayText, timestamp },
+            { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
                 displayText: '',
-                timestamp,
             },
             Promise.resolve([])
         )
