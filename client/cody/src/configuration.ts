@@ -16,10 +16,8 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
 }
 
 const codyConfiguration = vscode.workspace.getConfiguration('cody')
-const globalConfigTarget = vscode.ConfigurationTarget.Global
 
 // Update user configurations in VS Code for Cody
 export async function updateConfiguration(configKey: string, configValue: string): Promise<void> {
-    // Removing globalConfigTarget will only update configs for the workspace setting only
-    await codyConfiguration.update(configKey, configValue, globalConfigTarget)
+    await codyConfiguration.update(configKey, configValue, vscode.ConfigurationTarget.Global)
 }
