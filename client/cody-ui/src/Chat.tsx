@@ -67,6 +67,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
+    transcriptActionClassName,
     inputRowClassName,
     chatInputClassName,
 }) => {
@@ -142,6 +143,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 transcriptItemClassName={transcriptItemClassName}
                 humanTranscriptItemClassName={humanTranscriptItemClassName}
                 transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                transcriptActionClassName={transcriptActionClassName}
                 className={styles.transcriptContainer}
             />
 

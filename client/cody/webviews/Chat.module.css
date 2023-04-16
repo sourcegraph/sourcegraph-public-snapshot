@@ -38,6 +38,10 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     color: var(--vscode-input-foreground);
 }
 
+.transcript-action {
+    background-color: var(--code-background);
+}
+
 .code-blocks-copy-button {
     color: var(--vscode-button-secondaryForeground);
     background-color: var(--vscode-button-secondaryBackground);

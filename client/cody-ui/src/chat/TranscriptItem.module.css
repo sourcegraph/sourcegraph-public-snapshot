@@ -46,6 +46,14 @@
     width: 1rem;
 }
 
+.actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(var(--spacing) * 0.5);
+    padding: 0 var(--spacing);
+}
+
 .content {
     padding: 0 var(--spacing) var(--spacing) var(--spacing);
     word-break: break-word;
@@ -62,9 +70,4 @@
 }
 .content > div:first-child > *:last-child {
     margin-bottom: 0;
-}
-
-.context-files {
-    margin-top: var(--spacing);
-    font-size: 0.9rem;
 }
