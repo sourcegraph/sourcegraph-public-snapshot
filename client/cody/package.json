@@ -102,8 +102,8 @@
         "title": "Ask Cody: Improve Variable Names"
       },
       {
-        "command": "cody.recipe.replace",
-        "title": "Ask Cody: Replace Instructions in Selection"
+        "command": "cody.recipe.fixup",
+        "title": "Ask Cody: Fixup Code from Inline Instructions"
       },
       {
         "command": "cody.set-access-token",
@@ -120,10 +120,16 @@
     ],
     "keybindings": [
       {
-        "command": "cody.recipe.explain-code-high-level",
-        "key": "ctrl+alt+c",
-        "mac": "ctrl+alt+c",
+        "command": "cody.chat.focus",
+        "key": "alt+/",
+        "mac": "alt+/",
         "when": "cody.activated"
+      },
+      {
+        "command": "cody.recipe.fixup",
+        "key": "ctrl+alt+/",
+        "mac": "ctrl+alt+/",
+        "when": "cody.activated && editorTextFocus && !editorReadonly"
       }
     ],
     "submenus": [
@@ -162,7 +168,7 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.replace",
+          "command": "cody.recipe.fixup",
           "when": "cody.activated"
         },
         {

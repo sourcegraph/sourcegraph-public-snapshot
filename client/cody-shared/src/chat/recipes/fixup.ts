@@ -7,9 +7,9 @@ import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext } from './recipe'
 
-export class Replace implements Recipe {
+export class Fixup implements Recipe {
     public getID(): string {
-        return 'replace'
+        return 'fixup'
     }
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
@@ -17,7 +17,7 @@ export class Replace implements Recipe {
 
         const selection = context.editor.getActiveTextEditorSelection()
         if (!selection) {
-            await context.editor.showWarningMessage('Select some code to operate on.')
+            await context.editor.showWarningMessage('Select some code to fixup.')
             return null
         }
 
