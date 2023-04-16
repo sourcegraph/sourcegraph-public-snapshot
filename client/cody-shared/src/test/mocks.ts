@@ -53,6 +53,10 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
+    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+        return this.mocks.getActiveTextEditorSelection?.() ?? null
+    }
+
     public getActiveTextEditor(): ActiveTextEditor | null {
         return this.mocks.getActiveTextEditor?.() ?? null
     }

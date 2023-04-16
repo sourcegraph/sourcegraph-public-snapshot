@@ -68,6 +68,9 @@ export async function createClient({
         getActiveTextEditorSelection() {
             return null
         },
+        getActiveTextEditorSelectionOrEntireFile() {
+            return null
+        },
         getActiveTextEditorVisibleContent() {
             return null
         },
