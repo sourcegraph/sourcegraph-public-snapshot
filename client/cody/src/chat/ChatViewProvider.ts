@@ -103,7 +103,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                         { serverEndpoint: this.serverEndpoint }
                     )
                 }
-                this.sendLogin(isValid)
+                void this.webview?.postMessage({ type: 'login', isValid })
                 break
             }
             case 'removeToken':
@@ -255,10 +255,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             messages: this.transcript.toChat(),
             isMessageInProgress: this.isMessageInProgress,
         })
-    }
-
-    private sendLogin(isValid: boolean): void {
-        void this.webview?.postMessage({ type: 'login', isValid })
     }
 
     /**
