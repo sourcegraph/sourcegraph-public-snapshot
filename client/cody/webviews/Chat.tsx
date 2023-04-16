@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -78,17 +78,48 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
-}) => (
-    <VSCodeTextArea
-        className={classNames(styles.chatInput, className)}
-        rows={rows}
-        value={value}
-        autofocus={autoFocus}
-        required={required}
-        onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
-        onKeyDown={onKeyDown}
-    />
-)
+}) => {
+    // Focus the textarea when the webview gains focus (unless there is text selected). This makes
+    // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
+    // View` with the keyboard.
+    const inputRef = useRef<HTMLElement>(null)
+    useEffect(() => {
+        const handleFocus = (): void => {
+            if (document.getSelection()?.isCollapsed) {
+                inputRef.current?.focus()
+            }
+        }
+        window.addEventListener('focus', handleFocus)
+        return () => {
+            window.removeEventListener('focus', handleFocus)
+        }
+    }, [])
+
+    // <VSCodeTextArea autofocus> does not work, so implement autofocus ourselves.
+    useEffect(() => {
+        if (autoFocus) {
+            inputRef.current?.focus()
+        }
+    }, [autoFocus])
+
+    return (
+        <VSCodeTextArea
+            className={classNames(styles.chatInput, className)}
+            rows={rows}
+            ref={
+                // VSCodeTextArea has a very complex type.
+                //
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                inputRef as any
+            }
+            value={value}
+            autofocus={autoFocus}
+            required={required}
+            onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
+            onKeyDown={onKeyDown}
+        />
+    )
+}
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <VSCodeButton
