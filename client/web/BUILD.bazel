@@ -1585,7 +1585,6 @@ ts_project(
         "src/util/dom.ts",
         "src/util/getReactElements.ts",
         "src/util/index.tsx",
-        "src/util/path.tsx",
         "src/util/prettyBytesBigint.ts",
         "src/util/security.ts",
         "src/util/settings.ts",

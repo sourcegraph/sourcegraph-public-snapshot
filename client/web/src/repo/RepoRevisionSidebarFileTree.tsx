@@ -11,6 +11,7 @@ import {
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
+import { dirname } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -25,7 +26,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
-import { dirname } from '../util/path'
 
 import { FocusableTree, FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 
