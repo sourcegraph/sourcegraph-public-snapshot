@@ -36,15 +36,27 @@ export const Transcript: React.FunctionComponent<
             // We allow some small threshold for "what is considered not scrolled up" so that
             // minimal scroll doesn't affect it (ie. if I'm not all the way scrolled down by like a
             // pixel or two, I probably still want it to scroll).
-            const SCROLL_THRESHOLD = 15
-            if (transcriptContainerRef.current.scrollTop >= -SCROLL_THRESHOLD) {
+            const SCROLL_THRESHOLD = 100
+            const delta = Math.abs(
+                transcriptContainerRef.current.scrollHeight -
+                    transcriptContainerRef.current.offsetHeight -
+                    transcriptContainerRef.current.scrollTop
+            )
+            if (delta < SCROLL_THRESHOLD) {
                 transcriptContainerRef.current.scrollTo({
-                    behavior: 'smooth',
                     top: transcriptContainerRef.current.scrollHeight,
                 })
             }
         }
     }, [transcript, transcriptContainerRef])
+
+    // Scroll down whenever a new message is received.
+    const lastMessageSpeaker = transcript[transcript.length - 1]?.speaker
+    useEffect(() => {
+        transcriptContainerRef.current?.scrollTo({
+            top: transcriptContainerRef.current.scrollHeight,
+        })
+    }, [lastMessageSpeaker])
 
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
