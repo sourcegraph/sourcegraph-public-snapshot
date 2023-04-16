@@ -214,6 +214,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
+        if (text === '/reset') {
+            this.onResetChat()
+            return
+        }
+
         this.inputHistory.push(text)
         await this.executeRecipe('chat-question', text)
     }

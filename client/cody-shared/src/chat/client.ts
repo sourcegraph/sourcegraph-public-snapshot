@@ -95,6 +95,12 @@ export async function createClient({ config, setMessageInProgress, setTranscript
 
     return {
         submitMessage: async (text: string) => {
+            if (text === '/reset') {
+                transcript.reset()
+                sendTranscript()
+                return
+            }
+
             const interaction = await chatQuestionRecipe.getInteraction(text, {
                 editor: fakeEditor,
                 intentDetector,
