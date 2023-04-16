@@ -5,7 +5,7 @@ import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 import { Terms } from '@sourcegraph/cody-ui/src/Terms'
 
-import './Login.css'
+import styles from './Login.module.css'
 
 interface LoginProps {
     isValidLogin?: boolean
@@ -13,57 +13,43 @@ interface LoginProps {
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({ isValidLogin, onLogin }) => {
-    const [termsAccepted, setTermsAccepted] = useState(false)
     const [token, setToken] = useState<string>('')
-    const [endpoint, setEndpoint] = useState('')
+    const [endpoint, setEndpoint] = useState('https://sourcegraph.com')
 
     return (
-        <div className="inner-container">
-            <div className="non-transcript-container">
-                {termsAccepted ? (
-                    <div className="container-getting-started">
-                        <p>Access Token</p>
-                        <VSCodeTextField
-                            value={token}
-                            placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
-                            className="w-100"
-                            type={TextFieldType.password}
-                            onInput={(e: any) => setToken(e.target.value)}
-                        />
-                        <p>Sourcegraph Instance</p>
-                        <VSCodeTextField
-                            value={endpoint}
-                            placeholder="ex https://example.sourcegraph.com"
-                            className="w-100"
-                            autofocus={true}
-                            onInput={(e: any) => setEndpoint(e.target.value)}
-                        />
-                        <VSCodeButton className="login-button" type="button" onClick={() => onLogin(token, endpoint)}>
-                            Login
-                        </VSCodeButton>
-                        {isValidLogin === false && (
-                            <p className="invalid-login-message">
-                                Invalid login credentials. Please check that you have entered the correct instance URL
-                                and a valid access token.
-                            </p>
-                        )}
-                    </div>
-                ) : (
-                    <div className="container-getting-started">
-                        <Terms
-                            acceptTermsButton={
-                                <VSCodeButton
-                                    className="accept-button"
-                                    type="button"
-                                    onClick={() => setTermsAccepted(true)}
-                                >
-                                    I Accept
-                                </VSCodeButton>
-                            }
-                        />
-                    </div>
-                )}
-            </div>
-        </div>
+        <form className={styles.container}>
+            <label htmlFor="endpoint" className={styles.label}>
+                Sourcegraph URL
+            </label>
+            <VSCodeTextField
+                id="endpoint"
+                value={endpoint}
+                className={styles.input}
+                onInput={(e: any) => setEndpoint(e.target.value)}
+            />
+
+            <label htmlFor="accessToken" className={styles.label}>
+                Access Token
+            </label>
+            <VSCodeTextField
+                id="accessToken"
+                value={token}
+                placeholder=""
+                className={styles.input}
+                type={TextFieldType.password}
+                onInput={(e: any) => setToken(e.target.value)}
+            />
+
+            <VSCodeButton className={styles.button} type="submit" onClick={() => onLogin(token, endpoint)}>
+                Sign in
+            </VSCodeButton>
+            <Terms className={styles.terms} />
+
+            {isValidLogin === false && (
+                <p className={styles.error}>
+                    Invalid credentials. Please check the Sourcegraph instance URL and access token.
+                </p>
+            )}
+        </form>
     )
 }
