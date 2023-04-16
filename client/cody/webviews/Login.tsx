@@ -42,7 +42,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             />
 
             <VSCodeButton className={styles.button} type="submit" onClick={() => onLogin(token, endpoint)}>
-                Sign in
+                Sign In
             </VSCodeButton>
             <div className={styles.terms} dangerouslySetInnerHTML={{ __html: renderMarkdown(CODY_TERMS_MARKDOWN) }} />
 
