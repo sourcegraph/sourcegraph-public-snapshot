@@ -22,7 +22,6 @@ interface ChatProps extends ChatClassNames {
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
-    tipsRecommendations?: string[]
     afterTips?: string
     className?: string
 }
@@ -62,7 +61,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     textAreaComponent: TextArea,
     submitButtonComponent: SubmitButton,
     fileLinkComponent,
-    tipsRecommendations,
     afterTips,
     className,
     codeBlocksCopyButtonClassName,
@@ -130,11 +128,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
-        () => [
-            { speaker: 'assistant', text: '', displayText: welcomeText(tipsRecommendations, afterTips) },
-            ...transcript,
-        ],
-        [afterTips, tipsRecommendations, transcript]
+        () => [{ speaker: 'assistant', text: '', displayText: welcomeText(afterTips) }, ...transcript],
+        [afterTips, transcript]
     )
 
     return (
@@ -169,17 +164,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 }
 
-function welcomeText(tipsRecommendations?: string[], afterTips?: string): string {
+function welcomeText(afterTips?: string): string {
     return [
-        "Hello! I'm Cody. I can write code and answer questions for you:",
-        ['Generate unit tests for code', 'Fix a bug in code', 'Explain code', 'Clean up code', 'Add a feature']
-            .map(item => `* ${item}`)
-            .join('\n'),
-        "I read through your codebase so that my code and answers are more accurate, but I'm not perfect.",
-        '**Tips**',
-        `* I'll tell you which files I read to learn about your codebase. If the list of files looks wrong, try pasting in the code manually (and report an issue).\n${
-            tipsRecommendations?.map(item => `* ${item}`).join('\n') ?? ''
-        }`,
+        "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.",
         afterTips,
     ]
         .filter(isDefined)

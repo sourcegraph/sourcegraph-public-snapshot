@@ -21,11 +21,6 @@ interface ChatboxProps {
     setInputHistory: (history: string[]) => void
 }
 
-const TIPS_RECOMMENDATIONS: string[] = [
-    'Visit the **Recipes** tab for special actions like **Generate a unit test** or **Summarize recent code changes**.',
-    'Use the reset button in the top right to reset the chat when you want to start a new session about a different topic.',
-]
-
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
@@ -50,7 +45,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             textAreaComponent={TextArea}
             submitButtonComponent={SubmitButton}
             fileLinkComponent={FileLink}
-            tipsRecommendations={TIPS_RECOMMENDATIONS}
             className={styles.innerContainer}
             codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
             transcriptItemClassName={styles.transcriptItem}
