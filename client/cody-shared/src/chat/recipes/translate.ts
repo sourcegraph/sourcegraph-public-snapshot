@@ -11,7 +11,7 @@ export class TranslateToLanguage implements Recipe {
     }
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelection()
+        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             return null
         }
