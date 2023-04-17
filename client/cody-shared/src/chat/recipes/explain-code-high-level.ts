@@ -10,13 +10,8 @@ export class ExplainCodeHighLevel implements Recipe {
         return 'explain-code-high-level'
     }
 
-    public async getInteraction(
-        _humanChatInput: string,
-        editor: Editor,
-        _intentDetector: IntentDetector,
-        codebaseContext: CodebaseContext
-    ): Promise<Interaction | null> {
-        const selection = editor.getActiveTextEditorSelection()
+    public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             return Promise.resolve(null)
         }

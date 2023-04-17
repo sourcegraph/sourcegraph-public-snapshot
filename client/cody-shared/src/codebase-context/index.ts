@@ -25,7 +25,7 @@ export class CodebaseContext {
     }
 
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        switch (this.contextType) {
+        switch (this.config.useContext) {
             case 'blended':
                 return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
