@@ -12,6 +12,7 @@ import { getConfiguration } from './configuration'
 import { ExtensionApi } from './extension-api'
 import { CODY_ACCESS_TOKEN_SECRET, VSCodeSecretStorage } from './secret-storage'
 
+// This client can be used to execute arbitrary commands.
 let client: LanguageClient
 
 export async function sendCommandRequest(command: string, args: any[] | undefined): Promise<void> {
@@ -22,9 +23,7 @@ export async function sendCommandRequest(command: string, args: any[] | undefine
         })
 }
 
-export function activate(context: vscode.ExtensionContext): ExtensionApi {
-    console.log('Cody extension activated')
-
+function getLLMSPBinary(): string {
     const arch = process.env.npm_config_path || os.arch()
     let binaryName = 'llmsp-v1.0.0'
     switch (arch) {
@@ -48,13 +47,21 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
             break
     }
 
-    let serverOptions: ServerOptions = {
+    return binaryName
+}
+
+export async function activate(context: vscode.ExtensionContext): Promise<ExtensionApi> {
+    console.log('Cody extension activated')
+
+    const llmspBinary = getLLMSPBinary()
+
+    const serverOptions: ServerOptions = {
         run: {
-            command: path.join(context.extensionPath, 'resources', 'bin', binaryName),
+            command: path.join(context.extensionPath, 'resources', 'bin', llmspBinary),
             transport: TransportKind.stdio,
         },
         debug: {
-            command: path.join(context.extensionPath, 'resources', 'bin', binaryName),
+            command: path.join(context.extensionPath, 'resources', 'bin', llmspBinary),
             transport: TransportKind.stdio,
         },
     }
@@ -62,12 +69,10 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     PromptMixin.add(languagePromptMixin(vscode.env.language))
 
     // Options to control the language client
-    let clientOptions: LanguageClientOptions = {
-        // Register the server for plain text documents
-        documentSelector: [{ scheme: 'file', language: 'go' }],
+    const clientOptions: LanguageClientOptions = {
+        documentSelector: [{ scheme: 'file', language: 'go' }, { scheme: 'file', language: 'typescript' }], // TODO: Support more (or all) languages
         synchronize: {
-            // Notify the server about file changes to '.clientrc files contained in the workspace
-            fileEvents: vscode.workspace.createFileSystemWatcher('**/*.go'),
+            fileEvents: vscode.workspace.createFileSystemWatcher('*'),
         },
         middleware: {
             resolveCodeAction: async (item, token, next): Promise<vscode.CodeAction | null | undefined> => {
@@ -84,7 +89,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
         },
     }
 
-    // Create the language client and start the client.
+    // Create the language client.
     client = new LanguageClient('llmsp', 'LLM-powered LSP', serverOptions, clientOptions)
     const secretStorage = new VSCodeSecretStorage(context.secrets)
 
@@ -96,6 +101,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     const config = getConfiguration(vscode.workspace.getConfiguration())
     const repos = config.codebase != undefined && config.codebase != '' ? [config.codebase] : null
 
+    // Registers a command to instruct Cody to do something with the selected text.
     context.subscriptions.push(
         vscode.commands.registerCommand('cody.dostuff', async (args: any[]) => {
             const editor = vscode.window.activeTextEditor;
@@ -113,18 +119,18 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
             }
         }))
 
-    secretStorage.get(CODY_ACCESS_TOKEN_SECRET).then(res => {
-        client.sendNotification('workspace/didChangeConfiguration', {
-            settings: {
-                llmsp: {
-                    sourcegraph: {
-                        url: config.serverEndpoint,
-                        accessToken: res ?? '',
-                        repos: repos,
-                    },
+    const codyAccessToken = await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)
+
+    client.sendNotification('workspace/didChangeConfiguration', {
+        settings: {
+            llmsp: {
+                sourcegraph: {
+                    url: config.serverEndpoint,
+                    accessToken: codyAccessToken ?? '',
+                    repos: repos,
                 },
             },
-        })
+        },
     })
 
     PromptMixin.add(languagePromptMixin(vscode.env.language))
