@@ -13,6 +13,7 @@ export const recipesList = {
     'translate-to-language': 'Translate to different language',
     'git-history': 'Summarize recent code changes',
     'find-code-smells': 'Smell code',
+    fixup: 'Fixup code from inline instructions',
 }
 
 export function Recipes(): React.ReactElement {
