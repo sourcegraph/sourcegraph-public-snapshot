@@ -172,7 +172,6 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" && "${pr_number}" != "false" ]
 
   # GitHub pull request number and GitHub api token are set
   # Reusing or creating a new `App Preview` comment in the PR if it doesn't exist yet
-  github_pr_api_url="https://api.github.com/repos/${owner_and_repo}/pulls/${pr_number}"
   github_pr_comments_api_url="https://api.github.com/repos/${owner_and_repo}/issues/${pr_number}/comments"
 
   app_preview_comment_id=$(curl -sSf --request GET \
