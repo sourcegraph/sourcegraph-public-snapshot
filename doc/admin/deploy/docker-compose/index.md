@@ -1,9 +1,5 @@
 # Sourcegraph with Docker Compose
 
-> ⚠️ We recommend new users use our [machine image](../machine-images/index.md) or [script-install](../single-node/script.md) instructions, which are easier and offer more flexibility when configuring Sourcegraph. Existing customers can reach out to our Customer Engineering team support@sourcegraph.com if they wish to migrate to these deployment models.
-
----
-
 Setting up Docker applications with [multiple containers](https://www.docker.com/resources/what-container) like Sourcegraph using Docker Compose allows us to start all the applications with a single command. It also makes configuring the applications easier through updating the docker-compose.yaml and docker-compose.override.yaml files. Please see the [official Docker Compose docs](https://docs.docker.com/compose/) to learn more about Docker Compose.
 
 This guide will take you through how to install Sourcegraph with Docker Compose on a server, which could be the local machine, a server on a local network, or cloud-hosted server. You can also follow one of the available *cloud-specific guides* listed below to prepare and install Sourcegraph on a supported cloud environment:
