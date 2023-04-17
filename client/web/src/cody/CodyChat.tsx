@@ -106,6 +106,7 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                         chatInputClassName={styles.chatInput}
                         textAreaComponent={AutoResizableTextArea}
                         codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
+                        transcriptActionClassName={styles.transcriptAction}
                     />
                 )}
             </div>

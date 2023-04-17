@@ -1,12 +1,18 @@
 .container {
     font-size: 0.9rem;
-    flex-grow: 1;
+    flex: 1;
+    height: auto !important;
+    min-height: 0.1rem;
 }
 
 .transcript-item {
     background: linear-gradient(var(--input-bg), var(--input-bg)) padding-box,
         linear-gradient(130deg, #00cbec, #a112ff) border-box;
     border-color: transparent;
+}
+
+.transcript-action > ol {
+    padding: 0;
 }
 
 .human-transcript-item {
@@ -35,7 +41,7 @@
 
 .transcript-item ul,
 .transcript-item ol {
-    padding-left: 1rem;
+    padding-left: 2rem;
 }
 
 .main-wrapper {
@@ -111,7 +117,8 @@
 
 .submit-button {
     right: 0.6rem !important;
-    bottom: 0.1rem !important;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    bottom: 1px !important;
     color: var(--body-color) !important;
 }
 
