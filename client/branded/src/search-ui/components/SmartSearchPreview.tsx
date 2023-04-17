@@ -71,7 +71,7 @@ export const SmartSearchPreview: React.FunctionComponent<SmartSearchPreviewProps
         return
     }, [results])
 
-    if (results?.state === 'complete' && !results?.alert?.proposedQueries) {
+    if (results?.state === 'complete' && (!results?.alert?.proposedQueries || resultNumber === 0)) {
         return null
     }
 
