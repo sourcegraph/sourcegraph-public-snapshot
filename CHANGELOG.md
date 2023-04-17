@@ -52,7 +52,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Code Insights that are run over zero repositories will finish processing and show `"No data to display"`. #[50561](https://github.com/sourcegraph/sourcegraph/pull/50561)
 
 ### Removed
 
