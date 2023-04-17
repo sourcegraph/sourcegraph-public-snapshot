@@ -23,7 +23,7 @@ export const CodyRecipesWidget = ({ selection }: CodyRecipesWidgetProps): JSX.El
 
     // Super hacky way to post a message.
     // TODO: Integrate with recipes components and format recipes from there.
-    const submit = () => {
+    const submit = (): void => {
         onSubmit('Explain the following code at a high level:\n```\n' + selectedCode + '\n```\n')
     }
 
