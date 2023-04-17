@@ -142,7 +142,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// 	testBuilds := operations.NewNamedSet("Test builds")
 		// 	scanBuilds := operations.NewNamedSet("Scan test builds")
 		// 	for _, image := range images.SourcegraphDockerImages {
-		// 		testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag(), false))
+		// 		testBuilds.Append(bazelBuildCandidateDockerImage(image, c.Version, c.candidateImageTag(), false))
 		// 		scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
 		// 	}
 		// 	ops.Merge(testBuilds)
@@ -157,7 +157,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.BackendIntegrationTests:
 		ops.Append(
-			buildCandidateDockerImage("server", c.Version, c.candidateImageTag(), false),
+			bazelBuildCandidateDockerImages([]string{"server"}, c.Version, c.candidateImageTag(), false),
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// always include very backend-oriented changes in this set of tests
@@ -230,7 +230,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
+			bazelBuildCandidateDockerImages([]string{patchImage}, c.Version, c.candidateImageTag(), false),
 			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
@@ -251,7 +251,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
+			bazelBuildCandidateDockerImages([]string{patchImage}, c.Version, c.candidateImageTag(), false),
 			wait,
 			publishFinalDockerImage(c, patchImage))
 
@@ -259,7 +259,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		imageBuildOps := operations.NewNamedSet("Image builds")
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			imageBuildOps.Append(
-				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), false))
+				bazelBuildCandidateDockerImages([]string{dockerImage}, c.Version, c.candidateImageTag(), false))
 		}
 		ops.Merge(imageBuildOps)
 
@@ -274,7 +274,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
-			buildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), false),
+			bazelBuildCandidateDockerImages([]string{"executorVMImage"}, c.Version, c.candidateImageTag(), false),
 			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
 			buildExecutorVM(c, true),
 			buildExecutorDockerMirror(c),
