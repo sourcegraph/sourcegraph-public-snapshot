@@ -7,33 +7,54 @@ import { Badge } from '@sourcegraph/wildcard'
 
 import styles from './RepoMetadata.module.scss'
 
-export const RepoMetadata: React.FunctionComponent<{
+interface RepoMetadataItemProps {
+    metadataKey: string
+    metadataValue: string | null | undefined
+    small?: boolean
+}
+
+const RepoMetadataItem: React.FunctionComponent<RepoMetadataItemProps> = ({ metadataKey, metadataValue, small }) => (
+    <div className="d-flex align-items-stretch justify-content-center">
+        <Badge
+            as="dt"
+            small={small}
+            variant="info"
+            aria-label={`Repository metadata key "${metadataKey}"`}
+            className={classNames('m-0', { [styles.roundedRightNone]: metadataValue })}
+        >
+            {metadataKey}
+        </Badge>
+        <Badge
+            as="dd"
+            small={small}
+            variant="secondary"
+            aria-label={`Repository metadata value "${metadataValue}" for key=${metadataKey}`}
+            aria-hidden={!metadataValue}
+            className={classNames(styles.roundedLeftNone, 'm-0', {
+                ['d-none']: !metadataValue,
+            })}
+        >
+            {metadataValue}
+        </Badge>
+    </div>
+)
+
+interface RepoMetadataProps {
     keyValuePairs: [string, string | null | undefined][]
     className?: string
     small?: boolean
-}> = props => {
-    const sortedPairs = useMemo(() => sortBy(props.keyValuePairs), [props.keyValuePairs])
+}
+
+export const RepoMetadata: React.FunctionComponent<RepoMetadataProps> = ({ keyValuePairs, small, className }) => {
+    const sortedPairs = useMemo(() => sortBy(keyValuePairs), [keyValuePairs])
     if (sortedPairs.length === 0) {
         return null
     }
     return (
-        <div className={classNames(styles.repoMetadata, props.className, 'd-flex align-items-center flex-wrap')}>
+        <dl className={classNames(styles.repoMetadata, 'd-flex align-items-start flex-wrap m-0', className)}>
             {sortedPairs.map(([key, value]) => (
-                <span className="d-flex align-items-center justify-content-center" key={`${key}:${value}`}>
-                    <Badge
-                        small={props.small}
-                        variant="info"
-                        className={classNames({ [styles.repoMetadataKey]: value })}
-                    >
-                        {key}
-                    </Badge>
-                    {value && (
-                        <Badge small={props.small} variant="secondary" className={styles.repoMetadataValue}>
-                            {value}
-                        </Badge>
-                    )}
-                </span>
+                <RepoMetadataItem key={`${key}:${value}`} metadataKey={key} metadataValue={value} small={small} />
             ))}
-        </div>
+        </dl>
     )
 }
