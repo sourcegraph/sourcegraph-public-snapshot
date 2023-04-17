@@ -103,7 +103,7 @@
       },
       {
         "command": "cody.recipe.fixup",
-        "title": "Ask Cody: Fixup Code from Inline Instructions"
+        "title": "Cody: Fixup"
       },
       {
         "command": "cody.set-access-token",
@@ -203,6 +203,9 @@
         },
         {
           "command": "cody.recipe.translate-to-language"
+        },
+        {
+          "command": "cody.recipe.fixup"
         }
       ]
     },
