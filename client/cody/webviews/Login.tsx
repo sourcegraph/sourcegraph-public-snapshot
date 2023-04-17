@@ -81,7 +81,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 <span>Connect Cody to sourcegraph.com in browser.</span>
                 <p className={styles.input}>
                     <a href="https://docs.google.com/forms/d/e/1FAIpQLScSI06yGMls-V1FALvFyURi8U9bKRTSKPworBhzZEHDQvo0HQ/viewform">
-                        Click here to request access.
+                        Fill out this form to request access.
                     </a>
                 </p>
                 <a href="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY">
