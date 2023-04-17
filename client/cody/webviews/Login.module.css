@@ -2,6 +2,13 @@
     padding: 1rem;
 }
 
+.wrapper {
+    color: var(--vscode-editor-foreground);
+    padding: 0.5rem;
+    background-color: var(--vscode-editor-background);
+    margin-bottom: 1rem;
+}
+
 .label {
     font-weight: bold;
 }
@@ -14,10 +21,6 @@
 .button {
     justify-content: center;
     width: 100%;
-
-    /* @vscode/webview-ui sets a 300px max-width. If we exceed that, the button will display a
-    glitchy-looking internal border. */
-    max-width: 300px;
 }
 
 .error {
@@ -29,4 +32,16 @@
 
 .terms {
     font-size: 85%;
+}
+
+.input-label {
+    display: flex;
+    color: var(--vscode-editor-foreground);
+    font-size: var(--vscode-editor-font-size);
+    justify-content: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.input-label i {
+    margin-right: 0.2rem;
 }

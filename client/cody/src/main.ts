@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
-import { ChatViewProvider } from './chat/ChatViewProvider'
+import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
 import { LocalStorage } from './command/LocalStorageProvider'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
@@ -105,7 +105,6 @@ const register = async (
             webviewOptions: { retainContextWhenHidden: true },
         })
     )
-    await vscode.commands.executeCommand('setContext', 'cody.activated', true)
     disposables.push({ dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) })
 
     const executeRecipe = async (recipe: string): Promise<void> => {
@@ -113,11 +112,38 @@ const register = async (
         await chatProvider.executeRecipe(recipe)
     }
 
+    const workspaceConfig = vscode.workspace.getConfiguration()
+    const config = getConfiguration(workspaceConfig)
+
     disposables.push(
+        // Register URI Handler to resolve token sending back from sourcegraph.com
+        vscode.window.registerUriHandler({
+            handleUri: async (uri: vscode.Uri) => {
+                await workspaceConfig.update(
+                    'cody.serverEndpoint',
+                    'https://sourcegraph.com',
+                    vscode.ConfigurationTarget.Global
+                )
+                const token = new URLSearchParams(uri.query).get('code')
+                if (token && token.length > 8) {
+                    await context.secrets.store(CODY_ACCESS_TOKEN_SECRET, token)
+                    const isAuthed = await isValidLogin({
+                        serverEndpoint: 'https://sourcegraph.com',
+                        accessToken: token,
+                        customHeaders: config.customHeaders,
+                    })
+                    await chatProvider.sendLogin(isAuthed)
+                    logEvent(
+                        'CodyVSCodeExtension:codySetAccessToken:clicked',
+                        { serverEndpoint: config.serverEndpoint },
+                        { serverEndpoint: config.serverEndpoint }
+                    )
+                    void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
+                }
+            },
+        }),
         // Toggle Chat
         vscode.commands.registerCommand('cody.toggle-enabled', async () => {
-            const workspaceConfig = vscode.workspace.getConfiguration()
-
             await workspaceConfig.update(
                 'cody.enabled',
                 !workspaceConfig.get('cody.enabled'),
@@ -146,6 +172,8 @@ const register = async (
             localStorage.get('cody.tos-version-accepted')
         ),
         // Commands
+        vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
+        vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
             executeRecipe('explain-code-high-level')
