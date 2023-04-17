@@ -3,9 +3,9 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "assets",
     srcs = [
-        "assets_dev.go",
+        "assets.go",
+        "dev.go",
         "doc.go",
-        "load_manifest_dev.go",
         "manifest.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/ui/assets",

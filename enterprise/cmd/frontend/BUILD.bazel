@@ -8,6 +8,8 @@ go_library(
     deps = [
         "//enterprise/cmd/frontend/shared",
         "//enterprise/cmd/sourcegraph/enterprisecmd",
+        "//ui/assets",
+        "//ui/assets/enterprise",
     ],
 )
 
