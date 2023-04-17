@@ -535,6 +535,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             queryState={queryState}
                             setQueryState={setQueryState}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                            searchMode={searchMode}
                             setSearchMode={setSearchMode}
                             submitSearch={submitSearch}
                             caseSensitive={caseSensitive}
