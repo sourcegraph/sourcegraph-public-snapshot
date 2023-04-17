@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 
 import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
@@ -46,7 +46,7 @@ export const SmartSearchPreview: React.FunctionComponent<SmartSearchPreviewProps
         )
     )
 
-    useEffect(() => {
+    useMemo(() => {
         if (results?.alert?.proposedQueries) {
             const resultNum: number = results.alert.proposedQueries.reduce(
                 (acc: number, proposedQuery: ProposedQuery): number => {
