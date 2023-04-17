@@ -2,6 +2,7 @@ import http from 'http'
 import https from 'https'
 
 import { isError } from '../../utils'
+import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
@@ -79,22 +80,29 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 rejectUnauthorized: !this.config.debug,
             },
             (res: http.IncomingMessage) => {
-                let buffer = ''
+                // Bytes which have not been decoded as UTF-8 text
+                let bufferBin = Buffer.of()
+                // Text which has not been decoded as a server-sent event (SSE)
+                let bufferText = ''
 
                 res.on('data', chunk => {
                     if (!(chunk instanceof Buffer)) {
                         throw new TypeError('expected chunk to be a Buffer')
                     }
-                    buffer += chunk.toString()
+                    // text/event-stream messages are always UTF-8, but a chunk
+                    // may terminate in the middle of a character
+                    const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
+                    bufferText += str
+                    bufferBin = buf
 
-                    const parseResult = parseEvents(buffer)
+                    const parseResult = parseEvents(bufferText)
                     if (isError(parseResult)) {
                         console.error(parseResult)
                         return
                     }
 
                     this.sendEvents(parseResult.events, cb)
-                    buffer = parseResult.remainingBuffer
+                    bufferText = parseResult.remainingBuffer
                 })
 
                 res.on('error', e => cb.onError(e.message))
