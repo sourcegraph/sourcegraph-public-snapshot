@@ -255,7 +255,9 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 // It requires Config as an argument because published images require a lot of metadata.
 func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		var cmds []string
+		cmds := []bk.StepOpt{}
+		cmds = append(cmds, bk.Agent("queue", "bazel"))
+
 		for _, app := range apps {
 
 			devImage := images.DevRegistryImage(app, "")
@@ -292,11 +294,11 @@ func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation 
 			}
 
 			candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
-			cmds = append(cmds, fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " ")))
+			cmds = append(cmds, bk.RawCmd(fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " "))))
 		}
-		pipeline.AddStep(fmt.Sprintf(":docker: :truck: %s", cmds),
-			// This step just pulls a prebuild image and pushes it to some registries. The
-			// only possible failure here is a registry flake, so we retry a few times.
-			bk.AutomaticRetry(3))
+		pipeline.AddStep(":docker: :truck: Publish images", cmds...)
+		// This step just pulls a prebuild image and pushes it to some registries. The
+		// only possible failure here is a registry flake, so we retry a few times.
+		bk.AutomaticRetry(3)
 	}
 }
