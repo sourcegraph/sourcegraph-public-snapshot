@@ -14,6 +14,7 @@ pub fn get_globals<'a>(
     source_bytes: &'a [u8],
 ) -> Option<Result<(globals::Scope, usize)>> {
     let mut config = languages::get_tag_configuration(parser)?;
+    config.parser.reset();
     let tree = config.parser.parse(source_bytes, None).unwrap();
     Some(globals::parse_tree(&mut config, &tree, source_bytes))
 }

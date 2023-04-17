@@ -1,3 +1,4 @@
+use once_cell::sync::OnceCell;
 use scip_macros::include_scip_query;
 use scip_treesitter_languages::parsers::BundledParser;
 use tree_sitter::{Language, Parser, Query};
@@ -8,31 +9,63 @@ pub struct TagConfiguration {
     pub parser: Parser,
 }
 
-pub fn rust() -> TagConfiguration {
+pub fn rust() -> &'static mut TagConfiguration {
+    static mut INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
+
     let language = BundledParser::Rust.get_language();
     let query = include_scip_query!("rust", "scip-tags");
 
     let mut parser = Parser::new();
     parser.set_language(language).unwrap();
 
-    TagConfiguration {
-        language,
-        parser,
-        query: Query::new(language, query).unwrap(),
+    unsafe {
+        INSTANCE.get_or_init(|| TagConfiguration {
+            language,
+            parser,
+            query: Query::new(language, query).unwrap(),
+        });
+
+        INSTANCE.get_mut().unwrap()
     }
 }
 
-pub fn go() -> TagConfiguration {
+pub fn go() -> &'static mut TagConfiguration {
+    static mut INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
+
     let language = BundledParser::Go.get_language();
     let query = include_scip_query!("go", "scip-tags");
 
     let mut parser = Parser::new();
     parser.set_language(language).unwrap();
 
-    TagConfiguration {
-        language,
-        parser,
-        query: Query::new(language, query).unwrap(),
+    unsafe {
+        INSTANCE.get_or_init(|| TagConfiguration {
+            language,
+            parser,
+            query: Query::new(language, query).unwrap(),
+        });
+
+        INSTANCE.get_mut().unwrap()
+    }
+}
+
+pub fn zig() -> &'static mut TagConfiguration {
+    static mut INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
+
+    let language = BundledParser::Zig.get_language();
+    let query = include_scip_query!("zig", "scip-tags");
+
+    let mut parser = Parser::new();
+    parser.set_language(language).unwrap();
+
+    unsafe {
+        INSTANCE.get_or_init(|| TagConfiguration {
+            language,
+            parser,
+            query: Query::new(language, query).unwrap(),
+        });
+
+        INSTANCE.get_mut().unwrap()
     }
 }
 
@@ -70,10 +103,11 @@ fn perl_locals() -> LocalConfiguration {
     }
 }
 
-pub fn get_tag_configuration(parser: BundledParser) -> Option<TagConfiguration> {
+pub fn get_tag_configuration(parser: BundledParser) -> Option<&'static mut TagConfiguration> {
     match parser {
         BundledParser::Rust => Some(rust()),
         BundledParser::Go => Some(go()),
+        BundledParser::Zig => Some(zig()),
         _ => None,
     }
 }

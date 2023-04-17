@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::io::{stdout, BufWriter, Read, Stdout, Write};
 use std::{io, path};
 
 use protobuf::EnumOrUnknown;
@@ -28,22 +28,34 @@ fn main() {
             break;
         }
 
+        let mut buf_writer = BufWriter::new(stdout());
+
         let request = serde_json::from_str::<Request>(&line).unwrap();
         match request {
-            Request::GenerateTags { filename, size } => generate_tags(filename, size),
+            Request::GenerateTags { filename, size } => {
+                generate_tags(&mut buf_writer, filename, size)
+            }
         }
 
-        println!(
-            "{}\n",
-            serde_json::to_string(&Reply::Completed {
+        write_to_buf_writer(
+            &mut buf_writer,
+            &Reply::Completed {
                 command: "generate-tags".to_string(),
-            })
-            .unwrap()
+            },
         );
+
+        buf_writer.flush().unwrap();
     }
 }
 
-fn generate_tags(filename: String, size: usize) {
+fn write_to_buf_writer<T: serde::ser::Serialize>(buf_writer: &mut BufWriter<Stdout>, val: &T) {
+    buf_writer
+        .write_all(serde_json::to_string(val).unwrap().as_bytes())
+        .unwrap();
+    buf_writer.write_all("\n".as_bytes()).unwrap();
+}
+
+fn generate_tags(buf_writer: &mut BufWriter<Stdout>, filename: String, size: usize) {
     let mut file_data = vec![0; size];
     io::stdin()
         .read_exact(&mut file_data)
@@ -67,6 +79,7 @@ fn generate_tags(filename: String, size: usize) {
     };
 
     emit_tags_for_scope(
+        buf_writer,
         path.file_name().unwrap().to_str().unwrap(),
         None,
         &root_scope,
@@ -85,7 +98,12 @@ fn suffix_to_string(suffix: EnumOrUnknown<Suffix>) -> String {
     .to_string();
 }
 
-fn emit_tags_for_scope(path: &str, parent_scope_name: Option<String>, scope: &Scope) {
+fn emit_tags_for_scope(
+    buf_writer: &mut BufWriter<Stdout>,
+    path: &str,
+    parent_scope_name: Option<String>,
+    scope: &Scope,
+) {
     let curr_scope_name = {
         let mut curr_scope_name = parent_scope_name.clone().unwrap_or("".to_string());
         for desc in &scope.descriptors {
@@ -103,9 +121,9 @@ fn emit_tags_for_scope(path: &str, parent_scope_name: Option<String>, scope: &Sc
     };
 
     for descriptor in &scope.descriptors {
-        println!(
-            "{}\n",
-            serde_json::to_string(&Reply::Tag {
+        write_to_buf_writer(
+            buf_writer,
+            &Reply::Tag {
                 name: descriptor.name.clone(),
                 path: path.to_string(),
                 // TODO(SuperAuguste): Set to correct language (does this even matter?)
@@ -116,20 +134,19 @@ fn emit_tags_for_scope(path: &str, parent_scope_name: Option<String>, scope: &Sc
                 scope: parent_scope_name.clone(),
                 scope_kind: Option::None,
                 signature: Option::None,
-            })
-            .unwrap()
+            },
         );
     }
 
     for subscope in &scope.children {
-        emit_tags_for_scope(path, curr_scope_name.clone(), &subscope);
+        emit_tags_for_scope(buf_writer, path, curr_scope_name.clone(), &subscope);
     }
 
     for global in &scope.globals {
         for descriptor in &global.descriptors {
-            println!(
-                "{}\n",
-                serde_json::to_string(&Reply::Tag {
+            write_to_buf_writer(
+                buf_writer,
+                &Reply::Tag {
                     name: descriptor.name.clone(),
                     path: path.to_string(),
                     // TODO(SuperAuguste): Set to correct language (does this even matter?)
@@ -140,8 +157,7 @@ fn emit_tags_for_scope(path: &str, parent_scope_name: Option<String>, scope: &Sc
                     scope: curr_scope_name.clone(),
                     scope_kind: Option::None,
                     signature: Option::None,
-                })
-                .unwrap()
+                },
             );
         }
     }

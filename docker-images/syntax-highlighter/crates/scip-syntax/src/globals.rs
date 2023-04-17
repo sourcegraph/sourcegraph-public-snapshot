@@ -127,7 +127,9 @@ pub fn parse_tree<'a>(
     let mut scopes = vec![];
     let mut globals = vec![];
 
-    for m in cursor.matches(&config.query, root_node, source_bytes) {
+    let matches = cursor.matches(&config.query, root_node, source_bytes);
+
+    for m in matches {
         // eprintln!("\n==== NEW MATCH ====");
 
         let mut node = None;

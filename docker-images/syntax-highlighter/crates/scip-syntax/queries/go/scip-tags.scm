@@ -20,3 +20,4 @@
 (field_declaration_list (field_declaration name: (_) @descriptor.term))
 
 (const_spec name: (_) @descriptor.term)
+(import_spec name: (_) @descriptor.term)
