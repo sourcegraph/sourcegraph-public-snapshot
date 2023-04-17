@@ -50,11 +50,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     // Allows recipes to hook up subscribers to process sub-streams of bot output
     private multiplexer: BotResponseMultiplexer = new BotResponseMultiplexer()
-    serverEndpoint: string
 
     constructor(
         private extensionPath: string,
         private codebase: string,
+        // eslint-disable-next-line no-unused-vars property is used onConfigChange
+        private serverEndpoint: string,
         private transcript: Transcript,
         private chat: ChatClient,
         private intentDetector: IntentDetector,
@@ -77,6 +78,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     public static create(
         extensionPath: string,
         codebase: string,
+        serverEndpoint: string,
         contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
         secretStorage: SecretStorage,
         localStorage: LocalStorage,
@@ -91,6 +93,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         return new ChatViewProvider(
             extensionPath,
             codebase,
+            serverEndpoint,
             new Transcript(),
             chatClient,
             intentDetector,
