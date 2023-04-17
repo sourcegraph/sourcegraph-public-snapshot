@@ -31,6 +31,24 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 5.0.2
+
+### Added
+
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
 ## 5.0.1
 
 ### Added
