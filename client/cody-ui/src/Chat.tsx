@@ -98,7 +98,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     const onChatSubmit = useCallback((): void => {
         // Submit chat only when input is not empty
-        if (formInput !== undefined) {
+        if (formInput.trim()) {
             onSubmit(formInput)
             setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, formInput])
