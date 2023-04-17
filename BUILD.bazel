@@ -223,7 +223,7 @@ nogo(
         "//dev/linters/forbidigo",
         "//dev/linters/gocritic",
         "//dev/linters/ineffassign",
-        "//dev/linters/unparam"
+        "//dev/linters/unparam",
     ] + STATIC_CHECK_ANALYZERS,
 )
 
