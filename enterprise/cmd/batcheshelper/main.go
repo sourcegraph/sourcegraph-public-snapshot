@@ -20,7 +20,8 @@ import (
 func main() {
 	if err := doMain(); err != nil {
 		if errors.Is(err, run.ErrStepSkipped) {
-			os.Exit(125)
+			// Not really an error.
+			os.Exit(0)
 		}
 		fmt.Fprintf(os.Stderr, err.Error())
 		os.Exit(1)
