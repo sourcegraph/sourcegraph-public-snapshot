@@ -377,7 +377,17 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                             {...repoHeaderContributionsLifecycleProps}
                         >
                             {() =>
-                                !isCodySidebarOpen ? <AskCodyButton onClick={() => setCodySidebarOpen(true)} /> : null
+                                !isCodySidebarOpen ? (
+                                    <AskCodyButton
+                                        onClick={() => {
+                                            props.telemetryService.log('web:codySidebar:chatOpened', {
+                                                repo,
+                                                path: filePath,
+                                            })
+                                            setCodySidebarOpen(true)
+                                        }}
+                                    />
+                                ) : null
                             }
                         </RepoHeaderContributionPortal>
                     ) : null}
