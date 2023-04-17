@@ -37,7 +37,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     emailEnabled: false,
     experimentalFeatures: {},
     isAuthenticatedUser: true,
-    likelyDockerOnMac: false,
     needServerRestart: false,
     needsSiteInit: false,
     needsRepositoryConfiguration: false,
