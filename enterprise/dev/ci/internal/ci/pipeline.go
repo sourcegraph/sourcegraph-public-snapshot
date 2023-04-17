@@ -239,7 +239,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Publish images after everything is done
 		ops.Append(
 			wait,
-			publishFinalDockerImage(c, patchImage))
+			bazelPublishFinalDockerImage(c, []string{patchImage}))
 
 	case runtype.ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
@@ -253,22 +253,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet(
 			bazelBuildCandidateDockerImages([]string{patchImage}, c.Version, c.candidateImageTag(), false),
 			wait,
-			publishFinalDockerImage(c, patchImage))
+			bazelPublishFinalDockerImage(c, []string{patchImage}))
 
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageBuildOps.Append(
-				bazelBuildCandidateDockerImages([]string{dockerImage}, c.Version, c.candidateImageTag(), false))
-		}
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), false))
 		ops.Merge(imageBuildOps)
 
 		ops.Append(wait)
 
 		publishOps := operations.NewNamedSet("Publish images")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			publishOps.Append(publishFinalDockerImage(c, dockerImage))
-		}
+		publishOps.Append(bazelPublishFinalDockerImage(c, images.SourcegraphDockerImages))
+
 		ops.Merge(publishOps)
 
 	case runtype.ExecutorPatchNoTest:
@@ -280,7 +276,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildExecutorDockerMirror(c),
 			buildExecutorBinary(c),
 			wait,
-			publishFinalDockerImage(c, executorVMImage),
+			bazelPublishFinalDockerImage(c, []string{executorVMImage}),
 			publishExecutorVM(c, true),
 			publishExecutorDockerMirror(c),
 			publishExecutorBinary(c),
@@ -353,9 +349,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			publishOps.Append(bazelPublishFinalDockerImage(c, dockerImage))
-		}
+		publishOps.Append(bazelPublishFinalDockerImage(c, images.SourcegraphDockerImages))
 		// Executor VM image
 		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
 			publishOps.Append(publishExecutorVM(c, skipHashCompare))
