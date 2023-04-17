@@ -8,10 +8,10 @@ The login form allows users to sign in to Sourcegraph using [configured auth pro
 
 <span class="badge badge-note">Sourcegraph 5.1+</span>
 
-All of the below options do not apply to [`builtin`](./index.md#builtin-password-authentication) and 
-[`http-header`](./index.md#http-authentication-proxies) auth providers. Builtin auth provider has a specific 
-login form by itself. Sourcegraph does not show the http header auth provider option on the login 
-form since it is being implicitly applied on every request if configured.
+These options do not apply to [`builtin`](./index.md#builtin-password-authentication) and 
+[`http-header`](./index.md#http-authentication-proxies) auth providers.
+- The builtin auth provider has its own login form.
+- The HTTP header auth provider does not appear on the login form as it is applied on every request if configured.
 
 ### Change order of auth providers
 
