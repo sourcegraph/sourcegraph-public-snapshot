@@ -65,7 +65,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
             <BrandLogo className={styles.logo} isLightTheme={isLightTheme} variant="logo" />
-            <p>Hello world!</p>
+            <p>Hello world v2!</p>
             {isSourcegraphDotCom && (
                 <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">
                     Searching millions of public repositories
