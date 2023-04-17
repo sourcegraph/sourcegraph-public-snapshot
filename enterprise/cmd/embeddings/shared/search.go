@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,6 +27,10 @@ func searchRepoEmbeddingIndex(
 	getQueryEmbedding getQueryEmbeddingFn,
 	debug bool,
 ) (*embeddings.EmbeddingSearchResults, error) {
+	if featureflag.FromContext(ctx).GetBoolOr("search-weaviate", false) {
+		return search(ctx, params, logger)
+	}
+
 	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting repo embedding index")

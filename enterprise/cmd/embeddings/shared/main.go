@@ -137,33 +137,6 @@ func NewHandler(
 			return
 		}
 
-		var searchOpts embeddings.EmbeddingsSearchParameters
-		err := json.NewDecoder(r.Body).Decode(&searchOpts)
-		if err != nil {
-			http.Error(w, "could not parse request body", http.StatusBadRequest)
-			return
-		}
-
-		srs, err := search(r.Context(), searchOpts, logger)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		err = json.NewEncoder(w).Encode(srs)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	})
-
-	mux.HandleFunc("/search_old", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
-			return
-		}
-
 		var args embeddings.EmbeddingsSearchParameters
 		err := json.NewDecoder(r.Body).Decode(&args)
 		if err != nil {
