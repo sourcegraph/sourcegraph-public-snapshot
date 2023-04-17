@@ -17,7 +17,6 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { version as packageVersion } from '../../package.json'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { updateConfiguration } from '../configuration'
 import { logEvent } from '../event-logger'
@@ -43,8 +42,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private webview?: Omit<vscode.Webview, 'postMessage'> & {
         postMessage(message: ExtensionMessage): Thenable<boolean>
     }
-
-    private tosVersion = packageVersion
 
     private currentChatID = ''
     private inputHistory: string[] = []
@@ -94,9 +91,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'executeRecipe':
                 await this.executeRecipe(message.recipe)
                 break
-            case 'acceptTOS':
-                await this.acceptTOS(message.version)
-                break
             case 'settings': {
                 const isValid = await isValidLogin(message.serverEndpoint, message.accessToken, this.customHeaders)
                 if (isValid) {
@@ -144,16 +138,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             default:
                 console.error('Invalid request type from Webview')
         }
-    }
-
-    private async acceptTOS(version: string): Promise<void> {
-        this.tosVersion = version
-        await vscode.commands.executeCommand('cody.accept-tos', version)
-        logEvent(
-            'CodyVSCodeExtension:acceptTerms:clicked',
-            { serverEndpoint: this.serverEndpoint },
-            { serverEndpoint: this.serverEndpoint }
-        )
     }
 
     private createNewChatID(): void {
@@ -340,10 +324,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const resources = webviewView.webview.asWebviewUri(webviewPath)
         const nonce = this.getNonce()
 
-        webviewView.webview.html = decoded
-            .replaceAll('./', `${resources.toString()}/`)
-            .replace('/nonce/', nonce)
-            .replace('/tos-version/', this.tosVersion.toString())
+        webviewView.webview.html = decoded.replaceAll('./', `${resources.toString()}/`).replace('/nonce/', nonce)
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
     }
 
