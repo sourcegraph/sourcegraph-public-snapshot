@@ -28,7 +28,7 @@
   },
   "scripts": {
     "build": "pnpm esbuild --minify && vite build --mode production",
-    "build:dev": "pnpm esbuild --sourcemap && vite build --mode development",
+    "build:dev": "concurrently \"pnpm esbuild --sourcemap\" \"vite build --mode development\"",
     "download-rg": "scripts/download-rg.sh",
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
