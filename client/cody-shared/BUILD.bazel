@@ -66,6 +66,9 @@ ts_project(
         "src/telemetry/EventLogger.ts",
         "src/timestamp.ts",
         "src/utils.ts",
+
+    # gazelle:js_ignore_imports vscode
+        "src/telemetry/EventLogger.ts"
     ],
     tsconfig = ":tsconfig",
     # TODO(bazel): "#keep"s required for type-only imports
