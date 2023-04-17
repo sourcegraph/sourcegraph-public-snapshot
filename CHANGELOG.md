@@ -52,6 +52,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - For Cody, explicitly detect some cases where context is needed to avoid failed responses. [#50541](https://github.com/sourcegraph/sourcegraph/pull/50541)
+- Code Insights that are run over zero repositories will finish processing and show `"No data to display"`. #[50561](https://github.com/sourcegraph/sourcegraph/pull/50561)
 
 ### Removed
 
