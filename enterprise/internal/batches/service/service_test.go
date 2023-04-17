@@ -61,23 +61,30 @@ func TestServicePermissionLevels(t *testing.T) {
 	createTestData := func(t *testing.T, s *store.Store, author, orgNamespace int32) (batchChange *btypes.BatchChange, changeset *btypes.Changeset, spec *btypes.BatchSpec) {
 		if orgNamespace == 0 {
 			spec = testBatchSpec(author)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
 			batchChange = testBatchChange(author, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
 			changeset = testChangeset(repo.ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
+			if err := s.CreateChangeset(ctx, changeset); err != nil {
+				t.Fatal(err)
+			}
 		} else {
 			spec = testOrgBatchSpec(author, orgNamespace)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
 			batchChange = testOrgBatchChange(author, orgNamespace, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
 			changeset = testChangeset(repo.ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
-
-		}
-
-		if err := s.CreateBatchSpec(ctx, spec); err != nil {
-			t.Fatal(err)
-		}
-		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
-			t.Fatal(err)
-		}
-		if err := s.CreateChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
+			if err := s.CreateChangeset(ctx, changeset); err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		return batchChange, changeset, spec
@@ -3280,6 +3287,14 @@ func assertOrgAuthError(t *testing.T, err error) {
 
 	if !errors.Is(err, auth.ErrNotAnOrgMember) {
 		t.Fatalf("expected org authorization error, got %s", err.Error())
+	}
+}
+
+func assertNoOrgAuthError(t *testing.T, err error) {
+	t.Helper()
+
+	if errors.HasType(err, auth.ErrNotAnOrgMember) {
+		t.Fatal("got org authorization error")
 	}
 }
 
