@@ -50,6 +50,10 @@
 
 - [How to deploy a new executor image](deploy_executor_image.md)
 
+## Access Control
+
+- [Adding a new permission](add_permission.md)
+
 ## Windows support
 
 Running Sourcegraph on Windows is not actively tested, but should be possible within the Windows Subsystem for Linux (WSL).
