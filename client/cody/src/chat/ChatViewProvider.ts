@@ -54,7 +54,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     constructor(
         private extensionPath: string,
         private codebase: string,
-        // eslint-disable-next-line no-unused-vars property is used onConfigChange
+        // eslint-disable-next-line
         private serverEndpoint: string,
         private transcript: Transcript,
         private chat: ChatClient,
