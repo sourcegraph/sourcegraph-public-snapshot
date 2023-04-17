@@ -75,4 +75,30 @@ impl BundledParser {
             _ => None,
         }
     }
+
+    // TODO(SuperAuguste): language detection library
+    pub fn get_parser_from_extension(name: &str) -> Option<Self> {
+        match name {
+            "c" => Some(BundledParser::C),
+            "cpp" => Some(BundledParser::Cpp),
+            "cs" => Some(BundledParser::C_Sharp),
+            "go" => Some(BundledParser::Go),
+            "java" => Some(BundledParser::Java),
+            "js" => Some(BundledParser::Javascript),
+            "jsonnet" => Some(BundledParser::Jsonnet),
+            "ncl" => Some(BundledParser::Nickel),
+            "pl" => Some(BundledParser::Perl),
+            "pod" => Some(BundledParser::Pod),
+            "py" => Some(BundledParser::Python),
+            "rb" => Some(BundledParser::Ruby),
+            "rs" => Some(BundledParser::Rust),
+            "scala" => Some(BundledParser::Scala),
+            "sql" => Some(BundledParser::Sql),
+            "ts" => Some(BundledParser::Typescript),
+            "tsx" => Some(BundledParser::Tsx),
+            "xlsg" => Some(BundledParser::Xlsg),
+            "zig" => Some(BundledParser::Zig),
+            _ => None,
+        }
+    }
 }
