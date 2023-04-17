@@ -10,10 +10,10 @@ import { CompletionParameters, CompletionCallbacks, CodeCompletionParameters, Co
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     public async complete(params: CodeCompletionParameters): Promise<CodeCompletionResponse> {
         const requestFn = this.codeCompletionsEndpoint.startsWith('https://') ? https.request : http.request
-        const headersInstance = new Headers(this.customHeaders as HeadersInit)
+        const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
         headersInstance.set('Content-Type', 'application/json')
-        if (this.accessToken) {
-            headersInstance.set('Authorization', `token ${this.accessToken}`)
+        if (this.config.accessToken) {
+            headersInstance.set('Authorization', `token ${this.config.accessToken}`)
         }
         const completion = await new Promise<CodeCompletionResponse>((resolve, reject) => {
             const req = requestFn(
@@ -22,7 +22,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     method: 'POST',
                     headers: Object.fromEntries(headersInstance.entries()),
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                    rejectUnauthorized: this.mode === 'production',
+                    rejectUnauthorized: !this.config.debug,
                 },
                 (res: http.IncomingMessage) => {
                     let buffer = ''
@@ -72,11 +72,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(this.accessToken ? { Authorization: `token ${this.accessToken}` } : null),
-                    ...this.customHeaders,
+                    ...(this.config.accessToken ? { Authorization: `token ${this.config.accessToken}` } : null),
+                    ...this.config.customHeaders,
                 },
                 // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                rejectUnauthorized: this.mode === 'production',
+                rejectUnauthorized: !this.config.debug,
             },
             (res: http.IncomingMessage) => {
                 let buffer = ''

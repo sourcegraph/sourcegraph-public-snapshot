@@ -10,6 +10,7 @@ import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
@@ -20,21 +21,23 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { updateConfiguration } from '../configuration'
 import { logEvent } from '../event-logger'
-import { sanitizeServerEndpoint } from '../sanitize'
-import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../secret-storage'
+import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
-import { ExtensionMessage, WebviewMessage } from './protocol'
+import { ConfigurationSubsetForWebview, ExtensionMessage, WebviewMessage } from './protocol'
 
 async function isValidLogin(
-    serverEndpoint: string,
-    accessToken: string,
-    customHeaders: Record<string, string>
+    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
 ): Promise<boolean> {
-    const client = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(serverEndpoint), accessToken, customHeaders)
+    const client = new SourcegraphGraphQLAPIClient(config)
     const userId = await client.getCurrentUserId()
     return !isError(userId)
 }
+
+type Config = Pick<
+    ConfigurationWithAccessToken,
+    'codebase' | 'serverEndpoint' | 'debug' | 'customHeaders' | 'accessToken'
+>
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private isMessageInProgress = false
@@ -52,35 +55,41 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     // Allows recipes to hook up subscribers to process sub-streams of bot output
     private multiplexer: BotResponseMultiplexer = new BotResponseMultiplexer()
 
+    private configurationChangeEvent = new vscode.EventEmitter<void>()
+
     private disposables: vscode.Disposable[] = []
 
     constructor(
         private extensionPath: string,
-        private codebase: string,
-        private serverEndpoint: string,
+        private config: Config,
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
         private editor: Editor,
         private secretStorage: SecretStorage,
-        private mode: 'development' | 'production',
-        private localStorage: LocalStorage,
-        private customHeaders: Record<string, string>
+        private localStorage: LocalStorage
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
         }
         // chat id is used to identify chat session
         this.createNewChatID()
+
+        this.disposables.push(this.configurationChangeEvent)
+    }
+
+    public onConfigurationChange(newConfig: Config): void {
+        this.config = newConfig
+        this.configurationChangeEvent.fire()
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
-                await this.sendToken()
                 this.sendTranscript()
                 this.sendChatHistory()
                 this.publishContextStatus()
+                this.publishConfig()
                 break
             case 'reset':
                 this.onResetChat()
@@ -93,25 +102,29 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.executeRecipe(message.recipe)
                 break
             case 'settings': {
-                const isValid = await isValidLogin(message.serverEndpoint, message.accessToken, this.customHeaders)
+                const isValid = await isValidLogin({
+                    serverEndpoint: message.serverEndpoint,
+                    accessToken: message.accessToken,
+                    customHeaders: this.config.customHeaders,
+                })
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
                     logEvent(
                         'CodyVSCodeExtension:login:clicked',
-                        { serverEndpoint: this.serverEndpoint },
-                        { serverEndpoint: this.serverEndpoint }
+                        { serverEndpoint: this.config.serverEndpoint },
+                        { serverEndpoint: this.config.serverEndpoint }
                     )
                 }
-                this.sendLogin(isValid)
+                void this.webview?.postMessage({ type: 'login', isValid })
                 break
             }
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
                 logEvent(
                     'CodyVSCodeExtension:codyDeleteAccessToken:clicked',
-                    { serverEndpoint: this.serverEndpoint },
-                    { serverEndpoint: this.serverEndpoint }
+                    { serverEndpoint: this.config.serverEndpoint },
+                    { serverEndpoint: this.config.serverEndpoint }
                 )
                 break
             case 'removeHistory':
@@ -234,13 +247,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.showTab('chat')
         this.sendTranscript()
 
-        const prompt = await this.transcript.toPrompt(getPreamble(this.codebase))
+        const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
 
         logEvent(
             `CodyVSCodeExtension:recipe:${recipe.getID()}:executed`,
-            { serverEndpoint: this.serverEndpoint },
-            { serverEndpoint: this.serverEndpoint }
+            { serverEndpoint: this.config.serverEndpoint },
+            { serverEndpoint: this.config.serverEndpoint }
         )
     }
 
@@ -257,20 +270,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         })
     }
 
-    private sendLogin(isValid: boolean): void {
-        void this.webview?.postMessage({ type: 'login', isValid })
-    }
-
-    /**
-     * Sends access token to webview
-     */
-    private async sendToken(): Promise<void> {
-        void this.webview?.postMessage({
-            type: 'token',
-            value: await getAccessToken(this.secretStorage),
-            mode: this.mode,
-        })
-    }
     /**
      * Save chat history
      */
@@ -308,13 +307,28 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             void this.webview?.postMessage({
                 type: 'contextStatus',
                 contextStatus: {
-                    codebase: this.codebase,
+                    codebase: this.config.codebase,
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
                 },
             })
         }
 
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
+        send()
+    }
+
+    /**
+     * Publish the config to the webview.
+     */
+    private publishConfig(): void {
+        const send = (): void => {
+            const configForWebview: ConfigurationSubsetForWebview = {
+                debug: this.config.debug,
+                hasAccessToken: this.config.accessToken !== null && this.config.accessToken !== '',
+            }
+            void this.webview?.postMessage({ type: 'config', config: configForWebview })
+        }
+        this.disposables.push(this.configurationChangeEvent.event(() => send()))
         send()
     }
 

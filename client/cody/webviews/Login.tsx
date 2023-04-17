@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { TextFieldType } from '@vscode/webview-ui-toolkit/dist/text-field'
 import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
@@ -17,8 +17,16 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState('https://sourcegraph.com')
 
+    const onSubmit = useCallback<React.FormEventHandler>(
+        event => {
+            event.preventDefault()
+            onLogin(token, endpoint)
+        },
+        [endpoint, onLogin, token]
+    )
+
     return (
-        <form className={styles.container}>
+        <form className={styles.container} onSubmit={onSubmit}>
             <label htmlFor="endpoint" className={styles.label}>
                 Sourcegraph URL
             </label>
@@ -41,8 +49,8 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 onInput={(e: any) => setToken(e.target.value)}
             />
 
-            <VSCodeButton className={styles.button} type="submit" onClick={() => onLogin(token, endpoint)}>
-                Sign in
+            <VSCodeButton className={styles.button} type="submit">
+                Sign In
             </VSCodeButton>
             <div className={styles.terms} dangerouslySetInnerHTML={{ __html: renderMarkdown(CODY_TERMS_MARKDOWN) }} />
 

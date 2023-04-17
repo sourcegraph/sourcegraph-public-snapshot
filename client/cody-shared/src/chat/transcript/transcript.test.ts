@@ -74,7 +74,11 @@ describe('Transcript', () => {
                 intentDetector: new MockIntentDetector({
                     isCodebaseContextRequired: async () => Promise.resolve(true),
                 }),
-                codebaseContext: new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher),
+                codebaseContext: new CodebaseContext(
+                    { useContext: 'embeddings' },
+                    embeddings,
+                    defaultKeywordContextFetcher
+                ),
             })
         )
 
@@ -102,7 +106,11 @@ describe('Transcript', () => {
                 }),
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
-        const codebaseContext = new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
+        const codebaseContext = new CodebaseContext(
+            { useContext: 'embeddings' },
+            embeddings,
+            defaultKeywordContextFetcher
+        )
 
         const chatQuestionRecipe = new ChatQuestion()
         const transcript = new Transcript()
@@ -182,7 +190,11 @@ describe('Transcript', () => {
                 }),
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
-        const codebaseContext = new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
+        const codebaseContext = new CodebaseContext(
+            { useContext: 'embeddings' },
+            embeddings,
+            defaultKeywordContextFetcher
+        )
 
         const chatQuestionRecipe = new ChatQuestion()
         const transcript = new Transcript()
@@ -253,7 +265,11 @@ describe('Transcript', () => {
                 }),
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
-        const codebaseContext = new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
+        const codebaseContext = new CodebaseContext(
+            { useContext: 'embeddings' },
+            embeddings,
+            defaultKeywordContextFetcher
+        )
 
         const chatQuestionRecipe = new ChatQuestion()
         const transcript = new Transcript()

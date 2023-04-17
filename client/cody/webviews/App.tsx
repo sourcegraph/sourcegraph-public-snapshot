@@ -4,6 +4,7 @@ import './App.css'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { Chat } from './Chat'
 import { Debug } from './Debug'
@@ -17,7 +18,7 @@ import { UserHistory } from './UserHistory'
 import { vscodeAPI } from './utils/VSCodeApi'
 
 export function App(): React.ReactElement {
-    const [devMode, setDevMode] = useState(false)
+    const [config, setConfig] = useState<Pick<Configuration, 'debug'> | null>(null)
     const [debugLog, setDebugLog] = useState(['No data yet'])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -42,13 +43,9 @@ export function App(): React.ReactElement {
                     }
                     break
                 }
-                case 'token':
-                    {
-                        // Get the token from the extension.
-                        const hasToken = !!message.value
-                        setView(hasToken ? 'chat' : 'login')
-                        setDevMode(message.mode === 'development')
-                    }
+                case 'config':
+                    setConfig(message.config)
+                    setView(message.config.hasAccessToken ? 'chat' : 'login')
                     break
                 case 'login':
                     setIsValidLogin(message.isValid)
@@ -106,8 +103,8 @@ export function App(): React.ReactElement {
         <div className="outer-container">
             <Header showResetButton={view && view !== 'login'} onResetClick={onResetClick} />
             {view === 'login' && <Login onLogin={onLogin} isValidLogin={isValidLogin} />}
-            {view && view !== 'login' && <NavBar view={view} setView={setView} devMode={devMode} />}
-            {view === 'debug' && devMode && <Debug debugLog={debugLog} />}
+            {view && view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
+            {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}
             {view === 'history' && (
                 <UserHistory
                     userHistory={userHistory}
