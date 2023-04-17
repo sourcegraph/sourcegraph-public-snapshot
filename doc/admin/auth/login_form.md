@@ -1,8 +1,6 @@
 # Login form
 
-The login form displays [configured auth providers](./index.md). 
-Depending on configured auth providers, it will look different. We added a few parameters to tweak how 
-the login form behaves.
+The login form allows users to sign in to Sourcegraph using [configured auth providers](./index.md). 
 
 <img alt="login form screenshot" src="https://sourcegraphstatic.com/docs/images/administration/auth/login_form.png" class="screenshot">
 
