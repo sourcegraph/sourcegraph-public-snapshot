@@ -2,15 +2,14 @@ import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
 import { MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
-import { getShortTimestamp } from '../../timestamp'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext } from './recipe'
 
-export class Replace implements Recipe {
+export class Fixup implements Recipe {
     public getID(): string {
-        return 'replace'
+        return 'fixup'
     }
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
@@ -18,7 +17,7 @@ export class Replace implements Recipe {
 
         const selection = context.editor.getActiveTextEditorSelection()
         if (!selection) {
-            await context.editor.showWarningMessage('Select some code to operate on.')
+            await context.editor.showWarningMessage('Select some code to fixup.')
             return null
         }
 
@@ -59,17 +58,14 @@ It is OK to provide some commentary before you tell me the replacement <selectio
         )}\n\`\`\`\n\n${context.responseMultiplexer.prompt()}`
         // TODO: Move the prompt suffix from the recipe to the chat view. It may have other subscribers.
 
-        const timestamp = getShortTimestamp()
-
         return Promise.resolve(
             new Interaction(
                 {
                     speaker: 'human',
                     text: prompt,
                     displayText: 'Replace the instructions in the selection.',
-                    timestamp,
                 },
-                { speaker: 'assistant', text: '', displayText: '', timestamp },
+                { speaker: 'assistant' },
                 this.getContextMessages(selection.selectedText, context.codebaseContext)
             )
         )

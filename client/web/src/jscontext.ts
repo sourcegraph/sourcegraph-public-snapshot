@@ -151,11 +151,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     runningOnMacOS: boolean
 
     /**
-     * Likely running within a Docker container under a Mac host OS.
-     */
-    likelyDockerOnMac: boolean
-
-    /**
      * Whether the setup wizard supports file picker query, it's used
      * only for the Sourcegraph App (in all others deploy types it's always false)
      */

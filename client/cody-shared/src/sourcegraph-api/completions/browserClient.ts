@@ -10,10 +10,10 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
 
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
         const abort = new AbortController()
-        const headersInstance = new Headers(this.customHeaders as HeadersInit)
+        const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
         headersInstance.set('Content-Type', 'application/json; charset=utf-8')
-        if (this.accessToken) {
-            headersInstance.set('Authorization', `token ${this.accessToken}`)
+        if (this.config.accessToken) {
+            headersInstance.set('Authorization', `token ${this.config.accessToken}`)
         }
         fetchEventSource(this.completionsEndpoint, {
             method: 'POST',

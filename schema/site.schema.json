@@ -105,6 +105,11 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "codyRestrictUsersFeatureFlag": {
+          "description": "Restrict Cody to only be enabled for users that have a feature flag labeled \"cody-experimental\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag.",
+          "type": "boolean",
+          "default": false
+        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",
@@ -165,12 +170,6 @@
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
-        },
-        "bitbucketServerFastPerm": {
-          "description": "DEPRECATED: Configure in Bitbucket Server config.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
         },
         "perforce": {
           "description": "Allow adding Perforce code host connections",

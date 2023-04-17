@@ -44,7 +44,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         extsvcConfigAllowEdits: false,
         extsvcConfigFileExists: false,
         isAuthenticatedUser: true,
-        likelyDockerOnMac: false,
         needServerRestart: false,
         needsSiteInit: false,
         needsRepositoryConfiguration: false,

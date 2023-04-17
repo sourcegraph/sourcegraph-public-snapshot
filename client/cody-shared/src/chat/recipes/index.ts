@@ -1,12 +1,13 @@
 import { ChatQuestion } from './chat-question'
 import { ExplainCodeDetailed } from './explain-code-detailed'
 import { ExplainCodeHighLevel } from './explain-code-high-level'
+import { FindCodeSmells } from './find-code-smells'
+import { Fixup } from './fixup'
 import { GenerateDocstring } from './generate-docstring'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
 import { ImproveVariableNames } from './improve-variable-names'
 import { Recipe } from './recipe'
-import { Replace } from './replace'
 import { TranslateToLanguage } from './translate'
 
 const registeredRecipes: { [id: string]: Recipe } = {}
@@ -32,8 +33,9 @@ function init(): void {
         new GenerateTest(),
         new GitHistory(),
         new ImproveVariableNames(),
-        new Replace(),
+        new Fixup(),
         new TranslateToLanguage(),
+        new FindCodeSmells(),
     ]
 
     for (const recipe of recipes) {

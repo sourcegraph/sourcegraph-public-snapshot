@@ -1,6 +1,6 @@
 import './NavBar.css'
 
-export type View = 'chat' | 'recipes' | 'about' | 'login' | 'settings' | 'debug' | 'history'
+export type View = 'chat' | 'recipes' | 'login' | 'settings' | 'debug' | 'history'
 
 interface NavBarProps {
     setView: (selectedView: View) => void

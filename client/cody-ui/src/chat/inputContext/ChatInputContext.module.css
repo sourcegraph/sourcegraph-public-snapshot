@@ -1,0 +1,48 @@
+.container {
+    font-size: 90%;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    user-select: none;
+}
+
+.badge {
+    margin: 0;
+    padding-top: 0.15rem;
+    font-weight: normal;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    opacity: 0.7;
+    flex-grow: 0 0;
+}
+
+.items {
+    flex: 1;
+
+    display: flex;
+    gap: 0.75rem;
+    overflow: hidden;
+
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    overflow: hidden;
+}
+
+.item-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+}
+
+.item-text {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}

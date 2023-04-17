@@ -1,9 +1,16 @@
 import React from 'react'
 
-export const CodySvg = React.memo(() => (
-    <div className="header-logo">
-        <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 128 128">
-            <g transform="translate(0,128) scale(0.100000,-0.100000)" fill="var(--vscode-sideBarTitle-foreground)">
+export const CodySvg = React.memo<{ className?: string }>(function CodySvg({ className }) {
+    return (
+        <svg
+            version="1.0"
+            xmlns="http://www.w3.org/2000/svg"
+            width="30"
+            height="30"
+            viewBox="0 0 128 128"
+            className={className}
+        >
+            <g transform="translate(0,128) scale(0.100000,-0.100000)" fill="currentColor">
                 <path
                     d="M832 1126 c-52 -28 -62 -61 -62 -199 0 -150 11 -186 67 -212 48 -23
         99 -14 138 25 l30 30 3 135 c4 151 -8 194 -59 220 -34 18 -86 19 -117 1z"
@@ -21,8 +28,8 @@ export const CodySvg = React.memo(() => (
                 />
             </g>
         </svg>
-    </div>
-))
+    )
+})
 
 export const ResetSvg = React.memo(() => (
     <div className="header-container-right">

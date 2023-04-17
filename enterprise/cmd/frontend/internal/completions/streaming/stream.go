@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/openai"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
@@ -54,12 +53,9 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		isEnabled := cody.IsCodyExperimentalFeatureFlagEnabled(ctx)
-		if !isEnabled {
-			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
-			return
-		}
+	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
+		http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
+		return
 	}
 
 	if r.Method != "POST" {

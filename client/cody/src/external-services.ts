@@ -1,48 +1,51 @@
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
+import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { LocalKeywordContextFetcher } from './keyword-context/local-keyword-context-fetcher'
-import { getAccessToken, SecretStorage } from './secret-storage'
 
 interface ExternalServices {
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     chatClient: ChatClient
-    completionsClient: SourcegraphNodeCompletionsClient
+    completionsClient: SourcegraphCompletionsClient
+
+    /** Update configuration for all of the services in this interface. */
+    onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
 }
 
-export async function configureExternalServices(
-    serverEndpoint: string,
-    codebase: string,
-    rgPath: string,
-    editor: Editor,
-    secretStorage: SecretStorage,
-    contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
-    mode: 'development' | 'production',
-    customHeaders: Record<string, string>
-): Promise<ExternalServices> {
-    const accessToken = await getAccessToken(secretStorage)
-    const client = new SourcegraphGraphQLAPIClient(serverEndpoint, accessToken, customHeaders)
-    const completions = new SourcegraphNodeCompletionsClient(serverEndpoint, accessToken, mode, customHeaders)
+type ExternalServicesConfiguration = Pick<
+    ConfigurationWithAccessToken,
+    'serverEndpoint' | 'codebase' | 'useContext' | 'customHeaders' | 'accessToken' | 'debug'
+>
 
-    const repoId = codebase ? await client.getRepoId(codebase) : null
+export async function configureExternalServices(
+    initialConfig: ExternalServicesConfiguration,
+    rgPath: string,
+    editor: Editor
+): Promise<ExternalServices> {
+    const client = new SourcegraphGraphQLAPIClient(initialConfig)
+    const completions = new SourcegraphNodeCompletionsClient(initialConfig)
+
+    const repoId = initialConfig.codebase ? await client.getRepoId(initialConfig.codebase) : null
     if (isError(repoId)) {
         const errorMessage =
-            `Cody could not find the '${codebase}' repository on your Sourcegraph instance.\n` +
+            `Cody could not find the '${initialConfig.codebase}' repository on your Sourcegraph instance.\n` +
             'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
         console.error(errorMessage)
     }
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
 
     const codebaseContext = new CodebaseContext(
-        contextType,
+        initialConfig,
         embeddingsSearch,
         new LocalKeywordContextFetcher(rgPath, editor)
     )
@@ -52,5 +55,10 @@ export async function configureExternalServices(
         codebaseContext,
         chatClient: new ChatClient(completions),
         completionsClient: completions,
+        onConfigurationChange: newConfig => {
+            client.onConfigurationChange(newConfig)
+            completions.onConfigurationChange(newConfig)
+            codebaseContext.onConfigurationChange(newConfig)
+        },
     }
 }

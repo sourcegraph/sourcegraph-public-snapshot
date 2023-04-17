@@ -1,25 +1,22 @@
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { LocalStorage } from './command/LocalStorageProvider'
-import { sanitizeServerEndpoint } from './sanitize'
-import { SecretStorage, getAccessToken } from './secret-storage'
 
+let eventLoggerGQLClient: SourcegraphGraphQLAPIClient
 let eventLogger: EventLogger | null = null
 
 export async function updateEventLogger(
-    config: Configuration,
-    secretStorage: SecretStorage,
+    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
     localStorage: LocalStorage
 ): Promise<void> {
-    const accessToken = await getAccessToken(secretStorage)
-    const gqlAPIClient = new SourcegraphGraphQLAPIClient(
-        sanitizeServerEndpoint(config.serverEndpoint),
-        accessToken,
-        config.customHeaders
-    )
-    eventLogger = await EventLogger.create(localStorage, gqlAPIClient)
+    if (!eventLoggerGQLClient) {
+        eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
+        eventLogger = await EventLogger.create(localStorage, eventLoggerGQLClient)
+    } else {
+        eventLoggerGQLClient.onConfigurationChange(config)
+    }
 }
 
 export function logEvent(eventName: string, eventProperties?: any, publicProperties?: any): void {

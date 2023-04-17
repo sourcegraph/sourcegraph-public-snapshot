@@ -22,8 +22,8 @@ export class VSCodeEditor implements Editor {
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {
-        const activeEditor = vscode.window.activeTextEditor
-        if (!activeEditor || activeEditor.document.uri.scheme !== 'file') {
+        const activeEditor = this.getActiveTextEditorInstance()
+        if (!activeEditor) {
             return null
         }
         const documentUri = activeEditor.document.uri
@@ -31,9 +31,14 @@ export class VSCodeEditor implements Editor {
         return { content: documentText, filePath: documentUri.fsPath }
     }
 
-    public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+    private getActiveTextEditorInstance(): vscode.TextEditor | null {
         const activeEditor = vscode.window.activeTextEditor
-        if (!activeEditor || activeEditor.document.uri.scheme !== 'file') {
+        return activeEditor && activeEditor.document.uri.scheme === 'file' ? activeEditor : null
+    }
+
+    public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+        const activeEditor = this.getActiveTextEditorInstance()
+        if (!activeEditor) {
             return null
         }
         const selection = activeEditor.selection
@@ -42,7 +47,25 @@ export class VSCodeEditor implements Editor {
             vscode.window.showErrorMessage('No code selected. Please select some code and try again.')
             return null
         }
+        return this.createActiveTextEditorSelection(activeEditor, selection)
+    }
 
+    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+        const activeEditor = this.getActiveTextEditorInstance()
+        if (!activeEditor) {
+            return null
+        }
+        let selection = activeEditor.selection
+        if (!selection || selection.isEmpty) {
+            selection = new vscode.Selection(0, 0, activeEditor.document.lineCount, 0)
+        }
+        return this.createActiveTextEditorSelection(activeEditor, selection)
+    }
+
+    private createActiveTextEditorSelection(
+        activeEditor: vscode.TextEditor,
+        selection: vscode.Selection
+    ): ActiveTextEditorSelection {
         const precedingText = activeEditor.document.getText(
             new vscode.Range(
                 new vscode.Position(Math.max(0, selection.start.line - SURROUNDING_LINES), 0),
@@ -62,8 +85,8 @@ export class VSCodeEditor implements Editor {
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
-        const activeEditor = vscode.window.activeTextEditor
-        if (!activeEditor || activeEditor.document.uri.scheme !== 'file') {
+        const activeEditor = this.getActiveTextEditorInstance()
+        if (!activeEditor) {
             return null
         }
 
@@ -87,12 +110,8 @@ export class VSCodeEditor implements Editor {
     }
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
-        const activeEditor = vscode.window.activeTextEditor
-        if (
-            !activeEditor ||
-            activeEditor.document.uri.scheme !== 'file' ||
-            vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName
-        ) {
+        const activeEditor = this.getActiveTextEditorInstance()
+        if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {
             // TODO: should return something indicating success or failure
             return
         }

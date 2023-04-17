@@ -10,15 +10,18 @@ import { eventLogger } from '../tracking/eventLogger'
 
 interface CodyChatStore {
     client: Client | null
+    config: ClientInit['config'] | null
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
-    repo: string | null
+    repo: string
     filePath: string
     setClient: (client: Client | null) => void
+    setConfig: (config: ClientInit['config']) => void
     setMessageInProgress: (message: ChatMessage | null) => void
     setTranscript: (transcript: ChatMessage[]) => void
-    initializeClient: (config: ClientInit['config']) => void
+    initializeClient: (config: Required<ClientInit['config']>) => void
     onSubmit: (text: string) => void
+    onReset: () => void
 }
 
 export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore => {
@@ -34,20 +37,28 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         }
     }
 
+    const onReset = (): void => {
+        const { initializeClient, config } = get()
+        if (config) {
+            initializeClient(config as Required<ClientInit['config']>)
+        }
+    }
+
     return {
         client: null,
         messageInProgress: null,
+        config: null,
         transcript: [],
         filePath: '',
         repo: '',
         setClient: client => set({ client }),
+        setConfig: config => set({ config }),
         setMessageInProgress: message => set({ messageInProgress: message }),
         setTranscript: transcript => set({ transcript }),
-        initializeClient: (config: ClientInit['config']): void => {
-            set({ messageInProgress: null, transcript: [], repo: config.codebase ?? null })
+        initializeClient: (config: Required<ClientInit['config']>): void => {
+            set({ messageInProgress: null, transcript: [], repo: config.codebase, config })
             createClient({
                 config,
-                accessToken: null,
                 setMessageInProgress: message => set({ messageInProgress: message }),
                 setTranscript: transcript => set({ transcript }),
             })
@@ -61,17 +72,19 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         },
 
         onSubmit,
+        onReset,
     }
 })
 
 export const useChatStore = (isCodyEnabled: boolean, repoName: string): CodyChatStore => {
     const store = useChatStoreState()
 
-    const config = useMemo<ClientInit['config']>(
+    const config = useMemo<Required<ClientInit['config']>>(
         () => ({
             serverEndpoint: window.location.origin,
             useContext: 'embeddings',
             codebase: repoName,
+            accessToken: null,
         }),
         [repoName]
     )
