@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -39,9 +40,17 @@ func getCompletionStreamClient(provider string, accessToken string, model string
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
+	defer cancel()
+
 	completionsConfig := conf.Get().Completions
 	if completionsConfig == nil || !completionsConfig.Enabled {
 		http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
+		return
+	}
+
+	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
+		http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
 		return
 	}
 
@@ -55,9 +64,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not decode request body", http.StatusBadRequest)
 		return
 	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
-	defer cancel()
 
 	var err error
 	tr, ctx := trace.New(ctx, "completions.ServeStream", "Completions")

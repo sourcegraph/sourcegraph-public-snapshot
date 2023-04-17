@@ -389,6 +389,7 @@ ts_project(
         "src/testing/render-with-branded-context.tsx",
         "src/types.ts",
         "src/utils/index.ts",
+        "src/utils/joinWithAnd.tsx",
         "src/utils/linkClickHandler.ts",
         "src/utils/screenReaderAnnounce.ts",
         "src/viewports.ts",

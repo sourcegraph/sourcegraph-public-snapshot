@@ -16,6 +16,7 @@ rust_proc_macro(
 
 rust_test(
     name = "unit_test",
+    size = "small",
     aliases = aliases(
         normal_dev = True,
         proc_macro_dev = True,
@@ -27,5 +28,4 @@ rust_test(
     deps = all_crate_deps(
         normal_dev = True,
     ),
-    size = "small",
 )

@@ -16,7 +16,6 @@ go_library(
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/codeintel/resolvers",
-        "//internal/conf",
         "//internal/database",
         "//internal/gqlutil",
         "//internal/metrics",
