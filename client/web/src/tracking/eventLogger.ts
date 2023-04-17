@@ -179,9 +179,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
      * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
      *
      * @param eventLabel: the event name.
-     * @param eventProperties: event properties. These get logged to our database, but do not get
-     * sent to our analytics systems. This may contain private info such as repository names or search queries.
-     * @param publicArgument: event properties that include only public information. Do NOT
+     * @param eventProperties: event properties. These get logged to our database,
+     * @param publicArgument: event properties that include only public information. After removing private code on dotcom we now send this to our analytics systems.
      * include any private information, such as full URLs that may contain private repo names or
      * search queries. The contents of this parameter are sent to our analytics systems.
      */
