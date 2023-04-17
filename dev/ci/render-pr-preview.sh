@@ -171,31 +171,38 @@ echo "Preview url: ${pr_preview_url}"
 if [[ -n "${github_api_key}" && -n "${pr_number}" && "${pr_number}" != "false" ]]; then
 
   # GitHub pull request number and GitHub api token are set
-  # Appending `App Preview` section into PR description if it hasn't existed yet
+  # Reusing or creating a new `App Preview` comment in the PR if it doesn't exist yet
   github_pr_api_url="https://api.github.com/repos/${owner_and_repo}/pulls/${pr_number}"
+  github_pr_comments_api_url="https://api.github.com/repos/${owner_and_repo}/issues/${pr_number}/comments"
 
-  pr_description=$(curl -sSf --request GET \
-    --url "${github_pr_api_url}" \
+  app_preview_comment_id=$(curl -sSf --request GET \
+    --url "${github_pr_comments_api_url}" \
     --user "apikey:${github_api_key}" \
     --header 'Accept: application/vnd.github.v3+json' \
-    --header 'Content-Type: application/json' | jq -r '.body')
+    --header 'Content-Type: application/json' | jq '.[] | select(.body | contains("## App preview")) | .id')
 
-  if [[ "${pr_description}" != *"## App preview"* ]]; then
-    echo "Updating PR #${pr_number} in ${owner_and_repo} description"
+  app_preview_comment_body=$(printf '%s\n' \
+    "## App preview:" \
+    "- [Web](${pr_preview_url}/search)" \
+    "Check out the [client app preview documentation](https://docs.sourcegraph.com/dev/how-to/client_pr_previews) to learn more." | jq -Rs .)
 
-    pr_description=$(printf '%s\n\n' "${pr_description}" \
-      "## App preview:" \
-      "- [Web](${pr_preview_url}/search)" \
-      "Check out the [client app preview documentation](https://docs.sourcegraph.com/dev/how-to/client_pr_previews) to learn more." |
-      jq -Rs .)
+  if [[ -z "${app_preview_comment_id}" ]]; then
+    echo "Adding new App preview comment to PR #${pr_number} in ${owner_and_repo}"
 
-    curl -sSf -o /dev/null --request PATCH \
-      --url "${github_pr_api_url}" \
+    curl -sSf -o /dev/null --request POST \
+      --url "${github_pr_comments_api_url}" \
       --user "apikey:${github_api_key}" \
       --header 'Accept: application/vnd.github.v3+json' \
       --header 'Content-Type: application/json' \
-      --data "{ \"body\": ${pr_description} }"
+      --data "{ \"body\": ${app_preview_comment_body} }"
   else
-    echo "PR #${pr_number} in ${owner_and_repo} description already has \"App preview\" section"
+    echo "Updating App preview comment (id: ${app_preview_comment_id}) in PR #${pr_number} in ${owner_and_repo}"
+
+    curl -sSf -o /dev/null --request PATCH \
+      --url "https://api.github.com/repos/${owner_and_repo}/issues/comments/${app_preview_comment_id}" \
+      --user "apikey:${github_api_key}" \
+      --header 'Accept: application/vnd.github.v3+json' \
+      --header 'Content-Type: application/json' \
+      --data "{ \"body\": ${app_preview_comment_body} }"
   fi
 fi
