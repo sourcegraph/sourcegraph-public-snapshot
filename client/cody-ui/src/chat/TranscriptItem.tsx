@@ -20,6 +20,7 @@ export interface TranscriptItemClassNames {
     humanTranscriptItemClassName?: string
     transcriptItemParticipantClassName?: string
     codeBlocksCopyButtonClassName?: string
+    transcriptActionClassName?: string
 }
 
 /**
@@ -39,6 +40,7 @@ export const TranscriptItem: React.FunctionComponent<
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
     codeBlocksCopyButtonClassName,
+    transcriptActionClassName,
 }) => (
     <div
         className={classNames(
@@ -58,18 +60,18 @@ export const TranscriptItem: React.FunctionComponent<
                 )}
             </h2>
         </header>
+        {message.contextFiles && message.contextFiles.length > 0 && (
+            <div className={styles.actions}>
+                <ContextFiles
+                    contextFiles={message.contextFiles}
+                    fileLinkComponent={fileLinkComponent}
+                    className={transcriptActionClassName}
+                />
+            </div>
+        )}
         <div className={classNames(styles.content)}>
             {message.displayText ? (
-                <>
-                    <CodeBlocks displayText={message.displayText} copyButtonClassName={codeBlocksCopyButtonClassName} />
-                    {message.contextFiles && message.contextFiles.length > 0 && (
-                        <ContextFiles
-                            contextFiles={message.contextFiles}
-                            fileLinkComponent={fileLinkComponent}
-                            className={styles.contextFiles}
-                        />
-                    )}
-                </>
+                <CodeBlocks displayText={message.displayText} copyButtonClassName={codeBlocksCopyButtonClassName} />
             ) : inProgress ? (
                 <BlinkingCursor />
             ) : null}

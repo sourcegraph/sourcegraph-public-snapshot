@@ -54,6 +54,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             transcriptItemClassName={styles.transcriptItem}
             humanTranscriptItemClassName={styles.humanTranscriptItem}
             transcriptItemParticipantClassName={styles.transcriptItemParticipant}
+            transcriptActionClassName={styles.transcriptAction}
             inputRowClassName={styles.inputRow}
             chatInputContextClassName={styles.chatInputContext}
             chatInputClassName={styles.chatInputClassName}

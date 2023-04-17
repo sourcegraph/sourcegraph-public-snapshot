@@ -38,6 +38,7 @@ export const Chat: React.FunctionComponent<
         transcriptItemClassName={styles.transcriptItem}
         humanTranscriptItemClassName={styles.humanTranscriptItem}
         transcriptItemParticipantClassName={styles.transcriptItemParticipant}
+        transcriptActionClassName={styles.transcriptAction}
         inputRowClassName={styles.inputRow}
         chatInputClassName={styles.chatInput}
     />

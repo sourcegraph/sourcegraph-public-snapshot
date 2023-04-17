@@ -25,6 +25,7 @@ export const Transcript: React.FunctionComponent<
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
+    transcriptActionClassName,
 }) => {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
@@ -71,6 +72,7 @@ export const Transcript: React.FunctionComponent<
                     transcriptItemClassName={transcriptItemClassName}
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                    transcriptActionClassName={transcriptActionClassName}
                 />
             ))}
             {messageInProgress && messageInProgress.speaker === 'assistant' && (
@@ -81,6 +83,7 @@ export const Transcript: React.FunctionComponent<
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                    transcriptActionClassName={transcriptActionClassName}
                 />
             )}
         </div>

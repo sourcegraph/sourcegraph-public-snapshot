@@ -12,10 +12,10 @@
   "exclude": ["out", "dist"],
   "references": [
     {
-      "path": "../common",
+      "path": "../cody-shared",
     },
     {
-      "path": "../cody-shared",
+      "path": "../common",
     },
   ],
 }

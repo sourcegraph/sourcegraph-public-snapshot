@@ -4,6 +4,7 @@
     --row-foreground-color: black;
     --row-participant-name-color: #777;
     --row-border-color: #cccccc;
+    --transcript-action-background-color: #00000011;
 }
 
 :global(.theme-dark) {
@@ -12,6 +13,7 @@
     --row-foreground-color: #ffffffee;
     --row-participant-name-color: #ffffff88;
     --row-border-color: #ffffff33;
+    --transcript-action-background-color: #ffffff11;
 }
 
 .transcript-item {
@@ -34,4 +36,8 @@
 
 .transcript-item-participant {
     color: var(--row-participant-name-color);
+}
+
+.transcript-action {
+    background-color: var(--transcript-action-background-color);
 }

@@ -32,6 +32,7 @@ ts_project(
         "src/chat/Transcript.story.tsx",
         "src/chat/Transcript.tsx",
         "src/chat/TranscriptItem.tsx",
+        "src/chat/actions/TranscriptAction.tsx",
         "src/chat/fixtures.ts",
         "src/chat/inputContext/ChatInputContext.story.tsx",
         "src/chat/inputContext/ChatInputContext.tsx",

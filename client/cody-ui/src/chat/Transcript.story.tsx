@@ -46,6 +46,7 @@ export const Simple: ComponentStoryObj<typeof Transcript> = {
             transcriptItemClassName={styles.transcriptItem}
             humanTranscriptItemClassName={styles.humanTranscriptItem}
             transcriptItemParticipantClassName={styles.transcriptItemParticipant}
+            transcriptActionClassName={styles.transcriptAction}
         />
     ),
 }
