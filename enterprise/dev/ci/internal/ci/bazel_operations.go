@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
@@ -243,6 +245,56 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 				// bk.AutomaticRetryStatus(3, 222),
 			)
 		}
-		pipeline.AddStep(":docker: :construction: Build Ricky", cmds...)
+		pipeline.AddStep(":docker: :construction: Build Docker images", cmds...)
+	}
+}
+
+// Tag and push final Docker image for the service defined by `app`
+// after the e2e tests pass.
+//
+// It requires Config as an argument because published images require a lot of metadata.
+func bazelPublishFinalDockerImage(c Config, app string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		devImage := images.DevRegistryImage(app, "")
+		publishImage := images.PublishedRegistryImage(app, "")
+
+		var imgs []string
+		for _, image := range []string{publishImage, devImage} {
+			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.CandidatesNoTest) {
+				imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
+			}
+
+			if app == "server" && c.RunType.Is(runtype.ReleaseBranch) {
+				imgs = append(imgs, fmt.Sprintf("%s:%s-insiders", image, c.Branch))
+			}
+
+			if c.RunType.Is(runtype.MainBranch) {
+				imgs = append(imgs, fmt.Sprintf("%s:insiders", image))
+			}
+		}
+
+		// these tags are pushed to our dev registry, and are only
+		// used internally
+		for _, tag := range []string{
+			c.Version,
+			c.Commit,
+			c.shortCommit(),
+			fmt.Sprintf("%s_%s_%d", c.shortCommit(), c.Time.Format("2006-01-02"), c.BuildNumber),
+			fmt.Sprintf("%s_%d", c.shortCommit(), c.BuildNumber),
+			fmt.Sprintf("%s_%d", c.Commit, c.BuildNumber),
+			strconv.Itoa(c.BuildNumber),
+		} {
+			internalImage := fmt.Sprintf("%s:%s", devImage, tag)
+			imgs = append(imgs, internalImage)
+		}
+
+		candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
+		var cmds []string
+		cmds = append(cmds, fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " ")))
+
+		pipeline.AddStep(fmt.Sprintf(":docker: :truck: %s", cmds),
+			// This step just pulls a prebuild image and pushes it to some registries. The
+			// only possible failure here is a registry flake, so we retry a few times.
+			bk.AutomaticRetry(3))
 	}
 }
