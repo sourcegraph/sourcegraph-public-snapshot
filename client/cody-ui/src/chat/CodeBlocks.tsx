@@ -4,6 +4,8 @@ import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 
+import { logEvent } from '../event-logger'
+
 import styles from './CodeBlocks.module.css'
 
 interface CodeBlocksProps {
@@ -28,6 +30,8 @@ function createCopyButtonWithContainer(text: string, className: string): HTMLEle
         navigator.clipboard.writeText(text).catch(error => console.error(error))
         copyButton.textContent = 'Copied!'
         setTimeout(() => (copyButton.textContent = 'Copy'), 3000)
+        logEvent('CodyVSCodeExtension:copyButton:clicked')
+        console.log('CodyVSCodeExtension:copyButton:clicked')
     })
 
     // The container will contain the copy button and the <pre> element with the code.
