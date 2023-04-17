@@ -58,16 +58,19 @@ Note that this requires site-admin privileges.
 
 1. Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). In particular, code snippets will be sent to a third-party language model provider when you use the Cody extension.
 2. To turn Cody on, you will need to set an access token for Sourcegraph to authentify with the third-party large language model provider (currently Anthropic but we may use different or several models over time). Reach out to your Sourcegraph Technical Advisor or Customer Engineer to get a key. They will create a key for you using the [anthropic console](https://console.anthropic.com/account/keys).
-3. Once you have the key, go to Site admin > Site configuration (`/site-admin/configuration`) on your instance and set:
+3. Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
 
-```json
-"completions": {
-  "enabled": true,
-  "accessToken": "<token>",
-  "model": "claude-v1",
-  "provider": "anthropic"
-}
-```
+    ```json
+    {
+      // [...]
+      "completions": {
+        "enabled": true,
+        "accessToken": "<token>",
+        "model": "claude-v1",
+        "provider": "anthropic"
+      }
+    }
+    ```
 4. You're done! 
 5. Cody can be configured to use embeddings to significantly improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [embeddings](#embeddings) section for more.
 
@@ -78,17 +81,17 @@ Now that Cody is turned on on your Sourcegraph instance, any user can configure 
 1. If you currently have a previous version of Cody installed, uninstall it and reload VS Code before proceeding to the next steps.
 1. Search for “Sourcegraph Cody” in your VS Code extension marketplace, and install it.
 
-<img width="500" alt="Sourcegraph Cody in VS Code Marketplace" src="https://user-images.githubusercontent.com/55068936/228114612-65402e1c-7501-44cb-a846-46c4376b9572.png">
+    <img width="500" alt="Sourcegraph Cody in VS Code Marketplace" src="https://user-images.githubusercontent.com/55068936/228114612-65402e1c-7501-44cb-a846-46c4376b9572.png">
 
 3. Reload VS Code, and open the Cody extension. Review and accept the terms.
 
 4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
 
-<img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
+    <img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
 
 5. In the Cody VS Code extension, set your instance URL and the access token
     
-<img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
+    <img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
 
 6. See [this section](#enabling-codebase-aware-answers) on how to enable codebase-aware answers.
 
@@ -120,20 +123,22 @@ Embeddings are a semantic representation of text. Embeddings are usually floatin
 
 ### Configuring embeddings
 
-Here is the config for the OpenAI Embeddings API:
-
-```json
-"embeddings": {
-  "enabled": true,
-  "url": "https://api.openai.com/v1/embeddings",
-  "accessToken": "<token>",
-  "model": "text-embedding-ada-002",
-  "dimensions": 1536,
-  "excludedFilePathPatterns": []
-}
-```
-
-* Navigate to Site admin > Cody (`/site-admin/cody`) and schedule repositories for embedding.
+1. Go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance
+1. Add the following to configure OpenAI embeddings:
+    ```json
+    {
+      // [...]
+      "embeddings": {
+        "enabled": true,
+        "url": "https://api.openai.com/v1/embeddings",
+        "accessToken": "<token>",
+        "model": "text-embedding-ada-002",
+        "dimensions": 1536,
+        "excludedFilePathPatterns": []
+      }
+    }
+    ```
+1. Navigate to **Site admin > Cody** (`/site-admin/cody`) and schedule repositories for embedding.
 
 > NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice). 
 
@@ -144,11 +149,14 @@ The `excludedFilePathPatterns` is a setting in the Sourcegraph embeddings config
 To use `excludedFilePathPatterns`, add it to your embeddings site config with a list of glob patterns. For example, to exclude all SVG files, you would add the following setting to your configuration file:
 
 ```json
-"embeddings": {
-  // ...
-  "excludedFilePathPatterns": [
-    "*.svg"
-  ]
+{
+  // [...]
+  "embeddings": {
+    // [...]
+    "excludedFilePathPatterns": [
+      "*.svg"
+    ]
+  }
 }
 ```
 
