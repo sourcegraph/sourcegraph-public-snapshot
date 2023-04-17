@@ -51,10 +51,10 @@ ENTERPRISE_TARGETS=(
 )
 
 if "$ENTERPRISE"; then
-  TARGETS="(${ENTERPRISE_TARGETS[*]})"
+  TARGETS=("${ENTERPRISE_TARGETS[@]}")
   BUNDLE=enterprise
 else
-  TARGETS="(${OSS_TARGETS[*]})"
+  TARGETS=("${OSS_TARGETS[@]}")
   BUNDLE=oss
 fi
 
