@@ -1,14 +1,24 @@
-//go:build !dist
-// +build !dist
-
 package assets
 
 import (
 	"encoding/json"
+	"net/http"
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type DevProvider struct {
+	assets http.FileSystem
+}
+
+func (p DevProvider) LoadWebpackManifest() (*WebpackManifest, error) {
+	return LoadWebpackManifest()
+}
+
+func (p DevProvider) Assets() http.FileSystem {
+	return p.assets
+}
 
 var MockLoadWebpackManifest func() (*WebpackManifest, error)
 

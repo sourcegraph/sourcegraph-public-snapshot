@@ -2,10 +2,19 @@
 package main
 
 import (
+	"os"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph/enterprisecmd"
+	"github.com/sourcegraph/sourcegraph/ui/assets"
+
+	// TODO
+	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise"
 )
 
 func main() {
+	if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
+		assets.UseDevAssetsProvider()
+	}
 	enterprisecmd.DeprecatedSingleServiceMainEnterprise(shared.Service)
 }
