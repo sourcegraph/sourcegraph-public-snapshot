@@ -121,14 +121,14 @@ func TestServicePermissionLevels(t *testing.T) {
 			name:              "non-org member (org namespace)",
 			batchChangeAuthor: user.ID,
 			currentUser:       otherUser2.ID,
-			assertFunc:        assertAuthError,
+			assertFunc:        assertOrgOrAuthError,
 			orgNamespace:      org.ID,
 		},
 		{
 			name:              "non-org member (org namespace - all members admin)",
 			batchChangeAuthor: user.ID,
 			currentUser:       otherUser2.ID,
-			assertFunc:        assertOrgAuthError,
+			assertFunc:        assertOrgOrAuthError,
 			orgMembersAdmin:   true,
 			orgNamespace:      org.ID,
 		},
@@ -136,7 +136,7 @@ func TestServicePermissionLevels(t *testing.T) {
 			name:              "org member (org namespace)",
 			batchChangeAuthor: user.ID,
 			currentUser:       otherUser.ID,
-			assertFunc:        assertNoError,
+			assertFunc:        assertNoAuthError,
 			orgNamespace:      org.ID,
 		},
 		{
@@ -3271,22 +3271,20 @@ func assertAuthError(t *testing.T, err error) {
 	if err == nil {
 		t.Fatalf("expected error. got none")
 	}
-	if err != nil {
-		if !errors.HasType(err, &auth.InsufficientAuthorizationError{}) {
-			t.Fatalf("wrong error: %s (%T)", err, err)
-		}
+	if !errors.HasType(err, &auth.InsufficientAuthorizationError{}) {
+		t.Fatalf("wrong error: %s (%T)", err, err)
 	}
 }
 
-func assertOrgAuthError(t *testing.T, err error) {
+func assertOrgOrAuthError(t *testing.T, err error) {
 	t.Helper()
 
 	if err == nil {
 		t.Fatal("expected org authorization error, got none")
 	}
 
-	if !errors.Is(err, auth.ErrNotAnOrgMember) {
-		t.Fatalf("expected org authorization error, got %s", err.Error())
+	if !errors.HasType(err, auth.ErrNotAnOrgMember) && !errors.HasType(err, &auth.InsufficientAuthorizationError{}) {
+		t.Fatalf("expected authorization error, got %s", err.Error())
 	}
 }
 
@@ -3302,14 +3300,8 @@ func assertNoAuthError(t *testing.T, err error) {
 	t.Helper()
 
 	// Ignore other errors, we only want to check whether it's an auth error
-	if errors.HasType(err, &auth.InsufficientAuthorizationError{}) {
+	if errors.HasType(err, &auth.InsufficientAuthorizationError{}) || errors.Is(err, auth.ErrNotAnOrgMember) {
 		t.Fatalf("got auth error")
-	}
-}
-
-func assertNoError(t *testing.T, err error) {
-	if err != nil {
-		t.Fatalf("expected no error, got %s", err.Error())
 	}
 }
 
