@@ -44,3 +44,22 @@ CREATE TABLE IF NOT EXISTS own_aggregate_recent_contribution (
 CREATE UNIQUE INDEX IF NOT EXISTS own_aggregate_recent_contribution_author_file
 ON own_aggregate_recent_contribution
 USING btree (commit_author_id, changed_file_path_id);
+
+CREATE OR REPLACE FUNCTION update_own_aggregate_recent_contribution() RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE own_aggregate_recent_contribution
+    SET contributions_count = contributions_count + 1
+    WHERE commit_author_id = NEW.commit_author_id AND changed_file_path_id = NEW.changed_file_path_id;
+
+    IF NOT FOUND THEN
+        INSERT INTO own_aggregate_recent_contribution (commit_author_id, changed_file_path_id, contributions_count)
+        VALUES (NEW.commit_author_id, NEW.changed_file_path_id, 1);
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_own_aggregate_recent_contribution
+AFTER INSERT ON own_signal_recent_contribution
+FOR EACH ROW EXECUTE PROCEDURE update_own_aggregate_recent_contribution();

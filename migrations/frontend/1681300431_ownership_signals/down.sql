@@ -1,3 +1,6 @@
+DROP TRIGGER IF EXISTS update_own_aggregate_recent_contribution ON own_signal_recent_contribution;
+DROP FUNCTION IF EXISTS update_own_aggregate_recent_contribution();
+
 DROP INDEX IF EXISTS own_aggregate_recent_contribution_author_file;
 DROP TABLE IF EXISTS own_aggregate_recent_contribution;
 
