@@ -15,10 +15,10 @@ These options do not apply to [`builtin`](./index.md#builtin-password-authentica
 
 ### Change order of auth providers
 
-If there are multiple auth providers configured, by default the login form displays a login button for each of them. 
-This is displayed in a specific order that is hardcoded in the application. 
+When multiple auth providers are configured, the login form displays a login button for each of them. Default order 
+of auth providers is hardcoded in the application.
 
-To change the order, each auth provider now has an optional `order` parameter. It is an integer and items 
+The default order can be overriden with an optional `order` parameter. It is an integer and items 
 will be sorted in natural order (1, 2, 3, ...). 
 
 Example [site configuration](../config/site_config.md):
