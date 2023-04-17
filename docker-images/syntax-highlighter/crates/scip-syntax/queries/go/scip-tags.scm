@@ -18,3 +18,5 @@
 (type_declaration (type_spec name: (type_identifier) @descriptor.type)) @scope
 
 (field_declaration_list (field_declaration name: (_) @descriptor.term))
+
+(const_spec name: (_) @descriptor.term)
