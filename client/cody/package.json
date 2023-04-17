@@ -52,9 +52,8 @@
       "activitybar": [
         {
           "id": "cody",
-          "title": "Cody",
-          "icon": "resources/cody.svg",
-          "when": "cody.activated"
+          "title": "Sourcegraph Cody",
+          "icon": "resources/cody.svg"
         }
       ]
     },
@@ -64,7 +63,7 @@
           "type": "webview",
           "id": "cody.chat",
           "name": "Chat",
-          "when": "cody.activated"
+          "visibility": "visible"
         }
       ]
     },
@@ -75,55 +74,76 @@
       },
       {
         "command": "cody.recipe.explain-code",
-        "title": "Ask Cody: Explain Code in Detail"
+        "title": "Ask Cody: Explain Code in Detail",
+        "when": "cody.activated"
       },
       {
         "command": "cody.recipe.explain-code-high-level",
-        "title": "Ask Cody: Explain Code at a High Level"
+        "title": "Ask Cody: Explain Code at a High Level",
+        "when": "cody.activated"
       },
       {
         "command": "cody.recipe.generate-unit-test",
-        "title": "Ask Cody: Generate Unit Test"
+        "title": "Ask Cody: Generate Unit Test",
+        "when": "cody.activated"
       },
       {
         "command": "cody.recipe.generate-docstring",
-        "title": "Ask Cody: Generate Docstring"
+        "title": "Ask Cody: Generate Docstring",
+        "when": "cody.activated"
       },
       {
         "command": "cody.recipe.translate-to-language",
-        "title": "Ask Cody: Translate to Language"
+        "title": "Ask Cody: Translate to Language",
+        "when": "cody.activated"
       },
       {
         "command": "cody.recipe.git-history",
-        "title": "Ask Cody: Summarize Recent Code Changes"
+        "title": "Ask Cody: Summarize Recent Code Changes",
+        "when": "cody.activated"
       },
       {
         "command": "cody.recipe.improve-variable-names",
-        "title": "Ask Cody: Improve Variable Names"
+        "title": "Ask Cody: Improve Variable Names",
+        "when": "cody.activated"
       },
       {
         "command": "cody.recipe.fixup",
-        "title": "Cody: Fixup"
+        "title": "Ask Cody: Fixup Code",
+        "when": "cody.activated"
       },
       {
         "command": "cody.set-access-token",
-        "title": "Cody: Set Access Token"
+        "title": "Cody: Set Access Token",
+        "when": "!cody.activated"
       },
       {
         "command": "cody.delete-access-token",
-        "title": "Cody: Delete Access Token"
+        "title": "Cody: Delete Access Token",
+        "when": "cody.activated"
       },
       {
         "command": "cody.experimental.suggest",
-        "title": "Ask Cody: View Suggestions"
+        "title": "Ask Cody: View Suggestions",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.settings",
+        "title": "Ask Cody: Settings",
+        "icon": "$(gear)",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.focus",
+        "title": "Cody: Login to use Cody",
+        "when": "!cody.activated"
       }
     ],
     "keybindings": [
       {
         "command": "cody.chat.focus",
         "key": "alt+/",
-        "mac": "alt+/",
-        "when": "cody.activated"
+        "mac": "alt+/"
       },
       {
         "command": "cody.recipe.fixup",
@@ -140,9 +160,6 @@
     ],
     "menus": {
       "commandPalette": [
-        {
-          "command": "cody.toggle-enabled"
-        },
         {
           "command": "cody.recipe.explain-code",
           "when": "cody.activated"
@@ -170,42 +187,53 @@
         {
           "command": "cody.recipe.fixup",
           "when": "cody.activated"
-        },
-        {
-          "command": "cody.set-access-token"
-        },
-        {
-          "command": "cody.delete-access-token"
         }
       ],
       "editor/context": [
         {
           "submenu": "cody.submenu",
-          "group": "7_modification",
-          "when": "cody.activated"
+          "group": "7_modification"
         }
       ],
       "cody.submenu": [
         {
-          "command": "cody.recipe.explain-code"
+          "command": "cody.recipe.explain-code",
+          "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.explain-code-high-level"
+          "command": "cody.recipe.explain-code-high-level",
+          "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.generate-unit-test"
+          "command": "cody.recipe.generate-unit-test",
+          "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.generate-docstring"
+          "command": "cody.recipe.generate-docstring",
+          "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.improve-variable-names"
+          "command": "cody.recipe.improve-variable-names",
+          "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.translate-to-language"
+          "command": "cody.recipe.translate-to-language",
+          "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.fixup"
+          "command": "cody.recipe.fixup",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.focus",
+          "when": "!cody.activated"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "cody.settings",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation"
         }
       ]
     },
@@ -221,7 +249,7 @@
         "cody.serverEndpoint": {
           "type": "string",
           "default": "https://sourcegraph.com",
-          "example": "https://<instance>.sourcegraph.com",
+          "example": "https://example.sourcegraph.com",
           "description": "URL to the Sourcegraph instance."
         },
         "cody.codebase": {
