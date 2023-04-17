@@ -9,7 +9,7 @@
     border-color: transparent;
     border-top-width: 1px;
     border-top-style: solid;
-    border-bottom: none;
+    border-bottom-style: none !important; // Override the Transcript...last-child row
 }
 
 
