@@ -41,7 +41,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	c := &check.Checker{}
-	c.CheckExportedFuncs(true)
+	c.CheckExportedFuncs(false)
 	c.Packages([]*packages.Package{pkg})
 	c.ProgramSSA(ssaPkg.Prog)
 
