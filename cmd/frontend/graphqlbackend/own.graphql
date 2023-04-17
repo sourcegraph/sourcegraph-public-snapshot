@@ -41,6 +41,26 @@ extend type GitBlob implements Ownable {
     ): OwnershipConnection!
 }
 
+extend type GitTree implements Ownable {
+    """
+    Ownership summary for this file.
+    """
+    ownership(
+        """
+        Returns the first n ownership records from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Return only ownership for the given reasons.
+        """
+        reasons: [OwnershipReasonType!]
+    ): OwnershipConnection!
+}
+
 """
 A list of ownership entries.
 """
@@ -89,7 +109,7 @@ enum OwnershipReasonType {
 Union of all possible types of ownership reasons. Use the individual subtypes to
 get more details on the ownership determination.
 """
-union OwnershipReason = CodeownersFileEntry
+union OwnershipReason = CodeownersFileEntry | RecentContributions
 
 """
 The entity is an owner because they were mentioned on a codeowners file.
@@ -112,6 +132,12 @@ type CodeownersFileEntry {
     The line in the CODEOWNERS file that matched for this determination.
     """
     ruleLineMatch: Int!
+}
+
+type RecentContributions {
+    title: String!
+
+    description: String!
 }
 
 """

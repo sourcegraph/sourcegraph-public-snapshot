@@ -248,6 +248,10 @@ func (r *codeownersFileEntryResolver) ToCodeownersFileEntry() (graphqlbackend.Co
 	return r, true
 }
 
+func (r *codeownersFileEntryResolver) ToRecentContributions() (graphqlbackend.RecentContributionsResolver, bool) {
+	return nil, false
+}
+
 func (r *codeownersFileEntryResolver) Title(_ context.Context) (string, error) {
 	return "CODEOWNERS", nil
 }
@@ -284,9 +288,100 @@ func (r *codeownersFileEntryResolver) RuleLineMatch(_ context.Context) (int32, e
 	return r.matchLineNumber, nil
 }
 
+type recentContributorResolver struct {
+	count int
+}
+
+func (r *recentContributorResolver) ToCodeownersFileEntry() (graphqlbackend.CodeownersFileEntryResolver, bool) {
+	return nil, false
+}
+
+func (r *recentContributorResolver) ToRecentContributions() (graphqlbackend.RecentContributionsResolver, bool) {
+	return r, true
+}
+
+func (r *recentContributorResolver) Title(context.Context) (string, error) {
+	return "Recent contributor", nil
+}
+
+
+func (r *recentContributorResolver) Description(context.Context) (string, error) {
+	return fmt.Sprintf("Number of recent contributions: %d", r.count), nil
+}
+
 func areOwnEndpointsAvailable(ctx context.Context) error {
 	if !featureflag.FromContext(ctx).GetBoolOr("search-ownership", false) {
 		return errors.New("own is not available yet")
 	}
 	return nil
 }
+
+func (r *ownResolver) GitTreeOwnership(
+	ctx context.Context,
+	tree *graphqlbackend.GitTreeEntryResolver,
+	args graphqlbackend.ListOwnershipArgs,
+) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
+	cursor, err := graphqlutil.DecodeCursor(args.After)
+	if err != nil {
+		return nil, err
+	}
+	repo := tree.Repository()
+	repoID := repo.IDInt32()
+	path := tree.Path()
+	authors, err := r.db.OwnSignals().FindRecentAuthors(ctx, repoID, path)
+	if err != nil {
+		return nil, err
+	}
+	total := len(authors)
+	makeCursor := func(name, email string) string {
+		return fmt.Sprintf("%s|%s", name, email)
+	}
+	// TODO ListOwnershipArgs.reasons not supported
+	if cursor != "" {
+		after := 0
+		for i, a := range authors {
+			c := makeCursor(a.AuthorName, a.AuthorEmail)
+			if c == cursor {
+				after = i
+				break
+			}
+		}
+		authors = authors[after:]
+	}
+	var next *string
+	if args.First != nil && int(*args.First) < len(authors) {
+		n := authors[*args.First]
+		s := makeCursor(n.AuthorName, n.AuthorEmail)
+		next = &s
+		authors = authors[:*args.First]
+	}
+	var resolvedOwners []codeowners.ResolvedOwner
+	var ownerships []graphqlbackend.OwnershipResolver
+	for _, a := range authors {
+		p := &codeowners.Person{Handle: a.AuthorName, Email: a.AuthorEmail}
+		resolvedOwners = append(resolvedOwners, p)
+		ownerships = append(ownerships, &ownershipResolver{
+			db:            r.db,
+			resolvedOwner: p,
+			reasons:       []graphqlbackend.OwnershipReasonResolver{&recentContributorResolver{a.ContributionCount}},
+		})
+	}
+	return &ownershipConnectionResolver{
+		db:             r.db,
+		total:          total,
+		next:           next,
+		resolvedOwners: resolvedOwners,
+		ownerships:     ownerships,
+	}, nil
+}
+
+// type ownershipConnectionResolver struct {
+// 	db             edb.EnterpriseDB
+// 	total          int
+// 	next           *string
+// 	resolvedOwners []codeowners.ResolvedOwner
+// 	ownerships     []graphqlbackend.OwnershipResolver
+// }

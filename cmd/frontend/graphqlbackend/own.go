@@ -18,6 +18,7 @@ type ListOwnershipArgs struct {
 
 type OwnResolver interface {
 	GitBlobOwnership(ctx context.Context, blob *GitTreeEntryResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
+	GitTreeOwnership(ctx context.Context, tree *GitTreeEntryResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
 
 	PersonOwnerField(person *PersonResolver) string
 	UserOwnerField(user *UserResolver) string
@@ -59,6 +60,7 @@ type OwnerResolver interface {
 
 type OwnershipReasonResolver interface {
 	ToCodeownersFileEntry() (CodeownersFileEntryResolver, bool)
+	ToRecentContributions() (RecentContributionsResolver, bool)
 }
 
 type CodeownersFileEntryResolver interface {
@@ -66,6 +68,11 @@ type CodeownersFileEntryResolver interface {
 	Description(context.Context) (string, error)
 	CodeownersFile(context.Context) (FileResolver, error)
 	RuleLineMatch(context.Context) (int32, error)
+}
+
+type RecentContributionsResolver interface {
+	Title(context.Context) (string, error)
+	Description(context.Context) (string, error)
 }
 
 type CodeownersFileArgs struct {

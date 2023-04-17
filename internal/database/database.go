@@ -40,6 +40,7 @@ type DB interface {
 	OutboundWebhooks(encryption.Key) OutboundWebhookStore
 	OutboundWebhookJobs(encryption.Key) OutboundWebhookJobStore
 	OutboundWebhookLogs(encryption.Key) OutboundWebhookLogStore
+	OwnSignals() OwnSignalStore
 	Permissions() PermissionStore
 	PermissionSyncJobs() PermissionSyncJobStore
 	Phabricator() PhabricatorStore
