@@ -117,6 +117,7 @@ type bigQueryEvent struct {
 	OriginalReferrer string  `json:"original_referrer"`
 	SessionReferrer  string  `json:"session_referrer"`
 	SessionFirstURL  string  `json:"session_first_url"`
+	Argument         string  `json:"argument"`
 	PublicArgument   string  `json:"public_argument"`
 	DeviceID         *string `json:"device_id,omitempty"`
 	InsertID         *string `json:"insert_id,omitempty"`
@@ -198,6 +199,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			Version:          version.Version(),
 			FeatureFlags:     string(featureFlagJSON),
 			CohortID:         event.CohortID,
+			Argument: 	   	  string(event.Argument),
 			PublicArgument:   string(event.PublicArgument),
 			DeviceID:         event.DeviceID,
 			InsertID:         event.InsertID,
