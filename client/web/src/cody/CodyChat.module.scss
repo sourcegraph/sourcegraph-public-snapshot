@@ -6,9 +6,12 @@
 }
 
 .transcript-item {
-    background: linear-gradient(var(--input-bg), var(--input-bg)) padding-box,
-        linear-gradient(130deg, #00cbec, #a112ff) border-box;
+    background: linear-gradient(var(--body-bg), var(--body-bg)) padding-box,
+        linear-gradient(268deg, #00cbec, #a112ff) border-box;
     border-color: transparent;
+    border-top-width: 1px;
+    border-top-style: solid;
+    border-bottom-style: none !important; // Override the Transcript...last-child row
 }
 
 .transcript-action > ol {
@@ -16,7 +19,7 @@
 }
 
 .human-transcript-item {
-    background-color: var(--input-bg);
+    background: var(--input-bg);
     border-color: var(--border-color-2);
 }
 
@@ -32,7 +35,7 @@
     border-bottom: solid 1px var(--border-color-2);
     border-radius: 0 !important;
     padding: 0.625rem !important;
-    background: var(--body-bg);
+    background: var(--subtle-bg);
 }
 
 .transcript-item code {
