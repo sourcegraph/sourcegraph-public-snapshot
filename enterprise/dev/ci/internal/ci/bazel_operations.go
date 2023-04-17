@@ -140,7 +140,7 @@ func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
 	}
 }
 
-func bazelBuildCandidateDockerImages(apps []string, version string, tag string) operations.Operation {
+func bazelBuildCandidateDockerImages(apps []string, version string, tag string, rt runtype.RunType) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{}
 
@@ -158,16 +158,6 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string) 
 			bk.Agent("queue", "bazel"),
 		)
 
-		// Add Sentry environment variables if we are building off main branch
-		// to enable building the webapp with source maps enabled
-		if uploadSourcemaps {
-			cmds = append(cmds,
-				bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
-				bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
-				bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
-			)
-		}
-
 		// Allow all build scripts to emit info annotations
 		// TODO(JH) probably remove
 		buildAnnotationOptions := bk.AnnotatedCmdOpts{
@@ -180,6 +170,16 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string) 
 		for _, app := range apps {
 			image := strings.ReplaceAll(app, "/", "-")
 			localImage := "sourcegraph/" + image + ":" + version
+
+			// Add Sentry environment variables if we are building off main branch
+			// to enable building the webapp with source maps enabled
+			if rt.Is(runtype.MainDryRun) && app == "frontend" {
+				cmds = append(cmds,
+					bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
+					bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
+					bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
+				)
+			}
 
 			cmds = append(cmds,
 				bk.RawCmd(fmt.Sprintf(`echo "--- Building candidate %s image..."`, app)),
