@@ -199,6 +199,10 @@ func (d *db) OutboundWebhookLogs(key encryption.Key) OutboundWebhookLogStore {
 	return OutboundWebhookLogsWith(d.Store, key)
 }
 
+func (d *db) OwnSignals() OwnSignalStore {
+	return OwnSignalsStoreWith(d.Store)
+}
+
 func (d *db) Permissions() PermissionStore {
 	return PermissionsWith(d.Store)
 }
