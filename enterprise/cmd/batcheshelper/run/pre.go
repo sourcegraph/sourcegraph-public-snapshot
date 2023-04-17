@@ -72,7 +72,14 @@ func Pre(
 			return errors.Wrap(err, "failed to write step result file")
 		}
 
-		return ErrStepSkipped
+		// Determine the next step to run.
+		next := nextStep(stepIdx, executionInput.SkippedSteps)
+		// Write the skip file.
+		if err = util.WriteSkipFile(workingDirectory, next); err != nil {
+			return errors.Wrap(err, "failed to write skip file")
+		}
+
+		return nil
 	} else {
 		// Parse and render the step.Files.
 		filesToMount, err := createFilesToMount(workingDirectory, stepIdx, step, &stepContext)
@@ -235,5 +242,12 @@ func getAbsoluteMountPath(batchSpecDir string, mountPath string) (string, error)
 	return p, nil
 }
 
-// ErrStepSkipped is returned when a step is skipped.
-var ErrStepSkipped = errors.New("step skipped")
+func nextStep(currentStep int, skippedSteps map[int]struct{}) int {
+	// TODO: this can eventually do dynamic checking instead of just checking the statically skipped steps.
+	for i := currentStep + 1; i < len(skippedSteps); i++ {
+		if _, ok := skippedSteps[i]; !ok {
+			return i
+		}
+	}
+	return -1
+}
