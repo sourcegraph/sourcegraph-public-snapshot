@@ -123,7 +123,7 @@ if [ -z "${renderServiceId}" ]; then
             },
             {
                 \"key\": \"NODE_ENV\",
-                \"value\": \"production\"
+                \"value\": \"development\"
             },
             {
                 \"key\": \"PORT\",
@@ -141,8 +141,8 @@ if [ -z "${renderServiceId}" ]; then
         \"serviceDetails\": {
             \"pullRequestPreviewsEnabled\": \"no\",
             \"envSpecificDetails\": {
-                \"buildCommand\": \"source dev/ci/render-preview-install.sh && dev/ci/pnpm-build.sh client/web\",
-                \"startCommand\": \"source dev/ci/render-preview-install.sh && pnpm --filter @sourcegraph/web serve:prod\"
+                \"buildCommand\": \"source dev/ci/render-preview-install.sh && dev/ci/pnpm-install-with-retry.sh && pnpm generate\",
+                \"startCommand\": \"source dev/ci/render-preview-install.sh && pnpm --filter @sourcegraph/web serve:dev\"
             },
             \"numInstances\": 1,
             \"plan\": \"starter\",
