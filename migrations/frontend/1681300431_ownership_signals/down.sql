@@ -1,3 +1,6 @@
+DROP INDEX IF EXISTS own_aggregate_recent_contribution_author_file;
+DROP TABLE IF EXISTS own_aggregate_recent_contribution;
+
 DROP TABLE IF EXISTS own_signal_recent_contribution;
 
 DROP INDEX IF EXISTS commit_authors_email_name;

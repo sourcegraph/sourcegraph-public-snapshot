@@ -33,3 +33,14 @@ CREATE TABLE IF NOT EXISTS own_signal_recent_contribution (
 
 COMMENT ON TABLE own_signal_recent_contribution
 IS 'One entry per file changed in every commit that classifies as a contribution signal.';
+
+CREATE TABLE IF NOT EXISTS own_aggregate_recent_contribution (
+    id SERIAL PRIMARY KEY,
+    commit_author_id INTEGER NOT NULL REFERENCES commit_authors(id),
+    changed_file_path_id INTEGER NOT NULL REFERENCES repo_paths(id),
+    contributions_count INTEGER DEFAULT 0
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS own_aggregate_recent_contribution_author_file
+ON own_aggregate_recent_contribution
+USING btree (commit_author_id, changed_file_path_id);
