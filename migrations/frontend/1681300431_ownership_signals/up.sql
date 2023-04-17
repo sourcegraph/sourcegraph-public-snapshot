@@ -62,6 +62,15 @@ BEGIN
         SELECT id FROM ancestors
     );
 
+    WITH RECURSIVE ancestors AS (
+        SELECT id, parent_id, 1 AS level
+        FROM repo_paths
+        WHERE id = NEW.changed_file_path_id
+        UNION ALL
+        SELECT p.id, p.parent_id, a.level + 1
+        FROM repo_paths p
+        JOIN ancestors a ON p.id = a.parent_id
+    )
     INSERT INTO own_aggregate_recent_contribution (commit_author_id, changed_file_path_id, contributions_count)
     SELECT NEW.commit_author_id, id, 1
     FROM ancestors
