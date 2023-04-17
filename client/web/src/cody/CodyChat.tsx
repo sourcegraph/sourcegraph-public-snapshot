@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiClose, mdiSend, mdiArrowDown } from '@mdi/js'
+import { mdiClose, mdiSend, mdiArrowDown, mdiReload } from '@mdi/js'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
@@ -9,7 +9,7 @@ import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 import { useQuery } from '@sourcegraph/http-client'
-import { Button, ErrorAlert, Icon, LoadingSpinner, Text, TextArea } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, Icon, LoadingSpinner, Text, TextArea, Tooltip } from '@sourcegraph/wildcard'
 
 import { RepoEmbeddingExistsQueryResult, RepoEmbeddingExistsQueryVariables } from '../graphql-operations'
 import { REPO_EMBEDDING_EXISTS_QUERY } from '../repo/repoRevisionSidebar/cody/backend'
@@ -24,7 +24,7 @@ interface CodyChatProps {
 }
 
 export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
-    const { onSubmit, messageInProgress, transcript, repo } = useChatStoreState()
+    const { onReset, onSubmit, messageInProgress, transcript, repo } = useChatStoreState()
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
     const [formInput, setFormInput] = useState('')
@@ -66,10 +66,22 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
         variables: { repoName: repo },
     })
 
+    const shouldShowResetButton =
+        !embeddingExistsLoading && !embeddingExistsError && embeddingExistsData?.repository?.embeddingExists
+
     return (
         <div className={styles.mainWrapper}>
             <div className={styles.codySidebar} ref={codySidebarRef} onScroll={handleScroll}>
                 <div className={styles.codySidebarHeader}>
+                    {shouldShowResetButton && (
+                        <div>
+                            <Tooltip content="Start a new conversation">
+                                <Button variant="icon" aria-label="Start a new conversation" onClick={onReset}>
+                                    <Icon aria-hidden={true} svgPath={mdiReload} />
+                                </Button>
+                            </Tooltip>
+                        </div>
+                    )}
                     <div>
                         <CodyLogo />
                         Ask Cody
