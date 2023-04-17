@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"text/template"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -16,7 +17,6 @@ const (
 	authorName       = "sourcegraph"
 	authorEmail      = "sourcegraph@sourcegraph.com"
 	changeSetBody    = "My first batch change!"
-	container        = "alpine:3"
 )
 
 func testHelloWorldBatchChange() Test {
@@ -24,6 +24,7 @@ func testHelloWorldBatchChange() Test {
 		NameContent:             "hello-world",
 		Description:             "Add Hello World to READMEs",
 		RunCommand:              "IFS=$'\\n'; echo Hello World | tee -a $(find -name README.md)",
+		Container:               "alpine:3",
 		ChangeSetTemplateTitle:  "Hello World",
 		ChangeSetTemplateBranch: "hello-world",
 		CommitMessage:           "Append Hello World to all README.md files",
@@ -159,7 +160,7 @@ func testHelloWorldBatchChange() Test {
 							{
 								Number:    1,
 								Run:       batchSpecPs.RunCommand,
-								Container: container,
+								Container: batchSpecPs.Container,
 								OutputLines: gqltestutil.WorkspaceOutputLines{
 									Nodes: []string{
 										"stderr: WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested",
@@ -233,7 +234,8 @@ func testEnvObjectBatchChange() Test {
 		NameContent: "env-object",
 		Description: "Add the value of an environment variable object to READMEs",
 		RunCommand:  "IFS=$'\\n'; echo $MESSAGE | tee -a $(find -name README.md)",
-		AdditionalKeyValues: []specStepBlock{
+		Container:   "alpine:3",
+		AdditionalBlocks: []specStepBlock{
 			{
 				BlockName: "env",
 				KeyValues: []keyValue{
@@ -376,7 +378,7 @@ func testEnvObjectBatchChange() Test {
 							{
 								Number:    1,
 								Run:       batchSpecPs.RunCommand,
-								Container: container,
+								Container: batchSpecPs.Container,
 								OutputLines: gqltestutil.WorkspaceOutputLines{
 									Nodes: []string{
 										"stderr: WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested",
@@ -388,8 +390,8 @@ func testEnvObjectBatchChange() Test {
 								ExitCode: 0,
 								Environment: []gqltestutil.WorkspaceEnvironmentVariable{
 									{
-										Name:  batchSpecPs.AdditionalKeyValues[0].KeyValues[0].Key,
-										Value: batchSpecPs.AdditionalKeyValues[0].KeyValues[0].Value,
+										Name:  batchSpecPs.AdditionalBlocks[0].KeyValues[0].Key,
+										Value: batchSpecPs.AdditionalBlocks[0].KeyValues[0].Value,
 									},
 								},
 								OutputVariables: []gqltestutil.WorkspaceOutputVariable{},
@@ -455,8 +457,10 @@ func testFromFileBatchChange() Test {
 		NameContent: "file-mount",
 		Description: "Add the content of a file to READMEs",
 		RunCommand:  "IFS=$'\\n'; cat /tmp/hello-world.txt | tee -a $(find -name README.md)",
-		AdditionalKeyValues: []specStepBlock{
+		Container:   "alpine:3",
+		AdditionalBlocks: []specStepBlock{
 			{
+				BlockType: Object,
 				BlockName: "files",
 				KeyValues: []keyValue{
 					// Use a multi-line scalar to circumvent weird diff behaviour in the actual response
@@ -599,7 +603,7 @@ func testFromFileBatchChange() Test {
 							{
 								Number:    1,
 								Run:       batchSpecPs.RunCommand,
-								Container: container,
+								Container: batchSpecPs.Container,
 								OutputLines: gqltestutil.WorkspaceOutputLines{
 									Nodes: []string{
 										"stderr: WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested",
@@ -633,7 +637,7 @@ func testFromFileBatchChange() Test {
 		},
 	}
 
-	// TODO: verify file mount in the expected state?
+	// TODO: verify file in the expected state?
 	return Test{
 		PreExistingCacheEntries: map[string]execution.AfterStepResult{},
 		BatchSpecInput:          batchSpec,
@@ -666,6 +670,241 @@ func testFromFileBatchChange() Test {
 		},
 		ExpectedState: expectedState,
 		CacheDisabled: true,
+	}
+}
+
+func testFileMountBatchChange(client *HttpClient) Test {
+	const fileName = "hello_appender.py"
+
+	batchSpecPs := batchSpecParams{
+		NameContent: "file-mount",
+		Description: "Add a message from a python file to READMEs",
+		RunCommand:  "python /tmp/hello_appender.py",
+		Container:   "python:3.11-alpine",
+		AdditionalBlocks: []specStepBlock{
+			{
+				BlockType: Array,
+				BlockName: "mount",
+				KeyValues: []keyValue{
+					{Key: "path", Value: fmt.Sprintf("./%s", fileName)},
+					{Key: "mountpoint", Value: "/tmp/hello_appender.py"},
+				},
+			},
+		},
+		ChangeSetTemplateTitle:  "Hello World from mounted python file",
+		ChangeSetTemplateBranch: "mounted-file",
+		CommitMessage:           "Append a message from a python file to all README.md files",
+	}
+	batchSpec := generateBatchSpec(batchSpecPs)
+	log.Printf("Generated batch spec:\n%s", batchSpec)
+
+	diffPs := diffParams{
+		READMEObjectHash:         "1bfecb8",
+		ExamplesREADMEObjectHash: "79a6f77",
+		Project3READMEObjectHash: "287d7ea",
+		Project1READMEObjectHash: "30e9fe6",
+		Project2READMEObjectHash: "209f60f",
+		HelloWorldMessage:        "Hello world from a python file!",
+	}
+	expectedDiff := generateDiff(diffPs)
+
+	expectedState := gqltestutil.BatchSpecDeep{
+		State: "COMPLETED",
+		ChangesetSpecs: gqltestutil.BatchSpecChangesetSpecs{
+			TotalCount: 1,
+			Nodes: []gqltestutil.ChangesetSpec{
+				{
+					Type: "BRANCH",
+					Description: gqltestutil.ChangesetSpecDescription{
+						BaseRepository: gqltestutil.ChangesetRepository{Name: sourceRepository},
+						BaseRef:        sourceRef,
+						BaseRev:        "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
+						HeadRef:        batchSpecPs.ChangeSetTemplateBranch,
+						Title:          batchSpecPs.ChangeSetTemplateTitle,
+						Body:           changeSetBody,
+						Commits: []gqltestutil.ChangesetSpecCommit{
+							{
+								Message: batchSpecPs.CommitMessage,
+								Subject: batchSpecPs.CommitMessage,
+								Body:    "",
+								Author: gqltestutil.ChangesetSpecCommitAuthor{
+									Name:  authorName,
+									Email: authorEmail,
+								},
+							},
+						},
+						Diffs: gqltestutil.ChangesetSpecDiffs{
+							FileDiffs: gqltestutil.ChangesetSpecFileDiffs{
+								RawDiff: ``,
+							},
+						},
+					},
+					ForkTarget: gqltestutil.ChangesetForkTarget{},
+				},
+			},
+		},
+		Namespace: gqltestutil.Namespace{},
+		WorkspaceResolution: gqltestutil.WorkspaceResolution{
+			Workspaces: gqltestutil.WorkspaceResolutionWorkspaces{
+				TotalCount: 1,
+				Stats: gqltestutil.WorkspaceResolutionWorkspacesStats{
+					Completed: 1,
+				},
+				Nodes: []gqltestutil.BatchSpecWorkspace{
+					{
+						State: "COMPLETED",
+						DiffStat: gqltestutil.DiffStat{
+							Added:   5,
+							Deleted: 5,
+						},
+						Repository: gqltestutil.ChangesetRepository{Name: sourceRepository},
+						Branch: gqltestutil.WorkspaceBranch{
+							Name: sourceRef,
+						},
+						ChangesetSpecs: []gqltestutil.WorkspaceChangesetSpec{
+							{},
+						},
+						SearchResultPaths: []string{},
+						Executor: gqltestutil.Executor{
+							QueueName: "batches",
+							Active:    true,
+						},
+						Stages: gqltestutil.BatchSpecWorkspaceStages{
+							Setup: []gqltestutil.ExecutionLogEntry{
+								{
+									Key:      "setup.git.init",
+									ExitCode: 0,
+								},
+								{
+									Key:      "setup.git.add-remote",
+									ExitCode: 0,
+								},
+								{
+									Key:      "setup.git.disable-gc",
+									ExitCode: 0,
+								},
+								{
+									Key:      "setup.git.fetch",
+									ExitCode: 0,
+								},
+								{
+									Key:      "setup.git.checkout",
+									ExitCode: 0,
+								},
+								{
+									Key:      "setup.git.set-remote",
+									ExitCode: 0,
+								},
+								{
+									Key:      "setup.fs.extras",
+									Command:  []string{},
+									ExitCode: 0,
+								},
+							},
+							SrcExec: []gqltestutil.ExecutionLogEntry{
+								{
+									Key:      "step.docker.step.0.pre",
+									ExitCode: 0,
+								},
+								{
+									Key:      "step.docker.step.0.run",
+									ExitCode: 0,
+								},
+								{
+									Key:      "step.docker.step.0.post",
+									ExitCode: 0,
+								},
+							},
+							Teardown: []gqltestutil.ExecutionLogEntry{
+								{
+									Key:      "teardown.fs",
+									Command:  []string{},
+									ExitCode: 0,
+								},
+							},
+						},
+						Steps: []gqltestutil.BatchSpecWorkspaceStep{
+							{
+								Number:    1,
+								Run:       batchSpecPs.RunCommand,
+								Container: batchSpecPs.Container,
+								OutputLines: gqltestutil.WorkspaceOutputLines{
+									Nodes: []string{
+										"stderr: WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested",
+										"stderr: Hello World",
+										"",
+									},
+									TotalCount: 3,
+								},
+								ExitCode:        0,
+								Environment:     []gqltestutil.WorkspaceEnvironmentVariable{},
+								OutputVariables: []gqltestutil.WorkspaceOutputVariable{},
+								DiffStat: gqltestutil.DiffStat{
+									Added:   5,
+									Deleted: 5,
+								},
+								Diff: gqltestutil.ChangesetSpecDiffs{
+									FileDiffs: gqltestutil.ChangesetSpecFileDiffs{
+										RawDiff: expectedDiff,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Source: "REMOTE",
+		Files: gqltestutil.BatchSpecFiles{
+			TotalCount: 1,
+			Nodes: []gqltestutil.BatchSpecFile{
+				{
+					// TODO: get from params instead of hardcode
+					Path: "/tmp/",
+					Name: "hello_appender.py",
+				},
+			},
+		},
+	}
+
+	// TODO: verify file in the expected state?
+	return Test{
+		PreExistingCacheEntries: map[string]execution.AfterStepResult{},
+		BatchSpecInput:          batchSpec,
+		ExpectedCacheEntries: map[string]execution.AfterStepResult{
+			"9_AvsVMDl3SJLH-vtwD5Lg-step-0": {
+				Version: 2,
+				Stdout:  fmt.Sprintf("%s\n", diffPs.HelloWorldMessage),
+				Diff:    []byte(expectedDiff),
+				Outputs: map[string]any{},
+			},
+		},
+		ExpectedChangesetSpecs: []*types.ChangesetSpec{
+			{
+				Type:              "branch",
+				DiffStatAdded:     5,
+				DiffStatDeleted:   5,
+				BatchSpecID:       2,
+				BaseRepoID:        1,
+				UserID:            1,
+				BaseRev:           "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
+				BaseRef:           sourceRef,
+				HeadRef:           fmt.Sprintf("refs/heads/%s", batchSpecPs.ChangeSetTemplateBranch),
+				Title:             batchSpecPs.ChangeSetTemplateTitle,
+				Body:              changeSetBody,
+				CommitMessage:     batchSpecPs.CommitMessage,
+				CommitAuthorName:  authorName,
+				CommitAuthorEmail: authorEmail,
+				Diff:              []byte(expectedDiff),
+			},
+		},
+		ExpectedState: expectedState,
+		CacheDisabled: true,
+		FileUpload: gqltestutil.BatchSpecFile{
+			// TODO: get from params instead of hardcode
+			Path: "/tmp/",
+			Name: "hello_appender.py",
+		},
 	}
 }
 
@@ -753,7 +992,15 @@ type keyValue struct {
 	Value string
 }
 
+type blockType string
+
+const (
+	Array  blockType = "array"
+	Object blockType = "object"
+)
+
 type specStepBlock struct {
+	BlockType blockType
 	BlockName string
 	KeyValues []keyValue
 }
@@ -762,7 +1009,8 @@ type batchSpecParams struct {
 	NameContent             string
 	Description             string
 	RunCommand              string
-	AdditionalKeyValues     []specStepBlock
+	Container               string
+	AdditionalBlocks        []specStepBlock
 	ChangeSetTemplateTitle  string
 	ChangeSetTemplateBranch string
 	CommitMessage           string
@@ -780,14 +1028,16 @@ on:
 
 steps:
   - run: {{.RunCommand}}
-    container: alpine:3
-{{- range .AdditionalKeyValues }}
+    container: {{.Container}}
+{{- range .AdditionalBlocks }}
     {{.BlockName}}:
-    {{- range .KeyValues }}
+    {{if eq .BlockType "object"}}{{- range .KeyValues }}
       {{.Key}}: {{.Value}}
-    {{- end}}
+    {{- end}}{{else}}  - {{range .KeyValues -}}
+          {{.Key}}: {{.Value}}
+        {{end}}
+    {{end}}
 {{- end}}
-
 changesetTemplate:
   title: {{.ChangeSetTemplateTitle}}
   body: My first batch change!

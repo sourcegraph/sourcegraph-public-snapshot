@@ -3,7 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
+	"mime/multipart"
+	"net/http"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -29,9 +35,10 @@ type Test struct {
 	ExpectedChangesetSpecs  []*types.ChangesetSpec
 	ExpectedState           gqltestutil.BatchSpecDeep
 	CacheDisabled           bool
+	FileUpload              gqltestutil.BatchSpecFile
 }
 
-func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Store, test Test) error {
+func RunTest(ctx context.Context, gqlClient *gqltestutil.Client, httpClient *HttpClient, bstore *store.Store, test Test) error {
 	// Reset DB state.
 	if err := bstore.Exec(ctx, sqlf.Sprintf(cleanupBatchChangesDB)); err != nil {
 		return err
@@ -58,7 +65,7 @@ func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Stor
 
 	log.Println("fetching user ID")
 
-	id, err := client.CurrentUserID("")
+	id, err := gqlClient.CurrentUserID("")
 	if err != nil {
 		return err
 	}
@@ -70,14 +77,14 @@ func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Stor
 
 	log.Println("Creating empty batch change")
 
-	batchChangeID, err := client.CreateEmptyBatchChange(id, "e2e-test-batch-change")
+	batchChangeID, err := gqlClient.CreateEmptyBatchChange(id, "e2e-test-batch-change")
 	if err != nil {
 		return err
 	}
 
 	log.Println("Creating batch spec")
 
-	batchSpecID, err := client.CreateBatchSpecFromRaw(batchChangeID, id, test.BatchSpecInput)
+	batchSpecID, err := gqlClient.CreateBatchSpecFromRaw(batchChangeID, id, test.BatchSpecInput)
 	if err != nil {
 		return err
 	}
@@ -89,7 +96,7 @@ func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Stor
 		if time.Since(start) > 60*time.Second {
 			return errors.New("Waiting for batch spec workspace resolution to complete timed out after 60s")
 		}
-		state, err := client.GetBatchSpecWorkspaceResolutionStatus(batchSpecID)
+		state, err := gqlClient.GetBatchSpecWorkspaceResolutionStatus(batchSpecID)
 		if err != nil {
 			return err
 		}
@@ -104,10 +111,21 @@ func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Stor
 		}
 	}
 
+	if test.FileUpload.Name != "" {
+		log.Println("Submitting mounted file")
+		workdir, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		if err = httpClient.uploadFile(workdir, test.FileUpload.Name, batchSpecID); err != nil {
+			return err
+		}
+	}
+
 	log.Println("Submitting execution for batch spec")
 
 	// We're off, start the execution.
-	if err := client.ExecuteBatchSpec(batchSpecID, test.CacheDisabled); err != nil {
+	if err := gqlClient.ExecuteBatchSpec(batchSpecID, test.CacheDisabled); err != nil {
 		return err
 	}
 
@@ -119,16 +137,17 @@ func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Stor
 		if time.Since(start) > 3*60*time.Second {
 			return errors.New("Waiting for batch spec execution to complete timed out after 3 min")
 		}
-		state, failureMessage, err := client.GetBatchSpecState(batchSpecID)
+		state, failureMessage, err := gqlClient.GetBatchSpecState(batchSpecID)
 		if err != nil {
 			return err
 		}
 		if state == "FAILED" {
-			spec, err := client.GetBatchSpecDeep(batchSpecID)
+			spec, err := gqlClient.GetBatchSpecDeep(batchSpecID)
 			if err != nil {
 				return err
 			}
-			d, err := json.MarshalIndent(spec, "", "")
+			//d, err := json.MarshalIndent(spec, "", "")
+			d, err := json.MarshalIndent(spec, "", "  ")
 			if err != nil {
 				return err
 			}
@@ -143,7 +162,7 @@ func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Stor
 
 	log.Println("Loading batch spec to assert")
 
-	gqlResp, err := client.GetBatchSpecDeep(batchSpecID)
+	gqlResp, err := gqlClient.GetBatchSpecDeep(batchSpecID)
 	if err != nil {
 		return err
 	}
@@ -231,4 +250,84 @@ func compareBatchSpecDeepCmpopts() []cmp.Option {
 		cmpopts.IgnoreFields(gqltestutil.Executor{}, "Hostname"),
 		cmpopts.IgnoreFields(gqltestutil.ExecutionLogEntry{}, "Command", "StartTime", "Out", "DurationMilliseconds"),
 	}
+}
+
+type HttpClient struct {
+	token    string
+	endpoint string
+	client   *http.Client
+}
+
+func (c *HttpClient) uploadFile(workingDir, filePath, batchSpecID string) error {
+	// Create a pipe so the requests can be chunked to the server
+	pipeReader, pipeWriter := io.Pipe()
+	multipartWriter := multipart.NewWriter(pipeWriter)
+
+	// Write in a separate goroutine to properly chunk the file content. Writing to the pipe lets us not have
+	// to put the whole file in memory.
+	go func() {
+		defer pipeWriter.Close()
+		defer multipartWriter.Close()
+
+		if err := createFormFile(multipartWriter, workingDir, filePath); err != nil {
+			pipeWriter.CloseWithError(err)
+		}
+	}()
+
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimRight(c.endpoint, "/")+"/"+fmt.Sprintf(".api/files/batch-changes/%s", batchSpecID), pipeReader)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "token "+c.token)
+	req.Header.Set("Content-Type", multipartWriter.FormDataContentType())
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		// Errors passed to pipeWriter.CloseWithError come through here.
+		return err
+	}
+	defer resp.Body.Close()
+
+	// 2xx and 3xx are ok
+	p, err := io.ReadAll(resp.Body)
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
+		if err != nil {
+			return err
+		}
+		return errors.New(string(p))
+	}
+	return nil
+}
+
+func createFormFile(w *multipart.Writer, workingDir string, mountPath string) error {
+	f, err := os.Open(filepath.Join(workingDir, mountPath))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	filePath, fileName := filepath.Split(mountPath)
+	filePath = strings.Trim(strings.TrimSuffix(filePath, string(filepath.Separator)), ".")
+	// Ensure Windows separators are changed to Unix.
+	filePath = strings.ReplaceAll(filePath, "\\", "/")
+	if err = w.WriteField("filepath", filePath); err != nil {
+		return err
+	}
+	fileInfo, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	if err = w.WriteField("filemod", fileInfo.ModTime().UTC().String()); err != nil {
+		return err
+	}
+
+	part, err := w.CreateFormFile("file", fileName)
+	if err != nil {
+		return err
+	}
+	if _, err = io.Copy(part, f); err != nil {
+		return err
+	}
+	return nil
 }

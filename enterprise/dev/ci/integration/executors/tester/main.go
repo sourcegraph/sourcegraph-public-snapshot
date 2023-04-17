@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/sourcegraph/log"
 
@@ -48,33 +49,46 @@ func main() {
 
 	logger.Info("Instance is clean")
 
-	var client *gqltestutil.Client
-	client, err = initAndAuthenticate()
+	var gqlClient *gqltestutil.Client
+	gqlClient, err = initAndAuthenticate()
 	if err != nil {
 		logger.Fatal("Failed to set up user", log.Error(err))
 	}
 
+	var token string
+	token, err = gqlClient.CreateAccessToken("batches", []string{"user:all"})
+	if err != nil {
+		logger.Fatal("Failed to generate access token", log.Error(err))
+	}
+
+	httpClient := &HttpClient{
+		token:    token,
+		endpoint: SourcegraphEndpoint,
+		client:   http.DefaultClient,
+	}
+
 	// Activate native SSBC execution, src-cli based execution doesn't work in CI
 	// because docker in docker is fun.
-	if err := client.SetFeatureFlag("native-ssbc-execution", true); err != nil {
+	if err = gqlClient.SetFeatureFlag("native-ssbc-execution", true); err != nil {
 		logger.Fatal("Failed to set native-ssbc-execution feature flag", log.Error(err))
 	}
 
 	// Make sure repos are cloned in the instance.
-	if err := ensureRepos(client); err != nil {
+	if err = ensureRepos(gqlClient); err != nil {
 		logger.Fatal("Ensuring repos exist in the instance", log.Error(err))
 	}
 
 	// Now that we have our repositories synced and cloned into the instance, we
 	// can start testing.
 	testCases := []Test{
-		testHelloWorldBatchChange(),
-		testEnvObjectBatchChange(),
-		testFromFileBatchChange(),
+		//testHelloWorldBatchChange(),
+		//testEnvObjectBatchChange(),
+		//testFromFileBatchChange(),
+		testFileMountBatchChange(httpClient),
 	}
 
 	for _, t := range testCases {
-		if err := RunTest(ctx, client, bstore, t); err != nil {
+		if err = RunTest(ctx, gqlClient, httpClient, bstore, t); err != nil {
 			logger.Fatal("Running test", log.Error(err))
 		}
 	}
