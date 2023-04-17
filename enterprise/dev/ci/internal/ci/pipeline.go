@@ -352,19 +352,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Append(wait)
 
 		// Add final artifacts
-		// publishOps := operations.NewNamedSet("Publish images")
-		// for _, dockerImage := range images.SourcegraphDockerImages {
-		// 	publishOps.Append(publishFinalDockerImage(c, dockerImage))
-		// }
-		// // Executor VM image
-		// if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
-		// 	publishOps.Append(publishExecutorVM(c, skipHashCompare))
-		// 	publishOps.Append(publishExecutorBinary(c))
-		// 	if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-		// 		publishOps.Append(publishExecutorDockerMirror(c))
-		// 	}
-		// }
-		// ops.Merge(publishOps)
+		publishOps := operations.NewNamedSet("Publish images")
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			publishOps.Append(bazelPublishFinalDockerImage(c, dockerImage))
+		}
+		// Executor VM image
+		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
+			publishOps.Append(publishExecutorVM(c, skipHashCompare))
+			publishOps.Append(publishExecutorBinary(c))
+			if c.RunType.Is(runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+				publishOps.Append(publishExecutorDockerMirror(c))
+			}
+		}
+		ops.Merge(publishOps)
 	}
 
 	ops.Append(
