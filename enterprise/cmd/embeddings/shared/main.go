@@ -86,10 +86,17 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
+	weaviate := newWeaviateClient(
+		logger,
+		readFile,
+		getQueryEmbedding,
+		config.WeaviateURL,
+	)
+
 	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndex(uploadStore)
 
 	// Create HTTP server
-	handler := NewHandler(logger, readFile, getRepoEmbeddingIndex, getQueryEmbedding, getContextDetectionEmbeddingIndex)
+	handler := NewHandler(logger, readFile, getRepoEmbeddingIndex, getQueryEmbedding, weaviate, getContextDetectionEmbeddingIndex)
 	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
@@ -113,6 +120,7 @@ func NewHandler(
 	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
+	weaviate *weaviateClient,
 	getContextDetectionEmbeddingIndex getContextDetectionEmbeddingIndexFn,
 ) http.Handler {
 	// Initialize the legacy JSON API server
@@ -130,7 +138,7 @@ func NewHandler(
 			return
 		}
 
-		res, err := searchRepoEmbeddingIndex(r.Context(), logger, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding)
+		res, err := searchRepoEmbeddingIndex(r.Context(), logger, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
 		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
