@@ -43,7 +43,7 @@ Example [site configuration](../config/site_config.md):
 }
 ```
 
-In this case, the gitlab auth provider will be shown above the github auth provider on the login page.
+In this case, the GitLab auth provider will be shown above the GitHub auth provider on the login page.
 
 <img alt="login form auth providers order screenshot" src="https://sourcegraphstatic.com/docs/images/administration/auth/login_form_order.png" class="screenshot">
 
