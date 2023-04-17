@@ -2,6 +2,9 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
 
+# gazelle:js_ignore_imports vscode
+"src/telemetry/EventLogger.ts"
+
 npm_link_all_packages(name = "node_modules")
 
 ts_config(
@@ -66,9 +69,6 @@ ts_project(
         "src/telemetry/EventLogger.ts",
         "src/timestamp.ts",
         "src/utils.ts",
-
-    # gazelle:js_ignore_imports vscode
-        "src/telemetry/EventLogger.ts"
     ],
     tsconfig = ":tsconfig",
     # TODO(bazel): "#keep"s required for type-only imports
