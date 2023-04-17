@@ -1,0 +1,32 @@
+.container {
+    padding: 1rem;
+}
+
+.label {
+    font-weight: bold;
+}
+
+.input {
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+.button {
+    justify-content: center;
+    width: 100%;
+
+    /* @vscode/webview-ui sets a 300px max-width. If we exceed that, the button will display a
+    glitchy-looking internal border. */
+    max-width: 300px;
+}
+
+.error {
+    border: 1px solid var(--vscode-inputValidation-errorBorder);
+    background-color: var(--vscode-inputValidation-errorBackground);
+    padding: 0.5rem;
+    margin-top: 1rem;
+}
+
+.terms {
+    font-size: 85%;
+}

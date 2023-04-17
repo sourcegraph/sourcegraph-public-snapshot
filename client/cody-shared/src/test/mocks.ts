@@ -53,6 +53,10 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
+    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+        return this.mocks.getActiveTextEditorSelection?.() ?? null
+    }
+
     public getActiveTextEditor(): ActiveTextEditor | null {
         return this.mocks.getActiveTextEditor?.() ?? null
     }
@@ -88,7 +92,8 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
         editor: args.editor || defaultEditor,
         intentDetector: args.intentDetector || defaultIntentDetector,
         codebaseContext:
-            args.codebaseContext || new CodebaseContext('none', defaultEmbeddingsClient, defaultKeywordContextFetcher),
+            args.codebaseContext ||
+            new CodebaseContext({ useContext: 'none' }, defaultEmbeddingsClient, defaultKeywordContextFetcher),
         responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
     }
 }

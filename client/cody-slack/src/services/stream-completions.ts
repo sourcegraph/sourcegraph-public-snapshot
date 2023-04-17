@@ -32,9 +32,10 @@ function getCompletionsClient() {
         return new OpenAICompletionsClient(OPENAI_API_KEY)
     }
 
-    return new SourcegraphNodeCompletionsClient(
-        DEFAULT_APP_SETTINGS.serverEndpoint,
-        SOURCEGRAPH_ACCESS_TOKEN,
-        DEFAULT_APP_SETTINGS.debug
-    )
+    return new SourcegraphNodeCompletionsClient({
+        serverEndpoint: DEFAULT_APP_SETTINGS.serverEndpoint,
+        accessToken: SOURCEGRAPH_ACCESS_TOKEN,
+        debug: DEFAULT_APP_SETTINGS.debug === 'development',
+        customHeaders: {},
+    })
 }

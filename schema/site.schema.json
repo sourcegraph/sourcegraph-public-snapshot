@@ -171,12 +171,6 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "bitbucketServerFastPerm": {
-          "description": "DEPRECATED: Configure in Bitbucket Server config.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "perforce": {
           "description": "Allow adding Perforce code host connections",
           "type": "string",

@@ -1,3 +1,5 @@
+import { ConfigurationWithAccessToken } from '../../configuration'
+
 import {
     Event,
     CompletionParameters,
@@ -6,18 +8,21 @@ import {
     CodeCompletionResponse,
 } from './types'
 
-export abstract class SourcegraphCompletionsClient {
-    protected completionsEndpoint: string
-    protected codeCompletionsEndpoint: string
+type Config = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'debug' | 'customHeaders'>
 
-    constructor(
-        instanceUrl: string,
-        protected accessToken: string | null,
-        protected mode: 'development' | 'production',
-        protected customHeaders: Record<string, string> = {}
-    ) {
-        this.completionsEndpoint = new URL('/.api/completions/stream', instanceUrl).href
-        this.codeCompletionsEndpoint = new URL('/.api/completions/code', instanceUrl).href
+export abstract class SourcegraphCompletionsClient {
+    constructor(protected config: Config) {}
+
+    public onConfigurationChange(newConfig: Config): void {
+        this.config = newConfig
+    }
+
+    protected get completionsEndpoint(): string {
+        return new URL('/.api/completions/stream', this.config.serverEndpoint).href
+    }
+
+    protected get codeCompletionsEndpoint(): string {
+        return new URL('/.api/completions/code', this.config.serverEndpoint).href
     }
 
     protected sendEvents(events: Event[], cb: CompletionCallbacks): void {

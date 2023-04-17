@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiClose, mdiSend, mdiArrowDown } from '@mdi/js'
+import { mdiClose, mdiSend, mdiArrowDown, mdiReload } from '@mdi/js'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
 import { Chat, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
-import { Terms } from '@sourcegraph/cody-ui/src/Terms'
+import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 import { useQuery } from '@sourcegraph/http-client'
-import { Button, ErrorAlert, Icon, LoadingSpinner, Text, TextArea } from '@sourcegraph/wildcard'
+import { Button, ErrorAlert, Icon, LoadingSpinner, Text, TextArea, Tooltip } from '@sourcegraph/wildcard'
 
 import { RepoEmbeddingExistsQueryResult, RepoEmbeddingExistsQueryVariables } from '../graphql-operations'
 import { REPO_EMBEDDING_EXISTS_QUERY } from '../repo/repoRevisionSidebar/cody/backend'
@@ -24,7 +24,7 @@ interface CodyChatProps {
 }
 
 export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
-    const { onSubmit, messageInProgress, transcript, repo } = useChatStoreState()
+    const { onReset, onSubmit, messageInProgress, transcript, repo } = useChatStoreState()
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
     const [formInput, setFormInput] = useState('')
@@ -66,10 +66,22 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
         variables: { repoName: repo },
     })
 
+    const shouldShowResetButton =
+        !embeddingExistsLoading && !embeddingExistsError && embeddingExistsData?.repository?.embeddingExists
+
     return (
         <div className={styles.mainWrapper}>
             <div className={styles.codySidebar} ref={codySidebarRef} onScroll={handleScroll}>
                 <div className={styles.codySidebarHeader}>
+                    {shouldShowResetButton && (
+                        <div>
+                            <Tooltip content="Start a new conversation">
+                                <Button variant="icon" aria-label="Start a new conversation" onClick={onReset}>
+                                    <Icon aria-hidden={true} svgPath={mdiReload} />
+                                </Button>
+                            </Tooltip>
+                        </div>
+                    )}
                     <div>
                         <CodyLogo />
                         Ask Cody
@@ -98,23 +110,15 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                         submitButtonComponent={SubmitButton}
                         fileLinkComponent={FileLink}
                         className={styles.container}
-                        afterTips={
-                            <details className="small mt-2">
-                                <summary>Terms</summary>
-                                <Terms />
-                            </details>
-                        }
-                        bubbleContentClassName={styles.bubbleContent}
-                        bubbleClassName={styles.bubble}
-                        bubbleRowClassName={styles.bubbleRow}
-                        humanBubbleContentClassName={styles.humanBubbleContent}
-                        botBubbleContentClassName={styles.botBubbleContent}
-                        bubbleFooterClassName={classNames('text-muted', 'small', 'mt-0', styles.bubbleFooter)}
-                        bubbleLoaderDotClassName={styles.bubbleLoaderDot}
+                        afterTips={CODY_TERMS_MARKDOWN}
+                        transcriptItemClassName={styles.transcriptItem}
+                        humanTranscriptItemClassName={styles.humanTranscriptItem}
+                        transcriptItemParticipantClassName="text-muted"
                         inputRowClassName={styles.inputRow}
                         chatInputClassName={styles.chatInput}
                         textAreaComponent={AutoResizableTextArea}
                         codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
+                        transcriptActionClassName={styles.transcriptAction}
                     />
                 )}
             </div>

@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
-import { Terms } from '@sourcegraph/cody-ui/src/Terms'
+import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import styles from './Chat.module.css'
@@ -12,10 +12,20 @@ export const Chat: React.FunctionComponent<
         React.ComponentPropsWithoutRef<typeof ChatUI>,
         'textAreaComponent' | 'submitButtonComponent' | 'fileLinkComponent'
     >
-> = ({ messageInProgress, transcript, formInput, setFormInput, inputHistory, setInputHistory, onSubmit }) => (
+> = ({
+    messageInProgress,
+    transcript,
+    contextStatus,
+    formInput,
+    setFormInput,
+    inputHistory,
+    setInputHistory,
+    onSubmit,
+}) => (
     <ChatUI
         messageInProgress={messageInProgress}
         transcript={transcript}
+        contextStatus={contextStatus}
         formInput={formInput}
         setFormInput={setFormInput}
         inputHistory={inputHistory}
@@ -24,17 +34,11 @@ export const Chat: React.FunctionComponent<
         textAreaComponent={TextArea}
         submitButtonComponent={SubmitButton}
         fileLinkComponent={FileLink}
-        afterTips={
-            <details className={styles.terms}>
-                <summary>Terms</summary>
-                <Terms />
-            </details>
-        }
-        bubbleContentClassName={styles.bubbleContent}
-        humanBubbleContentClassName={styles.humanBubbleContent}
-        botBubbleContentClassName={styles.botBubbleContent}
-        bubbleFooterClassName={styles.bubbleFooter}
-        bubbleLoaderDotClassName={styles.bubbleLoaderDot}
+        afterTips={CODY_TERMS_MARKDOWN}
+        transcriptItemClassName={styles.transcriptItem}
+        humanTranscriptItemClassName={styles.humanTranscriptItem}
+        transcriptItemParticipantClassName={styles.transcriptItemParticipant}
+        transcriptActionClassName={styles.transcriptAction}
         inputRowClassName={styles.inputRow}
         chatInputClassName={styles.chatInput}
     />

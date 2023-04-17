@@ -16,7 +16,7 @@ export type Event = DoneEvent | CompletionEvent | ErrorEvent
 
 export interface Message {
     speaker: 'human' | 'assistant'
-    text: string
+    text?: string
 }
 
 export interface CodeCompletionResponse {
