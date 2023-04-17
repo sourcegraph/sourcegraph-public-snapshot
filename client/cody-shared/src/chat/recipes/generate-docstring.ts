@@ -54,7 +54,6 @@ export class GenerateDocstring implements Recipe {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
-                displayText: '',
             },
             getContextMessagesFromSelection(
                 truncatedSelectedText,

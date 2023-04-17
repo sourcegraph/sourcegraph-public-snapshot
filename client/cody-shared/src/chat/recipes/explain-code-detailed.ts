@@ -26,7 +26,7 @@ export class ExplainCodeDetailed implements Recipe {
 
         return new Interaction(
             { speaker: 'human', text: promptMessage, displayText },
-            { speaker: 'assistant', text: '', displayText: '' },
+            { speaker: 'assistant' },
             getContextMessagesFromSelection(
                 truncatedSelectedText,
                 truncatedPrecedingText,

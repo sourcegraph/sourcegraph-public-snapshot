@@ -36,7 +36,6 @@ If you have no ideas because the code looks fine, feel free to say that it alrea
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
-                displayText: '',
             },
             new Promise(resolve => resolve([]))
         )

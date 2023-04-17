@@ -72,7 +72,6 @@ export class GitHistory implements Recipe {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
-                displayText: '',
             },
             Promise.resolve([])
         )

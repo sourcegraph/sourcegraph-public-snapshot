@@ -7,6 +7,7 @@ import {
     CodeCompletionResponse,
     CompletionCallbacks,
     CompletionParameters,
+    Message,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 export class OpenAICompletionsClient extends SourcegraphCompletionsClient {
@@ -31,12 +32,17 @@ export class OpenAICompletionsClient extends SourcegraphCompletionsClient {
             .createChatCompletion(
                 {
                     model: 'gpt-3.5-turbo',
-                    messages: params.messages.map(message => {
-                        return {
-                            role: message.speaker === 'human' ? 'user' : 'assistant',
-                            content: message.text,
-                        }
-                    }),
+                    messages: params.messages
+                        .filter(
+                            (message): message is Omit<Message, 'text'> & Required<Pick<Message, 'text'>> =>
+                                message.text !== undefined
+                        )
+                        .map(message => {
+                            return {
+                                role: message.speaker === 'human' ? 'user' : 'assistant',
+                                content: message.text,
+                            }
+                        }),
                     stream: true,
                 },
                 { responseType: 'stream' }

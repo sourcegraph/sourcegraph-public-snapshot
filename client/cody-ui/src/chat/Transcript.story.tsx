@@ -40,7 +40,7 @@ export default meta
 export const Simple: ComponentStoryObj<typeof Transcript> = {
     render: args => (
         <Transcript
-            messageInProgress={{ speaker: 'assistant', text: '', displayText: '' }}
+            messageInProgress={{ speaker: 'assistant' }}
             transcript={args.transcript}
             fileLinkComponent={FileLink}
             transcriptItemClassName={styles.transcriptItem}

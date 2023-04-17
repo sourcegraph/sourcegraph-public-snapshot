@@ -37,7 +37,6 @@ export class TranslateToLanguage implements Recipe {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
-                displayText: '',
             },
             Promise.resolve([])
         )

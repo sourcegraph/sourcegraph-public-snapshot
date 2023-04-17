@@ -38,7 +38,6 @@ export class GenerateTest implements Recipe {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
-                displayText: '',
             },
             getContextMessagesFromSelection(
                 truncatedSelectedText,

@@ -160,8 +160,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     const { text, displayText } = lastInteraction.getAssistantMessage()
-                    const { text: highlightedDisplayText } = await highlightTokens(displayText, fileExists)
-                    this.transcript.addAssistantResponse(text, highlightedDisplayText)
+                    const { text: highlightedDisplayText } = await highlightTokens(displayText || '', fileExists)
+                    this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                 }
                 this.isMessageInProgress = false
                 this.cancelCompletionCallback = null
