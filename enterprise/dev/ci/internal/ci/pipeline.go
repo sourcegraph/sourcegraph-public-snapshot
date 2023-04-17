@@ -127,6 +127,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"codeinsights-db",
 				"codeintel-db",
 				"node-exporter",
+				"opentelemetry-collector",
 				"postgres-12-alpine",
 				"prometheus",
 				"prometheus-gcp",
