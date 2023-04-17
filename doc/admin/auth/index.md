@@ -19,7 +19,7 @@ The authentication providers are configured in the [`auth.providers`](../config/
 
 ## Login form configuration
 
-For ways to configure the login form we present to the users, please see the [login form configuration page](./login_form.md).
+To configure the presentation of the login form, see the [login form configuration page](./login_form.md).
 ## Recommendations
 
 If you are unsure which auth provider is right for you, we recommend applying the following rules in
