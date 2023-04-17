@@ -37,7 +37,6 @@ func WolfiBaseImagesOperations(changedFiles []string, tag string, packagesChange
 func WolfiPackagesOperations(changedFiles []string) *operations.Set {
 	// TODO: Should we require the image name, or the full path to the yaml file?
 	ops := operations.NewNamedSet("Dependency packages")
-	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
 
 	var stepKeys []string
 	for _, c := range changedFiles {
@@ -46,8 +45,6 @@ func WolfiPackagesOperations(changedFiles []string) *operations.Set {
 			buildFunc, key := buildPackage(match[1])
 			stepKeys = append(stepKeys, key)
 			ops.Append(buildFunc)
-		} else {
-			logger.Fatal(fmt.Sprintf("Unable to extract package name from '%s', matches were %+v\n", c, match))
 		}
 	}
 
