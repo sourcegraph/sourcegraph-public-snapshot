@@ -134,6 +134,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"redis-cache",
 				"redis-store",
 				"redis_exporter",
+				"sg",
 				"syntax-highlighter",
 			}, c.Version, c.candidateImageTag()),
 		)
