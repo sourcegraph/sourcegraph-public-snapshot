@@ -15,12 +15,16 @@ import { CODY_ACCESS_TOKEN_SECRET, VSCodeSecretStorage } from './secret-storage'
 // This client can be used to execute arbitrary commands.
 let client: LanguageClient
 
-export async function sendCommandRequest(command: string, args: any[] | undefined): Promise<void> {
+export async function sendCommandRequest<R>(command: string, args: any[] | undefined): Promise<R> {
     return client
-        .sendRequest('workspace/executeCommand', {
+        .sendRequest<R>('workspace/executeCommand', {
             command,
             arguments: args,
         })
+}
+
+type ErrorAnswer = {
+    answer: string
 }
 
 function getLLMSPBinary(): string {
@@ -78,8 +82,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
             resolveCodeAction: async (item, token, next): Promise<vscode.CodeAction | null | undefined> => {
                 const action = await next(item, token)
                 if (action != null && action != undefined && action.command != undefined) {
+                    // We can intercept certain code actions and handle special cases here
+                    if (action.command.command === "cody.explainErrors") {
+                        try {
+                            let resp = await sendCommandRequest<ErrorAnswer>(action.command.command, action.command.arguments)
+                            // Display response in chat window
+                            return action
+                        } catch (err) {
+                        }
+                    }
                     try {
-                        await sendCommandRequest(action.command.command, action.command.arguments)
+                        await sendCommandRequest<void>(action.command.command, action.command.arguments)
                     } catch (err) {
                         console.error(err)
                     }
@@ -127,6 +140,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Extens
                 sourcegraph: {
                     url: config.serverEndpoint,
                     accessToken: codyAccessToken ?? '',
+                    autoComplete: 'always',
                     repos: repos,
                 },
             },
