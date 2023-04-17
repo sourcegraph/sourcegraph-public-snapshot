@@ -140,7 +140,7 @@ func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
 	}
 }
 
-func bazelBuildCandidateDockerImages(apps []string, version string, tag string, uploadSourcemaps bool) operations.Operation {
+func bazelBuildCandidateDockerImages(apps []string, version string, tag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{}
 
