@@ -47,13 +47,12 @@ In this case, the GitLab auth provider will be shown above the GitHub auth provi
 
 <img alt="login form auth providers order screenshot" src="https://sourcegraphstatic.com/docs/images/administration/auth/login_form_order.png" class="screenshot">
 
-`order` is an optional parameter. Auth providers without `order` parameter will be put at the end of the 
-auth providers list using the specific hardcoded order mentioned above. 
+Auth providers without `order` parameter will be put at the end of the auth providers list.
 
 ### Limit count of login options
 
 By default, the login form shows up to 5 primary auth provider buttons on the page. Other auth providers can be reached 
-with `Other login methods` button.
+with the `Other login methods` button.
 
 This default can be changed, e.g. in case there are 1 or 2 preferred methods for users to login with. 
 For example there might be a different auth provider setup for regular engineers and a different one for site admins. 
@@ -106,8 +105,8 @@ By default, the `displayPrefix` will be `Continue with` and `displayName` will b
 
 > NOTE: Hiding an auth provider is mostly useful for development purposes and special cases.
 
-It is possible to also hide the auth provider from the login form completely. Auth provider has `hidden` boolean property, 
-which can be configured as in example [site configuration](../config/site_config.md) below:
+It is also possible to hide the auth provider from the login form completely. Auth providers have a `hidden` boolean property. 
+See the [site configuration](../config/site_config.md) example below:
 ```json
 {
   "auth.providers": [
@@ -124,4 +123,4 @@ which can be configured as in example [site configuration](../config/site_config
 }
 ```
 
-In this example, the github auth provider will not be shown on the login form at all. Only Gitlab auth provider will be shown. 
+In this example, the GitHub auth provider will not be shown on the login form at all. Only the GitLab auth provider will be shown. 
