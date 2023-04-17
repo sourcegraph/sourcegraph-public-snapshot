@@ -47,7 +47,6 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             set({ messageInProgress: null, transcript: [], repo: config.codebase })
             createClient({
                 config,
-                accessToken: null,
                 setMessageInProgress: message => set({ messageInProgress: message }),
                 setTranscript: transcript => set({ transcript }),
             })
@@ -72,6 +71,7 @@ export const useChatStore = (isCodyEnabled: boolean, repoName: string): CodyChat
             serverEndpoint: window.location.origin,
             useContext: 'embeddings',
             codebase: repoName,
+            accessToken: null,
         }),
         [repoName]
     )

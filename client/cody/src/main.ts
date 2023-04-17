@@ -1,111 +1,102 @@
 import * as vscode from 'vscode'
 
-import { ChatViewProvider } from '../chat/ChatViewProvider'
-import { CodyCompletionItemProvider } from '../completions'
-import { CompletionsDocumentProvider } from '../completions/docprovider'
-import { History } from '../completions/history'
-import { getConfiguration } from '../configuration'
-import { VSCodeEditor } from '../editor/vscode-editor'
-import { logEvent, updateEventLogger } from '../event-logger'
-import { configureExternalServices } from '../external-services'
-import { getRgPath } from '../rg'
-import { sanitizeCodebase, sanitizeServerEndpoint } from '../sanitize'
-import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from '../secret-storage'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
-import { LocalStorage } from './LocalStorageProvider'
+import { ChatViewProvider } from './chat/ChatViewProvider'
+import { LocalStorage } from './command/LocalStorageProvider'
+import { CodyCompletionItemProvider } from './completions'
+import { CompletionsDocumentProvider } from './completions/docprovider'
+import { History } from './completions/history'
+import { getConfiguration } from './configuration'
+import { VSCodeEditor } from './editor/vscode-editor'
+import { logEvent, updateEventLogger } from './event-logger'
+import { configureExternalServices } from './external-services'
+import { getRgPath } from './rg'
+import {
+    CODY_ACCESS_TOKEN_SECRET,
+    InMemorySecretStorage,
+    SecretStorage,
+    VSCodeSecretStorage,
+    getAccessToken,
+} from './secret-storage'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
  */
 export async function start(context: vscode.ExtensionContext): Promise<vscode.Disposable> {
-    const secretStorage = getSecretStorage(context)
+    const secretStorage =
+        process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
     const localStorage = new LocalStorage(context.globalState)
     const rgPath = await getRgPath(context.extensionPath)
 
-    const disposables: vscode.Disposable[] = []
-
-    let mainDisposable: vscode.Disposable | undefined
-    disposables.push({ dispose: () => mainDisposable?.dispose() })
-    const initializeMain = async (focusView = false): Promise<void> => {
-        mainDisposable?.dispose()
-        try {
-            const disposable = await register(context, secretStorage, localStorage, rgPath, focusView)
-            mainDisposable?.dispose()
-            mainDisposable = disposable
-        } catch (error) {
-            console.error(error)
-            mainDisposable?.dispose()
-            mainDisposable = undefined
-        }
+    const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
+        const config = getConfiguration(vscode.workspace.getConfiguration())
+        return { ...config, accessToken: await getAccessToken(secretStorage) }
     }
 
-    // Initialize.
-    void initializeMain()
+    const disposables: vscode.Disposable[] = []
+
+    const { disposable, onConfigurationChange } = await register(
+        context,
+        await getFullConfig(),
+        secretStorage,
+        localStorage,
+        rgPath
+    )
+    disposables.push(disposable)
 
     // Re-initialize when configuration or secrets change.
     disposables.push(
         secretStorage.onDidChange(async key => {
             if (key === CODY_ACCESS_TOKEN_SECRET) {
-                await initializeMain(true)
+                onConfigurationChange(await getFullConfig())
             }
         }),
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody') || event.affectsConfiguration('sourcegraph')) {
-                await initializeMain(true)
+                onConfigurationChange(await getFullConfig())
             }
         })
     )
-    return vscode.Disposable.from(...disposables)
-}
 
-function getSecretStorage(context: vscode.ExtensionContext): SecretStorage {
-    return process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
+    return vscode.Disposable.from(...disposables)
 }
 
 // Registers commands and webview given the config.
 const register = async (
     context: vscode.ExtensionContext,
+    initialConfig: ConfigurationWithAccessToken,
     secretStorage: SecretStorage,
     localStorage: LocalStorage,
-    rgPath: string,
-    focusView: boolean
-): Promise<vscode.Disposable> => {
+    rgPath: string
+): Promise<{
+    disposable: vscode.Disposable
+    onConfigurationChange: (newConfig: ConfigurationWithAccessToken) => void
+}> => {
     const disposables: vscode.Disposable[] = []
 
-    const config = getConfiguration(vscode.workspace.getConfiguration())
-
-    await updateEventLogger(config, secretStorage, localStorage)
+    await updateEventLogger(initialConfig, localStorage)
 
     const editor = new VSCodeEditor()
 
-    const mode = config.debug ? 'development' : 'production'
-    const serverEndpoint = sanitizeServerEndpoint(config.serverEndpoint)
-    const codebase = sanitizeCodebase(config.codebase)
-
-    const { intentDetector, codebaseContext, chatClient, completionsClient } = await configureExternalServices(
-        serverEndpoint,
-        codebase,
-        rgPath,
-        editor,
-        secretStorage,
-        config.useContext,
-        mode,
-        config.customHeaders
-    )
+    const {
+        intentDetector,
+        codebaseContext,
+        chatClient,
+        completionsClient,
+        onConfigurationChange: externalServicesOnDidConfigurationChange,
+    } = await configureExternalServices(initialConfig, rgPath, editor)
 
     // Create chat webview
     const chatProvider = new ChatViewProvider(
         context.extensionPath,
-        sanitizeCodebase(config.codebase),
-        sanitizeServerEndpoint(config.serverEndpoint),
+        initialConfig,
         chatClient,
         intentDetector,
         codebaseContext,
         editor,
         secretStorage,
-        mode,
-        localStorage,
-        config.customHeaders
+        localStorage
     )
     disposables.push(chatProvider)
 
@@ -114,11 +105,6 @@ const register = async (
             webviewOptions: { retainContextWhenHidden: true },
         })
     )
-    if (focusView) {
-        // Focus the webview if the re-initialization was triggered by a config or secret change.
-        setTimeout(() => vscode.commands.executeCommand('cody.chat.focus'), 100)
-    }
-
     await vscode.commands.executeCommand('setContext', 'cody.activated', true)
     disposables.push({ dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) })
 
@@ -192,7 +178,8 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.find-code-smells', async () => executeRecipe('find-code-smells'))
     )
 
-    if (config.experimentalSuggest) {
+    if (initialConfig.experimentalSuggest) {
+        // TODO(sqs): make this listen to config and not just use initialConfig
         const docprovider = new CompletionsDocumentProvider()
         disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
 
@@ -206,5 +193,11 @@ const register = async (
         )
     }
 
-    return vscode.Disposable.from(...disposables)
+    return {
+        disposable: vscode.Disposable.from(...disposables),
+        onConfigurationChange: newConfig => {
+            chatProvider.onConfigurationChange(newConfig)
+            externalServicesOnDidConfigurationChange(newConfig)
+        },
+    }
 }

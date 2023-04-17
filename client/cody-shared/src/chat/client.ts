@@ -1,5 +1,5 @@
 import { CodebaseContext } from '../codebase-context'
-import { Configuration } from '../configuration'
+import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor } from '../editor'
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
@@ -17,33 +17,22 @@ import { ChatMessage } from './transcript/messages'
 import { reformatBotMessage } from './viewHelpers'
 
 export interface ClientInit {
-    config: Pick<Configuration, 'serverEndpoint' | 'codebase' | 'useContext'>
-    accessToken: string | null
+    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken'>
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: ChatMessage[]) => void
-    customHeaders?: Record<string, string>
 }
 
 export interface Client {
     submitMessage: (text: string) => void
 }
 
-export async function createClient({
-    config,
-    accessToken,
-    setMessageInProgress,
-    setTranscript,
-    customHeaders,
-}: ClientInit): Promise<Client> {
-    const completionsClient = new SourcegraphBrowserCompletionsClient(
-        config.serverEndpoint,
-        accessToken,
-        process.env.NODE_ENV === 'development' ? 'development' : 'production',
-        customHeaders
-    )
+export async function createClient({ config, setMessageInProgress, setTranscript }: ClientInit): Promise<Client> {
+    const fullConfig = { ...config, debug: false, customHeaders: {} }
+
+    const completionsClient = new SourcegraphBrowserCompletionsClient(fullConfig)
     const chatClient = new ChatClient(completionsClient)
 
-    const graphqlClient = new SourcegraphGraphQLAPIClient(config.serverEndpoint, accessToken, customHeaders)
+    const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)
 
     const repoId = config.codebase ? await graphqlClient.getRepoId(config.codebase) : null
     if (isError(repoId)) {
@@ -54,7 +43,7 @@ export async function createClient({
 
     const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
 
-    const codebaseContext = new CodebaseContext(config.useContext, embeddingsSearch, noopKeywordFetcher)
+    const codebaseContext = new CodebaseContext(config, embeddingsSearch, noopKeywordFetcher)
 
     const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
 

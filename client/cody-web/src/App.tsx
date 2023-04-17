@@ -23,10 +23,11 @@ export const App: React.FunctionComponent = () => {
     useEffect(() => {
         setMessageInProgress(null)
         setTranscript([])
-        createClient({ config, accessToken: config.accessToken, setMessageInProgress, setTranscript }).then(
-            setClient,
-            setClient
-        )
+        createClient({
+            config,
+            setMessageInProgress,
+            setTranscript,
+        }).then(setClient, setClient)
     }, [config])
 
     const onSubmit = useCallback(
