@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Icon, Menu, MenuButton, MenuItem, MenuList } from '@sourcegraph/wildcard'
+import { Icon, Menu, MenuButton, MenuList } from '@sourcegraph/wildcard'
 
 import styles from './Recipes.module.css'
 

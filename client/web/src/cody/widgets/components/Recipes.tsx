@@ -2,7 +2,7 @@ import React, { useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { AskCodyIcon } from '../../icons/AskCodyIcon'
+import { AskCodyIcon } from '@sourcegraph/cody-ui/src/icons/AskCodyIcon'
 
 import { useRecipesResize } from './useRecipesResize'
 

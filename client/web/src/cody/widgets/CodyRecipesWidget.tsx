@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 
 import { mdiCardBulletedOutline, mdiDotsVertical, mdiProgressPencil, mdiTranslate } from '@mdi/js'
 
-import { useChatStoreState } from '../../../web/src/stores/codyChat'
+import { useChatStoreState } from '../../stores/codyChat'
 
 import { Recipe } from './components/Recipe'
 import { RecipeAction } from './components/RecipeAction'

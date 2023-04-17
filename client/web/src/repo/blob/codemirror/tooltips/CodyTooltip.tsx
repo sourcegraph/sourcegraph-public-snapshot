@@ -2,7 +2,7 @@ import { EditorState, StateField } from '@codemirror/state'
 import { Tooltip, showTooltip } from '@codemirror/view'
 import ReactDOM from 'react-dom/client'
 
-import { CodyRecipesWidget } from '@sourcegraph/cody-ui/src/widgets/CodyRecipesWidget'
+import { CodyRecipesWidget } from '../../../../cody/widgets/CodyRecipesWidget'
 
 /**
  * Add a extension to CodeMirror extensions to display the Cody widget
