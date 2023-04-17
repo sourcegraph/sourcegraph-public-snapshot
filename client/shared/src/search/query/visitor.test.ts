@@ -15,20 +15,20 @@ expect.addSnapshotSerializer({
 const collect = (input: string): Node[] => {
     const visitedNodes: Node[] = []
     const visitors: Visitors = {
-        visitOperator(operands: Node[], kind: OperatorKind, range, groupRange) {
-            visitedNodes.push({ type: 'operator', operands, kind, range, groupRange })
+        visitOperator(left, right, kind: OperatorKind, range, groupRange) {
+            visitedNodes.push({ type: 'operator', left, right, kind, range, groupRange })
         },
         visitSequence(nodes: Node[], range) {
             visitedNodes.push({ type: 'sequence', nodes, range })
         },
-        visitParameter(field, value, negated, range) {
-            visitedNodes.push({ type: 'parameter', field, value, negated, range })
+        visitParameter(field, value, negated, quoted, range) {
+            visitedNodes.push({ type: 'parameter', field, value, negated, quoted, range })
         },
-        visitPattern(value, kind, negated, quoted, range) {
-            visitedNodes.push({ type: 'pattern', value, kind, negated, quoted, range })
+        visitPattern(value, kind, range) {
+            visitedNodes.push({ type: 'pattern', value, kind, range })
         },
     }
-    visit((parseSearchQuery(input) as ParseSuccess).nodes, visitors)
+    visit([(parseSearchQuery(input) as ParseSuccess).node], visitors)
     return visitedNodes
 }
 
@@ -38,48 +38,46 @@ describe('visit()', () => {
             [
               {
                 "type": "operator",
-                "operands": [
-                  {
-                    "type": "sequence",
-                    "nodes": [
-                      {
-                        "type": "parameter",
-                        "field": "repo",
-                        "value": "foo",
-                        "negated": false,
-                        "range": {
-                          "start": 0,
-                          "end": 8
-                        }
-                      },
-                      {
-                        "type": "pattern",
-                        "kind": 1,
-                        "value": "pattern-bar",
-                        "quoted": false,
-                        "negated": false,
-                        "range": {
-                          "start": 9,
-                          "end": 20
-                        }
+                "left": {
+                  "type": "sequence",
+                  "nodes": [
+                    {
+                      "type": "parameter",
+                      "field": "repo",
+                      "value": "foo",
+                      "quoted": false,
+                      "negated": false,
+                      "range": {
+                        "start": 0,
+                        "end": 8
                       }
-                    ],
-                    "range": {
-                      "start": 0,
-                      "end": 20
+                    },
+                    {
+                      "type": "pattern",
+                      "kind": 1,
+                      "value": "pattern-bar",
+                      "range": {
+                        "start": 9,
+                        "end": 20
+                      }
                     }
-                  },
-                  {
-                    "type": "parameter",
-                    "field": "file",
-                    "value": "baz",
-                    "negated": false,
-                    "range": {
-                      "start": 24,
-                      "end": 32
-                    }
+                  ],
+                  "range": {
+                    "start": 0,
+                    "end": 20
                   }
-                ],
+                },
+                "right": {
+                  "type": "parameter",
+                  "field": "file",
+                  "value": "baz",
+                  "quoted": false,
+                  "negated": false,
+                  "range": {
+                    "start": 24,
+                    "end": 32
+                  }
+                },
                 "kind": "OR",
                 "range": {
                   "start": 0,
@@ -93,6 +91,7 @@ describe('visit()', () => {
                     "type": "parameter",
                     "field": "repo",
                     "value": "foo",
+                    "quoted": false,
                     "negated": false,
                     "range": {
                       "start": 0,
@@ -103,8 +102,6 @@ describe('visit()', () => {
                     "type": "pattern",
                     "kind": 1,
                     "value": "pattern-bar",
-                    "quoted": false,
-                    "negated": false,
                     "range": {
                       "start": 9,
                       "end": 20
@@ -121,6 +118,7 @@ describe('visit()', () => {
                 "field": "repo",
                 "value": "foo",
                 "negated": false,
+                "quoted": false,
                 "range": {
                   "start": 0,
                   "end": 8
@@ -130,8 +128,6 @@ describe('visit()', () => {
                 "type": "pattern",
                 "value": "pattern-bar",
                 "kind": 1,
-                "negated": false,
-                "quoted": false,
                 "range": {
                   "start": 9,
                   "end": 20
@@ -142,6 +138,7 @@ describe('visit()', () => {
                 "field": "file",
                 "value": "baz",
                 "negated": false,
+                "quoted": false,
                 "range": {
                   "start": 24,
                   "end": 32

@@ -4,6 +4,7 @@
     "exclude_files": {
       "rules_go.*/*": "ignore rules_go working directory",
       "external/*": "no need to vet third party code",
+      "schema/schema.go": "ignore generated code",
       ".*_generated\\.go$": "ignore generated code",
       ".*_pb\\.go$": "ignore protobuff generated code",
       "docker-images/*": "ignore all code under docker-images",

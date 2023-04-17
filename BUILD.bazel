@@ -195,6 +195,15 @@ js_library(
     ],
 )
 
+js_library(
+    name = "graphql_schema_config",
+    srcs = [
+        ".graphqlrc.yml",
+        "graphql-schema-linter.config.js",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 # Go
 
 # nogo config
@@ -209,6 +218,7 @@ nogo(
     visibility = ["//visibility:public"],  # must have public visibility
     deps = [
         "//dev/linters/bodyclose",
+        "//dev/linters/depguard",
         "//dev/linters/exportloopref",
         "//dev/linters/forbidigo",
         "//dev/linters/gocritic",
@@ -216,4 +226,6 @@ nogo(
     ] + STATIC_CHECK_ANALYZERS,
 )
 
-exports_files(["go.mod"])
+exports_files([
+    "go.mod",
+])

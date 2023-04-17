@@ -21,7 +21,6 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
-	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -1025,28 +1024,24 @@ func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPe
 
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
-func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) (_ []string, err error) {
-	cmd := c.gitCommand(repo, "ls-tree", "-z", "--name-only", "-r", string(commit), "--")
-
-	out, err := cmd.CombinedOutput(ctx)
+func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, opts *protocol.ListFilesOpts) (_ []string, err error) {
+	files, err := c.ReadDir(ctx, checker, repo, commit, "", true)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "reading directory")
 	}
+	var filteredFiles []string
 
-	files := strings.Split(string(out), "\x00")
-	// Drop trailing empty string
-	if len(files) > 0 && files[len(files)-1] == "" {
-		files = files[:len(files)-1]
-	}
-
-	var matching []string
-	for _, path := range files {
-		if pattern.MatchString(path) {
-			matching = append(matching, path)
+	for _, file := range files {
+		if file.IsDir() && !opts.IncludeDirs {
+			continue
+		} else if opts.MaxFileSizeBytes != 0 && file.Size() > opts.MaxFileSizeBytes {
+			continue
 		}
+
+		filteredFiles = append(filteredFiles, file.Name())
 	}
 
-	return filterPaths(ctx, checker, repo, matching)
+	return filterPaths(ctx, checker, repo, filteredFiles)
 }
 
 // 🚨 SECURITY: All git methods that deal with file or path access need to have

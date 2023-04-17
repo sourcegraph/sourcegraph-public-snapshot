@@ -1,5 +1,5 @@
 import { CodebaseContext } from '../codebase-context'
-import { Configuration } from '../configuration'
+import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor } from '../editor'
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
@@ -8,15 +8,16 @@ import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completi
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
 import { isError } from '../utils'
 
+import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
+import { getPreamble } from './preamble'
 import { ChatQuestion } from './recipes/chat-question'
 import { Transcript } from './transcript'
 import { ChatMessage } from './transcript/messages'
 import { reformatBotMessage } from './viewHelpers'
 
 export interface ClientInit {
-    config: Pick<Configuration, 'serverEndpoint' | 'codebase' | 'useContext'>
-    accessToken: string | null
+    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken'>
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: ChatMessage[]) => void
 }
@@ -25,20 +26,13 @@ export interface Client {
     submitMessage: (text: string) => void
 }
 
-export async function createClient({
-    config,
-    accessToken,
-    setMessageInProgress,
-    setTranscript,
-}: ClientInit): Promise<Client> {
-    const completionsClient = new SourcegraphBrowserCompletionsClient(
-        config.serverEndpoint,
-        accessToken,
-        process.env.NODE_ENV === 'development' ? 'development' : 'production'
-    )
+export async function createClient({ config, setMessageInProgress, setTranscript }: ClientInit): Promise<Client> {
+    const fullConfig = { ...config, debug: false, customHeaders: {} }
+
+    const completionsClient = new SourcegraphBrowserCompletionsClient(fullConfig)
     const chatClient = new ChatClient(completionsClient)
 
-    const graphqlClient = new SourcegraphGraphQLAPIClient(config.serverEndpoint, accessToken)
+    const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)
 
     const repoId = config.codebase ? await graphqlClient.getRepoId(config.codebase) : null
     if (isError(repoId)) {
@@ -49,7 +43,7 @@ export async function createClient({
 
     const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
 
-    const codebaseContext = new CodebaseContext(config.useContext, embeddingsSearch, noopKeywordFetcher)
+    const codebaseContext = new CodebaseContext(config, embeddingsSearch, noopKeywordFetcher)
 
     const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
 
@@ -63,11 +57,17 @@ export async function createClient({
         getActiveTextEditorSelection() {
             return null
         },
+        getActiveTextEditorSelectionOrEntireFile() {
+            return null
+        },
         getActiveTextEditorVisibleContent() {
             return null
         },
         getWorkspaceRootPath() {
             return null
+        },
+        replaceSelection(_fileName, _selectedText, _replacement) {
+            return Promise.resolve()
         },
         async showQuickPick(labels) {
             return window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || undefined
@@ -99,6 +99,7 @@ export async function createClient({
                 editor: fakeEditor,
                 intentDetector,
                 codebaseContext,
+                responseMultiplexer: new BotResponseMultiplexer(),
             })
             if (!interaction) {
                 throw new Error('No interaction')
@@ -107,7 +108,7 @@ export async function createClient({
             transcript.addInteraction(interaction)
             sendTranscript()
 
-            const prompt = await transcript.toPrompt()
+            const prompt = await transcript.toPrompt(getPreamble(config.codebase))
             const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
 
             chatClient.chat(prompt, {

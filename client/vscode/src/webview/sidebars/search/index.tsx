@@ -5,6 +5,7 @@ import React, { useMemo, useState } from 'react'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
 import { createRoot } from 'react-dom/client'
+import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -119,10 +120,20 @@ const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
 
 const root = createRoot(document.querySelector('#root')!)
 
+const routes = [
+    {
+        path: '/*',
+        element: <Main />,
+    },
+]
+const router = createMemoryRouter(routes, {
+    initialEntries: ['/'],
+})
+
 root.render(
     <ShortcutProvider>
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <Main />
+            <RouterProvider router={router} />
         </WildcardThemeContext.Provider>
     </ShortcutProvider>
 )

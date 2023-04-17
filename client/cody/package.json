@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Sourcegraph Cody",
-  "version": "0.0.5",
+  "version": "0.0.7",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -28,7 +28,7 @@
   },
   "scripts": {
     "build": "pnpm esbuild --minify && vite build --mode production",
-    "build:dev": "pnpm esbuild --sourcemap && vite build --mode development",
+    "build:dev": "concurrently \"pnpm esbuild --sourcemap\" \"vite build --mode development\"",
     "download-rg": "scripts/download-rg.sh",
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
@@ -102,6 +102,10 @@
         "title": "Ask Cody: Improve Variable Names"
       },
       {
+        "command": "cody.recipe.fixup",
+        "title": "Cody: Fixup"
+      },
+      {
         "command": "cody.set-access-token",
         "title": "Cody: Set Access Token"
       },
@@ -116,10 +120,16 @@
     ],
     "keybindings": [
       {
-        "command": "cody.recipe.explain-code-high-level",
-        "key": "ctrl+alt+c",
-        "mac": "ctrl+alt+c",
+        "command": "cody.chat.focus",
+        "key": "alt+/",
+        "mac": "alt+/",
         "when": "cody.activated"
+      },
+      {
+        "command": "cody.recipe.fixup",
+        "key": "ctrl+alt+/",
+        "mac": "ctrl+alt+/",
+        "when": "cody.activated && editorTextFocus && !editorReadonly"
       }
     ],
     "submenus": [
@@ -158,6 +168,10 @@
           "when": "cody.activated"
         },
         {
+          "command": "cody.recipe.fixup",
+          "when": "cody.activated"
+        },
+        {
           "command": "cody.set-access-token"
         },
         {
@@ -189,6 +203,9 @@
         },
         {
           "command": "cody.recipe.translate-to-language"
+        },
+        {
+          "command": "cody.recipe.fixup"
         }
       ]
     },
@@ -203,7 +220,7 @@
         },
         "cody.serverEndpoint": {
           "type": "string",
-          "default": "https://<instance>.sourcegraph.com",
+          "default": "https://sourcegraph.com",
           "example": "https://<instance>.sourcegraph.com",
           "description": "URL to the Sourcegraph instance."
         },
@@ -230,6 +247,16 @@
         },
         "cody.experimental.keys.anthropic": {
           "type": "string"
+        },
+        "cody.customHeaders": {
+          "type": "object",
+          "default": {},
+          "examples": [
+            {
+              "Cache-Control": "no-cache",
+              "Proxy-Authenticate": "Basic"
+            }
+          ]
         }
       }
     }

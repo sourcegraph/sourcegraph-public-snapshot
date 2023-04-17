@@ -17,7 +17,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../../components/WebStory'
 import { PermissionsSyncJob } from '../../graphql-operations'
 
-import { PERMISSIONS_SYNC_JOBS_QUERY } from './backend'
+import { PERMISSIONS_SYNC_JOBS_QUERY, PERMISSIONS_SYNC_JOBS_STATS } from './backend'
 import { PermissionsSyncJobsTable } from './PermissionsSyncJobsTable'
 
 const decorator: DecoratorFn = Story => <Story />
@@ -66,6 +66,26 @@ export const SixSyncJobsFound: Story = () => (
                         generateResponse(PermissionsSyncJobState.PROCESSING, null, PROCESSING_JOBS_MOCK_DATA, 3),
                         generateResponse(PermissionsSyncJobState.QUEUED, null, QUEUED_JOBS_MOCK_DATA, 3),
                         generateResponse(null, null, PARTIAL_JOBS_MOCK_DATA, 2, true),
+                        {
+                            request: {
+                                query: getDocumentNode(PERMISSIONS_SYNC_JOBS_STATS),
+                                variables: {},
+                            },
+                            result: {
+                                data: {
+                                    permissionsSyncingStats: {
+                                        queueSize: 1337,
+                                        usersWithLatestJobFailing: 228101,
+                                        reposWithLatestJobFailing: 3,
+                                        usersWithNoPermissions: 4,
+                                        reposWithNoPermissions: 5,
+                                        usersWithStalePermissions: 6,
+                                        reposWithStalePermissions: 42,
+                                    },
+                                },
+                            },
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
                     ])
                 }
             >

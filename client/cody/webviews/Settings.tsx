@@ -13,9 +13,6 @@ export const Settings: React.FunctionComponent<React.PropsWithChildren<SettingsP
     <div className="inner-container">
         <div className="non-transcript-container">
             <div className="settings">
-                <VSCodeButton className="logout-button" type="button" onClick={() => setView('about')}>
-                    About
-                </VSCodeButton>
                 <VSCodeButton className="logout-button" type="button" onClick={() => setView('history')}>
                     Chat History
                 </VSCodeButton>

@@ -175,16 +175,6 @@ The Sourcegraph instance's site admin must [update the `corsOrigin` site config 
 }
 ```
 
-The site admin should also set `alerts.codeHostIntegrationMessaging` in [global settings](../config/settings.md#editing-global-settings-for-site-admins) to ensure informational content for users in the Sourcegraph webapp references the native integration and not the browser extension.
-
-```json
-{
-  // ...
-  "alerts.codeHostIntegrationMessaging": "native-integration"
-  // ...
-}
-```
-
 ## Access token scopes
 
 Sourcegraph requires an access token with `api` permissions (and `sudo`, if you are using an `external` identity provider type). These permissions are required for the following reasons:

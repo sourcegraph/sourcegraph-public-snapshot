@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -eux
 
 # Honeycomb's buildevent plumbing.
 # -------------------------------
@@ -29,18 +29,18 @@ mkdir -p ./annotations/
 # ----------
 
 if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" ]]; then
-    echo "~~~ Preparing asdf dependencies"
+  echo "~~~ Preparing asdf dependencies"
 
-    if [[ "$BUILDKITE_STEP_KEY" == "pipeline-gen" ]]; then
-        echo "pipeline-gen step: running go install only"
-        asdf install golang
-    elif [[ "$BUILDKITE_STEP_KEY" == "pipeline-upload" ]]; then
-        echo "pipeline-upload step: skipping asdf install"
-    else
-        echo "running normal install"
-        ./dev/ci/asdf-install.sh
-    fi
-# else
-    # Only enable when you're debugging, this produces about 300 log files
-    # export BUILDKITE_ARTIFACT_PATHS="$(bazel info bazel-testlogs)/**/*.log"
+  if [[ "$BUILDKITE_STEP_KEY" == "pipeline-gen" ]]; then
+    echo "pipeline-gen step: running go install only"
+    asdf install golang
+  elif [[ "$BUILDKITE_STEP_KEY" == "pipeline-upload" ]]; then
+    echo "pipeline-upload step: skipping asdf install"
+  else
+    echo "running normal install"
+    ./dev/ci/asdf-install.sh
+  fi
+#else
+  # Only enable when you're debugging, this produces about 300 log files
+  # export BUILDKITE_ARTIFACT_PATHS="$(bazel info bazel-testlogs)/**/*.log"
 fi

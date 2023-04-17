@@ -2,6 +2,7 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
+import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
@@ -9,53 +10,63 @@ import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { version as packageVersion } from '../../package.json'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { updateConfiguration } from '../configuration'
-import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
-import { configureExternalServices } from '../external-services'
-import { getRgPath } from '../rg'
-import { sanitizeServerEndpoint } from '../sanitize'
-import { CODY_ACCESS_TOKEN_SECRET, getAccessToken, SecretStorage } from '../secret-storage'
+import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
-async function isValidLogin(serverEndpoint: string, accessToken: string): Promise<boolean> {
-    const client = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(serverEndpoint), accessToken)
+import { ConfigurationSubsetForWebview, ExtensionMessage, WebviewMessage } from './protocol'
+
+async function isValidLogin(
+    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+): Promise<boolean> {
+    const client = new SourcegraphGraphQLAPIClient(config)
     const userId = await client.getCurrentUserId()
     return !isError(userId)
 }
 
-export class ChatViewProvider implements vscode.WebviewViewProvider {
+type Config = Pick<
+    ConfigurationWithAccessToken,
+    'codebase' | 'serverEndpoint' | 'debug' | 'customHeaders' | 'accessToken'
+>
+
+export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
-    private webview?: vscode.Webview
-
-    private tosVersion = packageVersion
+    private webview?: Omit<vscode.Webview, 'postMessage'> & {
+        postMessage(message: ExtensionMessage): Thenable<boolean>
+    }
 
     private currentChatID = ''
     private inputHistory: string[] = []
     private chatHistory: ChatHistory = {}
 
+    private transcript: Transcript = new Transcript()
+
+    // Allows recipes to hook up subscribers to process sub-streams of bot output
+    private multiplexer: BotResponseMultiplexer = new BotResponseMultiplexer()
+
+    private configurationChangeEvent = new vscode.EventEmitter<void>()
+
+    private disposables: vscode.Disposable[] = []
+
     constructor(
         private extensionPath: string,
-        private codebase: string,
-        private serverEndpoint: string,
-        private transcript: Transcript,
+        private config: Config,
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
         private editor: Editor,
         private secretStorage: SecretStorage,
-        private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
-        private rgPath: string,
-        private mode: 'development' | 'production',
         private localStorage: LocalStorage
     ) {
         if (TestSupport.instance) {
@@ -63,53 +74,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
         // chat id is used to identify chat session
         this.createNewChatID()
+
+        this.disposables.push(this.configurationChangeEvent)
     }
 
-    public static async create(
-        extensionPath: string,
-        codebase: string,
-        serverEndpoint: string,
-        contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
-        debug: boolean,
-        secretStorage: SecretStorage,
-        localStorage: LocalStorage
-    ): Promise<ChatViewProvider> {
-        const mode = debug ? 'development' : 'production'
-        const rgPath = await getRgPath(extensionPath)
-        const editor = new VSCodeEditor()
-
-        const { intentDetector, codebaseContext, chatClient } = await configureExternalServices(
-            serverEndpoint,
-            codebase,
-            rgPath,
-            editor,
-            secretStorage,
-            contextType,
-            mode
-        )
-        return new ChatViewProvider(
-            extensionPath,
-            codebase,
-            serverEndpoint,
-            new Transcript(),
-            chatClient,
-            intentDetector,
-            codebaseContext,
-            editor,
-            secretStorage,
-            contextType,
-            rgPath,
-            mode,
-            localStorage
-        )
+    public onConfigurationChange(newConfig: Config): void {
+        this.config = newConfig
+        this.configurationChangeEvent.fire()
     }
 
-    private async onDidReceiveMessage(message: any): Promise<void> {
+    private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
-                await this.sendToken()
                 this.sendTranscript()
                 this.sendChatHistory()
+                this.publishContextStatus()
+                this.publishConfig()
                 break
             case 'reset':
                 this.onResetChat()
@@ -121,29 +101,30 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             case 'executeRecipe':
                 await this.executeRecipe(message.recipe)
                 break
-            case 'acceptTOS':
-                await this.acceptTOS(message.version)
-                break
             case 'settings': {
-                const isValid = await isValidLogin(message.serverEndpoint, message.accessToken)
+                const isValid = await isValidLogin({
+                    serverEndpoint: message.serverEndpoint,
+                    accessToken: message.accessToken,
+                    customHeaders: this.config.customHeaders,
+                })
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
                     logEvent(
                         'CodyVSCodeExtension:login:clicked',
-                        { serverEndpoint: this.serverEndpoint },
-                        { serverEndpoint: this.serverEndpoint }
+                        { serverEndpoint: this.config.serverEndpoint },
+                        { serverEndpoint: this.config.serverEndpoint }
                     )
                 }
-                this.sendLogin(isValid)
+                void this.webview?.postMessage({ type: 'login', isValid })
                 break
             }
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
                 logEvent(
                     'CodyVSCodeExtension:codyDeleteAccessToken:clicked',
-                    { serverEndpoint: this.serverEndpoint },
-                    { serverEndpoint: this.serverEndpoint }
+                    { serverEndpoint: this.config.serverEndpoint },
+                    { serverEndpoint: this.config.serverEndpoint }
                 )
                 break
             case 'removeHistory':
@@ -173,16 +154,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    private async acceptTOS(version: string): Promise<void> {
-        this.tosVersion = version
-        await vscode.commands.executeCommand('cody.accept-tos', version)
-        logEvent(
-            'CodyVSCodeExtension:acceptTerms:clicked',
-            { serverEndpoint: this.serverEndpoint },
-            { serverEndpoint: this.serverEndpoint }
-        )
-    }
-
     private createNewChatID(): void {
         this.currentChatID = new Date(Date.now()).toUTCString()
     }
@@ -190,11 +161,39 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
         this.cancelCompletion()
 
-        this.cancelCompletionCallback = this.chat.chat(promptMessages, {
-            onChange: text => this.onBotMessageChange(reformatBotMessage(text, responsePrefix)),
-            onComplete: () => {
-                void this.onBotMessageComplete()
+        let text = ''
+
+        this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
+            onResponse: (content: string) => {
+                text += content
+                this.transcript.addAssistantResponse(reformatBotMessage(text, responsePrefix))
+                this.sendTranscript()
+                return Promise.resolve()
             },
+            onTurnComplete: async () => {
+                const lastInteraction = this.transcript.getLastInteraction()
+                if (lastInteraction) {
+                    const { text, displayText } = lastInteraction.getAssistantMessage()
+                    const { text: highlightedDisplayText } = await highlightTokens(displayText || '', fileExists)
+                    this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
+                }
+                this.isMessageInProgress = false
+                this.cancelCompletionCallback = null
+                this.sendTranscript()
+                await this.saveChatHistory()
+            },
+        })
+
+        let textConsumed = 0
+
+        this.cancelCompletionCallback = this.chat.chat(promptMessages, {
+            onChange: text => {
+                // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
+                text = text.slice(textConsumed)
+                textConsumed += text.length
+                return this.multiplexer.publish(text)
+            },
+            onComplete: () => this.multiplexer.notifyTurnComplete(),
             onError: err => {
                 void vscode.window.showErrorMessage(err)
             },
@@ -230,10 +229,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             return
         }
 
+        // Create a new multiplexer to drop any old subscribers
+        this.multiplexer = new BotResponseMultiplexer()
+
         const interaction = await recipe.getInteraction(humanChatInput, {
             editor: this.editor,
             intentDetector: this.intentDetector,
             codebaseContext: this.codebaseContext,
+            responseMultiplexer: this.multiplexer,
         })
         if (!interaction) {
             return
@@ -244,26 +247,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         this.showTab('chat')
         this.sendTranscript()
 
-        const prompt = await this.transcript.toPrompt(getPreamble(this.codebase))
+        const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
 
         logEvent(
             `CodyVSCodeExtension:recipe:${recipe.getID()}:executed`,
-            { serverEndpoint: this.serverEndpoint },
-            { serverEndpoint: this.serverEndpoint }
+            { serverEndpoint: this.config.serverEndpoint },
+            { serverEndpoint: this.config.serverEndpoint }
         )
-    }
-
-    private onBotMessageChange(text: string): void {
-        this.transcript.addAssistantResponse(text)
-        this.sendTranscript()
-    }
-
-    private async onBotMessageComplete(): Promise<void> {
-        this.isMessageInProgress = false
-        this.cancelCompletionCallback = null
-        this.sendTranscript()
-        await this.saveChatHistory()
     }
 
     private showTab(tab: string): void {
@@ -279,20 +270,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         })
     }
 
-    private sendLogin(isValid: boolean): void {
-        void this.webview?.postMessage({ type: 'login', isValid })
-    }
-
-    /**
-     * Sends access token to webview
-     */
-    private async sendToken(): Promise<void> {
-        void this.webview?.postMessage({
-            type: 'token',
-            value: await getAccessToken(this.secretStorage),
-            mode: this.mode,
-        })
-    }
     /**
      * Save chat history
      */
@@ -320,6 +297,41 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             messages: localHistory,
         })
     }
+
+    /**
+     * Publish the current context status to the webview.
+     */
+    private publishContextStatus(): void {
+        const send = (): void => {
+            const editorContext = this.editor.getActiveTextEditor()
+            void this.webview?.postMessage({
+                type: 'contextStatus',
+                contextStatus: {
+                    codebase: this.config.codebase,
+                    filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
+                },
+            })
+        }
+
+        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
+        send()
+    }
+
+    /**
+     * Publish the config to the webview.
+     */
+    private publishConfig(): void {
+        const send = (): void => {
+            const configForWebview: ConfigurationSubsetForWebview = {
+                debug: this.config.debug,
+                hasAccessToken: this.config.accessToken !== null && this.config.accessToken !== '',
+            }
+            void this.webview?.postMessage({ type: 'config', config: configForWebview })
+        }
+        this.disposables.push(this.configurationChangeEvent.event(() => send()))
+        send()
+    }
+
     /**
      * create webview resources
      */
@@ -347,11 +359,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         const resources = webviewView.webview.asWebviewUri(webviewPath)
         const nonce = this.getNonce()
 
-        webviewView.webview.html = decoded
-            .replaceAll('./', `${resources.toString()}/`)
-            .replace('/nonce/', nonce)
-            .replace('/tos-version/', this.tosVersion.toString())
-        webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message))
+        webviewView.webview.html = decoded.replaceAll('./', `${resources.toString()}/`).replace('/nonce/', nonce)
+        this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
     }
 
     public transcriptForTesting(testing: TestSupport): ChatMessage[] {
@@ -362,44 +371,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         return this.transcript.toChat()
     }
 
-    public async onConfigChange(change: string, codebase: string, serverEndpoint: string): Promise<void> {
-        switch (change) {
-            case 'token':
-            case 'endpoint': {
-                const { intentDetector, codebaseContext, chatClient } = await configureExternalServices(
-                    serverEndpoint,
-                    codebase,
-                    this.rgPath,
-                    this.editor,
-                    this.secretStorage,
-                    this.contextType,
-                    this.mode
-                )
-
-                this.codebase = codebase
-                this.serverEndpoint = serverEndpoint
-                this.intentDetector = intentDetector
-                this.codebaseContext = codebaseContext
-                this.chat = chatClient
-
-                const action = await vscode.window.showInformationMessage(
-                    'Cody configuration has been updated.',
-                    'Reload Window'
-                )
-
-                logEvent(
-                    'CodyVSCodeExtension:updateEndpoint:clicked',
-                    { serverEndpoint: this.serverEndpoint },
-                    { serverEndpoint: this.serverEndpoint }
-                )
-                if (action === 'Reload Window') {
-                    await vscode.commands.executeCommand('workbench.action.reloadWindow')
-                }
-                break
-            }
-        }
-    }
-
     private getNonce(): string {
         let text = ''
         const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -408,4 +379,39 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         }
         return text
     }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
+    }
+}
+
+function trimPrefix(text: string, prefix: string): string {
+    if (text.startsWith(prefix)) {
+        return text.slice(prefix.length)
+    }
+    return text
+}
+
+function trimSuffix(text: string, suffix: string): string {
+    if (text.endsWith(suffix)) {
+        return text.slice(0, -suffix.length)
+    }
+    return text
+}
+
+async function fileExists(filePath: string): Promise<boolean> {
+    const patterns = [filePath, '**/' + trimSuffix(trimPrefix(filePath, '/'), '/') + '/**']
+    if (!filePath.endsWith('/')) {
+        patterns.push('**/' + trimPrefix(filePath, '/') + '*')
+    }
+    for (const pattern of patterns) {
+        const files = await vscode.workspace.findFiles(pattern, null, 1)
+        if (files.length > 0) {
+            return true
+        }
+    }
+    return false
 }
