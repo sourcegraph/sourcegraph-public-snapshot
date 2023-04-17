@@ -2,10 +2,12 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
+import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { isDefined } from '@sourcegraph/common'
 
 import { FileLinkProps } from './chat/ContextFiles'
+import { ChatInputContext } from './chat/inputContext/ChatInputContext'
 import { Transcript } from './chat/Transcript'
 import { TranscriptItemClassNames } from './chat/TranscriptItem'
 
@@ -14,6 +16,7 @@ import styles from './Chat.module.css'
 interface ChatProps extends ChatClassNames {
     transcript: ChatMessage[]
     messageInProgress: ChatMessage | null
+    contextStatus?: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
@@ -28,6 +31,7 @@ interface ChatProps extends ChatClassNames {
 
 interface ChatClassNames extends TranscriptItemClassNames {
     inputRowClassName?: string
+    chatInputContextClassName?: string
     chatInputClassName?: string
 }
 
@@ -53,6 +57,7 @@ export interface ChatUISubmitButtonProps {
 export const Chat: React.FunctionComponent<ChatProps> = ({
     messageInProgress,
     transcript,
+    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
@@ -68,6 +73,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
     inputRowClassName,
+    chatInputContextClassName,
     chatInputClassName,
 }) => {
     const [inputRows, setInputRows] = useState(5)
@@ -146,19 +152,28 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             />
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
-                <TextArea
-                    className={classNames(styles.chatInput, chatInputClassName)}
-                    rows={inputRows}
-                    value={formInput}
-                    autoFocus={true}
-                    required={true}
-                    onInput={({ target }) => {
-                        const { value } = target as HTMLInputElement
-                        inputHandler(value)
-                    }}
-                    onKeyDown={onChatKeyDown}
-                />
-                <SubmitButton className={styles.submitButton} onClick={onChatSubmit} disabled={!!messageInProgress} />
+                <div className={styles.textAreaContainer}>
+                    <TextArea
+                        className={classNames(styles.chatInput, chatInputClassName)}
+                        rows={inputRows}
+                        value={formInput}
+                        autoFocus={true}
+                        required={true}
+                        onInput={({ target }) => {
+                            const { value } = target as HTMLInputElement
+                            inputHandler(value)
+                        }}
+                        onKeyDown={onChatKeyDown}
+                    />
+                    <SubmitButton
+                        className={styles.submitButton}
+                        onClick={onChatSubmit}
+                        disabled={!!messageInProgress}
+                    />
+                </div>
+                {contextStatus && (
+                    <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
+                )}
             </form>
         </div>
     )

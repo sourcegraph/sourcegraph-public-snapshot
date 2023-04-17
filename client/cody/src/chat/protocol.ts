@@ -1,3 +1,4 @@
+import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 /**
@@ -27,3 +28,4 @@ export type ExtensionMessage =
     | { type: 'history'; messages: UserLocalHistory | null }
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean }
     | { type: 'debug'; message: string }
+    | { type: 'contextStatus'; contextStatus: ChatContextStatus }

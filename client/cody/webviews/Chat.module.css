@@ -48,6 +48,10 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
 }
 
+.chat-input-context {
+    color: var(--vscode-input-foreground);
+}
+
 .chat-input {
     outline: none;
     color: var(--vscode-input-foreground);

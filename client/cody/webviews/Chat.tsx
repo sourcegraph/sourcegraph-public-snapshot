@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef } from 'react'
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
+import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
@@ -15,6 +16,7 @@ import styles from './Chat.module.css'
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    contextStatus: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
@@ -24,6 +26,7 @@ interface ChatboxProps {
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
+    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
@@ -37,6 +40,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         <ChatUI
             messageInProgress={messageInProgress}
             transcript={transcript}
+            contextStatus={contextStatus}
             formInput={formInput}
             setFormInput={setFormInput}
             inputHistory={inputHistory}
@@ -51,6 +55,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             humanTranscriptItemClassName={styles.humanTranscriptItem}
             transcriptItemParticipantClassName={styles.transcriptItemParticipant}
             inputRowClassName={styles.inputRow}
+            chatInputContextClassName={styles.chatInputContext}
             chatInputClassName={styles.chatInputClassName}
         />
     )

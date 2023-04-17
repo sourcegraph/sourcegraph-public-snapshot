@@ -80,6 +80,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.sendToken()
                 this.sendTranscript()
                 this.sendChatHistory()
+                this.publishContextStatus()
                 break
             case 'reset':
                 this.onResetChat()
@@ -297,6 +298,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             messages: localHistory,
         })
     }
+
+    /**
+     * Publish the current context status to the webview.
+     */
+    private publishContextStatus(): void {
+        const send = (): void => {
+            const editorContext = this.editor.getActiveTextEditor()
+            void this.webview?.postMessage({
+                type: 'contextStatus',
+                contextStatus: {
+                    codebase: this.codebase,
+                    filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
+                },
+            })
+        }
+
+        this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
+        send()
+    }
+
     /**
      * create webview resources
      */

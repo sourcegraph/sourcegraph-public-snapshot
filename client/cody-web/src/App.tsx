@@ -60,6 +60,7 @@ export const App: React.FunctionComponent = () => {
                         <Chat
                             messageInProgress={messageInProgress}
                             transcript={transcript}
+                            contextStatus={{ codebase: config.codebase }}
                             formInput={formInput}
                             setFormInput={setFormInput}
                             inputHistory={inputHistory}
