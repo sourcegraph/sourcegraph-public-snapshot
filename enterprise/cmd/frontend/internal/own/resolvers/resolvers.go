@@ -304,7 +304,6 @@ func (r *recentContributorResolver) Title(context.Context) (string, error) {
 	return "Recent contributor", nil
 }
 
-
 func (r *recentContributorResolver) Description(context.Context) (string, error) {
 	return fmt.Sprintf("Number of recent contributions: %d", r.count), nil
 }
