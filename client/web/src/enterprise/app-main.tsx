@@ -21,12 +21,7 @@ import { EnterpriseWebApp } from './EnterpriseWebApp'
 import { Command } from '@tauri-apps/api/shell'
 
 // Start Backend early
-const command = Command.sidecar("../.bin/backend", [], {
-    env: {
-        USE_EMBEDDED_POSTGRESQL: "0",
-        DEPLOY_TYPE: "app"
-    }
-})
+const command = Command.sidecar("../.bin/backend", [], {})
 command.on('close', data => {
     console.log(`backend command finished with code ${data.code} and signal ${data.signal}`)
 })
