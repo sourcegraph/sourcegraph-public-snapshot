@@ -31,5 +31,9 @@ build --test_env=BUILDKITE
 build --test_env=E2E_HEADLESS=false
 build --test_env=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"
 build --test_env=GH_TOKEN
+
+# Needed for integration tests
+build --test_env=PERCY_TOKEN
+
 # temp
 build --test_env=INCLUDE_ADMIN_ONBOARDING=false
