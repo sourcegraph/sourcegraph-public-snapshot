@@ -39,9 +39,11 @@ type Test struct {
 }
 
 func RunTest(ctx context.Context, gqlClient *gqltestutil.Client, httpClient *HttpClient, bstore *store.Store, test Test) error {
-	// Reset DB state.
-	if err := bstore.Exec(ctx, sqlf.Sprintf(cleanupBatchChangesDB)); err != nil {
-		return err
+	// Reset DB state, but only if we're not testing caching.
+	if test.CacheDisabled {
+		if err := bstore.Exec(ctx, sqlf.Sprintf(cleanupBatchChangesDB)); err != nil {
+			return err
+		}
 	}
 
 	_, err := batches.ParseBatchSpec([]byte(test.BatchSpecInput))
@@ -77,7 +79,7 @@ func RunTest(ctx context.Context, gqlClient *gqltestutil.Client, httpClient *Htt
 
 	log.Println("Creating empty batch change")
 
-	batchChangeID, err := gqlClient.CreateEmptyBatchChange(id, "e2e-test-batch-change")
+	batchChangeID, err := gqlClient.CreateEmptyBatchChange(id, fmt.Sprintf("e2e-test-batch-change-cached-%t", !test.CacheDisabled))
 	if err != nil {
 		return err
 	}
@@ -146,7 +148,7 @@ func RunTest(ctx context.Context, gqlClient *gqltestutil.Client, httpClient *Htt
 			if err != nil {
 				return err
 			}
-			//d, err := json.MarshalIndent(spec, "", "")
+			// TODO: this was not indented before, any reason or just oversight?
 			d, err := json.MarshalIndent(spec, "", "  ")
 			if err != nil {
 				return err
@@ -190,7 +192,7 @@ func RunTest(ctx context.Context, gqlClient *gqltestutil.Client, httpClient *Htt
 		haveEntriesMap[e.Key] = c
 	}
 
-	if diff := cmp.Diff(haveEntriesMap, test.ExpectedCacheEntries); diff != "" {
+	if diff := cmp.Diff(haveEntriesMap, test.ExpectedCacheEntries, diffTransformer); diff != "" {
 		log.Printf("Cache entries diff detected: %s\n", diff)
 		return errors.New("cache entries not in correct state")
 	}
@@ -210,7 +212,7 @@ func RunTest(ctx context.Context, gqlClient *gqltestutil.Client, httpClient *Htt
 		return test.ExpectedChangesetSpecs[i].BaseRepoID < test.ExpectedChangesetSpecs[j].BaseRepoID
 	})
 
-	if diff := cmp.Diff([]*types.ChangesetSpec(haveCSS), test.ExpectedChangesetSpecs, cmpopts.IgnoreFields(types.ChangesetSpec{}, "ID", "RandID", "CreatedAt", "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff([]*types.ChangesetSpec(haveCSS), test.ExpectedChangesetSpecs, cmpopts.IgnoreFields(types.ChangesetSpec{}, "ID", "RandID", "CreatedAt", "UpdatedAt"), diffTransformer); diff != "" {
 		log.Printf("Changeset specs diff detected: %s\n", diff)
 		return errors.New("changeset specs not in correct state")
 	}
@@ -234,13 +236,18 @@ UPDATE batch_spec_execution_cache_entries SET id = DEFAULT;
 DELETE FROM changeset_specs;
 `
 
+// diffTransformer prints only lines that are actually diffing on large multiline strings (such as changeset diffs).
+// Without this transformer, the segment containing the diff can get truncated resulting in useless output.
+var diffTransformer = cmpopts.AcyclicTransformer("onlyShowDiffs", func(in string) any { return strings.Split(in, "\n") })
+
 func compareBatchSpecDeepCmpopts() []cmp.Option {
 	// TODO: Reduce the number of ignores in here.
+
 	return []cmp.Option{
 		// The printed diff isn't guaranteed to display the lines that don't match if they are further down in the diff.
 		// This transformer breaks up the string in separate lines which will only print the offending lines (and 2 around them).
 		// See https://github.com/google/go-cmp/issues/311
-		cmpopts.AcyclicTransformer("onlyShowDiffs", func(in string) any { return strings.Split(in, "\n") }),
+		diffTransformer,
 		cmpopts.IgnoreFields(gqltestutil.BatchSpecDeep{}, "ID", "CreatedAt", "FinishedAt", "StartedAt", "ExpiresAt"),
 		cmpopts.IgnoreFields(gqltestutil.ChangesetSpec{}, "ID"),
 		cmpopts.IgnoreFields(gqltestutil.BatchSpecWorkspace{}, "QueuedAt", "StartedAt", "FinishedAt"),

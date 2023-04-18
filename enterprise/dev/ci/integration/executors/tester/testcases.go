@@ -19,7 +19,9 @@ const (
 	changeSetBody    = "My first batch change!"
 )
 
-func testHelloWorldBatchChange() Test {
+// testHelloWorldBatchChange is also used to test caching. When useCachedEntry is set to true,
+// the test should retrieve the cached results rather than executing again.
+func testHelloWorldBatchChange(useCachedEntry bool) Test {
 	batchSpecPs := batchSpecParams{
 		NameContent:             "hello-world",
 		Description:             "Add Hello World to READMEs",
@@ -40,6 +42,77 @@ func testHelloWorldBatchChange() Test {
 		HelloWorldMessage:        "Hello World",
 	}
 	expectedDiff := generateDiff(diffPs)
+
+	// These are the expected results for a fresh execution...
+	stepCacheResultCount := 0
+	stageSetup := []gqltestutil.ExecutionLogEntry{
+		{
+			Key:      "setup.git.init",
+			ExitCode: 0,
+		},
+		{
+			Key:      "setup.git.add-remote",
+			ExitCode: 0,
+		},
+		{
+			Key:      "setup.git.disable-gc",
+			ExitCode: 0,
+		},
+		{
+			Key:      "setup.git.fetch",
+			ExitCode: 0,
+		},
+		{
+			Key:      "setup.git.checkout",
+			ExitCode: 0,
+		},
+		{
+			Key:      "setup.git.set-remote",
+			ExitCode: 0,
+		},
+		{
+			Key:      "setup.fs.extras",
+			Command:  []string{},
+			ExitCode: 0,
+		},
+	}
+	srcExec := []gqltestutil.ExecutionLogEntry{
+		{
+			Key:      "step.docker.step.0.pre",
+			ExitCode: 0,
+		},
+		{
+			Key:      "step.docker.step.0.run",
+			ExitCode: 0,
+		},
+		{
+			Key:      "step.docker.step.0.post",
+			ExitCode: 0,
+		},
+	}
+	teardown := []gqltestutil.ExecutionLogEntry{
+		{
+			Key:      "teardown.fs",
+			Command:  []string{},
+			ExitCode: 0,
+		},
+	}
+	executor := gqltestutil.Executor{
+		QueueName: "batches",
+		Active:    true,
+	}
+
+	// ... and when expecting cached results, return these values
+	if useCachedEntry {
+		stepCacheResultCount = 1
+		stageSetup = nil
+		srcExec = nil
+		teardown = nil
+		executor = gqltestutil.Executor{
+			QueueName: "",
+			Active:    false,
+		}
+	}
 
 	expectedState := gqltestutil.BatchSpecDeep{
 		State: "COMPLETED",
@@ -85,7 +158,9 @@ func testHelloWorldBatchChange() Test {
 				},
 				Nodes: []gqltestutil.BatchSpecWorkspace{
 					{
-						State: "COMPLETED",
+						CachedResultFound:    useCachedEntry,
+						StepCacheResultCount: stepCacheResultCount,
+						State:                "COMPLETED",
 						DiffStat: gqltestutil.DiffStat{
 							Added:   5,
 							Deleted: 5,
@@ -98,69 +173,20 @@ func testHelloWorldBatchChange() Test {
 							{},
 						},
 						SearchResultPaths: []string{},
-						Executor: gqltestutil.Executor{
-							QueueName: "batches",
-							Active:    true,
-						},
+						Executor:          executor,
 						Stages: gqltestutil.BatchSpecWorkspaceStages{
-							Setup: []gqltestutil.ExecutionLogEntry{
-								{
-									Key:      "setup.git.init",
-									ExitCode: 0,
-								},
-								{
-									Key:      "setup.git.add-remote",
-									ExitCode: 0,
-								},
-								{
-									Key:      "setup.git.disable-gc",
-									ExitCode: 0,
-								},
-								{
-									Key:      "setup.git.fetch",
-									ExitCode: 0,
-								},
-								{
-									Key:      "setup.git.checkout",
-									ExitCode: 0,
-								},
-								{
-									Key:      "setup.git.set-remote",
-									ExitCode: 0,
-								},
-								{
-									Key:      "setup.fs.extras",
-									Command:  []string{},
-									ExitCode: 0,
-								},
-							},
-							SrcExec: []gqltestutil.ExecutionLogEntry{
-								{
-									Key:      "step.docker.step.0.pre",
-									ExitCode: 0,
-								},
-								{
-									Key:      "step.docker.step.0.run",
-									ExitCode: 0,
-								},
-								{
-									Key:      "step.docker.step.0.post",
-									ExitCode: 0,
-								},
-							},
-							Teardown: []gqltestutil.ExecutionLogEntry{
-								{
-									Key:      "teardown.fs",
-									Command:  []string{},
-									ExitCode: 0,
-								},
-							},
+							Setup:    stageSetup,
+							SrcExec:  srcExec,
+							Teardown: teardown,
 						},
 						Steps: []gqltestutil.BatchSpecWorkspaceStep{
 							{
-								Number:    1,
-								Run:       batchSpecPs.RunCommand,
-								Container: batchSpecPs.Container,
+								// If we expect a cache, this step should be skipped
+								CachedResultFound: useCachedEntry,
+								Skipped:           useCachedEntry,
+								Number:            1,
+								Run:               batchSpecPs.RunCommand,
+								Container:         batchSpecPs.Container,
 								OutputLines: gqltestutil.WorkspaceOutputLines{
 									Nodes: []string{
 										"stderr: WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested",
@@ -194,6 +220,34 @@ func testHelloWorldBatchChange() Test {
 		},
 	}
 
+	baseChangesetSpec := &types.ChangesetSpec{
+		ID:                1,
+		Type:              "branch",
+		DiffStatAdded:     5,
+		DiffStatDeleted:   5,
+		BatchSpecID:       2,
+		BaseRepoID:        1,
+		UserID:            1,
+		BaseRev:           "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
+		BaseRef:           sourceRef,
+		HeadRef:           fmt.Sprintf("refs/heads/%s", batchSpecPs.ChangeSetTemplateBranch),
+		Title:             batchSpecPs.ChangeSetTemplateTitle,
+		Body:              changeSetBody,
+		CommitMessage:     batchSpecPs.CommitMessage,
+		CommitAuthorName:  authorName,
+		CommitAuthorEmail: authorEmail,
+		Diff:              []byte(expectedDiff),
+	}
+	// if this is a fresh execution, we expected these changes...
+	expectedChangesetSpecs := []*types.ChangesetSpec{baseChangesetSpec}
+	// ... and if we can use cached results, expect an identical changeset with an incremented ID
+	if useCachedEntry {
+		cachedChangesetSpec := baseChangesetSpec.Clone()
+		// TODO: why does the batch spec ID increment by 2 (and why does it increment at all?)
+		cachedChangesetSpec.BatchSpecID = 4
+		expectedChangesetSpecs = append(expectedChangesetSpecs, cachedChangesetSpec)
+	}
+
 	return Test{
 		PreExistingCacheEntries: map[string]execution.AfterStepResult{},
 		BatchSpecInput:          batchSpec,
@@ -205,27 +259,9 @@ func testHelloWorldBatchChange() Test {
 				Outputs: map[string]any{},
 			},
 		},
-		ExpectedChangesetSpecs: []*types.ChangesetSpec{
-			{
-				Type:              "branch",
-				DiffStatAdded:     5,
-				DiffStatDeleted:   5,
-				BatchSpecID:       2,
-				BaseRepoID:        1,
-				UserID:            1,
-				BaseRev:           "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
-				BaseRef:           sourceRef,
-				HeadRef:           fmt.Sprintf("refs/heads/%s", batchSpecPs.ChangeSetTemplateBranch),
-				Title:             batchSpecPs.ChangeSetTemplateTitle,
-				Body:              changeSetBody,
-				CommitMessage:     batchSpecPs.CommitMessage,
-				CommitAuthorName:  authorName,
-				CommitAuthorEmail: authorEmail,
-				Diff:              []byte(expectedDiff),
-			},
-		},
-		ExpectedState: expectedState,
-		CacheDisabled: true,
+		ExpectedChangesetSpecs: expectedChangesetSpecs,
+		ExpectedState:          expectedState,
+		CacheDisabled:          !useCachedEntry,
 	}
 }
 
