@@ -204,8 +204,6 @@ func readIntoBuffer(prefix string, w io.WriteCloser, r io.Reader) error {
 	return scanner.Err()
 }
 
-var ErrStepSkipped = errors.New("step skipped")
-
 const maxBuffer = 100 * 1024 * 1024
 
 // startCommand starts the given command and waits for the given errgroup to complete.
@@ -227,9 +225,6 @@ func startCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *errgr
 	if err := cmd.Wait(); err != nil {
 		var e *exec.ExitError
 		if errors.As(err, &e) {
-			if e.ExitCode() == 125 {
-				return 0, ErrStepSkipped
-			}
 			return e.ExitCode(), nil
 		}
 
