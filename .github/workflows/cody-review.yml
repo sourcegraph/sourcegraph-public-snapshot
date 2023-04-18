@@ -1,13 +1,13 @@
 name: Cody Review
 
 on:
-  pull_request:
+  pull_request_target:
     types:
       - labeled
       - unlabeled
       - push
     branches:
-      - tr/cody-review
+      - 'tr/cody-review'
 
 jobs:
   comment:
@@ -67,7 +67,6 @@ jobs:
 
       - name: Check out repository and install
         if: steps.check_label.outputs.action == 'review'
-        uses: actions/checkout@v3
         uses: pnpm/action-setup@v2
         id: pnpm-install
         with:
