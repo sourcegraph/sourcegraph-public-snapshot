@@ -1,6 +1,5 @@
 ---
 source: crates/scip-syntax/src/globals.rs
-assertion_line: 330
 expression: dumped
 ---
   package example
@@ -8,22 +7,23 @@ expression: dumped
   
   import (
    f "fmt"
+// ^ definition scip-ctags example/f.
   )
   
   func Something() {
-//     ^^^^^^^^^ definition scip-ctags Something().
+//     ^^^^^^^^^ definition scip-ctags example/Something().
    x := true
    f.Println(x)
   }
   
   func Another() float64 { return 5 / 3 }
-//     ^^^^^^^ definition scip-ctags Another().
+//     ^^^^^^^ definition scip-ctags example/Another().
   
   type MyThing struct{}
-//     ^^^^^^^ definition scip-ctags MyThing#
+//     ^^^^^^^ definition scip-ctags example/MyThing#
   
   func (m *MyThing) DoSomething()    {}
-//                  ^^^^^^^^^^^ definition scip-ctags MyThing#DoSomething().
+//                  ^^^^^^^^^^^ definition scip-ctags example/MyThing#DoSomething().
   func (m MyThing) DoSomethingElse() {}
-//                 ^^^^^^^^^^^^^^^ definition scip-ctags MyThing#DoSomethingElse().
+//                 ^^^^^^^^^^^^^^^ definition scip-ctags example/MyThing#DoSomethingElse().
 

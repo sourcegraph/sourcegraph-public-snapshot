@@ -13,24 +13,28 @@ expression: dumped
   // constructor being called once. The arguments to the call will be the
   // first call to occur. All callers will receive the same return values.
   type MemoizedConstructorWithArg[A, T any] struct {
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags MemoizedConstructorWithArg#
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags memo/MemoizedConstructorWithArg#
    ctor  func(A) (T, error)
+// ^^^^ definition scip-ctags memo/MemoizedConstructorWithArg#ctor.
    value T
+// ^^^^^ definition scip-ctags memo/MemoizedConstructorWithArg#value.
    err   error
+// ^^^ definition scip-ctags memo/MemoizedConstructorWithArg#err.
    once  sync.Once
+// ^^^^ definition scip-ctags memo/MemoizedConstructorWithArg#once.
   }
   
   // NewMemoizedConstructor memoizes the given constructor
   func NewMemoizedConstructorWithArg[A, T any](ctor func(A) (T, error)) *MemoizedConstructorWithArg[A, T] {
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags NewMemoizedConstructorWithArg().
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags memo/NewMemoizedConstructorWithArg().
    return &MemoizedConstructorWithArg[A, T]{ctor: ctor}
   }
   
   // Init ensures that the given constructor has been called exactly
   // once, then returns the constructor's result value and error.
   func (m *MemoizedConstructorWithArg[A, T]) Init(arg A) (T, error) {
-//                                           ^^^^ definition scip-ctags T#Init().
-//                                           ^^^^ definition scip-ctags A#Init().
+//                                           ^^^^ definition scip-ctags memo/T#Init().
+//                                           ^^^^ definition scip-ctags memo/A#Init().
    m.once.Do(func() { m.value, m.err = m.ctor(arg) })
    return m.value, m.err
   }
