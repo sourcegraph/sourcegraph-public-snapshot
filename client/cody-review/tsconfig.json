@@ -2,20 +2,19 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2020",
-    "lib": ["esnext"],
-    "sourceMap": true,
     "sourceRoot": "src",
+    "rootDir": ".",
+    "outDir": "./out",
     "baseUrl": "./src",
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "strict": true,
   },
+  "include": ["src", "package.json", ".eslintrc.js", "jest.config.js"],
+  "exclude": ["out", "dist"],
   "references": [
     {
-      "path": "../shared",
+      "path": "../cody-shared",
+    },
+    {
+      "path": "../common",
     },
   ],
-  "include": ["./package.json", "**/*"],
-  "exclude": ["node_modules", "../../node_modules", "out", "dist"],
 }

@@ -295,6 +295,7 @@
     "open": "^7.0.4",
     "p-retry": "^4.2.0",
     "p-timeout": "^4.1.0",
+    "parse-diff": "^0.11.1",
     "postcss-cli": "^10.1.0",
     "postcss-custom-media": "^8.0.0",
     "postcss-focus-visible": "^5.0.0",

@@ -7,6 +7,10 @@
   "sideEffects": false,
   "license": "Apache-2.0",
   "scripts": {
-    "review": "ts-node ./src/index.ts"
+    "review": "ts-node-transpile-only ./src/index.ts"
+  },
+  "dependencies": {
+    "@sourcegraph/cody-shared": "workspace:*",
+    "@sourcegraph/common": "workspace:*"
   }
 }
