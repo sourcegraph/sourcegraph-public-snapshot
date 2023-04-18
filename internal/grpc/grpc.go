@@ -4,14 +4,15 @@ package grpc
 import (
 	"context"
 	"net/http"
-	// "os"
-	// "strconv"
+	"os"
+	"strconv"
 	"strings"
 
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
-	// "github.com/sourcegraph/sourcegraph/internal/conf"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // MultiplexHandlers takes a gRPC server and a plain HTTP handler and multiplexes the
@@ -35,9 +36,8 @@ func MultiplexHandlers(grpcServer *grpc.Server, httpHandler http.Handler) http.H
 const envGRPCEnabled = "SG_FEATURE_FLAG_GRPC"
 
 func IsGRPCEnabled(ctx context.Context) bool {
-	return false
-	// if val, err := strconv.ParseBool(os.Getenv(envGRPCEnabled)); err == nil {
-	// 	return val
-	// }
-	// return conf.Get().ExperimentalFeatures.EnableGRPC
+	if val, err := strconv.ParseBool(os.Getenv(envGRPCEnabled)); err == nil {
+		return val
+	}
+	return conf.Get().ExperimentalFeatures.EnableGRPC
 }
