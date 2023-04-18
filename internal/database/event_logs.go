@@ -1390,7 +1390,7 @@ func (l *eventLogStore) AggregatedCodyEvents(ctx context.Context, now time.Time)
 	if err != nil {
 		return nil, err
 	}
-	return codyEvents
+	return codyEvents, nil
 }
 
 func (l *eventLogStore) aggregatedCodyEvents(ctx context.Context, queryString string, now time.Time) (events []types.CodyAggregatedEvent, err error) {
