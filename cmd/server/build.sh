@@ -138,8 +138,7 @@ TARGETS=(
 echo "--- bazel build"
 ./dev/ci/bazel.sh build "${TARGETS[@]}" \
   --stamp \
-  --workspace_status_command=./dev/bazel_stamp_vars.sh \
-  --//:assets_bundle_type=oss
+  --workspace_status_command=./dev/bazel_stamp_vars.sh
 
 echo "-- preparing rootfs"
 cp -a ./cmd/server/rootfs/. "$OUTPUT"

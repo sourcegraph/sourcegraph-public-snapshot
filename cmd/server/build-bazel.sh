@@ -62,7 +62,6 @@ echo "--- bazel build"
 ./dev/ci/bazel.sh build "${TARGETS[@]}" \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
-  --//:assets_bundle_type="$BUNDLE" \
   --platforms @zig_sdk//platform:linux_amd64 \
   --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
 
