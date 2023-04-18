@@ -3,12 +3,16 @@ import { Command } from 'commander'
 import { cleanEnv, str } from 'envalid'
 import { memoize } from 'lodash'
 
+import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
 import { KeywordContextFetcher } from '@sourcegraph/cody-shared/src/keyword-context'
-import { SOLUTION_TOKEN_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { Message as PromptMessage } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { SOLUTION_TOKEN_LENGTH, MAX_HUMAN_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import {
     CompletionParameters,
@@ -17,6 +21,8 @@ import {
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
+
+import { getPreamble } from './preamble'
 
 const ENVIRONMENT_CONFIG = cleanEnv(process.env, {
     SRC_ACCESS_TOKEN: str(),
@@ -79,10 +85,52 @@ function streamCompletions(client: SourcegraphNodeCompletionsClient, messages: M
     return client.stream({ messages, ...DEFAULT_CHAT_COMPLETION_PARAMETERS }, cb)
 }
 
+async function getContextMessages(
+    text: string,
+    intentDetector: IntentDetector,
+    codebaseContext: CodebaseContext
+): Promise<ContextMessage[]> {
+    const contextMessages: ContextMessage[] = []
+
+    const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
+
+    if (isCodebaseContextRequired) {
+        const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
+            numCodeResults: 8,
+            numTextResults: 2,
+        })
+
+        contextMessages.push(...codebaseContextMessages)
+    }
+
+    return contextMessages
+}
+
+async function interactionFromMessage(
+    message: Message,
+    intentDetector: IntentDetector,
+    codebaseContext: CodebaseContext | null
+): Promise<Interaction | null> {
+    if (!message.text) {
+        return Promise.resolve(null)
+    }
+
+    const text = truncateText(message.text, MAX_HUMAN_INPUT_TOKENS)
+
+    const contextMessages =
+        codebaseContext === null ? Promise.resolve([]) : getContextMessages(text, intentDetector, codebaseContext)
+
+    return Promise.resolve(
+        new Interaction(
+            { speaker: 'human', text, displayText: text },
+            { speaker: 'assistant', text: '', displayText: '' },
+            contextMessages
+        )
+    )
+}
+
 async function startCLI() {
     const program = new Command()
-
-    console.log('--- Cody CLI ---')
 
     program
         .version('0.0.1')
@@ -117,22 +165,36 @@ async function startCLI() {
         customHeaders: {},
     })
 
-    console.log('human: ' + options.prompt)
+    const transcript = new Transcript()
 
-    const promptMessages: PromptMessage[] = [
-        {
-            speaker: 'human',
-            text: options.prompt,
-        },
-        { speaker: 'assistant', text: '' },
-    ]
+    // TODO: Keep track of all user input if we add REPL mode
 
-    streamCompletions(completionsClient, promptMessages, {
-        onChange: text => {
-            process.stdout.write(text)
+    const initialMessage: Message = { speaker: 'human', text: options.prompt }
+    const messages: { human: Message; assistant?: Message }[] = [{ human: initialMessage }]
+    for (const [index, message] of messages.entries()) {
+        const interaction = await interactionFromMessage(
+            message.human,
+            intentDetector,
+            // Fetch codebase context only for the last message
+            index === messages.length - 1 ? codebaseContext : null
+        )
+
+        transcript.addInteraction(interaction)
+
+        if (message.assistant?.text) {
+            transcript.addAssistantResponse(message.assistant?.text)
+        }
+    }
+
+    const prompt = await transcript.toPrompt(getPreamble(DEFAULT_APP_SETTINGS.codebase))
+
+    let text = ''
+    streamCompletions(completionsClient, prompt, {
+        onChange: chunk => {
+            text = chunk
         },
         onComplete: () => {
-            console.log()
+            console.log(text)
         },
         onError: err => {
             console.error(err)
