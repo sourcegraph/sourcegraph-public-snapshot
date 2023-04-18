@@ -6,16 +6,16 @@
     padding: 0.18rem 0.06rem;
     align-items: center;
     overflow: hidden;
-    filter: drop-shadow(1px 2px 3px RGBA(36, 41, 54, 0.2));
+    filter: drop-shadow(1px 2px 3px rgba(36, 41, 54, 0.2));
     user-select: none;
 }
 
 .recipe-wrapper {
-    display: flex;
     background-color: var(--input-bg);
     border-radius: 4px;
     border: 1px solid var(--border-color-2);
     padding: 0.06rem 0.5rem;
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     margin: 0 3px;
     white-space: nowrap;
     text-overflow: ellipsis;
