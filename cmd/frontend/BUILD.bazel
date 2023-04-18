@@ -8,6 +8,8 @@ go_library(
     deps = [
         "//cmd/frontend/shared",
         "//cmd/sourcegraph-oss/osscmd",
+        "//ui/assets",
+        "//ui/assets/oss",
     ],
 )
 
