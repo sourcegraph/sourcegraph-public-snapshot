@@ -1991,11 +1991,12 @@ webpack_bundle(
         "WEBPACK_USE_NAMED_CHUNKS": "false",
     },
     output_dir = True,
+    visibility = ["//ui/assets:__subpackages__"],
     webpack_config = "webpack.bazel.config.js",
     deps = WEBPACK_CONFIG_DEPS,
 )
 
-# Used for integartion tests and has bigger bundle size
+# Used for integration tests and has bigger bundle size
 # because of the inlined source-maps.
 webpack_web_app(
     name = "app-enterprise",
