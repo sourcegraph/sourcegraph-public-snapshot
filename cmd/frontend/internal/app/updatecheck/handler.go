@@ -1,6 +1,7 @@
 package updatecheck
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"context"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,10 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -729,19 +729,18 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 }
 
 func codyFeatureFlag() (boolean, error) {
-    ctx := context.Background()
-    flags, err := featureflag.FromContext(ctx)
-    if err != nil {
-        return false, err
-    }
-    codyExperimental, err := flags.GetBoolOr("cody-experimental", true)
-    if err != nil {
-        return false, err
-    }
+	ctx := context.Background()
+	flags, err := featureflag.FromContext(ctx)
+	if err != nil {
+		return false, err
+	}
+	codyExperimental, err := flags.GetBoolOr("cody-experimental", true)
+	if err != nil {
+		return false, err
+	}
 
-    return codyExperimental, nil
+	return codyExperimental, nil
 }
-
 
 var (
 	requestCounter = promauto.NewCounter(prometheus.CounterOpts{
