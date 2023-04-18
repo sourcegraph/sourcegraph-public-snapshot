@@ -199,7 +199,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			Version:          version.Version(),
 			FeatureFlags:     string(featureFlagJSON),
 			CohortID:         event.CohortID,
-			Argument: 	   	  string(event.Argument),
+			Argument:         string(event.Argument),
 			PublicArgument:   string(event.PublicArgument),
 			DeviceID:         event.DeviceID,
 			InsertID:         event.InsertID,
