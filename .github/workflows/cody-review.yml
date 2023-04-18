@@ -48,10 +48,9 @@ jobs:
           script: |
             const { context, github } = require("@actions/github");
             const pr = context.issue;
-            const targetCommentBody = "Your comment message goes here.";
 
             github.rest.issues.listComments(pr).then(({ data }) => {
-              const targetComment = data.find((comment) => comment.body === targetCommentBody && comment.user.login === 'github-actions[bot]');
+              const targetComment = data.find((comment) => comment.body === comment.user.login === 'github-actions[bot]');
 
               if (targetComment) {
                 github.rest.issues.deleteComment({
