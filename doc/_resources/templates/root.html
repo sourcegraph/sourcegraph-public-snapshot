@@ -50,7 +50,7 @@
                 }
             </script>
 
-            <script type="module" src="https://esm.sh/@markprompt/web@0.2.2-beta34" defer></script>
+            <script type="module" src="https://esm.sh/@markprompt/web@0.3.2-beta3" defer></script>
 
             <script>
                 function showMarkprompt() {
@@ -168,13 +168,11 @@
                     <markprompt-content
                         model="gpt-4"
                         projectKey="sk_test_5FCapaMpGj2ghoQmFWzl7K1kdE2RJgbc"
-                        accentColor="#0055c5"
-                        placeholder="Ask docs"
+                        placeholder="Ask docs..."
                     />
                 </div>
             </div>
             <script>
-
                 const markprompt = localStorage.getItem('markprompt') !== null
                 const markpromptButton = document.getElementById("markprompt-button");
                 const searchForm = document.getElementById("search-form");
@@ -183,6 +181,7 @@
                 searchForm.style.display = markprompt ? 'none' : 'block';
 
                 const component = document.getElementsByTagName('markprompt-content')[0];
+
                 component.getRefFromId = (id) => {
                     const parts = id.split("/")
                     let label = parts.slice(-1)[0].replace(/\.md$/, '')
@@ -200,6 +199,40 @@
 
                     return { label, href }
                 };
+
+                component.promptTemplate = `You are a very enthusiastic company representative from Sourcegraph who loves to help people! Given the following sections from the documentation (preceded by a section id), answer the question using only that information, outputted in Markdown format. Here are some further instructions:
+- If you encounter a relative link, or an anchor link (starting with #), prepend it with the section id. Also remove any extension (such as ".md") from the section id, and replace "/docs/" with "/".
+- If you are unsure and the answer is not explicitly written in the documentation, say "\{\{I_DONT_KNOW\}\}".
+
+Context sections:
+---
+\{\{CONTEXT\}\}
+
+Question: "\{\{PROMPT\}\}"
+
+Answer (including related code snippets if available):`
+
+                function setDark(dark) {
+                    if (dark) {
+                        component.classList.add('dark')
+                    } else {
+                        component.classList.remove('dark')
+                    }
+                }
+
+                const body = document.querySelector('body');
+
+                setDark(body.className.includes("theme-dark"))
+
+                const observer = new MutationObserver((mutationsList) => {
+                    for (const mutation of mutationsList) {
+                        if (mutation.target === body && mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                            setDark(body.className.includes("theme-dark"))
+                        }
+                    }
+                });
+
+                observer.observe(body, { attributes: true });
             </script>
 		</body>
 	</html>
