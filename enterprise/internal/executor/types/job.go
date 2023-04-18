@@ -16,6 +16,8 @@ type Job struct {
 	// that different queues can share identifiers.
 	ID int `json:"id"`
 
+	Queue string `json:"queue"`
+
 	// Token is the authentication token for the specific Job.
 	Token string `json:"Token"`
 

@@ -2,6 +2,7 @@ package executorqueue
 
 import (
 	"crypto/subtle"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -14,12 +15,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches"
 	codeintelqueue "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
+	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
+	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -41,8 +45,11 @@ func newExecutorQueuesHandler(
 	// in the worker.
 	//
 	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
-	codeintelHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, codeintelqueue.QueueHandler(observationCtx, db, accessToken))
-	batchesHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, batches.QueueHandler(observationCtx, db, accessToken))
+	codeIntelQueueHandler := codeintelqueue.QueueHandler(observationCtx, db, accessToken)
+	batchesQueueHandler := batches.QueueHandler(observationCtx, db, accessToken)
+
+	codeintelHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, codeIntelQueueHandler)
+	batchesHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, batchesQueueHandler)
 	handlers := []handler.ExecutorHandler{codeintelHandler, batchesHandler}
 
 	gitserverClient := gitserver.NewClient()
@@ -90,6 +97,82 @@ func newExecutorQueuesHandler(
 			handler.SetupJobRoutes(h, jobRouter)
 		}
 
+		queueRouter.Path("/dequeue").Methods(http.MethodPost).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var req dequeueRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				// TODO
+			}
+
+			if err := validateWorkerHostname(req.WorkerHostName); err != nil {
+				// TODO
+			}
+
+			version2Supported := false
+			if req.Version != "" {
+				var err error
+				version2Supported, err = api.CheckSourcegraphVersion(req.Version, "4.3.0-0", "2022-11-24")
+				if err != nil {
+					// TODO
+				}
+			}
+
+			// TODO - validate queue list
+			var job executortypes.Job
+			// TODO - impl fairness later
+			for _, queue := range req.Queues {
+				switch queue {
+				case "batches":
+					record, _, err := batchesQueueHandler.Store.Dequeue(r.Context(), req.WorkerHostName, nil)
+					if err != nil {
+						// TODO
+					}
+					// TODO - resource meta
+					job, err = batchesQueueHandler.RecordTransformer(r.Context(), req.Version, record, handler.ResourceMetadata{})
+					if err != nil {
+						// TODO
+					}
+				case "codeintel":
+					record, _, err := codeIntelQueueHandler.Store.Dequeue(r.Context(), req.WorkerHostName, nil)
+					if err != nil {
+						// TODO
+					}
+					// TODO - resource meta
+					job, err = codeIntelQueueHandler.RecordTransformer(r.Context(), req.Version, record, handler.ResourceMetadata{})
+					if err != nil {
+						// TODO
+					}
+				}
+				if job.ID != 0 {
+					break
+				}
+				// If this executor supports v2, return a v2 payload. Based on this field,
+				// marshalling will be switched between old and new payload.
+				if version2Supported {
+					job.Version = 2
+				}
+
+				token, err := jobTokenStore.Create(r.Context(), job.ID, queue, job.RepositoryName)
+				if err != nil {
+					if errors.Is(err, executorstore.ErrJobTokenAlreadyCreated) {
+						// Token has already been created, regen it.
+						token, err = jobTokenStore.Regenerate(r.Context(), job.ID, queue)
+						if err != nil {
+							// TODO
+						}
+					} else {
+						// TODO
+					}
+				}
+				job.Token = token
+				job.Queue = queue
+			}
+
+			// TODO - does this actually work?
+			if err := json.NewEncoder(w).Encode(job); err != nil {
+				// TODO
+			}
+		})
+
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		lsifRouter := base.PathPrefix("/lsif").Name("executor-lsif").Subrouter()
 		lsifRouter.Path("/upload").Methods("POST").Handler(uploadHandler)
@@ -114,6 +197,12 @@ func newExecutorQueuesHandler(
 	}
 
 	return factory
+}
+
+type dequeueRequest struct {
+	Version        string   `json:"version"`
+	WorkerHostName string   `json:"workerHostName"`
+	Queues         []string `json:"queues"`
 }
 
 type routeName string
