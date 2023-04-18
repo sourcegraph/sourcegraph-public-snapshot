@@ -55,7 +55,7 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func getSpanContext(logger log.Logger, ctx context.Context) (shouldTrace bool, spanContext map[string]string) {
+func getSpanContext(ctx context.Context, logger log.Logger) (shouldTrace bool, spanContext map[string]string) {
 	if !policy.ShouldTrace(ctx) {
 		return false, nil
 	}
@@ -90,9 +90,8 @@ type Options struct {
 	Features search.Features
 }
 
-func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
-	logger := log.Scoped("ToSearch", "")
-	shouldTrace, spanContext := getSpanContext(logger, ctx)
+func (o *Options) ToSearch(ctx context.Context, logger log.Logger) *zoekt.SearchOptions {
+	shouldTrace, spanContext := getSpanContext(ctx, logger)
 	searchOpts := &zoekt.SearchOptions{
 		Trace:        shouldTrace,
 		SpanContext:  spanContext,

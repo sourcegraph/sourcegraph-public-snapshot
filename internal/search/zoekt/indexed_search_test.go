@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
@@ -443,6 +444,7 @@ func TestZoektSearchOptions(t *testing.T) {
 	cases := []struct {
 		name            string
 		context         context.Context
+		logger          log.Logger
 		options         *Options
 		rankingFeatures *schema.Ranking
 		want            *zoekt.SearchOptions
@@ -450,6 +452,7 @@ func TestZoektSearchOptions(t *testing.T) {
 		{
 			name:    "test defaults",
 			context: context.Background(),
+			logger:  log.Scoped("TestZoektSearchOptions", "defaults"),
 			options: &Options{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
 				NumRepos:       3,
@@ -465,6 +468,7 @@ func TestZoektSearchOptions(t *testing.T) {
 		{
 			name:    "test defaults with ranking feature enabled",
 			context: context.Background(),
+			logger:  log.Scoped("TestZoektSearchOptions", "defaults with ranking"),
 			options: &Options{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
 				NumRepos:       3,
@@ -486,6 +490,7 @@ func TestZoektSearchOptions(t *testing.T) {
 		{
 			name:    "test repo search defaults",
 			context: context.Background(),
+			logger:  log.Scoped("TestZoektSearchOptions", "search ranking"),
 			options: &Options{
 				Selector:       []string{filter.Repository},
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
@@ -502,6 +507,7 @@ func TestZoektSearchOptions(t *testing.T) {
 		},
 		{
 			name:    "test large file match limit",
+			logger:  log.Scoped("TestZoektSearchOptions", "large file match limit"),
 			context: context.Background(),
 			options: &Options{
 				FileMatchLimit: 100_000,
@@ -518,6 +524,7 @@ func TestZoektSearchOptions(t *testing.T) {
 		{
 			name:    "test document ranks weight",
 			context: context.Background(),
+			logger:  log.Scoped("TestZoektSearchOptions", "document ranks weight"),
 			rankingFeatures: &schema.Ranking{
 				DocumentRanksWeight: &documentRanksWeight,
 			},
@@ -542,6 +549,7 @@ func TestZoektSearchOptions(t *testing.T) {
 		{
 			name:    "test flush wall time",
 			context: context.Background(),
+			logger:  log.Scoped("TestZoektSearchOptions", "flush wall time"),
 			rankingFeatures: &schema.Ranking{
 				FlushWallTimeMS: 3141,
 			},
@@ -577,7 +585,7 @@ func TestZoektSearchOptions(t *testing.T) {
 				}()
 			}
 
-			got := tt.options.ToSearch(tt.context)
+			got := tt.options.ToSearch(tt.context, tt.logger)
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Fatalf("search options mismatch (-want +got):\n%s", diff)
 			}

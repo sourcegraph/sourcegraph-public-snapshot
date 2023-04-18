@@ -144,6 +144,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 
 	var tr *trace.Trace
 	tr, ctx = trace.New(ctx, "search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
+	logger := log.Scoped("search", "")
 	defer tr.Finish()
 
 	tr.LazyPrintf("%s", p.Pattern)
@@ -203,7 +204,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	if p.IsStructuralPat && p.Indexed {
 		// Execute the new structural search path that directly calls Zoekt.
 		// TODO use limit in indexed structural search
-		return structuralSearchWithZoekt(ctx, s.Indexed, p, sender)
+		return structuralSearchWithZoekt(ctx, logger, s.Indexed, p, sender)
 	}
 
 	// Compile pattern before fetching from store incase it is bad.
