@@ -1,13 +1,10 @@
 name: Cody Review
 
 on:
-  pull_request_target:
-    types:
-      - labeled
-      - unlabeled
-      - push
+  push:
     branches:
-      - 'tr/**'
+      - tr/cody-review
+
 
 jobs:
   comment:
