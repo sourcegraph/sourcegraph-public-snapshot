@@ -8,8 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss/osscmd"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 
-	// TODO
-	_ "github.com/sourcegraph/sourcegraph/ui/assets/oss"
+	_ "github.com/sourcegraph/sourcegraph/ui/assets/oss" // Select oss assets
 )
 
 func main() {

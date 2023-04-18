@@ -8,8 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph/enterprisecmd"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 
-	// TODO
-	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise"
+	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
 )
 
 func main() {
