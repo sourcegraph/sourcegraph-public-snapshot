@@ -260,6 +260,10 @@ func (r *batchSpecWorkspaceStepV2Resolver) ExitCode() *int32 {
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) Environment() ([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, error) {
+	// The environment is dependent on environment of the executor and template variables, that aren't
+	// known at the time when we resolve the workspace. If the step already started, batcheshelper has logged
+	// the final env. Otherwise, we fall back to the preliminary set of env vars as determined by the
+	// resolve workspaces step.
 	if r.skipped {
 		return nil, nil
 	}
