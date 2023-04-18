@@ -28,6 +28,7 @@ import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, Scalars } from '../../graphql-operations'
+import { useEditorStore } from '../../stores/editor'
 import { BlameHunkData } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -433,6 +434,21 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             openSearchPanel(editorRef.current)
         }
     }, [])
+
+    useEffect(() => {
+        const view = editorRef.current
+        useEditorStore.setState({
+            editor: view
+                ? {
+                      view,
+                      repo: props.blobInfo.repoName,
+                      filename: props.blobInfo.filePath,
+                      content: props.blobInfo.content,
+                  }
+                : null,
+        })
+        return () => useEditorStore.setState({ editor: null })
+    }, [props.blobInfo.content, props.blobInfo.filePath, props.blobInfo.repoName])
 
     return (
         <>

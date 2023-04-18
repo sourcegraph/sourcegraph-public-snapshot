@@ -5,16 +5,15 @@ import classNames from 'classnames'
 
 import { Icon, Menu, MenuButton, MenuList } from '@sourcegraph/wildcard'
 
-import styles from './Recipes.module.css'
+import styles from './Recipes.module.scss'
 
 export interface RecipeProps {
     title?: string
     icon?: string
-    onClick?: () => void
     children?: React.ReactNode
 }
 
-export function Recipe({ children, title, icon, onClick }: RecipeProps): JSX.Element {
+export function Recipe({ children, title, icon }: RecipeProps): JSX.Element {
     const mainButtonRef = useRef<HTMLButtonElement>(null)
     const [menuWidth, setMenuWidth] = useState<number | undefined>(undefined)
 
@@ -24,7 +23,7 @@ export function Recipe({ children, title, icon, onClick }: RecipeProps): JSX.Ele
             const width = mainButtonRef.current.offsetWidth
             setMenuWidth(width)
         }
-    }, [mainButtonRef.current])
+    }, [])
 
     return (
         <Menu>

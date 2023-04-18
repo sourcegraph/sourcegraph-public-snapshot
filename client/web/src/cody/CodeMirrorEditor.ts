@@ -1,0 +1,93 @@
+import {
+    ActiveTextEditor,
+    ActiveTextEditorSelection,
+    ActiveTextEditorVisibleContent,
+    Editor,
+} from '@sourcegraph/cody-shared/src/editor'
+
+import { EditorStore } from '../stores/editor'
+
+export class CodeMirrorEditor implements Editor {
+    private editorStoreRef: React.MutableRefObject<EditorStore>
+    constructor(editorStoreRef: React.MutableRefObject<EditorStore>) {
+        this.editorStoreRef = editorStoreRef
+    }
+
+    public getWorkspaceRootPath(): string | null {
+        return null
+    }
+
+    public getActiveTextEditor(): ActiveTextEditor | null {
+        const editor = this.editorStoreRef.current.editor
+        if (editor === null) {
+            return null
+        }
+
+        return { content: editor.content, filePath: editor.filename }
+    }
+
+    public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+        const editor = this.editorStoreRef.current.editor
+        if (editor === null) {
+            return null
+        }
+
+        const selection = editor.view?.state.selection
+
+        if (selection && selection.ranges.length > 0) {
+            const [range] = selection.ranges
+            const { head, anchor } = range
+
+            if (head !== anchor) {
+                const precedingText = editor.view?.state.sliceDoc(undefined, range.from)
+                const selectedText = editor.view?.state.sliceDoc(range.from, range.to)
+                const followingText = editor.view?.state.sliceDoc(range.to, undefined)
+
+                return {
+                    fileName: editor.filename,
+                    precedingText,
+                    selectedText,
+                    followingText,
+                }
+            }
+        }
+
+        return null
+    }
+
+    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+        const editor = this.editorStoreRef.current.editor
+        if (editor === null) {
+            return null
+        }
+
+        const selection = this.getActiveTextEditorSelection()
+        if (selection) {
+            return selection
+        }
+
+        return {
+            fileName: editor.filename,
+            precedingText: '',
+            selectedText: editor.content,
+            followingText: '',
+        }
+    }
+
+    public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
+        return null
+    }
+
+    public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {
+        return Promise.resolve()
+    }
+
+    public showQuickPick(labels: string[]): Promise<string | undefined> {
+        return Promise.resolve(window.prompt(`Choose between: ${labels.join(', ')}`, labels[0]) || undefined)
+    }
+
+    public async showWarningMessage(message: string): Promise<void> {
+        console.warn(message)
+        return Promise.resolve()
+    }
+}

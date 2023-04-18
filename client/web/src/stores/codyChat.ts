@@ -1,12 +1,17 @@
-import { useEffect, useMemo } from 'react'
+/* eslint-disable no-void */
+import { useEffect, useMemo, useRef } from 'react'
 
 import create from 'zustand'
 
 import { Client, createClient, ClientInit } from '@sourcegraph/cody-shared/src/chat/client'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { PrefilledOptions } from '@sourcegraph/cody-shared/src/editor/withPreselectedOptions'
 import { isErrorLike } from '@sourcegraph/common'
 
+import { CodeMirrorEditor } from '../cody/CodeMirrorEditor'
 import { eventLogger } from '../tracking/eventLogger'
+
+import { EditorStore, useEditorStore } from './editor'
 
 interface CodyChatStore {
     client: Client | null
@@ -15,17 +20,25 @@ interface CodyChatStore {
     transcript: ChatMessage[]
     repo: string
     filePath: string
-    setClient: (client: Client | null) => void
-    setConfig: (config: ClientInit['config']) => void
-    setMessageInProgress: (message: ChatMessage | null) => void
-    setTranscript: (transcript: ChatMessage[]) => void
-    initializeClient: (config: Required<ClientInit['config']>) => void
-    onSubmit: (text: string) => void
-    onReset: () => void
+
+    initializeClient: (
+        config: Required<ClientInit['config']>,
+        editorStore: React.MutableRefObject<EditorStore>,
+        openCody: () => void
+    ) => Promise<void>
+
+    submitMessage: (text: string) => void
+    executeRecipe: (
+        recipeId: string,
+        options?: {
+            prefilledOptions?: PrefilledOptions
+        }
+    ) => Promise<void>
+    reset: () => void
 }
 
 export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore => {
-    const onSubmit = (text: string): void => {
+    const submitMessage = (text: string): void => {
         const { client, repo, filePath } = get()
         if (client && !isErrorLike(client)) {
             eventLogger.log('web:codySidebar:submit', {
@@ -33,14 +46,29 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
                 path: filePath,
                 text,
             })
-            client.submitMessage(text)
+            void client.submitMessage(text)
         }
     }
 
-    const onReset = (): void => {
-        const { initializeClient, config } = get()
-        if (config) {
-            initializeClient(config as Required<ClientInit['config']>)
+    const executeRecipe = async (
+        recipeId: string,
+        options?: {
+            prefilledOptions?: PrefilledOptions
+        }
+    ): Promise<void> => {
+        const { client, repo, filePath } = get()
+        if (client && !isErrorLike(client)) {
+            eventLogger.log('web:codySidebar:recipe', { repo, path: filePath, recipeId })
+            await client.executeRecipe(recipeId, options)
+            eventLogger.log('web:codySidebar:recipe:executed', { repo, path: filePath, recipeId })
+        }
+        return Promise.resolve()
+    }
+
+    const reset = (): void => {
+        const { client } = get()
+        if (client && !isErrorLike(client)) {
+            void client.reset()
         }
     }
 
@@ -51,33 +79,47 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         transcript: [],
         filePath: '',
         repo: '',
-        setClient: client => set({ client }),
-        setConfig: config => set({ config }),
-        setMessageInProgress: message => set({ messageInProgress: message }),
-        setTranscript: transcript => set({ transcript }),
-        initializeClient: (config: Required<ClientInit['config']>): void => {
+
+        async initializeClient(
+            config: Required<ClientInit['config']>,
+            stateRef: React.MutableRefObject<EditorStore>,
+            openCody: () => void
+        ): Promise<void> {
             set({ messageInProgress: null, transcript: [], repo: config.codebase, config })
-            createClient({
-                config,
-                setMessageInProgress: message => set({ messageInProgress: message }),
-                setTranscript: transcript => set({ transcript }),
-            })
-                .then(client => {
-                    set({ client })
+
+            const editor = new CodeMirrorEditor(stateRef)
+
+            try {
+                const client = await createClient({
+                    config,
+                    setMessageInProgress: message => set({ messageInProgress: message }),
+                    setTranscript: transcript => set({ transcript }),
+                    editor,
+                    openCody,
                 })
-                .catch(error => {
-                    eventLogger.log('web:codySidebar:clientError', { repo: config?.codebase })
-                    set({ client: error })
-                })
+
+                set({ client })
+            } catch (error) {
+                set({ client: error })
+            }
         },
 
-        onSubmit,
-        onReset,
+        submitMessage,
+        executeRecipe,
+        reset,
     }
 })
 
-export const useChatStore = (isCodyEnabled: boolean, repoName: string): CodyChatStore => {
+export const useChatStore = (isCodyEnabled: boolean, repoName: string, openCody: () => void): CodyChatStore => {
     const store = useChatStoreState()
+
+    const editorStore = useEditorStore()
+    // We use a ref here so that a change in the editor state does not need a recreation of the
+    // client config.
+    const stateRef = useRef(editorStore)
+    useEffect(() => {
+        stateRef.current = editorStore
+    }, [editorStore])
 
     const config = useMemo<Required<ClientInit['config']>>(
         () => ({
@@ -95,8 +137,8 @@ export const useChatStore = (isCodyEnabled: boolean, repoName: string): CodyChat
             return
         }
 
-        initializeClient(config)
-    }, [config, initializeClient, isCodyEnabled])
+        void initializeClient(config, stateRef, openCody)
+    }, [config, initializeClient, isCodyEnabled, stateRef, openCody])
 
     return store
 }

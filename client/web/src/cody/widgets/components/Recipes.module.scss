@@ -1,4 +1,4 @@
-.recipesWrapper {
+.recipes-wrapper {
     display: flex;
     overflow-x: auto;
     background-color: var(--body-bg);
@@ -6,10 +6,11 @@
     padding: 0.18rem 0.06rem;
     align-items: center;
     overflow: hidden;
-    filter: drop-shadow(1px 2px 3px RGBA(36, 41, 54, 0.2))
-  }
+    filter: drop-shadow(1px 2px 3px RGBA(36, 41, 54, 0.2));
+    user-select: none;
+}
 
-  .recipeWrapper {
+.recipe-wrapper {
     display: flex;
     background-color: var(--input-bg);
     border-radius: 4px;
@@ -22,8 +23,8 @@
     display: inline-block;
     flex-shrink: 0;
     font-weight: 400;
-  }
+}
 
-  .recipeMenuWrapper {
+.recipe-menu-wrapper {
     font-size: 0.83rem;
-  }
+}

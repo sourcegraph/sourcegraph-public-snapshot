@@ -24,7 +24,7 @@ interface CodyChatProps {
 }
 
 export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
-    const { onReset, onSubmit, messageInProgress, transcript, repo } = useChatStoreState()
+    const { reset, submitMessage, messageInProgress, transcript, repo } = useChatStoreState()
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
     const [formInput, setFormInput] = useState('')
@@ -76,7 +76,7 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                     {shouldShowResetButton && (
                         <div>
                             <Tooltip content="Start a new conversation">
-                                <Button variant="icon" aria-label="Start a new conversation" onClick={onReset}>
+                                <Button variant="icon" aria-label="Start a new conversation" onClick={reset}>
                                     <Icon aria-hidden={true} svgPath={mdiReload} />
                                 </Button>
                             </Tooltip>
@@ -106,7 +106,7 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                         setFormInput={setFormInput}
                         inputHistory={inputHistory}
                         setInputHistory={setInputHistory}
-                        onSubmit={onSubmit}
+                        onSubmit={submitMessage}
                         submitButtonComponent={SubmitButton}
                         fileLinkComponent={FileLink}
                         className={styles.container}

@@ -1,6 +1,10 @@
-import { useMemo, useState, useEffect } from 'react'
+/* eslint-disable no-void */
+
+import React from 'react'
 
 import { mdiCardBulletedOutline, mdiDotsVertical, mdiProgressPencil, mdiTranslate } from '@mdi/js'
+
+import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
 
 import { useChatStoreState } from '../../stores/codyChat'
 
@@ -8,79 +12,42 @@ import { Recipe } from './components/Recipe'
 import { RecipeAction } from './components/RecipeAction'
 import { Recipes } from './components/Recipes'
 
-interface CodyRecipesWidgetProps {
-    selection?: string
-}
+export const CodyRecipesWidget: React.FC<{}> = () => {
+    const { executeRecipe } = useChatStoreState()
 
-export const CodyRecipesWidget = ({ selection }: CodyRecipesWidgetProps): JSX.Element => {
-    const [selectedCode, setSelectedCode] = useState<string | undefined>(selection)
+    return (
+        <Recipes>
+            <Recipe title="Explain" icon={mdiCardBulletedOutline}>
+                <RecipeAction title="Detailed" onClick={() => void executeRecipe('explain-code-detailed')} />
+                <RecipeAction title="High level" onClick={() => void executeRecipe('explain-code-high-level')} />
+            </Recipe>
 
-    useEffect(() => {
-        setSelectedCode(selection)
-    }, [selection])
+            <Recipe title="Generate" icon={mdiProgressPencil}>
+                <RecipeAction title="A unit test" onClick={() => void executeRecipe('generate-unit-test')} />
+                <RecipeAction title="A docstring" onClick={() => void executeRecipe('generate-docstring')} />
+            </Recipe>
 
-    const { onSubmit } = useChatStoreState()
+            <Recipe title="Translate" icon={mdiTranslate}>
+                {TranslateToLanguage.options.map(language => (
+                    <RecipeAction
+                        key={language}
+                        title={language}
+                        onClick={() =>
+                            void executeRecipe('translate-to-language', {
+                                prefilledOptions: [[TranslateToLanguage.options, language]],
+                            })
+                        }
+                    />
+                ))}
+            </Recipe>
 
-    // Super hacky way to post a message.
-    // TODO: Integrate with recipes components and format recipes from there.
-    const submit = (): void => {
-        onSubmit('Explain the following code at a high level:\n```\n' + selectedCode + '\n```\n')
-    }
-
-    const recipesWidget = useMemo(
-        () => (
-            <Recipes>
-                <Recipe title="Explain" icon={mdiCardBulletedOutline}>
-                    <RecipeAction title="Detailed" />
-                    <RecipeAction title="High level" onClick={submit} />
-                </Recipe>
-
-                <Recipe title="Generate" icon={mdiProgressPencil}>
-                    <RecipeAction title="A unit test" />
-                    <RecipeAction title="A docstring" />
-                </Recipe>
-
-                {/* TODO: Load languages from the recipes shared code of VSCode extension. */}
-                <Recipe title="Translate" icon={mdiTranslate}>
-                    <RecipeAction title="Python" />
-                    <RecipeAction title="Java" />
-                    <RecipeAction title="Javascript" />
-                    <RecipeAction title="Go" />
-                    <RecipeAction title="Rust" />
-                    <RecipeAction title="Erlang" />
-                    <RecipeAction title="TypeScript" />
-                    <RecipeAction title="Bash" />
-                    <RecipeAction title="C#" />
-                    <RecipeAction title="C++" />
-                    <RecipeAction title="C" />
-                    <RecipeAction title="PHP" />
-                    <RecipeAction title="Ruby" />
-                    <RecipeAction title="Elm" />
-                    <RecipeAction title="Kotlin" />
-                    <RecipeAction title="Groovy" />
-                    <RecipeAction title="BASIC" />
-                    <RecipeAction title="R" />
-                    <RecipeAction title="Matlab" />
-                    <RecipeAction title="Objective-C" />
-                    <RecipeAction title="Swift" />
-                    <RecipeAction title="Perl" />
-                    <RecipeAction title="Julia" />
-                    <RecipeAction title="Fortran" />
-                    <RecipeAction title="COBOL" />
-                    <RecipeAction title="Lisp" />
-                    <RecipeAction title="Haskell" />
-                </Recipe>
-                {/* <Recipe title="Summarize" icon={mdiClipboardTextClockOutline}>
-                    <RecipeAction title="Last 5 items" />
-                    <RecipeAction title="Last day" />
-                    <RecipeAction title="Last week" />
-                </Recipe>
-                <Recipe title="Improve names" icon={mdiScrewdriver} /> */}
-                <Recipe icon={mdiDotsVertical} />
-            </Recipes>
-        ),
-        []
+            <Recipe icon={mdiDotsVertical}>
+                <RecipeAction
+                    title="Improve variable names"
+                    onClick={() => void executeRecipe('improve-variable-names')}
+                />
+                <RecipeAction title="Smell code" onClick={() => void executeRecipe('find-code-smells')} />
+            </Recipe>
+        </Recipes>
     )
-
-    return recipesWidget
 }

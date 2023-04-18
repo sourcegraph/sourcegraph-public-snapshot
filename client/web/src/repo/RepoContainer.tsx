@@ -1,4 +1,4 @@
-import React, { FC, Suspense, useEffect, useMemo, useState } from 'react'
+import React, { FC, Suspense, useEffect, useMemo, useState, useCallback } from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
@@ -190,10 +190,12 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     )
 
     const [isCodyEnabled] = useFeatureFlag('cody-experimental')
-    useChatStore(isCodyEnabled, repoName)
-
     const focusCodyShortcut = useKeyboardShortcut('focusCody')
     const [isCodySidebarOpen, setCodySidebarOpen] = useTemporarySetting('cody.showSidebar', false)
+    const openCody = useCallback(() => {
+        setCodySidebarOpen(true)
+    }, [setCodySidebarOpen])
+    useChatStore(isCodyEnabled, repoName, openCody)
 
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
