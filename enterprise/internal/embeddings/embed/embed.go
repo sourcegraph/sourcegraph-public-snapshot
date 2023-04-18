@@ -55,12 +55,12 @@ func EmbedRepo(
 		return nil, err
 	}
 
-	codeIndex, err := embedFiles(codeFileNames, client, splitOptions, readFile, MAX_CODE_EMBEDDING_VECTORS, ranks)
+	codeIndex, err := embedFiles(ctx, codeFileNames, client, splitOptions, readFile, MAX_CODE_EMBEDDING_VECTORS, ranks)
 	if err != nil {
 		return nil, err
 	}
 
-	textIndex, err := embedFiles(textFileNames, client, splitOptions, readFile, MAX_TEXT_EMBEDDING_VECTORS, ranks)
+	textIndex, err := embedFiles(ctx, textFileNames, client, splitOptions, readFile, MAX_TEXT_EMBEDDING_VECTORS, ranks)
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +80,7 @@ func createEmptyEmbeddingIndex(columnDimension int) embeddings.EmbeddingIndex {
 // entire files. So we split the file contents into chunks and get embeddings for the chunks in batches. Functions returns an EmbeddingIndex containing
 // the embeddings and metadata about the chunks the embeddings correspond to.
 func embedFiles(
+	ctx context.Context,
 	fileNames []string,
 	client EmbeddingsClient,
 	splitOptions split.SplitOptions,
@@ -121,7 +122,7 @@ func embedFiles(
 				index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
 			}
 
-			batchEmbeddings, err := client.GetEmbeddingsWithRetries(batchChunks, GET_EMBEDDINGS_MAX_RETRIES)
+			batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks, GET_EMBEDDINGS_MAX_RETRIES)
 			if err != nil {
 				return errors.Wrap(err, "error while getting embeddings")
 			}

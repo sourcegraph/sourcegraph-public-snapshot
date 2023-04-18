@@ -1,6 +1,8 @@
 package shared
 
 import (
+	"context"
+
 	lru "github.com/hashicorp/golang-lru/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
@@ -10,7 +12,7 @@ import (
 const QUERY_EMBEDDING_RETRIES = 3
 const QUERY_EMBEDDINGS_CACHE_MAX_ENTRIES = 128
 
-func getCachedQueryEmbeddingFn(client embed.EmbeddingsClient) (getQueryEmbeddingFn, error) {
+func getCachedQueryEmbeddingFn(ctx context.Context, client embed.EmbeddingsClient) (getQueryEmbeddingFn, error) {
 	cache, err := lru.New[string, []float32](QUERY_EMBEDDINGS_CACHE_MAX_ENTRIES)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating query embeddings cache")
@@ -20,7 +22,7 @@ func getCachedQueryEmbeddingFn(client embed.EmbeddingsClient) (getQueryEmbedding
 		if cachedQueryEmbedding, ok := cache.Get(query); ok {
 			queryEmbedding = cachedQueryEmbedding
 		} else {
-			queryEmbedding, err = client.GetEmbeddingsWithRetries([]string{query}, QUERY_EMBEDDING_RETRIES)
+			queryEmbedding, err = client.GetEmbeddingsWithRetries(ctx, []string{query}, QUERY_EMBEDDING_RETRIES)
 			if err != nil {
 				return nil, err
 			}
