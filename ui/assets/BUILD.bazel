@@ -10,7 +10,6 @@ go_library(
         "doc.go",
         "manifest.go",
     ],
-    embedsrcs = ["copy_bundle_dist"],  # keep
     importpath = "github.com/sourcegraph/sourcegraph/ui/assets",
     visibility = ["//visibility:public"],
     deps = ["//lib/errors"],
