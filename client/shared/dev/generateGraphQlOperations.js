@@ -13,6 +13,7 @@ const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/shared')
 const VSCODE_FOLDER = path.resolve(ROOT_FOLDER, './client/vscode')
 const JETBRAINS_FOLDER = path.resolve(ROOT_FOLDER, './client/jetbrains')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.graphql')
+const CODY_REVIEW_FOLDER = path.resolve(ROOT_FOLDER, './client/cody-review')
 
 const SHARED_DOCUMENTS_GLOB = [`${SHARED_FOLDER}/src/**/*.{ts,tsx}`]
 
@@ -96,6 +97,10 @@ async function generateGraphQlOperations() {
       {
         interfaceNameForOperations: 'JetBrainsGraphQlOperations',
         outputPath: path.join(JETBRAINS_FOLDER, './webview/src/graphql-operations.ts'),
+      },
+      {
+        interfaceNameForOperations: 'CodyReviewGraphQlOperations',
+        outputPath: path.join(CODY_REVIEW_FOLDER, './src/graphql-operations.ts'),
       },
     ])
   } catch (error) {
