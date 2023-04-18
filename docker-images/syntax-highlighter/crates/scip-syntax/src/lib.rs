@@ -10,15 +10,15 @@ pub mod languages;
 pub mod locals;
 pub mod ts_scip;
 
-pub fn get_globals<'a>(
+pub fn get_globals(
     parser: BundledParser,
-    source_bytes: &'a [u8],
+    source_bytes: &[u8],
 ) -> Option<Result<(globals::Scope, usize)>> {
     let config = languages::get_tag_configuration(parser)?;
     let mut parser = Parser::new();
     parser.set_language(config.language).unwrap();
     let tree = parser.parse(source_bytes, None).unwrap();
-    Some(globals::parse_tree(&config, &tree, source_bytes))
+    Some(globals::parse_tree(config, &tree, source_bytes))
 }
 
 pub fn get_locals(parser: BundledParser, source_bytes: &[u8]) -> Option<Result<Vec<Occurrence>>> {

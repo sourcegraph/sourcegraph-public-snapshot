@@ -1,6 +1,5 @@
-use std::{io::BufWriter, io::Write, ops::Not, path};
+use std::{io::BufWriter, ops::Not, path};
 
-use protobuf::EnumOrUnknown;
 use scip::types::{descriptor::Suffix, Descriptor};
 use scip_treesitter_languages::parsers::BundledParser;
 use serde::{Deserialize, Serialize};
@@ -34,9 +33,9 @@ pub enum Request {
     },
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Debug)]
 #[serde(tag = "_type")]
-pub enum Reply {
+pub enum Reply<'a> {
     #[serde(rename = "program")]
     Program { name: String, version: String },
     #[serde(rename = "completed")]
@@ -44,72 +43,98 @@ pub enum Reply {
     #[serde(rename = "error")]
     Error { message: String, fatal: bool },
     #[serde(rename = "tag")]
-    Tag {
-        name: String,
-        path: String,
-        language: String,
-        /// Starts at 1
-        line: usize,
-        kind: String,
-        pattern: String,
-        scope: Option<String>,
-        #[serde(rename = "scopeKind")]
-        scope_kind: Option<String>,
-        signature: Option<String>,
-        // TODO(SuperAuguste): Any other properties required? Roles? Access?
-    },
+    Tag(Tag<'a>),
 }
 
-pub fn write_to_buf_writer<T: serde::ser::Serialize, W: std::io::Write>(
-    buf_writer: &mut BufWriter<W>,
-    val: &T,
-) {
-    buf_writer
-        .write_all(serde_json::to_string(val).unwrap().as_bytes())
-        .unwrap();
-    buf_writer.write_all("\n".as_bytes()).unwrap();
+impl<'a> Reply<'a> {
+    pub fn write<W: std::io::Write>(self, writer: &mut W) {
+        writer
+            .write_all(serde_json::to_string(&self).unwrap().as_bytes())
+            .unwrap();
+        writer.write_all("\n".as_bytes()).unwrap();
+    }
+
+    pub fn write_tag<W: std::io::Write>(
+        writer: &mut W,
+        scope: &Scope,
+        path: &'a str,
+        language: &'a str,
+        tag_scope: Option<&'a str>,
+    ) {
+        let descriptors = &scope.descriptors;
+        let name = descriptors
+            .iter()
+            .map(|d| d.name.as_str())
+            .collect::<Vec<_>>()
+            .join(".");
+
+        let tag = Self::Tag(Tag {
+            name,
+            path,
+            language,
+            line: scope.range[0] as usize + 1,
+            kind: descriptors_to_kind(&scope.descriptors),
+            scope: tag_scope,
+        });
+
+        tag.write(writer);
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Tag<'a> {
+    name: String,
+    path: &'a str,
+    language: &'a str,
+    /// Starts at 1
+    line: usize,
+    kind: &'a str,
+    scope: Option<&'a str>,
+    // Can't find any uses of these. If someone reports a bug, we can support this
+    // scope_kind: Option<String>,
+    // signature: Option<String>,
 }
 
 pub fn generate_tags<W: std::io::Write>(
     buf_writer: &mut BufWriter<W>,
     filename: String,
     file_data: &[u8],
-) {
+) -> Option<()> {
     let path = path::Path::new(&filename);
+    let extension = path.extension()?.to_str()?;
+    let filepath = path.file_name()?.to_str()?;
 
-    let parser = match BundledParser::get_parser_from_extension(
-        path.extension().unwrap_or_default().to_str().unwrap(),
-    ) {
-        None => return,
-        Some(parser) => parser,
-    };
-
-    let (root_scope, _) = match match get_globals(parser, &file_data) {
-        None => return,
-        Some(res) => res,
-    } {
-        Err(_) => return,
+    let parser = BundledParser::get_parser_from_extension(extension)?;
+    let (root_scope, _) = match get_globals(parser, file_data)? {
         Ok(vals) => vals,
+        Err(err) => {
+            // TODO: Not sure I want to keep this or not
+            #[cfg(debug_assertions)]
+            if true {
+                panic!("Could not parse file: {}", err);
+            }
+
+            return None;
+        }
     };
 
-    emit_tags_for_scope(
-        buf_writer,
-        path.file_name().unwrap().to_str().unwrap(),
-        vec![],
-        &root_scope,
-    );
+    emit_tags_for_scope(buf_writer, filepath, vec![], &root_scope, "go");
+    Some(())
 }
 
-fn suffix_to_string(suffix: EnumOrUnknown<Suffix>) -> String {
-    return match suffix.enum_value_or_default() {
-        // TODO(SuperAuguste): handle more cases + we lose info here, how do handle this?
+fn descriptors_to_kind(descriptors: &[Descriptor]) -> &'static str {
+    match descriptors
+        .last()
+        .unwrap_or_default()
+        .suffix
+        .enum_value_or_default()
+    {
         Suffix::Namespace => "namespace",
         Suffix::Package => "package",
         Suffix::Method => "method",
         Suffix::Type => "type",
         _ => "variable",
     }
-    .to_string();
 }
 
 fn emit_tags_for_scope<W: std::io::Write>(
@@ -117,6 +142,7 @@ fn emit_tags_for_scope<W: std::io::Write>(
     path: &str,
     parent_scopes: Vec<String>,
     scope: &Scope,
+    language: &str,
 ) {
     let curr_scopes = {
         let mut curr_scopes = parent_scopes.clone();
@@ -126,34 +152,18 @@ fn emit_tags_for_scope<W: std::io::Write>(
         curr_scopes
     };
 
-    if scope.descriptors.len() > 0 {
-        write_to_buf_writer(
-            buf_writer,
-            &Reply::Tag {
-                name: scope
-                    .descriptors
-                    .iter()
-                    .map(|d| d.name.clone())
-                    .collect::<Vec<String>>()
-                    .join("."),
-                path: path.to_string(),
-                // TODO(SuperAuguste): Set to correct language (does this even matter?)
-                language: "Go".to_string(),
-                line: scope.range[0] as usize + 1,
-                kind: suffix_to_string(scope.descriptors.last().unwrap().suffix),
-                pattern: "/.*/".to_string(),
-                scope: parent_scopes
-                    .is_empty()
-                    .not()
-                    .then(|| parent_scopes.join(".")),
-                scope_kind: Option::None,
-                signature: Option::None,
-            },
-        );
+    if !scope.descriptors.is_empty() {
+        let tag_scope = parent_scopes
+            .is_empty()
+            .not()
+            .then(|| parent_scopes.join("."));
+        let tag_scope = tag_scope.as_deref();
+
+        Reply::write_tag(&mut *buf_writer, scope, path, language, tag_scope);
     }
 
     for subscope in &scope.children {
-        emit_tags_for_scope(buf_writer, path, curr_scopes.clone(), &subscope);
+        emit_tags_for_scope(buf_writer, path, curr_scopes.clone(), subscope, language);
     }
 
     for global in &scope.globals {
@@ -166,20 +176,18 @@ fn emit_tags_for_scope<W: std::io::Write>(
                 .map(|d| d.name.clone()),
         );
 
-        write_to_buf_writer(
-            buf_writer,
-            &Reply::Tag {
-                name: global.descriptors.last().unwrap().name.clone(),
-                path: path.to_string(),
-                // TODO(SuperAuguste): Set to correct language (does this even matter?)
-                language: "Go".to_string(),
-                line: global.range[0] as usize + 1,
-                kind: suffix_to_string(global.descriptors.last().unwrap().suffix),
-                pattern: "/.*/".to_string(),
-                scope: scope_name.is_empty().not().then(|| scope_name.join(".")),
-                scope_kind: Option::None,
-                signature: Option::None,
-            },
-        );
+        Reply::Tag(Tag {
+            name: global.descriptors.last().unwrap().name.clone(),
+            path,
+            language,
+            line: global.range[0] as usize + 1,
+            kind: descriptors_to_kind(&global.descriptors),
+            scope: scope_name
+                .is_empty()
+                .not()
+                .then(|| scope_name.join("."))
+                .as_deref(),
+        })
+        .write(buf_writer);
     }
 }
