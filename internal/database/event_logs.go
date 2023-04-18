@@ -900,7 +900,7 @@ SELECT
   user_id,
   COUNT(*) FILTER (WHERE event_logs.name ='SearchResultsQueried') as search_count,
   COUNT(*) FILTER (WHERE event_logs.name LIKE '%codeintel%') as codeintel_count,
-  COUNT(*) FILTER (WHERE event_logs.name LIKE '%cody%') as cody_count
+  COUNT(*) FILTER (WHERE event_logs.name LIKE '%cody%' or event_logs.name LIKE '%Cody%') as cody_count
 FROM event_logs
 WHERE anonymous_user_id != 'backend'
 GROUP BY 1, 2
