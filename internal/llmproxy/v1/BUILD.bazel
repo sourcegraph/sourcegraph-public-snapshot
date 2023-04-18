@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_buf//buf:defs.bzl", "buf_lint_test")
+
+proto_library(
+    name = "proto_proto",
+    srcs = ["gitserver.proto"],
+    strip_import_prefix = "/internal",
+    visibility = ["//:__subpackages__"],
+)
+
+go_library(
+    name = "llmproxy",
+    srcs = [
+        "llmproxy.pb.go",
+        "llmproxy_grpc.pb.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/llmproxy/v1",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+        "@org_golang_google_protobuf//reflect/protoreflect",
+        "@org_golang_google_protobuf//runtime/protoimpl",
+    ],
+)
+
+buf_lint_test(
+    name = "v1_proto_lint",
+    timeout = "short",
+    config = "//internal:buf.yaml",
+    targets = [":proto_proto"],
+)
