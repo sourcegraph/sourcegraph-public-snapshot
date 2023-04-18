@@ -68,8 +68,8 @@ func (s *githubAppsStore) Create(ctx context.Context, app *types.GitHubApp) erro
 
 	query := sqlf.Sprintf(`INSERT INTO
 	    github_apps (app_id, name, slug, client_id, client_secret, private_key, encryption_key_id, logo)
-    	VALUES (%s, %s, %s, %s, %s, %s, %s, %s)`,
-		app.AppID, app.Name, app.Slug, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
+    	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)`,
+		app.AppID, app.Name, app.Slug, app.BaseURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
 	return s.Exec(ctx, query)
 }
 
@@ -91,9 +91,10 @@ func (s *githubAppsStore) Update(ctx context.Context, id int, app *types.GitHubA
 		return err
 	}
 
+	// TODO: consider only writing what changed here...
 	query := sqlf.Sprintf(`UPDATE github_apps
-             SET name = %s, slug = %s, client_id = %s, client_secret = %s, private_key = %s, encryption_key_id = %s, logo = %s, updated_at = NOW()
-             WHERE id = %s`, app.ID, app.Name, app.Slug, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
+             SET name = %s, slug = %s, base_url = %s, client_id = %s, client_secret = %s, private_key = %s, encryption_key_id = %s, logo = %s, updated_at = NOW()
+             WHERE id = %s`, app.ID, app.Name, app.Slug, app.BaseURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
 	return s.Exec(ctx, query)
 }
 
@@ -106,6 +107,7 @@ func (s *githubAppsStore) GetByID(ctx context.Context, id int) (*types.GitHubApp
 		id,
 		name,
 		slug,
+		base_url,
 		client_id,
 		client_secret,
 		private_key,
@@ -119,6 +121,7 @@ func (s *githubAppsStore) GetByID(ctx context.Context, id int) (*types.GitHubApp
 		&app.ID,
 		&app.Name,
 		&app.Slug,
+		&app.BaseURL,
 		&app.ClientID,
 		&clientSecret,
 		&privateKey,

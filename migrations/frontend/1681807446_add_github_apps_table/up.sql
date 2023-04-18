@@ -3,6 +3,7 @@ CREATE TABLE github_apps (
     app_id INT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     slug TEXT NOT NULL,
+    base_url TEXT NOT NULL,
     client_id TEXT NOT NULL,
     client_secret TEXT NOT NULL,
     private_key TEXT NOT NULL,
