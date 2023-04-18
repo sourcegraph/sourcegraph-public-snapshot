@@ -3,13 +3,14 @@ package backend
 import (
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/grpc/v1"
 	"github.com/sourcegraph/zoekt/rpc"
 	zoektstream "github.com/sourcegraph/zoekt/stream"
 	"google.golang.org/grpc"
+
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 // We don't use the normal factory for internal requests because we disable

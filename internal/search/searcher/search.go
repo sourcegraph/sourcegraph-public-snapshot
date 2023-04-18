@@ -58,10 +58,6 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	if ctx.Err() != nil {
-		return nil, err
-	}
-
 	var fetchTimeout time.Duration
 	if len(s.Repos) == 1 || s.UseFullDeadline {
 		// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
