@@ -244,10 +244,11 @@ func getAbsoluteMountPath(batchSpecDir string, mountPath string) (string, error)
 
 func nextStep(currentStep int, skippedSteps map[int]struct{}) int {
 	// TODO: this can eventually do dynamic checking instead of just checking the statically skipped steps.
-	for i := currentStep + 1; i < len(skippedSteps); i++ {
-		if _, ok := skippedSteps[i]; !ok {
-			return i
+	next := currentStep + 1
+	for {
+		if _, ok := skippedSteps[next]; !ok {
+			return next
 		}
+		next++
 	}
-	return -1
 }
