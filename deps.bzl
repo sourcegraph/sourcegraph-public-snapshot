@@ -5727,14 +5727,14 @@ def go_dependencies():
         version = "v0.2.4-0.20230403145725-e720fb88e6fd",
     )
 
-    # go_repository(
-    #     name = "com_github_sourcegraph_zoekt",
-    #     build_file_proto_mode = "disable_global",
-    #     importpath = "github.com/sourcegraph/zoekt",
-    #     sum = "h1:dZN5lUWLL4I3jkxQG9SAtF+Ufv92JnQhNiGoXJfRHjU=",
-    #     version = "v0.0.0-20230328081101-02541e61dd57",
-    # )
-    #
+    go_repository(
+        name = "com_github_sourcegraph_zoekt",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/zoekt",
+        sum = "h1:dZN5lUWLL4I3jkxQG9SAtF+Ufv92JnQhNiGoXJfRHjU=",
+        version = "v0.0.0-20230328081101-02541e61dd57",
+    )
+
     go_repository(
         name = "com_github_spaolacci_murmur3",
         build_file_proto_mode = "disable_global",
