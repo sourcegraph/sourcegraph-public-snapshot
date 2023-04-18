@@ -27,6 +27,15 @@ jobs:
             Hi, I'm Cody! I'm starting my review of this PR. I'll leave comments as I go along.
           reactions: 'eyes'
 
+      - name: Remove comment
+        if: env.CODY_REVIEW != 'true' && github.event.action == 'unlabeled'
+        uses: peter-evans/delete-comment@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ steps.leave-a-comment.outputs.comment-id }}
+        run: |
+          echo "CODY_REVIEW=false" >> $GITHUB_ENV
+
       - name: Check out repository
         if: env.CODY_REVIEW == 'true'
         uses: actions/checkout@v2
