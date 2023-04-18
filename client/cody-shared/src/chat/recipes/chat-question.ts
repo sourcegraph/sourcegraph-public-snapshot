@@ -45,9 +45,14 @@ export class ChatQuestion implements Recipe {
             contextMessages.push(...codebaseContextMessages)
         }
 
-        if (isCodebaseContextRequired || intentDetector.isEditorContextRequired(text)) {
+        if (isCodebaseContextRequired || await intentDetector.isEditorContextRequired(text)) {
             contextMessages.push(...this.getEditorContext(editor))
         }
+
+        // TODO: Implement getting all open editor content
+        // if (await intentDetector.isEditorBroaderFileContextRequired(text)) {
+        //     contextMessages.push(...this.getEditorBroaderFileContext())
+        // }
 
         return contextMessages
     }

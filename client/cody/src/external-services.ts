@@ -3,7 +3,7 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
-import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
+import { LlmBasedIntentDetector } from '@sourcegraph/cody-shared/src/intent-detector/llm-based'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -48,7 +48,7 @@ export async function configureExternalServices(
     )
 
     return {
-        intentDetector: new SourcegraphIntentDetectorClient(client),
+        intentDetector: new LlmBasedIntentDetector(completions),
         codebaseContext,
         chatClient: new ChatClient(completions),
         completionsClient: completions,
