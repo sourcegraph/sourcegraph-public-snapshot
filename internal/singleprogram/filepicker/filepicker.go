@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -18,7 +19,17 @@ import (
 func osascript(ctx context.Context) (string, error) {
 	cmd := exec.CommandContext(ctx,
 		"osascript", "-e",
-		`return the POSIX path of (choose folder with prompt "Select a repository or folder with repositories")`)
+		`set theFolders to choose folder with prompt "Select repositories or folders with repositories" with multiple selections allowed`,
+		"-e",
+		"set posixPaths to {}",
+		"-e",
+		"repeat with thisFolder in theFolders",
+		"-e",
+		"    set end of posixPaths to POSIX path of thisFolder",
+		"-e",
+		"end repeat",
+		"-e",
+		"return posixPaths")
 	path, err := cmd.Output()
 	if err != nil {
 		return "", err

@@ -273,7 +273,7 @@ interface InputWithActionsProps extends InputHTMLAttributes<HTMLInputElement> {
  * Renders either file picker input (non-editable but clickable and with "pick a path" action button or
  * simple input where user can input path manually.
  */
-const InputWitActions = forwardRef<HTMLInputElement, InputWithActionsProps>((props, ref) => {
+const InputWitActions = forwardRef<HTMLInputElement, InputWithActionsProps>(function InputWitActions(props, ref) {
     const { isFilePickerMode, isProcessing, onPickPath, onPathReset, className, value, ...attributes } = props
 
     return (
