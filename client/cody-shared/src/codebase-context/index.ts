@@ -1,3 +1,4 @@
+import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
 import { KeywordContextFetcher } from '../keyword-context'
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
@@ -14,13 +15,17 @@ export interface ContextSearchOptions {
 
 export class CodebaseContext {
     constructor(
-        private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
+        private config: Pick<Configuration, 'useContext'>,
         private embeddings: EmbeddingsSearch | null,
         private keywords: KeywordContextFetcher
     ) {}
 
+    public onConfigurationChange(newConfig: typeof this.config): void {
+        this.config = newConfig
+    }
+
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        switch (this.contextType) {
+        switch (this.config.useContext) {
             case 'blended':
                 return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)

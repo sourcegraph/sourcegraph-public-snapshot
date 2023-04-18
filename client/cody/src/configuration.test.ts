@@ -10,7 +10,7 @@ describe('getConfiguration', () => {
         expect(getConfiguration(config)).toEqual({
             enabled: true,
             serverEndpoint: '',
-            codebase: undefined,
+            codebase: '',
             debug: false,
             useContext: 'embeddings',
             experimentalSuggest: false,

@@ -6,32 +6,15 @@ import classNames from 'classnames'
 import { highlightNode } from '@sourcegraph/common'
 import { codeHostSubstrLength, displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Badge, Icon, Link } from '@sourcegraph/wildcard'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
+import { RepoMetadata } from './RepoMetadata'
 import { ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
 
 const REPO_DESCRIPTION_CHAR_LIMIT = 500
-
-const RepoMetadata: React.FunctionComponent<{ keyValuePairs: Record<string, string>; className?: string }> = ({
-    keyValuePairs,
-    className,
-}) => (
-    <div className={classNames(styles.repoMetadata, className, 'd-flex align-items-center flex-wrap')}>
-        {Object.entries(keyValuePairs).map(([key, value]) => (
-            <span className="d-flex align-items-center justify-content-center" key={`${key}:${value}`}>
-                <Badge small={true} variant="info" className={classNames({ [styles.repoMetadataKey]: value })}>
-                    {key}
-                </Badge>
-                <Badge small={true} variant="secondary" className={styles.repoMetadataValue}>
-                    {value}
-                </Badge>
-            </span>
-        ))}
-    </div>
-)
 
 export interface RepoSearchResultProps {
     result: RepositoryMatch
@@ -111,8 +94,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             <small>Repository match</small>
                             {enableRepositoryMetadata && !!result.keyValuePairs && (
                                 <RepoMetadata
-                                    keyValuePairs={result.keyValuePairs}
+                                    keyValuePairs={Object.entries(result.keyValuePairs)}
                                     className="justify-content-end ml-2 mr-4"
+                                    small={true}
                                 />
                             )}
                         </div>

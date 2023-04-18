@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiClose, mdiSend, mdiArrowDown } from '@mdi/js'
+import { mdiClose, mdiSend, mdiArrowDown, mdiReload } from '@mdi/js'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
 import { Chat, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
-import { Terms } from '@sourcegraph/cody-ui/src/Terms'
-import { Button, Icon, TextArea } from '@sourcegraph/wildcard'
+import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
+import { useQuery } from '@sourcegraph/http-client'
+import { Button, ErrorAlert, Icon, LoadingSpinner, Text, TextArea, Tooltip } from '@sourcegraph/wildcard'
 
+import { RepoEmbeddingExistsQueryResult, RepoEmbeddingExistsQueryVariables } from '../graphql-operations'
+import { REPO_EMBEDDING_EXISTS_QUERY } from '../repo/repoRevisionSidebar/cody/backend'
 import { useChatStoreState } from '../stores/codyChat'
 
 import styles from './CodyChat.module.scss'
@@ -21,7 +24,7 @@ interface CodyChatProps {
 }
 
 export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
-    const { onSubmit, messageInProgress, transcript } = useChatStoreState()
+    const { onReset, onSubmit, messageInProgress, transcript, repo } = useChatStoreState()
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
     const [formInput, setFormInput] = useState('')
@@ -55,10 +58,30 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
         }
     }, [transcript, shouldScrollToBottom, messageInProgress])
 
+    const {
+        data: embeddingExistsData,
+        loading: embeddingExistsLoading,
+        error: embeddingExistsError,
+    } = useQuery<RepoEmbeddingExistsQueryResult, RepoEmbeddingExistsQueryVariables>(REPO_EMBEDDING_EXISTS_QUERY, {
+        variables: { repoName: repo },
+    })
+
+    const shouldShowResetButton =
+        !embeddingExistsLoading && !embeddingExistsError && embeddingExistsData?.repository?.embeddingExists
+
     return (
         <div className={styles.mainWrapper}>
             <div className={styles.codySidebar} ref={codySidebarRef} onScroll={handleScroll}>
                 <div className={styles.codySidebarHeader}>
+                    {shouldShowResetButton && (
+                        <div>
+                            <Tooltip content="Start a new conversation">
+                                <Button variant="icon" aria-label="Start a new conversation" onClick={onReset}>
+                                    <Icon aria-hidden={true} svgPath={mdiReload} />
+                                </Button>
+                            </Tooltip>
+                        </div>
+                    )}
                     <div>
                         <CodyLogo />
                         Ask Cody
@@ -69,35 +92,35 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                         </Button>
                     </div>
                 </div>
-                <Chat
-                    messageInProgress={messageInProgress}
-                    transcript={transcript}
-                    formInput={formInput}
-                    setFormInput={setFormInput}
-                    inputHistory={inputHistory}
-                    setInputHistory={setInputHistory}
-                    onSubmit={onSubmit}
-                    submitButtonComponent={SubmitButton}
-                    fileLinkComponent={FileLink}
-                    className={styles.container}
-                    afterTips={
-                        <details className="small mt-2">
-                            <summary>Terms</summary>
-                            <Terms />
-                        </details>
-                    }
-                    bubbleContentClassName={styles.bubbleContent}
-                    bubbleClassName={styles.bubble}
-                    bubbleRowClassName={styles.bubbleRow}
-                    humanBubbleContentClassName={styles.humanBubbleContent}
-                    botBubbleContentClassName={styles.botBubbleContent}
-                    bubbleFooterClassName={classNames('text-muted', 'small', 'mt-0', styles.bubbleFooter)}
-                    bubbleLoaderDotClassName={styles.bubbleLoaderDot}
-                    inputRowClassName={styles.inputRow}
-                    chatInputClassName={styles.chatInput}
-                    textAreaComponent={AutoResizableTextArea}
-                    codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
-                />
+                {embeddingExistsLoading ? (
+                    <LoadingSpinner className="m-3" />
+                ) : embeddingExistsError ? (
+                    <ErrorAlert error={embeddingExistsError} className="m-3" />
+                ) : !embeddingExistsData?.repository?.embeddingExists ? (
+                    <Text className="m-3">Repository embeddings are not available.</Text>
+                ) : (
+                    <Chat
+                        messageInProgress={messageInProgress}
+                        transcript={transcript}
+                        formInput={formInput}
+                        setFormInput={setFormInput}
+                        inputHistory={inputHistory}
+                        setInputHistory={setInputHistory}
+                        onSubmit={onSubmit}
+                        submitButtonComponent={SubmitButton}
+                        fileLinkComponent={FileLink}
+                        className={styles.container}
+                        afterTips={CODY_TERMS_MARKDOWN}
+                        transcriptItemClassName={styles.transcriptItem}
+                        humanTranscriptItemClassName={styles.humanTranscriptItem}
+                        transcriptItemParticipantClassName="text-muted"
+                        inputRowClassName={styles.inputRow}
+                        chatInputClassName={styles.chatInput}
+                        textAreaComponent={AutoResizableTextArea}
+                        codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
+                        transcriptActionClassName={styles.transcriptAction}
+                    />
+                )}
             </div>
             {showScrollDownButton && <ScrollDownButton onClick={() => scrollToBottom('smooth')} />}
         </div>

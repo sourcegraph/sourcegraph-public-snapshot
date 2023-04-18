@@ -4,22 +4,15 @@ import { Configuration, OpenAIApi } from 'openai'
 
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import {
-    CodeCompletionResponse,
     CompletionCallbacks,
     CompletionParameters,
+    Message,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-export class OpenAICompletionsClient extends SourcegraphCompletionsClient {
+export class OpenAICompletionsClient implements Pick<SourcegraphCompletionsClient, 'stream'> {
     private openai: OpenAIApi
 
-    constructor(
-        protected apiKey: string,
-        instanceUrl: string = '',
-        protected accessToken: string = '',
-        protected mode: 'development' | 'production' = 'production'
-    ) {
-        super(instanceUrl, accessToken, mode)
-
+    constructor(private apiKey: string) {
         const configuration = new Configuration({
             apiKey: this.apiKey,
         })
@@ -31,12 +24,17 @@ export class OpenAICompletionsClient extends SourcegraphCompletionsClient {
             .createChatCompletion(
                 {
                     model: 'gpt-3.5-turbo',
-                    messages: params.messages.map(message => {
-                        return {
-                            role: message.speaker === 'human' ? 'user' : 'assistant',
-                            content: message.text,
-                        }
-                    }),
+                    messages: params.messages
+                        .filter(
+                            (message): message is Omit<Message, 'text'> & Required<Pick<Message, 'text'>> =>
+                                message.text !== undefined
+                        )
+                        .map(message => {
+                            return {
+                                role: message.speaker === 'human' ? 'user' : 'assistant',
+                                content: message.text,
+                            }
+                        }),
                     stream: true,
                 },
                 { responseType: 'stream' }
@@ -82,9 +80,5 @@ export class OpenAICompletionsClient extends SourcegraphCompletionsClient {
             .catch(console.error)
 
         return () => {}
-    }
-
-    public complete(): Promise<CodeCompletionResponse> {
-        throw new Error('SourcegraphBrowserCompletionsClient.complete not implemented')
     }
 }

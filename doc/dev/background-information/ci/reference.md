@@ -26,7 +26,6 @@ The default run type.
   - **Linters and static analysis**: Run sg lint
   - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
   - **Pipeline setup**: Trigger async
-  - Client PR preview
   - Upload build trace
 
 - Pipeline for `GraphQL` changes:

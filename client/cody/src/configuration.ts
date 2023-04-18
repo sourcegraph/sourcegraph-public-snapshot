@@ -2,11 +2,14 @@ import * as vscode from 'vscode'
 
 import type { ConfigurationUseContext, Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
+/**
+ * All configuration values, with some sanitization performed.
+ */
 export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get'>): Configuration {
     return {
         enabled: config.get('cody.enabled', true),
-        serverEndpoint: config.get('cody.serverEndpoint', ''),
-        codebase: config.get('cody.codebase'),
+        serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
+        codebase: sanitizeCodebase(config.get('cody.codebase')),
         debug: config.get('cody.debug', false),
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
         experimentalSuggest: config.get('cody.experimental.suggestions', false),
@@ -15,11 +18,22 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
     }
 }
 
+function sanitizeCodebase(codebase: string | undefined): string {
+    if (!codebase) {
+        return ''
+    }
+    const protocolRegexp = /^(https?):\/\//
+    return codebase.replace(protocolRegexp, '')
+}
+
+function sanitizeServerEndpoint(serverEndpoint: string): string {
+    const trailingSlashRegexp = /\/$/
+    return serverEndpoint.trim().replace(trailingSlashRegexp, '')
+}
+
 const codyConfiguration = vscode.workspace.getConfiguration('cody')
-const globalConfigTarget = vscode.ConfigurationTarget.Global
 
 // Update user configurations in VS Code for Cody
 export async function updateConfiguration(configKey: string, configValue: string): Promise<void> {
-    // Removing globalConfigTarget will only update configs for the workspace setting only
-    await codyConfiguration.update(configKey, configValue, globalConfigTarget)
+    await codyConfiguration.update(configKey, configValue, vscode.ConfigurationTarget.Global)
 }

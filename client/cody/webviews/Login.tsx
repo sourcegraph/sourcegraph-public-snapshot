@@ -1,69 +1,102 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { TextFieldType } from '@vscode/webview-ui-toolkit/dist/text-field'
 import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { Terms } from '@sourcegraph/cody-ui/src/Terms'
+import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 
-import './Login.css'
+import styles from './Login.module.css'
 
 interface LoginProps {
     isValidLogin?: boolean
     onLogin: (token: string, endpoint: string) => void
+    serverEndpoint?: string
 }
 
-export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({ isValidLogin, onLogin }) => {
-    const [termsAccepted, setTermsAccepted] = useState(false)
+export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
+    isValidLogin,
+    onLogin,
+    serverEndpoint,
+}) => {
     const [token, setToken] = useState<string>('')
-    const [endpoint, setEndpoint] = useState('')
+    const [endpoint, setEndpoint] = useState(serverEndpoint)
+
+    const onSubmit = useCallback<React.FormEventHandler>(
+        event => {
+            event.preventDefault()
+            if (endpoint) {
+                onLogin(token, endpoint)
+            }
+        },
+        [endpoint, onLogin, token]
+    )
 
     return (
-        <div className="inner-container">
-            <div className="non-transcript-container">
-                {termsAccepted ? (
-                    <div className="container-getting-started">
-                        <p>Access Token</p>
-                        <VSCodeTextField
-                            value={token}
-                            placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
-                            className="w-100"
-                            type={TextFieldType.password}
-                            onInput={(e: any) => setToken(e.target.value)}
-                        />
-                        <p>Sourcegraph Instance</p>
-                        <VSCodeTextField
-                            value={endpoint}
-                            placeholder="ex https://example.sourcegraph.com"
-                            className="w-100"
-                            autofocus={true}
-                            onInput={(e: any) => setEndpoint(e.target.value)}
-                        />
-                        <VSCodeButton className="login-button" type="button" onClick={() => onLogin(token, endpoint)}>
-                            Login
-                        </VSCodeButton>
-                        {isValidLogin === false && (
-                            <p className="invalid-login-message">
-                                Invalid login credentials. Please check that you have entered the correct instance URL
-                                and a valid access token.
-                            </p>
-                        )}
-                    </div>
-                ) : (
-                    <div className="container-getting-started">
-                        <Terms
-                            acceptTermsButton={
-                                <VSCodeButton
-                                    className="accept-button"
-                                    type="button"
-                                    onClick={() => setTermsAccepted(true)}
-                                >
-                                    I Accept
-                                </VSCodeButton>
-                            }
-                        />
-                    </div>
-                )}
+        <div className={styles.container}>
+            {isValidLogin === false && (
+                <p className={styles.error}>
+                    Invalid credentials. Please check the Sourcegraph instance URL and access token.
+                </p>
+            )}
+            <p className={styles.inputLabel}>
+                <i className="codicon codicon-organization" />
+                <span>Enterprise User</span>
+            </p>
+            <form className={styles.wrapper} onSubmit={onSubmit}>
+                <label htmlFor="endpoint" className={styles.inputLabel}>
+                    <i className="codicon codicon-link" />
+                    <span>Sourcegraph Instance URL</span>
+                </label>
+                <VSCodeTextField
+                    id="endpoint"
+                    value={endpoint || ''}
+                    className={styles.input}
+                    placeholder="https://example.sourcegraph.com"
+                    onInput={(e: any) => setEndpoint(e.target.value)}
+                />
+
+                <label htmlFor="accessToken" className={styles.inputLabel}>
+                    <i className="codicon codicon-key" />
+                    <span>
+                        Access Token (
+                        <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">docs</a>)
+                    </span>
+                </label>
+                <VSCodeTextField
+                    id="accessToken"
+                    value={token}
+                    placeholder=""
+                    className={styles.input}
+                    type={TextFieldType.password}
+                    onInput={(e: any) => setToken(e.target.value)}
+                />
+
+                <VSCodeButton className={styles.button} type="submit">
+                    Sign In
+                </VSCodeButton>
+            </form>
+            <p className={styles.inputLabel}>
+                <i className="codicon codicon-account" />
+                <span>Everyone Else</span>
+            </p>
+            <div className={styles.wrapper}>
+                <p className={styles.input}>
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLScSI06yGMls-V1FALvFyURi8U9bKRTSKPworBhzZEHDQvo0HQ/viewform">
+                        Fill out this form to request access.
+                    </a>
+                </p>
+                <a href="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY">
+                    <VSCodeButton
+                        className={styles.button}
+                        type="button"
+                        onClick={() => setEndpoint('https://sourcegraph.com')}
+                    >
+                        Continue with Sourcegraph.com
+                    </VSCodeButton>
+                </a>
             </div>
+            <div className={styles.terms} dangerouslySetInnerHTML={{ __html: renderMarkdown(CODY_TERMS_MARKDOWN) }} />
         </div>
     )
 }

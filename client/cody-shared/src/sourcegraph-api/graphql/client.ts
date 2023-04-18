@@ -1,5 +1,6 @@
 import fetch from 'isomorphic-fetch'
 
+import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'
 
 import {
@@ -62,10 +63,12 @@ export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
 
     constructor(
-        private instanceUrl: string,
-        private accessToken: string | null,
-        private customHeaders: Record<string, string> = {}
+        private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
     ) {}
+
+    public onConfigurationChange(newConfig: typeof this.config): void {
+        this.config = newConfig
+    }
 
     public async getCurrentUserId(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
@@ -94,7 +97,7 @@ export class SourcegraphGraphQLAPIClient {
         publicArgument?: string | {}
     }): Promise<void | Error> {
         try {
-            if (this.instanceUrl === this.dotcomUrl) {
+            if (this.config.serverEndpoint === this.dotcomUrl) {
                 await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
                     response => {
                         extractDataOrError(response, data => {})
@@ -140,11 +143,11 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
-        const endpointURL = new URL('/.api/graphql', this.instanceUrl).href
-        const headers = new Headers(this.customHeaders as HeadersInit)
+        const endpointURL = new URL('/.api/graphql', this.config.serverEndpoint).href
+        const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
-        if (this.accessToken) {
-            headers.set('Authorization', `token ${this.accessToken}`)
+        if (this.config.accessToken) {
+            headers.set('Authorization', `token ${this.config.accessToken}`)
         }
 
         return fetch(endpointURL, {

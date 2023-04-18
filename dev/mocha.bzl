@@ -1,4 +1,5 @@
-load("@npm//:mocha/package_json.bzl", "bin")
+load("@npm//:@percy/cli/package_json.bzl", percy_bin = "bin")
+load("@npm//:mocha/package_json.bzl", mocha_bin = "bin")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 
 NON_BUNDLED = [
@@ -29,7 +30,7 @@ NON_BUNDLED_DEPS = [
     "//client/web:node_modules/@sourcegraph/build-config",
 ]
 
-def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs):
+def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_enabled = False, **kwargs):
     bundle_name = "%s_bundle" % name
 
     # Bundle the tests to remove the use of esm modules in tests
@@ -90,10 +91,30 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
         "DISPLAY": ":99",
     })
 
-    bin.mocha_test(
-        name = name,
-        args = args,
-        data = data + args_data + NON_BUNDLED_DEPS,
-        env = env,
-        **kwargs
-    )
+    if is_percy_enabled:
+        percy_args = [
+            "exec",
+            "--quiet",
+            "--",
+            # TODO: figure out how to get this path from "//:node_modules/mocha"
+            "node_modules/mocha/bin/mocha",
+        ]
+
+        percy_bin.percy_test(
+            name = name,
+            args = percy_args + args,
+            data = data + args_data + NON_BUNDLED_DEPS + ["//:node_modules/mocha"],
+            env = dict(env, **{
+                "PERCY_ON": "true",
+                "PERCY_TOKEN": "$$PERCY_TOKEN",
+            }),
+            **kwargs
+        )
+    else:
+        mocha_bin.mocha_test(
+            name = name,
+            args = args,
+            data = data + args_data + NON_BUNDLED_DEPS,
+            env = env,
+            **kwargs
+        )

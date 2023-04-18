@@ -1,6 +1,5 @@
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { Message } from '../../sourcegraph-api'
-import { getShortTimestamp } from '../../timestamp'
 
 import { Interaction } from './interaction'
 import { ChatMessage } from './messages'
@@ -24,7 +23,6 @@ export class Transcript {
             speaker: 'assistant',
             text,
             displayText: displayText ?? text,
-            timestamp: getShortTimestamp(),
         })
     }
 
@@ -85,5 +83,5 @@ function truncatePrompt(messages: Message[], maxTokens: number): Message[] {
 }
 
 function estimateTokensUsage(message: Message): number {
-    return Math.round(message.text.length / CHARS_PER_TOKEN)
+    return Math.round((message.text || '').length / CHARS_PER_TOKEN)
 }

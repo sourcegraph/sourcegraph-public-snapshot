@@ -12,7 +12,7 @@ import { Optional } from 'utility-types'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, basename } from '@sourcegraph/common'
 import {
     createActiveSpan,
     reactManualTracer,
@@ -56,7 +56,6 @@ import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionI
 import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { SearchStreamingProps } from '../../search'
 import { useNotepad } from '../../stores'
-import { basename } from '../../util/path'
 import { parseBrowserRepoURL, toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'

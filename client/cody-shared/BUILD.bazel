@@ -4,6 +4,8 @@ load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
 
 npm_link_all_packages(name = "node_modules")
 
+# gazelle:js_resolve vscode //:node_modules/@vscode
+
 ts_config(
     name = "tsconfig",
     src = "tsconfig.json",
@@ -21,11 +23,14 @@ ts_project(
         "src/chat/bot-response-multiplexer.ts",
         "src/chat/chat.ts",
         "src/chat/client.ts",
+        "src/chat/context.ts",
         "src/chat/markdown.ts",
         "src/chat/preamble.ts",
         "src/chat/recipes/chat-question.ts",
         "src/chat/recipes/explain-code-detailed.ts",
         "src/chat/recipes/explain-code-high-level.ts",
+        "src/chat/recipes/find-code-smells.ts",
+        "src/chat/recipes/fixup.ts",
         "src/chat/recipes/generate-docstring.ts",
         "src/chat/recipes/generate-test.ts",
         "src/chat/recipes/git-log.ts",
@@ -34,7 +39,6 @@ ts_project(
         "src/chat/recipes/index.ts",
         "src/chat/recipes/langs.ts",
         "src/chat/recipes/recipe.ts",
-        "src/chat/recipes/replace.ts",
         "src/chat/recipes/translate.ts",
         "src/chat/transcript/index.ts",
         "src/chat/transcript/interaction.ts",
@@ -63,8 +67,8 @@ ts_project(
         "src/sourcegraph-api/graphql/index.ts",
         "src/sourcegraph-api/graphql/queries.ts",
         "src/sourcegraph-api/index.ts",
+        "src/sourcegraph-api/utils.ts",
         "src/telemetry/EventLogger.ts",
-        "src/timestamp.ts",
         "src/utils.ts",
     ],
     tsconfig = ":tsconfig",
@@ -75,6 +79,8 @@ ts_project(
         "//:node_modules/@types/isomorphic-fetch",
         "//:node_modules/@types/node",
         "//:node_modules/@types/uuid",
+        "//:node_modules/@types/vscode",  #keep
+        "//:node_modules/@vscode",
         "//:node_modules/isomorphic-fetch",
         "//:node_modules/uuid",
     ],
@@ -92,6 +98,7 @@ ts_project(
         "src/chat/bot-response-multiplexer.test.ts",
         "src/chat/transcript/transcript.test.ts",
         "src/hallucinations-detector/index.test.ts",
+        "src/sourcegraph-api/utils.test.ts",
         "src/test/mocks.ts",
     ],
     tsconfig = ":tsconfig",
