@@ -163,7 +163,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     } catch  {
                         // Try to open the file in the sourcegraph view
                         const sourcegraphInstanceUrl = 'https://sourcegraph.com'
-                        const sourcegraphWebUrl = `${sourcegraphInstanceUrl}/search?q=context:global+file:${message.filePath}`
+                        const sourcegraphWebUrl = new URL(`/search?q=context:global+file:${message.filePath}`, sourcegraphInstanceUrl).href
 
                         try {
                             await vscode.env.openExternal(vscode.Uri.parse(sourcegraphWebUrl))
