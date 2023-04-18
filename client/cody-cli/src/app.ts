@@ -1,10 +1,10 @@
+#! /usr/bin/env node
 import { Command } from 'commander'
-import figlet from 'figlet'
 
 //add the following line
 const program = new Command()
 
-console.log(figlet.textSync('Cody CLI'))
+console.log('Cody CLI')
 
 program
     .version('0.0.1')

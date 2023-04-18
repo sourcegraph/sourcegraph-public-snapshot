@@ -15,10 +15,11 @@
   "dependencies": {
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/common": "workspace:*",
-    "commander": "^10.0.1",
-    "figlet": "^1.6.0"
+    "commander": "^10.0.1"
   },
-  "devDependencies": {
-    "@types/figlet": "^1.5.5"
+  "devDependencies": {},
+  "main": "dist/app.js",
+  "bin": {
+    "cody": "./dist/app.js"
   }
 }
