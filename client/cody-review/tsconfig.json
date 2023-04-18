@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2020",
+    "lib": ["esnext"],
+    "sourceMap": true,
+    "sourceRoot": "src",
+    "baseUrl": "./src",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": true,
+  },
+  "references": [
+    {
+      "path": "../shared",
+    },
+  ],
+  "include": ["./package.json", "**/*"],
+  "exclude": ["node_modules", "../../node_modules", "out", "dist"],
+}

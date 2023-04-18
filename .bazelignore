@@ -33,6 +33,7 @@ client/plugin-backstage/node_modules
 client/backstage-common/node_modules
 client/backstage-backend/node_modules
 client/backstage-frontend/node_modules
+client/cody-review/node_modules
 
 cmd/symbols/squirrel/test_repos/starlark
 
