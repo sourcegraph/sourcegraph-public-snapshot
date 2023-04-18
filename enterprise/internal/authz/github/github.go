@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Provider implements authz.Provider for GitHub repository permissions.
@@ -38,6 +39,9 @@ type Provider struct {
 	enableGithubInternalRepoVisibility bool
 
 	InstallationID *int64
+
+	// GitHubAppDetails is non-nil if this is a GitHub App installation
+	GitHubAppDetails *schema.GitHubAppDetails
 
 	db database.DB
 }
