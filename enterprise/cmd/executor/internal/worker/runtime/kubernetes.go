@@ -34,7 +34,7 @@ func (r *kubernetesRuntime) PrepareWorkspace(ctx context.Context, logger command
 		r.cmd,
 		logger,
 		r.cloneOptions,
-		command.KubernetesMountPath,
+		command.KubernetesMountDir,
 		r.operations,
 	)
 }
