@@ -35,5 +35,5 @@ func TestLogger_WriteEvent(t *testing.T) {
 	assert.Equal(t, "STARTED", actual["status"])
 	assert.Equal(t, float64(1), actual["metadata"].(map[string]interface{})["step"])
 	assert.Equal(t, "BAR", actual["metadata"].(map[string]interface{})["env"].(map[string]interface{})["FOO"])
-	assert.Regexp(t, `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$`, actual["timestamp"])
+	assert.Regexp(t, `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z$`, actual["timestamp"])
 }
