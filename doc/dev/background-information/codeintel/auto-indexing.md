@@ -8,14 +8,22 @@ Currently, scheduling is based primarily around repository groups (but the confi
 
 Once the set of repositories to index have been determined, the set of steps required to index the repository are determined.
 
-If a user has explicitly configured indexing steps for this repository, the configuration may be found in the [database](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Eenterprise/internal/codeintel/autoindex/enqueuer/index_records%5C.go+func+%28s+*IndexEnqueuer%29+getIndexRecordsFromConfigurationInDatabase%28&patternType=literal) (configured via the UI), or in the [sourcegraph.yaml](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Eenterprise/internal/codeintel/autoindex/enqueuer/index_records%5C.go+func+%28s+*IndexEnqueuer%29+getIndexRecordsFromConfigurationInRepository%28&patternType=literal) configuration file in the root of the repository.
+If a user has explicitly configured indexing steps for this repository, the configuration may be found in the [database](https://sourcegraph.com/search?q=context%3Aglobal+repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%40main+file%3A%5Eenterprise%2Finternal%2Fcodeintel%2Fautoindexing%2Finternal%2Fjobselector%2Fjob_selector%5C.go+func+%28s+*JobSelector%29+getIndexRecordsFromConfigurationInDatabase%28&patternType=standard&sm=0&groupBy=path) (configured via the UI), or in the [sourcegraph.yaml](https://sourcegraph.com/search?q=context%3Aglobal+repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24%40main+file%3A%5Eenterprise%2Finternal%2Fcodeintel%2Fautoindexing%2Finternal%2Fjobselector%2Fjob_selector%5C.go+func+%28s+*JobSelector%29+getIndexRecordsFromConfigurationInRepository&patternType=standard&sm=0&groupBy=path) configuration file in the root of the repository.
 
-If no explicit configuration exists, the steps are [inferred from the repository structure](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Eenterprise/internal/codeintel/autoindex/enqueuer/index_records%5C.go+func+%28s+*IndexEnqueuer%29+inferIndexRecordsFromRepositoryStructure%28&patternType=literal). We currently support detection of projects in the following languages:
+If no explicit configuration exists, the steps are [inferred from the repository structure](https://sourcegraph.com/search?q=context%3Aglobal+repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24+file%3A%5Eenterprise%2Finternal%2Fcodeintel%2Fautoindexing%2Finternal%2Fjobselector%2Fjob_selector%5C.go+func+%28s+*JobSelector%29+inferIndexRecordsFromRepositoryStructure&patternType=standard&sm=1&groupBy=path). We currently support detection of projects in the following languages:
 
-- [Go](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Elib/codeintel/autoindex/inference/go%5C.go+func+InferGoIndexJobs%28&patternType=literal)
-- [TypeScript](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Elib/codeintel/autoindex/inference/typescript%5C.go+func+InferTypeScriptIndexJobs%28&patternType=literal)
+- [Go](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/codeintel/autoindexing/internal/inference/lua/go.lua)
+- [JavaScript/TypeScript](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/codeintel/autoindexing/internal/inference/lua/typescript.lua)
+- [Python](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/codeintel/autoindexing/internal/inference/lua/python.lua)
+- [Ruby](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/codeintel/autoindexing/internal/inference/lua/ruby.lua)
+- [Rust](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/codeintel/autoindexing/internal/inference/lua/rust.lua)
 
-The steps to index the repository are serialized into an index record and [inserted into a task queue](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Eenterprise/internal/codeintel/stores/dbstore/indexes%5C.go+func+%28s+*Store%29+InsertIndexes%28&patternType=literal) to be processed asynchronously by a pool of task executors.
+And partial detection of projects in the following languages:
+
+- [Java/Scala/Kotlin](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/codeintel/autoindexing/internal/inference/lua/java.lua)
+- [C/C++](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/codeintel/autoindexing/internal/inference/lua/clang.lua)
+
+The steps to index the repository are serialized into an index record and [inserted into a task queue](https://sourcegraph.com/search?q=context%3Aglobal+repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24+file%3A%5Eenterprise%2Finternal%2Fcodeintel%2Fautoindexing%2Finternal%2Fstore%2Fenqueuer%5C.go+func+%28s+*store%29+InsertIndexes%28&patternType=standard&sm=0&groupBy=path) to be processed asynchronously by a pool of task executors.
 
 ## Processing
 
