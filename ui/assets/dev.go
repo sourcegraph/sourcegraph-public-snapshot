@@ -13,7 +13,7 @@ type DevProvider struct {
 }
 
 func (p DevProvider) LoadWebpackManifest() (*WebpackManifest, error) {
-	return LoadWebpackManifest()
+	return loadWebpackManifest()
 }
 
 func (p DevProvider) Assets() http.FileSystem {
@@ -22,12 +22,12 @@ func (p DevProvider) Assets() http.FileSystem {
 
 var MockLoadWebpackManifest func() (*WebpackManifest, error)
 
-// LoadWebpackManifest uses Webpack manifest to extract hashed bundle names to
+// loadWebpackManifest uses Webpack manifest to extract hashed bundle names to
 // serve to the client, see https://webpack.js.org/concepts/manifest/ for
 // details. In dev mode, we load this file from disk on demand, so it doesn't
 // have to exist at compile time, to avoid a build dependency between frontend
 // and client.
-func LoadWebpackManifest() (m *WebpackManifest, err error) {
+func loadWebpackManifest() (m *WebpackManifest, err error) {
 	if MockLoadWebpackManifest != nil {
 		return MockLoadWebpackManifest()
 	}
