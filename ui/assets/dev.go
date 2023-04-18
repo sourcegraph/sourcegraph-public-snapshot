@@ -8,6 +8,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// UseDevAssetsProvider installs the development variant of the UseDevAssetsProvider
+// which expects assets to be generated on the fly by an external Webpack process
+// under the ui/assets/ folder.
+func UseDevAssetsProvider() {
+	Provider = DevProvider{assets: http.Dir("./ui/assets")}
+}
+
+// DevProvider is the development variant of the UseDevAssetsProvider
+// which expects assets to be generated on the fly by an external Webpack process
+// under the ui/assets/ folder.
 type DevProvider struct {
 	assets http.FileSystem
 }
