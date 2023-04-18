@@ -1507,6 +1507,27 @@ WITH events AS (
   WHERE
     timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `
     AND name like '%cody%'
+),
+code_generation_keys AS (
+  SELECT * FROM unnest(ARRAY[
+    'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
+    'CodyVSCodeExtension:recipe:improve-variable-names:executed',
+    'CodyVSCodeExtension:recipe:replace:executed',
+    'CodyVSCodeExtension:recipe:generate-docstring:executed',
+    'CodyVSCodeExtension:recipe:generate-unit-test:executed',
+    'CodyVSCodeExtension:recipe:rewrite-functional:executed',
+    'CodyVSCodeExtension:recipe:code-refactor:executed',
+    'CodyVSCodeExtension:recipe:fixup:executed'
+  ]) AS key
+),
+explanation_keys AS (
+  SELECT * FROM unnest(ARRAY[
+    'CodyVSCodeExtension:recipe:explain-code-high-level:executed',
+    'CodyVSCodeExtension:recipe:explain-code-detailed:executed',
+    'CodyVSCodeExtension:recipe:find-code-smells:executed',
+    'CodyVSCodeExtension:recipe:git-history:executed',
+    'CodyVSCodeExtension:recipe:rate-code:executed'
+  ]) AS key
 )
 SELECT
   key,
@@ -1520,55 +1541,18 @@ SELECT
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
   SUM(case when month = current_month and key in
-  	('CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
-	'CodyVSCodeExtension:recipe:improve-variable-names:executed',
-	'CodyVSCodeExtension:recipe:replace:executed',
-	'CodyVSCodeExtension:recipe:generate-docstring:executed',
-	'CodyVSCodeExtension:recipe:generate-unit-test:executed',
-	'CodyVSCodeExtension:recipe:rewrite-functional:executed',
-	'CodyVSCodeExtension:recipe:code-refactor:executed',
-	'CodyVSCodeExtension:recipe:fixup:executed')
-	then value::int else 0 end) as code_generation_month,
+  	(SELECT * FROM code_generation_keys)
+  	then value::int else 0 end) as code_generation_month,
   SUM(case when week = current_week and key in
-  	('CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
-	'CodyVSCodeExtension:recipe:improve-variable-names:executed',
-	'CodyVSCodeExtension:recipe:replace:executed',
-	'CodyVSCodeExtension:recipe:generate-docstring:executed',
-	'CodyVSCodeExtension:recipe:generate-unit-test:executed',
-	'CodyVSCodeExtension:recipe:rewrite-functional:executed',
-	'CodyVSCodeExtension:recipe:code-refactor:executed',
-	'CodyVSCodeExtension:recipe:fixup:executed')
+  	(SELECT * FROM explanation_keys)
 	then value::int else 0 end) as code_generation_week,
-  SUM(case when day = current_day and key in
-  	('CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
-	'CodyVSCodeExtension:recipe:improve-variable-names:executed',
-	'CodyVSCodeExtension:recipe:replace:executed',
-	'CodyVSCodeExtension:recipe:generate-docstring:executed',
-	'CodyVSCodeExtension:recipe:generate-unit-test:executed',
-	'CodyVSCodeExtension:recipe:rewrite-functional:executed',
-	'CodyVSCodeExtension:recipe:code-refactor:executed',
-	'CodyVSCodeExtension:recipe:fixup:executed')
+  SUM(case when day = current_day and key in (SELECT * FROM code_generation_keys)
 	then value::int else 0 end) as code_generation_day,
-  SUM(case when month = current_month and key in
-    ('CodyVSCodeExtension:recipe:explain-code-high-level:executed',
-	'CodyVSCodeExtension:recipe:explain-code-detailed:executed',
-	'CodyVSCodeExtension:recipe:find-code-smells:executed',
-	'CodyVSCodeExtension:recipe:git-history:executed',
-	'CodyVSCodeExtension:recipe:rate-code:executed')
+  SUM(case when month = current_month and key in (SELECT * FROM explanation_keys)
 	then value::int else 0 end) as explanation_month,
-  SUM(case when week = current_week and key in
-    ('CodyVSCodeExtension:recipe:explain-code-high-level:executed',
-	'CodyVSCodeExtension:recipe:explain-code-detailed:executed',
-	'CodyVSCodeExtension:recipe:find-code-smells:executed',
-	'CodyVSCodeExtension:recipe:git-history:executed',
-	'CodyVSCodeExtension:recipe:rate-code:executed')
+  SUM(case when week = current_week and key in (SELECT * FROM explanation_keys)
 	then value::int else 0 end) as explanation_week,
-  SUM(case when day = current_day and key in
-    ('CodyVSCodeExtension:recipe:explain-code-high-level:executed',
-	'CodyVSCodeExtension:recipe:explain-code-detailed:executed',
-	'CodyVSCodeExtension:recipe:find-code-smells:executed',
-	'CodyVSCodeExtension:recipe:git-history:executed',
-	'CodyVSCodeExtension:recipe:rate-code:executed')
+  SUM(case when day = current_day and key in (SELECT * FROM explanation_keys)
 	then value::int else 0 end) as explanation_day,
 	0 as invalid_month,
 	0 as invalid_week,
