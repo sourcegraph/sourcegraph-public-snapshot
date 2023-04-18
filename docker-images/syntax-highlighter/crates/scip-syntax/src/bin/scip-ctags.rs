@@ -1,7 +1,9 @@
-use std::io;
-use std::io::{stdout, BufWriter, Read, Write};
+use std::{
+    io,
+    io::{stdout, BufWriter, Read, Write},
+};
 
-use scip_syntax::ctags::{generate_tags, write_to_buf_writer, Reply, Request};
+use scip_syntax::ctags::{generate_tags, Reply, Request};
 
 fn main() {
     println!(
@@ -19,7 +21,7 @@ fn main() {
             .read_line(&mut line)
             .expect("Could not read line");
 
-        if line.len() == 0 {
+        if line.is_empty() {
             break;
         }
 
@@ -32,16 +34,14 @@ fn main() {
                 io::stdin()
                     .read_exact(&mut file_data)
                     .expect("Could not read file data");
-                generate_tags(&mut buf_writer, filename, &file_data)
+                generate_tags(&mut buf_writer, filename, &file_data);
             }
         }
 
-        write_to_buf_writer(
-            &mut buf_writer,
-            &Reply::Completed {
-                command: "generate-tags".to_string(),
-            },
-        );
+        Reply::Completed {
+            command: "generate-tags".to_string(),
+        }
+        .write(&mut buf_writer);
 
         buf_writer.flush().unwrap();
     }

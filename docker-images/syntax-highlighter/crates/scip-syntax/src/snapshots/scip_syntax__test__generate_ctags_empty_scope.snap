@@ -2,9 +2,9 @@
 source: crates/scip-syntax/src/lib.rs
 expression: "String::from_utf8_lossy(buf_writer.buffer())"
 ---
-{"_type":"tag","name":"Arguments","path":"ctags-empty-scope.rs","language":"Go","line":10,"kind":"type","pattern":"/.*/","scope":null,"scopeKind":null,"signature":null}
-{"_type":"tag","name":"ParseTiming","path":"ctags-empty-scope.rs","language":"Go","line":15,"kind":"type","pattern":"/.*/","scope":null,"scopeKind":null,"signature":null}
-{"_type":"tag","name":"main","path":"ctags-empty-scope.rs","language":"Go","line":28,"kind":"method","pattern":"/.*/","scope":null,"scopeKind":null,"signature":null}
-{"_type":"tag","name":"measure_parsing","path":"ctags-empty-scope.rs","language":"Go","line":24,"kind":"method","pattern":"/.*/","scope":null,"scopeKind":null,"signature":null}
-{"_type":"tag","name":"parse_files","path":"ctags-empty-scope.rs","language":"Go","line":20,"kind":"method","pattern":"/.*/","scope":null,"scopeKind":null,"signature":null}
+{"_type":"tag","name":"Arguments","path":"ctags-empty-scope.rs","language":"go","line":10,"kind":"type","scope":null}
+{"_type":"tag","name":"ParseTiming","path":"ctags-empty-scope.rs","language":"go","line":15,"kind":"type","scope":null}
+{"_type":"tag","name":"main","path":"ctags-empty-scope.rs","language":"go","line":28,"kind":"method","scope":null}
+{"_type":"tag","name":"measure_parsing","path":"ctags-empty-scope.rs","language":"go","line":24,"kind":"method","scope":null}
+{"_type":"tag","name":"parse_files","path":"ctags-empty-scope.rs","language":"go","line":20,"kind":"method","scope":null}
 
