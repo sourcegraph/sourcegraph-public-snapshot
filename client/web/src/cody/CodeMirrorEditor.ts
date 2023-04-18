@@ -75,7 +75,18 @@ export class CodeMirrorEditor implements Editor {
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
-        return null
+        const editor = this.editorStoreRef.current.editor
+        if (editor === null) {
+            return null
+        }
+
+        const { from, to } = editor.view?.viewport
+
+        const content = editor.view?.state.sliceDoc(from, to)
+        return {
+            fileName: editor.filename,
+            content,
+        }
     }
 
     public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {
@@ -87,6 +98,7 @@ export class CodeMirrorEditor implements Editor {
     }
 
     public async showWarningMessage(message: string): Promise<void> {
+        // eslint-disable-next-line no-console
         console.warn(message)
         return Promise.resolve()
     }
