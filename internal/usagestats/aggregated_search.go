@@ -67,7 +67,7 @@ func groupAggregatedCodyStats(events []types.CodyAggregatedEvent) *types.CodyUsa
 		populateCodyEventStatistics(event, codyUsageStats)
 	}
 
-	return searchUsageStats
+	return codyUsageStats
 }
 
 // utility functions that resolve a SearchEventStatistics value for a given event name for some SearchUsagePeriod.
@@ -174,20 +174,20 @@ func populateCodyEventStatistics(event types.CodyAggregatedEvent, statistics *ty
 		return
 	}
 
-    statistics.Monthly[0].StartTime = event.Month
-    month := extractor(statistics.Monthly[0])
-    month.EventsCount = &event.TotalMonth
-    month.UserCount = &event.UniquesMonth
+	statistics.Monthly[0].StartTime = event.Month
+	month := extractor(statistics.Monthly[0])
+	month.EventsCount = &event.TotalMonth
+	month.UserCount = &event.UniquesMonth
 
-    statistics.Weekly[0].StartTime = event.Week
-    week := extractor(statistics.Weekly[0])
-    week.EventsCount = &event.TotalWeek
-    week.UserCount = &event.UniquesWeek
+	statistics.Weekly[0].StartTime = event.Week
+	week := extractor(statistics.Weekly[0])
+	week.EventsCount = &event.TotalWeek
+	week.UserCount = &event.UniquesWeek
 
-    statistics.Daily[0].StartTime = event.Day
-    day := extractor(statistics.Daily[0])
-    day.EventsCount = &event.TotalDay
-    day.UserCount = &event.UniquesDay
+	statistics.Daily[0].StartTime = event.Day
+	day := extractor(statistics.Daily[0])
+	day.EventsCount = &event.TotalDay
+	day.UserCount = &event.UniquesDay
 }
 
 func populateSearchFilterCountStatistics(event types.SearchAggregatedEvent, statistics *types.SearchUsageStatistics) {
@@ -268,12 +268,12 @@ func newSearchEventPeriod() *types.SearchUsagePeriod {
 
 func newCodyEventPeriod() *types.CodyUsagePeriod {
 	return &types.CodyUsagePeriod{
-		StartTime:              time.now().UTC(),
-		TotalUsers:             newCodyCountStatistics(),
-		TotalRequest:           newCodyCountStatistics(),
-		CodeGenerationRequests: newCodyCountStatistics(),
-		ExplanationRequests:    newCodyCountStatistics(),
-		InvalidRequests:        newCodyCountStatistics(),
+		StartTime:              time.Now().UTC(),
+		TotalUsers:             0,
+		TotalRequest:           0,
+		CodeGenerationRequests: 0,
+		ExplanationRequests:    0,
+		InvalidRequests:        0,
 	}
 }
 

@@ -824,20 +824,19 @@ func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, en
 }
 
 func (l *eventLogStore) countUniqueCodyUsersBySQL(ctx context.Context, startDate, endDate time.Time, conds []*sqlf.Query) (int, error) {
-    if len(conds) == 0 {
-        conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
-    }
-    codyConds := []*sqlf.Query{sqlf.Sprintf("name LIKE '%%cody%%' ")}
-    q := sqlf.Sprintf(`SELECT COUNT(DISTINCT `+userIDQueryFragment+`)
+	if len(conds) == 0 {
+		conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	}
+	codyConds := []*sqlf.Query{sqlf.Sprintf("name LIKE '%%cody%%' ")}
+	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT `+userIDQueryFragment+`)
         FROM event_logs
         LEFT OUTER JOIN users ON users.id = event_logs.user_id
         WHERE (DATE(TIMEZONE('UTC'::text, timestamp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestamp)) <= %s) AND (%s) AND (%s)`, startDate, endDate, sqlf.Join(conds, ") AND ("), sqlf.Join(codyConds, ") AND ("))
-    r := l.QueryRow(ctx, q)
-    var count int
-    err := r.Scan(&count)
-    return count, err
+	r := l.QueryRow(ctx, q)
+	var count int
+	err := r.Scan(&count)
+	return count, err
 }
-
 
 func (l *eventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error) {
 	rows, err := l.Handle().QueryContext(ctx, `SELECT user_id

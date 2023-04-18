@@ -1029,7 +1029,7 @@ type CodyAggregatedEvent struct {
 }
 
 type CodyCountStatistics struct {
-	UserCount   *int32
+	UserCount *int32
 	//EventsCount *int32 //for future event counting
 }
 
