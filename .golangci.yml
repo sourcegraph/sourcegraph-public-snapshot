@@ -12,10 +12,10 @@ linters:
     - ineffassign # nogo equivelant
     #- nolintlint see https://github.com/golangci/golangci-lint/issues/3228.
     - staticcheck # nogo equivelant
-    - typecheck
+    - typecheck # nogo equivelant NOT POSSIBLE: no analyzer to import
     - unconvert
     # - unused
-    - unparam
+    - unparam # nogo equivelant
     - exportloopref # nogo equivelant
 
 linters-settings:
