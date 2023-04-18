@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -145,39 +146,34 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 
 	// Run all the things.
 	logger.Info("Running commands")
-	skippedIndex := -1
-	for i, spec := range commands {
-		if skippedIndex >= 0 {
+	skipToStep := -1
+	for _, spec := range commands {
+		if skipToStep > -1 {
 			index, err := spec.Index()
 			if err != nil {
-				if errors.Is(err, runner.ErrNoIndex) {
-					index = i
-				} else {
-					return err
-				}
+				return errors.Wrap(err, "getting command index")
 			}
-			if index == skippedIndex {
+			if index < skipToStep {
 				continue
 			}
-			skippedIndex = -1
 		}
 		spec.Queue = h.options.QueueName
 		spec.JobID = job.ID
 		if err := runtimeRunner.Run(ctx, spec); err != nil {
-			if errors.Is(err, command.ErrStepSkipped) {
-				index, err := spec.Index()
-				if err != nil {
-					if errors.Is(err, runner.ErrNoIndex) {
-						index = i
-					} else {
-						return err
-					}
-				}
-				logger.Debug("Step skipped", log.Int("index", index), log.String("key", spec.CommandSpec.Key))
-				skippedIndex = index
-				continue
-			}
 			return errors.Wrapf(err, "running command %q", spec.CommandSpec.Key)
+		}
+		if strings.HasSuffix(spec.CommandSpec.Key, "pre") {
+			// Check if there is a skip file. and if so, what the next step is.
+			nextStep, err := runner.NextStep(ws.Path())
+			if err != nil {
+				return errors.Wrap(err, "checking for skip file")
+			}
+			if nextStep > 0 {
+				logger.Info("Skipping to step", log.Int("step", nextStep))
+				skipToStep = nextStep
+			} else {
+				skipToStep = -1
+			}
 		}
 	}
 
