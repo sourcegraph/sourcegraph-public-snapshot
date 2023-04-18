@@ -827,7 +827,7 @@ func (l *eventLogStore) countUniqueCodyUsersBySQL(ctx context.Context, startDate
 	if len(conds) == 0 {
 		conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	}
-	codyConds := []*sqlf.Query{sqlf.Sprintf("name LIKE '%%cody%%' ")}
+	codyConds := []*sqlf.Query{sqlf.Sprintf("(name LIKE '%%cody%%' OR name LIKE '%%Cody%%')")}
 	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT `+userIDQueryFragment+`)
         FROM event_logs
         LEFT OUTER JOIN users ON users.id = event_logs.user_id
