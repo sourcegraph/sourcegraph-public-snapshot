@@ -4,7 +4,12 @@ on:
   push:
     branches:
       - tr/cody-review
-
+  pull_request:
+    types:
+      - labeled
+      - unlabeled
+    branches:
+      - tr/cody-review
 
 jobs:
   comment:
@@ -22,3 +27,74 @@ jobs:
             echo "::set-output name=action::remove_review"
           fi
         shell: bash
+
+      - name: Leave a comment
+        if: steps.check_label.outputs.action == 'review'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { context, github } = require("@actions/github");
+            const pr = context.issue;
+            const commentBody = "👋 Hi, I'm Cody! I'm starting my review of this PR. I'll leave comments as I go along.";
+
+            github.rest.issues.createComment({
+              ...pr,
+              body: commentBody
+            });
+
+      - name: Remove comment from PR
+        if: steps.check_label.outputs.action == 'remove_review'
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { context, github } = require("@actions/github");
+            const pr = context.issue;
+
+            github.rest.issues.listComments(pr).then(({ data }) => {
+              const targetComment = data.find((comment) => comment.body === comment.user.login === 'github-actions[bot]');
+
+              if (targetComment) {
+                github.rest.issues.deleteComment({
+                  ...pr,
+                  comment_id: targetComment.id
+                });
+              }
+            });
+
+      - name: Check out repository
+        if: steps.check_label.outputs.action == 'review'
+        uses: actions/checkout@v2
+
+      - name: Check out repository and install
+        if: steps.check_label.outputs.action == 'review'
+        uses: pnpm/action-setup@v2
+        id: pnpm-install
+        with:
+          version: 7.28.0
+          run_install: false
+
+      - name: Get pnpm store directory
+        if: steps.check_label.outputs.action == 'review'
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT\
+
+      - name: Setup pnpm cache
+        if: steps.check_label.outputs.action == 'review'
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install npm dependencies
+        if: steps.check_label.outputs.action == 'review'
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Cody Review
+        if: steps.check_label.outputs.action == 'review'
+        run: pnpm --filter ./client/cody-review run review
