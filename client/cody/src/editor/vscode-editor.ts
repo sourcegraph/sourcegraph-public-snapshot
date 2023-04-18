@@ -142,4 +142,12 @@ export class VSCodeEditor implements Editor {
     public async showWarningMessage(message: string): Promise<void> {
         await vscode.window.showWarningMessage(message)
     }
+
+    public async showOpenDialog(options?: {
+        canSelectFolders?: boolean
+        canSelectFiles?: boolean
+    }): Promise<{ path: string; scheme: string }[] | undefined> {
+        const results = await vscode.window.showOpenDialog(options)
+        return results
+    }
 }

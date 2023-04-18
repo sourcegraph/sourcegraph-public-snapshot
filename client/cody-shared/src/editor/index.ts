@@ -29,4 +29,8 @@ export interface Editor {
     replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
     showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
+    showOpenDialog(options?: {
+        canSelectFolders?: boolean
+        canSelectFiles?: boolean
+    }): Promise<{ path: string; scheme: string }[] | undefined>
 }
