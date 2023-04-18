@@ -1,8 +1,8 @@
 name: Review
 on:
-  pull_request_target:
-    types:
-      - labeled
+  push:
+    branches:
+      - tr/cody-review
 
 jobs:
   backport:
