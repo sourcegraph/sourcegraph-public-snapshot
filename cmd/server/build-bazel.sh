@@ -36,6 +36,8 @@ OSS_TARGETS=(
 )
 
 ENTERPRISE_TARGETS=(
+  //cmd/github-proxy
+  //cmd/searcher
   //enterprise/cmd/frontend
   //enterprise/cmd/gitserver
   //enterprise/cmd/worker
