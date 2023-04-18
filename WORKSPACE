@@ -87,6 +87,8 @@ http_archive(
     sha256 = "480b83a61dff2251d1330b65f7fcb6f93817bd4aaa158cae1ac8b49bc4d6e1ba",
     strip_prefix = "bazel-super-formatter-437005cadf879e804a844f120daf5425c2e9fb18",
     url = "https://github.com/aspect-build/bazel-super-formatter/archive/437005cadf879e804a844f120daf5425c2e9fb18.tar.gz",
+    patch_args = ["-p1"],
+    patches = ["//third_party/superformatter:pnpm-lock.patch"],
 )
 
 # rules_js setup ================================
@@ -292,20 +294,3 @@ parse_dependencies()
 load("@aspect_rules_format//format:toolchains.bzl", "format_register_toolchains")
 
 format_register_toolchains()
-
-# If Python formatting is enabled, you'll need to uncomment the following as well.
-#
-# load("@rules_python//python:repositories.bzl", "python_register_toolchains")
-#
-# python_register_toolchains(
-#     name = "python3",
-#     python_version = "3.10",
-# )
-#
-# load("@rules_python//python/pip_install:repositories.bzl", "pip_install_dependencies")
-#
-# pip_install_dependencies()
-#
-# load("@aspect_rules_format//:requirements.bzl", install_black = "install_deps")
-#
-# install_black()
