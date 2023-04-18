@@ -2,8 +2,8 @@ name: Cody Review
 
 on:
   pull_request:
-    types:
-      - labeled
+    branches: [tr/cody-review]
+    types: [labeled]
 
 jobs:
   comment:
