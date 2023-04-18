@@ -231,7 +231,6 @@ func PartitionRepos(
 	// Split based on indexed vs unindexed
 	// TODO: this seems to be detecting all repos as unindexed, which is doubling the number of results we get. BAD BAD BAD
 	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filterFunc) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-	println("LENGTHS", len(indexed.BranchRepos()), len(unindexed))
 
 	tr.SetAttributes(
 		attribute.Int("indexed.size", len(indexed.RepoRevs)),
