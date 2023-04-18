@@ -41,7 +41,8 @@
     "release": "ts-node ./scripts/release.ts",
     "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
     "watch:esbuild": "pnpm esbuild --sourcemap --watch",
-    "watch:webview": "vite build --mode development --watch"
+    "watch:webview": "vite build --mode development --watch",
+    "storybook": "STORIES_GLOB='client/cody/webviews/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start"
   },
   "main": "./dist/extension.js",
   "activationEvents": [
