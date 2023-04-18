@@ -18,6 +18,29 @@ import { initAppShell } from '../storm/app-shell-init'
 
 import { EnterpriseWebApp } from './EnterpriseWebApp'
 
+import { Command } from '@tauri-apps/api/shell'
+
+// Start Backend early
+const command = Command.sidecar("../.bin/backend", [], {
+    env: {
+        USE_EMBEDDED_POSTGRESQL: "0",
+        DEPLOY_TYPE: "app"
+    }
+})
+command.on('close', data => {
+    console.log(`backend command finished with code ${data.code} and signal ${data.signal}`)
+})
+command.on('error', error => console.log(`command error: "${error}"`))
+command.stdout.on('data', line => console.log(`backend out: ${line}`))
+command.stderr.on('data', line => console.log(`backend err: ${line}`))
+const child = await command.spawn()
+
+window.addEventListener('backend-message', async (event) => {
+    console.log(`msg: ${event}`)
+})
+
+console.log(`backend started with pid ${child.pid} `)
+
 const appShellPromise = initAppShell()
 
 // It's important to have a root component in a separate file to create a react-refresh boundary and avoid page reload.
