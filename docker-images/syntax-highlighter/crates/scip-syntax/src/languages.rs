@@ -6,67 +6,57 @@ use tree_sitter::{Language, Parser, Query};
 pub struct TagConfiguration {
     pub language: Language,
     pub query: Query,
-    pub parser: Parser,
 }
 
-pub fn rust() -> &'static mut TagConfiguration {
-    static mut INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
+pub fn rust() -> &'static TagConfiguration {
+    static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
 
-    let language = BundledParser::Rust.get_language();
-    let query = include_scip_query!("rust", "scip-tags");
+    INSTANCE.get_or_init(|| {
+        let language = BundledParser::Rust.get_language();
+        let query = include_scip_query!("rust", "scip-tags");
 
-    let mut parser = Parser::new();
-    parser.set_language(language).unwrap();
+        let mut parser = Parser::new();
+        parser.set_language(language).unwrap();
 
-    unsafe {
-        INSTANCE.get_or_init(|| TagConfiguration {
+        TagConfiguration {
             language,
-            parser,
             query: Query::new(language, query).unwrap(),
-        });
-
-        INSTANCE.get_mut().unwrap()
-    }
+        }
+    })
 }
 
-pub fn go() -> &'static mut TagConfiguration {
-    static mut INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
+pub fn go() -> &'static TagConfiguration {
+    static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
 
-    let language = BundledParser::Go.get_language();
-    let query = include_scip_query!("go", "scip-tags");
+    INSTANCE.get_or_init(|| {
+        let language = BundledParser::Go.get_language();
+        let query = include_scip_query!("go", "scip-tags");
 
-    let mut parser = Parser::new();
-    parser.set_language(language).unwrap();
+        let mut parser = Parser::new();
+        parser.set_language(language).unwrap();
 
-    unsafe {
-        INSTANCE.get_or_init(|| TagConfiguration {
+        TagConfiguration {
             language,
-            parser,
             query: Query::new(language, query).unwrap(),
-        });
-
-        INSTANCE.get_mut().unwrap()
-    }
+        }
+    })
 }
 
-pub fn zig() -> &'static mut TagConfiguration {
-    static mut INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
+pub fn zig() -> &'static TagConfiguration {
+    static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
 
-    let language = BundledParser::Zig.get_language();
-    let query = include_scip_query!("zig", "scip-tags");
+    INSTANCE.get_or_init(|| {
+        let language = BundledParser::Zig.get_language();
+        let query = include_scip_query!("zig", "scip-tags");
 
-    let mut parser = Parser::new();
-    parser.set_language(language).unwrap();
+        let mut parser = Parser::new();
+        parser.set_language(language).unwrap();
 
-    unsafe {
-        INSTANCE.get_or_init(|| TagConfiguration {
+        TagConfiguration {
             language,
-            parser,
             query: Query::new(language, query).unwrap(),
-        });
-
-        INSTANCE.get_mut().unwrap()
-    }
+        }
+    })
 }
 
 pub struct LocalConfiguration {
@@ -103,7 +93,7 @@ fn perl_locals() -> LocalConfiguration {
     }
 }
 
-pub fn get_tag_configuration(parser: BundledParser) -> Option<&'static mut TagConfiguration> {
+pub fn get_tag_configuration(parser: BundledParser) -> Option<&'static TagConfiguration> {
     match parser {
         BundledParser::Rust => Some(rust()),
         BundledParser::Go => Some(go()),

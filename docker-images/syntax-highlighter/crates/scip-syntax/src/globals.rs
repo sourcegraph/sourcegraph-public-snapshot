@@ -115,7 +115,7 @@ impl Scope {
 }
 
 pub fn parse_tree<'a>(
-    config: &mut TagConfiguration,
+    config: &TagConfiguration,
     tree: &'a tree_sitter::Tree,
     source_bytes: &'a [u8],
 ) -> Result<(Scope, usize)> {
@@ -239,12 +239,16 @@ pub fn parse_tree<'a>(
 mod test {
     use scip::types::Document;
     use scip_treesitter::snapshot::dump_document;
+    use tree_sitter::Parser;
 
     use super::*;
 
-    fn parse_file_for_lang(config: &mut TagConfiguration, source_code: &str) -> Result<Document> {
+    fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Result<Document> {
         let source_bytes = source_code.as_bytes();
-        let tree = config.parser.parse(source_bytes, None).unwrap();
+
+        let mut parser = Parser::new();
+        parser.set_language(config.language).unwrap();
+        let tree = parser.parse(source_bytes, None).unwrap();
 
         let mut occ = parse_tree(config, &tree, source_bytes)?;
         let mut doc = Document::new();
@@ -263,9 +267,9 @@ mod test {
 
     #[test]
     fn test_can_parse_rust_tree() -> Result<()> {
-        let mut config = crate::languages::rust();
+        let config = crate::languages::rust();
         let source_code = include_str!("../testdata/scopes.rs");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
 
         let dumped = dump_document(&doc, source_code)?;
         insta::assert_snapshot!(dumped);
@@ -275,9 +279,9 @@ mod test {
 
     #[test]
     fn test_can_parse_go_tree() -> Result<()> {
-        let mut config = crate::languages::go();
+        let config = crate::languages::go();
         let source_code = include_str!("../testdata/example.go");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
         // dbg!(doc);
 
         let dumped = dump_document(&doc, source_code)?;
@@ -288,9 +292,9 @@ mod test {
 
     #[test]
     fn test_can_parse_go_internal_tree() -> Result<()> {
-        let mut config = crate::languages::go();
+        let config = crate::languages::go();
         let source_code = include_str!("../testdata/internal_go.go");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
         // dbg!(doc);
 
         let dumped = dump_document(&doc, source_code)?;

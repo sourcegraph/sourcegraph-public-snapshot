@@ -7,7 +7,7 @@
  name: (_) @descriptor.type) @scope
 
 (impl_item
- trait: (_) @descriptor.type
+ trait: (_)? @descriptor.type
  type: (_) @descriptor.type) @scope
 
 ;; TODO: @local to stop traversal
