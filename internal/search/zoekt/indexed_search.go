@@ -648,7 +648,6 @@ type RepoSubsetTextSearchJob struct {
 // ZoektSearch is a job that searches repositories using zoekt.
 func (z *RepoSubsetTextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, z)
-	logger := log.Scoped("Run", "ZoektSearch is a job that searches repositories using zoekt.")
 	defer func() { finish(alert, err) }()
 
 	if z.Repos == nil {
@@ -663,7 +662,7 @@ func (z *RepoSubsetTextSearchJob) Run(ctx context.Context, clients job.RuntimeCl
 		since = z.Since
 	}
 
-	return nil, zoektSearch(ctx, logger, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, z.Features, since, stream)
+	return nil, zoektSearch(ctx, clients.Logger, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, z.Features, since, stream)
 }
 
 func (*RepoSubsetTextSearchJob) Name() string {
@@ -707,14 +706,13 @@ type GlobalTextSearchJob struct {
 
 func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
-	logger := log.Scoped("Run", "ZoektSearch is a job that searches repositories using zoekt.")
 	defer func() { finish(alert, err) }()
 
 	userPrivateRepos := privateReposForActor(ctx, clients.Logger, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
-	return nil, DoZoektSearchGlobal(ctx, logger, clients.Zoekt, t.ZoektArgs, t.GlobalZoektQueryRegexps, stream)
+	return nil, DoZoektSearchGlobal(ctx, clients.Logger, clients.Zoekt, t.ZoektArgs, t.GlobalZoektQueryRegexps, stream)
 }
 
 func (*GlobalTextSearchJob) Name() string {

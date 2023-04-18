@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
-	sourcegraphlog "github.com/sourcegraph/log"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -28,7 +27,6 @@ type SymbolSearchJob struct {
 // Run calls the zoekt backend to search symbols
 func (z *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, z)
-	logger := sourcegraphlog.Scoped("Run", "ZoektSearch is a job that searches repositories using zoekt.")
 	defer func() { finish(alert, err) }()
 
 	if z.Repos == nil {
@@ -46,7 +44,7 @@ func (z *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err = zoektSearch(ctx, logger, z.Repos, z.Query, nil, search.SymbolRequest, clients.Zoekt, z.FileMatchLimit, z.Select, z.Features, since, stream)
+	err = zoektSearch(ctx, clients.Logger, z.Repos, z.Query, nil, search.SymbolRequest, clients.Zoekt, z.FileMatchLimit, z.Select, z.Features, since, stream)
 	if err != nil {
 		tr.SetAttributes(attribute.String("error", err.Error()))
 		// Only record error if we haven't timed out.
@@ -96,7 +94,6 @@ type GlobalSymbolSearchJob struct {
 
 func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
-	logger := sourcegraphlog.Scoped("Run", "ZoektSearch is a job that searches repositories using zoekt.")
 	defer func() { finish(alert, err) }()
 
 	userPrivateRepos := privateReposForActor(ctx, clients.Logger, clients.DB, s.RepoOpts)
@@ -104,7 +101,7 @@ func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 
 	// always search for symbols in indexed repositories when searching the repo universe.
-	err = DoZoektSearchGlobal(ctx, logger, clients.Zoekt, s.ZoektArgs, nil, stream)
+	err = DoZoektSearchGlobal(ctx, clients.Logger, clients.Zoekt, s.ZoektArgs, nil, stream)
 	if err != nil {
 		tr.SetAttributes(attribute.String("error", err.Error()))
 		// Only record error if we haven't timed out.

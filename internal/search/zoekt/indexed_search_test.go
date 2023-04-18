@@ -452,7 +452,7 @@ func TestZoektSearchOptions(t *testing.T) {
 		{
 			name:    "test defaults",
 			context: context.Background(),
-			logger:  log.Scoped("TestZoektSearchOptions", "defaults"),
+			logger:  logtest.Scoped(t),
 			options: &Options{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
 				NumRepos:       3,
@@ -468,7 +468,7 @@ func TestZoektSearchOptions(t *testing.T) {
 		{
 			name:    "test defaults with ranking feature enabled",
 			context: context.Background(),
-			logger:  log.Scoped("TestZoektSearchOptions", "defaults with ranking"),
+			logger:  logtest.Scoped(t),
 			options: &Options{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
 				NumRepos:       3,
@@ -490,7 +490,7 @@ func TestZoektSearchOptions(t *testing.T) {
 		{
 			name:    "test repo search defaults",
 			context: context.Background(),
-			logger:  log.Scoped("TestZoektSearchOptions", "search ranking"),
+			logger:  logtest.Scoped(t),
 			options: &Options{
 				Selector:       []string{filter.Repository},
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
@@ -507,7 +507,7 @@ func TestZoektSearchOptions(t *testing.T) {
 		},
 		{
 			name:    "test large file match limit",
-			logger:  log.Scoped("TestZoektSearchOptions", "large file match limit"),
+			logger:  logtest.Scoped(t),
 			context: context.Background(),
 			options: &Options{
 				FileMatchLimit: 100_000,
@@ -524,7 +524,7 @@ func TestZoektSearchOptions(t *testing.T) {
 		{
 			name:    "test document ranks weight",
 			context: context.Background(),
-			logger:  log.Scoped("TestZoektSearchOptions", "document ranks weight"),
+			logger:  logtest.Scoped(t),
 			rankingFeatures: &schema.Ranking{
 				DocumentRanksWeight: &documentRanksWeight,
 			},
@@ -549,7 +549,7 @@ func TestZoektSearchOptions(t *testing.T) {
 		{
 			name:    "test flush wall time",
 			context: context.Background(),
-			logger:  log.Scoped("TestZoektSearchOptions", "flush wall time"),
+			logger:  logtest.Scoped(t),
 			rankingFeatures: &schema.Ranking{
 				FlushWallTimeMS: 3141,
 			},
