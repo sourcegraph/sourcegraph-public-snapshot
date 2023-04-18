@@ -981,6 +981,28 @@ type UserDates struct {
 	DeletedAt time.Time
 }
 
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyUsageStatistics struct {
+	TotalInstalls int32
+	Daily         []*CodyUsagePeriod
+	Weekly        []*CodyUsagePeriod
+	Monthly       []*CodyUsagePeriod
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyUsagePeriod struct {
+	StartTime              time.Time
+	TotalUsers             int32
+	TotalRequest           int32
+	CodeGenerationRequests int32
+	ExplanationRequests    int32
+	InvalidRequests        int32
+}
+
 // CodyAggregatedEvent represents the total requests, unique users, code
 // generation requests, explanation requests, and invalid requests over
 // the current month, week, and day for a single search event.
@@ -1004,6 +1026,11 @@ type CodyAggregatedEvent struct {
 	InvalidMonth        int32
 	InvalidWeek         int32
 	InvalidDay          int32
+}
+
+type CodyCountStatistics struct {
+	UserCount *int32
+	//EventsCount *int32 //for future event counting
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
