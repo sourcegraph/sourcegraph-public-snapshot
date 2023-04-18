@@ -16,9 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func migrate(ctx context.Context, toMigrate []api.RepoName, observationCtx *observation.Context, config *embeddings.EmbeddingsUploadStoreConfig, client *weaviate.Client) error {
-	logger := observationCtx.Logger
-
+func migrate(
+	ctx context.Context,
+	toMigrate []api.RepoName,
+	observationCtx *observation.Context,
+	config *embeddings.EmbeddingsUploadStoreConfig,
+	client *weaviate.Client,
+	log logger,
+) error {
 	uploadStore, err := embeddings.NewEmbeddingsUploadStore(ctx, observationCtx, config)
 	if err != nil {
 		return err
@@ -48,7 +53,7 @@ func migrate(ctx context.Context, toMigrate []api.RepoName, observationCtx *obse
 			if batchHave%batchWant == 0 {
 				_, err := batch.Do(ctx)
 				if err != nil {
-					logger.Error("Failed send batch", log.Error(err))
+					log("batch.Do Error: %s", err)
 				}
 				batchHave = 0
 			}
@@ -56,10 +61,11 @@ func migrate(ctx context.Context, toMigrate []api.RepoName, observationCtx *obse
 	}
 
 	for _, repo := range toMigrate {
+		log("migrating %s ...", repo)
 		indexName := embeddings.GetRepoEmbeddingIndexName(repo)
 		index, err := embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(indexName))
 		if err != nil {
-			logger.Error("Failed to download index", log.Error(err))
+			log("failed to download embedding index for %s: %s", repo, err)
 			continue
 		}
 
@@ -71,26 +77,43 @@ func migrate(ctx context.Context, toMigrate []api.RepoName, observationCtx *obse
 	if batchHave > 0 {
 		_, err := batch.Do(ctx)
 		if err != nil {
-			logger.Error("Failed send batch", log.Error(err))
+			log("batch.Do Error: %s", err)
 		}
 	}
 
 	return nil
 }
 
+type logger func(format string, a ...any)
+
+// Compile:
+// GOOS=linux GOARCH=amd64 go build -o migrate main.go
+//
+// Copy to embeddings container:
+// kubectl cp -n prod migrate embeddings-5d64d57bc6-j89tk:/home/sourcegraph/migrate -c embeddings
+//
+// Run:
+// ./migrate --weaviate_host weaviate.prod.svc.cluster.local github.com/sourcegraph/sourcegraph
 func main() {
 	usage := `
 Usage: migrate [options] <repo1,repo2,...>
 Options:
-		--weaviate_host <host> (default: localhost:8181)
+		--weaviate_host <host> (default: localhost:8080)
 `
 
-	weaviateHost := "localhost:8181"
+	weaviateHost := "localhost:8080"
 	flag.StringVar(&weaviateHost, "weaviate_host", weaviateHost, "The host of the weaviate instance to migrate to")
 	flag.Parse()
 
+	logStdout := func(format string, a ...any) {
+		if !strings.HasSuffix(format, "\n") {
+			format += "\n"
+		}
+		fmt.Fprintf(flag.CommandLine.Output(), format, a...)
+	}
+
 	if len(flag.Args()) != 1 {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n\n%s\n\n", os.Args[0], strings.TrimSpace(usage))
+		logStdout("Usage of %s:\n\n%s\n\n", os.Args[0], strings.TrimSpace(usage))
 		os.Exit(1)
 	}
 
@@ -109,13 +132,22 @@ Options:
 		panic(err)
 	}
 
+	_, err = weaviateClient.Schema().Getter().Do(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	logStdout("successfully connected to Weaviate")
+
 	storeConfig := &embeddings.EmbeddingsUploadStoreConfig{}
 	storeConfig.Load()
 
+	logStdout(fmt.Sprintf("loaded config: %+v", storeConfig))
+
 	observationCtx := observation.NewContext(log.Scoped("weaviate", "migration"))
 
-	err = migrate(context.Background(), toMigrate, observationCtx, storeConfig, weaviateClient)
+	err = migrate(context.Background(), toMigrate, observationCtx, storeConfig, weaviateClient, logStdout)
 	if err != nil {
-		observationCtx.Logger.Error("Failed to migrate", log.Error(err))
+		logStdout("Failed to migrate: %s", err)
+		os.Exit(1)
 	}
 }
