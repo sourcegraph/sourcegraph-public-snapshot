@@ -33,7 +33,12 @@ if [ -z "${VERSION-}" ]; then
   exit 1
 fi
 
-go build -o .bin/backend-aarch64-apple-darwin -tags dist ./enterprise/cmd/sourcegraph
+go build \
+  -o .bin/backend-aarch64-apple-darwin \
+  -tags dist \
+  -ldflags '-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app' \
+  ./enterprise/cmd/sourcegraph
+
 pnpm tauri build
 
 # # Manually set the version because `git describe` (which goreleaser otherwise uses) prints the wrong
