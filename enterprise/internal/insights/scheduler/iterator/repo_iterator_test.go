@@ -691,6 +691,32 @@ func TestReset(t *testing.T) {
 
 }
 
+func TestEmptyIterator(t *testing.T) {
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+	store := basestore.NewWithHandle(insightsDB.Handle())
+
+	ctx := context.Background()
+
+	clock := glock.NewMockClock()
+	clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+	repos := []int32{}
+	itr, _ := NewWithClock(ctx, store, clock, repos)
+	var seen []api.RepoID
+
+	got, _ := testForNextAndFinish(t, store, itr, IterationConfig{}, seen, func(ctx context.Context, id api.RepoID, fn FinishFunc) bool {
+		clock.Advance(time.Second * 1)
+		err := fn(ctx, store, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return true
+	})
+	jsonify, _ := json.Marshal(got)
+	autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":1,"TotalCount":0,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonify))
+
+}
+
 func addError(ctx context.Context, itr *PersistentRepoIterator, store *basestore.Store, t *testing.T) {
 	// create an error
 	_, _, finish := itr.NextWithFinish(IterationConfig{})
