@@ -42,24 +42,24 @@ jobs:
               body: commentBody
             });
 
-      - name: Remove comment from PR
-        if: steps.check_label.outputs.action == 'remove_review'
-        uses: actions/github-script@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const pr = context.issue;
+      # - name: Remove comment from PR
+      #   if: steps.check_label.outputs.action == 'remove_review'
+      #   uses: actions/github-script@v6
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     script: |
+      #       const pr = context.issue;
 
-            github.rest.issues.listComments(pr).then(({ data }) => {
-              const targetComment = data.find((comment) => comment.body === comment.user.login === 'github-actions[bot]');
+      #       github.rest.issues.listComments(pr).then(({ data }) => {
+      #         const targetComment = data.find((comment) => comment.body === comment.user.login === 'github-actions[bot]');
 
-              if (targetComment) {
-                github.rest.issues.deleteComment({
-                  ...pr,
-                  comment_id: targetComment.id
-                });
-              }
-            });
+      #         if (targetComment) {
+      #           github.rest.issues.deleteComment({
+      #             ...pr,
+      #             comment_id: targetComment.id
+      #           });
+      #         }
+      #       });
 
       - name: Check out repository
         if: steps.check_label.outputs.action == 'review'
