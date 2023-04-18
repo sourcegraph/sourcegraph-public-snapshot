@@ -8,6 +8,7 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/util",
     visibility = ["//visibility:public"],
+    deps = ["//lib/errors"],
 )
 
 go_test(
@@ -16,5 +17,6 @@ go_test(
     deps = [
         ":util",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )
