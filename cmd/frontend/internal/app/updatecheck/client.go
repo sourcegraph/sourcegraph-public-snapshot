@@ -145,10 +145,10 @@ func getUsersActiveTodayCount(ctx context.Context, db database.DB) (_ int, err e
 	return usagestats.GetUsersActiveTodayCount(ctx, db)
 }
 
-func getCodyUsersActiveTodayCount(ctx context.Context, db database.DB) (_ int, err error) {
-	defer recordOperation("getCodyUsersActiveTodayCount")(&err)
-	return usagestats.GetCodyUsersActiveTodayCount(ctx, db)
-}
+// func getCodyUsersActiveTodayCount(ctx context.Context, db database.DB) (_ int, err error) {
+// 	defer recordOperation("getCodyUsersActiveTodayCount")(&err)
+// 	return usagestats.GetCodyUsersActiveTodayCount(ctx, db)
+// }
 
 func getInitialSiteAdminInfo(ctx context.Context, db database.DB) (_ string, _ bool, err error) {
 	defer recordOperation("getInitialSiteAdminInfo")(&err)
@@ -246,6 +246,17 @@ func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context, db database.
 	}
 
 	return json.Marshal(codeIntelUsage)
+}
+
+func getAndMarshalAggregatedCodyUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalAggregatedCodyUsageJSON")(&err)
+
+	codyUsage, err := usagestats.GetAggregatedCodyStats(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(codyUsage)
 }
 
 func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
@@ -465,11 +476,11 @@ func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (
 	}
 	r.ActiveToday = usersActiveTodayCount > 0
 
-	codyUsersActiveTodayCount, err := getCodyUsersActiveTodayCount(ctx, db)
-	if err != nil {
-		logFunc("getCodyUsersActiveTodayCount failed", log.Error(err))
-	}
-	r.CodyActiveToday = codyUsersActiveTodayCount > 0
+	// 	codyUsersActiveTodayCount, err := getCodyUsersActiveTodayCount(ctx, db)
+	// 	if err != nil {
+	// 		logFunc("getCodyUsersActiveTodayCount failed", log.Error(err))
+	// 	}
+	// 	r.CodyActiveToday = codyUsersActiveTodayCount > 0
 
 	contents, err := json.Marshal(r)
 	if err != nil {

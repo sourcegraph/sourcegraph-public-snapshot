@@ -10841,6 +10841,9 @@ type MockEventLogStore struct {
 	// WithTransactFunc is an instance of a mock function object controlling
 	// the behavior of the method WithTransact.
 	WithTransactFunc *EventLogStoreWithTransactFunc
+	// CodyUsageCurrentPeriodsFunc is an instance of a mock function object
+	// controlling the behavior of the method CodyUsageCurrentPeriods.
+	CodyUsageCurrentPeriodsFunc *EventLogStoreCodyUsageCurrentPeriodsFunc
 }
 
 // NewMockEventLogStore creates a new mock of the EventLogStore interface.
@@ -10854,6 +10857,11 @@ func NewMockEventLogStore() *MockEventLogStore {
 		},
 		AggregatedCodeIntelInvestigationEventsFunc: &EventLogStoreAggregatedCodeIntelInvestigationEventsFunc{
 			defaultHook: func(context.Context) (r0 []types.CodeIntelAggregatedInvestigationEvent, r1 error) {
+				return
+			},
+		},
+		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
+			defaultHook: func(context.Context, time.Time) (r0 []types.CodyAggregatedEvent, r1 error) {
 				return
 			},
 		},
@@ -11029,6 +11037,11 @@ func NewMockEventLogStore() *MockEventLogStore {
 		},
 		WithTransactFunc: &EventLogStoreWithTransactFunc{
 			defaultHook: func(context.Context, func(EventLogStore) error) (r0 error) {
+				return
+			},
+		},
+		CodyUsageCurrentPeriodsFunc: &EventLogStoreCodyUsageCurrentPeriodsFunc{
+			defaultHook: func(context.Context) (r0 types.CodyAggregatedEvent, r1 error) {
 				return
 			},
 		},
@@ -11224,6 +11237,11 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.WithTransact")
 			},
 		},
+		CodyUsageCurrentPeriodsFunc: &EventLogStoreCodyUsageCurrentPeriodsFunc{
+			defaultHook: func(context.Context) (types.CodyAggregatedEvent, error) {
+				panic("unexpected invocation of MockEventLogStore.CodyUsageCurrentPeriods")
+			},
+		},
 	}
 }
 
@@ -11237,6 +11255,9 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		},
 		AggregatedCodeIntelInvestigationEventsFunc: &EventLogStoreAggregatedCodeIntelInvestigationEventsFunc{
 			defaultHook: i.AggregatedCodeIntelInvestigationEvents,
+		},
+		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
+			defaultHook: i.AggregatedCodyEvents,
 		},
 		AggregatedSearchEventsFunc: &EventLogStoreAggregatedSearchEventsFunc{
 			defaultHook: i.AggregatedSearchEvents,
@@ -11342,6 +11363,9 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		},
 		WithTransactFunc: &EventLogStoreWithTransactFunc{
 			defaultHook: i.WithTransact,
+		},
+		CodyUsageCurrentPeriodsFunc: &EventLogStoreCodyUsageCurrentPeriodsFunc{
+			defaultHook: i.CodyUsageCurrentPeriods,
 		},
 	}
 }

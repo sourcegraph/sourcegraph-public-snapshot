@@ -728,7 +728,7 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(singlePeriodUsage)
 }
 
-func codyFeatureFlag() (boolean, error) {
+func codyFeatureFlag() (bool, error) {
 	ctx := context.Background()
 	flags, err := featureflag.FromContext(ctx)
 	if err != nil {
