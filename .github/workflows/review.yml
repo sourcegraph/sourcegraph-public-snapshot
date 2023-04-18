@@ -1,0 +1,13 @@
+name: Review
+on:
+  pull_request_target:
+    types:
+      - labeled
+
+jobs:
+  backport:
+    name: Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with: { repository: 'sourcegraph/sourcegraph' }
