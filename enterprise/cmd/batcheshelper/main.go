@@ -46,7 +46,6 @@ func doMain() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("previousResult: %+v\n", previousResult)
 
 	logger := &log.Logger{Writer: os.Stdout}
 
