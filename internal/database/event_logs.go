@@ -781,11 +781,11 @@ LEFT OUTER JOIN unique_users_by_month ON all_periods.type = 'month' AND all_peri
 ORDER BY period DESC
 `
 
-func (l *eventLogStore) CountCodyUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error) {
-	conds := buildCountUniqueUserConds(opt)
-
-	return l.countUniqueCodyUsersBySQL(ctx, startDate, endDate, conds)
-}
+// func (l *eventLogStore) CountCodyUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error) {
+// 	conds := buildCountUniqueUserConds(opt)
+//
+// 	return l.countUniqueCodyUsersBySQL(ctx, startDate, endDate, conds)
+// }
 
 func (l *eventLogStore) CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error) {
 	conds := buildCountUniqueUserConds(opt)

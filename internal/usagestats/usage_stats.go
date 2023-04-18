@@ -257,26 +257,6 @@ func activeUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, m
 	})
 }
 
-// codyActiveUsers returns counts of active Cody users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
-func codyActiveUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, monthPeriods int) (*types.CodyUsageStatistics, error) {
-	if dayPeriods == 0 && weekPeriods == 0 && monthPeriods == 0 {
-		return &types.CodyUsageStatistics{
-			Daily:   []*types.CodyUsagePeriod{},
-			Weekly:  []*types.CodyUsagePeriod{},
-			Monthly: []*types.CodyUsagePeriod{},
-		}, nil
-	}
-
-	return db.EventLogs().CodyUsageMultiplePeriods(ctx, timeNow().UTC(), dayPeriods, weekPeriods, monthPeriods, &database.CountUniqueUsersOptions{
-		CommonUsageOptions: database.CommonUsageOptions{
-			ExcludeSystemUsers:          true,
-			ExcludeNonActiveUsers:       true,
-			ExcludeSourcegraphAdmins:    true,
-			ExcludeSourcegraphOperators: true,
-		},
-	})
-}
-
 func minIntOrZero(a, b int) int {
 	min := b
 	if a < b {
