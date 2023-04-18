@@ -21,14 +21,14 @@ OPTIONS:
 ### Arguments
 
 | Argument | Placement | Description                       | Example Value         |
-|----------|-----------|-----------------------------------|-----------------------|
+| -------- | --------- | --------------------------------- | --------------------- |
 | Mode     | First     | The mode to run the script in.    | `pre` or `post`       |
 | Step     | Second    | The step that is being processed. | `0`, `1`, `2`, etc... |
 
 ### Options
 
 | Flag                | Default Value           | Description                                                                  |
-|---------------------|-------------------------|------------------------------------------------------------------------------|
+| ------------------- | ----------------------- | ---------------------------------------------------------------------------- |
 | `-input`            | `input.json`            | The path to the input file. Defaults to "input.json". (default "input.json") |
 | `-previousStepPath` | N/A                     | The path to the previous step's result file.                                 |
 | `-workspaceFiles`   | `/data/workspace-files` | The path to the workspace files.                                             |
