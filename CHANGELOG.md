@@ -48,7 +48,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Use the Alpine 3.17 releases of cURL and Git
 
 ### Fixed
 
