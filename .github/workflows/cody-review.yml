@@ -1,35 +1,17 @@
 name: Cody Review
 
 on:
-  push:
-    branches:
-      - tr/cody-review
   pull_request:
     types:
       - labeled
-      - unlabeled
-    branches:
-      - tr/cody-review
 
 jobs:
   comment:
     runs-on: ubuntu-latest
-    steps:
-      - name: Check for "cody-review" label
-        id: check_label
-        run: |
-          PR_LABEL="${{ github.event.label.name }}"
-          TARGET_LABEL="cody-review"
-          echo "PR_LABEL=$PR_LABEL"
-          if [ "$PR_LABEL" == "$TARGET_LABEL" ]; then
-            echo "::set-output name=action::review"
-          else
-            echo "::set-output name=action::remove_review"
-          fi
-        shell: bash
+    if: ${{ github.event.label.name == 'cody-review' }}
 
+    steps:
       - name: Leave a comment
-        if: steps.check_label.outputs.action == 'review'
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -62,11 +44,9 @@ jobs:
       #       });
 
       - name: Check out repository
-        if: steps.check_label.outputs.action == 'review'
         uses: actions/checkout@v2
 
       - name: Check out repository and install
-        if: steps.check_label.outputs.action == 'review'
         uses: pnpm/action-setup@v2
         id: pnpm-install
         with:
@@ -74,14 +54,12 @@ jobs:
           run_install: false
 
       - name: Get pnpm store directory
-        if: steps.check_label.outputs.action == 'review'
         id: pnpm-cache
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT\
 
       - name: Setup pnpm cache
-        if: steps.check_label.outputs.action == 'review'
         uses: actions/cache@v3
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
@@ -90,9 +68,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install npm dependencies
-        if: steps.check_label.outputs.action == 'review'
         run: pnpm install --frozen-lockfile
 
       - name: Run Cody Review
-        if: steps.check_label.outputs.action == 'review'
         run: pnpm --filter ./client/cody-review run review
