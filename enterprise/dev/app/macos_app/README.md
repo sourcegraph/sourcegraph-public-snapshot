@@ -34,8 +34,6 @@ openssl x509 -in app.cer -inform DER -out app.pem -outform PEM
 openssl pkcs12 -export -out app.p12 -certfile CertificateSigningRequest.certSigningRequest -inkey "Sourcegraph Private Key.pem" -in app.pem
 
 openssl pkcs12 -export -in "Developer ID Application SOURCEGRAPH INC (74A5FJ7P96).pem" -inkey "Apple Development- Peter Guy (SOURCEGRAPH INC)-noenc.pem" -certfile CertificateSigningRequest.certSigningRequest -name test -out "Developer ID Application SOURCEGRAPH INC (74A5FJ7P96) - test.p12"
-
-CIWOoa9ozizZpEEdk87PEZt8hI6wwrI
 ```
 
 ## App-specific credentials for notarization
