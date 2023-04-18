@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "store",
+    srcs = ["github_apps.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//internal/database/basestore",
+        "//internal/encryption",
+        "//internal/encryption/keyring",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    srcs = ["github_apps_test.go"],
+    embed = [":store"],
+)
