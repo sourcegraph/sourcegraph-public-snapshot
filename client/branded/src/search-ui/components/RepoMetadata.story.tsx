@@ -29,8 +29,16 @@ export const RepoMetadataStory: Story = () => (
                     <RepoMetadata metadata={mockMetadata} />
                 </div>
                 <div className="d-flex align-items-center mb-2">
+                    <Text className="mb-0 mr-3 text-no-wrap">Default & Delete mode</Text>
+                    <RepoMetadata keyValuePairs={mockMetadata} onDelete={key => alert(key)} />
+                </div>
+                <div className="d-flex align-items-center mb-2">
                     <Text className="mb-0 mr-3 text-no-wrap">Small</Text>
                     <RepoMetadata metadata={mockMetadata} small={true} />
+                </div>
+                <div className="d-flex align-items-center mb-2">
+                    <Text className="mb-0 mr-3 text-no-wrap">Small & Delete mode</Text>
+                    <RepoMetadata keyValuePairs={mockMetadata} small={true} onDelete={key => alert(key)} />
                 </div>
             </div>
         )}
