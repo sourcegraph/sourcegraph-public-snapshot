@@ -44,7 +44,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- An experimental site config setting to restrict cody to users by the cody-experimental feature flag [#50668](https://github.com/sourcegraph/sourcegraph/pull/50668)
 
 ### Changed
 
