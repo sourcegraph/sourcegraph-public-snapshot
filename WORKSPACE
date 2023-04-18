@@ -84,9 +84,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_format",
-    sha256 = "c8d04f68082c0eeac2777e15f65048ece2f17d632023bdcc511602f8c5faf177",
-    strip_prefix = "bazel-super-formatter-2.0.0",
-    url = "https://github.com/aspect-build/bazel-super-formatter/archive/refs/tags/v2.0.0.tar.gz",
+    sha256 = "480b83a61dff2251d1330b65f7fcb6f93817bd4aaa158cae1ac8b49bc4d6e1ba",
+    strip_prefix = "bazel-super-formatter-437005cadf879e804a844f120daf5425c2e9fb18",
+    url = "https://github.com/aspect-build/bazel-super-formatter/archive/437005cadf879e804a844f120daf5425c2e9fb18.tar.gz",
 )
 
 # rules_js setup ================================
