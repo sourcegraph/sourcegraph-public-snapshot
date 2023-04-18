@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-
+echo "[+] Checking PR"
 # Make this script independent of where it's called
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
