@@ -709,7 +709,7 @@ func testFromFileBatchChange() Test {
 	}
 }
 
-func testFileMountBatchChange(client *HttpClient) Test {
+func testFileMountBatchChange() Test {
 	const fileName = "hello_appender.py"
 
 	batchSpecPs := batchSpecParams{

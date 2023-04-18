@@ -86,7 +86,7 @@ func main() {
 		testHelloWorldBatchChange(true),
 		testEnvObjectBatchChange(),
 		testFromFileBatchChange(),
-		//testFileMountBatchChange(httpClient),
+		//testFileMountBatchChange(),
 	}
 
 	for _, t := range testCases {
