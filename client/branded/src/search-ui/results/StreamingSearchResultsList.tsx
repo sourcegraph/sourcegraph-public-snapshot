@@ -10,7 +10,13 @@ import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/compon
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { BuildSearchQueryURLParameters, QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import {
+    BuildSearchQueryURLParameters,
+    QueryState,
+    SearchContextProps,
+    SearchMode,
+    SubmitSearchParameters,
+} from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
     getMatchUrl,
@@ -47,8 +53,6 @@ export interface StreamingSearchResultsListProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     /** Clicking on a match opens the link in a new tab. */
     openMatchesInNewTab?: boolean
-    /** Available to web app through JS Context */
-    assetsRoot?: string
 
     /**
      * Latest run query. Resets scroll visibility state when changed.
@@ -77,6 +81,12 @@ export interface StreamingSearchResultsListProps
     setQueryState?: (queryState: QueryState) => void
     buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
 
+    searchMode?: SearchMode
+    setSearchMode?: (mode: SearchMode) => void
+    submitSearch?: (parameters: SubmitSearchParameters) => void
+    searchQueryFromURL?: string
+    caseSensitive?: boolean
+
     selectedSearchContextSpec?: string
 
     /**
@@ -84,6 +94,8 @@ export interface StreamingSearchResultsListProps
      * It's passed the index of the result in the list and the result type.
      */
     logSearchResultClicked?: (index: number, type: string) => void
+
+    enableRepositoryMetadata?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -97,7 +109,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     isSourcegraphDotCom,
     enableOwnershipSearch,
     searchContextsEnabled,
-    assetsRoot,
     platformContext,
     openMatchesInNewTab,
     executedQuery,
@@ -109,7 +120,13 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     queryState,
     setQueryState,
     buildSearchURLQueryFromQueryState,
+    searchMode,
+    setSearchMode,
+    submitSearch,
+    caseSensitive,
+    searchQueryFromURL,
     logSearchResultClicked,
+    enableRepositoryMetadata,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -197,6 +214,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 result={result}
                                 onSelect={() => logSearchResultClicked?.(index, 'repo')}
                                 containerClassName={resultClassName}
+                                enableRepositoryMetadata={enableRepositoryMetadata}
                                 as="li"
                             />
                         )
@@ -230,6 +248,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             )
         },
         [
+            enableRepositoryMetadata,
             prefetchFileEnabled,
             prefetchFile,
             location,
@@ -274,7 +293,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             </div>
 
             {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results} telemetryService={telemetryService}>
+                <StreamingSearchResultFooter results={results}>
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage
@@ -283,9 +302,13 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 enableOwnershipSearch={enableOwnershipSearch}
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
-                                assetsRoot={assetsRoot}
                                 showQueryExamples={showQueryExamplesOnNoResultsPage}
                                 setQueryState={setQueryState}
+                                searchMode={searchMode}
+                                setSearchMode={setSearchMode}
+                                submitSearch={submitSearch}
+                                caseSensitive={caseSensitive}
+                                searchQueryFromURL={searchQueryFromURL}
                             />
                         )}
                     </>

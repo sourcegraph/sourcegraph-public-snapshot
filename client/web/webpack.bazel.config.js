@@ -107,12 +107,12 @@ const config = {
     splitChunks: {
       cacheGroups: {
         [initialChunkNames.react]: {
-          test: /[/\\]node_modules.*[/\\](react|react-dom)[/\\]/,
+          test: /[/\\]node_modules[/\\](react|react-dom)[/\\]/,
           name: initialChunkNames.react,
           chunks: 'all',
         },
         [initialChunkNames.opentelemetry]: {
-          test: /[/\\]node_modules.*[/\\](@opentelemetry)[/\\]/,
+          test: /[/\\]node_modules[/\\](@opentelemetry|zone.js)[/\\]/,
           name: initialChunkNames.opentelemetry,
           chunks: 'all',
         },

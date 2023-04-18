@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/resolvers"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming"
@@ -24,5 +25,8 @@ func Init(
 ) error {
 	logger := log.Scoped("completions", "")
 	enterpriseServices.NewCompletionsStreamHandler = func() http.Handler { return streaming.NewCompletionsStreamHandler(logger) }
+	enterpriseServices.NewCodeCompletionsHandler = func() http.Handler { return streaming.NewCodeCompletionsHandler(logger) }
+	enterpriseServices.CompletionsResolver = resolvers.NewCompletionsResolver()
+
 	return nil
 }

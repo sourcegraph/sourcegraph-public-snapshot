@@ -1,9 +1,11 @@
+import { ExtensionMessage, WebviewMessage } from '../../src/chat/protocol'
+
 declare const acquireVsCodeApi: () => VSCodeApi
 
 interface VSCodeApi {
-    getState: () => any
-    setState: (newState: any) => any
-    postMessage: (message: any) => void
+    getState: () => unknown
+    setState: (newState: unknown) => unknown
+    postMessage: (message: unknown) => void
 }
 
 class VSCodeWrapper {
@@ -13,57 +15,13 @@ class VSCodeWrapper {
         this.vscodeApi.postMessage(message)
     }
 
-    public onMessage(callback: (message: any) => void): () => void {
-        window.addEventListener('message', callback)
-        return () => window.removeEventListener('message', callback)
+    public onMessage(callback: (message: ExtensionMessage) => void): () => void {
+        const listener = (event: MessageEvent<ExtensionMessage>): void => {
+            callback(event.data)
+        }
+        window.addEventListener('message', listener)
+        return () => window.removeEventListener('message', listener)
     }
 }
 
 export const vscodeAPI: VSCodeWrapper = new VSCodeWrapper()
-
-interface IntializedWebviewMessage {
-    command: 'initialized'
-}
-
-interface ResetWebviewMessage {
-    command: 'reset'
-}
-
-interface RemoveTokenWebviewMessage {
-    command: 'removeToken'
-}
-
-interface SettingsWebviewMessage {
-    command: 'settings'
-    serverEndpoint: string
-    accessToken: string
-}
-
-interface SubmitWebviewMessage {
-    command: 'submit'
-    text: string
-}
-
-interface ExecuteRecipeWebviewMessage {
-    command: 'executeRecipe'
-    recipe: string
-}
-
-interface RemoveChatHistoryWebviewMessage {
-    command: 'removeHistory'
-}
-
-interface OpenFileWebviewMessage {
-    command: 'openFile'
-    filePath: string
-}
-
-type WebviewMessage =
-    | IntializedWebviewMessage
-    | ResetWebviewMessage
-    | RemoveTokenWebviewMessage
-    | SettingsWebviewMessage
-    | SubmitWebviewMessage
-    | ExecuteRecipeWebviewMessage
-    | RemoveChatHistoryWebviewMessage
-    | OpenFileWebviewMessage

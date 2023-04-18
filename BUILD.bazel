@@ -6,6 +6,7 @@ load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
 load("@io_bazel_rules_go//proto:compiler.bzl", "go_proto_compiler")
 load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_APIV2")
 load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev/linters/staticcheck:analyzers.bzl", "STATIC_CHECK_ANALYZERS")
 
 # Gazelle config
 #
@@ -17,7 +18,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 # gazelle:js_npm_package_target_name {dirname}_pkg
 
 # Enable: Aspect javascript, standard go
-# gazelle:lang js,go,protobuf
+# gazelle:lang js,go,proto
 
 package(default_visibility = ["//visibility:public"])
 
@@ -56,9 +57,6 @@ gazelle_binary(
 
 # Tell gazelle what is our main module
 # gazelle:prefix github.com/sourcegraph/sourcegraph
-
-# Specify which protoc compilers we want when we detect GRPC service definitions.
-# gazelle:go_grpc_compilers //:gen-go-grpc,@io_bazel_rules_go//proto:go_proto
 
 gazelle(
     name = "gazelle",
@@ -155,6 +153,7 @@ js_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:node_modules/@babel/preset-env",
+        "//:node_modules/@babel/runtime",
         "//:node_modules/signale",
     ],
 )
@@ -169,10 +168,12 @@ js_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//:node_modules/@babel/plugin-transform-runtime",
         "//:node_modules/@babel/plugin-transform-typescript",
         "//:node_modules/@babel/preset-env",
         "//:node_modules/@babel/preset-react",
         "//:node_modules/@babel/preset-typescript",
+        "//:node_modules/@babel/runtime",
         "//:node_modules/babel-plugin-lodash",
         "//:node_modules/babel-plugin-webpack-chunkname",
         "//:node_modules/semver",
@@ -194,6 +195,15 @@ js_library(
     ],
 )
 
+js_library(
+    name = "graphql_schema_config",
+    srcs = [
+        ".graphqlrc.yml",
+        "graphql-schema-linter.config.js",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 # Go
 
 # nogo config
@@ -208,11 +218,15 @@ nogo(
     visibility = ["//visibility:public"],  # must have public visibility
     deps = [
         "//dev/linters/bodyclose",
+        "//dev/linters/depguard",
         "//dev/linters/exportloopref",
         "//dev/linters/forbidigo",
         "//dev/linters/gocritic",
         "//dev/linters/ineffassign",
-    ],
+        "//dev/linters/unparam",
+    ] + STATIC_CHECK_ANALYZERS,
 )
 
-exports_files(["go.mod"])
+exports_files([
+    "go.mod",
+])

@@ -44,7 +44,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         extsvcConfigAllowEdits: false,
         extsvcConfigFileExists: false,
         isAuthenticatedUser: true,
-        likelyDockerOnMac: false,
         needServerRestart: false,
         needsSiteInit: false,
         needsRepositoryConfiguration: false,
@@ -75,6 +74,8 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
             endpoint: ENVIRONMENT_CONFIG.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT,
         },
         embeddingsEnabled: false,
+        primaryLoginProvidersCount: 5,
+        batchChangesRolloutWindows: null,
         // Site-config overrides default JS context
         ...siteConfig,
     }

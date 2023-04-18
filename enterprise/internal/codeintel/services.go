@@ -3,6 +3,7 @@ package codeintel
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking"
@@ -23,6 +24,7 @@ type Services struct {
 	RankingService      *ranking.Service
 	UploadsService      *uploads.Service
 	SentinelService     *sentinel.Service
+	ContextService      *context.Service
 	GitserverClient     gitserver.Client
 }
 
@@ -43,6 +45,7 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 	codenavSvc := codenav.NewService(deps.ObservationCtx, db, codeIntelDB, uploadsSvc, gitserverClient)
 	rankingSvc := ranking.NewService(deps.ObservationCtx, db, codeIntelDB)
 	sentinelService := sentinel.NewService(deps.ObservationCtx, db)
+	contextService := context.NewService(deps.ObservationCtx, db)
 
 	return Services{
 		AutoIndexingService: autoIndexingSvc,
@@ -52,10 +55,7 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 		RankingService:      rankingSvc,
 		UploadsService:      uploadsSvc,
 		SentinelService:     sentinelService,
+		ContextService:      contextService,
 		GitserverClient:     gitserverClient,
 	}, nil
-}
-
-func scopedContext(component string, parent *observation.Context) *observation.Context {
-	return observation.ScopedContext("codeintel", "worker", component, parent)
 }

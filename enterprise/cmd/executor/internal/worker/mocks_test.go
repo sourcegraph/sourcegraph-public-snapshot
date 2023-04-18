@@ -9,6 +9,7 @@ package worker
 import (
 	"context"
 	"io"
+	"io/fs"
 	"os/exec"
 	"sync"
 
@@ -1232,6 +1233,9 @@ type MockCmdRunner struct {
 	// LookPathFunc is an instance of a mock function object controlling the
 	// behavior of the method LookPath.
 	LookPathFunc *CmdRunnerLookPathFunc
+	// StatFunc is an instance of a mock function object controlling the
+	// behavior of the method Stat.
+	StatFunc *CmdRunnerStatFunc
 }
 
 // NewMockCmdRunner creates a new mock of the CmdRunner interface. All
@@ -1250,6 +1254,11 @@ func NewMockCmdRunner() *MockCmdRunner {
 		},
 		LookPathFunc: &CmdRunnerLookPathFunc{
 			defaultHook: func(string) (r0 string, r1 error) {
+				return
+			},
+		},
+		StatFunc: &CmdRunnerStatFunc{
+			defaultHook: func(string) (r0 fs.FileInfo, r1 error) {
 				return
 			},
 		},
@@ -1275,6 +1284,11 @@ func NewStrictMockCmdRunner() *MockCmdRunner {
 				panic("unexpected invocation of MockCmdRunner.LookPath")
 			},
 		},
+		StatFunc: &CmdRunnerStatFunc{
+			defaultHook: func(string) (fs.FileInfo, error) {
+				panic("unexpected invocation of MockCmdRunner.Stat")
+			},
+		},
 	}
 }
 
@@ -1290,6 +1304,9 @@ func NewMockCmdRunnerFrom(i util.CmdRunner) *MockCmdRunner {
 		},
 		LookPathFunc: &CmdRunnerLookPathFunc{
 			defaultHook: i.LookPath,
+		},
+		StatFunc: &CmdRunnerStatFunc{
+			defaultHook: i.Stat,
 		},
 	}
 }
@@ -1628,6 +1645,110 @@ func (c CmdRunnerLookPathFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c CmdRunnerLookPathFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CmdRunnerStatFunc describes the behavior when the Stat method of the
+// parent MockCmdRunner instance is invoked.
+type CmdRunnerStatFunc struct {
+	defaultHook func(string) (fs.FileInfo, error)
+	hooks       []func(string) (fs.FileInfo, error)
+	history     []CmdRunnerStatFuncCall
+	mutex       sync.Mutex
+}
+
+// Stat delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCmdRunner) Stat(v0 string) (fs.FileInfo, error) {
+	r0, r1 := m.StatFunc.nextHook()(v0)
+	m.StatFunc.appendCall(CmdRunnerStatFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Stat method of the
+// parent MockCmdRunner instance is invoked and the hook queue is empty.
+func (f *CmdRunnerStatFunc) SetDefaultHook(hook func(string) (fs.FileInfo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Stat method of the parent MockCmdRunner instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *CmdRunnerStatFunc) PushHook(hook func(string) (fs.FileInfo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CmdRunnerStatFunc) SetDefaultReturn(r0 fs.FileInfo, r1 error) {
+	f.SetDefaultHook(func(string) (fs.FileInfo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CmdRunnerStatFunc) PushReturn(r0 fs.FileInfo, r1 error) {
+	f.PushHook(func(string) (fs.FileInfo, error) {
+		return r0, r1
+	})
+}
+
+func (f *CmdRunnerStatFunc) nextHook() func(string) (fs.FileInfo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CmdRunnerStatFunc) appendCall(r0 CmdRunnerStatFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CmdRunnerStatFuncCall objects describing
+// the invocations of this function.
+func (f *CmdRunnerStatFunc) History() []CmdRunnerStatFuncCall {
+	f.mutex.Lock()
+	history := make([]CmdRunnerStatFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CmdRunnerStatFuncCall is an object that describes an invocation of method
+// Stat on an instance of MockCmdRunner.
+type CmdRunnerStatFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 fs.FileInfo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CmdRunnerStatFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CmdRunnerStatFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

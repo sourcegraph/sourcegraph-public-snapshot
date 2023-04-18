@@ -25,7 +25,7 @@ type Service struct {
 	store           store.Store
 	repoStore       RepoStore
 	workerutilStore dbworkerstore.Store[shared.Upload]
-	lsifstore       lsifstore.LsifStore
+	lsifstore       lsifstore.Store
 	gitserverClient gitserver.Client
 	rankingBucket   *storage.BucketHandle
 	policySvc       PolicyService
@@ -40,7 +40,7 @@ func newService(
 	observationCtx *observation.Context,
 	store store.Store,
 	repoStore RepoStore,
-	lsifstore lsifstore.LsifStore,
+	lsifstore lsifstore.Store,
 	gsc gitserver.Client,
 	rankingBucket *storage.BucketHandle,
 	policySvc PolicyService,

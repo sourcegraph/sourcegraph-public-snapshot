@@ -1,64 +1,114 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Alert, Form, Input, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Alert, Form, Input, LoadingSpinner, Text, Badge, useSessionStorage } from '@sourcegraph/wildcard'
 
+import { CodyIcon } from '../../../cody/CodyIcon'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
-import { CompletionRequest, getCodyCompletionOneShot } from '../api'
+import { useURLSyncedString } from '../../../hooks/useUrlSyncedString'
+import { eventLogger } from '../../../tracking/eventLogger'
+
+import { translateToQuery } from './translateToQuery'
 
 import searchPageStyles from '../../../storm/pages/SearchPage/SearchPageContent.module.scss'
 import styles from './CodySearchPage.module.scss'
 
-export const CodySearchPage: React.FunctionComponent<{}> = () => {
+interface CodeSearchPageProps {
+    authenticatedUser: AuthenticatedUser | null
+    telemetryService: TelemetryService
+}
+
+export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ authenticatedUser }) => {
+    useEffect(() => {
+        eventLogger.logPageView('CodySearch')
+    }, [])
+
     const navigate = useNavigate()
 
-    const [codyEnabled] = useFeatureFlag('cody', false)
+    const [codyEnabled] = useFeatureFlag('cody-experimental', true)
 
     /** The value entered by the user in the query input */
-    const [input, setInput] = useState('')
+    // const [input, setInput] = useState('')
+    const [input, setInput] = useURLSyncedString('cody-search', '')
+    const codySearchStorage = useSessionStorage<string>('cody-search-input', '')
+    const setCodySearchInput = codySearchStorage[1]
 
     const [inputError, setInputError] = useState<string | null>(null)
 
-    const onInputChange = useCallback((newInput: string) => {
+    const onInputChange = (newInput: string): void => {
         setInput(newInput)
         setInputError(null)
-    }, [])
+    }
 
     const [loading, setLoading] = useState(false)
 
     const onSubmit = useCallback(() => {
+        const sanitizedInput = input.trim()
+
+        if (!sanitizedInput) {
+            return
+        }
+
+        eventLogger.log('web:codySearch:submit', { input: sanitizedInput }, { input: sanitizedInput })
         setLoading(true)
-        translateToQuery(input).then(
+        translateToQuery(sanitizedInput, authenticatedUser).then(
             query => {
                 setLoading(false)
 
                 if (query) {
+                    eventLogger.log(
+                        'web:codySearch:submitSucceeded',
+                        { input: sanitizedInput, translatedQuery: query },
+                        { input: sanitizedInput, translatedQuery: query }
+                    )
+                    setCodySearchInput(JSON.stringify({ input: sanitizedInput, translatedQuery: query }))
                     navigate({
                         pathname: '/search',
-                        search: buildSearchURLQuery(query, SearchPatternType.regexp, false),
+                        search: buildSearchURLQuery(query, SearchPatternType.regexp, false) + '&ref=cody-search',
                     })
                 } else {
+                    eventLogger.log(
+                        'web:codySearch:submitFailed',
+                        { input: sanitizedInput, reason: 'untranslatable' },
+                        { input: sanitizedInput, reason: 'untranslatable' }
+                    )
                     setInputError('Cody does not understand this query. Try rephrasing it.')
                 }
             },
             error => {
+                eventLogger.log(
+                    'web:codySearch:submitFailed',
+                    {
+                        input: sanitizedInput,
+                        reason: 'unreachable',
+                        error: error?.message,
+                    },
+                    {
+                        input: sanitizedInput,
+                        reason: 'unreachable',
+                        error: error?.message,
+                    }
+                )
                 setLoading(false)
                 setInputError(`Unable to reach Cody. Error: ${error?.message}`)
             }
         )
-    }, [navigate, input])
+    }, [navigate, input, authenticatedUser, setCodySearchInput])
 
     const isLightTheme = useIsLightTheme()
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', searchPageStyles.searchPage)}>
             <BrandLogo className={searchPageStyles.logo} isLightTheme={isLightTheme} variant="logo" />
+            <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">Searching millions of public repositories</div>
             {codyEnabled ? (
                 <SearchInput
                     value={input}
@@ -102,7 +152,20 @@ const SearchInput: React.FunctionComponent<{
 
     return (
         <Form onSubmit={onSubmit} className={className}>
-            <Input inputClassName={styles.input} value={value} onInput={onInput} disabled={loading} autoFocus={true} />
+            <Input
+                inputClassName={styles.input}
+                value={value}
+                onInput={onInput}
+                disabled={loading}
+                autoFocus={true}
+                placeholder="Search for code or files in natural language..."
+            />
+            <div className="align-items-center d-flex mt-4 justify-content-center">
+                <Text className="text-muted mb-0 mr-2" size="small">
+                    Powered by Cody <CodyIcon />
+                </Text>
+                <Badge variant="warning">Experimental</Badge>
+            </div>
             {error ? (
                 <Alert variant="danger" className="mt-2 w-100">
                     {error}
@@ -112,76 +175,4 @@ const SearchInput: React.FunctionComponent<{
             ) : null}
         </Form>
     )
-}
-
-async function translateToQuery(input: string): Promise<string | null> {
-    const messages: CompletionRequest['messages'] = [
-        {
-            speaker: 'human',
-            text:
-                'You are an expert at writing queries that match what a human requests. ' +
-                'A query consists of a regular expression matching file contents, and the following filters: repo:REPO-NAME-REGEXP, file:PATH-REGEXP, lang:LANGUAGE (LANGUAGE can be typescript, javascript, go, css, html, markdown, rust, c++, java, etc.), file:has.owner(USER), type:diff. ' +
-                'Always use the file: filter to narrow the query to only specific files. Escape any special characters in the regular expression to match file contents (such as \\* to match a literal *).',
-        },
-        { speaker: 'assistant', text: 'Understood. I will follow these rules.' },
-        {
-            speaker: 'human',
-            text: 'What is the query for <request>TypeScript files that define a React hook</request>',
-        },
-        {
-            speaker: 'assistant',
-            text: '<contents>^export (const|function) use\\w+</contents><filters>lang:typescript</filters>',
-        },
-        { speaker: 'human', text: 'What is the query for <request>changes to authentication</request>?' },
-        { speaker: 'assistant', text: '<contents>authentication</contents><filters>type:diff</filters>' },
-        { speaker: 'human', text: 'What is the query for <request>golang oauth</request>?' },
-        { speaker: 'assistant', text: '<contents>oauth</contents><filters>lang:go</filters>' },
-        { speaker: 'human', text: 'What is the query for <request>multierror repo</request>?' },
-        { speaker: 'assistant', text: '<contents></contents><filters>repo:multierror</filters>' },
-        { speaker: 'human', text: 'What is the query for <request>react class components</request>?' },
-        {
-            speaker: 'assistant',
-            text: '<contents>class \\w+ extends React\\.Component</contents><filters>(lang:typescript OR lang:javascript)</filters>',
-        },
-        { speaker: 'human', text: 'What is the query for <request>npm packages that depend on react</request>?' },
-        { speaker: 'assistant', text: '<contents>"react"</contents><filters>file:package\\.json</filters>' },
-        {
-            speaker: 'human',
-            text: 'What is the query for <request>Go test files in the client directory that contain the string "openid"</request>?',
-        },
-        { speaker: 'assistant', text: '<contents>openid</contents><filters>file:^client/ file:_test\\.go$</filters>' },
-        { speaker: 'human', text: 'What is the query for <request>DFH84fHAg</request>?' },
-        {
-            speaker: 'assistant',
-            text: 'I apologize, but I do not understand the request "DFH84fHAg". Without more context about what is being requested, I cannot generate a valid query.',
-        },
-        {
-            speaker: 'human',
-            text: 'NEVER ASK FOR MORE CONTEXT and ALWAYS MAKE A GUESS. If you are unsure, just treat the entire request as a regular expression matching file contents. What is the query for <request>DFH84fHAg</request>?',
-        },
-        { speaker: 'assistant', text: '<contents>DFH84fHAg</contents><filters></filters>' },
-        { speaker: 'human', text: 'What is the query for <request>changes to go files owned by alice</request>?' },
-        {
-            speaker: 'assistant',
-            text: '<contents></contents><filters>type:diff lang:go file:has.owner(alice)</filters>',
-        },
-        { speaker: 'human', text: 'What is the query for <request>React storybook files owned by alice</request>?' },
-        { speaker: 'assistant', text: '<contents>@storybook/react</contents><filters>file:has.owner(alice)</filters>' },
-        { speaker: 'human', text: `What is the query for <request>${input}</request>?` },
-        { speaker: 'assistant', text: '<contents>' },
-    ]
-
-    const result = await getCodyCompletionOneShot(messages)
-    if (!result.includes('contents>') && !result.includes('filters>')) {
-        return null
-    }
-    const query = result
-        .replace('<contents>', ' ')
-        .replace('</contents>', ' ')
-        .replace('<filters>', ' ')
-        .replace('</filters>', ' ')
-        .replace(/\n/g, ' ')
-        .replace(/\s{2,}/g, ' ')
-        .trim()
-    return query
 }

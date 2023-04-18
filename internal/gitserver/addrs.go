@@ -20,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const maxMessageSizeBytes = 64 * 1024 * 1024 // 64MiB
+
 var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_gitserver_addr_for_repo_invoked",
 	Help: "Number of times gitserver.AddrForRepo was invoked",
@@ -149,7 +151,11 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	// Open connections for each address
 	after.grpcConns = make(map[string]connAndErr, len(after.Addresses))
 	for _, addr := range after.Addresses {
-		conn, err := defaults.Dial(addr)
+		conn, err := defaults.Dial(
+			addr,
+			// Allow large messages to accomodate large diffs
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSizeBytes)),
+		)
 		after.grpcConns[addr] = connAndErr{conn: conn, err: err}
 	}
 

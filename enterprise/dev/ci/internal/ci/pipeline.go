@@ -136,23 +136,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 				triggerAsync(buildOptions)))
-
-			// Do not create client PR preview if Go or GraphQL is changed to avoid confusing
-			// preview behavior, because only Client code is used to deploy application preview.
-			if !c.Diff.Has(changed.Go) && !c.Diff.Has(changed.GraphQL) {
-				ops.Append(prPreview())
-			}
-		}
-		if c.Diff.Has(changed.DockerImages) {
-			// Build and scan docker images
-			testBuilds := operations.NewNamedSet("Test builds")
-			scanBuilds := operations.NewNamedSet("Scan test builds")
-			for _, image := range images.SourcegraphDockerImages {
-				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag(), false))
-				scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
-			}
-			ops.Merge(testBuilds)
-			ops.Merge(scanBuilds)
 		}
 
 	case runtype.ReleaseNightly:
@@ -290,17 +273,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		)
 
 	default:
-		if c.RunType.Is(runtype.MainBranch) {
-			// If we're on the main branch, we test a few Bazel invariants.
-			ops.Merge(BazelIncrementalMainOperations())
-		}
 		// Slow async pipeline
 		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 			triggerAsync(buildOptions)))
-
-		// At this stage, we don't break builds because of a Bazel failure.
-		// TODO(JH) disabled until I re-enable this with a flag
-		// ops.Merge(BazelOperations(true))
 
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
@@ -336,8 +311,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
-			// Do not enable this on main
-			// ForceBazel:                c.MessageFlags.ForceBazel,
+			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
 
 		// Integration tests

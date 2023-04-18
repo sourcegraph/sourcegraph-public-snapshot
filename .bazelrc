@@ -17,3 +17,5 @@ try-import %workspace%/.aspect/bazelrc/user.bazelrc
 
 # Enable bazel hack for autogold; apply to both build & test to avoid busting analysis cache
 build --test_env=ENABLE_BAZEL_PACKAGES_LOAD_HACK=true
+# Except in CI run E2E tests in headless mode
+try-import %workspace%/user.bazelrc

@@ -13,6 +13,9 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/autoindexing/internal/background",
+        "//enterprise/internal/codeintel/autoindexing/internal/background/dependencies",
+        "//enterprise/internal/codeintel/autoindexing/internal/background/scheduler",
+        "//enterprise/internal/codeintel/autoindexing/internal/background/summary",
         "//enterprise/internal/codeintel/autoindexing/internal/enqueuer",
         "//enterprise/internal/codeintel/autoindexing/internal/inference",
         "//enterprise/internal/codeintel/autoindexing/internal/jobselector",
@@ -29,8 +32,6 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//internal/repoupdater",
-        "//internal/workerutil",
-        "//internal/workerutil/dbworker/store",
         "//lib/codeintel/autoindex/config",
         "//lib/errors",
         "@com_github_opentracing_opentracing_go//log",

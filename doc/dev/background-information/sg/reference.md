@@ -100,6 +100,7 @@ Available commands in `sg.config.yaml`:
 * codeintel-executor
 * codeintel-executor-firecracker
 * codeintel-worker
+* cody-slack: Start Cody-Slack locally server locally
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
 * embeddings

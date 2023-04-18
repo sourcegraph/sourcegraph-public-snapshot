@@ -71,7 +71,9 @@ const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAu
         <>
             {githubProvider && (
                 <Link
-                    to={githubProvider.authenticationURL}
+                    // Use absolute URL to force full-page reload (because the auth routes are
+                    // handled by the backend router, not the frontend router).
+                    to={`${window.location.origin}${githubProvider.authenticationURL}`}
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
@@ -86,7 +88,9 @@ const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAu
 
             {gitlabProvider && (
                 <Link
-                    to={gitlabProvider.authenticationURL}
+                    // Use absolute URL to force full-page reload (because the auth routes are
+                    // handled by the backend router, not the frontend router).
+                    to={`${window.location.origin}${gitlabProvider.authenticationURL}`}
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',

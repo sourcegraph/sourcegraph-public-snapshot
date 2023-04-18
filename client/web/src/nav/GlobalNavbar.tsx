@@ -8,7 +8,7 @@ import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
 import { RouteObject, useLocation } from 'react-router-dom'
 
-import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
+import { isMacPlatform } from '@sourcegraph/common'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -29,7 +29,6 @@ import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinde
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
-import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { NotebookProps } from '../notebooks'
 import { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
@@ -168,10 +167,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.authenticatedUser)
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
-    // isCodeInsightsEnabled selector controls appearance based on user settings flags
-    const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
+    const codeInsights = codeInsightsEnabled
 
-    const [codyEnabled] = useFeatureFlag('cody')
+    const [codyEnabled] = useFeatureFlag('cody-experimental')
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
@@ -322,17 +320,30 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
-                        <NavAction>
-                            <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
-                                <Link
-                                    to="https://about.sourcegraph.com/app"
-                                    className={classNames(styles.link, 'small')}
-                                    onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'NavBar' })}
-                                >
-                                    Download app
-                                </Link>
-                            </Tooltip>
-                        </NavAction>
+                        <>
+                            <NavAction>
+                                <Tooltip content="The AI code assistant you can trust to answer questions and write code for you.">
+                                    <Link
+                                        to="https://about.sourcegraph.com/cody"
+                                        className={classNames(styles.link, 'small')}
+                                        onClick={() => eventLogger.log('ClickedOnCodyCTA', { location: 'NavBar' })}
+                                    >
+                                        Cody
+                                    </Link>
+                                </Tooltip>
+                            </NavAction>
+                            <NavAction>
+                                <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
+                                    <Link
+                                        to="https://about.sourcegraph.com/app"
+                                        className={classNames(styles.link, 'small')}
+                                        onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'NavBar' })}
+                                    >
+                                        App
+                                    </Link>
+                                </Tooltip>
+                            </NavAction>
+                        </>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser?.siteAdmin && (
@@ -372,11 +383,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 authenticatedUser={props.authenticatedUser}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isSourcegraphApp={isSourcegraphApp}
-                                codeHostIntegrationMessaging={
-                                    (!isErrorLike(props.settingsCascade.final) &&
-                                        props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
-                                    'browser-extension'
-                                }
                                 showFeedbackModal={showFeedbackModal}
                             />
                         </NavAction>

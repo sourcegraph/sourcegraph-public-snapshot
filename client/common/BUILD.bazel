@@ -40,6 +40,7 @@ ts_project(
         "src/util/markdown/contributions.ts",
         "src/util/markdown/index.ts",
         "src/util/markdown/markdown.ts",
+        "src/util/path.ts",
         "src/util/rxjs/asObservable.ts",
         "src/util/rxjs/combineLatestOrDefault.ts",
         "src/util/rxjs/index.ts",

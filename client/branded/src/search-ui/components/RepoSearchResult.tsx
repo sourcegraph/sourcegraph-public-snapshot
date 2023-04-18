@@ -9,6 +9,7 @@ import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegrap
 import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
+import { RepoMetadata } from './RepoMetadata'
 import { ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
@@ -21,6 +22,7 @@ export interface RepoSearchResultProps {
     containerClassName?: string
     as?: React.ElementType
     index: number
+    enableRepositoryMetadata?: boolean
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
@@ -29,6 +31,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     containerClassName,
     as,
     index,
+    enableRepositoryMetadata,
 }) => {
     const repoDescriptionElement = useRef<HTMLDivElement>(null)
     const repoNameElement = useRef<HTMLAnchorElement>(null)
@@ -87,8 +90,15 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                 <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
                     {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                     <div className="d-flex align-items-center flex-row">
-                        <div className={styles.matchType}>
+                        <div className={classNames(styles.matchType, 'd-flex align-items-start')}>
                             <small>Repository match</small>
+                            {enableRepositoryMetadata && !!result.keyValuePairs && (
+                                <RepoMetadata
+                                    keyValuePairs={Object.entries(result.keyValuePairs)}
+                                    className="justify-content-end ml-2 mr-4"
+                                    small={true}
+                                />
+                            )}
                         </div>
                         {result.fork && (
                             <>

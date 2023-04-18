@@ -129,7 +129,8 @@ func TestParseConfig(t *testing.T) {
 						ClientSecret: "my-client-secret",
 						DisplayName:  "GitLab",
 						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com"},
+						Url:          "https://gitlab.com",
+					},
 				}},
 			}}},
 			wantProviders: []Provider{
@@ -149,7 +150,7 @@ func TestParseConfig(t *testing.T) {
 							AuthURL:  "https://gitlab.com/oauth/authorize",
 							TokenURL: "https://gitlab.com/oauth/token",
 						},
-						Scopes: []string{"read_user", "read_api"},
+						Scopes: []string{"read_user", "api"},
 					}),
 				},
 			},

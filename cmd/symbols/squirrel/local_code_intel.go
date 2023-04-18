@@ -38,18 +38,15 @@ func (s *SquirrelService) LocalCodeIntel(ctx context.Context, repoCommitPath typ
 
 	// Collect scopes
 	scopes := map[NodeId]Scope{}
-	err = forEachCapture(root.LangSpec.localsQuery, *root, func(nameToNode map[string]Node) {
+	forEachCapture(root.LangSpec.localsQuery, *root, func(nameToNode map[string]Node) {
 		if node, ok := nameToNode["scope"]; ok {
 			scopes[nodeId(node.Node)] = map[SymbolName]*PartialSymbol{}
 			return
 		}
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	// Collect defs
-	err = forEachCapture(root.LangSpec.localsQuery, *root, func(nameToNode map[string]Node) {
+	forEachCapture(root.LangSpec.localsQuery, *root, func(nameToNode map[string]Node) {
 		for captureName, node := range nameToNode {
 			// Only collect "definition*" captures.
 			if strings.HasPrefix(captureName, "definition") {
@@ -80,9 +77,6 @@ func (s *SquirrelService) LocalCodeIntel(ctx context.Context, repoCommitPath typ
 			}
 		}
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	// Collect refs by walking the entire tree.
 	walk(root.Node, func(node *sitter.Node) {

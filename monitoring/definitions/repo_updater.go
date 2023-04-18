@@ -241,26 +241,6 @@ func RepoUpdater() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:           "permissions_syncs_scheduled_reason",
-							Description:    "number of users/repos scheduled for permissions sync grouped by reason",
-							Query:          `sum by (type) (src_repoupdater_perms_syncer_items_sync_scheduled)`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerIAM,
-							NoAlert:        true,
-							Interpretation: "Indicates the number of users/repos scheduled for permissions sync grouped by reason.",
-						},
-						{
-							Name:           "permissions_syncs_scheduled_priority",
-							Description:    "number of users/repos scheduled for permissions sync grouped by priority",
-							Query:          `sum by (priority) (src_repoupdater_perms_syncer_items_sync_scheduled)`,
-							Panel:          monitoring.Panel().LegendFormat("{{priority}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerIAM,
-							NoAlert:        true,
-							Interpretation: "Indicates the number of users/repos scheduled for permissions sync grouped by priority.",
-						},
-					},
-					{
-						{
 							Name:           "user_success_syncs_total",
 							Description:    "total number of user permissions syncs",
 							Query:          `sum(src_repoupdater_perms_syncer_success_syncs{type="user"})`,
@@ -286,17 +266,6 @@ func RepoUpdater() *monitoring.Dashboard {
 							Owner:          monitoring.ObservableOwnerIAM,
 							NoAlert:        true,
 							Interpretation: "Indicates the number of permissions syncs done for the first time for the user.",
-						},
-					},
-					{
-						{
-							Name:           "user_failed_syncs",
-							Description:    "number of user permissions failed syncs [5m]",
-							Query:          `sum(increase(src_repoupdater_perms_syncer_failed_syncs{type="user"}[5m]))`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerIAM,
-							NoAlert:        true,
-							Interpretation: "Indicates the number of users permissions syncs failed.",
 						},
 					},
 					{
@@ -327,17 +296,6 @@ func RepoUpdater() *monitoring.Dashboard {
 							Owner:          monitoring.ObservableOwnerIAM,
 							NoAlert:        true,
 							Interpretation: "Indicates the number of permissions syncs done for the first time for the repo.",
-						},
-					},
-					{
-						{
-							Name:           "repo_failed_syncs",
-							Description:    "number of repo permissions failed syncs over 5m",
-							Query:          `sum(increase(src_repoupdater_perms_syncer_failed_syncs{type="repo"}[5m]))`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerIAM,
-							NoAlert:        true,
-							Interpretation: "Indicates the number of repos permissions syncs failed in last 5 minute.",
 						},
 					},
 					{
@@ -402,40 +360,6 @@ func RepoUpdater() *monitoring.Dashboard {
 					},
 					{
 						{
-							Name:        "perms_syncer_perms",
-							Description: "time gap between least and most up to date permissions",
-							Query:       `max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)`,
-							Warning:     monitoring.Alert().GreaterOrEqual((3 * 24 * time.Hour).Seconds()).For(5 * time.Minute), // 3 days
-							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerIAM,
-							NextSteps:   "Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).",
-
-							MultiInstance: true,
-						},
-						{
-							Name:        "perms_syncer_stale_perms",
-							Description: "number of entities with stale permissions",
-							Query:       `max by (type) (src_repoupdater_perms_syncer_stale_perms)`,
-							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerIAM,
-							NextSteps:   "Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).",
-						},
-					},
-					{
-						{
-							Name:        "perms_syncer_no_perms",
-							Description: "number of entities with no permissions",
-							Query:       `max by (type) (src_repoupdater_perms_syncer_no_perms)`,
-							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerIAM,
-							NextSteps: `
-								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-								- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-							`,
-						},
-						{
 							Name:        "perms_syncer_outdated_perms",
 							Description: "number of entities with outdated permissions",
 							Query:       `max by (type) (src_repoupdater_perms_syncer_outdated_perms)`,
@@ -457,18 +381,6 @@ func RepoUpdater() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerIAM,
 							NextSteps:   "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.",
-						},
-						{
-							Name:        "perms_syncer_queue_size",
-							Description: "permissions sync queued items",
-							Query:       `max(src_repoupdater_perms_syncer_queue_size)`,
-							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerIAM,
-							NextSteps: `
-								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-								- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-							`,
 						},
 					},
 					{

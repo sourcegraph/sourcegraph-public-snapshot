@@ -1,27 +1,18 @@
 import { spawnSync } from 'child_process'
 
-import { CodebaseContext } from '../../codebase-context'
-import { Editor } from '../../editor'
-import { IntentDetector } from '../../intent-detector'
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
-import { getShortTimestamp } from '../../timestamp'
 import { Interaction } from '../transcript/interaction'
 
-import { Recipe } from './recipe'
+import { Recipe, RecipeContext } from './recipe'
 
 export class GitHistory implements Recipe {
     public getID(): string {
         return 'git-history'
     }
 
-    public async getInteraction(
-        _humanChatInput: string,
-        editor: Editor,
-        _intentDetector: IntentDetector,
-        _codebaseContext: CodebaseContext
-    ): Promise<Interaction | null> {
-        const dirPath = editor.getWorkspaceRootPath()
+    public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const dirPath = context.editor.getWorkspaceRootPath()
         if (!dirPath) {
             return null
         }
@@ -44,7 +35,7 @@ export class GitHistory implements Recipe {
                 rawDisplayText: 'What changed in my codebase in the last week?',
             },
         ]
-        const selectedLabel = await editor.showQuickPick(items.map(e => e.label))
+        const selectedLabel = await context.editor.showQuickPick(items.map(e => e.label))
         if (!selectedLabel) {
             return null
         }
@@ -73,17 +64,14 @@ export class GitHistory implements Recipe {
             console.warn('Truncated extra long git log output, so summary may be incomplete.')
         }
 
-        const timestamp = getShortTimestamp()
         const promptMessage = `Summarize these commits:\n${truncatedGitLogOutput}\n\nProvide your response in the form of a bulleted list. Do not mention the commit hashes.`
         const assistantResponsePrefix = 'Here is a summary of recent changes:\n- '
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText: rawDisplayText, timestamp },
+            { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
-                displayText: '',
-                timestamp,
             },
             Promise.resolve([])
         )

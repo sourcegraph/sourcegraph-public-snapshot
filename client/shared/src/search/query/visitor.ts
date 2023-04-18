@@ -14,9 +14,9 @@ export class Visitor {
      *
      * @param nodes Top-level nodes of the tree.
      */
-    public visit(nodes: Node[]): void {
+    public visit(nodes: (Node | null)[]): void {
         for (const node of nodes) {
-            switch (node.type) {
+            switch (node?.type) {
                 case 'operator':
                     this.visitOperator(node)
                     break
@@ -35,9 +35,9 @@ export class Visitor {
 
     private visitOperator(node: Operator): void {
         if (this._visitors.visitOperator) {
-            this._visitors.visitOperator(node.operands, node.kind, node.range, node.groupRange)
+            this._visitors.visitOperator(node.left, node.right, node.kind, node.range, node.groupRange)
         }
-        this.visit(node.operands)
+        this.visit([node.left, node.right])
     }
 
     private visitSequence(node: Sequence): void {
@@ -49,22 +49,28 @@ export class Visitor {
 
     private visitParameter(node: Parameter): void {
         if (this._visitors.visitParameter) {
-            this._visitors.visitParameter(node.field, node.value, node.negated, node.range)
+            this._visitors.visitParameter(node.field, node.value, node.negated, node.quoted, node.range)
         }
     }
 
     private visitPattern(node: Pattern): void {
         if (this._visitors.visitPattern) {
-            this._visitors.visitPattern(node.value, node.kind, node.negated, node.quoted, node.range)
+            this._visitors.visitPattern(node.value, node.kind, node.range)
         }
     }
 }
 
 export interface Visitors {
-    visitOperator?(operands: Node[], kind: OperatorKind, range: CharacterRange, groupRange?: CharacterRange): void
+    visitOperator?(
+        left: Node | null,
+        right: Node | null,
+        kind: OperatorKind,
+        range: CharacterRange,
+        groupRange?: CharacterRange
+    ): void
     visitSequence?(nodes: Node[], range: CharacterRange): void
-    visitParameter?(field: string, value: string, negated: boolean, range: CharacterRange): void
-    visitPattern?(value: string, kind: PatternKind, negated: boolean, quoted: boolean, range: CharacterRange): void
+    visitParameter?(field: string, value: string, negated: boolean, quoted: boolean, range: CharacterRange): void
+    visitPattern?(value: string, kind: PatternKind, range: CharacterRange): void
 }
 
 /**

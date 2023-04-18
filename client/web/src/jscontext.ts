@@ -1,5 +1,5 @@
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import { SiteConfiguration, BatchChangeRolloutWindow } from '@sourcegraph/shared/src/schema/site.schema'
 
 import { TemporarySettingsResult } from './graphql-operations'
 
@@ -22,6 +22,7 @@ export interface AuthProvider {
         | 'gerrit'
         | 'azuredevops'
     displayName: string
+    displayPrefix?: string
     isBuiltin: boolean
     authenticationURL: string
     serviceID: string
@@ -150,11 +151,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     runningOnMacOS: boolean
 
     /**
-     * Likely running within a Docker container under a Mac host OS.
-     */
-    likelyDockerOnMac: boolean
-
-    /**
      * Whether the setup wizard supports file picker query, it's used
      * only for the Sourcegraph App (in all others deploy types it's always false)
      */
@@ -183,6 +179,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     batchChangesWebhookLogsEnabled: boolean
 
+    batchChangesRolloutWindows: BatchChangeRolloutWindow[] | null
+
     /** Whether executors are enabled on the site. */
     executorsEnabled: boolean
 
@@ -209,6 +207,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]
+
+    /** primaryLoginProvidersCount sets the max number of primary login providers on signin page */
+    primaryLoginProvidersCount: number
 
     /** What the minimum length for a password should be. */
     authMinPasswordLength: number
