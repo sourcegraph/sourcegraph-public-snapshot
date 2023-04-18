@@ -2937,6 +2937,12 @@
           "type": "string"
         }
       }
+    },
+    "batchChanges.autoDeleteBranch": {
+      "description": "Override code host specific setting and automatically delete batch change branches when a batch change is merged or closed.",
+      "type": "boolean",
+      "group": "BatchChanges",
+      "default": false
     }
   }
 }
