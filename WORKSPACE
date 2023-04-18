@@ -84,11 +84,11 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_format",
+    patch_args = ["-p1"],
+    patches = ["//third_party/superformatter:pnpm-lock.patch"],
     sha256 = "480b83a61dff2251d1330b65f7fcb6f93817bd4aaa158cae1ac8b49bc4d6e1ba",
     strip_prefix = "bazel-super-formatter-437005cadf879e804a844f120daf5425c2e9fb18",
     url = "https://github.com/aspect-build/bazel-super-formatter/archive/437005cadf879e804a844f120daf5425c2e9fb18.tar.gz",
-    patch_args = ["-p1"],
-    patches = ["//third_party/superformatter:pnpm-lock.patch"],
 )
 
 # rules_js setup ================================
