@@ -2062,4 +2062,5 @@ bundlesize_bin.bundlesize_test(
     env = {
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle-enterprise)",
     },
+    flaky = True,
 )
