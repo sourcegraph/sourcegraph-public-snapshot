@@ -4,6 +4,8 @@ load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
 
 npm_link_all_packages(name = "node_modules")
 
+# gazelle:js_resolve vscode //:node_modules/@vscode
+
 ts_config(
     name = "tsconfig",
     src = "tsconfig.json",
@@ -77,6 +79,8 @@ ts_project(
         "//:node_modules/@types/isomorphic-fetch",
         "//:node_modules/@types/node",
         "//:node_modules/@types/uuid",
+        "//:node_modules/@types/vscode",  #keep
+        "//:node_modules/@vscode",
         "//:node_modules/isomorphic-fetch",
         "//:node_modules/uuid",
     ],

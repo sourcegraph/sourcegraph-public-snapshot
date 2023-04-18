@@ -58,8 +58,6 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 
 .chat-input {
     outline: none;
-    color: var(--vscode-input-foreground);
-    background-color: var(--vscode-input-background);
 }
 
 :global(.token-hallucinated) {

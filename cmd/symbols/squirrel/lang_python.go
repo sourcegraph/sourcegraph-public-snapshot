@@ -112,10 +112,7 @@ func (s *SquirrelService) getDefPython(ctx context.Context, node Node) (ret *Nod
 						])
 					)
 				`
-				captures, err := allCaptures(query, swapNode(node, cur))
-				if err != nil {
-					return nil, err
-				}
+				captures := allCaptures(query, swapNode(node, cur))
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
 						return swapNodePtr(node, capture.Node), nil
@@ -148,10 +145,7 @@ func (s *SquirrelService) getDefPython(ctx context.Context, node Node) (ret *Nod
 						(typed_default_parameter name: (identifier) @ident)
 					])
 				`
-				captures, err := allCaptures(query, swapNode(node, parameters))
-				if err != nil {
-					return nil, err
-				}
+				captures := allCaptures(query, swapNode(node, parameters))
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
 						return swapNodePtr(node, capture.Node), nil
@@ -208,10 +202,7 @@ func (s *SquirrelService) findNodeInScopePython(block Node, ident string) (ret *
 			continue
 		case "expression_statement":
 			query := `(expression_statement (assignment left: (identifier) @ident))`
-			captures, err := allCaptures(query, swapNode(block, child))
-			if err != nil {
-				return nil
-			}
+			captures := allCaptures(query, swapNode(block, child))
 			for _, capture := range captures {
 				if capture.Content(capture.Contents) == ident {
 					return swapNodePtr(block, capture.Node)
@@ -317,10 +308,7 @@ func (s *SquirrelService) lookupFieldPython(ctx context.Context, ty TypePython, 
 			switch child.Type() {
 			case "expression_statement":
 				query := `(expression_statement (assignment left: (identifier) @ident))`
-				captures, err := allCaptures(query, swapNode(ty2.def, child))
-				if err != nil {
-					return nil, err
-				}
+				captures := allCaptures(query, swapNode(ty2.def, child))
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == field {
 						return swapNodePtr(ty2.def, capture.Node), nil
@@ -535,10 +523,7 @@ func (s *SquirrelService) getDefInImports(ctx context.Context, program Node, ide
 		(import_statement) @import
 		(import_from_statement) @import
 	]`
-	captures, err := allCaptures(query, program)
-	if err != nil {
-		return nil, err
-	}
+	captures := allCaptures(query, program)
 	for _, stmt := range captures {
 		switch stmt.Type() {
 		case "import_statement":

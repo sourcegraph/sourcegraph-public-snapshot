@@ -113,23 +113,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
-                    logEvent(
-                        'CodyVSCodeExtension:login:clicked',
-                        { serverEndpoint: this.config.serverEndpoint },
-                        { serverEndpoint: this.config.serverEndpoint }
-                    )
+                    logEvent('CodyVSCodeExtension:login:clicked')
                 }
                 void this.webview?.postMessage({ type: 'login', isValid })
                 break
             }
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-                await vscode.commands.executeCommand('setContext', 'cody.activated', false)
-                logEvent(
-                    'CodyVSCodeExtension:codyDeleteAccessToken:clicked',
-                    { serverEndpoint: this.config.serverEndpoint },
-                    { serverEndpoint: this.config.serverEndpoint }
-                )
+                logEvent('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
                 break
             case 'removeHistory':
                 await this.localStorage.removeChatHistory()
@@ -254,11 +245,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
 
-        logEvent(
-            `CodyVSCodeExtension:recipe:${recipe.getID()}:executed`,
-            { serverEndpoint: this.config.serverEndpoint },
-            { serverEndpoint: this.config.serverEndpoint }
-        )
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.getID()}:executed`)
     }
 
     private showTab(tab: string): void {

@@ -28,7 +28,7 @@
 .submit-button {
     position: absolute;
     right: 0;
-    bottom: 0;
+    bottom: 0.125rem;
     fill: currentColor;
     opacity: 0.8;
     margin: 0.25rem;

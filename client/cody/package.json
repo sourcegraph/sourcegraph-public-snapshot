@@ -109,7 +109,7 @@
       },
       {
         "command": "cody.recipe.fixup",
-        "title": "Ask Cody: Fixup Code",
+        "title": "Cody: Fixup",
         "when": "cody.activated"
       },
       {
@@ -124,18 +124,18 @@
       },
       {
         "command": "cody.experimental.suggest",
-        "title": "Ask Cody: View Suggestions",
+        "title": "Cody: View Suggestions",
         "when": "cody.activated"
       },
       {
         "command": "cody.settings",
-        "title": "Ask Cody: Settings",
+        "title": "Cody: Settings",
         "icon": "$(gear)",
         "when": "cody.activated"
       },
       {
         "command": "cody.focus",
-        "title": "Cody: Login to use Cody",
+        "title": "Cody: Sign In to Use Cody",
         "when": "!cody.activated"
       }
     ],
