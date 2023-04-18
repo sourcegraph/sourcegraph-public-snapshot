@@ -5,6 +5,7 @@ on:
     types:
       - labeled
       - unlabeled
+      - push
     branches:
       - tr/cody-review
 
