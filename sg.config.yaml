@@ -397,7 +397,6 @@ commands:
     watch:
       - lib
       - internal
-      - internal/llmproxy
       - enterprise/cmd/llm-proxy
 
   searcher:

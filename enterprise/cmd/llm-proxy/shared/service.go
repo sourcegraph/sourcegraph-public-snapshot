@@ -19,9 +19,7 @@ func (svc) Name() string { return "llm-proxy" }
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	c := &Config{}
 	c.Load()
-	return c, []debugserver.Endpoint{
-		debugserver.NewGRPCWebUIEndpoint("llm-proxy", c.Address),
-	}
+	return c, []debugserver.Endpoint{}
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
