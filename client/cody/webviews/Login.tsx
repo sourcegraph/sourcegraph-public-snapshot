@@ -20,12 +20,14 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     serverEndpoint,
 }) => {
     const [token, setToken] = useState<string>('')
-    const [endpoint, setEndpoint] = useState(serverEndpoint || 'https://example.sourcegraph.com')
+    const [endpoint, setEndpoint] = useState(serverEndpoint)
 
     const onSubmit = useCallback<React.FormEventHandler>(
         event => {
             event.preventDefault()
-            onLogin(token, endpoint)
+            if (endpoint) {
+                onLogin(token, endpoint)
+            }
         },
         [endpoint, onLogin, token]
     )
@@ -48,15 +50,16 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 </label>
                 <VSCodeTextField
                     id="endpoint"
-                    value={endpoint}
+                    value={endpoint || ''}
                     className={styles.input}
+                    placeholder="https://example.sourcegraph.com"
                     onInput={(e: any) => setEndpoint(e.target.value)}
                 />
 
                 <label htmlFor="accessToken" className={styles.inputLabel}>
                     <i className="codicon codicon-key" />
                     <span>
-                        Personal Access Token (
+                        Access Token (
                         <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">docs</a>)
                     </span>
                 </label>
@@ -75,10 +78,9 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             </form>
             <p className={styles.inputLabel}>
                 <i className="codicon codicon-account" />
-                <span>Community User</span>
+                <span>Everyone Else</span>
             </p>
             <div className={styles.wrapper}>
-                <span>Connect Cody to sourcegraph.com in browser.</span>
                 <p className={styles.input}>
                     <a href="https://docs.google.com/forms/d/e/1FAIpQLScSI06yGMls-V1FALvFyURi8U9bKRTSKPworBhzZEHDQvo0HQ/viewform">
                         Fill out this form to request access.
@@ -90,7 +92,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         type="button"
                         onClick={() => setEndpoint('https://sourcegraph.com')}
                     >
-                        Continue with sourcegraph.com
+                        Continue with Sourcegraph.com
                     </VSCodeButton>
                 </a>
             </div>
