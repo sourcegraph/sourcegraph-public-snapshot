@@ -2,12 +2,6 @@
 # Article: https://buildkite.com/blog/how-bazel-built-its-ci-system-on-top-of-buildkite
 # Docs: https://bazel.build/reference/command-line-reference#flag--repository_cache
 build --repository_cache=/home/buildkite/repocache-sourcegraph
-build --remote_cache=grpc://ci-bazel-remote-cache:9092
-
-# Use Disk caching for building and testing.
-# Article: https://buildkite.com/blog/how-bazel-built-its-ci-system-on-top-of-buildkite
-# Docs: https://bazel.build/reference/command-line-reference#flag--disk_cache
-build --disk_cache=/home/buildkite/diskcache
 
 # We need /usr/local/bin
 # TODO(DevX) we should be narrower here.
