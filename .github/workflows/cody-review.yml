@@ -2,7 +2,6 @@ name: Cody Review
 
 on:
   pull_request:
-    branches: [tr/cody-review]
     types: [labeled]
 
 jobs:
@@ -12,36 +11,12 @@ jobs:
 
     steps:
       - name: Leave a comment
-        uses: actions/github-script@v6
+        uses: peter-evans/create-or-update-comment@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const pr = context.issue;
-            const commentBody = "👋 Hi, I'm Cody! I'm starting my review of this PR. I'll leave comments as I go along.";
-
-            github.rest.issues.createComment({
-              ...pr,
-              body: commentBody
-            });
-
-      # - name: Remove comment from PR
-      #   if: steps.check_label.outputs.action == 'remove_review'
-      #   uses: actions/github-script@v6
-      #   with:
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
-      #     script: |
-      #       const pr = context.issue;
-
-      #       github.rest.issues.listComments(pr).then(({ data }) => {
-      #         const targetComment = data.find((comment) => comment.body === comment.user.login === 'github-actions[bot]');
-
-      #         if (targetComment) {
-      #           github.rest.issues.deleteComment({
-      #             ...pr,
-      #             comment_id: targetComment.id
-      #           });
-      #         }
-      #       });
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            👋 Hi, I'm Cody! I'm starting my review of this PR. I'll leave comments as I go along.
 
       - name: Check out repository
         uses: actions/checkout@v2
