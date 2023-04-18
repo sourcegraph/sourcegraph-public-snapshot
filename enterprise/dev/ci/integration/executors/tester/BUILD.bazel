@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "init.go",
         "main.go",
+        "testcases.go",
         "testinfra.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/integration/executors/tester",
