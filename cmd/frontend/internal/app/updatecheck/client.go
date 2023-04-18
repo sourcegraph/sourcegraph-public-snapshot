@@ -145,6 +145,11 @@ func getUsersActiveTodayCount(ctx context.Context, db database.DB) (_ int, err e
 	return usagestats.GetUsersActiveTodayCount(ctx, db)
 }
 
+func getCodyUsersActiveTodayCount(ctx context.Context, db database.DB) (_ int, err error) {
+	defer recordOperation("getCodyUsersActiveTodayCount")(&err)
+	return usagestats.GetCodyUsersActiveTodayCount(ctx, db)
+}
+
 func getInitialSiteAdminInfo(ctx context.Context, db database.DB) (_ string, _ bool, err error) {
 	defer recordOperation("getInitialSiteAdminInfo")(&err)
 	return db.UserEmails().GetInitialSiteAdminInfo(ctx)
@@ -352,6 +357,17 @@ func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json
 	return json.Marshal(v)
 }
 
+func getAndMarshalCodyUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodyUsageJSON")(&err)
+
+	codyUsage, err := usagestats.GetAggregatedSearchStats(ctx, db) //TODO: fix
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(codyUsage)
+}
+
 func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logger) (json.RawMessage, error) {
 	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions", "gets the version of various dependency services"))
 	var (
@@ -449,6 +465,12 @@ func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (
 	}
 	r.ActiveToday = usersActiveTodayCount > 0
 
+	codyUsersActiveTodayCount, err := getCodyUsersActiveTodayCount(ctx, db)
+	if err != nil {
+		logFunc("getCodyUsersActiveTodayCount failed", log.Error(err))
+	}
+	r.CodyActiveToday = codyUsersActiveTodayCount > 0
+
 	contents, err := json.Marshal(r)
 	if err != nil {
 		return nil, err
@@ -507,6 +529,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		CodeHostIntegrationUsage:      []byte("{}"),
 		IDEExtensionsUsage:            []byte("{}"),
 		MigratedExtensionsUsage:       []byte("{}"),
+		CodyUsage:                     []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -649,6 +672,11 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	r.OwnUsage, err = getAndMarshalOwnUsageJSON(ctx, db)
 	if err != nil {
 		logFunc("ownUsage failed", log.Error(err))
+	}
+
+	r.CodyUsage, err = getAndMarshalCodyUsageJSON(ctx, db)
+	if err != nil {
+		logFunc("codyUsage failed", log.Error(err))
 	}
 
 	r.HasExtURL = conf.UsingExternalURL()

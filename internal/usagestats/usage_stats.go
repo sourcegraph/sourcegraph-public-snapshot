@@ -148,6 +148,22 @@ func GetByUserID(ctx context.Context, db database.DB, userID int32) (*types.User
 	}, nil
 }
 
+// GetCodyUsersActiveTodayCount returns a count of cody users that have been active today.
+func GetCodyUsersActiveTodayCount(ctx context.Context, db database.DB) (int, error) {
+	now := timeNow().UTC()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	return db.EventLogs().CountCodyUsersAll(
+		ctx,
+		today,
+		today.AddDate(0, 0, 1),
+		&database.CountUniqueUsersOptions{CommonUsageOptions: database.CommonUsageOptions{
+			ExcludeSystemUsers:          true,
+			ExcludeSourcegraphAdmins:    true,
+			ExcludeSourcegraphOperators: true,
+		}},
+	)
+}
+
 // GetUsersActiveTodayCount returns a count of users that have been active today.
 func GetUsersActiveTodayCount(ctx context.Context, db database.DB) (int, error) {
 	now := timeNow().UTC()
@@ -239,6 +255,26 @@ func activeUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, m
 			ExcludeSourcegraphOperators: true,
 		},
 	})
+}
+
+// codyActiveUsers returns counts of active Cody users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
+func codyActiveUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, monthPeriods int) (*types.CodyUsageStatistics, error) {
+    if dayPeriods == 0 && weekPeriods == 0 && monthPeriods == 0 {
+        return &types.CodyUsageStatistics{
+            Daily:   []*types.CodyUsagePeriod{},
+            Weekly:  []*types.CodyUsagePeriod{},
+            Monthly: []*types.CodyUsagePeriod{},
+        }, nil
+    }
+
+    return db.EventLogs().CodyUsageMultiplePeriods(ctx, timeNow().UTC(), dayPeriods, weekPeriods, monthPeriods, &database.CountUniqueUsersOptions{
+        CommonUsageOptions: database.CommonUsageOptions{
+            ExcludeSystemUsers:          true,
+            ExcludeNonActiveUsers:       true,
+            ExcludeSourcegraphAdmins:    true,
+            ExcludeSourcegraphOperators: true,
+        },
+    })
 }
 
 func minIntOrZero(a, b int) int {
