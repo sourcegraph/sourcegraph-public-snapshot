@@ -16,10 +16,6 @@ go_library(
 go_binary(
     name = "frontend",
     embed = [":frontend_lib"],
-    gotags = select({
-        "//:bundle_dist_oss": ["dist"],
-        "//conditions:default": [""],
-    }),
     visibility = ["//visibility:public"],
     x_defs = {
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
