@@ -16,7 +16,8 @@ import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
-import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { RepoMetadata } from '@sourcegraph/branded'
+import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger, basename } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -50,7 +51,6 @@ import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { OwnConfigProps } from '../../own/OwnConfigProps'
-import { basename } from '../../util/path'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 
@@ -197,6 +197,8 @@ export const TreePage: FC<Props> = ({
         }
     }, [uri, showCodeInsights, extensionsController])
 
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
+
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repoName)
         if (filePath) {
@@ -219,15 +221,23 @@ export const TreePage: FC<Props> = ({
         <div className="d-flex flex-wrap justify-content-between px-0">
             <div className={styles.header}>
                 <PageHeader className="mb-3 test-tree-page-title">
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <Icon aria-hidden={true} svgPath={getIcon()} className="mr-2" />
-                        <span data-testid="repo-header">{displayRepoName(repo?.name || '')}</span>
-                        {repo?.isFork && (
-                            <Badge variant="outlineSecondary" className="mx-2 mt-2" data-testid="repo-fork-badge">
-                                Fork
-                            </Badge>
+                    <div className="d-flex align-items-center flex-wrap">
+                        <PageHeader.Heading as="h2" styleAs="h1">
+                            <Icon aria-hidden={true} svgPath={getIcon()} className="mr-2" />
+                            <span data-testid="repo-header">{displayRepoName(repo?.name || '')}</span>
+                            {repo?.isFork && (
+                                <Badge variant="outlineSecondary" className="mx-2 mt-1" data-testid="repo-fork-badge">
+                                    Fork
+                                </Badge>
+                            )}
+                        </PageHeader.Heading>
+                        {enableRepositoryMetadata && repo?.keyValuePairs && (
+                            <RepoMetadata
+                                className="ml-2 mt-1"
+                                keyValuePairs={repo.keyValuePairs.map(({ key, value }) => [key, value])}
+                            />
                         )}
-                    </PageHeader.Heading>
+                    </div>
                 </PageHeader>
                 {repo?.description && <Text>{repo.description}</Text>}
             </div>

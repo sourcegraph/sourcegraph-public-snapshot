@@ -2,6 +2,12 @@ import * as anthropic from '@anthropic-ai/sdk'
 import { ChatCompletionRequestMessage } from 'openai'
 import * as vscode from 'vscode'
 
+import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import {
+    CodeCompletionParameters,
+    CodeCompletionResponse,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+
 import { ReferenceSnippet, getContext } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
 import { History } from './history'
@@ -19,7 +25,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private maxPrefixTokens: number
     private maxSuffixTokens: number
     constructor(
-        private claude: anthropic.Client | null,
+        private completionsClient: SourcegraphNodeCompletionsClient,
         private documentProvider: CompletionsDocumentProvider,
         private history: History,
         private contextWindowTokens = 2048, // 8001
@@ -57,11 +63,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         context: vscode.InlineCompletionContext,
         token: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
-        if (!this.claude) {
-            console.log('claude not activated')
-            return []
-        }
-
         const docContext = getCurrentDocContext(
             document,
             position,
@@ -80,7 +81,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // Start of line: medium debounce
             waitMs = 1500
             completers.push(
-                new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '', 2)
+                new EndOfLineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    prefix,
+                    '',
+                    2
+                )
             )
         } else if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || precedingLine.endsWith('.')) {
             // Do nothing
@@ -89,8 +97,22 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // End of line: long debounce, complete until newline
             waitMs = 3000
             completers.push(
-                new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '', 2),
-                new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '\n', 2)
+                new EndOfLineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    prefix,
+                    '',
+                    2 // 2 tries
+                ),
+                new EndOfLineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    prefix,
+                    '\n', // force a new line in the case we are at end of line
+                    2 // 2 tries
+                )
             )
         }
 
@@ -108,11 +130,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     }
 
     public async fetchAndShowCompletions(): Promise<void> {
-        if (!this.claude) {
-            console.log('claude not activated')
-            return
-        }
-
         const currentEditor = vscode.window.activeTextEditor
         if (!currentEditor || currentEditor?.document.uri.scheme === 'cody') {
             return
@@ -161,7 +178,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const remainingChars = this.tokToChar(this.promptTokens)
 
         const completer = new MultilineCompletionProvider(
-            this.claude,
+            this.completionsClient,
             remainingChars,
             this.responseTokens,
             similarCode,
@@ -260,14 +277,14 @@ function getCurrentDocContext(
     }
 }
 
-async function batchClaude(
-    claude: anthropic.Client,
-    params: anthropic.SamplingParameters,
+async function batchCompletions(
+    client: SourcegraphNodeCompletionsClient,
+    params: CodeCompletionParameters,
     n: number
-): Promise<anthropic.CompletionResponse[]> {
-    const responses: Promise<anthropic.CompletionResponse>[] = []
+): Promise<CodeCompletionResponse[]> {
+    const responses: Promise<CodeCompletionResponse>[] = []
     for (let i = 0; i < n; i++) {
-        responses.push(claude.complete(params))
+        responses.push(client.complete(params))
     }
     return Promise.all(responses)
 }
@@ -284,7 +301,7 @@ interface CompletionProvider {
 
 export class MultilineCompletionProvider implements CompletionProvider {
     constructor(
-        private claude: anthropic.Client,
+        private completionsClient: SourcegraphNodeCompletionsClient,
         private promptChars: number,
         private responseTokens: number,
         private snippets: ReferenceSnippet[],
@@ -375,13 +392,16 @@ export class MultilineCompletionProvider implements CompletionProvider {
         }
 
         // Issue request
-        const responses = await batchClaude(
-            this.claude,
+        const responses = await batchCompletions(
+            this.completionsClient,
             {
                 prompt,
-                stop_sequences: [anthropic.HUMAN_PROMPT],
-                max_tokens_to_sample: this.responseTokens,
+                stopSequences: [anthropic.HUMAN_PROMPT],
+                maxTokensToSample: this.responseTokens,
                 model: 'claude-instant-v1.0',
+                temperature: 1, // default value (source: https://console.anthropic.com/docs/api/reference)
+                topK: -1, // default value
+                topP: -1, // default value
             },
             n || this.defaultN
         )
@@ -389,14 +409,14 @@ export class MultilineCompletionProvider implements CompletionProvider {
         return responses.map(resp => ({
             prompt,
             content: this.postProcess(resp.completion),
-            stopReason: resp.stop_reason,
+            stopReason: resp.stopReason,
         }))
     }
 }
 
 export class EndOfLineCompletionProvider implements CompletionProvider {
     constructor(
-        private claude: anthropic.Client,
+        private completionsClient: SourcegraphNodeCompletionsClient,
         private promptChars: number,
         private responseTokens: number,
         private prefix: string,
@@ -449,7 +469,7 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
     }
 
     private postProcess(completion: string): string {
-        // Sometimes Claude omits an extra space
+        // Sometimes Claude emits an extra space
         if (
             completion.length > 0 &&
             completion.startsWith(' ') &&
@@ -478,13 +498,16 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
         }
 
         // Issue request
-        const responses = await batchClaude(
-            this.claude,
+        const responses = await batchCompletions(
+            this.completionsClient,
             {
                 prompt,
-                stop_sequences: [anthropic.HUMAN_PROMPT, '\n'],
-                max_tokens_to_sample: this.responseTokens,
+                stopSequences: [anthropic.HUMAN_PROMPT, '\n'],
+                maxTokensToSample: this.responseTokens,
                 model: 'claude-instant-v1.0',
+                temperature: 1,
+                topK: -1,
+                topP: -1,
             },
             n || this.defaultN
         )
@@ -492,7 +515,7 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
         return responses.map(resp => ({
             prompt,
             content: this.postProcess(resp.completion),
-            stopReason: resp.stop_reason,
+            stopReason: resp.stopReason,
         }))
     }
 }

@@ -168,3 +168,10 @@ def linter_dependencies():
     version = "v2.0.1",
     sum = "h1:yr9ZswukmNxl/hmJHEoLEjCF1d+f2pQrC0m1jzVljAE=",
   )
+
+  go_repository(
+    name ="cc_mvdan_unparam",
+    importpath = "mvdan.cc/unparam",
+    version = "v0.0.0-20230312165513-e84e2d14e3b8",
+    sum = "h1:VuJo4Mt0EVPychre4fNlDWDuE5AjXtPJpRUWqZDQhaI=",
+  )

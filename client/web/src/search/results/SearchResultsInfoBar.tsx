@@ -153,7 +153,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             return
         }
 
-        eventLogger.log('web:codySearch:feedbackSubmitted', { ...codySearchInput, positive })
+        eventLogger.log(
+            'web:codySearch:feedbackSubmitted',
+            { ...codySearchInput, positive },
+            { ...codySearchInput, positive }
+        )
         setCodyFeedback(positive)
     }
 

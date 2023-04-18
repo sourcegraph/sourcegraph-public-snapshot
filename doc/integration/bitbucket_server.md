@@ -42,16 +42,6 @@ For the Bitbucket Server plugin to then communicate with the Sourcegraph instanc
 }
 ```
 
-The site admin should also set `alerts.codeHostIntegrationMessaging` in [global settings](../admin/config/settings.md#editing-global-settings-for-site-admins) to ensure informational content for users in the Sourcegraph webapp references the native integration and not the browser extension.
-
-```json
-{
-  // ...
-  "alerts.codeHostIntegrationMessaging": "native-integration"
-  // ...
-}
-```
-
 #### I am seeing Content Security Policy violations, what should I do?
 
 If you have a Content Security Policy (CSP) setup in place and have encountered issues, you may need to adjust the CSP for our Bitbucket Server plugin.

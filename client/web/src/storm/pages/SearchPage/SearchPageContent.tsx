@@ -66,20 +66,8 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
             <BrandLogo className={styles.logo} isLightTheme={isLightTheme} variant="logo" />
             {isSourcegraphDotCom && (
-                <div className="d-sm-flex flex-row text-center">
-                    <div className={classNames(styles.slogan, 'text-muted mt-3 mr-sm-2 pr-2')}>
-                        Searching millions of public repositories
-                    </div>
-                    <div className="mt-3">
-                        <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
-                            <Link
-                                to="https://about.sourcegraph.com/app"
-                                onClick={() => telemetryService.log('ClickedOnAppCTA', { location: 'HomeAboveSearch' })}
-                            >
-                                Download Sourcegraph app <Icon svgPath={mdiArrowRight} aria-hidden={true} />
-                            </Link>
-                        </Tooltip>
-                    </div>
+                <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">
+                    Searching millions of public repositories
                 </div>
             )}
 
@@ -102,16 +90,16 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         {codySearchEnabled && (
                             <div className="d-flex justify-content-center mt-4">
                                 <Text className="text-muted">
-                                    <Badge variant="merged">New</Badge>{' '}
+                                    <Badge variant="merged">Experimental</Badge>{' '}
                                     <Link
                                         to="/search/cody"
                                         onClick={() =>
-                                            telemetryService.log('ClickedOnTryMagicalSearchCTA', {
+                                            telemetryService.log('ClickedOnTryCodySearchCTA', {
                                                 location: 'SearchPage',
                                             })
                                         }
                                     >
-                                        Try the Magical Search Experience powered by Cody <CodyIcon />{' '}
+                                        Ask Cody to contruct a query from natural language <CodyIcon />{' '}
                                         <Icon svgPath={mdiArrowRight} aria-hidden={true} />
                                     </Link>
                                 </Text>

@@ -55,5 +55,5 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({ displayTe
         }
     }, [copyButtonClassName, displayText])
 
-    return <p dangerouslySetInnerHTML={{ __html: renderMarkdown(displayText) }} />
+    return <div dangerouslySetInnerHTML={{ __html: renderMarkdown(displayText) }} />
 }
