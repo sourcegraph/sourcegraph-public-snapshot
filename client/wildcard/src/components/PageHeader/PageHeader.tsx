@@ -36,7 +36,6 @@ type PageHeaderProps = {
     /** Heading element to use, defaults to h1 */
     headingElement?: HeadingElement
     className?: string
-    rootClassName?: string
     children?: React.ReactNode
 } & (
     | {
@@ -53,16 +52,7 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<PageHea
     Breadcrumb: typeof Breadcrumb
     Heading: typeof Heading
 } = props => {
-    const {
-        annotation,
-        byline,
-        description,
-        actions,
-        className,
-        rootClassName,
-        children,
-        headingElement = 'h1',
-    } = props
+    const { annotation, byline, description, actions, className, children, headingElement = 'h1' } = props
     const path: BreadcrumbItem[] = 'path' in props ? props.path : []
 
     if (path.length === 0 && !children) {
@@ -81,7 +71,7 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<PageHea
 
     return (
         <div className={classNames(styles.container, className)}>
-            <div className={rootClassName}>
+            <div>
                 {annotation && <small className={styles.annotation}>{annotation}</small>}
                 {children || heading}
                 {byline && <small className={styles.byline}>{byline}</small>}

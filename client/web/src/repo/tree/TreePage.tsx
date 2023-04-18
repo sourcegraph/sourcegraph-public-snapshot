@@ -220,22 +220,24 @@ export const TreePage: FC<Props> = ({
     const RootHeaderSection = (): React.ReactElement => (
         <div className="d-flex flex-wrap justify-content-between px-0">
             <div className={styles.header}>
-                <PageHeader className="mb-3 test-tree-page-title" rootClassName="d-flex align-items-center flex-wrap">
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <Icon aria-hidden={true} svgPath={getIcon()} className="mr-2" />
-                        <span data-testid="repo-header">{displayRepoName(repo?.name || '')}</span>
-                        {repo?.isFork && (
-                            <Badge variant="outlineSecondary" className="mx-2 mt-1" data-testid="repo-fork-badge">
-                                Fork
-                            </Badge>
+                <PageHeader className="mb-3 test-tree-page-title">
+                    <div className="d-flex align-items-center flex-wrap">
+                        <PageHeader.Heading as="h2" styleAs="h1">
+                            <Icon aria-hidden={true} svgPath={getIcon()} className="mr-2" />
+                            <span data-testid="repo-header">{displayRepoName(repo?.name || '')}</span>
+                            {repo?.isFork && (
+                                <Badge variant="outlineSecondary" className="mx-2 mt-1" data-testid="repo-fork-badge">
+                                    Fork
+                                </Badge>
+                            )}
+                        </PageHeader.Heading>
+                        {enableRepositoryMetadata && repo?.keyValuePairs && (
+                            <RepoMetadata
+                                className="ml-2 mt-1"
+                                keyValuePairs={repo.keyValuePairs.map(({ key, value }) => [key, value])}
+                            />
                         )}
-                    </PageHeader.Heading>
-                    {enableRepositoryMetadata && repo?.keyValuePairs && (
-                        <RepoMetadata
-                            className="ml-2 mt-1"
-                            keyValuePairs={repo.keyValuePairs.map(({ key, value }) => [key, value])}
-                        />
-                    )}
+                    </div>
                 </PageHeader>
                 {repo?.description && <Text>{repo.description}</Text>}
             </div>
