@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -157,7 +158,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 		return err
 	}
 	repoName := repo.Name
-
+	fmt.Println("PROCESSING", repositoryID)
 	for {
 		// Retrieve the set of configuration policies that affect indexing for this repository.
 		policies, totalCount, err := b.policiesSvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
