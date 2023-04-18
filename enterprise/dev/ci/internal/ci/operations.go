@@ -578,7 +578,7 @@ func backendIntegrationTests(candidateImageTag string) operations.Operation {
 			pipeline.AddStep(
 				description,
 				// Run tests against the candidate server image
-				bk.DependsOn(candidateImageStepKey("server")),
+				bk.DependsOn("bazel-docker"),
 				bk.Env("IMAGE",
 					images.DevRegistryImage("server", candidateImageTag)),
 				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
@@ -735,7 +735,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 				},
 			}),
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn("bazel-docker"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
@@ -751,8 +751,7 @@ func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::packer: Executors E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.DependsOn(candidateImageStepKey("executor")),
+			bk.DependsOn("bazel-docker"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
@@ -772,7 +771,7 @@ func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn("bazel-docker"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -791,7 +790,7 @@ func serverQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::chromium: Sourcegraph QA",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn("bazel-docker"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
@@ -812,7 +811,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn("bazel-docker"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
 			bk.Env("DISPLAY", ":99"),
@@ -829,12 +828,9 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 }
 
 func clusterQA(candidateTag string) operations.Operation {
-	var dependencies []bk.StepOpt
-	for _, image := range images.DeploySourcegraphDockerImages {
-		dependencies = append(dependencies, bk.DependsOn(candidateImageStepKey(image)))
-	}
 	return func(p *bk.Pipeline) {
-		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA", append(dependencies,
+		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
+			bk.DependsOn("bazel-docker"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
 			bk.Env("NO_CLEANUP", "false"),
@@ -845,7 +841,7 @@ func clusterQA(candidateTag string) operations.Operation {
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
 			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"),
-		)...)
+		)
 	}
 }
 
@@ -957,7 +953,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: Scan %s", app),
-			bk.DependsOn(candidateImageStepKey(app)),
+			bk.DependsOn("bazel-docker"),
 
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
 
