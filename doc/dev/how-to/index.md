@@ -52,7 +52,7 @@
 
 ## Access Control
 
-- [Adding a new permission](add_permission.md)
+- [Adding permissions](add_permissions.md)
 
 ## Windows support
 
