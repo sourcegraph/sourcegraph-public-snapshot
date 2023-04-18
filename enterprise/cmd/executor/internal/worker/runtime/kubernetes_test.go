@@ -19,7 +19,6 @@ func TestKubernetesRuntime_Name(t *testing.T) {
 
 func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 	operations := command.NewOperations(&observation.TestContext)
-	index := 1
 
 	tests := []struct {
 		name           string
@@ -69,7 +68,6 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 			name: "Step with index",
 			steps: []types.DockerStep{
 				{
-					Index:    &index,
 					Key:      "key-1",
 					Image:    "my-image",
 					Commands: []string{"echo", "hello"},
@@ -88,7 +86,6 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 					Env:       []string{"FOO=bar"},
 					Operation: operations.Exec,
 				},
-				Index: 1,
 				Image: "my-image",
 			}},
 			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
