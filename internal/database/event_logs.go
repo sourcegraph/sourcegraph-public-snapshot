@@ -88,9 +88,6 @@ type EventLogStore interface {
 	// CountByUserIDAndEventNames gets a count of events logged by a given user that match a list of given event names.
 	CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error)
 
-	// CountCodyUsersAll provides a count of unique active cody users in a given time span.
-	CountCodyUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error)
-
 	// CountUniqueUsersAll provides a count of unique active users in a given time span.
 	CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error)
 
@@ -781,12 +778,6 @@ LEFT OUTER JOIN unique_users_by_month ON all_periods.type = 'month' AND all_peri
 ORDER BY period DESC
 `
 
-// func (l *eventLogStore) CountCodyUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error) {
-// 	conds := buildCountUniqueUserConds(opt)
-//
-// 	return l.countUniqueCodyUsersBySQL(ctx, startDate, endDate, conds)
-// }
-
 func (l *eventLogStore) CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error) {
 	conds := buildCountUniqueUserConds(opt)
 
@@ -822,21 +813,6 @@ func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, en
 	err := r.Scan(&count)
 	return count, err
 }
-
-// func (l *eventLogStore) countUniqueCodyUsersBySQL(ctx context.Context, startDate, endDate time.Time, conds []*sqlf.Query) (int, error) {
-// 	if len(conds) == 0 {
-// 		conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
-// 	}
-// 	codyConds := []*sqlf.Query{sqlf.Sprintf("(name LIKE '%%cody%%' OR name LIKE '%%Cody%%')")}
-// 	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT `+userIDQueryFragment+`)
-//         FROM event_logs
-//         LEFT OUTER JOIN users ON users.id = event_logs.user_id
-//         WHERE (DATE(TIMEZONE('UTC'::text, timestamp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestamp)) <= %s) AND (%s) AND (%s)`, startDate, endDate, sqlf.Join(conds, ") AND ("), sqlf.Join(codyConds, ") AND ("))
-// 	r := l.QueryRow(ctx, q)
-// 	var count int
-// 	err := r.Scan(&count)
-// 	return count, err
-// }
 
 func (l *eventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error) {
 	rows, err := l.Handle().QueryContext(ctx, `SELECT user_id
