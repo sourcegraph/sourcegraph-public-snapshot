@@ -6,9 +6,7 @@ import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 const meta: ComponentMeta<typeof Login> = {
     title: 'cody/Login',
     component: Login,
-
     decorators: [VSCodeStoryDecorator],
-
     parameters: {
         component: Login,
         chromatic: {
