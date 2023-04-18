@@ -34,7 +34,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { context, github } = require("@actions/github");
             const pr = context.issue;
             const commentBody = "👋 Hi, I'm Cody! I'm starting my review of this PR. I'll leave comments as I go along.";
 
@@ -49,7 +48,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { context, github } = require("@actions/github");
             const pr = context.issue;
 
             github.rest.issues.listComments(pr).then(({ data }) => {
