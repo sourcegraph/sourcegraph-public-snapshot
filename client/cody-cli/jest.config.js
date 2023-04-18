@@ -6,6 +6,6 @@ const config = require('../../jest.config.base')
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
   ...config,
-  displayName: 'cody-slack',
+  displayName: 'cody-cli',
   rootDir: __dirname,
 }
