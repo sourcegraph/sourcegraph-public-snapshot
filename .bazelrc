@@ -21,6 +21,5 @@ build --test_env=ENABLE_BAZEL_PACKAGES_LOAD_HACK=true
 # Except in CI run E2E tests in headless mode
 try-import %workspace%/user.bazelrc
 
-# run --@aspect_rules_format//format:proto_enabled
 run --@aspect_rules_format//format:python_enabled=false
-run --@aspect_rules_format//format:go_enabled=true
+run --@aspect_rules_format//format:go_enabled
