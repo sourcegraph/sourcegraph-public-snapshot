@@ -81,7 +81,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	client := embed.NewEmbeddingsClient()
-	getQueryEmbedding, err := getCachedQueryEmbeddingFn(client)
+	getQueryEmbedding, err := getCachedQueryEmbeddingFn(ctx, client)
 	if err != nil {
 		return err
 	}
