@@ -5,7 +5,7 @@ import * as vscode from 'vscode'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
+import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
@@ -245,7 +245,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
 
-        logEvent(`CodyVSCodeExtension:recipe:${recipe.getID()}:executed`)
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
     }
 
     private showTab(tab: string): void {

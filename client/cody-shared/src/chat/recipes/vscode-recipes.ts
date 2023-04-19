@@ -39,11 +39,11 @@ function init(): void {
     ]
 
     for (const recipe of recipes) {
-        const existingRecipe = getRecipe(recipe.getID())
+        const existingRecipe = getRecipe(recipe.id)
         if (existingRecipe) {
-            throw new Error(`Duplicate recipe with ID ${recipe.getID()}`)
+            throw new Error(`Duplicate recipe with ID ${recipe.id}`)
         }
-        registerRecipe(recipe.getID(), recipe)
+        registerRecipe(recipe.id, recipe)
     }
 }
 

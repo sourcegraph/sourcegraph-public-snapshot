@@ -13,6 +13,6 @@ export interface RecipeContext {
 }
 
 export interface Recipe {
-    getID(): string
+    id: string
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

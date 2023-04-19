@@ -1,6 +1,7 @@
 import { CodebaseContext } from '../codebase-context'
 import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor } from '../editor'
+import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { KeywordContextFetcher } from '../keyword-context'
@@ -11,7 +12,7 @@ import { isError } from '../utils'
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
 import { getPreamble } from './preamble'
-import { ChatQuestion } from './recipes/chat-question'
+import { getRecipe } from './recipes/browser-recipes'
 import { Transcript } from './transcript'
 import { ChatMessage } from './transcript/messages'
 import { reformatBotMessage } from './viewHelpers'
@@ -20,13 +21,26 @@ export interface ClientInit {
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken'>
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: ChatMessage[]) => void
+    editor: Editor
 }
 
 export interface Client {
-    submitMessage: (text: string) => void
+    submitMessage: (text: string) => Promise<void>
+    executeRecipe: (
+        recipeId: string,
+        options?: {
+            prefilledOptions?: PrefilledOptions
+        }
+    ) => Promise<void>
+    reset: () => void
 }
 
-export async function createClient({ config, setMessageInProgress, setTranscript }: ClientInit): Promise<Client> {
+export async function createClient({
+    config,
+    setMessageInProgress,
+    setTranscript,
+    editor,
+}: ClientInit): Promise<Client> {
     const fullConfig = { ...config, debug: false, customHeaders: {} }
 
     const completionsClient = new SourcegraphBrowserCompletionsClient(fullConfig)
@@ -49,35 +63,6 @@ export async function createClient({ config, setMessageInProgress, setTranscript
 
     const transcript = new Transcript()
 
-    /* eslint-disable @typescript-eslint/require-await */
-    const fakeEditor: Editor = {
-        getActiveTextEditor() {
-            return null
-        },
-        getActiveTextEditorSelection() {
-            return null
-        },
-        getActiveTextEditorSelectionOrEntireFile() {
-            return null
-        },
-        getActiveTextEditorVisibleContent() {
-            return null
-        },
-        getWorkspaceRootPath() {
-            return null
-        },
-        replaceSelection(_fileName, _selectedText, _replacement) {
-            return Promise.resolve()
-        },
-        async showQuickPick(labels) {
-            return window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || undefined
-        },
-        async showWarningMessage(message) {
-            console.warn(message)
-        },
-    }
-    /* eslint-enable @typescript-eslint/require-await */
-
     let isMessageInProgress = false
 
     const sendTranscript = (): void => {
@@ -91,41 +76,62 @@ export async function createClient({ config, setMessageInProgress, setTranscript
         }
     }
 
-    const chatQuestionRecipe = new ChatQuestion()
+    async function executeRecipe(
+        recipeId: string,
+        options?: {
+            prefilledOptions?: PrefilledOptions
+            humanChatInput?: string
+        }
+    ): Promise<void> {
+        const humanChatInput = options?.humanChatInput ?? ''
+        const recipe = getRecipe(recipeId)
+        if (!recipe) {
+            return
+        }
+
+        const interaction = await recipe.getInteraction(humanChatInput, {
+            editor: options?.prefilledOptions ? withPreselectedOptions(editor, options.prefilledOptions) : editor,
+            intentDetector,
+            codebaseContext,
+            responseMultiplexer: new BotResponseMultiplexer(),
+        })
+        if (!interaction) {
+            return
+        }
+        isMessageInProgress = true
+        transcript.addInteraction(interaction)
+
+        sendTranscript()
+
+        const prompt = await transcript.toPrompt(getPreamble(config.codebase))
+        const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
+
+        chatClient.chat(prompt, {
+            onChange(rawText) {
+                const text = reformatBotMessage(rawText, responsePrefix)
+                transcript.addAssistantResponse(text)
+
+                sendTranscript()
+            },
+            onComplete() {
+                isMessageInProgress = false
+                sendTranscript()
+            },
+            onError(error) {
+                console.error(error)
+            },
+        })
+    }
 
     return {
-        submitMessage: async (text: string) => {
-            const interaction = await chatQuestionRecipe.getInteraction(text, {
-                editor: fakeEditor,
-                intentDetector,
-                codebaseContext,
-                responseMultiplexer: new BotResponseMultiplexer(),
-            })
-            if (!interaction) {
-                throw new Error('No interaction')
-            }
-            isMessageInProgress = true
-            transcript.addInteraction(interaction)
+        submitMessage(text: string) {
+            return executeRecipe('chat-question', { humanChatInput: text })
+        },
+        executeRecipe,
+        reset() {
+            isMessageInProgress = false
+            transcript.reset()
             sendTranscript()
-
-            const prompt = await transcript.toPrompt(getPreamble(config.codebase))
-            const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
-
-            chatClient.chat(prompt, {
-                onChange(rawText) {
-                    const text = reformatBotMessage(rawText, responsePrefix)
-                    transcript.addAssistantResponse(text)
-
-                    sendTranscript()
-                },
-                onComplete() {
-                    isMessageInProgress = false
-                    sendTranscript()
-                },
-                onError(error) {
-                    console.error(error)
-                },
-            })
         },
     }
 }
