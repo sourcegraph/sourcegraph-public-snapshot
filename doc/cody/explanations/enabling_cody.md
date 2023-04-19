@@ -25,10 +25,10 @@ If you want to use Cody with embeddings on private code, consider moving to a So
 
 The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. By setting this configuration option to the name of a repository with embeddings, Cody will be able to provide more accurate and relevant answers to your coding questions based on that repository's content.
 
-1. Open the VS Code workspace settings by pressing <kbd>Cmd/Ctrl+,</kbd>, (or File > Preferences (Settings) on Windows & Linux).
-2. Search for the `Cody: Codebase` setting.
-3. Enter the repository name.
-   1. For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
+- Open the VS Code workspace settings by pressing <kbd>Cmd/Ctrl+,</kbd>, (or File > Preferences (Settings) on Windows & Linux).
+- Search for the `Cody: Codebase` setting.
+- Enter the repository name.
+  - For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
 
 ## Provide feedback
 
