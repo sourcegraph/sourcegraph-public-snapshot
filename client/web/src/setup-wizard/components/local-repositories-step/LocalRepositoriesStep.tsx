@@ -80,7 +80,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
 
         const localServices = getLocalServices(data)
         const localServicePaths = getLocalServicePaths(data)
-        const havePathsChanged = isEqual(directoryPaths, localServicePaths)
+        const havePathsChanged = !isEqual(directoryPaths, localServicePaths)
 
         // Do nothing if paths haven't changed
         if (!havePathsChanged) {

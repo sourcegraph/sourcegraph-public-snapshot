@@ -79,7 +79,7 @@ func (r *appResolver) LocalDirectoriesPicker(ctx context.Context) (LocalDirector
 		return nil, err
 	}
 
-	paths := strings.Split(stringPaths, ",")
+	paths := strings.Split(stringPaths, ", ")
 
 	return &localDirectoryResolver{paths: paths}, nil
 }
