@@ -769,7 +769,7 @@ func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(singlePeriodUsage)
 }
 
-func codyFeatureFlag() (bool) {
+func codyFeatureFlag() bool {
 	ctx := context.Background()
 	flags := featureflag.FromContext(ctx)
 	codyExperimental, err := flags.GetBoolOr("cody-experimental", true)
