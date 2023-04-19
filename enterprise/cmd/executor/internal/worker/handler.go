@@ -3,7 +3,6 @@ package worker
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	executorutil "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -159,7 +159,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 		if err := runtimeRunner.Run(ctx, spec); err != nil {
 			return errors.Wrapf(err, "running command %q", spec.CommandSpec.Key)
 		}
-		if strings.HasSuffix(spec.CommandSpec.Key, "pre") {
+		if executorutil.IsPreStepKey(spec.CommandSpec.Key) {
 			// Check if there is a skip file. and if so, what the next step is.
 			nextStep, err := runner.NextStep(ws.Path())
 			if err != nil {

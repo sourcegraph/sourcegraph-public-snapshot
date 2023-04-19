@@ -22,3 +22,8 @@ func TestFormatPostKey(t *testing.T) {
 	actual := util.FormatPostKey(1)
 	assert.Equal(t, "step.1.post", actual)
 }
+
+func TestIsPreStepKey(t *testing.T) {
+	actual := util.IsPreStepKey("step.1.pre")
+	assert.True(t, actual)
+}
