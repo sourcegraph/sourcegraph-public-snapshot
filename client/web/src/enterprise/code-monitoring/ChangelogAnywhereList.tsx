@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { useApolloClient } from '@apollo/client'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { CHARS_PER_TOKEN, MAX_RECIPE_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { renderMarkdown } from '@sourcegraph/common'
@@ -165,6 +166,9 @@ const SEARCH_QUERY = gql`
             repository {
                 name
             }
+            author {
+                date
+            }
             subject
             body
         }
@@ -299,12 +303,17 @@ const ExampleChangelog: React.FunctionComponent<ExampleChangelogProps> = ({ name
         // Flatten results and limit to 10 to avoid sending too many queries to Cody
         const flattenedResults = searchResults.flat().slice(0, 10)
 
+        // Sort results by date
+        const sortedResults = flattenedResults.sort(
+            (a, b) => new Date(b.result.commit.author.date).getTime() - new Date(a.result.commit.author.date).getTime()
+        )
+
         // Group and deduplicate results by repo
         const filteredGroupedResults: {
             [repo: string]: ChangelogChange[]
         } = {}
 
-        for (const { focus, result } of flattenedResults) {
+        for (const { focus, result } of sortedResults) {
             const repo = result.commit.repository.name
 
             if (!filteredGroupedResults[repo]) {
@@ -473,6 +482,9 @@ const ExampleChangelog: React.FunctionComponent<ExampleChangelogProps> = ({ name
                                             <div className="d-flex align-items-center mb-1">
                                                 <Label className="mr-1 mb-0">Relevant commit:</Label>
                                                 <Link to={change.url}>{change.commit.subject}</Link>
+                                                <small className="ml-2 text-muted">
+                                                    <Timestamp noAbout={true} date={change.commit.author.date} />
+                                                </small>
                                             </div>
                                             <div>
                                                 <div className="d-flex flex-column">
@@ -553,6 +565,25 @@ export const ChangelogAnywhereList: React.FunctionComponent<
                     queries={[
                         {
                             query: 'patterntype:regexp repo:^github.com/sourcegraph/sourcegraph$ type:diff lang:TypeScript after:"yesterday"',
+                            focus: 'diffs',
+                        },
+                    ]}
+                />
+                <ExampleChangelog
+                    name="Changes for Sourcegraph app"
+                    type="Commit-by-commit"
+                    granularity="Detailed"
+                    queries={[
+                        {
+                            query: 'context:global repo:^github.com/sourcegraph/sourcegraph$ type:diff message:^app: patternType:regexp after:"2 months ago"',
+                            focus: 'commits and diffs',
+                        },
+                        {
+                            query: 'context:global repo:^github.com/sourcegraph/sourcegraph$ type:diff file:client/web/src/enterprise/app/. patternType:regexp after:"2 months ago"',
+                            focus: 'commits and diffs',
+                        },
+                        {
+                            query: 'context:global repo:^github.com/sourcegraph/(about|handbook)$ type:diff \\bapp\\b patternType:regexp after:"2 months ago"',
                             focus: 'diffs',
                         },
                     ]}
