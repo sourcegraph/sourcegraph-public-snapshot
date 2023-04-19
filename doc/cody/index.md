@@ -13,14 +13,6 @@ Cody uses a combination of Sourcegraph's code graph and Large Language Models (L
 
 Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and in Sourcegraph itself.
 
-
-## Explanations
-
-- [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
-- [Enabling Cody for Sourcegraph.com users](explanations/enabling_cody.md)
-- [Enabling codebase-aware answers](explanations/enabling_codebase_aware_answers.md)
-- [Embeddings](embeddings.md)
-
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ VS Code Extension Quickstart</a>
 <a class="btn" href="faq">FAQ</a>
@@ -73,3 +65,9 @@ In VS Code, right-click on a selection of code and choose one of the `Ask Cody >
 - Generate Unit Test
 - Generate Docstring
 - Improve Variable Names
+
+## Explanations
+
+- [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
+- [Enabling Cody for Sourcegraph.com users](explanations/enabling_cody.md)
+- [Configuring embeddings](embeddings.md)

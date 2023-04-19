@@ -2,6 +2,11 @@
 
 Get started with the Cody VS Code extension and start using Cody recipes in under 10 minutes.
 
+If you haven't yet enabled Cody for your Sourcegraph instance, go here first:
+
+- [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
+- [Enabling Cody for Sourcegraph.com users](explanations/enabling_cody.md)
+
 ## Introduction
 
 In this guide, you will:
