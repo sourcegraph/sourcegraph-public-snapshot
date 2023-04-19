@@ -70,7 +70,7 @@ func NewGitHubSource(ctx context.Context, logger log.Logger, externalServicesSto
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitHubSource(logger, externalServicesStore, svc, &c, cf)
+	return newGitHubSource(logger, svc, &c, cf)
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -86,7 +86,6 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 
 func newGitHubSource(
 	logger log.Logger,
-	externalServicesStore database.ExternalServiceStore,
 	svc *types.ExternalService,
 	c *schema.GitHubConnection,
 	cf *httpcli.Factory,

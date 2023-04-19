@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -17,11 +16,8 @@ import (
 )
 
 func TestNewAuthzProviders(t *testing.T) {
-	db := database.NewMockDB()
-	db.ExternalServicesFunc.SetDefaultReturn(database.NewMockExternalServiceStore())
 	t.Run("no authorization", func(t *testing.T) {
 		initResults := NewAuthzProviders(
-			db,
 			[]*ExternalConnection{
 				{
 					GitHubConnection: &types.GitHubConnection{
@@ -48,7 +44,6 @@ func TestNewAuthzProviders(t *testing.T) {
 	t.Run("no matching auth provider", func(t *testing.T) {
 		t.Cleanup(licensing.TestingSkipFeatureChecks())
 		initResults := NewAuthzProviders(
-			db,
 			[]*ExternalConnection{
 				{
 					GitHubConnection: &types.GitHubConnection{
@@ -82,7 +77,6 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("default case", func(t *testing.T) {
 			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			initResults := NewAuthzProviders(
-				db,
 				[]*ExternalConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
@@ -112,7 +106,6 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("license does not have ACLs feature", func(t *testing.T) {
 			t.Cleanup(licensing.MockCheckFeatureError("failed"))
 			initResults := NewAuthzProviders(
-				db,
 				[]*ExternalConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
@@ -141,7 +134,6 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
 			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			initResults := NewAuthzProviders(
-				db,
 				[]*ExternalConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
@@ -180,10 +172,7 @@ func TestNewAuthzProviders(t *testing.T) {
 			github.MockGetAuthenticatedOAuthScopes = func(context.Context) ([]string, error) {
 				return []string{"read:org"}, nil
 			}
-			db := database.NewMockDB()
-			db.ExternalServicesFunc.SetDefaultReturn(database.NewMockExternalServiceStore())
 			initResults := NewAuthzProviders(
-				db,
 				[]*ExternalConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
@@ -232,10 +221,7 @@ func TestNewAuthzProviders(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
-			db := database.NewMockDB()
-			db.ExternalServicesFunc.SetDefaultReturn(database.NewMockExternalServiceStore())
 			initResults := NewAuthzProviders(
-				db,
 				[]*ExternalConnection{
 					{
 						ExternalService: &types.ExternalService{

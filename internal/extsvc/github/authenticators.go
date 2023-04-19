@@ -87,9 +87,6 @@ func NewGitHubAppInstallationAuthenticator(
 		InstallationAccessToken: installationAccessToken,
 		appAuthenticator:        appAuthenticator,
 	}
-	if installationAccessToken == "" {
-		// TODO: auther.Refresh()
-	}
 	return auther
 }
 
@@ -109,6 +106,7 @@ func (a *GitHubAppInstallationAuthenticator) Refresh(ctx context.Context, cli ht
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	var accessToken struct {
 		Token     string    `json:"token"`
@@ -128,7 +126,7 @@ func (a *GitHubAppInstallationAuthenticator) Authenticate(r *http.Request) error
 }
 
 func (a *GitHubAppInstallationAuthenticator) Hash() string {
-	sum := sha256.Sum256([]byte(strconv.Itoa(int(a.installationID))))
+	sum := sha256.Sum256([]byte(strconv.Itoa(a.installationID)))
 	return hex.EncodeToString(sum[:])
 }
 

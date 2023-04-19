@@ -349,7 +349,7 @@ func TestMakeRepo_NullCharacter(t *testing.T) {
 	schema := &schema.GitHubConnection{
 		Url: "https://github.com",
 	}
-	s, err := newGitHubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, schema, nil)
+	s, err := newGitHubSource(logtest.Scoped(t), &svc, schema, nil)
 	require.NoError(t, err)
 	repo := s.makeRepo(r)
 
@@ -404,7 +404,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GithubSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			s, err := newGitHubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, test.schema, nil)
+			s, err := newGitHubSource(logtest.Scoped(t), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
