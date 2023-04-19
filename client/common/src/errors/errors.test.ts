@@ -11,6 +11,7 @@ describe('asError', () => {
     test('preserves Error values', () => {
         const error = new Error('m')
         expect(asError(error)).toBe(error)
+        window.a = 1
     })
 
     test('creates Error values from error-like values', () => {
