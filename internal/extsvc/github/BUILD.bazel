@@ -42,6 +42,7 @@ go_test(
     name = "github_test",
     timeout = "short",
     srcs = [
+        "authenticators_test.go",
         "common_test.go",
         "v3_test.go",
         "v4_test.go",
