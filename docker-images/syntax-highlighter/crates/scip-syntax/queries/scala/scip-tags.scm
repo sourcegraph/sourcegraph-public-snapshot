@@ -1,3 +1,5 @@
+; TODO: Exclude functions in non-container blocks
+
 (compilation_unit
     (package_clause
         (package_identifier)
