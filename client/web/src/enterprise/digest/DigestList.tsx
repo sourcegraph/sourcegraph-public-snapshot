@@ -21,127 +21,14 @@ import {
     SummarizeTextVariables,
 } from '../../graphql-operations'
 
-import { CodeMonitoringPageProps } from './CodeMonitoringPage'
+import { preamble } from './prompt/preamble'
+import { buildCommitPrompt, CommitPromptInput } from './prompt/prompt'
 
-import styles from './ChangelogAnywhereList.module.scss'
+import styles from './DigestList.module.scss'
 
-interface ChangelogAnywhereListProps
-    extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>> {
+interface DigestListProps {
     authenticatedUser: AuthenticatedUser | null
 }
-
-const markdownPreamble1 = {
-    input: {
-        question: 'What has changed in our handbook this week?',
-        granularity: 'Overview',
-        heading: 'Update delivering-impact-reviews.md (#6630)',
-        description: null,
-        diff: 'content/departments/people-talent/people-ops/process/teammate-sentiment/impact-reviews/delivering-impact-reviews.md content/departments/people-talent/people-ops/process/teammate-sentiment/impact-reviews/delivering-impact-reviews.md\n@@ -4,3 +4,3 @@ \n \n-Impact reviews will be delivered synchronously in a 1:1 between the Manager and their direct report. Each Manager is responsible for scheduling a 30 - 60 minute (recommended) meeting with each Teammate to deliver their review packet, along with any corresponding promotion or compensation increases. All conversations must take place no later than **October 14 at the latest.**\n+Impact reviews will be delivered synchronously in a 1:1 between the Manager and their direct report. Each Manager is responsible for scheduling a 30 - 60 minute (recommended) meeting with each Teammate to deliver their review packet, along with any corresponding promotion or compensation increases. All conversations must take place no later than \\*_April 26, 2023 for H1 FY24 Impact Review Cycle_\n \n',
-    },
-    output: `
-- Updated the impact review process
-  - Old deadline: October 14
-  - New deadline: April 26, 2023 (H1 FY24 Impact Review Cycle)
-    `,
-}
-
-const markdownPreamble2 = {
-    input: {
-        question: 'What has changed in our handbook this week?',
-        granularity: 'Overview',
-        heading: 'updates customer information (#6625)',
-        description: 'updated private with more examples of customer information',
-        diff: 'content/company-info-and-process/policies/data-sharing.md content/company-info-and-process/policies/data-sharing.md\n@@ -53,3 +53,3 @@ Below you can find a matrix to help you make informed decisions about what data\n    </td>\n-   <td>Customer private source code\n+   <td>Customer private source code snippets (for support purposes)\n    </td>\n@@ -63,3 +63,3 @@ Below you can find a matrix to help you make informed decisions about what data\n    </td>\n-   <td>private repository names, legal contracts, company financials, incident reports for security issues \n+   <td>Customer roadmaps, customer number of codebases, customer challenges, private repository names, legal contracts, company financials, incident reports for security issues, private repository names, legal contracts, company financials, incident reports for security issues \n    </td>\n',
-    },
-    output: `
-- Updated customer information in the data-sharing policy
-- Added more examples of private customer information
-- Examples include:
-  - Customer roadmaps
-  - Number of customer codebases
-  - Customer challenges
-  - Private repository names (repeated)
-  - Legal contracts (repeated)
-  - Company financials (repeated)
-  - Incident reports for security issues (repeated)
-  - Customer private source code snippets (for support purposes)
-  - This change updated the customer information policy.
-    `,
-}
-
-const codyRules = `
-1. Use all of the **relevant** information available to build your summary.
-2. If the user specifies that the summary should have an "Overview" granularity, then you should only include the most important changes.
-3. If the user specifies that the summary should have a "Detailed" granularity, then you should include all of the changes.
-4. Format your summary in a bullet-point list. Do not use any other formatting.
-5. Do not mention details like specific files changed or commit hashes.
-6. Note that the diff is only a small preview of the most relevant parts of the change. Avoid assuming too much.
-7. Don't try to provide your own introduction or conclusion. The summary should be a standalone list of changes. For example, don't prefix your response with "Here is a summary of the changes" or any other similar introduction.
-`
-
-const humanCommitPreamble = `
-I want you to summarize a change for me, here's an example of a previous conversation we had, so you can understand what to do:
-
-Human:
-
-${JSON.stringify(markdownPreamble1.input)}
-
-Generate a high-level summary of this change in a readable, plaintext, bullet-point list.
-
-Additional information to help you build your summary:
-- The summary should have the following granularity: ${markdownPreamble1.input.granularity}
-
-Follow these rules strictly:
-${codyRules}
-
-Assistant:
-
-${markdownPreamble1.output}
-
-Human:
-
-${JSON.stringify(markdownPreamble2.input)}
-
-Generate a high-level summary of this change in a readable, plaintext, bullet-point list.
-
-Additional information to help you build your summary:
-- The summary should have the following granularity: ${markdownPreamble2.input.granularity}
-
-Follow these rules strictly:
-${codyRules}
-`
-
-const assistantCommitPreamble = `
-Assistant:
-
-${markdownPreamble2.output}
-`
-
-interface CommitPromptInput {
-    input: {
-        heading: string
-        description: string | null
-        diff: string | null
-    }
-    goal: string
-}
-
-export const getCommitPrompt = (input: CommitPromptInput['input'], question: string, granularity: string): string => `
-Human:
-
-${JSON.stringify(input)}
-
-Generate a summary of this change in a readable, plaintext, bullet-point list.
-
-Additional information to help you build your summary:
-- The summary should have the following granularity: ${granularity}
-
-Follow these rules strictly:
-${codyRules}
-
-Assistant:
-
--`
 
 const SEARCH_QUERY = gql`
     query SearchForChanges($query: String!) {
@@ -347,20 +234,16 @@ const ExampleChangelog: React.FunctionComponent<ExampleChangelogProps> = ({ name
                 const summaries = await Promise.all(
                     changes.map(async change => {
                         const promptInput = formatPrompt(change.result, change.focus)
-                        const prompt = getCommitPrompt(promptInput, name, granularity)
+                        const prompt = buildCommitPrompt({
+                            input: promptInput,
+                            granularity,
+                        })
 
                         const { data } = await client.query<SummarizeTextResult, SummarizeTextVariables>({
                             query: getDocumentNode(CODY_QUERY),
                             variables: {
                                 messages: [
-                                    {
-                                        speaker: SpeakerType.HUMAN,
-                                        text: humanCommitPreamble,
-                                    },
-                                    {
-                                        speaker: SpeakerType.ASSISTANT,
-                                        text: assistantCommitPreamble,
-                                    },
+                                    ...preamble,
                                     {
                                         speaker: SpeakerType.HUMAN,
                                         text: prompt,
@@ -384,7 +267,7 @@ const ExampleChangelog: React.FunctionComponent<ExampleChangelogProps> = ({ name
 
         setCodyLoading(false)
         setChangelogResults(changelogSummaries)
-    }, [client, granularity, name, queries])
+    }, [client, granularity, queries])
 
     return (
         <Container className="mt-2">
@@ -508,9 +391,7 @@ const ExampleChangelog: React.FunctionComponent<ExampleChangelogProps> = ({ name
     )
 }
 
-export const ChangelogAnywhereList: React.FunctionComponent<
-    React.PropsWithChildren<ChangelogAnywhereListProps>
-> = () => (
+export const DigestList: React.FunctionComponent<React.PropsWithChildren<DigestListProps>> = () => (
     <>
         <div className="row mb-5">
             <div className="d-flex flex-column w-100 col">

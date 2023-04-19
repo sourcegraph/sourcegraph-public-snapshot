@@ -22,12 +22,12 @@ import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
+import { DigestList } from '../digest/DigestList'
 
 import {
     fetchUserCodeMonitors as _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled,
 } from './backend'
-import { ChangelogAnywhereList } from './ChangelogAnywhereList'
 import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
 import { CodeMonitoringLogs } from './CodeMonitoringLogs'
 import { CodeMonitorList } from './CodeMonitorList'
@@ -231,13 +231,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                         />
                     )}
 
-                    {currentTab === 'changelog-anywhere' && (
-                        <ChangelogAnywhereList
-                            authenticatedUser={authenticatedUser}
-                            fetchUserCodeMonitors={fetchUserCodeMonitors}
-                            toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
-                        />
-                    )}
+                    {currentTab === 'changelog-anywhere' && <DigestList authenticatedUser={authenticatedUser} />}
                 </div>
             )}
         </div>
