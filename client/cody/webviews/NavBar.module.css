@@ -14,7 +14,7 @@
 .tab-btn {
     cursor: pointer;
     user-select: none;
-    background-color: var(--vscode-tab-inactiveBackground);
+    background-color: transparent;
     color: var(--vscode-tab-inactiveForeground);
     border: none;
 }

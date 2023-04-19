@@ -11,7 +11,7 @@ import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/tran
 import { ContextFiles } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 
 import { FileLink } from './FileLink'
-import { vscodeAPI } from './utils/VSCodeApi'
+import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
 
@@ -19,12 +19,14 @@ interface HistoryProps {
     userHistory: ChatHistory | null
     setUserHistory: (history: ChatHistory | null) => void
     setInputHistory: (inputHistory: string[] | []) => void
+    vscodeAPI: VSCodeWrapper
 }
 
 export const UserHistory: React.FunctionComponent<React.PropsWithChildren<HistoryProps>> = ({
     userHistory,
     setUserHistory,
     setInputHistory,
+    vscodeAPI,
 }) => {
     const [chatHistory, setChatHistory] = useState('')
 
@@ -35,7 +37,7 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
             setUserHistory(null)
             setInputHistory([])
         }
-    }, [setInputHistory, setUserHistory, userHistory])
+    }, [setInputHistory, setUserHistory, userHistory, vscodeAPI])
 
     return (
         <div className={styles.innerContainer}>

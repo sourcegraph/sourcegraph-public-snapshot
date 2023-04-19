@@ -9,7 +9,7 @@ import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@s
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { FileLink } from './FileLink'
-import { vscodeAPI } from './utils/VSCodeApi'
+import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
 
@@ -21,6 +21,7 @@ interface ChatboxProps {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
+    vscodeAPI: VSCodeWrapper
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -31,10 +32,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setFormInput,
     inputHistory,
     setInputHistory,
+    vscodeAPI,
 }) => {
-    const onSubmit = useCallback((text: string) => {
-        vscodeAPI.postMessage({ command: 'submit', text })
-    }, [])
+    const onSubmit = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'submit', text })
+        },
+        [vscodeAPI]
+    )
 
     return (
         <ChatUI
