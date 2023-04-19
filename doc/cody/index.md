@@ -11,7 +11,7 @@ Cody uses a combination of Sourcegraph's code graph and Large Language Models (L
 - **Sourcegraph Enterprise customers:** Contact your Sourcegraph techical advisor or [request enterprise access](https://sourcegraph.typeform.com/to/pIXTgwrd) to use Cody on your existing Sourcegraph instance.
 - **Everyone:** [Join the open beta.](https://forms.gle/cffMa8mrr8YuHv8o8) We'll email you when you're added, usually within a day.
 
-Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and in Sourcegraph itself. Follow the
+Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and in Sourcegraph itself.
 
 
 ## Explanations
