@@ -13,11 +13,11 @@ Cody uses Sourcegraph to fetch relevant context to generate answers and code. Th
 
   <img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
 
-7. 
+You're now ready to use Cody!
 
-## Use embeddings for code-aware answers
+## Configure embeddings for code-aware answers
 
-After installing, you can use embeddings to improve Cody's context of existing code. Embeddings significantly improve the accuracy and quality of Cody's responses. Note that embeddings are only available for public repositories on sourcegraph.com. [See the list](embedded-repos.md) of embedded repositories and request any that you'd like to add by pinging a Sourcegraph team member in [Discord](https://discord.gg/8wJF5EdAyA).
+After installing, you can optionally use embeddings to improve Cody's context of existing code. Embeddings significantly improve the accuracy and quality of Cody's responses. Note that embeddings are only available for public repositories on sourcegraph.com. [See the list](embedded-repos.md) of embedded repositories and request any that you'd like to add by pinging a Sourcegraph team member in [Discord](https://discord.gg/8wJF5EdAyA).
 
 If you want to use Cody with embeddings on private code, consider moving to a Sourcegraph Enterprise instance.
 
