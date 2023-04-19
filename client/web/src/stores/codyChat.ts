@@ -1,5 +1,5 @@
 /* eslint-disable no-void */
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import create from 'zustand'
 
@@ -7,6 +7,7 @@ import { Client, createClient, ClientInit } from '@sourcegraph/cody-shared/src/c
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { PrefilledOptions } from '@sourcegraph/cody-shared/src/editor/withPreselectedOptions'
 import { isErrorLike } from '@sourcegraph/common'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
 import { CodeMirrorEditor } from '../cody/CodeMirrorEditor'
 import { eventLogger } from '../tracking/eventLogger'
@@ -21,10 +22,13 @@ interface CodyChatStore {
     repo: string
     filePath: string
 
+    // private, not used outside of this module
+    onEvent: ((eventName: 'submit' | 'reset' | 'error') => void) | null
+
     initializeClient: (
         config: Required<ClientInit['config']>,
         editorStore: React.MutableRefObject<EditorStore>,
-        openCody: () => void
+        onEvent: (eventName: 'submit' | 'reset' | 'error') => void
     ) => Promise<void>
 
     submitMessage: (text: string) => void
@@ -39,13 +43,14 @@ interface CodyChatStore {
 
 export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore => {
     const submitMessage = (text: string): void => {
-        const { client, repo, filePath } = get()
+        const { client, repo, filePath, onEvent } = get()
         if (client && !isErrorLike(client)) {
             eventLogger.log('web:codySidebar:submit', {
                 repo,
                 path: filePath,
                 text,
             })
+            onEvent?.('submit')
             void client.submitMessage(text)
         }
     }
@@ -56,9 +61,10 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             prefilledOptions?: PrefilledOptions
         }
     ): Promise<void> => {
-        const { client, repo, filePath } = get()
+        const { client, repo, filePath, onEvent } = get()
         if (client && !isErrorLike(client)) {
             eventLogger.log('web:codySidebar:recipe', { repo, path: filePath, recipeId })
+            onEvent?.('submit')
             await client.executeRecipe(recipeId, options)
             eventLogger.log('web:codySidebar:recipe:executed', { repo, path: filePath, recipeId })
         }
@@ -66,8 +72,9 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     }
 
     const reset = (): void => {
-        const { client } = get()
+        const { client, onEvent } = get()
         if (client && !isErrorLike(client)) {
+            onEvent?.('reset')
             void client.reset()
         }
     }
@@ -79,13 +86,14 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         transcript: [],
         filePath: '',
         repo: '',
+        onEvent: null,
 
         async initializeClient(
             config: Required<ClientInit['config']>,
             stateRef: React.MutableRefObject<EditorStore>,
-            openCody: () => void
+            onEvent: (eventName: 'submit' | 'reset' | 'error') => void
         ): Promise<void> {
-            set({ messageInProgress: null, transcript: [], repo: config.codebase, config })
+            set({ messageInProgress: null, transcript: [], repo: config.codebase, config, onEvent })
 
             const editor = new CodeMirrorEditor(stateRef)
 
@@ -95,11 +103,11 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
                     setMessageInProgress: message => set({ messageInProgress: message }),
                     setTranscript: transcript => set({ transcript }),
                     editor,
-                    openCody,
                 })
 
                 set({ client })
             } catch (error) {
+                onEvent('error')
                 set({ client: error })
             }
         },
@@ -110,8 +118,21 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     }
 })
 
-export const useChatStore = (isCodyEnabled: boolean, repoName: string, openCody: () => void): CodyChatStore => {
+export const useChatStore = (
+    isCodyEnabled: boolean,
+    repoName: string
+): { store: CodyChatStore; isCodySidebarOpen: boolean | undefined; setIsCodySidebarOpen: (state: boolean) => void } => {
     const store = useChatStoreState()
+    const [isCodySidebarOpen, setIsCodySidebarOpen] = useTemporarySetting('cody.showSidebar', false)
+
+    const onEvent = useCallback(
+        (eventName: 'submit' | 'reset' | 'error') => {
+            if (eventName === 'submit') {
+                setIsCodySidebarOpen(true)
+            }
+        },
+        [setIsCodySidebarOpen]
+    )
 
     const editorStore = useEditorStore()
     // We use a ref here so that a change in the editor state does not need a recreation of the
@@ -137,8 +158,8 @@ export const useChatStore = (isCodyEnabled: boolean, repoName: string, openCody:
             return
         }
 
-        void initializeClient(config, stateRef, openCody)
-    }, [config, initializeClient, isCodyEnabled, stateRef, openCody])
+        void initializeClient(config, stateRef, onEvent)
+    }, [config, initializeClient, isCodyEnabled, stateRef, onEvent])
 
-    return store
+    return { store, isCodySidebarOpen, setIsCodySidebarOpen }
 }

@@ -22,7 +22,6 @@ export interface ClientInit {
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: ChatMessage[]) => void
     editor: Editor
-    openCody: () => void
 }
 
 export interface Client {
@@ -41,7 +40,6 @@ export async function createClient({
     setMessageInProgress,
     setTranscript,
     editor,
-    openCody,
 }: ClientInit): Promise<Client> {
     const fullConfig = { ...config, debug: false, customHeaders: {} }
 
@@ -103,7 +101,6 @@ export async function createClient({
         isMessageInProgress = true
         transcript.addInteraction(interaction)
 
-        openCody()
         sendTranscript()
 
         const prompt = await transcript.toPrompt(getPreamble(config.codebase))

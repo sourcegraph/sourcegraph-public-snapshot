@@ -34,6 +34,7 @@ const editor: Editor = {
         return Promise.resolve()
     },
     async showQuickPick(labels) {
+        // TODO: Use a proper UI element
         return window.prompt(`Choose: ${labels.join(', ')}`, labels[0]) || undefined
     },
     async showWarningMessage(message) {

@@ -94,10 +94,12 @@ export class CodeMirrorEditor implements Editor {
     }
 
     public showQuickPick(labels: string[]): Promise<string | undefined> {
+        // TODO: Use a proper UI element
         return Promise.resolve(window.prompt(`Choose between: ${labels.join(', ')}`, labels[0]) || undefined)
     }
 
     public async showWarningMessage(message: string): Promise<void> {
+        // TODO: Use a proper UI element
         // eslint-disable-next-line no-console
         console.warn(message)
         return Promise.resolve()
