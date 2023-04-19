@@ -939,16 +939,15 @@ importers:
     specifiers:
       '@sourcegraph/cody-shared': workspace:*
       '@sourcegraph/common': workspace:*
-      '@types/figlet': ^1.5.5
+      '@types/prompts': ^2.4.4
       commander: ^10.0.1
-      figlet: ^1.6.0
+      prompts: ^2.4.2
     dependencies:
       '@sourcegraph/cody-shared': link:../cody-shared
       '@sourcegraph/common': link:../common
+      '@types/prompts': 2.4.4
       commander: 10.0.1
-      figlet: 1.6.0
-    devDependencies:
-      '@types/figlet': 1.5.5
+      prompts: 2.4.2
 
   client/cody-shared:
     specifiers:
@@ -8714,10 +8713,6 @@ packages:
       '@types/qs': 6.9.6
       '@types/serve-static': 1.15.0
 
-  /@types/figlet/1.5.5:
-    resolution: {integrity: sha512-0sMBeFoqdGgdXoR/hgKYSWMpFufSpToosNsI2VgmkPqZJgeEXsXNu2hGr0FN401dBro2tNO5y2D6uw3UxVaxbg==}
-    dev: true
-
   /@types/filesystem/0.0.29:
     resolution: {integrity: sha512-85/1KfRedmfPGsbK8YzeaQUyV1FQAvMPMTuWFQ5EkLd2w7szhNO96bk3Rh/SKmOfd9co2rCLf0Voy4o7ECBOvw==}
     dependencies:
@@ -9046,6 +9041,13 @@ packages:
 
   /@types/promise.allsettled/1.0.3:
     resolution: {integrity: sha512-b/IFHHTkYkTqu41IH9UtpICwqrpKj2oNlb4KHPzFQDMiz+h1BgAeATeO0/XTph4+UkH9W2U0E4B4j64KWOovag==}
+    dev: false
+
+  /@types/prompts/2.4.4:
+    resolution: {integrity: sha512-p5N9uoTH76lLvSAaYSZtBCdEXzpOOufsRjnhjVSrZGXikVGHX9+cc9ERtHRV4hvBKHyZb1bg4K+56Bd2TqUn4A==}
+    dependencies:
+      '@types/node': 13.13.5
+      kleur: 3.0.3
     dev: false
 
   /@types/prop-types/15.7.5:
@@ -15560,12 +15562,6 @@ packages:
   /fetch-retry/5.0.2:
     resolution: {integrity: sha512-57Hmu+1kc6pKFUGVIobT7qw3NeAzY/uNN26bSevERLVvf6VGFR/ooDCOFBHMNDgAxBiU2YJq1D0vFzc6U1DcPw==}
     dev: true
-
-  /figlet/1.6.0:
-    resolution: {integrity: sha512-31EQGhCEITv6+hi2ORRPyn3bulaV9Fl4xOdR169cBzH/n1UqcxsiSB/noo6SJdD7Kfb1Ljit+IgR1USvF/XbdA==}
-    engines: {node: '>= 0.4.0'}
-    hasBin: true
-    dev: false
 
   /figures/2.0.0:
     resolution: {integrity: sha512-Oa2M9atig69ZkfwiApY8F2Yy+tzMbazyvqv21R0NsSC8floSOC09BbT1ITWAdoMGQvJ/aZnR1KMwdx9tvHnTNA==}

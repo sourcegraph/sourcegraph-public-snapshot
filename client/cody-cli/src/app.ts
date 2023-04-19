@@ -2,6 +2,7 @@
 import { Command } from 'commander'
 import { cleanEnv, str } from 'envalid'
 import { memoize } from 'lodash'
+import prompts from 'prompts'
 
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
@@ -139,10 +140,6 @@ async function startCLI() {
         .parse(process.argv)
 
     const options = program.opts()
-    if (options.prompt === '' || options.prompt === undefined) {
-        console.error('no prompt with --prompt provided')
-        process.exit(1)
-    }
 
     const sourcegraphClient = new SourcegraphGraphQLAPIClient({
         serverEndpoint: DEFAULT_APP_SETTINGS.serverEndpoint,
@@ -165,11 +162,22 @@ async function startCLI() {
         customHeaders: {},
     })
 
+    let prompt = options.prompt
+    if (prompt === undefined || prompt === '') {
+        const response = await prompts({
+            type: 'text',
+            name: 'value',
+            message: 'What do you want to ask Cody?',
+        })
+
+        prompt = response.value
+    }
+
     const transcript = new Transcript()
 
     // TODO: Keep track of all user input if we add REPL mode
 
-    const initialMessage: Message = { speaker: 'human', text: options.prompt }
+    const initialMessage: Message = { speaker: 'human', text: prompt }
     const messages: { human: Message; assistant?: Message }[] = [{ human: initialMessage }]
     for (const [index, message] of messages.entries()) {
         const interaction = await interactionFromMessage(
@@ -186,10 +194,10 @@ async function startCLI() {
         }
     }
 
-    const prompt = await transcript.toPrompt(getPreamble(DEFAULT_APP_SETTINGS.codebase))
+    const finalPrompt = await transcript.toPrompt(getPreamble(DEFAULT_APP_SETTINGS.codebase))
 
     let text = ''
-    streamCompletions(completionsClient, prompt, {
+    streamCompletions(completionsClient, finalPrompt, {
         onChange: chunk => {
             text = chunk
         },
