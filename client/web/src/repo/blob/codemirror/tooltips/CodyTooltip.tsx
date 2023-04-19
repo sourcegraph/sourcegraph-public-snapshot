@@ -35,6 +35,10 @@ export function codyWidgetExtension(): Extension {
     return [codyTooltip, selectionChangedPlugin]
 }
 
+// We use this custom plugin over EditorView.domEventHandlers() because mouse selections can start
+// inside CodeMirror but the mouseup event can handle _outside_ of the CodeMirror element. These
+// events still change the selection inside CodeMirror but won't be fired when using the built-in
+// dom handler.
 const selectionChangedPlugin = ViewPlugin.fromClass(
     class implements PluginValue {
         constructor(public view: EditorView) {
