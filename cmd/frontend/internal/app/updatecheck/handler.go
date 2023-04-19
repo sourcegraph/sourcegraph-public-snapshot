@@ -427,7 +427,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 
 	codyUsage, err := reserializeCodyUsage(pr.CodyUsage)
 	if err != nil {
-		return nil, errors.Wrap(err "malformed cody usage")
+		return nil, errors.Wrap(err, "malformed cody usage")
 	}
 
 	return json.Marshal(&pingPayload{
