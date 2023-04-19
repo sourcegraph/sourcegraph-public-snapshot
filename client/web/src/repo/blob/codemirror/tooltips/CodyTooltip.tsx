@@ -62,24 +62,14 @@ function computeCodyWidget(state: EditorState): Tooltip | null {
         return null
     }
 
-    const [range] = selection.ranges
-    const { head, anchor } = range
-
-    const headLine = state.doc.lineAt(head)
-    const anchorLine = state.doc.lineAt(anchor)
-
-    let multiline = false
-    if (headLine.number !== anchorLine.number) {
-        multiline = true
-    }
-
     // Find a position that is always the left most position of the selection bounding box
-    const pos = multiline
-        ? // When a multiline selection is made, the tooltip should be anchored to the start of the
-          // last line. This is to avoid the tooltip from jumping around too much
-          Math.max(headLine.from, anchorLine.from)
-        : // Otherwise, anchor the tooltip to the start of the selection
-          Math.min(head, anchor)
+    const lineFrom = state.doc.lineAt(selection.main.from)
+    const lineTo = state.doc.lineAt(selection.main.to)
+    const isMultiline = lineFrom.number !== lineTo.number
+    // When a multiline selection is made, the tooltip should be anchored to the start of the last
+    // line. This is to avoid the tooltip from jumping around too much. Otherwise, anchor the
+    // tooltip to the start of the selection
+    const pos = isMultiline ? lineTo.from : selection.main.from
 
     return {
         pos,
