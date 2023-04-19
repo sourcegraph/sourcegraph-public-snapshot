@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Random valid private key generated for this test and nothing else
@@ -45,19 +46,12 @@ func TestGitHubAppAuthenticator_Authenticate(t *testing.T) {
 		appID := "1234"
 		privateKey := []byte(testPrivateKey)
 		authenticator, err := NewGitHubAppAuthenticator(appID, privateKey)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 
 		req, err := http.NewRequest("GET", "https://api.github.com", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 
-		err = authenticator.Authenticate(req)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, authenticator.Authenticate(req))
 
 		assert.True(t, strings.HasPrefix(req.Header.Get("Authorization"), "Bearer "))
 	})
@@ -68,9 +62,7 @@ func TestGitHubAppAuthenticator_Authenticate(t *testing.T) {
 invalid key
 -----END RSA PRIVATE KEY-----`)
 		_, err := NewGitHubAppAuthenticator(appID, privateKey)
-		if err == nil {
-			t.Fatal("expected error")
-		}
+		require.Error(t, err)
 	})
 }
 
@@ -85,14 +77,10 @@ func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 	)
 
 	req, err := http.NewRequest("GET", "https://api.github.com", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	err = authenticator.Authenticate(req)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, authenticator.Authenticate(req))
 
 	assert.Equal(t, "Bearer installation-token", req.Header.Get("Authorization"))
 }
@@ -108,18 +96,11 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 		)
 
 		mockClient := &mockHTTPClient{}
-		err := installationAuthenticator.Refresh(context.Background(), mockClient)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, installationAuthenticator.Refresh(context.Background(), mockClient))
 
-		if !mockClient.DoCalled {
-			t.Fatal("expected mockClient.Do to be called")
-		}
+		require.True(t, mockClient.DoCalled)
 
-		if !appAuthenticator.AuthenticateCalled {
-			t.Fatal("expected appAuthenticator.Authenticate to be called")
-		}
+		require.True(t, appAuthenticator.AuthenticateCalled)
 	})
 
 	t.Run("without appAuthenticator", func(t *testing.T) {
@@ -130,10 +111,7 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 			nil,
 		)
 
-		err := installationAuthenticator.Refresh(context.Background(), nil)
-		if err == nil {
-			t.Fatal("expected error")
-		}
+		require.Error(t, installationAuthenticator.Refresh(context.Background(), nil))
 	})
 }
 
