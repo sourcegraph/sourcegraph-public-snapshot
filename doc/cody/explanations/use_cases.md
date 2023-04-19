@@ -27,13 +27,15 @@ Cody can also add and edit code directly in your file rather than making suggest
 To fixup some code, try:
 
 1. Write something you'd like Cody to do in-line in your file
-2. Highlight this code, then click the recipe `Fixup code`. Alternatively, right click -> `Ask Cody` -> `Fixup`
+2. Highlight this code plus any related code you'd like changed, then click the recipe `Fixup code`. Alternatively, right click -> `Ask Cody` -> `Fixup`
 3. Cody will work directly in your file
 
 For example:
 
-- "Change these links to be in a "more links" dropdown"
 - "Add a link here to the admin settings page"
+- "Add boilerplate code for a Java loop here"
+- "Factor out any common helper functions"
+- "Convert this code to a react functional component"
 
 ### Write docstrings
 
@@ -79,7 +81,7 @@ The same fixup functionality that can be used to write code can also be used to 
 For example:
 
 - Type "fix the bug in this function" directly underneath some function code
-- Highlight the line you just typed
+- Highlight the function plus the line you just typed
 - Click `Fixup code`
 - Cody will read your command and deploy its fix inline
 
