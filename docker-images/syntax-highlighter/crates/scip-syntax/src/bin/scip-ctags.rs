@@ -30,7 +30,7 @@ fn main() {
         let request = serde_json::from_str::<Request>(&line).unwrap();
         match request {
             Request::GenerateTags { filename, size } => {
-                eprintln!("{filename}");
+                // eprintln!("{filename}");
 
                 let mut file_data = vec![0; size];
                 io::stdin()
