@@ -13,13 +13,23 @@ Cody uses Sourcegraph to fetch relevant context to generate answers and code. Th
 
   <img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
 
-7. See [this section](#enabling-codebase-aware-answers) on how to enable codebase-aware answers.
+7. 
 
-## Enabling codebase-aware answers
+## Use embeddings for code-aware answers
 
+After installing, you can use embeddings to improve Cody's context of existing code. Embeddings significantly improve the accuracy and quality of Cody's responses. Note that embeddings are only available for public repositories on sourcegraph.com. [See the list](embedded-repos.md) of embedded repositories and request any that you'd like to add by pinging a Sourcegraph team member in [Discord](https://discord.gg/8wJF5EdAyA).
 
+If you want to use Cody with embeddings on private code, consider moving to a Sourcegraph Enterprise instance.
 
-After installing, we recommend the following:
+### Enable embeddings
 
-* [See the list](embedded-repos.md) of embedded repositories and request any that you'd like to add by pinging a Sourcegraph team member in [Discord](https://discord.gg/8wJF5EdAyA). Embeddings significantly improve the accuracy and quality of Cody's responses. Note that embeddings are only available for public repositories on sourcegraph.com. If you want to use Cody with embeddings on private code, consider moving to a Sourcegraph Enterprise instance.
-* Spread the word online and send us your feedback in Discord. Cody is open source and we'd love to hear from you if you have bug reports or feature requests.
+The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. By setting this configuration option to the name of a repository with embeddings, Cody will be able to provide more accurate and relevant answers to your coding questions based on that repository's content.
+
+1. Open the VS Code workspace settings by pressing <kbd>Cmd/Ctrl+,</kbd>, (or File > Preferences (Settings) on Windows & Linux).
+2. Search for the `Cody: Codebase` setting.
+3. Enter the repository name.
+   1. For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
+
+## Provide feedback
+
+Please spread the word online and send us your feedback in Discord! Cody is open source and we'd love to hear from you if you have bug reports or feature requests.

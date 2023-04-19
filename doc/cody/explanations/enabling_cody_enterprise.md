@@ -3,6 +3,7 @@
 [Instructions for self-hosted Sourcegraph Enterprise instance](#Cody-on-self-hosted-sourcegraph-enterprise)
 [Instructions for Sourcegraph Cloud](#Cody-on-sourcegraph-cloud)
 [Enabling codebase-aware answers](#enabling-codebase-aware-answers)
+[Turning Cody off](#turning-cody-off)
 
 ## Cody on self-hosted Sourcegraph Enterprise
 
@@ -92,9 +93,15 @@ Cody can be enabled on demand on your Sourcegraph instance by contacting your ac
 
 ## Enabling codebase-aware answers
 
+**Pre-requisite: In order to enable codebase-aware answers for Cody, you must first [configure embeddings](embeddings.md).**
+
 The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. By setting this configuration option to the repository name on your Sourcegraph instance, Cody will be able to provide more accurate and relevant answers to your coding questions, based on the context of the codebase you are currently working in.
 
 1. Open the VS Code workspace settings by pressing <kbd>Cmd/Ctrl+,</kbd>, (or File > Preferences (Settings) on Windows & Linux).
 2. Search for the `Cody: Codebase` setting.
 3. Enter the repository name as listed on your Sourcegraph instance.
    1. For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
+
+## Turning Cody off
+
+To turn Cody off, set `embeddings` and `completions` site-admin settings to `enabled:false` (or remove them altogether).
