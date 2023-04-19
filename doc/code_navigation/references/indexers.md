@@ -146,8 +146,8 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
-        <td class="indexer-implemented-y">✗</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-n">✓</td> <!-- Find implementations -->
+        <td class="indexer-implemented-n">✗</td> <!-- Cross-repository -->
+        <td class="indexer-implemented-y">✓</td> <!-- Find implementations -->
         <td><code>.sln</code> and <code>.csproj</code></td> <!-- Build tooling -->
       </tr>
    </tbody>
