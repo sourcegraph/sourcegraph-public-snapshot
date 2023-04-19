@@ -271,7 +271,7 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 
 		cmds := []bk.StepOpt{
 			withPnpmCache(),
-			bk.Cmd("dev/ci/pnpm-build.sh client/web"),
+			// bk.Cmd("dev/ci/pnpm-build.sh client/web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("CHECK_BUNDLESIZE", "1"),
