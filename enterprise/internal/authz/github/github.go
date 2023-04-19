@@ -51,7 +51,7 @@ type ProviderOptions struct {
 	GitHubClient *github.V3Client
 	GitHubURL    *url.URL
 
-	BaseToken      string
+	Auther         auth.Authenticator
 	GroupsCacheTTL time.Duration
 	IsApp          bool
 	DB             database.DB
@@ -61,7 +61,7 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
 		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
-			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
+			urn, apiURL, opts.Auther, nil)
 	}
 
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
@@ -350,8 +350,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		Expiry:       tok.Expiry,
 	}
 
-	if p.InstallationID != nil && p.db != nil {
-		// Only used if created by newAppProvider
+	if p.GitHubAppDetails != nil && p.db != nil {
 		oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, github.GetOAuthContext(p.codeHost.BaseURL.String()))
 		oauthToken.NeedsRefreshBuffer = 5
 	}

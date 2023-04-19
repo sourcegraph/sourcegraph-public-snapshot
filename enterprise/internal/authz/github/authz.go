@@ -3,14 +3,15 @@ package github
 import (
 	"fmt"
 	"net/url"
-	"strconv"
 	"time"
 
+	"github.com/sourcegraph/log"
 	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -107,6 +108,7 @@ func newAuthzProvider(
 	db database.DB,
 	c *ExternalConnection,
 ) (*Provider, error) {
+	logger := log.Scoped("GitHub Authz Provider", "")
 	if c.Authorization == nil {
 		return nil, nil
 	}
@@ -120,32 +122,22 @@ func newAuthzProvider(
 		return nil, errors.Errorf("could not parse URL for GitHub instance %q: %s", c.Url, err)
 	}
 
-	if c.GithubAppInstallationID != "" {
-		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
-		if err != nil {
-			return nil, errors.Wrap(err, "parse installation ID")
-		}
-
-		config, err := conf.GitHubAppConfig()
-		if err != nil {
-			return nil, err
-		}
-		if !config.Configured() {
-			return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph is not enabled")
-		}
-
-		return newAppProvider(db, c.ExternalService, c.GitHubConnection.URN, baseURL, config.AppID, config.PrivateKey, installationID, nil)
-	}
-
 	// Disable by default for now
 	if c.Authorization.GroupsCacheTTL <= 0 {
 		c.Authorization.GroupsCacheTTL = -1
 	}
 
+	var auther auth.Authenticator
+	if c.IsGitHubAppInstallation() {
+		auther = github.NewGitHubAppInstallationAuthenticator(logger, c.GitHubAppDetails.InstallationID, "", nil)
+	} else {
+		auther = &auth.OAuthBearerToken{Token: c.Token}
+	}
+
 	ttl := time.Duration(c.Authorization.GroupsCacheTTL) * time.Hour
 	return NewProvider(c.GitHubConnection.URN, ProviderOptions{
 		GitHubURL:      baseURL,
-		BaseToken:      c.Token,
+		Auther:         auther,
 		GroupsCacheTTL: ttl,
 	}), nil
 }

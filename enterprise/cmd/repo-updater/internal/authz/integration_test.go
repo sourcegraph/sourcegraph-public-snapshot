@@ -53,6 +53,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	token := os.Getenv("GITHUB_TOKEN")
+	auther := &auth.OAuthBearerToken{Token: token}
 
 	spec := extsvc.AccountSpec{
 		ServiceType: extsvc.TypeGitHub,
@@ -103,7 +104,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      uri,
-				BaseToken:      token,
+				Auther:         auther,
 				GroupsCacheTTL: -1,
 			})
 
@@ -188,7 +189,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      uri,
-				BaseToken:      token,
+				Auther:         auther,
 				GroupsCacheTTL: 72,
 			})
 
@@ -308,7 +309,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      uri,
-				BaseToken:      token,
+				Auther:         auther,
 				GroupsCacheTTL: -1,
 			})
 
@@ -396,7 +397,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      uri,
-				BaseToken:      token,
+				Auther:         auther,
 				GroupsCacheTTL: 72,
 			})
 
