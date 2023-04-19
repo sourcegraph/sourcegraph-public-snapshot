@@ -1551,6 +1551,7 @@ Referenced by:
  app_id            | integer                  |           | not null | 
  name              | text                     |           | not null | 
  slug              | text                     |           | not null | 
+ base_url          | text                     |           | not null | 
  client_id         | text                     |           | not null | 
  client_secret     | text                     |           | not null | 
  private_key       | text                     |           | not null | 

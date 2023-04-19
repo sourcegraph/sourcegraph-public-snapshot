@@ -2290,6 +2290,7 @@ CREATE TABLE github_apps (
     app_id integer NOT NULL,
     name text NOT NULL,
     slug text NOT NULL,
+    base_url text NOT NULL,
     client_id text NOT NULL,
     client_secret text NOT NULL,
     private_key text NOT NULL,

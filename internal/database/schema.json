@@ -11552,7 +11552,7 @@
           "Comment": ""
         },
         {
-          "Name": "client_id",
+          "Name": "base_url",
           "Index": 5,
           "TypeName": "text",
           "IsNullable": false,
@@ -11565,7 +11565,7 @@
           "Comment": ""
         },
         {
-          "Name": "client_secret",
+          "Name": "client_id",
           "Index": 6,
           "TypeName": "text",
           "IsNullable": false,
@@ -11578,8 +11578,21 @@
           "Comment": ""
         },
         {
+          "Name": "client_secret",
+          "Index": 7,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "created_at",
-          "Index": 10,
+          "Index": 11,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
@@ -11592,7 +11605,7 @@
         },
         {
           "Name": "encryption_key_id",
-          "Index": 8,
+          "Index": 9,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -11618,7 +11631,7 @@
         },
         {
           "Name": "logo",
-          "Index": 9,
+          "Index": 10,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -11644,7 +11657,7 @@
         },
         {
           "Name": "private_key",
-          "Index": 7,
+          "Index": 8,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -11670,7 +11683,7 @@
         },
         {
           "Name": "updated_at",
-          "Index": 11,
+          "Index": 12,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
