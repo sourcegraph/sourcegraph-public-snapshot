@@ -26,9 +26,9 @@ command.on('close', data => {
     console.log(`backend command finished with code ${data.code} and signal ${data.signal}`)
 })
 command.on('error', error => console.log(`command error: "${error}"`))
-command.stdout.on('data', line => console.log(`backend out: ${line}`))
-command.stderr.on('data', line => console.log(`backend err: ${line}`))
-const child = await command.spawn()
+command.stdout.on('data', line => console.log(`stdout: ${line}`))
+command.stderr.on('data', line => console.log(`stderr: ${line}`))
+const child = command.spawn()
 
 window.addEventListener('backend-message', async (event) => {
     console.log(`msg: ${event}`)
