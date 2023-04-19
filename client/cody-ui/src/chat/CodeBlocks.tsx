@@ -4,14 +4,18 @@ import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 
-import { logEvent } from '../event-logger'
-
 import styles from './CodeBlocks.module.css'
+
+import { ChatProps } from '../Chat'
 
 interface CodeBlocksProps {
     displayText: string
-
     copyButtonClassName?: string
+
+}
+
+interface Props extends CodeBlocksProps, Pick<ChatProps, 'logEvent'> {
+    logEvent: (eventName: string, eventProperties?: any) => void
 }
 
 function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
@@ -22,7 +26,11 @@ function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
     wrapperElement.append(element)
 }
 
-function createCopyButtonWithContainer(text: string, className: string): HTMLElement {
+function createCopyButtonWithContainer(
+    text: string,
+    className: string,
+    logEvent: (eventName: string, eventProperties?: any) => void
+): HTMLElement {
     const copyButton = document.createElement('button')
     copyButton.textContent = 'Copy'
     copyButton.className = className
@@ -42,7 +50,15 @@ function createCopyButtonWithContainer(text: string, className: string): HTMLEle
     return container
 }
 
-export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({ displayText, copyButtonClassName }) => {
+// const logEvent = (eventName: string, eventProperties?: any) => {
+//     console.log(eventName, eventProperties)
+// }
+
+export const CodeBlocks: React.FunctionComponent<CodeBlocksProps & Props> = ({
+    displayText,
+    copyButtonClassName,
+    logEvent
+}) => {
     useEffect(() => {
         const preElements = document.querySelectorAll('pre')
         for (const preElement of preElements) {
@@ -53,7 +69,7 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({ displayTe
                 // the Copy button scrolls along with the code.
                 wrapElement(
                     preElement,
-                    createCopyButtonWithContainer(preText, classNames(styles.copyButton, copyButtonClassName))
+                    createCopyButtonWithContainer(preText, classNames(styles.copyButton, copyButtonClassName), logEvent)
                 )
             }
         }

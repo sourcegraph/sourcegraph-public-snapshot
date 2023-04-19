@@ -13,7 +13,7 @@ import { TranscriptItemClassNames } from './chat/TranscriptItem'
 
 import styles from './Chat.module.css'
 
-interface ChatProps extends ChatClassNames {
+export interface ChatProps extends ChatClassNames {
     transcript: ChatMessage[]
     messageInProgress: ChatMessage | null
     contextStatus?: ChatContextStatus | null
@@ -27,6 +27,7 @@ interface ChatProps extends ChatClassNames {
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     afterTips?: string
     className?: string
+    logEvent?: (eventName: string, eventProperties?: any) => void
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {

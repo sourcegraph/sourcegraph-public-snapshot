@@ -8,6 +8,8 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
+import { logEvent } from '../src/event-logger'
+
 import { FileLink } from './FileLink'
 import { vscodeAPI } from './utils/VSCodeApi'
 
@@ -21,6 +23,7 @@ interface ChatboxProps {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
+    logEvent: typeof logEvent
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -31,6 +34,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setFormInput,
     inputHistory,
     setInputHistory,
+    logEvent,
 }) => {
     const onSubmit = useCallback((text: string) => {
         vscodeAPI.postMessage({ command: 'submit', text })
@@ -58,6 +62,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             inputRowClassName={styles.inputRow}
             chatInputContextClassName={styles.chatInputContext}
             chatInputClassName={styles.chatInputClassName}
+            logEvent={logEvent}
         />
     )
 }
