@@ -151,6 +151,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// TODO(JH) TEMP
 		ops.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+		ops.Append(bazelBuildEntCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
