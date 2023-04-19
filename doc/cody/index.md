@@ -15,8 +15,9 @@ Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/
 
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ VS Code Extension Quickstart</a>
+<a class="btn" href="explanations/use_cases">Cody Use Cases</a>
 <a class="btn" href="faq">FAQ</a>
-<a class="btn" href="https://discord.gg/8wJF5EdAyA">Join our Discord</a>
+<a class="btn" href="https://discord.com/servers/sourcegraph-969688426372825169">Join our Discord</a>
 </div>
 
 ## Features
