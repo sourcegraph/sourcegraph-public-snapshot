@@ -19,6 +19,7 @@ import { initAppShell } from '../storm/app-shell-init'
 
 import { EnterpriseWebApp } from './EnterpriseWebApp'
 
+const BACKEND_AVAILABLE_TEXT = 'Sourcegraph is now available on'
 // Start Backend early
 const command = Command.sidecar('../.bin/backend', [], {})
 command.on('close', data => {
@@ -27,19 +28,18 @@ command.on('close', data => {
 command.on('error', error => console.log(`command error: "${error}"`))
 command.stdout.on('data', (line: string) => console.log(`stdout: ${line}`))
 command.stderr.on('data', (line: string) => {
-    let count: number = line.search('BAZELINGA')
+    let count: number = line.search(BACKEND_AVAILABLE_TEXT)
     if (count > 0) {
         rootRender(false)
+        location.assign('http://localhost:3080/sign-in?nonce=foobar&returnTo=/')
     }
     console.log(`stderr: ${line}`)
 })
-const child = command.spawn()
+command.spawn().then(child => console.log(`backend started with pid ${child.pid}`))
 
 window.addEventListener('backend-message', async event => {
     console.log(`msg: ${event}`)
 })
-
-console.log(`backend started with pid ${child.pid} `)
 
 const appShellPromise = initAppShell()
 
