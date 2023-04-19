@@ -21,6 +21,7 @@ import {
     Message,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { isRepoNotFoundError } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { getPreamble } from './preamble'
@@ -39,18 +40,10 @@ const DEFAULT_APP_SETTINGS = {
 /**
  * Memoized function to get the repository ID for a given codebase.
  */
-const getRepoId = memoize(async (client: SourcegraphGraphQLAPIClient, codebase: string) => {
+const getRepoId = async (client: SourcegraphGraphQLAPIClient, codebase: string) => {
     const repoId = codebase ? await client.getRepoId(codebase) : null
-
-    if (isError(repoId)) {
-        const errorMessage =
-            `Cody could not find the '${codebase}' repository on your Sourcegraph instance.\n` +
-            'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
-        console.error(errorMessage)
-    }
-
     return repoId
-})
+}
 
 export async function createCodebaseContext(
     client: SourcegraphGraphQLAPIClient,
@@ -58,6 +51,10 @@ export async function createCodebaseContext(
     contextType: 'embeddings' | 'keyword' | 'none' | 'blended'
 ) {
     const repoId = await getRepoId(client, codebase)
+    if (isError(repoId)) {
+        throw repoId
+    }
+
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
 
     const codebaseContext = new CodebaseContext(
@@ -149,11 +146,27 @@ async function startCLI() {
 
     const intentDetector = new SourcegraphIntentDetectorClient(sourcegraphClient)
 
-    const codebaseContext = await createCodebaseContext(
-        sourcegraphClient,
-        DEFAULT_APP_SETTINGS.codebase,
-        DEFAULT_APP_SETTINGS.contextType
-    )
+    let codebaseContext
+    try {
+        codebaseContext = await createCodebaseContext(
+            sourcegraphClient,
+            DEFAULT_APP_SETTINGS.codebase,
+            DEFAULT_APP_SETTINGS.contextType
+        )
+    } catch (error) {
+        let errorMessage = ''
+        if (isRepoNotFoundError(error)) {
+            errorMessage =
+                `Cody could not find the '${DEFAULT_APP_SETTINGS.codebase}' repository on your Sourcegraph instance.\n` +
+                'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
+        } else {
+            errorMessage =
+                `Cody could not connect to your Sourcegraph instance: ${error}\n` +
+                'Make sure that cody.serverEndpoint is set to a running Sourcegraph instance and that an access token is configured.'
+        }
+        console.error(errorMessage)
+        process.exit(1)
+    }
 
     const completionsClient = new SourcegraphNodeCompletionsClient({
         serverEndpoint: DEFAULT_APP_SETTINGS.serverEndpoint,
