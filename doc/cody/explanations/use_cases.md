@@ -26,7 +26,7 @@ Cody can also add and edit code directly in your file rather than making suggest
 
 To fixup some code, try:
 
-1. Write something you'd like Cody to do in-line in your file
+1. Write something you'd like Cody to do inline in your file
 2. Highlight this code plus any related code you'd like changed, then click the recipe `Fixup code`. Alternatively, right click -> `Ask Cody` -> `Fixup`
 3. Cody will work directly in your file
 
@@ -56,7 +56,7 @@ When testing code, use Cody to quickly generate unit tests. Simply:
 1. Highlight a component you want to test (such as a specific function)
 2. Go to `Cody` -> `Recipes`
 3. Click `Generate a unit test`
-4. Cody provides code for a unit test; ou can paste this directly into your code
+4. Cody provides code for a unit test
 
 ## Fixing bugs
 
@@ -120,4 +120,4 @@ You can also ask Cody to find resources, such as libraries, that are already in 
 
 Try asking Cody: "Do we already use any _language_ libraries that provide _XYZ_?"
 
-For example:"Do we already use any Go libraries that provide an LRU cache? Where is that library used?"
+For example: "Do we already use any Go libraries that provide an LRU cache? Where is that library used?"
