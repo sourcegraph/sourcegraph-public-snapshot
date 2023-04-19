@@ -71,4 +71,4 @@ In VS Code, right-click on a selection of code and choose one of the `Ask Cody >
 
 - [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
 - [Enabling Cody for Sourcegraph.com users](explanations/enabling_cody.md)
-- [Configuring embeddings for codebase-aware answers](embeddings.md)
+- [Configuring embeddings for codebase-aware answers](explanations/embeddings.md)

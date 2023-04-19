@@ -1,6 +1,6 @@
 # Enabling Cody on Sourcegraph Enterprise
 
-[Instructions for self-hosted Sourcegraph Enterprise instance](#Cody-on-self-hosted-sourcegraph-enterprise)
+[Instructions for self-hosted Sourcegraph Enterprise](#Cody-on-self-hosted-sourcegraph-enterprise)
 [Instructions for Sourcegraph Cloud](#Cody-on-sourcegraph-cloud)
 [Enabling codebase-aware answers](#enabling-codebase-aware-answers)
 [Turning Cody off](#turning-cody-off)
@@ -9,11 +9,12 @@
 
 ### Prerequisites
 
-- Sourcegraph 5.0.1 or above.
-- An Anthropic API key, that you can get from your Technical Advisor or Customer Engineer. 
-- (Optionally) An OpenAI API key for embeddings.
+- Sourcegraph 5.0.1 or above
+- An Anthropic API key, that you can get from your Technical Advisor or Customer Engineer
+- (Optionally) An OpenAI API key for embeddings
 
 There are two steps required to enable Cody on your enterprise instance:
+
 1. Enable your Sourcegraph instance
 2. Configure the VS Code extension
 
@@ -64,12 +65,14 @@ You're all set!
 
 ### Step 3: Try Cody!
 
-A few things you can ask Cody:
+These are a few things you can ask Cody:
 
 - "What are popular go libraries for building CLIs?"
 - Open your workspace, and ask "Do we have a React date picker component in this repository?"
 - Right click on a function, and ask Cody to explain it
 - Try any of the Cody recipes!
+
+[See more Cody use cases here](use_cases.md).
 
 <img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
 
