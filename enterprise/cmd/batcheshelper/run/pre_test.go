@@ -66,7 +66,7 @@ func TestPre(t *testing.T) {
 						var data map[string]interface{}
 						err = json.Unmarshal(b, &data)
 						require.NoError(t, err)
-						assert.Equal(t, float64(1), data["nextStep"])
+						assert.Equal(t, "step.1.pre", data["nextStep"])
 					}
 				}
 			},

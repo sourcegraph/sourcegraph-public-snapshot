@@ -146,16 +146,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 
 	// Run all the things.
 	logger.Info("Running commands")
-	skipToStep := -1
-	for _, spec := range commands {
-		if skipToStep > -1 {
-			index, err := spec.Index()
-			if err != nil {
-				return errors.Wrap(err, "getting command index")
-			}
-			if index < skipToStep {
-				continue
-			}
+	skipKey := ""
+	for i, spec := range commands {
+		if len(skipKey) > 0 && skipKey != spec.CommandSpec.Key {
+			continue
+		} else if len(skipKey) > 0 {
+			// We have a match, so reset the skip key.
+			skipKey = ""
 		}
 		spec.Queue = h.options.QueueName
 		spec.JobID = job.ID
@@ -168,11 +165,9 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 			if err != nil {
 				return errors.Wrap(err, "checking for skip file")
 			}
-			if nextStep > 0 {
-				logger.Info("Skipping to step", log.Int("step", nextStep))
-				skipToStep = nextStep
-			} else {
-				skipToStep = -1
+			if len(nextStep) > 0 {
+				skipKey = runtime.CommandKey(h.jobRuntime.Name(), nextStep, i)
+				logger.Info("Skipping to step", log.String("key", skipKey))
 			}
 		}
 	}

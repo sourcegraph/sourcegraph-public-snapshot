@@ -32,7 +32,7 @@ func TestWriteSkipFile(t *testing.T) {
 	assert.Equal(t, "skip.json", dir[0].Name())
 	b, err := os.ReadFile(filepath.Join(wd, "skip.json"))
 	require.NoError(t, err)
-	assert.JSONEq(t, `{"nextStep": 1}`, string(b))
+	assert.JSONEq(t, `{"nextStep": "step.1.pre"}`, string(b))
 }
 
 func TestWriteSkipFile_MultipleWrites(t *testing.T) {
@@ -46,7 +46,7 @@ func TestWriteSkipFile_MultipleWrites(t *testing.T) {
 	require.Equal(t, "skip.json", dir[0].Name())
 	b, err := os.ReadFile(filepath.Join(wd, "skip.json"))
 	require.NoError(t, err)
-	assert.JSONEq(t, `{"nextStep": 1}`, string(b))
+	assert.JSONEq(t, `{"nextStep": "step.1.pre"}`, string(b))
 
 	err = util.WriteSkipFile(wd, 2)
 	require.NoError(t, err)
@@ -57,5 +57,5 @@ func TestWriteSkipFile_MultipleWrites(t *testing.T) {
 	require.Equal(t, "skip.json", dir[0].Name())
 	b, err = os.ReadFile(filepath.Join(wd, "skip.json"))
 	require.NoError(t, err)
-	assert.JSONEq(t, `{"nextStep": 2}`, string(b))
+	assert.JSONEq(t, `{"nextStep": "step.2.pre"}`, string(b))
 }

@@ -2,14 +2,10 @@ package runner
 
 import (
 	"context"
-	"strconv"
-
-	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Runner is the interface between an executor and the host on which commands
@@ -41,23 +37,6 @@ type Spec struct {
 	Image       string
 	ScriptPath  string
 }
-
-var indexRegex = regexp.MustCompile("step\\.(\\d+)")
-
-// Index returns the index of the step in the job. If there is no index number in the key, ErrNoIndex is returned.
-func (s Spec) Index() (int, error) {
-	matches := indexRegex.FindStringSubmatch(s.CommandSpec.Key)
-	if len(matches) != 2 {
-		return -1, ErrNoIndex
-	}
-	index, err := strconv.Atoi(matches[1])
-	if err != nil {
-		return -1, errors.Wrap(err, "failed to parse index from key")
-	}
-	return index, nil
-}
-
-var ErrNoIndex = errors.New("no index found")
 
 type Options struct {
 	DockerOptions      command.DockerOptions

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -13,27 +14,27 @@ import (
 // What the values can mean are,
 //   - 0: Nothing was skipped
 //   - n: The next step to run
-func NextStep(workingDirectory string) (int, error) {
-	path := filepath.Join(workingDirectory, "skip.json")
+func NextStep(workingDirectory string) (string, error) {
+	path := filepath.Join(workingDirectory, types.SkipFile)
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
 			fmt.Println("skip file does not exist at ", workingDirectory)
-			return 0, nil
+			return "", nil
 		}
-		return 0, errors.Wrap(err, "checking skip file")
+		return "", errors.Wrap(err, "checking skip file")
 	}
 
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return 0, errors.Wrap(err, "reading skip file")
+		return "", errors.Wrap(err, "reading skip file")
 	}
-	var s skip
+	var s types.Skip
 	if err = json.Unmarshal(b, &s); err != nil {
-		return 0, errors.Wrap(err, "unmarshalling skip file")
+		return "", errors.Wrap(err, "unmarshalling skip file")
+	}
+	// Remove the skip file. If not removed, the file will hang around and get read multiple times.
+	if err = os.Remove(path); err != nil {
+		return "", errors.Wrap(err, "removing skip file")
 	}
 	return s.NextStep, nil
-}
-
-type skip struct {
-	NextStep int `json:"nextStep"`
 }

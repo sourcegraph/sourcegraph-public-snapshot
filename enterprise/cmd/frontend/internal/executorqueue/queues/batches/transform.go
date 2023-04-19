@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	executorutil "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -247,7 +248,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			}
 
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
-				Key:   fmt.Sprintf("step.%d.pre", i),
+				Key:   executorutil.FormatPreKey(i),
 				Image: helperImage,
 				Env:   secretEnvVars,
 				Dir:   ".",
@@ -259,7 +260,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			})
 
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
-				Key:   fmt.Sprintf("step.%d.run", i),
+				Key:   executorutil.FormatRunKey(i),
 				Image: step.Container,
 				Dir:   runDir,
 				// Invoke the script file but also write stdout and stderr to separate files, which will then be
@@ -274,7 +275,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 
 			// This step gets the diff, reads stdout and stderr, renders the outputs and builds the AfterStepResult.
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
-				Key:   fmt.Sprintf("step.%d.post", i),
+				Key:   executorutil.FormatPostKey(i),
 				Image: helperImage,
 				Env:   secretEnvVars,
 				Dir:   ".",

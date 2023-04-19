@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	executorutil "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -21,18 +23,14 @@ func FilesMountPath(workingDirectory string, step int) string {
 
 // WriteSkipFile writes the skip file to the working directory.
 func WriteSkipFile(workingDirectory string, nextStep int) error {
-	s := skip{NextStep: nextStep}
+	s := types.Skip{NextStep: executorutil.FormatPreKey(nextStep)}
 	b, err := json.Marshal(s)
 	if err != nil {
 		return errors.Wrap(err, "marshalling skip file")
 	}
-	path := filepath.Join(workingDirectory, "skip.json")
+	path := filepath.Join(workingDirectory, types.SkipFile)
 	if err = os.WriteFile(path, b, os.ModePerm); err != nil {
 		return errors.Wrap(err, "writing skip file")
 	}
 	return nil
-}
-
-type skip struct {
-	NextStep int `json:"nextStep"`
 }

@@ -15,24 +15,16 @@ func TestNextStep(t *testing.T) {
 	tests := []struct {
 		name         string
 		setupFunc    func(t *testing.T, dir string)
-		expectedStep int
+		expectedStep string
 		expectedErr  error
 	}{
 		{
 			name: "Found next step",
 			setupFunc: func(t *testing.T, dir string) {
-				err := os.WriteFile(filepath.Join(dir, "skip.json"), []byte(`{"nextStep": 1}`), os.ModePerm)
+				err := os.WriteFile(filepath.Join(dir, "skip.json"), []byte(`{"nextStep": "step.1.pre"}`), os.ModePerm)
 				require.NoError(t, err)
 			},
-			expectedStep: 1,
-		},
-		{
-			name: "No more steps",
-			setupFunc: func(t *testing.T, dir string) {
-				err := os.WriteFile(filepath.Join(dir, "skip.json"), []byte(`{"nextStep": -1}`), os.ModePerm)
-				require.NoError(t, err)
-			},
-			expectedStep: -1,
+			expectedStep: "step.1.pre",
 		},
 	}
 	for _, test := range tests {

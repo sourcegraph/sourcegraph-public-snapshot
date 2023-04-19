@@ -50,16 +50,9 @@ func (r *kubernetesRuntime) NewRunner(ctx context.Context, logger command.Logger
 func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error) {
 	runnerSpecs := make([]runner.Spec, len(steps))
 	for i, step := range steps {
-		var key string
-		if len(step.Key) != 0 {
-			key = fmt.Sprintf("step.kubernetes.%s", step.Key)
-		} else {
-			key = fmt.Sprintf("step.kubernetes.%d", i)
-		}
-
 		runnerSpecs[i] = runner.Spec{
 			CommandSpec: command.Spec{
-				Key: key,
+				Key: kubernetesKey(step.Key, i),
 				Command: []string{
 					"/bin/sh",
 					"-c",
@@ -74,4 +67,11 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types
 	}
 
 	return runnerSpecs, nil
+}
+
+func kubernetesKey(stepKey string, index int) string {
+	if len(stepKey) > 0 {
+		return "step.kubernetes." + stepKey
+	}
+	return fmt.Sprintf("step.kubernetes.%d", index)
 }
