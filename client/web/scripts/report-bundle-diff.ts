@@ -30,7 +30,8 @@ async function getCompareRev(): Promise<string | undefined> {
             console.log(`Found cached archive for ${revision}`)
 
             return revision
-        } catch {
+        } catch (error) {
+            console.log(error)
             console.log(`Cached archive for ${revision} not found, skipping.`)
         }
     }
