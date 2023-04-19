@@ -1,7 +1,5 @@
 #! /usr/bin/env node
 import { Command } from 'commander'
-import { cleanEnv, str } from 'envalid'
-import { memoize } from 'lodash'
 import prompts from 'prompts'
 
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
@@ -24,18 +22,8 @@ import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/source
 import { isRepoNotFoundError } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { DEFAULTS, ENVIRONMENT_CONFIG } from './config'
 import { getPreamble } from './preamble'
-
-const ENVIRONMENT_CONFIG = cleanEnv(process.env, {
-    SRC_ACCESS_TOKEN: str(),
-})
-
-const DEFAULT_APP_SETTINGS = {
-    codebase: 'github.com/sourcegraph/sourcegraph',
-    serverEndpoint: 'https://sourcegraph.sourcegraph.com',
-    contextType: 'blended',
-    debug: 'development',
-} as const
 
 /**
  * Memoized function to get the repository ID for a given codebase.
@@ -134,30 +122,41 @@ async function startCLI() {
         .version('0.0.1')
         .description('Cody CLI')
         .option('-p, --prompt <value>', 'Give Cody a prompt')
+        .option('-c, --codebase <value>', `Codebase to use for context fetching. Default: ${DEFAULTS.codebase}`)
+        .option('-e, --endpoint <value>', `Sourcegraph instance to connect to. Default: ${DEFAULTS.serverEndpoint}`)
+        .option(
+            '--context [embeddings,keyword,none,blended]',
+            `How Cody fetches context for query. Default: ${DEFAULTS.contextType}`
+        )
         .parse(process.argv)
 
     const options = program.opts()
 
+    const codebase: string = options.codebase || DEFAULTS.codebase
+    const endpoint: string = options.endpoint || DEFAULTS.serverEndpoint
+    const contextType: 'keyword' | 'embeddings' | 'none' | 'blended' = options.contextType || DEFAULTS.contextType
+    const accessToken: string | undefined = ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN
+    if (accessToken === undefined || accessToken === '') {
+        console.error(
+            `No access token found. Set SRC_ACCESS_TOKEN to an access token created on the Sourcegraph instance.`
+        )
+        process.exit(1)
+    }
+
     const sourcegraphClient = new SourcegraphGraphQLAPIClient({
-        serverEndpoint: DEFAULT_APP_SETTINGS.serverEndpoint,
-        accessToken: ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN,
+        serverEndpoint: endpoint,
+        accessToken: accessToken,
         customHeaders: {},
     })
 
-    const intentDetector = new SourcegraphIntentDetectorClient(sourcegraphClient)
-
     let codebaseContext
     try {
-        codebaseContext = await createCodebaseContext(
-            sourcegraphClient,
-            DEFAULT_APP_SETTINGS.codebase,
-            DEFAULT_APP_SETTINGS.contextType
-        )
+        codebaseContext = await createCodebaseContext(sourcegraphClient, codebase, contextType)
     } catch (error) {
         let errorMessage = ''
         if (isRepoNotFoundError(error)) {
             errorMessage =
-                `Cody could not find the '${DEFAULT_APP_SETTINGS.codebase}' repository on your Sourcegraph instance.\n` +
+                `Cody could not find the '${codebase}' repository on your Sourcegraph instance.\n` +
                 'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
         } else {
             errorMessage =
@@ -168,10 +167,12 @@ async function startCLI() {
         process.exit(1)
     }
 
+    const intentDetector = new SourcegraphIntentDetectorClient(sourcegraphClient)
+
     const completionsClient = new SourcegraphNodeCompletionsClient({
-        serverEndpoint: DEFAULT_APP_SETTINGS.serverEndpoint,
+        serverEndpoint: endpoint,
         accessToken: ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN,
-        debug: DEFAULT_APP_SETTINGS.debug === 'development',
+        debug: DEFAULTS.debug === 'development',
         customHeaders: {},
     })
 
@@ -207,7 +208,7 @@ async function startCLI() {
         }
     }
 
-    const finalPrompt = await transcript.toPrompt(getPreamble(DEFAULT_APP_SETTINGS.codebase))
+    const finalPrompt = await transcript.toPrompt(getPreamble(codebase))
 
     let text = ''
     streamCompletions(completionsClient, finalPrompt, {
