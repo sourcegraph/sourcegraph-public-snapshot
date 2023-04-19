@@ -435,6 +435,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         }
     }, [])
 
+    // Sync the currently viewed document with the editor zustand store. This is used for features
+    // like Cody to know what file and range a user is looking at.
     useEffect(() => {
         const view = editorRef.current
         useEditorStore.setState({

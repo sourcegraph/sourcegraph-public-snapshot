@@ -28,27 +28,24 @@ export class CodeMirrorEditor implements Editor {
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
         const editor = this.editorStoreRef.current.editor
-        if (editor === null) {
+
+        if (!editor || editor.view.state.selection.main.empty) {
             return null
         }
 
-        const selection = editor.view?.state.selection
+        const selection = editor.view?.state.selection.main
+        const { head, anchor } = selection
 
-        if (selection && selection.ranges.length > 0) {
-            const [range] = selection.ranges
-            const { head, anchor } = range
+        if (head !== anchor) {
+            const precedingText = editor.view?.state.sliceDoc(undefined, selection.from)
+            const selectedText = editor.view?.state.sliceDoc(selection.from, selection.to)
+            const followingText = editor.view?.state.sliceDoc(selection.to, undefined)
 
-            if (head !== anchor) {
-                const precedingText = editor.view?.state.sliceDoc(undefined, range.from)
-                const selectedText = editor.view?.state.sliceDoc(range.from, range.to)
-                const followingText = editor.view?.state.sliceDoc(range.to, undefined)
-
-                return {
-                    fileName: editor.filename,
-                    precedingText,
-                    selectedText,
-                    followingText,
-                }
+            return {
+                fileName: editor.filename,
+                precedingText,
+                selectedText,
+                followingText,
             }
         }
 
