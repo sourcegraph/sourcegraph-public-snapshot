@@ -45,7 +45,6 @@ Cody can write docstrings for you to save time. To try this:
 2. Go to `Cody` -> `Recipes`
 3. Click `Generate a docstring`
 4. Cody will provide a copy of the code with docstrings inserted
-change this list to be nested bullet points
 
 ## Testing code
 
