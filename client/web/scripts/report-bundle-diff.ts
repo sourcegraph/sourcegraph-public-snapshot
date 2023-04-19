@@ -12,6 +12,10 @@ const COMMENT_HEADING = '## Bundle size report 📦'
 const MERGE_BASE = exec('git merge-base HEAD origin/main').toString().trim()
 let COMPARE_REV = ''
 
+const ROOT_PATH = path.join(__dirname, '../../../')
+const STATIC_ASSETS_PATH = process.env.WEB_BUNDLE_PATH || path.join(ROOT_PATH, 'ui/assets')
+const statoscopeBinPath = path.join(ROOT_PATH, 'node_modules/.bin/statoscope')
+
 const { BRANCH, BUILDKITE_PULL_REQUEST_REPO, BUILDKITE_PULL_REQUEST, COMMIT, GITHUB_TOKEN } = process.env
 
 async function getCompareRev(): Promise<string | undefined> {
@@ -19,18 +23,20 @@ async function getCompareRev(): Promise<string | undefined> {
 
     console.log('mergeBase', MERGE_BASE)
     console.log('revisions', revisions)
-    await fs.mkdir('./ui/assets', { recursive: true })
 
     for (const revision of revisions) {
         try {
+            const tarPath = path.join(STATIC_ASSETS_PATH, `bundle_size_cache-${revision}.tar.gz`)
+
             await storage
                 .bucket('sourcegraph_buildkite_cache')
                 .file(`sourcegraph/sourcegraph/bundle_size_cache-${revision}.tar.gz`)
-                .download({ destination: `./ui/assets/bundle_size_cache-${revision}.tar.gz` })
+                .download({ destination: tarPath })
 
             console.log(`Found cached archive for ${revision}`)
+            COMPARE_REV = revision
 
-            return revision
+            return tarPath
         } catch (error) {
             console.log(error)
             console.log(`Cached archive for ${revision} not found, skipping.`)
@@ -41,24 +47,23 @@ async function getCompareRev(): Promise<string | undefined> {
 }
 
 async function prepareStats(): Promise<{ commitFile: string; compareFile: string } | undefined> {
-    const compareRev = await getCompareRev()
+    const tarPath = await getCompareRev()
 
-    if (compareRev) {
-        COMPARE_REV = compareRev
-        exec(`tar -xf ui/assets/bundle_size_cache-${compareRev}.tar.gz ui/assets`)
+    if (tarPath) {
+        exec(`tar -xf ${tarPath} ${STATIC_ASSETS_PATH}`)
 
-        const commitFile = `./ui/assets/stats-${COMMIT}.json`
-        const compareFile = `./ui/assets/stats-${compareRev}.json`
+        const commitFile = path.join(STATIC_ASSETS_PATH, `stats-${COMMIT}.json`)
+        const compareFile = path.join(STATIC_ASSETS_PATH, `stats-${COMPARE_REV}.json`)
 
         try {
             await fs.access(commitFile)
             await fs.access(compareFile)
 
-            exec(
-                `./node_modules/.bin/statoscope generate -i "${commitFile}" -r "${compareFile}" -t ./ui/assets/compare-report.html`
-            )
+            const compareReportPath = path.join(STATIC_ASSETS_PATH, 'compare-report.html')
 
-            await storage.bucket('sourcegraph_reports').upload('./ui/assets/compare-report.html', {
+            exec(`${statoscopeBinPath} generate -i "${commitFile}" -r "${compareFile}" -t ${compareReportPath}`)
+
+            await storage.bucket('sourcegraph_reports').upload(compareReportPath, {
                 destination: `statoscope-reports/${BRANCH}/compare-report.html`,
             })
 
@@ -117,15 +122,9 @@ interface Metric {
 }
 type Report = [Header, Metric, Metric, Metric, Metric, Metric, Metric, Metric, Metric, Metric, Metric, Metric, Metric]
 
-function parseReport(commitFilename: string, compareFilename: string): Report {
+function parseReport(commitFile: string, compareFile: string): Report {
     const queryFile = path.join(__dirname, 'report-bundle-jora-query')
-
-    const commitFile = path.join('..', '..', commitFilename)
-    const compareFile = path.join('..', '..', compareFilename)
-
-    const statoscope = path.join(__dirname, '..', '..', '..', 'node_modules', '.bin', 'statoscope')
-
-    const rawReport = exec(`cat "${queryFile}" | ${statoscope} query -i "${compareFile}" -i "${commitFile}"`)
+    const rawReport = exec(`cat "${queryFile}" | ${statoscopeBinPath} query -i "${compareFile}" -i "${commitFile}"`)
 
     return JSON.parse(rawReport) as Report
 }
