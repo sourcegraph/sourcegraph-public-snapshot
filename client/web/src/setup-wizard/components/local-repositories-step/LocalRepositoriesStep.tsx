@@ -1,6 +1,6 @@
 import { ChangeEvent, FC, forwardRef, HTMLAttributes, InputHTMLAttributes, useEffect, useState } from 'react'
 
-import { useLazyQuery } from '@apollo/client'
+import { useApolloClient, useLazyQuery } from '@apollo/client'
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
@@ -53,6 +53,8 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     const [directoryPaths, setDirectoryPaths] = useState<string[]>([])
     const [error, setError] = useState<ErrorLike | undefined>()
 
+    const apolloClient = useApolloClient()
+
     // TODO: Trade out for getLocalServices() or extended externalServices(kind: "OTHER")
     // if/when available to simplify this block
     const { data, loading } = useQuery<GetLocalCodeHostsResult>(GET_LOCAL_CODE_HOSTS, {
@@ -97,10 +99,9 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
 
                 // Create a new local external service for this path
                 await addLocalCodeHost({
-                    refetchQueries: ['GetLocalCodeHosts', 'StatusAndRepoStats'],
                     variables: {
                         input: {
-                            displayName: 'Local repositories service',
+                            displayName: `Local repositories service (${directoryPath})`,
                             config: createDefaultLocalServiceConfig(directoryPath),
                             kind: ExternalServiceKind.OTHER,
                         },
@@ -117,16 +118,17 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
 
                 // Delete local external service for this path
                 await deleteLocalCodeHost({
-                    refetchQueries: ['GetLocalCodeHosts', 'StatusAndRepoStats'],
                     variables: {
                         id: localService.id,
                     },
                 })
             }
+
+            await apolloClient.refetchQueries({ include: ['GetLocalCodeHosts', 'StatusAndRepoStats'] })
         }
 
         syncExternalServices().catch(setError)
-    }, [directoryPaths, data, loading, addLocalCodeHost, updateLocalCodeHost, deleteLocalCodeHost])
+    }, [directoryPaths, data, loading, addLocalCodeHost, updateLocalCodeHost, deleteLocalCodeHost, apolloClient])
 
     useEffect(() => {
         telemetryService.log('SetupWizardLandedAddLocalCode')
