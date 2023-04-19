@@ -12,18 +12,26 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// GitHubAppAuthenticator is used to authenticate requests to the GitHub API
+// using a GitHub App. It contains the ID and private key associated with
+// the GitHub App.
 type GitHubAppAuthenticator struct {
 	appID  string
 	key    *rsa.PrivateKey
 	rawKey []byte
 }
 
+// NewGitHubAppAuthenticator creates an Authenticator that can be used to authenticate requests
+// to the GitHub API as a GitHub App. It requires the GitHub App ID and RSA private key.
+//
+// The returned Authenticator can be used to sign requests to the GitHub API on behalf of the GitHub App.
+// The requests will contain a JSON Web Token (JWT) in the Authorization header with claims identifying
+// the GitHub App.
 func NewGitHubAppAuthenticator(appID string, privateKey []byte) (auth.Authenticator, error) {
 	key, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
 	if err != nil {
@@ -45,13 +53,18 @@ func (a *GitHubAppAuthenticator) Authenticate(r *http.Request) error {
 	return nil
 }
 
+// generateJWT generates a JSON Web Token (JWT) signed with the GitHub App's private key.
+// The JWT contains claims identifying the GitHub App.
+//
+// The payload computation is following GitHub App's Ruby example shown in
+// https://docs.github.com/en/developers/apps/building-github-apps/authenticating-with-github-apps#authenticating-as-a-github-app.
+//
+// NOTE: GitHub rejects expiry and issue timestamps that are not an integer,
+// while the jwt-go library serializes to fractional timestamps. Truncate them
+// before passing to jwt-go.
+//
+// The returned JWT can be used to authenticate requests to the GitHub API as the GitHub App.
 func (a *GitHubAppAuthenticator) generateJWT() (string, error) {
-	// The payload computation is following GitHub App's Ruby example shown in
-	// https://docs.github.com/en/developers/apps/building-github-apps/authenticating-with-github-apps#authenticating-as-a-github-app.
-	//
-	// NOTE: GitHub rejects expiry and issue timestamps that are not an integer,
-	// while the jwt-go library serializes to fractional timestamps. Truncate them
-	// before passing to jwt-go.
 	iss := time.Now().Add(-time.Minute).Truncate(time.Second)
 	exp := iss.Add(10 * time.Minute)
 	claims := &jwt.RegisteredClaims{
@@ -69,6 +82,10 @@ func (a *GitHubAppAuthenticator) Hash() string {
 	return hex.EncodeToString(shaSum[:])
 }
 
+// GitHubAppInstallationAuthenticator is used to authenticate requests to the GitHub API
+// using an installation access token associated with a GitHub App installation.
+// It contains the installation ID, installation access token, and expiry time.
+// It also contains an appAuthenticator which is used to refresh the installation access token.
 type GitHubAppInstallationAuthenticator struct {
 	installationID          int
 	InstallationAccessToken string
@@ -76,8 +93,13 @@ type GitHubAppInstallationAuthenticator struct {
 	appAuthenticator        auth.Authenticator
 }
 
+// NewGitHubAppInstallationAuthenticator creates an Authenticator that can be used to authenticate requests
+// to the GitHub API using an installation access token associated with a GitHub App installation.
+//
+// The returned Authenticator can be used to authenticate requests to the GitHub API on behalf of the installation.
+// The requests will contain the installation access token in the Authorization header.
+// When the installation access token expires, the appAuthenticator will be used to generate a new one.
 func NewGitHubAppInstallationAuthenticator(
-	logger log.Logger,
 	installationID int,
 	installationAccessToken string,
 	appAuthenticator auth.Authenticator,
@@ -90,6 +112,14 @@ func NewGitHubAppInstallationAuthenticator(
 	return auther
 }
 
+// Refresh generates a new installation access token for the GitHub App installation.
+//
+// It makes a request to the GitHub API to generate a new installation access token for the
+// installation associated with the Authenticator. It updates the Authenticator with the new
+// installation access token and expiry time.
+//
+// Returns an error if the request fails, or if there is no Authenticator to authenticate
+// the token refresh request.
 func (a *GitHubAppInstallationAuthenticator) Refresh(ctx context.Context, cli httpcli.Doer) error {
 	if a.appAuthenticator == nil {
 		return errors.New("appAuthenticator is nil")
@@ -119,6 +149,8 @@ func (a *GitHubAppInstallationAuthenticator) Refresh(ctx context.Context, cli ht
 	return nil
 }
 
+// Authenticate adds an Authorization header to the request containing
+// the installation access token associated with the GitHub App installation.
 func (a *GitHubAppInstallationAuthenticator) Authenticate(r *http.Request) error {
 	r.Header.Set("Authorization", "Bearer "+a.InstallationAccessToken)
 	return nil
@@ -129,6 +161,12 @@ func (a *GitHubAppInstallationAuthenticator) Hash() string {
 	return hex.EncodeToString(sum[:])
 }
 
+// NeedsRefresh checks if the installation access token associated with the
+// GitHubAppInstallationAuthenticator needs to be refreshed.
+//
+// It returns true if the expiry time of the current installation access token
+// is within 5 minutes, indicating a new access token should be requested.
+// It returns false if the access token does not need to be refreshed yet.
 func (a *GitHubAppInstallationAuthenticator) NeedsRefresh() bool {
 	if !a.Expiry.IsZero() {
 		return time.Until(a.Expiry) < 5*time.Minute
