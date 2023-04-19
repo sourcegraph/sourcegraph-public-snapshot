@@ -5,14 +5,14 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols",
     visibility = ["//visibility:private"],
-    deps = [
-        "//enterprise/cmd/sourcegraph/enterprisecmd",
-        "//enterprise/cmd/symbols/shared",
-    ],
     x_defs = {
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
         "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
     },
+    deps = [
+        "//enterprise/cmd/sourcegraph/enterprisecmd",
+        "//enterprise/cmd/symbols/shared",
+    ],
 )
 
 go_binary(
