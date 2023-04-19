@@ -35,7 +35,7 @@ func migrate(
 
 	batch := client.Batch().ObjectsBatcher()
 
-	doMigrate := func(class string, codeOrText embeddings.EmbeddingIndex, repoName string) {
+	doMigrate := func(class string, codeOrText embeddings.EmbeddingIndex, repoName string, revision api.CommitID) {
 		dim := codeOrText.ColumnDimension
 		for i := 0; i < len(codeOrText.RowMetadata); i++ {
 			batch.WithObjects(&models.Object{
@@ -45,6 +45,7 @@ func migrate(
 					"file_name":  codeOrText.RowMetadata[i].FileName,
 					"start_line": codeOrText.RowMetadata[i].StartLine,
 					"end_line":   codeOrText.RowMetadata[i].EndLine,
+					"revision":   revision,
 				},
 				Vector: codeOrText.Embeddings[i*dim : (i+1)*dim],
 			})
@@ -70,8 +71,8 @@ func migrate(
 		}
 
 		repoName := string(index.RepoName)
-		doMigrate("Code", index.CodeIndex, repoName)
-		doMigrate("Text", index.TextIndex, repoName)
+		doMigrate("Code", index.CodeIndex, repoName, index.Revision)
+		doMigrate("Text", index.TextIndex, repoName, index.Revision)
 	}
 
 	if batchHave > 0 {
