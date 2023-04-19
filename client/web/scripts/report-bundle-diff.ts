@@ -51,6 +51,9 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
 
     if (tarPath) {
         console.log(`tar -xf ${tarPath} ui/assets -C ${STATIC_ASSETS_PATH}`)
+        console.log('---------')
+        exec(`tar tvf ${tarPath}`)
+        console.log('---------')
         exec(`tar -xf ${tarPath} ui/assets -C ${STATIC_ASSETS_PATH}`)
         exec(`ls -la ${STATIC_ASSETS_PATH}`)
 
