@@ -62,7 +62,7 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 		return nil, w.clientErr
 	}
 
-	embeddedQuery, err := w.getQueryEmbedding(params.Query)
+	embeddedQuery, err := w.getQueryEmbedding(ctx, params.Query)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting query embedding")
 	}
@@ -74,11 +74,12 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 			WithWhere(filters.Where().
 				WithOperator(filters.Equal).
 				WithPath([]string{"repo"}).
-				WithValueString(string(params.RepoName))).
+				WithValueInt(int64(params.RepoID))).
 			WithFields([]graphql.Field{
 				{Name: "file_name"},
 				{Name: "start_line"},
 				{Name: "end_line"},
+				{Name: "revision"},
 			}...).
 			WithLimit(limit)
 	}
@@ -86,21 +87,38 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 	extractResults := func(res *models.GraphQLResponse, typ string) []embeddings.EmbeddingSearchResult {
 		get := res.Data["Get"].(map[string]any)
 		code := get[typ].([]any)
+		if len(code) == 0 {
+			return nil
+		}
+
 		srs := make([]embeddings.EmbeddingSearchResult, 0, len(code))
+		revision := ""
 		for _, c := range code {
 			cMap := c.(map[string]any)
+			fileName := cMap["file_name"].(string)
+
+			if rev := cMap["revision"].(string); revision != rev {
+				if revision == "" {
+					revision = rev
+				} else {
+					w.logger.Warn("inconsistent revisions returned for an embedded repository", log.Int("repoid", int(params.RepoID)), log.String("filename", fileName), log.String("revision1", revision), log.String("revision2", rev))
+				}
+			}
+
 			srs = append(srs, embeddings.EmbeddingSearchResult{
 				RepoEmbeddingRowMetadata: embeddings.RepoEmbeddingRowMetadata{
-					FileName:  cMap["file_name"].(string),
+					FileName:  fileName,
 					StartLine: int(cMap["start_line"].(float64)),
 					EndLine:   int(cMap["end_line"].(float64)),
 				},
 			})
 		}
 
-		// TODO store in index the commit. Future we more likely is that we
-		// will store contents in weaviate for keyword search.
-		commit := api.CommitID("HEAD")
+		commit := api.CommitID(revision)
+		if commit == "" {
+			w.logger.Warn("no revision set for an embedded repository", log.Int("repoid", int(params.RepoID)))
+			commit = api.CommitID("HEAD")
+		}
 
 		return filterAndHydrateContent(ctx, w.logger, params.RepoName, commit, w.readFile, srs)
 	}
