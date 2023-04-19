@@ -1,4 +1,4 @@
-CREATE TABLE github_apps (
+CREATE TABLE IF NOT EXISTS github_apps (
     id SERIAL PRIMARY KEY,
     app_id INT NOT NULL UNIQUE,
     name TEXT NOT NULL,
@@ -11,4 +11,5 @@ CREATE TABLE github_apps (
     logo TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);-- not adding indexes for now, because we only expect a few rows in the table
+);
+-- not adding indexes for now, because we only expect a few rows in the table

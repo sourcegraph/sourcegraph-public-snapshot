@@ -1,1 +1,1 @@
-DROP TABLE github_apps;
+DROP TABLE IF EXISTS github_apps;
