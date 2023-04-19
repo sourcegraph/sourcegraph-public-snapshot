@@ -30,8 +30,6 @@ export const SmartSearchPreview: React.FunctionComponent<SmartSearchPreviewProps
     searchQueryFromURL,
     caseSensitive,
 }) => {
-    const [resultNumber, setResultNumber] = useState<number | string>(0)
-
     const results = useObservable(
         useMemo(
             () =>
@@ -46,27 +44,22 @@ export const SmartSearchPreview: React.FunctionComponent<SmartSearchPreviewProps
         )
     )
 
-    useMemo(() => {
+    const resultNumber = useMemo(() => {
         if (results?.alert?.proposedQueries) {
-            const resultNum: number = results.alert.proposedQueries.reduce(
-                (acc: number, proposedQuery: ProposedQuery): number => {
-                    let proposedQueryResultCount = 0
-                    const proposedQueryResultCountGroup = proposedQuery.annotations?.filter(
-                        ({ name }) => name === 'ResultCount'
-                    )
+            return results.alert.proposedQueries.reduce((acc: number, proposedQuery: ProposedQuery): number => {
+                let proposedQueryResultCount = 0
+                const proposedQueryResultCountGroup = proposedQuery.annotations?.filter(
+                    ({ name }) => name === 'ResultCount'
+                )
 
-                    if (proposedQueryResultCountGroup) {
-                        for (const result of proposedQueryResultCountGroup) {
-                            proposedQueryResultCount += parseInt(result.value.replace(/\D/g, ''), 10)
-                        }
+                if (proposedQueryResultCountGroup) {
+                    for (const result of proposedQueryResultCountGroup) {
+                        proposedQueryResultCount += parseInt(result.value.replace(/\D/g, ''), 10)
                     }
-                    acc += proposedQueryResultCount
-                    return acc
-                },
-                0
-            )
-
-            setResultNumber(resultNum)
+                }
+                acc += proposedQueryResultCount
+                return acc
+            }, 0)
         }
         return
     }, [results])
