@@ -1,19 +1,85 @@
 /* eslint-disable no-console */
+
+import { promises as fs } from 'fs'
 import path from 'path'
 
+import { Storage } from '@google-cloud/storage'
 import { Octokit } from 'octokit'
-import shelljs from 'shelljs'
+import { exec } from 'shelljs'
 
+const storage = new Storage()
 const COMMENT_HEADING = '## Bundle size report 📦'
+const MERGE_BASE = exec('git merge-base HEAD origin/main').toString().trim()
+let COMPARE_REV = ''
 
-const { BRANCH, BUILDKITE_PULL_REQUEST_REPO, BUILDKITE_PULL_REQUEST, COMMIT, COMPARE_REV, GITHUB_TOKEN, MERGE_BASE } =
-    process.env
+const { BRANCH, BUILDKITE_PULL_REQUEST_REPO, BUILDKITE_PULL_REQUEST, COMMIT, GITHUB_TOKEN } = process.env
+
+async function getCompareRev(): Promise<string | undefined> {
+    const revisions = exec(`git --no-pager log "${MERGE_BASE}" --pretty=format:"%H" -n 20`).toString().split('\n')
+
+    console.log('mergeBase', MERGE_BASE)
+    console.log('revisions', revisions)
+
+    for (const revision of revisions) {
+        try {
+            await storage
+                .bucket('sourcegraph_buildkite_cache')
+                .file(`sourcegraph/sourcegraph/bundle_size_cache-${revision}.tar.gz`)
+                .download({ destination: `./ui/assets/bundle_size_cache-${revision}.tar.gz` })
+
+            console.log(`Found cached archive for ${revision}`)
+
+            return revision
+        } catch {
+            console.log(`Cached archive for ${revision} not found, skipping.`)
+        }
+    }
+
+    return undefined
+}
+
+async function prepareStats(): Promise<{ commitFile: string; compareFile: string } | undefined> {
+    const compareRev = await getCompareRev()
+
+    if (compareRev) {
+        COMPARE_REV = compareRev
+        exec(`tar -xf ui/assets/bundle_size_cache-${compareRev}.tar.gz ui/assets`)
+
+        const commitFile = `./ui/assets/stats-${COMMIT}.json`
+        const compareFile = `./ui/assets/stats-${compareRev}.json`
+
+        try {
+            await fs.access(commitFile)
+            await fs.access(compareFile)
+
+            exec(
+                `./node_modules/.bin/statoscope generate -i "${commitFile}" -r "${compareFile}" -t ./ui/assets/compare-report.html`
+            )
+
+            await storage.bucket('sourcegraph_reports').upload('./ui/assets/compare-report.html', {
+                destination: `statoscope-reports/${BRANCH}/compare-report.html`,
+            })
+
+            return { commitFile, compareFile }
+        } catch {
+            console.log('No stats file found, skipping.')
+            console.log(commitFile)
+            console.log(compareFile)
+        }
+    }
+
+    return undefined
+}
 
 async function main(): Promise<void> {
     try {
-        const [commitFilename, compareFilename] = process.argv.slice(-2)
+        const stats = await prepareStats()
 
-        const report = parseReport(commitFilename, compareFilename)
+        if (!stats) {
+            return
+        }
+
+        const report = parseReport(stats.commitFile, stats.compareFile)
 
         if (hasZeroChanges(report)) {
             console.log('No changes detected in the bundle size, skip posting the comment.')
@@ -29,8 +95,11 @@ async function main(): Promise<void> {
         process.exit(1)
     }
 }
-// eslint-disable-next-line @typescript-eslint/no-floating-promises
-main()
+
+main().catch(error => {
+    console.error(error)
+    process.exit(1)
+})
 
 interface Header {
     hash: string
@@ -54,7 +123,7 @@ function parseReport(commitFilename: string, compareFilename: string): Report {
 
     const statoscope = path.join(__dirname, '..', '..', '..', 'node_modules', '.bin', 'statoscope')
 
-    const rawReport = shelljs.exec(`cat "${queryFile}" | ${statoscope} query -i "${compareFile}" -i "${commitFile}"`)
+    const rawReport = exec(`cat "${queryFile}" | ${statoscope} query -i "${compareFile}" -i "${commitFile}"`)
 
     return JSON.parse(rawReport) as Report
 }

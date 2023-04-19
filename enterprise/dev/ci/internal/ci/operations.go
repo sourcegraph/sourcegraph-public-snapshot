@@ -290,7 +290,7 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 				bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
 				bk.Env("BRANCH", branch),
 				bk.Env("COMMIT", commit),
-				bk.Cmd("dev/ci/report-bundle-diff.sh"),
+				bk.Cmd("pnpm --filter @sourcegraph/web run report-bundle-diff"),
 			)
 		}
 
