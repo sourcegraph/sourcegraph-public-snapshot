@@ -2,7 +2,6 @@ package runner
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -16,16 +15,11 @@ import (
 //   - n: The next step to run
 func NextStep(workingDirectory string) (string, error) {
 	path := filepath.Join(workingDirectory, types.SkipFile)
-	if _, err := os.Stat(path); err != nil {
-		if os.IsNotExist(err) {
-			fmt.Println("skip file does not exist at ", workingDirectory)
-			return "", nil
-		}
-		return "", errors.Wrap(err, "checking skip file")
-	}
-
 	b, err := os.ReadFile(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return "", nil
+		}
 		return "", errors.Wrap(err, "reading skip file")
 	}
 	var s types.Skip
