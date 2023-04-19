@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -16,7 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func osascript(ctx context.Context) (string, error) {
+func osascript(ctx context.Context) ([]string, error) {
+	var paths []string
+
 	cmd := exec.CommandContext(ctx,
 		"osascript", "-e",
 		`set theFolders to choose folder with prompt "Select repositories or folders with repositories" with multiple selections allowed`,
@@ -30,51 +33,53 @@ func osascript(ctx context.Context) (string, error) {
 		"end repeat",
 		"-e",
 		"return posixPaths")
-	path, err := cmd.Output()
+	bytePaths, err := cmd.Output()
 	if err != nil {
-		return "", err
+		return paths, err
 	}
 
-	// Output looks something like "/path/to/dir/\n". We can reliably strip
-	// out the trailing new line by just returning upto the last /
-	i := bytes.LastIndexByte(path, '/')
-	if i < 0 {
-		return "", errors.Errorf("returned value from file picker is missing /: %q", string(path))
-	} else if i == 0 {
-		return "/", nil
+	// Output looks something like "/path/to/dir1/, /path/to/dir2/\n". We can reliably strip
+	// out the trailing new line and then split on the comma+space.
+	stringPaths := trimTrailingNewline(bytePaths)
+	paths = strings.Split(stringPaths, ", ")
+	for i, path := range paths {
+		if len(path) > 0 {
+			paths[i] = strings.TrimSuffix(path, "/")
+		}
 	}
-	return string(path[:i]), nil
+
+	return paths, nil
 }
 
-func zenity(ctx context.Context) (string, error) {
+func zenity(ctx context.Context) ([]string, error) {
 	// nix-shell -p gnome.zenity
 	cmd := exec.CommandContext(ctx, "zenity", "--file-selection", "--directory")
 	path, err := cmd.Output()
 	if err != nil {
-		return "", err
+		return []string{}, err
 	}
 
-	return trimTrailingNewline(path), nil
+	return []string{trimTrailingNewline(path)}, nil
 }
 
-func kdialog(ctx context.Context) (string, error) {
+func kdialog(ctx context.Context) ([]string, error) {
 	// nix-shell -p kdialog
 	cmd := exec.CommandContext(ctx, "kdialog", "--getexistingdirectory")
 	pathRaw, err := cmd.Output()
 	if err != nil {
-		return "", err
+		return []string{}, err
 	}
 
 	path := trimTrailingNewline(pathRaw)
 
 	// kdialog may return a file, if so pick its parent
 	if info, err := os.Lstat(path); err != nil {
-		return "", errors.Wrap(err, "failed to Lstat user selected path via kdialog")
+		return []string{}, errors.Wrap(err, "failed to Lstat user selected path via kdialog")
 	} else if !info.IsDir() {
-		return filepath.Dir(path), nil
+		return []string{filepath.Dir(path)}, nil
 	}
 
-	return path, nil
+	return []string{path}, nil
 }
 
 func trimTrailingNewline(b []byte) string {
@@ -84,7 +89,7 @@ func trimTrailingNewline(b []byte) string {
 // Picker returns the filepath to a directory a user picked. It should exclude
 // the trailing /. If the operation times out or the user cancels, an error is
 // returned.
-type Picker func(ctx context.Context) (string, error)
+type Picker func(ctx context.Context) ([]string, error)
 
 // Lookup finds a Picker to run. If no Picker can be found, ok is false.
 func Lookup(logger log.Logger) (_ Picker, ok bool) {

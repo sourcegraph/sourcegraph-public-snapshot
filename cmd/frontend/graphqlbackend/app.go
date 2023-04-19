@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"path/filepath"
-	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -74,12 +73,10 @@ func (r *appResolver) LocalDirectoriesPicker(ctx context.Context) (LocalDirector
 		return nil, errors.New("filepicker is not available")
 	}
 
-	stringPaths, err := picker(ctx)
+	paths, err := picker(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	paths := strings.Split(stringPaths, ", ")
 
 	return &localDirectoryResolver{paths: paths}, nil
 }
