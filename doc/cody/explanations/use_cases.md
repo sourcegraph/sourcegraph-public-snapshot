@@ -1,13 +1,13 @@
-# Cody Use Cases
+# Cody use cases
 
-Cody can help with a wide range of day-to-day engineering work, including:
+Cody can help with you write code and answers questions in several ways, including:
 
 - [Writing code](#writing-code)
 - [Testing code](#testing-code)
 - [Fixing bugs](#fixing-bugs)
 - [Onboarding to a new codebase](#onboarding-to-a-new-codebase)
 
-## Writing Code
+## Writing code
 
 When writing code, Cody can help by generating boilerplate code, writing code with the fixup feature, or writing docstrings.
 
@@ -27,7 +27,7 @@ Cody can also add and edit code directly in your file rather than making suggest
 To fixup some code, try:
 
 1. Write something you'd like Cody to do inline in your file
-2. Highlight this code plus any related code you'd like changed, then click the recipe `Fixup code`. Alternatively, right click -> `Ask Cody` -> `Fixup`
+2. Highlight this code plus any related code you'd like changed, then use the `ctrl`+`alt`+`/` hotkey (or the `Cody: Fixup` VS Code command)
 3. Cody will work directly in your file
 
 For example:
@@ -42,9 +42,8 @@ For example:
 Cody can write docstrings for you to save time. To try this:
 
 1. Highlight a code snippet, such as a function or class
-2. Go to `Cody` -> `Recipes`
-3. Click `Generate a docstring`
-4. Cody will provide a copy of the code with docstrings inserted
+2. Right click -> `Ask Cody` -> `Ask Cody: Generate Docstring`
+3. Cody will provide a copy of the code with docstrings inserted
 
 ## Testing code
 
@@ -53,9 +52,8 @@ Cody can write docstrings for you to save time. To try this:
 When testing code, use Cody to quickly generate unit tests. Simply:
 
 1. Highlight a component you want to test (such as a specific function)
-2. Go to `Cody` -> `Recipes`
-3. Click `Generate a unit test`
-4. Cody provides code for a unit test
+2. Right click -> `Ask Cody` -> `Ask Cody: Generate Unit Test`
+3. Cody provides code for a unit test
 
 ## Fixing bugs
 
@@ -81,12 +79,12 @@ For example:
 
 - Type "fix the bug in this function" directly underneath some function code
 - Highlight the function plus the line you just typed
-- Click `Fixup code`
+- Use the `ctrl`+`alt`+`/` hotkey (or the `Cody: Fixup` VS Code command)
 - Cody will read your command and deploy its fix inline
 
 ## Onboarding to a new codebase
 
-When onboarding to a new codebase, understanding code at a high level can be time consuming and slow you down from contributing code. Use Cody to help understand code and get oriented to where things are defined.
+When onboarding to a new codebase, understanding code can be time consuming. Use Cody to help understand code faster and get oriented to where things are defined.
 
 ### Explain code at a high level
 
@@ -115,7 +113,7 @@ You can also ask Cody to retrieve helpful information right from your docs.
 
 ### Find resources that are already in use
 
-You can also ask Cody to find resources, such as libraries, that are already in use and available in a codebase. This makes it easy to ensure you're not reinventing the wheel.
+You can ask Cody to find resources, such as libraries, that are already in use and available in a codebase.
 
 Try asking Cody: "Do we already use any _language_ libraries that provide _XYZ_?"
 

@@ -11,7 +11,7 @@
 
 - Sourcegraph 5.0.1 or above
 - An Anthropic API key, that you can get from your Technical Advisor or Customer Engineer
-- (Optionally) An OpenAI API key for embeddings
+- (Optionally) An OpenAI API key for embeddings (to power code graph context)
 
 There are two steps required to enable Cody on your enterprise instance:
 
@@ -38,7 +38,7 @@ Note that this requires site-admin privileges.
     }
     ```
 4. You're done! 
-5. Cody can be configured to use embeddings to significantly improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [embeddings](#embeddings) section for more.
+5. Cody can be configured to use embeddings for code graph context to significantly improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [codebase-aware answers](#enabling-codebase-aware-answers) section for more.
 
 ### Step 2: Configure the VS Code extension
 
@@ -94,7 +94,7 @@ Cody can be enabled on demand on your Sourcegraph instance by contacting your ac
 
 ## Enabling codebase-aware answers
 
-**Pre-requisite: In order to enable codebase-aware answers for Cody, you must first [configure embeddings](embeddings.md).**
+**Pre-requisite: In order to enable codebase-aware answers for Cody, you must first [configure code graph context](code_graph_context.md).**
 
 The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. By setting this configuration option to the repository name on your Sourcegraph instance, Cody will be able to provide more accurate and relevant answers to your coding questions, based on the context of the codebase you are currently working in.
 

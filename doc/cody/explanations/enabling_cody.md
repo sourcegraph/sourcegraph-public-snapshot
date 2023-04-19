@@ -15,13 +15,13 @@ Cody uses Sourcegraph to fetch relevant context to generate answers and code. Th
 
 You're now ready to use Cody!
 
-## Configure embeddings for code-aware answers
+## Configure code graph context for code-aware answers
 
-After installing, you can optionally use embeddings to improve Cody's context of existing code. Embeddings significantly improve the accuracy and quality of Cody's responses. Note that embeddings are only available for public repositories on sourcegraph.com. [See the list](embedded-repos.md) of embedded repositories and request any that you'd like to add by pinging a Sourcegraph team member in [Discord](https://discord.gg/8wJF5EdAyA).
+After installing, you can optionally use [code graph context](code_graph_context.md) to improve Cody's context of existing code. Note that code graph context is only available for public repositories on sourcegraph.com which have embeddings. [See the list](embedded-repos.md) of repositories with embeddings and request any that you'd like to add by pinging a Sourcegraph team member in [Discord](https://discord.gg/8wJF5EdAyA).
 
-If you want to use Cody with embeddings on private code, consider moving to a Sourcegraph Enterprise instance.
+If you want to use Cody with code graph context on private code, consider moving to a Sourcegraph Enterprise instance.
 
-### Enable embeddings
+### Enable code graph context
 
 The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. By setting this configuration option to the name of a repository with embeddings, Cody will be able to provide more accurate and relevant answers to your coding questions based on that repository's content.
 
