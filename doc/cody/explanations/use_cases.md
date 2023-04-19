@@ -9,7 +9,7 @@ Cody can help with a wide range of day-to-day engineering work, including:
 
 ## Writing Code
 
-When writing code, Cody can help by generating boilerplate code, writing code, or writing docstrings.
+When writing code, Cody can help by generating boilerplate code, writing code with the fixup feature, or writing docstrings.
 
 ### Generate boilerplate code
 
