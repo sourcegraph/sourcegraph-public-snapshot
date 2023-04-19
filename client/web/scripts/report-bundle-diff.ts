@@ -33,7 +33,7 @@ async function getCompareRev(): Promise<string | undefined> {
                 .file(`sourcegraph/sourcegraph/bundle_size_cache-${revision}.tar.gz`)
                 .download({ destination: tarPath })
 
-            console.log(`Found cached archive for ${revision}`)
+            console.log(`Found cached archive for ${revision}`, tarPath)
             COMPARE_REV = revision
 
             return tarPath
@@ -50,7 +50,8 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
     const tarPath = await getCompareRev()
 
     if (tarPath) {
-        exec(`tar -xf ${tarPath} ${STATIC_ASSETS_PATH}`)
+        console.log(`tar -xf ${tarPath} -C ${STATIC_ASSETS_PATH}`)
+        exec(`tar -xf ${tarPath} -C ${STATIC_ASSETS_PATH}`)
 
         const commitFile = path.join(STATIC_ASSETS_PATH, `stats-${COMMIT}.json`)
         const compareFile = path.join(STATIC_ASSETS_PATH, `stats-${COMPARE_REV}.json`)
@@ -68,8 +69,8 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
             })
 
             return { commitFile, compareFile }
-        } catch {
-            console.log('No stats file found, skipping.')
+        } catch (error) {
+            console.log('No stats file found, skipping.', error)
             console.log(commitFile)
             console.log(compareFile)
         }
