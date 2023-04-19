@@ -30,8 +30,7 @@ command.stdout.on('data', (line: string) => console.log(`stdout: ${line}`))
 command.stderr.on('data', (line: string) => {
     let count: number = line.search(BACKEND_AVAILABLE_TEXT)
     if (count > 0) {
-        rootRender(false)
-        location.pathname = 'sign-in/nonce=foobar'
+        console.log('Backend is ready')
     }
     console.log(`stderr: ${line}`)
 })
@@ -48,13 +47,9 @@ async function rootRender(waiting: boolean = true) {
     try {
         const { graphqlClient, temporarySettingsStorage } = await appShellPromise
 
-        if (waiting) {
-            root.render(<h1>WAITING</h1>)
-        } else {
-            root.render(
-                <EnterpriseWebApp graphqlClient={graphqlClient} temporarySettingsStorage={temporarySettingsStorage} />
-            )
-        }
+        root.render(
+            <EnterpriseWebApp graphqlClient={graphqlClient} temporarySettingsStorage={temporarySettingsStorage} />
+        )
     } catch (error) {
         logger.error('Failed to initialize the app shell', error)
     }

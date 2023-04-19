@@ -20,6 +20,9 @@
             "sidecar": true
           }
         ]
+      },
+      "http": {
+        "all": true
       }
     },
     "bundle": {
