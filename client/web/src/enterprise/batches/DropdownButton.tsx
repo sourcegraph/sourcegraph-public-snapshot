@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
-import { BatchChangeRolloutWindow } from '@sourcegraph/shared/src/schema/site.schema'
 import {
     ProductStatusBadge,
     Button,
@@ -188,10 +187,13 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
                 )}
             </H4>
             <Text className="text-wrap text-muted mb-0">
-                {action.type === 'publish' && batchChangesRolloutWindows && batchChangesRolloutWindows.length > 0 ? (
+                {action.type === 'publish' ? (
                     <small>
-                        {action.dropdownDescription} Note: Rollout windows have been set up by the admin. This means
-                        that some of the selected changesets won't be processed until a time in the future.
+                        {action.dropdownDescription} <br></br>
+                        <b>
+                            Note: Rollout windows have been set up by the admin. This means that some of the selected
+                            changesets won't be processed until a time in the future.
+                        </b>{' '}
                     </small>
                 ) : (
                     <small>{action.dropdownDescription}</small>
