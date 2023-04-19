@@ -41,7 +41,7 @@ func groupAggregatedSearchStats(events []types.SearchAggregatedEvent) *types.Sea
 
 // GetAggregatedCodyStats queries the database for Cody usage and returns
 // the aggregates statistics in the format of our BigQuery schema.
-func GetAggregatedCodyStats(ctx context.Context, db database.DB) (*types.CodyUsageStatistics, error) {
+func GetAggregatedCodyStats(ctx context.Context, db database.DB) (int32, error) {
 	events, err := db.EventLogs().d(ctx, time.Now().UTC())
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func GetAggregatedCodyStats(ctx context.Context, db database.DB) (*types.CodyUsa
 // Sourcegraph's Postgres table) and returns a CodyUsageStatistics data type
 // that ends up being stored in BigQuery. CodyUsageStatistics corresponds to
 // the target DB schema.
-func groupAggregatedCodyStats(events []types.CodyAggregatedEvent) *types.CodyUsageStatistics {
+func groupAggregatedCodyStats(events []types.CodyAggregatedEvent) int32 {
 	codyUsageStats := &types.CodyUsageStatistics{
 		TotalInstalls: 0,
 		Daily:         []*types.CodyUsagePeriod{newCodyEventPeriod()},
@@ -103,22 +103,22 @@ var searchFilterCountExtractors = map[string]func(p *types.SearchUsagePeriod) *t
 	"count_only_patterns_three_or_more": func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OnlyPatternsThreeOrMore },
 }
 
-var codyEventCountExtractors = map[string]func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics{
-	"CodyVSCodeExtension:recipe:rewrite-to-functional:executed":   func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:improve-variable-names:executed":  func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:replace:executed":                 func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:generate-docstring:executed":      func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:generate-unit-test:executed":      func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:rewrite-functional:executed":      func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:code-refactor:executed":           func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:fixup:executed":                   func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:explain-code-high-level:executed": func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:explain-code-detailed:executed":   func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:find-code-smells:executed":        func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:git-history:executed":             func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:rate-code:executed":               func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:chat-question:executed":           func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.TotalRequests },
-	"CodyVSCodeExtension:recipe:translate-to-language:executed":   func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.ExplanationRequests },
+var codyEventCountExtractors = map[string]func(p *types.CodyUsagePeriod) int32{
+	"CodyVSCodeExtension:recipe:rewrite-to-functional:executed":   func(p *types.CodyUsagePeriod) int32 { return p.CodeGenerationRequests },
+	"CodyVSCodeExtension:recipe:improve-variable-names:executed":  func(p *types.CodyUsagePeriod) int32 { return p.CodeGenerationRequests },
+	"CodyVSCodeExtension:recipe:replace:executed":                 func(p *types.CodyUsagePeriod) int32 { return p.CodeGenerationRequests },
+	"CodyVSCodeExtension:recipe:generate-docstring:executed":      func(p *types.CodyUsagePeriod) int32 { return p.CodeGenerationRequests },
+	"CodyVSCodeExtension:recipe:generate-unit-test:executed":      func(p *types.CodyUsagePeriod) int32 { return p.CodeGenerationRequests },
+	"CodyVSCodeExtension:recipe:rewrite-functional:executed":      func(p *types.CodyUsagePeriod) int32 { return p.CodeGenerationRequests },
+	"CodyVSCodeExtension:recipe:code-refactor:executed":           func(p *types.CodyUsagePeriod) int32 { return p.CodeGenerationRequests },
+	"CodyVSCodeExtension:recipe:fixup:executed":                   func(p *types.CodyUsagePeriod) int32 { return p.CodeGenerationRequests },
+	"CodyVSCodeExtension:recipe:explain-code-high-level:executed": func(p *types.CodyUsagePeriod) int32 { return p.ExplanationRequests },
+	"CodyVSCodeExtension:recipe:explain-code-detailed:executed":   func(p *types.CodyUsagePeriod) int32 { return p.ExplanationRequests },
+	"CodyVSCodeExtension:recipe:find-code-smells:executed":        func(p *types.CodyUsagePeriod) int32 { return p.ExplanationRequests },
+	"CodyVSCodeExtension:recipe:git-history:executed":             func(p *types.CodyUsagePeriod) int32 { return p.ExplanationRequests },
+	"CodyVSCodeExtension:recipe:rate-code:executed":               func(p *types.CodyUsagePeriod) int32 { return p.ExplanationRequests },
+	"CodyVSCodeExtension:recipe:chat-question:executed":           func(p *types.CodyUsagePeriod) int32 { return p.TotalRequests },
+	"CodyVSCodeExtension:recipe:translate-to-language:executed":   func(p *types.CodyUsagePeriod) int32 { return p.ExplanationRequests },
 }
 
 // populateSearchEventStatistics is a side-effecting function that populates the
