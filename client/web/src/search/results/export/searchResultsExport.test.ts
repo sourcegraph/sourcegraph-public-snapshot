@@ -923,6 +923,11 @@ describe('searchResultsToFileContent', () => {
                     repoLastFetched: '2022-12-15T03:33:35.440014Z',
                     description:
                         "Download and generate EPUB of your favorite books from O'Reilly Learning (aka Safari Books Online) library.",
+                    keyValuePairs: {
+                        oss: undefined,
+                        deprecated: undefined,
+                        'some",non-standard-key': 'value',
+                    },
                 },
                 {
                     type: 'repo',
@@ -1392,6 +1397,14 @@ describe('searchResultsToFileContent', () => {
 
     test.each(data)('returns correct content for searchType "%s"', (searchType, results, content) => {
         expect(searchResultsToFileContent(results, sourcegraphURL)).toEqual(content)
+    })
+
+    test('returns correct content for repo match with enableRepositoryMetadata=true', () => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const [, results] = data.find(([searchType]) => searchType === 'repo')!
+        expect(searchResultsToFileContent(results, sourcegraphURL, true)).toEqual(
+            'Match type,Repository,Repository external URL,Repository metadata\nrepo,github.com/lorenzodifuccia/safaribooks,http://localhost:3443/github.com/lorenzodifuccia/safaribooks,"oss\ndeprecated\nsome"",non-standard-key:value"\nrepo,github.com/rfletcher/safari-json-formatter,http://localhost:3443/github.com/rfletcher/safari-json-formatter,""\nrepo,github.com/AdguardTeam/AdGuardForSafari,http://localhost:3443/github.com/AdguardTeam/AdGuardForSafari,""\nrepo,github.com/kishikawakatsumi/SourceKitForSafari,http://localhost:3443/github.com/kishikawakatsumi/SourceKitForSafari,""\nrepo,github.com/shaojiankui/iOS-UDID-Safari,http://localhost:3443/github.com/shaojiankui/iOS-UDID-Safari,""'
+        )
     })
 })
 
