@@ -320,6 +320,7 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 		// X-Requested-With header.
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		if isTrustedOrigin(r) {
+			println("🍋", "WE ARE TRUSTED")
 			// X-Sourcegraph-Client is the deprecated form of X-Requested-With, so we treat it the same
 			// way. It is NOT respected anymore, but is left as an allowed header so as to not block
 			// requests that still do include it as e.g. part of a proxy put in front of Sourcegraph.

@@ -31,7 +31,7 @@ command.stderr.on('data', (line: string) => {
     let count: number = line.search(BACKEND_AVAILABLE_TEXT)
     if (count > 0) {
         rootRender(false)
-        location.assign('http://localhost:3080/sign-in?nonce=foobar&returnTo=/')
+        location.pathname = 'sign-in/nonce=foobar'
     }
     console.log(`stderr: ${line}`)
 })
@@ -78,11 +78,8 @@ window.fetch = function (url, ...args) {
     if (!url.startsWith('/.assets') && !url.includes('://')) {
         url = `http://localhost:3080${url}`
     }
-    let headers = {
-        Origin: 'http://localhost',
-    }
     console.log('requesting', url)
-    return originalFetch(url, { headers, ...args })
+    return originalFetch(url, ...args)
 }
 window.EventSource = function (url, ...args) {
     if (!url.startsWith('/.assets') && !url.includes('://')) {
