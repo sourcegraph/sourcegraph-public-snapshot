@@ -1,4 +1,4 @@
-use std::{io::BufWriter, ops::Not, path};
+use std::{collections::HashMap, io::BufWriter, ops::Not, path};
 
 use scip::types::{descriptor::Suffix, Descriptor};
 use scip_treesitter_languages::parsers::BundledParser;
@@ -60,6 +60,7 @@ impl<'a> Reply<'a> {
         path: &'a str,
         language: &'a str,
         tag_scope: Option<&'a str>,
+        scope_deduplicator: &mut HashMap<String, ()>,
     ) {
         let descriptors = &scope.descriptors;
         let name = descriptors
@@ -67,6 +68,17 @@ impl<'a> Reply<'a> {
             .map(|d| d.name.as_str())
             .collect::<Vec<_>>()
             .join(".");
+
+        let mut dedup = match tag_scope {
+            Some(ts) => vec![ts],
+            None => vec![],
+        };
+        dedup.push(&name);
+        let dedup = dedup.join(".");
+        if scope_deduplicator.contains_key(&dedup) {
+            return;
+        }
+        scope_deduplicator.insert(dedup, ());
 
         let tag = Self::Tag(Tag {
             name,
@@ -118,7 +130,15 @@ pub fn generate_tags<W: std::io::Write>(
         }
     };
 
-    emit_tags_for_scope(buf_writer, filepath, vec![], &root_scope, "go");
+    let mut scope_deduplicator = HashMap::new();
+    emit_tags_for_scope(
+        buf_writer,
+        filepath,
+        vec![],
+        &root_scope,
+        "go",
+        &mut scope_deduplicator,
+    );
     Some(())
 }
 
@@ -143,6 +163,7 @@ fn emit_tags_for_scope<W: std::io::Write>(
     parent_scopes: Vec<String>,
     scope: &Scope,
     language: &str,
+    scope_deduplicator: &mut HashMap<String, ()>,
 ) {
     let curr_scopes = {
         let mut curr_scopes = parent_scopes.clone();
@@ -159,11 +180,25 @@ fn emit_tags_for_scope<W: std::io::Write>(
             .then(|| parent_scopes.join("."));
         let tag_scope = tag_scope.as_deref();
 
-        Reply::write_tag(&mut *buf_writer, scope, path, language, tag_scope);
+        Reply::write_tag(
+            &mut *buf_writer,
+            scope,
+            path,
+            language,
+            tag_scope,
+            scope_deduplicator,
+        );
     }
 
     for subscope in &scope.children {
-        emit_tags_for_scope(buf_writer, path, curr_scopes.clone(), subscope, language);
+        emit_tags_for_scope(
+            buf_writer,
+            path,
+            curr_scopes.clone(),
+            subscope,
+            language,
+            scope_deduplicator,
+        );
     }
 
     for global in &scope.globals {
