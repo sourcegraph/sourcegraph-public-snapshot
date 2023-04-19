@@ -71,7 +71,7 @@ func isQuerySimilarToNoContextMessages(
 		return false, errors.Wrap(err, "getting context detection embedding index")
 	}
 
-	queryEmbedding, err := getQueryEmbedding(query)
+	queryEmbedding, err := getQueryEmbedding(ctx, query)
 	if err != nil {
 		return false, errors.Wrap(err, "getting query embedding")
 	}
