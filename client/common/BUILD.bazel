@@ -1,6 +1,7 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+load("//dev:eslint.bzl", "eslint_test")
 
 npm_link_all_packages(name = "node_modules")
 
@@ -113,4 +114,22 @@ jest_test(
     data = [
         ":common_tests",
     ],
+)
+
+eslint_test(
+    name = "foo",
+    data = [
+        "src/errors/errors.test.ts",
+        "src/util/fetchCache.test.ts",
+        "src/util/hashCode.test.ts",
+        "src/util/highlightNode.test.ts",
+        "src/util/jsonc.test.ts",
+        "src/util/markdown/markdown.test.ts",
+        "src/util/rxjs/asObservable.test.ts",
+        "src/util/rxjs/combineLatestOrDefault.test.ts",
+        "src/util/rxjs/repeatUntil.test.ts",
+        "src/util/string.test.ts",
+        "src/util/url.test.ts",
+    ],
+    deps = ["//:eslint_config"],
 )

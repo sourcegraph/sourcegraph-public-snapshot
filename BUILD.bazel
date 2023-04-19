@@ -204,6 +204,23 @@ js_library(
     visibility = ["//visibility:public"],
 )
 
+js_library(
+    name = "eslint_config",
+    testonly = True,
+    srcs = [
+        ".eslintignore",
+        ".eslintrc.js",
+        "tsconfig.eslint.json",
+    ],
+    deps = [
+        ":node_modules/@sourcegraph/eslint-config",
+        ":node_modules/@sourcegraph/eslint-plugin-sourcegraph",
+        ":node_modules/@sourcegraph/eslint-plugin-wildcard",
+        ":node_modules/eslint-plugin-jsdoc",
+        ":node_modules/eslint-plugin-monorepo",
+    ],
+)
+
 # Go
 
 # nogo config
