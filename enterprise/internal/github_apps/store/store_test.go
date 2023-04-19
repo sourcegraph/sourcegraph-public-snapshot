@@ -21,6 +21,7 @@ func TestCreateGitHubApp(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := &githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
 	app := &types.GitHubApp{
@@ -33,7 +34,6 @@ func TestCreateGitHubApp(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	store := &githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	err := store.Create(ctx, app)
 	require.NoError(t, err)
 
@@ -60,6 +60,7 @@ func TestDeleteGitHubApp(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
 	app := &types.GitHubApp{
@@ -71,7 +72,6 @@ func TestDeleteGitHubApp(t *testing.T) {
 		PrivateKey:   "private-key",
 	}
 
-	store := githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	err := store.Create(ctx, app)
 	require.NoError(t, err)
 
@@ -93,11 +93,10 @@ func TestUpdateGitHubApp(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := context.Background()
-
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
 
 	app := &types.GitHubApp{
 		AppID:        123,
@@ -150,6 +149,7 @@ func TestGetByID(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := &githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
 	app1 := &types.GitHubApp{
@@ -174,7 +174,6 @@ func TestGetByID(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	store := &githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	err := store.Create(ctx, app1)
 	require.NoError(t, err)
 	err = store.Create(ctx, app2)
