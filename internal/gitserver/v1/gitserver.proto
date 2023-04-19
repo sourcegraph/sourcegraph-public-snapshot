@@ -9,6 +9,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 service GitserverService {
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
+  rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
 }
 
 message ExecRequest {
@@ -191,4 +192,15 @@ message CommitMatch {
   // to its first parent. May be unset if `include_modified_files` is not
   // specified in the request.
   repeated string modified_files = 9;
+}
+
+message ArchiveRequest {
+    string repo = 1;
+    string treeish = 2;
+    string format = 3;
+    repeated string pathspecs = 4;
+}
+
+message ArchiveResponse {
+    bytes data = 1;
 }
