@@ -40,7 +40,6 @@ go_test(
         "//enterprise/internal/licensing",
         "//internal/api",
         "//internal/authz",
-        "//internal/conf",
         "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/extsvc/github",
