@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -15,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -62,8 +60,8 @@ var (
 	_ VersionSource              = &GitHubSource{}
 )
 
-// NewGithubSource returns a new GitHubSource from the given external service.
-func NewGithubSource(ctx context.Context, logger log.Logger, externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+// NewGitHubSource returns a new GitHubSource from the given external service.
+func NewGitHubSource(ctx context.Context, logger log.Logger, externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -72,7 +70,7 @@ func NewGithubSource(ctx context.Context, logger log.Logger, externalServicesSto
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(logger, externalServicesStore, svc, &c, cf)
+	return newGitHubSource(logger, externalServicesStore, svc, &c, cf)
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -86,7 +84,7 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "The amount of time spent waiting on the rate limit",
 }, []string{"resource", "name"})
 
-func newGithubSource(
+func newGitHubSource(
 	logger log.Logger,
 	externalServicesStore database.ExternalServiceStore,
 	svc *types.ExternalService,
@@ -154,38 +152,23 @@ func newGithubSource(
 	if err != nil {
 		return nil, err
 	}
-	token := &auth.OAuthBearerToken{Token: c.Token}
+	var auther auth.Authenticator
+	if c.IsGitHubAppInstallation() {
+		// TODO: Fetch GitHub App details
+		auther = github.NewGitHubAppInstallationAuthenticator(logger, c.GitHubAppDetails.InstallationID, "", nil)
+	} else {
+		auther = &auth.OAuthBearerToken{Token: c.Token}
+	}
 	urn := svc.URN()
 
 	var (
 		v3ClientLogger = log.Scoped("source", "github client for github source")
-		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, token, cli)
-		v4Client       = github.NewV4Client(urn, apiURL, token, cli)
+		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cli)
+		v4Client       = github.NewV4Client(urn, apiURL, auther, cli)
 
 		searchClientLogger = log.Scoped("search", "github client for search")
-		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, token, cli)
+		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, auther, cli)
 	)
-
-	useGitHubApp := false
-	config, err := conf.GitHubAppConfig()
-	if err != nil {
-		return nil, err
-	}
-	if c.GithubAppInstallationID != "" && config.Configured() {
-		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
-		if err != nil {
-			return nil, errors.Wrap(err, "parse installation ID")
-		}
-
-		installationAuther, err := database.BuildGitHubAppInstallationAuther(externalServicesStore, config.AppID, config.PrivateKey, urn, apiURL, cli, installationID, svc)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating GitHub App installation authenticator")
-		}
-
-		v3Client = github.NewV3Client(v3ClientLogger, urn, apiURL, installationAuther, cli)
-		v4Client = github.NewV4Client(urn, apiURL, installationAuther, cli)
-		useGitHubApp = true
-	}
 
 	for resource, monitor := range map[string]*ratelimit.Monitor{
 		"rest":    v3Client.ExternalRateLimiter(),
@@ -217,13 +200,11 @@ func newGithubSource(
 		v4Client:         v4Client,
 		searchClient:     searchClient,
 		originalHostname: originalHostname,
-		useGitHubApp:     useGitHubApp,
 		logger: logger.With(
 			log.Object("GitHubSource",
 				log.Bool("excludeForks", excludeForks),
 				log.Bool("githubDotCom", githubDotCom),
 				log.String("originalHostname", originalHostname),
-				log.Bool("useGitHubApp", useGitHubApp),
 			),
 		),
 	}, nil
@@ -232,7 +213,9 @@ func newGithubSource(
 func (s *GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	switch a.(type) {
 	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH:
+		*auth.OAuthBearerTokenWithSSH,
+		*github.GitHubAppAuthenticator,
+		*github.GitHubAppInstallationAuthenticator:
 		break
 
 	default:
@@ -1100,7 +1083,6 @@ func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githu
 // to avoid hitting the GitHub search API 1000 results limit, which would cause
 // use to miss matches.
 func (s *repositoryQuery) Refine() bool {
-
 	if s.Created.Size() < 2*time.Second {
 		// Can't refine further than 1 second
 		return false

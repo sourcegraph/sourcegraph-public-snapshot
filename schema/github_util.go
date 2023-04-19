@@ -22,3 +22,7 @@ func (c *GitHubConnection) SetRepos(all bool, repos []string) error {
 	c.Repos = repos
 	return nil
 }
+
+func (c *GitHubConnection) IsGitHubAppInstallation() bool {
+	return c.GitHubAppDetails != nil
+}

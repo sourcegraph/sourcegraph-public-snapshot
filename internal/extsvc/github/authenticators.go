@@ -70,7 +70,7 @@ func (a *GitHubAppAuthenticator) Hash() string {
 }
 
 type GitHubAppInstallationAuthenticator struct {
-	installationID          int64
+	installationID          int
 	InstallationAccessToken string
 	Expiry                  time.Time
 	appAuthenticator        *GitHubAppAuthenticator
@@ -78,17 +78,19 @@ type GitHubAppInstallationAuthenticator struct {
 
 func NewGitHubAppInstallationAuthenticator(
 	logger log.Logger,
-	installationID int64,
+	installationID int,
 	installationAccessToken string,
-	expiry time.Time,
 	appAuthenticator *GitHubAppAuthenticator,
-) (*GitHubAppInstallationAuthenticator, error) {
-	return &GitHubAppInstallationAuthenticator{
+) *GitHubAppInstallationAuthenticator {
+	auther := &GitHubAppInstallationAuthenticator{
 		installationID:          installationID,
 		InstallationAccessToken: installationAccessToken,
-		Expiry:                  expiry,
 		appAuthenticator:        appAuthenticator,
-	}, nil
+	}
+	if installationAccessToken == "" {
+		// TODO: auther.Refresh()
+	}
+	return auther
 }
 
 func (a *GitHubAppInstallationAuthenticator) Refresh(ctx context.Context, cli httpcli.Doer) error {
