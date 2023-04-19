@@ -103,7 +103,7 @@ var searchFilterCountExtractors = map[string]func(p *types.SearchUsagePeriod) *t
 	"count_only_patterns_three_or_more": func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OnlyPatternsThreeOrMore },
 }
 
-var codyEventCountExtractors = map[string]func(p *types.CodyUsagePeriod) *types.CodyCountStatistics{
+var codyEventCountExtractors = map[string]func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics{
 	"CodyVSCodeExtension:recipe:rewrite-to-functional:executed":   func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.CodeGenerationRequests },
 	"CodyVSCodeExtension:recipe:improve-variable-names:executed":  func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.CodeGenerationRequests },
 	"CodyVSCodeExtension:recipe:replace:executed":                 func(p *types.CodyUsagePeriod) *types.CodyUsageStatistics { return p.CodeGenerationRequests },

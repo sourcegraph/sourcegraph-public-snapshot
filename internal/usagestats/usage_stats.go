@@ -148,22 +148,6 @@ func GetByUserID(ctx context.Context, db database.DB, userID int32) (*types.User
 	}, nil
 }
 
-// GetCodyUsersActiveTodayCount returns a count of cody users that have been active today.
-func GetCodyUsersActiveTodayCount(ctx context.Context, db database.DB) (int, error) {
-	now := timeNow().UTC()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	return db.EventLogs().CountCodyUsersAll(
-		ctx,
-		today,
-		today.AddDate(0, 0, 1),
-		&database.CountUniqueUsersOptions{CommonUsageOptions: database.CommonUsageOptions{
-			ExcludeSystemUsers:          true,
-			ExcludeSourcegraphAdmins:    true,
-			ExcludeSourcegraphOperators: true,
-		}},
-	)
-}
-
 // GetUsersActiveTodayCount returns a count of users that have been active today.
 func GetUsersActiveTodayCount(ctx context.Context, db database.DB) (int, error) {
 	now := timeNow().UTC()
