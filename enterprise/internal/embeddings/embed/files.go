@@ -2,7 +2,6 @@ package embed
 
 import (
 	"path/filepath"
-
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
@@ -21,9 +20,16 @@ var textFileExtensions = map[string]struct{}{
 }
 
 var defaultExcludedFilePathPatterns = []string{
+	".*ignore", // Files like .gitignore, .eslintignore
+	".gitattributes",
+	".mailmap",
+	"*.csv",
 	"*.sql",
 	"*.svg",
 	"*.json",
+	"*.jsonc",
+	"*.jsonl",
+	"*.xml",
 	"*.yml",
 	"*.yaml",
 	"__fixtures__/",
