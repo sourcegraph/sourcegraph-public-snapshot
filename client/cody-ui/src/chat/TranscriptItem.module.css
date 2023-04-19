@@ -27,6 +27,8 @@
 
 .participant {
     font-weight: bold;
+    display: flex;
+    justify-content: space-between;
 }
 
 .participant-name {
@@ -64,10 +66,25 @@
     overflow-x: auto;
 }
 
-
 .content > div:first-child > *:first-child {
     margin-top: 0;
 }
 .content > div:first-child > *:last-child {
     margin-bottom: 0;
+}
+
+.feedback-buttons-container {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+
+    margin: 0;
+    padding: 0 var(--spacing) var(--spacing) var(--spacing);
+
+    font-size: 0.8rem;
+}
+
+.feedback-buttons {
+    display: flex;
+    margin: 0;
 }

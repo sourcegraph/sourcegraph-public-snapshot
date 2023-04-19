@@ -12,6 +12,7 @@ export type WebviewMessage =
           command: 'initialized'
       }
     | { command: 'reset' }
+    | { command: 'event'; event: string; value: string }
     | { command: 'submit'; text: string }
     | { command: 'executeRecipe'; recipe: string }
     | { command: 'settings'; serverEndpoint: string; accessToken: string }
@@ -39,3 +40,5 @@ export type ExtensionMessage =
 export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debug' | 'serverEndpoint'> {
     hasAccessToken: boolean
 }
+
+export const DOTCOM_URL = new URL('https://sourcegraph.com')

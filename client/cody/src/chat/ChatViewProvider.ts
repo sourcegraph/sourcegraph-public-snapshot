@@ -25,7 +25,7 @@ import { logEvent } from '../event-logger'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
-import { ConfigurationSubsetForWebview, ExtensionMessage, WebviewMessage } from './protocol'
+import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, WebviewMessage } from './protocol'
 
 export async function isValidLogin(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
@@ -113,14 +113,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
-                    logEvent('CodyVSCodeExtension:login:clicked')
+                    this.sendEvent('auth', 'login')
                 }
                 void this.webview?.postMessage({ type: 'login', isValid })
                 break
             }
+            case 'event':
+                this.sendEvent(message.event, message.value)
+                break
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-                logEvent('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
+                this.sendEvent('token', 'Delete')
                 break
             case 'removeHistory':
                 await this.localStorage.removeChatHistory()
@@ -340,6 +343,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         this.disposables.push(this.configurationChangeEvent.event(() => send()))
         send().catch(error => console.error(error))
+    }
+
+    public sendEvent(event: string, value: string): void {
+        const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href
+        switch (event) {
+            case 'feedback':
+                // Only include context for dot com users with connected codebase
+                logEvent(
+                    `CodyVSCodeExtension:codyFeedback:${value}`,
+                    null,
+                    !isPrivateInstance && this.config.codebase ? this.transcript.toChat() : null
+                )
+                break
+            case 'token':
+                logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`)
+                break
+            case 'auth':
+                logEvent(`CodyVSCodeExtension:${value}:clicked`)
+                break
+        }
     }
 
     /**
