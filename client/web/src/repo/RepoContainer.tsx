@@ -1,4 +1,4 @@
-import React, { FC, Suspense, useEffect, useMemo, useState, useCallback } from 'react'
+import React, { FC, Suspense, useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
@@ -24,7 +24,6 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { EditorHint, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
