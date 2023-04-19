@@ -73,8 +73,6 @@ A few things you can ask Cody:
 
 <img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
 
-
-
 ## Cody on Sourcegraph Cloud
 
 On Sourcegraph Cloud, Cody is a managed service and you do not need to follow the step 1 of the self-hosted guide above. 
