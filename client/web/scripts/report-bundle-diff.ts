@@ -54,8 +54,10 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
         console.log('---------')
         exec(`tar tvf ${tarPath}`)
         console.log('---------')
-        exec(`tar -xf ${tarPath} ui/assets -C ${STATIC_ASSETS_PATH}`)
+        exec(`tar -xf ${tarPath} --strip-components=2 ui/assets -C ${STATIC_ASSETS_PATH}`)
+        console.log('---------')
         exec(`ls -la ${STATIC_ASSETS_PATH}`)
+        console.log('---------')
 
         const commitFile = path.join(STATIC_ASSETS_PATH, `stats-${COMMIT}.json`)
         const compareFile = path.join(STATIC_ASSETS_PATH, `stats-${COMPARE_REV}.json`)
