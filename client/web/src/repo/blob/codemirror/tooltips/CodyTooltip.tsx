@@ -1,4 +1,4 @@
-import { EditorSelection, EditorState, Extension, StateEffect, StateField } from '@codemirror/state'
+import { EditorState, Extension, StateEffect, StateField } from '@codemirror/state'
 import { EditorView, PluginValue, Tooltip, ViewPlugin, showTooltip } from '@codemirror/view'
 import ReactDOM from 'react-dom/client'
 
@@ -9,7 +9,7 @@ export const codyTooltip = StateField.define<Tooltip | null>({
         return null
     },
     update(value, transaction) {
-        if (isSelectionCollapsed(transaction.newSelection)) {
+        if (transaction.newSelection.main.empty) {
             return null
         }
 
@@ -58,7 +58,7 @@ const selectionChangedPlugin = ViewPlugin.fromClass(
 function computeCodyWidget(state: EditorState): Tooltip | null {
     const { selection } = state
 
-    if (isSelectionCollapsed(selection)) {
+    if (selection.main.empty) {
         return null
     }
 
@@ -93,20 +93,4 @@ function computeCodyWidget(state: EditorState): Tooltip | null {
             return { dom }
         },
     }
-}
-
-function isSelectionCollapsed(selection: EditorSelection): boolean {
-    if (!selection || selection.ranges.length === 0) {
-        return true
-    }
-
-    const [range] = selection.ranges
-    const { head, anchor } = range
-
-    // Don't show the tooltip if the selection is collapsed
-    if (head === anchor) {
-        return true
-    }
-
-    return false
 }
