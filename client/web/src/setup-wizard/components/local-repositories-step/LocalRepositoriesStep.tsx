@@ -128,6 +128,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                 })
             }
 
+            // Refetch local external services and status after all mutations have been completed.
             await apolloClient.refetchQueries({ include: ['GetLocalCodeHosts', 'StatusAndRepoStats'] })
         }
 
