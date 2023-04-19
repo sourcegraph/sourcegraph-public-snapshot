@@ -4,14 +4,13 @@ import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 
-import styles from './CodeBlocks.module.css'
-
 import { ChatProps } from '../Chat'
+
+import styles from './CodeBlocks.module.css'
 
 interface CodeBlocksProps {
     displayText: string
     copyButtonClassName?: string
-
 }
 
 interface Props extends CodeBlocksProps, Pick<ChatProps, 'logEvent'> {
@@ -50,14 +49,10 @@ function createCopyButtonWithContainer(
     return container
 }
 
-// const logEvent = (eventName: string, eventProperties?: any) => {
-//     console.log(eventName, eventProperties)
-// }
-
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps & Props> = ({
     displayText,
     copyButtonClassName,
-    logEvent
+    logEvent,
 }) => {
     useEffect(() => {
         const preElements = document.querySelectorAll('pre')
