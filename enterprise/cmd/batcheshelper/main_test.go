@@ -120,14 +120,6 @@ func TestParsePreviousStepResult(t *testing.T) {
 			expected: execution.AfterStepResult{Version: 2},
 		},
 		{
-			name: "Previous step is not skipped, but file is missing",
-			step: 1,
-			newStepFileFunc: func(t *testing.T) string {
-				return ""
-			},
-			expectedErr: errors.New("failed to read step result file: open step0.json: no such file or directory"),
-		},
-		{
 			name: "Previous step is not skipped, but file is invalid",
 			step: 1,
 			newStepFileFunc: func(t *testing.T) string {
@@ -145,7 +137,7 @@ func TestParsePreviousStepResult(t *testing.T) {
 			if test.newStepFileFunc != nil {
 				path = test.newStepFileFunc(t)
 			}
-			result, err := parsePreviousStepResult(path, test.step, test.skippedSteps)
+			result, err := parsePreviousStepResult(path, test.step)
 
 			if test.expectedErr != nil {
 				require.Error(t, err)
