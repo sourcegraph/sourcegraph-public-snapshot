@@ -19,6 +19,7 @@ async function getCompareRev(): Promise<string | undefined> {
 
     console.log('mergeBase', MERGE_BASE)
     console.log('revisions', revisions)
+    await fs.mkdir('./ui/assets', { recursive: true })
 
     for (const revision of revisions) {
         try {
