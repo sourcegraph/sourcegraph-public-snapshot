@@ -15,7 +15,7 @@ import (
 
 type readFileFn func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error)
 type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
-type getQueryEmbeddingFn func(query string) ([]float32, error)
+type getQueryEmbeddingFn func(ctx context.Context, query string) ([]float32, error)
 
 func searchRepoEmbeddingIndex(
 	ctx context.Context,
@@ -30,7 +30,7 @@ func searchRepoEmbeddingIndex(
 		return nil, errors.Wrap(err, "getting repo embedding index")
 	}
 
-	embeddedQuery, err := getQueryEmbedding(params.Query)
+	embeddedQuery, err := getQueryEmbedding(ctx, params.Query)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting query embedding")
 	}
