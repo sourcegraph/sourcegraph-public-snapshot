@@ -73,14 +73,14 @@ type GitHubAppInstallationAuthenticator struct {
 	installationID          int
 	InstallationAccessToken string
 	Expiry                  time.Time
-	appAuthenticator        *GitHubAppAuthenticator
+	appAuthenticator        auth.Authenticator
 }
 
 func NewGitHubAppInstallationAuthenticator(
 	logger log.Logger,
 	installationID int,
 	installationAccessToken string,
-	appAuthenticator *GitHubAppAuthenticator,
+	appAuthenticator auth.Authenticator,
 ) *GitHubAppInstallationAuthenticator {
 	auther := &GitHubAppInstallationAuthenticator{
 		installationID:          installationID,
@@ -91,9 +91,8 @@ func NewGitHubAppInstallationAuthenticator(
 }
 
 func (a *GitHubAppInstallationAuthenticator) Refresh(ctx context.Context, cli httpcli.Doer) error {
-	_, err := a.appAuthenticator.generateJWT()
-	if err != nil {
-		return err
+	if a.appAuthenticator == nil {
+		return errors.New("appAuthenticator is nil")
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/app/installations/%d/access_tokens", a.installationID), nil)
