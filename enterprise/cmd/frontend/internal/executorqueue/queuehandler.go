@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches"
@@ -23,9 +24,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var validQueues = []string{"batches", "codeintel"}
+
+func validateQueues(queues []string) []string {
+	var invalidQueues []string
+	for _, queue := range queues {
+		if !slices.Contains(validQueues, queue) {
+			invalidQueues = append(invalidQueues, queue)
+		}
+	}
+	return invalidQueues
+}
 
 func newExecutorQueuesHandler(
 	observationCtx *observation.Context,
@@ -98,12 +112,15 @@ func newExecutorQueuesHandler(
 		}
 
 		queueRouter.Path("/dequeue").Methods(http.MethodPost).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			//var req dequeueRequest
 			var req dequeueRequest
 			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-				// TODO
+				// TODO: should we also log errors here? Not sure
+				http.Error(w, fmt.Sprintf("Failed to unmarshal payload: %s", err.Error()), http.StatusBadRequest)
 			}
 
-			if err := validateWorkerHostname(req.WorkerHostName); err != nil {
+			// TODO: simply exported this method: I guess all of this will move into the handler package anyway so temp solution
+			if err := handler.ValidateWorkerHostname(req.WorkerHostName); err != nil {
 				// TODO
 			}
 
@@ -112,34 +129,58 @@ func newExecutorQueuesHandler(
 				var err error
 				version2Supported, err = api.CheckSourcegraphVersion(req.Version, "4.3.0-0", "2022-11-24")
 				if err != nil {
-					// TODO
+					// TODO: should we also log errors here? Not sure
+					http.Error(w, fmt.Sprintf("Failed to check Sourcegraph version: %s", err.Error()), http.StatusInternalServerError)
 				}
 			}
 
-			// TODO - validate queue list
+			if invalidQueues := validateQueues(req.Queues); len(invalidQueues) != 0 {
+				// TODO: should we also log errors here? Not sure
+				http.Error(w, fmt.Sprintf("Invalid queue name(s) '%s' found. Supported queue names are '%s'. ", strings.Join(invalidQueues, ", "), strings.Join(validQueues, ", ")), http.StatusBadRequest)
+			}
+
+			resourceMetadata := handler.ResourceMetadata{
+				NumCPUs:   req.NumCPUs,
+				Memory:    req.Memory,
+				DiskSpace: req.DiskSpace,
+			}
 			var job executortypes.Job
 			// TODO - impl fairness later
 			for _, queue := range req.Queues {
+				// TODO: basically replicating error handling of handler.dequeue() here
 				switch queue {
 				case "batches":
 					record, _, err := batchesQueueHandler.Store.Dequeue(r.Context(), req.WorkerHostName, nil)
 					if err != nil {
-						// TODO
+						logger.Error("Handler returned an error", log.Error(err))
+						http.Error(w, fmt.Sprintf("Failed to dequeue from queue %s: %s", queue, errors.Wrap(err, "dbworkerstore.Dequeue").Error()), http.StatusInternalServerError)
 					}
-					// TODO - resource meta
-					job, err = batchesQueueHandler.RecordTransformer(r.Context(), req.Version, record, handler.ResourceMetadata{})
+
+					job, err = batchesQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
 					if err != nil {
-						// TODO
+						if _, err = batchesQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); err != nil {
+							logger.Error("Failed to mark record as failed",
+								log.Int("recordID", record.RecordID()),
+								log.Error(err))
+						}
+
+						http.Error(w, fmt.Sprintf("Failed to transform %s record into job: %s", queue, errors.Wrap(err, "RecordTransformer")), http.StatusInternalServerError)
 					}
 				case "codeintel":
 					record, _, err := codeIntelQueueHandler.Store.Dequeue(r.Context(), req.WorkerHostName, nil)
 					if err != nil {
-						// TODO
+						logger.Error("Handler returned an error", log.Error(err))
+						http.Error(w, fmt.Sprintf("Failed to dequeue from queue %s: %s", queue, errors.Wrap(err, "dbworkerstore.Dequeue").Error()), http.StatusInternalServerError)
 					}
-					// TODO - resource meta
-					job, err = codeIntelQueueHandler.RecordTransformer(r.Context(), req.Version, record, handler.ResourceMetadata{})
+					job, err = codeIntelQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
 					if err != nil {
-						// TODO
+						if _, err = codeIntelQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); err != nil {
+							logger.Error("Failed to mark record as failed",
+								log.Int("recordID", record.RecordID()),
+								log.Error(err))
+						}
+
+						http.Error(w, fmt.Sprintf("Failed to transform %s record into job: %s", queue, errors.Wrap(err, "RecordTransformer")), http.StatusInternalServerError)
 					}
 				}
 				if job.ID != 0 {
@@ -157,10 +198,10 @@ func newExecutorQueuesHandler(
 						// Token has already been created, regen it.
 						token, err = jobTokenStore.Regenerate(r.Context(), job.ID, queue)
 						if err != nil {
-							// TODO
+							http.Error(w, fmt.Sprintf("Failed to regenerate token: %s", errors.Wrap(err, "RegenerateToken").Error()), http.StatusInternalServerError)
 						}
 					} else {
-						// TODO
+						http.Error(w, fmt.Sprintf("Failed to create token: %s", errors.Wrap(err, "CreateToken").Error()), http.StatusInternalServerError)
 					}
 				}
 				job.Token = token
@@ -169,7 +210,8 @@ func newExecutorQueuesHandler(
 
 			// TODO - does this actually work?
 			if err := json.NewEncoder(w).Encode(job); err != nil {
-				// TODO
+				logger.Error("Failed to serialize payload", log.Error(err))
+				http.Error(w, fmt.Sprintf("Failed to serialize payload: %s", err), http.StatusInternalServerError)
 			}
 		})
 
@@ -199,10 +241,15 @@ func newExecutorQueuesHandler(
 	return factory
 }
 
+// TODO: fairly sure this is basically executortypes.DequeueRequest with Queues extended
+// (and WorkerHostName == ExecutorName?)
 type dequeueRequest struct {
-	Version        string   `json:"version"`
-	WorkerHostName string   `json:"workerHostName"`
 	Queues         []string `json:"queues"`
+	WorkerHostName string   `json:"workerHostName"`
+	Version        string   `json:"version"`
+	NumCPUs        int      `json:"numCPUs,omitempty"`
+	Memory         string   `json:"memory,omitempty"`
+	DiskSpace      string   `json:"diskSpace,omitempty"`
 }
 
 type routeName string

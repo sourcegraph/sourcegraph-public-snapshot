@@ -120,7 +120,7 @@ func (h *handler[T]) HandleDequeue(w http.ResponseWriter, r *http.Request) {
 // the job record and the locking transaction. If no job is available for processing,
 // a false-valued flag is returned.
 func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata executorMetadata) (executortypes.Job, bool, error) {
-	if err := validateWorkerHostname(metadata.name); err != nil {
+	if err := ValidateWorkerHostname(metadata.name); err != nil {
 		return executortypes.Job{}, false, err
 	}
 
@@ -387,7 +387,7 @@ func (h *handler[T]) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids []int) ([]int, []int, error) {
-	if err := validateWorkerHostname(executor.Hostname); err != nil {
+	if err := ValidateWorkerHostname(executor.Hostname); err != nil {
 		return nil, nil, err
 	}
 
@@ -507,7 +507,7 @@ type errorResponse struct {
 // cancelJobs reaches to the queueHandlers.FetchCanceled to determine jobs that need to be canceled.
 // This endpoint is deprecated and should be removed in Sourcegraph 4.4.
 func (h *handler[T]) cancelJobs(ctx context.Context, executorName string, knownIDs []int) ([]int, error) {
-	if err := validateWorkerHostname(executorName); err != nil {
+	if err := ValidateWorkerHostname(executorName); err != nil {
 		return nil, err
 	}
 	// The Heartbeat method now handles both heartbeats and cancellation. For backcompat,
@@ -521,10 +521,10 @@ func (h *handler[T]) cancelJobs(ctx context.Context, executorName string, knownI
 	return canceledIDs, errors.Wrap(err, "dbworkerstore.CanceledJobs")
 }
 
-// validateWorkerHostname validates the WorkerHostname field sent for all the endpoints.
+// ValidateWorkerHostname validates the WorkerHostname field sent for all the endpoints.
 // We don't allow empty hostnames, as it would bypass the hostname verification, which
 // could lead to stray workers updating records they no longer own.
-func validateWorkerHostname(hostname string) error {
+func ValidateWorkerHostname(hostname string) error {
 	if hostname == "" {
 		return errors.New("worker hostname cannot be empty")
 	}
