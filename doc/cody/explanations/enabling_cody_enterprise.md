@@ -1,7 +1,7 @@
 # Enabling Cody on Sourcegraph Enterprise
 
-- [Instructions for self-hosted Sourcegraph Enterprise](#Cody-on-self-hosted-sourcegraph-enterprise)
-- [Instructions for Sourcegraph Cloud](#Cody-on-sourcegraph-cloud)
+- [Instructions for self-hosted Sourcegraph Enterprise](#cody-on-self-hosted-sourcegraph-enterprise)
+- [Instructions for Sourcegraph Cloud](#cody-on-sourcegraph-cloud)
 - [Enabling codebase-aware answers](#enabling-codebase-aware-answers)
 - [Turning Cody off](#turning-cody-off)
 
