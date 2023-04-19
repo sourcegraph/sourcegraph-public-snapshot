@@ -476,6 +476,7 @@ export interface StreamSearchOptions {
     decorationContextLines?: number
     displayLimit?: number
     chunkMatches?: boolean
+    enableRepositoryMetadata?: boolean
 }
 
 function initiateSearchStream(
