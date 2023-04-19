@@ -105,12 +105,12 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                                         </Link>
                                     </li>
                                 )}
-                                {reason.__typename === 'GitCommitOwnershipSignal' && (
+                                (
                                     <li key={reason.title}>
                                         <Badge className={styles.badge}>asdf</Badge>{' '}
                                         {reason.description}
                                     </li>
-                                )}
+                                )
                             </>
                         ))}
                     </ul>

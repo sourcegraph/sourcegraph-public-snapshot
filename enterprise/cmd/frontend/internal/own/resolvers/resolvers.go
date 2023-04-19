@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -178,7 +179,7 @@ func (r *ownResolver) GitBlobOwnership(
 		return nil, err
 	}
 
-	ownerships = append(ownerships, &ownershipResolver{
+	contribResolver := &ownershipResolver{
 		db: r.db,
 		resolvedOwner: &codeowners.Person{
 			User:         nil,
@@ -187,7 +188,19 @@ func (r *ownResolver) GitBlobOwnership(
 			Email:        email,
 		},
 		reasons: []graphqlbackend.OwnershipReasonResolver{&ownershipReasonResolver{&gitCommitOwnershipSignalResolver{total: count}}},
-	})
+	}
+
+	user, err := identifyUser(r.db, email)
+	if err == nil {
+		// if we don't get an error (meaning we can match) we will add it to the resolver
+		contribResolver.resolvedOwner = &codeowners.Person{
+			User:   user,
+			Handle: name,
+			Email:  email,
+		}
+	}
+
+	ownerships = append(ownerships, contribResolver)
 
 	return &ownershipConnectionResolver{
 		db:             r.db,
@@ -407,4 +420,8 @@ func computeCommitOwner(path string, rev string, repoName api.RepoName) (name st
 	top := contribs[max]
 
 	return top.Name, top.Email, top.Count, nil
+}
+
+func identifyUser(db database.DB, email string) (*types.User, error) {
+	return db.Users().GetByVerifiedEmail(context.Background(), email)
 }
