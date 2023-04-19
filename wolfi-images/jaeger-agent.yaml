@@ -21,7 +21,7 @@ contents:
     ## jaeger-agent-specific tools
     - jaeger-agent@sourcegraph
 
-# Run as root
+# Run as jaeger
 accounts:
   run-as: 10001
   groups:
