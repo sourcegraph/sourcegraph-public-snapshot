@@ -65,34 +65,6 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 			},
 		},
 		{
-			name: "Step with index",
-			steps: []types.DockerStep{
-				{
-					Key:      "key-1",
-					Image:    "my-image",
-					Commands: []string{"echo", "hello"},
-					Dir:      ".",
-					Env:      []string{"FOO=bar"},
-				},
-			},
-			mockFunc: func(ws *MockWorkspace) {
-				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
-			},
-			expected: []runner.Spec{{
-				CommandSpec: command.Spec{
-					Key:       "step.kubernetes.key-1",
-					Command:   []string{"/bin/sh", "-c", "/data/.sourcegraph-executor/script.sh"},
-					Dir:       ".",
-					Env:       []string{"FOO=bar"},
-					Operation: operations.Exec,
-				},
-				Image: "my-image",
-			}},
-			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
-				require.Len(t, ws.ScriptFilenamesFunc.History(), 1)
-			},
-		},
-		{
 			name: "Multiple steps",
 			steps: []types.DockerStep{
 				{

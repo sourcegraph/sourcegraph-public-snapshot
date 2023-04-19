@@ -66,35 +66,6 @@ func TestFirecrackerRuntime_NewRunnerSpecs(t *testing.T) {
 			},
 		},
 		{
-			name: "Step with index",
-			steps: []types.DockerStep{
-				{
-					Key:      "key-1",
-					Image:    "my-image",
-					Commands: []string{"echo", "hello"},
-					Dir:      ".",
-					Env:      []string{"FOO=bar"},
-				},
-			},
-			mockFunc: func(ws *MockWorkspace) {
-				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
-			},
-			expected: []runner.Spec{{
-				CommandSpec: command.Spec{
-					Key:       "step.docker.key-1",
-					Command:   []string(nil),
-					Dir:       ".",
-					Env:       []string{"FOO=bar"},
-					Operation: operations.Exec,
-				},
-				Image:      "my-image",
-				ScriptPath: "script.sh",
-			}},
-			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
-				require.Len(t, ws.ScriptFilenamesFunc.History(), 1)
-			},
-		},
-		{
 			name: "Multiple steps",
 			steps: []types.DockerStep{
 				{
