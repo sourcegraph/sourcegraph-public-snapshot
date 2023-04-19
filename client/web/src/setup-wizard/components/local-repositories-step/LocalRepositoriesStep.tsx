@@ -52,6 +52,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
 
     const [directoryPaths, setDirectoryPaths] = useState<string[]>([])
     const [error, setError] = useState<ErrorLike | undefined>()
+    const [localStateSynced, setLocalStateSynced] = useState(false)
 
     const apolloClient = useApolloClient()
 
@@ -60,7 +61,10 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     const { data, loading } = useQuery<GetLocalCodeHostsResult>(GET_LOCAL_CODE_HOSTS, {
         fetchPolicy: 'cache-first',
         // Sync local state and local external service path
-        onCompleted: data => setDirectoryPaths(getLocalServicePaths(data)),
+        onCompleted: data => {
+            setDirectoryPaths(getLocalServicePaths(data))
+            setLocalStateSynced(true)
+        },
         onError: setError,
     })
     const [addLocalCodeHost] = useMutation<AddRemoteCodeHostResult, AddRemoteCodeHostVariables>(ADD_CODE_HOST)
@@ -71,10 +75,10 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         DELETE_CODE_HOST
     )
 
-    // Automatically creates, update, or deletes (if local service already exists) a local
-    // external service as user changes the absolute path for local repositories
+    // Automatically creates, updates, or deletes local external service as
+    // user chooses paths for local repositories.
     useEffect(() => {
-        if (loading) {
+        if (loading || !localStateSynced) {
             return
         }
 
@@ -128,7 +132,16 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         }
 
         syncExternalServices().catch(setError)
-    }, [directoryPaths, data, loading, addLocalCodeHost, updateLocalCodeHost, deleteLocalCodeHost, apolloClient])
+    }, [
+        directoryPaths,
+        data,
+        loading,
+        addLocalCodeHost,
+        updateLocalCodeHost,
+        deleteLocalCodeHost,
+        apolloClient,
+        localStateSynced,
+    ])
 
     useEffect(() => {
         telemetryService.log('SetupWizardLandedAddLocalCode')
@@ -243,6 +256,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                     message="Pick a git directory or folder that contains multiple git folders"
                     isProcessing={loading}
                     className={styles.filePicker}
+                    // eslint-disable-next-line @typescript-eslint/no-misused-promises
                     onPickPath={() => queryPath()}
                     onPathReset={handlePathReset}
                     onChange={handleInputChange}
