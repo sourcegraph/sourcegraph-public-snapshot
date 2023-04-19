@@ -80,7 +80,7 @@ export class CodeMirrorEditor implements Editor {
             return null
         }
 
-        const { from, to } = editor.view?.viewport
+        const { from, to } = editor.view.viewport
 
         const content = editor.view?.state.sliceDoc(from, to)
         return {
