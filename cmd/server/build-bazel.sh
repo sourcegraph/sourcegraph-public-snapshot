@@ -52,10 +52,11 @@ ENTERPRISE_TARGETS=(
   @com_github_sourcegraph_zoekt//cmd/zoekt-webserver
 )
 
-if "$ENTERPRISE"; then
-  TARGETS=("${ENTERPRISE_TARGETS[@]}")
-else
+if [[ "${ENTERPRISE:-"false"}" == "false" ]]; then
   TARGETS=("${OSS_TARGETS[@]}")
+  exit $?
+else
+  TARGETS=("${ENTERPRISE_TARGETS[@]}")
 fi
 
 echo "--- bazel build"
