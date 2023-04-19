@@ -58,6 +58,7 @@ func AppReady(db database.DB, logger log.Logger) {
 	}
 
 	printExternalURL(displayURL)
+	println("BAZELINGA")
 }
 
 func printExternalURL(externalURL string) {

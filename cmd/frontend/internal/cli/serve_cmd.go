@@ -65,6 +65,8 @@ var (
 	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
+	// tauri oririgin - this is the origin sent through when Sourcegraph app is running via Tauri
+	tauriOrigin = "tauri://localhost"
 )
 
 // InitDB initializes and returns the global database connection and sets the

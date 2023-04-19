@@ -25,8 +25,14 @@ command.on('close', data => {
     console.log(`backend command finished with code ${data.code} and signal ${data.signal}`)
 })
 command.on('error', error => console.log(`command error: "${error}"`))
-command.stdout.on('data', line => console.log(`stdout: ${line}`))
-command.stderr.on('data', line => console.log(`stderr: ${line}`))
+command.stdout.on('data', (line: string) => console.log(`stdout: ${line}`))
+command.stderr.on('data', (line: string) => {
+    let count: number = line.search('BAZELINGA')
+    if (count > 0) {
+        rootRender(false)
+    }
+    console.log(`stderr: ${line}`)
+})
 const child = command.spawn()
 
 window.addEventListener('backend-message', async event => {
@@ -37,20 +43,26 @@ console.log(`backend started with pid ${child.pid} `)
 
 const appShellPromise = initAppShell()
 
-// It's important to have a root component in a separate file to create a react-refresh boundary and avoid page reload.
-// https://github.com/pmmmwh/react-refresh-webpack-plugin/blob/main/docs/TROUBLESHOOTING.md#edits-always-lead-to-full-reload
-window.addEventListener('DOMContentLoaded', async () => {
+async function rootRender(waiting: boolean = true) {
     const root = createRoot(document.querySelector('#root')!)
-
     try {
         const { graphqlClient, temporarySettingsStorage } = await appShellPromise
 
-        root.render(
-            <EnterpriseWebApp graphqlClient={graphqlClient} temporarySettingsStorage={temporarySettingsStorage} />
-        )
+        if (waiting) {
+            root.render(<h1>WAITING</h1>)
+        } else {
+            root.render(
+                <EnterpriseWebApp graphqlClient={graphqlClient} temporarySettingsStorage={temporarySettingsStorage} />
+            )
+        }
     } catch (error) {
         logger.error('Failed to initialize the app shell', error)
     }
+}
+// It's important to have a root component in a separate file to create a react-refresh boundary and avoid page reload.
+// https://github.com/pmmmwh/react-refresh-webpack-plugin/blob/main/docs/TROUBLESHOOTING.md#edits-always-lead-to-full-reload
+window.addEventListener('DOMContentLoaded', async () => {
+    rootRender()
 })
 
 if (process.env.DEV_WEB_BUILDER === 'esbuild' && process.env.NODE_ENV === 'development') {
