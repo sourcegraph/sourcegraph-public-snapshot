@@ -317,12 +317,12 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 	}
 
 	want := []types.UserUsageCounts{
-		{Date: days[2], UserID: users[0], SearchCount: 25, CodeIntelCount: 25, CodyCount: 0},
-		{Date: days[2], UserID: users[1], SearchCount: 25, CodeIntelCount: 25, CodyCount: 0},
-		{Date: days[1], UserID: users[0], SearchCount: 25, CodeIntelCount: 25, CodyCount: 0},
-		{Date: days[1], UserID: users[1], SearchCount: 25, CodeIntelCount: 25, CodyCount: 0},
-		{Date: days[0], UserID: users[0], SearchCount: 25, CodeIntelCount: 25, CodyCount: 0},
-		{Date: days[0], UserID: users[1], SearchCount: 25, CodeIntelCount: 25, CodyCount: 0},
+		{Date: days[2], UserID: users[0], SearchCount: 25, CodeIntelCount: 25},
+		{Date: days[2], UserID: users[1], SearchCount: 25, CodeIntelCount: 25},
+		{Date: days[1], UserID: users[0], SearchCount: 25, CodeIntelCount: 25},
+		{Date: days[1], UserID: users[1], SearchCount: 25, CodeIntelCount: 25},
+		{Date: days[0], UserID: users[0], SearchCount: 25, CodeIntelCount: 25},
+		{Date: days[0], UserID: users[1], SearchCount: 25, CodeIntelCount: 25},
 	}
 
 	if diff := cmp.Diff(want, have); diff != "" {
