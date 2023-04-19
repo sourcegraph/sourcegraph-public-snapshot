@@ -1,4 +1,0 @@
-out/
-src/schema/*
-src/graphql-operations.ts
-src/polyfills/vendor/*
