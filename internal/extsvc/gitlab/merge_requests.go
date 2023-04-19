@@ -107,11 +107,12 @@ var (
 )
 
 type CreateMergeRequestOpts struct {
-	SourceBranch    string `json:"source_branch"`
-	TargetBranch    string `json:"target_branch"`
-	TargetProjectID int    `json:"target_project_id,omitempty"`
-	Title           string `json:"title"`
-	Description     string `json:"description,omitempty"`
+	SourceBranch       string `json:"source_branch"`
+	TargetBranch       string `json:"target_branch"`
+	TargetProjectID    int    `json:"target_project_id,omitempty"`
+	Title              string `json:"title"`
+	Description        string `json:"description,omitempty"`
+	RemoveSourceBranch bool   `json:"remove_source_branch,omitempty"`
 	// TODO: other fields at
 	// https://docs.gitlab.com/ee/api/merge_requests.html#create-mr as needed.
 }

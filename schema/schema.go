@@ -2318,6 +2318,8 @@ type SiteConfiguration struct {
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
+	// BatchChangesAutoDeleteBranch description: Override code host specific setting and automatically delete batch change branches when a batch change is merged or closed.
+	BatchChangesAutoDeleteBranch bool `json:"batchChanges.autoDeleteBranch,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
 	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
@@ -2582,6 +2584,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "auth.userOrgMap")
 	delete(m, "authz.enforceForSiteAdmins")
 	delete(m, "authz.refreshInterval")
+	delete(m, "batchChanges.autoDeleteBranch")
 	delete(m, "batchChanges.changesetsRetention")
 	delete(m, "batchChanges.disableWebhooksWarning")
 	delete(m, "batchChanges.enabled")

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -117,6 +118,12 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 		targetProjectID = c.TargetRepo.Metadata.(*gitlab.Project).ID
 	}
 
+	var removeSource bool
+	if conf.Get().BatchChangesAutoDeleteBranch == true {
+		removeSource = true
+	} else {
+		removeSource = false
+	}
 	// We have to create the merge request against the remote project, not the
 	// target project, because that's how GitLab's API works: you provide the
 	// target project ID as one of the parameters. Yes, this is weird.
@@ -124,11 +131,12 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	// Of course, we then have to use the targetProject for everything else,
 	// because that's what the merge request actually belongs to.
 	mr, err := s.client.CreateMergeRequest(ctx, remoteProject, gitlab.CreateMergeRequestOpts{
-		SourceBranch:    source,
-		TargetBranch:    target,
-		TargetProjectID: targetProjectID,
-		Title:           c.Title,
-		Description:     c.Body,
+		SourceBranch:       source,
+		TargetBranch:       target,
+		TargetProjectID:    targetProjectID,
+		Title:              c.Title,
+		Description:        c.Body,
+		RemoveSourceBranch: removeSource,
 	})
 	if err != nil {
 		if err == gitlab.ErrMergeRequestAlreadyExists {

@@ -548,6 +548,12 @@
       "group": "BatchChanges",
       "default": false
     },
+    "batchChanges.autoDeleteBranch": {
+      "description": "Override code host specific setting and automatically delete batch change branches when a batch change is merged or closed.",
+      "type": "boolean",
+      "group": "BatchChanges",
+      "default": false
+    },
     "batchChanges.rolloutWindows": {
       "description": "Specifies specific windows, which can have associated rate limits, to be used when reconciling published changesets (creating or updating). All days and times are handled in UTC.",
       "type": "array",
