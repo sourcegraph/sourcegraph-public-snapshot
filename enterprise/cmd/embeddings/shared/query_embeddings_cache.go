@@ -12,13 +12,13 @@ import (
 const QUERY_EMBEDDING_RETRIES = 3
 const QUERY_EMBEDDINGS_CACHE_MAX_ENTRIES = 128
 
-func getCachedQueryEmbeddingFn(ctx context.Context, client embed.EmbeddingsClient) (getQueryEmbeddingFn, error) {
+func getCachedQueryEmbeddingFn(client embed.EmbeddingsClient) (getQueryEmbeddingFn, error) {
 	cache, err := lru.New[string, []float32](QUERY_EMBEDDINGS_CACHE_MAX_ENTRIES)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating query embeddings cache")
 	}
 
-	return func(query string) (queryEmbedding []float32, err error) {
+	return func(ctx context.Context, query string) (queryEmbedding []float32, err error) {
 		if cachedQueryEmbedding, ok := cache.Get(query); ok {
 			queryEmbedding = cachedQueryEmbedding
 		} else {
