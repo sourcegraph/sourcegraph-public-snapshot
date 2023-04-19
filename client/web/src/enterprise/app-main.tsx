@@ -10,6 +10,7 @@ import '@sourcegraph/shared/src/polyfills'
 import '../initBuildInfo'
 import '../monitoring/initMonitoring'
 
+import { Command } from '@tauri-apps/api/shell'
 import { createRoot } from 'react-dom/client'
 
 import { logger } from '@sourcegraph/common'
@@ -18,10 +19,8 @@ import { initAppShell } from '../storm/app-shell-init'
 
 import { EnterpriseWebApp } from './EnterpriseWebApp'
 
-import { Command } from '@tauri-apps/api/shell'
-
 // Start Backend early
-const command = Command.sidecar("../.bin/backend", [], {})
+const command = Command.sidecar('../.bin/backend', [], {})
 command.on('close', data => {
     console.log(`backend command finished with code ${data.code} and signal ${data.signal}`)
 })
@@ -30,7 +29,7 @@ command.stdout.on('data', line => console.log(`stdout: ${line}`))
 command.stderr.on('data', line => console.log(`stderr: ${line}`))
 const child = command.spawn()
 
-window.addEventListener('backend-message', async (event) => {
+window.addEventListener('backend-message', async event => {
     console.log(`msg: ${event}`)
 })
 
@@ -60,17 +59,20 @@ if (process.env.DEV_WEB_BUILDER === 'esbuild' && process.env.NODE_ENV === 'devel
     })
 }
 
-const originalFetch = window.fetch;
+const originalFetch = window.fetch
 const originalEventSource = window.EventSource
 
-window.fetch = function(url, ...args) {
+window.fetch = function (url, ...args) {
     if (!url.startsWith('/.assets') && !url.includes('://')) {
         url = `http://localhost:3080${url}`
     }
+    let headers = {
+        Origin: 'http://localhost',
+    }
     console.log('requesting', url)
-    return originalFetch(url, ...args);
+    return originalFetch(url, { headers, ...args })
 }
-window.EventSource = function(url, ...args) {
+window.EventSource = function (url, ...args) {
     if (!url.startsWith('/.assets') && !url.includes('://')) {
         url = `http://localhost:3080${url}`
     }

@@ -341,7 +341,7 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 func isTrustedOrigin(r *http.Request) bool {
 	requestOrigin := r.Header.Get("Origin")
 
-	isExtensionRequest := requestOrigin == devExtension || requestOrigin == prodExtension
+	isExtensionRequest := requestOrigin == devExtension || requestOrigin == prodExtension || requestOrigin == tauriOrigin
 
 	var isCORSAllowedRequest bool
 	if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" {
