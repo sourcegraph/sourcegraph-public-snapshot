@@ -9,8 +9,8 @@ export const GET_LOCAL_DIRECTORY_PATH = gql`
 `
 
 export const DISCOVER_LOCAL_REPOSITORIES = gql`
-    query DiscoverLocalRepositories($dir: String!) {
-        localDirectories(dir: $dir) {
+    query DiscoverLocalRepositories($paths: [String!]!) {
+        localDirectories(paths: $paths) {
             paths
             repositories {
                 __typename
