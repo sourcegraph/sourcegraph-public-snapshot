@@ -187,7 +187,7 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
                 )}
             </H4>
             <Text className="text-wrap text-muted mb-0">
-                {action.type === 'publish' ? (
+                {action.type === 'publish' && batchChangesRolloutWindows && batchChangesRolloutWindows.length > 0 ? (
                     <small>
                         {action.dropdownDescription} <br></br>
                         <b>
