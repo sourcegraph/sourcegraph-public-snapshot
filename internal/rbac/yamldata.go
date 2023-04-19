@@ -91,9 +91,9 @@ func generateGoTypes(output *os.File, namespaces []rtypes.PermissionNamespace) {
 	var namespacesConstants = make([]string, len(namespaces))
 	var namespaceVariableNames = make([]string, len(namespaces))
 	for index, namespace := range namespaces {
-		namespaceName := sentencizePermission(namespace.String())
-		namespacesConstants[index] = fmt.Sprintf("const %s PermissionNamespace = \"%s\"", namespaceName, namespace)
-		namespaceVariableNames[index] = namespaceName
+		namespaceVarName := fmt.Sprintf("%sNamespace", sentencizePermission(namespace.String()))
+		namespacesConstants[index] = fmt.Sprintf("const %s PermissionNamespace = \"%s\"", namespaceVarName, namespace)
+		namespaceVariableNames[index] = namespaceVarName
 	}
 
 	fmt.Fprintf(output, rbacTypesTemplate, strings.Join(namespacesConstants, "\n"), strings.Join(namespaceVariableNames, ", "))
