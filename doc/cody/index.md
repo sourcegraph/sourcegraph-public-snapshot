@@ -11,7 +11,19 @@ Cody uses a combination of Sourcegraph's code graph and Large Language Models (L
 - **Sourcegraph Enterprise customers:** Contact your Sourcegraph techical advisor or [request enterprise access](https://sourcegraph.typeform.com/to/pIXTgwrd) to use Cody on your existing Sourcegraph instance.
 - **Everyone:** [Join the open beta.](https://forms.gle/cffMa8mrr8YuHv8o8) We'll email you when you're added, usually within a day.
 
-Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and in Sourcegraph itself.
+Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and in Sourcegraph itself. Follow the
+
+
+## Explanations
+
+- [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
+- [Enabling Cody for Sourcegraph.com users](explanations/enabling_cody.md)
+- [Enabling codebase-aware answers](explanations/enabling_codebase_aware_answers.md)
+
+<div class="cta-group">
+<a class="btn btn-primary" href="quickstart">★ Quickstart</a>
+<a class="btn" href="https://discord.gg/8wJF5EdAyA">Join our Discord</a>
+</div>
 
 ## Features
 
@@ -59,98 +71,6 @@ In VS Code, right-click on a selection of code and choose one of the `Ask Cody >
 - Generate Unit Test
 - Generate Docstring
 - Improve Variable Names
-
-## Cody on Sourcegraph.com
-
-Cody uses Sourcegraph to fetch relevant context to generate answers and code. These instructions walk through installing Cody and connecting it to Sourcegraph.com. For private instances of Sourcegraph, see the section below about enabling Cody for Enterprise.
-
-1. Sign into [Sourcegraph.com](https://sourcegraph.com) (or create an account if you don't already have one)
-1. [Join the open beta](https://forms.gle/cffMa8mrr8YuHv8o8). We'll email you when you're added, usually within a day.
-1. [Create a Sourcegraph access token](https://sourcegraph.com/user/settings/tokens)
-1. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-  1. Set the Sourcegraph URL to be `https://sourcegraph.com`
-  1. Set the access token to be the token you just created
-1. See [this section](#enabling-codebase-aware-answers) on how to enable codebase-aware answers.
-
-After installing, we recommend the following:
-
-* [See the list](embedded-repos.md) of embedded repositories and request any that you'd like to add by pinging a Sourcegraph team member in [Discord](https://discord.gg/8wJF5EdAyA). Embeddings significantly improve the accuracy and quality of Cody's responses. Note that embeddings are only available for public repositories on sourcegraph.com. If you want to use Cody with embeddings on private code, consider moving to a Sourcegraph Enterprise instance.
-* Spread the word online and send us your feedback in Discord. Cody is open source and we'd love to hear from you if you have bug reports or feature requests.
-
-## Cody on Sourcegraph Cloud
-
-On Sourcegraph Cloud, Cody is a managed service and you do not need to follow the step 1 of the self-hosted guide. 
-
-1. Cody can be enabled on demand on your Sourcegraph instance by contacting your account manager. The Sourcegraph team will refer to the [handbook](https://handbook.sourcegraph.com/departments/cloud/#managed-instance-requests).
-1. Users can then configure the [VS Code extension](#step-2-configure-the-vs-code-extension)
-
-Learn more from [Cody on Cloud](../cloud/index.md#cody).
-
-## Cody on your self-hosted Sourcegraph Enterprise instance
-
-### Prerequisites
-
-- Sourcegraph 5.0.1 or above.
-- An Anthropic API key, that you can get from your Technical Advisor or Customer Engineer. 
-- (Optionally), an OpenAI API key for embeddings.
-
-There are two steps required to enable Cody for Enterprise: enable your Sourcegraph instance and configure the VS Code extension.
-
-### Step 1: Enable Cody on your Sourcegraph instance
-
-Note that this requires site-admin privileges.
-
-1. Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). In particular, code snippets will be sent to a third-party language model provider when you use the Cody extension.
-2. To turn Cody on, you will need to set an access token for Sourcegraph to authentify with the third-party large language model provider (currently Anthropic but we may use different or several models over time). Reach out to your Sourcegraph Technical Advisor or Customer Engineer to get a key. They will create a key for you using the [anthropic console](https://console.anthropic.com/account/keys).
-3. Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
-
-    ```json
-    {
-      // [...]
-      "completions": {
-        "enabled": true,
-        "accessToken": "<token>",
-        "model": "claude-v1",
-        "provider": "anthropic"
-      }
-    }
-    ```
-4. You're done! 
-5. Cody can be configured to use embeddings to significantly improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [embeddings](#embeddings) section for more.
-
-### Step 2: Configure the VS Code extension
-
-Now that Cody is turned on on your Sourcegraph instance, any user can configure and use the Cody VS Code extension. This does not require admin privilege.
-
-1. If you currently have a previous version of Cody installed, uninstall it and reload VS Code before proceeding to the next steps.
-1. Search for “Sourcegraph Cody” in your VS Code extension marketplace, and install it.
-
-    <img width="500" alt="Sourcegraph Cody in VS Code Marketplace" src="https://user-images.githubusercontent.com/55068936/228114612-65402e1c-7501-44cb-a846-46c4376b9572.png">
-
-3. Reload VS Code, and open the Cody extension. Review and accept the terms.
-
-4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
-
-    <img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
-
-5. In the Cody VS Code extension, set your instance URL and the access token
-    
-    <img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
-
-6. See [this section](#enabling-codebase-aware-answers) on how to enable codebase-aware answers.
-
-You're all set!
-
-### Step 3: Try Cody!
-
-A few things you can ask Cody:
-
-- "What are popular go libraries for building CLIs?"
-- Open your workspace, and ask "Do we have a React date picker component in this repository?"
-- Right click on a function, and ask Cody to explain it
-- Try any of the Cody recipes!
-
-<img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
 
 ## Enabling codebase-aware answers
 
@@ -254,4 +174,3 @@ If you would like to allow your Sourcegraph instance to control the creation and
 ## Turning Cody off
 
 To turn Cody off, set `embeddings` and `completions` site-admin settings to `enabled:false` (or remove them altogether).
-
