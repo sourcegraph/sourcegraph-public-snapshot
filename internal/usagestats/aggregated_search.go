@@ -42,7 +42,7 @@ func groupAggregatedSearchStats(events []types.SearchAggregatedEvent) *types.Sea
 // GetAggregatedCodyStats queries the database for Cody usage and returns
 // the aggregates statistics in the format of our BigQuery schema.
 func GetAggregatedCodyStats(ctx context.Context, db database.DB) (*types.CodyUsageStatistics, error) {
-	events, err := db.EventLogs().AggregatedCodyEvents(ctx, time.Now().UTC())
+	events, err := db.EventLogs().d(ctx, time.Now().UTC())
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func populateCodyEventStatistics(event types.CodyAggregatedEvent, statistics *ty
 		return
 	}
 
-	statistics.Monthly[0].StartTime = event.Month
+	statistics.Monthly[0].StartTime = event.Month //double check this logic
 	month := extractor(statistics.Monthly[0])
 	month.EventsCount = &event.TotalMonth
 	month.UserCount = &event.UniquesMonth

@@ -751,9 +751,9 @@ func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
 	}
 
 	singlePeriodUsage := struct {
-		Daily   *types.codyUsagePeriod
-		Weekly  *types.codyUsagePeriod
-		Monthly *types.codyUsagePeriod
+		Daily   *types.CodyUsagePeriod
+		Weekly  *types.CodyUsagePeriod
+		Monthly *types.CodyUsagePeriod
 	}{}
 
 	if len(codyUsage.Daily) > 0 {
@@ -769,18 +769,15 @@ func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(singlePeriodUsage)
 }
 
-func codyFeatureFlag() (bool, error) {
+func codyFeatureFlag() (bool) {
 	ctx := context.Background()
-	flags, err := featureflag.FromContext(ctx)
-	if err != nil {
-		return false, err
-	}
+	flags := featureflag.FromContext(ctx)
 	codyExperimental, err := flags.GetBoolOr("cody-experimental", true)
 	if err != nil {
-		return false, err
+		return false
 	}
 
-	return codyExperimental, nil
+	return codyExperimental
 }
 
 var (
