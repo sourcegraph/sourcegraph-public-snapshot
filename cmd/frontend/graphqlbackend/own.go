@@ -58,14 +58,28 @@ type OwnerResolver interface {
 }
 
 type OwnershipReasonResolver interface {
+	SimpleOwnReasonResolver
 	ToCodeownersFileEntry() (CodeownersFileEntryResolver, bool)
+	ToGitCommitOwnershipSignal() (GitCommitOwnershipSignalResolver, bool)
+}
+
+type SimpleOwnReasonResolver interface {
+	Title() (string, error)
+	Description() (string, error)
 }
 
 type CodeownersFileEntryResolver interface {
-	Title(context.Context) (string, error)
-	Description(context.Context) (string, error)
+	Title() (string, error)
+	Description() (string, error)
 	CodeownersFile(context.Context) (FileResolver, error)
 	RuleLineMatch(context.Context) (int32, error)
+}
+
+type GitCommitOwnershipSignalResolver interface {
+	TotalCount() (int32, error)
+	RecentCount() (int32, error)
+	Title() (string, error)
+	Description() (string, error)
 }
 
 type CodeownersFileArgs struct {

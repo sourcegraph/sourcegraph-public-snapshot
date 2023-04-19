@@ -31,8 +31,6 @@ export const FETCH_OWNERS = gql`
     ${OWNER_FIELDS}
 
     fragment CodeownersFileEntryFields on CodeownersFileEntry {
-        title
-        description
         codeownersFile {
             url
         }
@@ -50,6 +48,8 @@ export const FETCH_OWNERS = gql`
                                     ...OwnerFields
                                 }
                                 reasons {
+                                    title
+                                    description
                                     ...CodeownersFileEntryFields
                                 }
                             }
