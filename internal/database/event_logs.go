@@ -853,7 +853,6 @@ func (l *eventLogStore) UsersUsageCounts(ctx context.Context) (counts []types.Us
 			&c.UserID,
 			&dbutil.NullInt32{N: &c.SearchCount},
 			&dbutil.NullInt32{N: &c.CodeIntelCount},
-			&dbutil.NullInt32{N: &c.CodyCount},
 		)
 
 		if err != nil {
@@ -875,8 +874,7 @@ SELECT
   DATE(timestamp),
   user_id,
   COUNT(*) FILTER (WHERE event_logs.name ='SearchResultsQueried') as search_count,
-  COUNT(*) FILTER (WHERE event_logs.name LIKE '%codeintel%') as codeintel_count,
-  COUNT(*) FILTER (WHERE event_logs.name LIKE '%cody%' or event_logs.name LIKE '%Cody%') as cody_count
+  COUNT(*) FILTER (WHERE event_logs.name LIKE '%codeintel%') as codeintel_count
 FROM event_logs
 WHERE anonymous_user_id != 'backend'
 GROUP BY 1, 2

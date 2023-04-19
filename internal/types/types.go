@@ -971,7 +971,6 @@ type UserUsageCounts struct {
 	UserID         uint32
 	SearchCount    int32
 	CodeIntelCount int32
-	CodyCount      int32
 }
 
 // UserDates captures the created and deleted dates of a single user.
