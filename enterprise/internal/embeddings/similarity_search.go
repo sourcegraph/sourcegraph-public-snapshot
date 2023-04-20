@@ -12,7 +12,7 @@ import (
 type nearestNeighbor struct {
 	index int
 	score int32
-	debug string
+	debug searchDebugInfo
 }
 
 type nearestNeighborsHeap struct {
@@ -138,7 +138,7 @@ func (index *EmbeddingIndex) SimilaritySearch(query []int8, numResults int, work
 	for idx := 0; idx < min(numResults, len(neighbors)); idx++ {
 		results[idx] = EmbeddingSearchResult{
 			RepoEmbeddingRowMetadata: index.RowMetadata[neighbors[idx].index],
-			Debug:                    neighbors[idx].debug,
+			Debug:                    neighbors[idx].debug.String(),
 		}
 	}
 
@@ -177,19 +177,11 @@ const (
 	scoreSimilarityWeight int32 = 2
 )
 
-func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) (score int32, debugInfo string) {
-	addScore := func(what string, s int32) {
-		score += s
-		if opts.Debug {
-			debugInfo += fmt.Sprintf("%s:%d, ", what, s)
-		}
-	}
-
-	similarity := CosineSimilarity(index.row(i), query)
-
-	addScore("similarity", scoreSimilarityWeight*similarity)
+func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) (score int32, debugInfo searchDebugInfo) {
+	similarityScore := scoreSimilarityWeight * CosineSimilarity(index.row(i), query)
 
 	// handle missing ranks
+	rankScore := int32(0)
 	if opts.UseDocumentRanks && len(index.Ranks) > i {
 		// The file rank represents a log (base 2) count. The log ranks should be
 		// bounded at 32, but we cap it just in case to ensure it falls in the range [0,
@@ -199,14 +191,23 @@ func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) (sco
 		if normalizedRank > 1.0 {
 			normalizedRank = 1.0
 		}
-		addScore("rank", int32(float32(scoreFileRankWeight)*normalizedRank))
+		rankScore = int32(float32(scoreFileRankWeight) * normalizedRank)
 	}
 
-	if opts.Debug {
-		debugInfo = fmt.Sprintf("score: %d, %s", score, debugInfo)
-	}
+	return similarityScore + rankScore, searchDebugInfo{similarity: similarityScore, rank: rankScore, enabled: opts.Debug}
+}
 
-	return score, debugInfo
+type searchDebugInfo struct {
+	similarity int32
+	rank       int32
+	enabled    bool
+}
+
+func (i *searchDebugInfo) String() string {
+	if !i.enabled {
+		return ""
+	}
+	return fmt.Sprintf("score:%d, similarity:%d, rank:%d", i.similarity+i.rank, i.similarity, i.rank)
 }
 
 func CosineSimilarity(row []int8, query []int8) int32 {

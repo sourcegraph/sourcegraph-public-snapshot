@@ -178,7 +178,7 @@ func TestScore(t *testing.T) {
 		t.Fatalf("Expected score %d, but got %d", expectedScore, score)
 	}
 
-	if debugInfo == "" {
-		t.Fatal("Expected a non-empty debug string")
+	if debugInfo.String() == "" {
+		t.Fatal("Expected a non-empty debug")
 	}
 }
