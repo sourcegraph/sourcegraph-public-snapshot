@@ -1,6 +1,8 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+load("//dev:eslint.bzl", "eslint_test")
 
 npm_link_all_packages(name = "node_modules")
 
@@ -77,5 +79,32 @@ jest_test(
     name = "test",
     data = [
         ":http-client_tests",
+    ],
+)
+
+js_library(
+    name = "eslint_config",
+    testonly = True,
+    srcs = [".eslintrc.js"],
+    data = [
+        ".eslintignore",
+        ":tsconfig",
+    ],
+    deps = [
+        ":node_modules/@sourcegraph/common",
+        ":tsconfig",
+        "//:eslint_config",
+    ],
+)
+
+eslint_test(
+    name = "eslint_test",
+    config = ":eslint_config",
+    data = glob([
+        "src/**/*.ts",
+        "src/**/*.tsx",
+    ]),
+    deps = [
+        ":eslint_config",
     ],
 )

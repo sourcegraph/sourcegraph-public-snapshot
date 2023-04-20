@@ -95,6 +95,23 @@ npm_translate_lock(
     npm_package_target_name = "{dirname}_pkg",
     npmrc = "//:.npmrc",
     pnpm_lock = "//:pnpm-lock.yaml",
+    public_hoist_packages = {
+        "@typescript-eslint/eslint-plugin": [""],
+        "@typescript-eslint/parser": [""],
+        "eslint-config-prettier": [""],
+        "eslint-plugin-ban": [""],
+        "eslint-plugin-etc": [""],
+        "eslint-plugin-import": [""],
+        "eslint-plugin-jest-dom": [""],
+        "eslint-plugin-jsdoc": [""],
+        "eslint-plugin-jsx-a11y": [""],
+        "eslint-plugin-react": [""],
+        "eslint-plugin-react-hooks": [""],
+        "eslint-plugin-rxjs": [""],
+        "eslint-plugin-unicorn": [""],
+        "eslint-plugin-unused-imports": [""],
+        "eslint-import-resolver-node": [""],
+    },
     verify_node_modules_ignored = "//:.bazelignore",
 )
 

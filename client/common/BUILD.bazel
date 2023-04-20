@@ -1,4 +1,5 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
 load("//dev:eslint.bzl", "eslint_test")
@@ -116,20 +117,25 @@ jest_test(
     ],
 )
 
-eslint_test(
-    name = "foo",
+js_library(
+    name = "eslint_config",
+    testonly = True,
+    srcs = [".eslintrc.js"],
     data = [
-        "src/errors/errors.test.ts",
-        "src/util/fetchCache.test.ts",
-        "src/util/hashCode.test.ts",
-        "src/util/highlightNode.test.ts",
-        "src/util/jsonc.test.ts",
-        "src/util/markdown/markdown.test.ts",
-        "src/util/rxjs/asObservable.test.ts",
-        "src/util/rxjs/combineLatestOrDefault.test.ts",
-        "src/util/rxjs/repeatUntil.test.ts",
-        "src/util/string.test.ts",
-        "src/util/url.test.ts",
+        ".eslintignore",
+        ":tsconfig",
     ],
-    deps = ["//:eslint_config"],
+    deps = [
+        "//:eslint_config",
+    ],
+)
+
+eslint_test(
+    name = "eslint_test",
+    config = ":eslint_config",
+    data = glob([
+        "src/**/*.ts",
+        "src/**/*.tsx",
+    ]),
+    deps = [":eslint_config"],
 )
