@@ -20,11 +20,21 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-type JobType int
+type IndexJobType struct {
+	Name            string
+	Id              int
+	IndexInterval   time.Duration
+	RefreshInterval time.Duration
+}
 
-const (
-	RecentContributions = iota
-)
+var IndexJobTypes = []IndexJobType{{
+	Name:            "recent-contributors",
+	Id:              1,
+	IndexInterval:   time.Hour * 24,
+	RefreshInterval: time.Minute * 5,
+}}
+
+const tableName = "own_background_jobs"
 
 type Job struct {
 	ID              int
@@ -103,7 +113,7 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 
 	workerStore := dbworkerstore.New(observationCtx, db.Handle(), dbworkerstore.Options[*Job]{
 		Name:              fmt.Sprintf("%s_store", name),
-		TableName:         "own_background_jobs",
+		TableName:         tableName,
 		ColumnExpressions: jobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanJob),
 		OrderByExpression: sqlf.Sprintf("id"), // processes oldest records first
