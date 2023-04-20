@@ -176,10 +176,7 @@ func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) (sco
 		}
 	}
 
-	similarity := CosineSimilarity(
-		index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension],
-		query,
-	)
+	similarity := CosineSimilarity(index.Row(i), query)
 
 	addScore("similarity", scoreSimilarityWeight*similarity)
 

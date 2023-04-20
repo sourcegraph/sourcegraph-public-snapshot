@@ -11,6 +11,11 @@ type EmbeddingIndex struct {
 	Ranks           []float32
 }
 
+// Row returns the embeddings for the nth row in the index
+func (index *EmbeddingIndex) Row(n int) []int8 {
+	return index.Embeddings[n*index.ColumnDimension : (n+1)*index.ColumnDimension]
+}
+
 type RepoEmbeddingRowMetadata struct {
 	FileName  string `json:"fileName"`
 	StartLine int    `json:"startLine"`
