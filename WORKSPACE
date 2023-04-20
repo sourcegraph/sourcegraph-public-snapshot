@@ -252,18 +252,5 @@ load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
 
-# bazel test @sourcegraph_back_compat//cmd/... @sourcegraph_back_compat//lib/... @sourcegraph_back_compat//internal/... @sourcegraph_back_compat//enterprise/cmd/... @sourcegraph_back_compat//enterprise/internal/...
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-load("//migrations:back_compat_deps.bzl", "patched_deps")
-patched_deps()
-git_repository(
-    name = "sourcegraph_back_compat",
-    remote = "https://github.com/sourcegraph/sourcegraph.git",
-    patches = ["//migrations:back_compat_migrations.patch", "//migrations:back_compat_build_fixes.patch"],
-    patch_args = ["-p1"],
-    commit = "177663e4329d712f3493787410f71da60fe5dc7f", # this is the v5.0.0 tag + some fixes to ensure it builds properly with Bazel
-    # already done on ci/backcompat-v5.0.0
-    # patch_cmds = [
-    #     "rm -Rf client", # we don't need the client code for those, and they tend to not play well with this trick.
-    # ],
-)
+load("//dev/backcompat:defs.bzl", "back_compat_defs")
+back_compat_defs()
