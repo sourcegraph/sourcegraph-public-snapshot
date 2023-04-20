@@ -3,6 +3,7 @@ use protobuf::Enum;
 use scip::types::{Descriptor, Occurrence};
 
 use crate::{byterange::ByteRange, languages::TagConfiguration};
+use bitvec::prelude::*;
 
 #[derive(Debug)]
 pub struct Scope {
@@ -127,19 +128,16 @@ pub fn parse_tree<'a>(
     let mut scopes = vec![];
     let mut globals = vec![];
 
-    // NOTE: I considered a lot of different approaches for eliminating locals:
-    // - bitset of size source_bytes with bits in @local range set to denote invalidity (space cost too high)
-    // - binary search tree of some sort (maybe? not too confident in implementing this)
-    let mut local_ends = vec![];
+    let mut local_ranges = BitVec::<u8, Msb0>::repeat(false, source_bytes.len());
 
     let matches = cursor.matches(&config.query, root_node, source_bytes);
 
-    'match_loop: for m in matches {
+    for m in matches {
         // eprintln!("\n==== NEW MATCH ====");
 
         let mut node = None;
         let mut scope = None;
-        let mut local_end = None;
+        let mut local_range = None;
         let mut descriptors = vec![];
 
         for capture in m.captures {
@@ -158,7 +156,7 @@ pub fn parse_tree<'a>(
             }
 
             if capture_name.starts_with("local") {
-                local_end = Some(capture.node.end_byte());
+                local_range = Some(capture.node.byte_range());
             }
 
             // eprintln!(
@@ -168,23 +166,10 @@ pub fn parse_tree<'a>(
             // );
         }
 
-        // let node = node.expect("there must always be at least one descriptor");
-
         match node {
             Some(node) => {
-                if !local_ends.is_empty() {
-                    let mut i = local_ends.len() - 1;
-                    loop {
-                        if node.end_byte() < *local_ends.get(i).unwrap() {
-                            continue 'match_loop;
-                        }
-                        local_ends.remove(i);
-
-                        if i == 0 {
-                            break;
-                        }
-                        i -= 1;
-                    }
+                if local_ranges[node.start_byte()] {
+                    continue;
                 }
 
                 let descriptors = descriptors
@@ -226,14 +211,14 @@ pub fn parse_tree<'a>(
                 }
             }
             None => {
-                if local_end == None {
+                if local_range == None {
                     panic!("there must always be at least one descriptor (except for @local)");
                 }
             }
         }
 
-        if let Some(local_end) = local_end {
-            local_ends.push(local_end);
+        if let Some(local_range) = local_range {
+            local_ranges.get_mut(local_range).unwrap().fill(true);
         }
     }
 
