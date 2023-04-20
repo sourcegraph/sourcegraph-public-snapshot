@@ -11,6 +11,7 @@ go_library(
         "types.go",
         "uploadstore.go",
     ],
+    embed = ["means.gob"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings",
     visibility = ["//enterprise:__subpackages__"],
     deps = [

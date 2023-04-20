@@ -2,12 +2,79 @@ package embeddings
 
 import (
 	"container/heap"
+	"embed"
 	"fmt"
+	"encoding/gob"
+	"log"
 	"math"
 	"sort"
+	"strings"
 
 	"github.com/sourcegraph/conc"
 )
+
+//go:embed means.gob
+var embeddedDataFs embed.FS
+
+// The mean vectors for various popular languages keyed on file extension
+var fileTypeMeans map[string][]float32
+
+// Gets the extension of a filename for keying into fileTypeMeans
+// TODO(dpc): Surely something exists for this; reuse that.
+func extension(s string) string {
+     for {
+       i := strings.IndexRune(s, '.')
+       if i == -1 {
+       	  return s
+       }
+       s = s[i + 1:]
+     }
+}
+
+// TODO(dpc): How does static setup work in Go?
+func SimilaritySearchLoadFileTypeMeanVectors() {
+     	meansFile, err := embeddedDataFs.Open("means.gob")
+	if err != nil {
+	   log.Fatal(err)
+	}
+	defer meansFile.Close()
+	decoder := gob.NewDecoder(meansFile)
+     	err = decoder.Decode(&fileTypeMeans)
+	if err != nil {
+	   log.Fatal(err)
+	}
+}
+
+// Retrieves the appropriate mean embedding (if any) for a file with the given name.
+func meanVectorForFileNamed(filename string, dimension int) []float32 {
+     ext := extension(filename)
+     means, ok := fileTypeMeans[ext]
+     if !ok || len(means) != dimension {
+     	// TODO(dpc): Returns static zeros here instead of allocating
+	log.Printf("no file type means for %s", ext)
+     	return make([]float32, dimension)
+     }
+     return means
+}
+
+// Subtracts b from a, mutating a.
+func vectorSubtract(a []float32, b []float32) {
+     for i, value := range(b) {
+     	 a[i] -= value
+     }
+}
+
+// Normalizes a vector.
+func vectorNormalize(vec []float32) {
+     sum := float64(0)
+     for _, value := range(vec) {
+     	 sum += float64(value * value)
+     }
+     sum32 := float32(math.Sqrt(sum))
+     for i := range(vec) {
+     	 vec[i] /= sum32
+     }
+}
 
 type nearestNeighbor struct {
 	index int
@@ -87,6 +154,8 @@ func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, w
 	if numResults == 0 {
 		return []EmbeddingSearchResult{}
 	}
+
+	SimilaritySearchLoadFileTypeMeanVectors()
 
 	numRows := len(index.RowMetadata)
 	// Cannot request more results than there are rows.
@@ -175,8 +244,15 @@ func (index *EmbeddingIndex) score(query []float32, i int, opts SearchOptions) (
 		}
 	}
 
+	// TODO(dpc): Consider hoisting this allocation out and reusing it
+	candidate := make([]float32, index.ColumnDimension)
+	copy(candidate, index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension])
+	languageMean := meanVectorForFileNamed(index.RowMetadata[i].FileName, index.ColumnDimension)
+	vectorSubtract(candidate, languageMean)
+	vectorNormalize(candidate)
+
 	similarity := CosineSimilarity(
-		index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension],
+	        candidate,
 		query,
 	)
 

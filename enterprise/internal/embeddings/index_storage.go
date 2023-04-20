@@ -128,6 +128,10 @@ func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSi
 }
 
 func decodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
+return DecodeRepoEmbeddingIndex(dec)
+}
+
+func DecodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
 	rei := &RepoEmbeddingIndex{}
 
 	if err := dec.Decode(&rei.RepoName); err != nil {
