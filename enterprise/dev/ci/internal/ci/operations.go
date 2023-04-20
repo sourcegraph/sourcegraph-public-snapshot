@@ -50,7 +50,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops := operations.NewSet()
 
 	if opts.ForceBazel {
-		ops.Merge(BazelOperations(false)) // non soft-failing
+		ops.Merge(BazelOperations())
 	}
 
 	// Simple, fast-ish linter checks

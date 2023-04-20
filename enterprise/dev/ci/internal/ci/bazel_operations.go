@@ -8,10 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
-func BazelOperations(optional bool) *operations.Set {
+func BazelOperations() *operations.Set {
 	ops := operations.NewNamedSet("Bazel")
-	ops.Append(bazelConfigure(optional))
-	ops.Append(bazelTest(optional, "//..."))
+	ops.Append(bazelConfigure())
+	ops.Append(bazelTest("//..."))
 	return ops
 }
 
@@ -28,7 +28,7 @@ func bazelRawCmd(args ...string) string {
 
 // bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
 // are correct, but do not actually build anything.
-func bazelAnalysisPhase(optional bool) func(*bk.Pipeline) {
+func bazelAnalysisPhase() func(*bk.Pipeline) {
 	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
 	cmd := bazelRawCmd(
 		"build",
@@ -43,16 +43,12 @@ func bazelAnalysisPhase(optional bool) func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		if optional {
-			cmds = append(cmds, bk.SoftFail())
-		}
-
 		pipeline.AddStep(":bazel: Analysis phase",
 			cmds...,
 		)
 	}
 }
-func bazelConfigure(optional bool) func(*bk.Pipeline) {
+func bazelConfigure() func(*bk.Pipeline) {
 	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
 	cmds := []bk.StepOpt{
 		bk.Key("bazel-configure"),
@@ -66,16 +62,13 @@ func bazelConfigure(optional bool) func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		if optional {
-			cmds = append(cmds, bk.SoftFail())
-		}
 		pipeline.AddStep(":bazel: Ensure buildfiles are up to date",
 			cmds...,
 		)
 	}
 }
 
-func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
+func bazelTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
@@ -89,9 +82,6 @@ func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 	)
 
 	return func(pipeline *bk.Pipeline) {
-		if optional {
-			cmds = append(cmds, bk.SoftFail())
-		}
 		pipeline.AddStep(":bazel: Tests",
 			cmds...,
 		)
