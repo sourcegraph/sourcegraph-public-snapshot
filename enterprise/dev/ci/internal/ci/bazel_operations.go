@@ -12,6 +12,14 @@ func BazelOperations(optional bool) *operations.Set {
 	ops := operations.NewNamedSet("Bazel")
 	ops.Append(bazelConfigure(optional))
 	ops.Append(bazelTest(optional, "//..."))
+	ops.Append(bazelBackCompatTest(
+		optional,
+		"@sourcegraph_back_compat//cmd/...",
+		"@sourcegraph_back_compat//lib/...",
+		"@sourcegraph_back_compat//internal/...",
+		"@sourcegraph_back_compat//enterprise/cmd/...",
+		"@sourcegraph_back_compat//enterprise/internal/...",
+	))
 	return ops
 }
 
@@ -93,6 +101,32 @@ func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 			cmds = append(cmds, bk.SoftFail())
 		}
 		pipeline.AddStep(":bazel: Tests",
+			cmds...,
+		)
+	}
+}
+
+func bazelBackCompatTest(optional bool, targets ...string) func(*bk.Pipeline) {
+	cmds := []bk.StepOpt{
+		bk.DependsOn("bazel-configure"),
+		bk.Agent("queue", "bazel"),
+
+		// Generate a patch that backports the migration from the new code into the old one.
+		bk.RawCmd("git diff ci/backcompat-v5.0.0 ..HEAD -- migrations/ > migrations/back_compat_migrations.patch"),
+	}
+
+	bazelRawCmd := bazelRawCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
+	cmds = append(
+		cmds,
+		// TODO(JH): run server image for end-to-end tests on SOURCEGRAPH_BASE_URL similar to run-bazel-server.sh.
+		bk.RawCmd(bazelRawCmd),
+	)
+
+	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+		pipeline.AddStep(":bazel: BackCompat Tests",
 			cmds...,
 		)
 	}
