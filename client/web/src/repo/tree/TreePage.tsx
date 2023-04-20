@@ -231,10 +231,10 @@ export const TreePage: FC<Props> = ({
                                 </Badge>
                             )}
                         </PageHeader.Heading>
-                        {enableRepositoryMetadata && repo?.keyValuePairs && (
+                        {enableRepositoryMetadata && repo?.metadata && (
                             <RepoMetadata
                                 className="ml-2 mt-1"
-                                keyValuePairs={repo.keyValuePairs.map(({ key, value }) => [key, value])}
+                                metadata={repo.metadata.map(({ key, value }) => [key, value])}
                             />
                         )}
                     </div>
