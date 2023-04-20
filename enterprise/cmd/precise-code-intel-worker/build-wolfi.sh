@@ -19,11 +19,10 @@ export CGO_ENABLED=0
 
 echo "--- go build"
 pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker"
-bazel run @go_sdk//:bin/go -- build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
+go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 
 echo "--- docker build"
 docker build -f enterprise/cmd/precise-code-intel-worker/Dockerfile.wolfi -t "$IMAGE" "$OUTPUT" \
-  --platform="${PLATFORM:-linux/amd64}" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \

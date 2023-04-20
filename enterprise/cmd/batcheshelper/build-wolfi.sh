@@ -16,7 +16,7 @@ export GOOS=linux
 export CGO_ENABLED=0
 
 pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper"
-bazel run @go_sdk//:bin/go -- build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
+go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 
 docker build -f enterprise/cmd/batcheshelper/Dockerfile.wolfi -t "$IMAGE" "$OUTPUT" \
   --platform="${PLATFORM:-linux/amd64}" \

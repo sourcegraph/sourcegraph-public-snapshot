@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-# TODO: This is untested and WIP
-
 # We want to build multiple go binaries, so we use a custom build step on CI.
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eux
@@ -101,7 +99,6 @@ IMAGE=sourcegraph/blobstore:server docker-images/blobstore/build-wolfi.sh
 
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile.wolfi -t "$IMAGE" "$OUTPUT" \
-  --platform="${PLATFORM:-linux/amd64}" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
