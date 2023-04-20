@@ -43,21 +43,3 @@ if (process.env.DEV_WEB_BUILDER === 'esbuild' && process.env.NODE_ENV === 'devel
         location.reload()
     })
 }
-
-const originalFetch = window.fetch;
-const originalEventSource = window.EventSource
-
-window.fetch = function(url, ...args) {
-    if (!url.startsWith('/.assets') && !url.includes('://')) {
-        url = `http://localhost:3080${url}`
-    }
-    console.log('requesting', url)
-    return originalFetch(url, ...args);
-}
-window.EventSource = function(url, ...args) {
-    if (!url.startsWith('/.assets') && !url.includes('://')) {
-        url = `http://localhost:3080${url}`
-    }
-    console.log('requesting', url)
-    return new originalEventSource(url, ...args)
-}
