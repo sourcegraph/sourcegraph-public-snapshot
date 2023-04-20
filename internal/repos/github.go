@@ -155,7 +155,7 @@ func newGitHubSource(
 	var auther auth.Authenticator
 	if c.IsGitHubAppInstallation() {
 		// TODO: Fetch GitHub App details
-		auther = ghauth.NewGitHubAppInstallationAuthenticator(c.GitHubAppDetails.InstallationID, "", nil)
+		auther = ghauth.NewInstallationAccessToken(c.GitHubAppDetails.InstallationID, nil)
 	} else {
 		auther = &auth.OAuthBearerToken{Token: c.Token}
 	}
@@ -211,17 +211,6 @@ func newGitHubSource(
 }
 
 func (s *GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
-	switch a.(type) {
-	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH,
-		*ghauth.GitHubAppAuthenticator,
-		*ghauth.GitHubAppInstallationAuthenticator:
-		break
-
-	default:
-		return nil, newUnsupportedAuthenticatorError("GitHubSource", a)
-	}
-
 	sc := *s
 	sc.v3Client = sc.v3Client.WithAuthenticator(a)
 	sc.v4Client = sc.v4Client.WithAuthenticator(a)

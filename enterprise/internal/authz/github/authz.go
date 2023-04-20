@@ -124,7 +124,7 @@ func newAuthzProvider(
 
 	var auther auth.Authenticator
 	if c.IsGitHubAppInstallation() {
-		auther = ghauth.NewGitHubAppInstallationAuthenticator(c.GitHubAppDetails.InstallationID, "", nil)
+		auther = ghauth.NewInstallationAccessToken(c.GitHubAppDetails.InstallationID, nil)
 	} else {
 		auther = &auth.OAuthBearerToken{Token: c.Token}
 	}

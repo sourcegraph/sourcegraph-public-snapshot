@@ -67,12 +67,11 @@ invalid key
 
 func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 	installationID := 1
-	installationToken := "installation-token"
-	authenticator := NewGitHubAppInstallationAuthenticator(
+	authenticator := NewInstallationAccessToken(
 		installationID,
-		installationToken,
 		nil,
 	)
+	authenticator.token = "installation-token"
 
 	req, err := http.NewRequest("GET", "https://api.github.com", nil)
 	require.NoError(t, err)
@@ -86,9 +85,8 @@ func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 	t.Run("with appAuthenticator", func(t *testing.T) {
 		appAuthenticator := &mockAuthenticator{}
-		installationAuthenticator := NewGitHubAppInstallationAuthenticator(
+		installationAuthenticator := NewInstallationAccessToken(
 			1,
-			"installation-token",
 			appAuthenticator,
 		)
 
@@ -101,9 +99,8 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 	})
 
 	t.Run("without appAuthenticator", func(t *testing.T) {
-		installationAuthenticator := NewGitHubAppInstallationAuthenticator(
+		installationAuthenticator := NewInstallationAccessToken(
 			1,
-			"installation-token",
 			nil,
 		)
 

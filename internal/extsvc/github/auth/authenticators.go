@@ -13,14 +13,15 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// GitHubAppAuthenticator is used to authenticate requests to the GitHub API
+// gitHubAppAuthenticator is used to authenticate requests to the GitHub API
 // using a GitHub App. It contains the ID and private key associated with
 // the GitHub App.
-type GitHubAppAuthenticator struct {
+type gitHubAppAuthenticator struct {
 	appID  string
 	key    *rsa.PrivateKey
 	rawKey []byte
@@ -32,12 +33,12 @@ type GitHubAppAuthenticator struct {
 // The returned Authenticator can be used to sign requests to the GitHub API on behalf of the GitHub App.
 // The requests will contain a JSON Web Token (JWT) in the Authorization header with claims identifying
 // the GitHub App.
-func NewGitHubAppAuthenticator(appID string, privateKey []byte) (auth.Authenticator, error) {
+func NewGitHubAppAuthenticator(appID string, privateKey []byte) (*gitHubAppAuthenticator, error) {
 	key, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse private key")
 	}
-	return &GitHubAppAuthenticator{
+	return &gitHubAppAuthenticator{
 		appID:  appID,
 		key:    key,
 		rawKey: privateKey,
@@ -47,7 +48,7 @@ func NewGitHubAppAuthenticator(appID string, privateKey []byte) (auth.Authentica
 // Authenticate adds an Authorization header to the request containing
 // a JSON Web Token (JWT) signed with the GitHub App's private key.
 // The JWT contains claims identifying the GitHub App.
-func (a *GitHubAppAuthenticator) Authenticate(r *http.Request) error {
+func (a *gitHubAppAuthenticator) Authenticate(r *http.Request) error {
 	token, err := a.generateJWT()
 	if err != nil {
 		return err
@@ -67,7 +68,7 @@ func (a *GitHubAppAuthenticator) Authenticate(r *http.Request) error {
 // before passing to jwt-go.
 //
 // The returned JWT can be used to authenticate requests to the GitHub API as the GitHub App.
-func (a *GitHubAppAuthenticator) generateJWT() (string, error) {
+func (a *gitHubAppAuthenticator) generateJWT() (string, error) {
 	iss := time.Now().Add(-time.Minute).Truncate(time.Second)
 	exp := iss.Add(10 * time.Minute)
 	claims := &jwt.RegisteredClaims{
@@ -80,37 +81,54 @@ func (a *GitHubAppAuthenticator) generateJWT() (string, error) {
 	return token.SignedString(a.key)
 }
 
-func (a *GitHubAppAuthenticator) Hash() string {
+func (a *gitHubAppAuthenticator) Hash() string {
 	shaSum := sha256.Sum256(a.rawKey)
 	return hex.EncodeToString(shaSum[:])
 }
 
-// GitHubAppInstallationAuthenticator is used to authenticate requests to the GitHub API
-// using an installation access token associated with a GitHub App installation.
-// It contains the installation ID, installation access token, and expiry time.
-// It also contains an appAuthenticator which is used to refresh the installation access token.
-type GitHubAppInstallationAuthenticator struct {
-	installationID          int
-	InstallationAccessToken string
-	Expiry                  time.Time
-	appAuthenticator        auth.Authenticator
+type jsonToken struct {
+	Token     string `json:"token"`
+	ExpiresAt string `json:"expires_at"`
 }
 
-// NewGitHubAppInstallationAuthenticator creates an Authenticator that can be used to authenticate requests
+type InstallationAccessToken struct {
+	Token     string
+	ExpiresAt time.Time
+}
+
+// installationAccessToken is used to authenticate requests to the
+// GitHub API using an installation access token from a GitHub App.
+//
+// It implements the auth.Authenticator interface.
+type installationAccessToken struct {
+	installationID   int
+	token            string
+	expiresAt        time.Time
+	appAuthenticator auth.Authenticator
+	cli              *github.V3Client
+}
+
+func (t *installationAccessToken) updateFromJSON(jt *jsonToken) {
+	expiresAt, err := time.Parse(time.RFC3339, jt.ExpiresAt)
+	if err == nil {
+		t.expiresAt = expiresAt
+	}
+	t.token = jt.Token
+}
+
+// NewInstallationAccessToken creates an Authenticator that can be used to authenticate requests
 // to the GitHub API using an installation access token associated with a GitHub App installation.
 //
 // The returned Authenticator can be used to authenticate requests to the GitHub API on behalf of the installation.
 // The requests will contain the installation access token in the Authorization header.
 // When the installation access token expires, the appAuthenticator will be used to generate a new one.
-func NewGitHubAppInstallationAuthenticator(
+func NewInstallationAccessToken(
 	installationID int,
-	installationAccessToken string,
 	appAuthenticator auth.Authenticator,
-) *GitHubAppInstallationAuthenticator {
-	auther := &GitHubAppInstallationAuthenticator{
-		installationID:          installationID,
-		InstallationAccessToken: installationAccessToken,
-		appAuthenticator:        appAuthenticator,
+) *installationAccessToken {
+	auther := &installationAccessToken{
+		installationID:   installationID,
+		appAuthenticator: appAuthenticator,
 	}
 	return auther
 }
@@ -123,16 +141,16 @@ func NewGitHubAppInstallationAuthenticator(
 //
 // Returns an error if the request fails, or if there is no Authenticator to authenticate
 // the token refresh request.
-func (a *GitHubAppInstallationAuthenticator) Refresh(ctx context.Context, cli httpcli.Doer) error {
-	if a.appAuthenticator == nil {
+func (t *installationAccessToken) Refresh(ctx context.Context, cli httpcli.Doer) error {
+	if t.appAuthenticator == nil {
 		return errors.New("appAuthenticator is nil")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/app/installations/%d/access_tokens", a.installationID), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/app/installations/%d/access_tokens", t.installationID), nil)
 	if err != nil {
 		return err
 	}
-	a.appAuthenticator.Authenticate(req)
+	t.appAuthenticator.Authenticate(req)
 
 	resp, err := cli.Do(req)
 	if err != nil {
@@ -140,42 +158,38 @@ func (a *GitHubAppInstallationAuthenticator) Refresh(ctx context.Context, cli ht
 	}
 	defer resp.Body.Close()
 
-	var accessToken struct {
-		Token     string    `json:"token"`
-		ExpiresAt time.Time `json:"expires_at"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&accessToken); err != nil {
+	var jsonToken jsonToken
+	if err := json.NewDecoder(resp.Body).Decode(&jsonToken); err != nil {
 		return err
 	}
-	a.InstallationAccessToken = accessToken.Token
-	a.Expiry = accessToken.ExpiresAt
+	t.updateFromJSON(&jsonToken)
 	return nil
 }
 
 // Authenticate adds an Authorization header to the request containing
 // the installation access token associated with the GitHub App installation.
-func (a *GitHubAppInstallationAuthenticator) Authenticate(r *http.Request) error {
-	r.Header.Set("Authorization", "Bearer "+a.InstallationAccessToken)
+func (a *installationAccessToken) Authenticate(r *http.Request) error {
+	r.Header.Set("Authorization", "Bearer "+a.token)
 	return nil
 }
 
 // Hash returns a hash of the GitHub App installation ID.
 // We use the installation ID instead of the installation access
 // token because installation access tokens are short lived.
-func (a *GitHubAppInstallationAuthenticator) Hash() string {
+func (a *installationAccessToken) Hash() string {
 	sum := sha256.Sum256([]byte(strconv.Itoa(a.installationID)))
 	return hex.EncodeToString(sum[:])
 }
 
-// NeedsRefresh checks if the installation access token associated with the
-// GitHubAppInstallationAuthenticator needs to be refreshed.
-//
-// It returns true if the expiry time of the current installation access token
-// is within 5 minutes, indicating a new access token should be requested.
-// It returns false if the access token does not need to be refreshed yet.
-func (a *GitHubAppInstallationAuthenticator) NeedsRefresh() bool {
-	if !a.Expiry.IsZero() {
-		return time.Until(a.Expiry) < 5*time.Minute
+// NeedsRefresh checks whether the GitHub App installation access token
+// needs to be refreshed. An access token needs to be refreshed if it has
+// expired or will expire within the next few seconds.
+func (t *installationAccessToken) NeedsRefresh() bool {
+	if t.token == "" {
+		return true
 	}
-	return false
+	if t.expiresAt.IsZero() {
+		return false
+	}
+	return time.Until(t.expiresAt) < 5*time.Minute
 }
