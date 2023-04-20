@@ -5731,6 +5731,7 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
+        patches = ["//third_party/com_github_sourcegraph_zoekt:go.patch"],
         sum = "h1:dZN5lUWLL4I3jkxQG9SAtF+Ufv92JnQhNiGoXJfRHjU=",
         version = "v0.0.0-20230328081101-02541e61dd57",
     )
