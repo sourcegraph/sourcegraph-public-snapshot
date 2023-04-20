@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -67,36 +68,56 @@ invalid key
 
 func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 	installationID := 1
-	authenticator := NewInstallationAccessToken(
+	appAuthenticator := &mockAuthenticator{}
+	token := NewInstallationAccessToken(
 		installationID,
-		nil,
+		appAuthenticator,
 	)
-	authenticator.token = "installation-token"
+	token.token = "installation-token"
 
 	req, err := http.NewRequest("GET", "https://api.github.com", nil)
 	require.NoError(t, err)
 
-	err = authenticator.Authenticate(req)
-	require.NoError(t, authenticator.Authenticate(req))
+	err = token.Authenticate(req)
+	require.NoError(t, token.Authenticate(req))
 
 	assert.Equal(t, "Bearer installation-token", req.Header.Get("Authorization"))
 }
 
 func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
-	t.Run("with appAuthenticator", func(t *testing.T) {
-		appAuthenticator := &mockAuthenticator{}
-		installationAuthenticator := NewInstallationAccessToken(
-			1,
-			appAuthenticator,
-		)
+	appAuthenticator := &mockAuthenticator{}
+	token := NewInstallationAccessToken(
+		1,
+		appAuthenticator,
+	)
 
-		mockClient := &mockHTTPClient{}
-		require.NoError(t, installationAuthenticator.Refresh(context.Background(), mockClient))
+	mockClient := &mockHTTPClient{}
+	require.NoError(t, token.Refresh(context.Background(), mockClient))
 
-		require.True(t, mockClient.DoCalled)
+	require.True(t, mockClient.DoCalled)
 
-		require.True(t, appAuthenticator.AuthenticateCalled)
-	})
+	require.True(t, appAuthenticator.AuthenticateCalled)
+
+	require.Equal(t, token.token, "new-token")
+}
+
+func TestInstallationAccessToken_NeedsRefresh(t *testing.T) {
+	testCases := map[string]struct {
+		token        installationAccessToken
+		needsRefresh bool
+	}{
+		"empty token":   {installationAccessToken{}, true},
+		"valid token":   {installationAccessToken{token: "abc123"}, false},
+		"not expired":   {installationAccessToken{token: "abc123", expiresAt: time.Now().Add(10 * time.Minute)}, false},
+		"expired":       {installationAccessToken{token: "abc123", expiresAt: time.Now().Add(-10 * time.Minute)}, true},
+		"expiring soon": {installationAccessToken{token: "abc123", expiresAt: time.Now().Add(3 * time.Minute)}, true},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.needsRefresh, tc.token.NeedsRefresh())
+		})
+	}
 }
 
 type mockAuthenticator struct {
