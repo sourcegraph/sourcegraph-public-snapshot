@@ -116,12 +116,11 @@ func (t *installationAccessToken) updateFromJSON(jt *jsonToken) {
 	t.token = jt.Token
 }
 
-// NewInstallationAccessToken creates an Authenticator that can be used to authenticate requests
-// to the GitHub API using an installation access token associated with a GitHub App installation.
+// NewInstallationAccessToken implements the Authenticator interface
+// for GitHub App installations. Installation access tokens are created
+// for the given installationID, using the provided authenticator.
 //
-// The returned Authenticator can be used to authenticate requests to the GitHub API on behalf of the installation.
-// The requests will contain the installation access token in the Authorization header.
-// When the installation access token expires, the appAuthenticator will be used to generate a new one.
+// appAuthenticator must not be nil.
 func NewInstallationAccessToken(
 	installationID int,
 	appAuthenticator auth.Authenticator,
@@ -136,16 +135,9 @@ func NewInstallationAccessToken(
 // Refresh generates a new installation access token for the GitHub App installation.
 //
 // It makes a request to the GitHub API to generate a new installation access token for the
-// installation associated with the Authenticator. It updates the Authenticator with the new
-// installation access token and expiry time.
-//
-// Returns an error if the request fails, or if there is no Authenticator to authenticate
-// the token refresh request.
+// installation associated with the Authenticator.
+// Returns an error if the request fails.
 func (t *installationAccessToken) Refresh(ctx context.Context, cli httpcli.Doer) error {
-	if t.appAuthenticator == nil {
-		return errors.New("appAuthenticator is nil")
-	}
-
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/app/installations/%d/access_tokens", t.installationID), nil)
 	if err != nil {
 		return err

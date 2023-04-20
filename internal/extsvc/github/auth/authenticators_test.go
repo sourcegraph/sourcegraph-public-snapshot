@@ -97,15 +97,6 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 
 		require.True(t, appAuthenticator.AuthenticateCalled)
 	})
-
-	t.Run("without appAuthenticator", func(t *testing.T) {
-		installationAuthenticator := NewInstallationAccessToken(
-			1,
-			nil,
-		)
-
-		require.Error(t, installationAuthenticator.Refresh(context.Background(), nil))
-	})
 }
 
 type mockAuthenticator struct {
