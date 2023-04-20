@@ -10,7 +10,9 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -105,7 +107,14 @@ func scanJob(s dbutil.Scanner) (*Job, error) {
 
 func NewOwnBackgroundWorker(ctx context.Context, db database.DB, observationCtx *observation.Context) []goroutine.BackgroundRoutine {
 	worker, resetter, _ := makeWorker(ctx, db, observationCtx)
-	return []goroutine.BackgroundRoutine{worker, resetter}
+	janitor := background.NewJanitorJob(ctx, background.JanitorOptions{
+		Name:        "own-background-jobs-janitor",
+		Description: "Janitor for own-background-jobs queue",
+		Interval:    time.Minute * 5,
+		Metrics:     background.NewJanitorMetrics(observationCtx, "own-background-jobs-janitor", "own-background"),
+		CleanupFunc: janitorFunc(db, time.Hour*24*7),
+	})
+	return []goroutine.BackgroundRoutine{worker, resetter, janitor}
 }
 
 func makeWorker(ctx context.Context, db database.DB, observationCtx *observation.Context) (*workerutil.Worker[*Job], *dbworker.Resetter[*Job], dbworkerstore.Store[*Job]) {
@@ -153,4 +162,16 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *Job) er
 	jsonify, _ := json.Marshal(record)
 	logger.Info(fmt.Sprintf("Hello from the own background processor: %v", string(jsonify)))
 	return nil
+}
+
+func janitorFunc(db database.DB, retention time.Duration) func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error) {
+	return func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error) {
+		ts := time.Now().Add(-1 * retention)
+		result, err := basestore.NewWithHandle(db.Handle()).ExecResult(ctx, sqlf.Sprintf("delete from %s where state not in ('queued', 'processing', 'errored') and finished_at < %s", sqlf.Sprintf(tableName), ts))
+		if err != nil {
+			return 0, 0, err
+		}
+		affected, _ := result.RowsAffected()
+		return 0, int(affected), nil
+	}
 }
