@@ -4790,9 +4790,6 @@ ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
 
 ALTER TABLE ONLY github_apps
-    ADD CONSTRAINT github_apps_app_id_key UNIQUE (app_id);
-
-ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY gitserver_relocator_jobs
@@ -5265,6 +5262,8 @@ CREATE INDEX feature_flag_overrides_org_id ON feature_flag_overrides USING btree
 CREATE INDEX feature_flag_overrides_user_id ON feature_flag_overrides USING btree (namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
 
 CREATE INDEX finished_at_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (finished_at);
+
+CREATE UNIQUE INDEX github_apps_app_id_slug_base_url_unique ON github_apps USING btree (app_id, slug, base_url);
 
 CREATE INDEX gitserver_relocator_jobs_state ON gitserver_relocator_jobs USING btree (state);
 

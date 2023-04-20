@@ -11697,14 +11697,14 @@
       ],
       "Indexes": [
         {
-          "Name": "github_apps_app_id_key",
+          "Name": "github_apps_app_id_slug_base_url_unique",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX github_apps_app_id_key ON github_apps USING btree (app_id)",
-          "ConstraintType": "u",
-          "ConstraintDefinition": "UNIQUE (app_id)"
+          "IndexDefinition": "CREATE UNIQUE INDEX github_apps_app_id_slug_base_url_unique ON github_apps USING btree (app_id, slug, base_url)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         },
         {
           "Name": "github_apps_pkey",

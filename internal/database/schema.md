@@ -1561,7 +1561,7 @@ Referenced by:
  updated_at        | timestamp with time zone |           | not null | now()
 Indexes:
     "github_apps_pkey" PRIMARY KEY, btree (id)
-    "github_apps_app_id_key" UNIQUE CONSTRAINT, btree (app_id)
+    "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
 
 ```
 
