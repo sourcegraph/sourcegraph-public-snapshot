@@ -50,8 +50,12 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
     }, [setCompletionsQuotaResponse])
 
     const storeCompletionsQuota = useCallback(() => {
-        setUserCompletionsQuota({ variables: { userID, quota: quota === '' ? null : parseInt(quota) } })
-    }, [quota, userID])
+        setUserCompletionsQuota({ variables: { userID, quota: quota === '' ? null : parseInt(quota, 10) } }).catch(
+            error => {
+                console.error(error)
+            }
+        )
+    }, [quota, userID, setUserCompletionsQuota])
 
     if (loading) {
         return <LoadingSpinner />
@@ -84,16 +88,15 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
                         name="completions-quota"
                         type="number"
                         value={quota}
-                        onChange={ev => setQuota(ev.currentTarget.value)}
+                        onChange={event => setQuota(event.currentTarget.value)}
                         spellCheck={false}
                         min={1}
                         disabled={setUserCompletionsQuotaLoading}
-                        placeholder={
-                            'Global limit: ' +
-                            (data?.site.perUserCompletionsQuota === null
+                        placeholder={`Global limit: ${
+                            data?.site.perUserCompletionsQuota === null
                                 ? 'infinite'
-                                : data?.site.perUserCompletionsQuota)
-                        }
+                                : data?.site.perUserCompletionsQuota
+                        }`}
                         label="Custom completions quota"
                         className="flex-grow-1 mb-0"
                     />
