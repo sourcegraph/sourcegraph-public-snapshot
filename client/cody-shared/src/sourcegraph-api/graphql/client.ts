@@ -81,11 +81,11 @@ export class SourcegraphGraphQLAPIClient {
     public async getRepoId(repoName: string): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
-        }).then(response => {
-            return extractDataOrError(response, data =>
+        }).then(response =>
+            extractDataOrError(response, data =>
                 data.repository ? data.repository.id : new RepoNotFoundError(`repository ${repoName} not found`)
             )
-        })
+        )
     }
 
     public async logEvent(event: {
