@@ -13,18 +13,23 @@ import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
 import { getPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
-import { Transcript } from './transcript'
+import { Transcript, TranscriptJSON } from './transcript'
 import { ChatMessage } from './transcript/messages'
 import { reformatBotMessage } from './viewHelpers'
+
+export type { TranscriptJSON }
+export { Transcript }
 
 export interface ClientInit {
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken'>
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: ChatMessage[]) => void
     editor: Editor
+    initialTranscript?: Transcript
 }
 
 export interface Client {
+    transcript: Transcript
     submitMessage: (text: string) => Promise<void>
     executeRecipe: (
         recipeId: string,
@@ -40,6 +45,7 @@ export async function createClient({
     setMessageInProgress,
     setTranscript,
     editor,
+    initialTranscript,
 }: ClientInit): Promise<Client> {
     const fullConfig = { ...config, debug: false, customHeaders: {} }
 
@@ -48,7 +54,7 @@ export async function createClient({
 
     const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)
 
-    const repoId = config.codebase ? await graphqlClient.getRepoId(config.codebase) : null
+    const repoId = config.codebase ? await graphqlClient.getRepoIdIfEmbeddingExists(config.codebase) : null
     if (isError(repoId)) {
         throw new Error(
             `Cody could not access the '${config.codebase}' repository on your Sourcegraph instance. Details: ${repoId.message}`
@@ -61,7 +67,7 @@ export async function createClient({
 
     const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
 
-    const transcript = new Transcript()
+    const transcript = initialTranscript || new Transcript()
 
     let isMessageInProgress = false
 
@@ -124,6 +130,7 @@ export async function createClient({
     }
 
     return {
+        transcript,
         submitMessage(text: string) {
             return executeRecipe('chat-question', { humanChatInput: text })
         },

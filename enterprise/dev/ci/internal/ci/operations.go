@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
@@ -50,7 +49,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops := operations.NewSet()
 
 	if opts.ForceBazel {
-		ops.Merge(BazelOperations(false)) // non soft-failing
+		ops.Merge(BazelOperations())
 	}
 
 	// Simple, fast-ish linter checks
@@ -160,18 +159,8 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 	cmd = cmd + "lint -annotations -fail-fast=false " + formatCheck + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
-		lintCachePath := "/root/buildkite/build/sourcegraph/.golangci-lint-cache"
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
 			withPnpmCache(),
-			bk.Env("GOLANGCI_LINT_CACHE", lintCachePath),
-			buildkite.Cache(&bk.CacheOptions{
-				ID:                "golangci-lint",
-				Key:               "golangci-lint-{{ git.branch }}",
-				RestoreKeys:       []string{"golangci-lint-main"}, // We only restore the main branch cache.
-				Paths:             []string{".golangci-lint-cache"},
-				Compress:          true,
-				IgnorePullRequest: true,
-			}),
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
 					IncludeNames: true,
@@ -324,6 +313,7 @@ func addCodyExtensionTests(pipeline *bk.Pipeline) {
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm --filter cody-ai run test:integration"),
+		bk.Cmd("pnpm --filter cody-shared run test"),
 	)
 }
 
