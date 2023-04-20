@@ -268,6 +268,7 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 	return func(pipeline *bk.Pipeline) {
 		commit := os.Getenv("BUILDKITE_COMMIT")
 		branch := os.Getenv("BUILDKITE_BRANCH")
+		gac := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 		cmds := []bk.StepOpt{
 			withPnpmCache(),
@@ -290,6 +291,7 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 				bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
 				bk.Env("BRANCH", branch),
 				bk.Env("COMMIT", commit),
+				bk.Env("GOOGLE_APPLICATION_CREDENTIALS", gac),
 				bk.Cmd("pnpm --filter @sourcegraph/web run report-bundle-diff"),
 			)
 		}

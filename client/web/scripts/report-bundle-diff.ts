@@ -16,7 +16,16 @@ const ROOT_PATH = path.join(__dirname, '../../../')
 const STATIC_ASSETS_PATH = process.env.WEB_BUNDLE_PATH || path.join(ROOT_PATH, 'ui/assets')
 const statoscopeBinPath = path.join(ROOT_PATH, 'node_modules/.bin/statoscope')
 
-const { BRANCH, BUILDKITE_PULL_REQUEST_REPO, BUILDKITE_PULL_REQUEST, COMMIT, GITHUB_TOKEN } = process.env
+const {
+    GOOGLE_APPLICATION_CREDENTIALS,
+    BRANCH,
+    BUILDKITE_PULL_REQUEST_REPO,
+    BUILDKITE_PULL_REQUEST,
+    COMMIT,
+    GITHUB_TOKEN,
+} = process.env
+
+console.log({ GOOGLE_APPLICATION_CREDENTIALS })
 
 async function getCompareRev(): Promise<string | undefined> {
     const revisions = exec(`git --no-pager log "${MERGE_BASE}" --pretty=format:"%H" -n 20`).toString().split('\n')
@@ -54,7 +63,7 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
         exec(`tar tvf ${tarPath}`)
         console.log('---------')
 
-        const cmd = `tar -xf ${tarPath} --strip-components=3 -C ${STATIC_ASSETS_PATH}`
+        const cmd = `tar -xf ${tarPath} --strip-components=2 -C ${STATIC_ASSETS_PATH}`
         console.log(cmd)
         exec(cmd)
         console.log('---------')
