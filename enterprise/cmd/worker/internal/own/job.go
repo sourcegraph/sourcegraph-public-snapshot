@@ -70,6 +70,11 @@ func (o *ownRepoIndexSchedulerJob) Handle(ctx context.Context) error {
 	return nil
 }
 
+// Every X duration the scheduler will run and try to index repos for each job type. It will obey the following rules:
+// 1. ignore jobs in progress or still in retry-backoff
+// 2. ignore repos that have indexed more recently than the configured index interval for the job, ex. 24 hours
+// 3. add all remaining cloned repos to the queue
+// This means each (job, repo) tuple will only be index maximum once in a single interval duration
 var ownIndexRepoQuery = `
 WITH ineligible_repos AS (SELECT repo_id
                           FROM own_background_jobs
