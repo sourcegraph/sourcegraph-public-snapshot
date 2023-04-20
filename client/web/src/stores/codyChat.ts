@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { isEqual } from 'lodash'
+import { Transition } from 'react-spring'
 import create from 'zustand'
 
 import { Client, createClient, ClientInit, Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/client'
@@ -124,13 +125,22 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         onEvent: (eventName: 'submit' | 'reset' | 'error') => void
     ): Promise<void> => {
         const editor = new CodeMirrorEditor(editorStateRef)
-        const transcriptHistory = JSON.parse(
-            window.localStorage.getItem(CODY_TRANSCRIPT_HISTORY_KEY) || '[]'
-        ) as TranscriptJSON[]
 
-        const initialTranscript = Transcript.fromJSON(
-            transcriptHistory[transcriptHistory.length - 1] || { interactions: [] }
-        )
+        const transcriptHistory = ((): TranscriptJSON[] => {
+            try {
+                return JSON.parse(window.localStorage.getItem(CODY_TRANSCRIPT_HISTORY_KEY) || '[]')
+            } catch {
+                return []
+            }
+        })()
+
+        const initialTranscript = ((): Transcript => {
+            try {
+                return Transcript.fromJSON(transcriptHistory[transcriptHistory.length - 1] || { interactions: [] })
+            } catch {
+                return new Transcript()
+            }
+        })()
 
         set({
             config,
@@ -212,10 +222,11 @@ export const useChatStore = ({
         editorStateRef.current = editorStore
     }, [editorStore])
 
+    // TODO(naman): change useContext to `blended` after adding keyboard context
     const config = useMemo<Required<ClientInit['config']>>(
         () => ({
             serverEndpoint: window.location.origin,
-            useContext: 'blended',
+            useContext: 'embeddings',
             codebase,
             accessToken: null,
         }),
