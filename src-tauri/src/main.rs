@@ -17,7 +17,7 @@ fn main() {
     tauri::Builder::default()
         .setup(|app| {
             let window = app.get_window("main").unwrap();
-            let (mut rx, mut child) = Command::new_sidecar("backend")
+            let (mut rx, _child) = Command::new_sidecar("backend")
                 .expect("failed to create `backend` binary command")
                 .spawn()
                 .expect("Failed to spawn backend sidecar");
@@ -25,13 +25,23 @@ fn main() {
             tauri::async_runtime::spawn(async move {
                 // read events such as stdout
                 while let Some(event) = rx.recv().await {
-                    if let CommandEvent::Stdout(line) = event {
-                        window
-                            .emit("message", Some(format!("'{}'", line)))
-                            .expect("failed to emit event");
-                        // write to stdin
-                        child.write("message from Rust\n".as_bytes()).unwrap();
-                    }
+                    match event {
+                        CommandEvent::Stdout(line) => {
+                            window
+                                .emit("backend-stdout", Some(line.clone()))
+                                .expect("failed to emit event");
+
+                            window.eval(&format!("console.log(\"YO: {}\")", line));
+                        }
+                        CommandEvent::Stderr(line) => {
+                            window
+                                .emit("backend-stderr", Some(line.clone()))
+                                .expect("failed to emit event");
+
+                            window.eval(&format!("console.log(\"{}\")", line));
+                        }
+                        _ => continue,
+                    };
                 }
             });
 

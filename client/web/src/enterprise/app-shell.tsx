@@ -1,17 +1,14 @@
 console.log('app-shell.tsx loaded')
 
-const redirectToServer = (url) => {
-    fetch(url)
-      .then(res => {
-        if (res.ok) {
-          window.location.href = url
-        } else {
-          setTimeout(redirectToServer, 1000)
-        }
-      })
-      .catch(err => {
-        setTimeout(redirectToServer, 1000)
-      })
-  }
+import { listen } from '@tauri-apps/api/event'
 
-  redirectToServer('http://localhost:3080')
+const outputHandler = (event) => {
+    console.log(':: ' + event.payload)
+    if (event.payload.startsWith('tauri:sign-in-url: ')) {
+        const url = event.payload.slice('tauri:sign-in-url: '.length).trim()
+        window.location.href = url
+    }
+}
+
+listen('backend-stdout', outputHandler)
+listen('backend-stderr', outputHandler)
