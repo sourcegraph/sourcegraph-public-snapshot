@@ -1,10 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
-exports_files([
-    "back_compat_migrations.patch",  # git diff ci/backcompat-v5.0.0 ..HEAD -- migrations/ > migrations/back_compat_migrations.patch
-    "back_compat_build_fixes.patch",  # replace @//lib/errors by @sourcegraph_back_compat//lib/errors
-])
-
 go_library(
     name = "migrations",
     srcs = ["embed.go"],
