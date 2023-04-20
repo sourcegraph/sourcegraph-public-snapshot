@@ -119,8 +119,8 @@ export async function startLSP() {
     	documentSettings.delete(e.document.uri);
     });
 
-    // // The content of a text document has changed. This event is emitted
-    // // when the text document first opened or when its content has changed.
+    // The content of a text document has changed. This event is emitted
+    // when the text document first opened or when its content has changed.
     documents.onDidChangeContent(change => {
     	validateTextDocument(change.document);
     });
@@ -213,10 +213,6 @@ export async function startLSP() {
     	}
     );
 
-    // Make the text document manager listen on the connection
-    // for open, change and close text document events
     documents.listen(connection);
-
-    // Listen on the connection
     connection.listen();
 }
