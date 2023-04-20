@@ -1,4 +1,3 @@
-
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import {
     createConnection,
@@ -13,33 +12,88 @@ import {
     TextDocumentPositionParams,
     TextDocumentSyncKind,
     InitializeResult,
+    Connection,
+    DidChangeConfigurationParams,
+    DidChangeWatchedFilesParams,
 } from 'vscode-languageserver/node'
 
+import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
+import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+
+import { DEFAULTS } from './config'
+import { createCodebaseContext } from './context'
+
 export async function startLSP() {
-    // Create a connection for the server, using Node's IPC as a transport.
-    // Also include all preview / proposed LSP features.
-    const connection = createConnection(ProposedFeatures.all)
+    const server = new CodyLanguageServer()
+    server.listen()
+}
+interface SourcegraphSettings {
+    url: string
+    accessToken: string
+    repos: string[]
+}
 
-    // // Create a simple text document manager.
-    const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
+function validSettings(settings: SourcegraphSettings): boolean {
+    return settings.url !== '' && settings.accessToken !== '' && settings.repos.length !== 0
+}
 
-    let hasConfigurationCapability = false
-    let hasWorkspaceFolderCapability = false
-    let hasDiagnosticRelatedInformationCapability = false
+interface CodyLSPSettings {
+    sourcegraph: SourcegraphSettings
+}
 
-    connection.onInitialize((params: InitializeParams) => {
+const defaultSettings: CodyLSPSettings = {
+    sourcegraph: {
+        url: DEFAULTS.serverEndpoint,
+        accessToken: 'not set',
+        repos: [],
+    },
+}
+
+class CodyLanguageServer {
+    connection: Connection
+    documents: TextDocuments<TextDocument>
+
+    globalSettings: CodyLSPSettings = defaultSettings
+    documentSettings: Map<string, Thenable<CodyLSPSettings>> = new Map()
+
+    hasDiagnosticRelatedInformationCapability: boolean = false
+
+    // These 3 will be set once we've received the configuration from the LSP
+    // client.
+    intentDetector?: IntentDetector
+    codebaseContext?: CodebaseContext
+    completionsClient?: SourcegraphNodeCompletionsClient
+
+    constructor() {
+        this.connection = createConnection(ProposedFeatures.all)
+        this.documents = new TextDocuments(TextDocument)
+
+        this.connection.onInitialized(this.onInitialized.bind(this))
+        this.connection.onDidChangeConfiguration(this.onDidChangeConfiguration.bind(this))
+        this.connection.onCompletion(this.onCompletion.bind(this))
+        this.connection.onDidChangeWatchedFiles(this.onDidChangeWatchedFiles.bind(this))
+        this.connection.onCompletionResolve(this.onCompletionResolve.bind(this))
+
+        this.documents.onDidClose(e => this.documentSettings.delete(e.document.uri))
+        this.documents.onDidChangeContent(change => this.validateTextDocument(change.document))
+    }
+
+    public listen() {
+        this.documents.listen(this.connection)
+        this.connection.listen()
+    }
+
+    onInitialize(params: InitializeParams) {
         const capabilities = params.capabilities
 
-        // Does the client support the `workspace/configuration` request?
-        // If not, we fall back using global settings.
-        hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration)
-        hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders)
-        hasDiagnosticRelatedInformationCapability = !!(
+        this.hasDiagnosticRelatedInformationCapability = !!(
             capabilities.textDocument &&
             capabilities.textDocument.publishDiagnostics &&
             capabilities.textDocument.publishDiagnostics.relatedInformation
         )
-
         const result: InitializeResult = {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
@@ -47,172 +101,117 @@ export async function startLSP() {
                 completionProvider: {
                     resolveProvider: true,
                 },
+                inlayHintProvider: false,
             },
         }
-        if (hasWorkspaceFolderCapability) {
-            result.capabilities.workspace = {
-                workspaceFolders: {
-                    supported: true,
-                },
-            }
-        }
         return result
-    })
+    }
 
-    connection.onInitialized(() => {
-        if (hasConfigurationCapability) {
-            // Register for all configuration changes.
-            connection.client.register(DidChangeConfigurationNotification.type, undefined)
+    onInitialized() {
+        console.error('onInitialized')
+        this.connection.client.register(DidChangeConfigurationNotification.type, undefined)
+    }
+
+    onDidChangeConfiguration(change: DidChangeConfigurationParams) {
+        console.error('configuration change', change)
+
+        this.globalSettings = (change.settings.codylsp || defaultSettings) as CodyLSPSettings
+        if (validSettings(this.globalSettings.sourcegraph)) {
+            this.initializeCody()
         }
-        if (hasWorkspaceFolderCapability) {
-            connection.workspace.onDidChangeWorkspaceFolders(_event => {
-                connection.console.log('Workspace folder change event received.')
-            })
+
+        this.documents.all().forEach(this.validateTextDocument)
+    }
+
+    async initializeCody() {
+        // TODO: These two are clunky
+        const codebase = this.globalSettings.sourcegraph.repos[0]
+        const contextType = 'blended'
+        const customHeaders = {}
+
+        const sourcegraphClient = new SourcegraphGraphQLAPIClient({
+            serverEndpoint: this.globalSettings.sourcegraph.url,
+            accessToken: this.globalSettings.sourcegraph.accessToken,
+            customHeaders,
+        })
+
+        try {
+            this.codebaseContext = await createCodebaseContext(sourcegraphClient, codebase, contextType)
+        } catch (error) {
+            // TODO: return this to the LSP
+
+            let errorMessage = ''
+            // if (isRepoNotFoundError(error)) {
+            //     errorMessage =
+            //         `Cody could not find the '${codebase}' repository on your Sourcegraph instance.\n` +
+            //         'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
+            // } else {
+            errorMessage =
+                `Cody could not connect to your Sourcegraph instance: ${error}\n` +
+                'Make sure that cody.serverEndpoint is set to a running Sourcegraph instance and that an access token is configured.'
+            // }
+            console.error(errorMessage)
         }
-    })
 
-    // The example settings
-    interface ExampleSettings {
-        maxNumberOfProblems: number
+        this.intentDetector = new SourcegraphIntentDetectorClient(sourcegraphClient)
+
+        this.completionsClient = new SourcegraphNodeCompletionsClient({
+            serverEndpoint: this.globalSettings.sourcegraph.url,
+            accessToken: this.globalSettings.sourcegraph.accessToken,
+            debug: DEFAULTS.debug === 'development',
+            customHeaders,
+        })
+
+        console.error('hey man we did it!!')
     }
 
-    // The global settings, used when the `workspace/configuration` request is not supported by the client.
-    // Please note that this is not the case when using this server with the client provided in this example
-    // but could happen with other clients.
-    const defaultSettings: ExampleSettings = { maxNumberOfProblems: 1000 };
-    let globalSettings: ExampleSettings = defaultSettings;
-
-    // Cache the settings of all open documents
-    const documentSettings: Map<string, Thenable<ExampleSettings>> = new Map();
-
-    connection.onDidChangeConfiguration(change => {
-    	if (hasConfigurationCapability) {
-    		// Reset all cached document settings
-    		documentSettings.clear();
-    	} else {
-    		globalSettings = <ExampleSettings>(
-    			(change.settings.languageServerExample || defaultSettings)
-    		);
-    	}
-
-    	// Revalidate all open text documents
-    	documents.all().forEach(validateTextDocument);
-    });
-
-    const getDocumentSettings = (resource: string): Thenable<ExampleSettings> => {
-    	if (!hasConfigurationCapability) {
-    		return Promise.resolve(globalSettings);
-    	}
-    	let result = documentSettings.get(resource);
-    	if (!result) {
-    		result = connection.workspace.getConfiguration({
-    			scopeUri: resource,
-    			section: 'languageServerExample'
-    		});
-    		documentSettings.set(resource, result);
-    	}
-    	return result;
+    onDidChangeWatchedFiles(change: DidChangeWatchedFilesParams) {
+        // Monitored files have change in VSCode
+        console.error('We received an file change event:', change)
     }
 
-    // Only keep settings for open documents
-    documents.onDidClose(e => {
-    	documentSettings.delete(e.document.uri);
-    });
+    async validateTextDocument(textDocument: TextDocument): Promise<void> {
+        const diagnostics: Diagnostic[] = [
+            {
+                severity: DiagnosticSeverity.Warning,
+                range: {
+                    start: textDocument.positionAt(0),
+                    end: textDocument.positionAt(10),
+                },
+                message: `Cody was here`,
+                source: 'codylsp',
+            },
+        ]
 
-    // The content of a text document has changed. This event is emitted
-    // when the text document first opened or when its content has changed.
-    documents.onDidChangeContent(change => {
-    	validateTextDocument(change.document);
-    });
-
-    const validateTextDocument = async(textDocument: TextDocument): Promise<void> => {
-    	// In this simple example we get the settings for every validate run.
-    	const settings = await getDocumentSettings(textDocument.uri);
-
-    	// The validator creates diagnostics for all uppercase words length 2 and more
-    	const text = textDocument.getText();
-    	const pattern = /\b[A-Z]{2,}\b/g;
-    	let m: RegExpExecArray | null;
-
-    	let problems = 0;
-    	const diagnostics: Diagnostic[] = [];
-    	while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-    		problems++;
-    		const diagnostic: Diagnostic = {
-    			severity: DiagnosticSeverity.Warning,
-    			range: {
-    				start: textDocument.positionAt(m.index),
-    				end: textDocument.positionAt(m.index + m[0].length)
-    			},
-    			message: `${m[0]} is all uppercase.`,
-    			source: 'ex'
-    		};
-    		if (hasDiagnosticRelatedInformationCapability) {
-    			diagnostic.relatedInformation = [
-    				{
-    					location: {
-    						uri: textDocument.uri,
-    						range: Object.assign({}, diagnostic.range)
-    					},
-    					message: 'Spelling matters'
-    				},
-    				{
-    					location: {
-    						uri: textDocument.uri,
-    						range: Object.assign({}, diagnostic.range)
-    					},
-    					message: 'Particularly for names'
-    				}
-    			];
-    		}
-    		diagnostics.push(diagnostic);
-    	}
-
-    	// Send the computed diagnostics to VSCode.
-    	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+        this.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
     }
 
-    connection.onDidChangeWatchedFiles(_change => {
-    	// Monitored files have change in VSCode
-    	connection.console.log('We received an file change event');
-    });
+    onCompletion(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] {
+        // The pass parameter contains the position of the text document in
+        // which code complete got requested. For the example we ignore this
+        // info and always provide the same completion items.
+        return [
+            {
+                label: 'TypeScript',
+                kind: CompletionItemKind.Text,
+                data: 1,
+            },
+            {
+                label: 'JavaScript',
+                kind: CompletionItemKind.Text,
+                data: 2,
+            },
+        ]
+    }
 
-    // This handler provides the initial list of the completion items.
-    connection.onCompletion(
-    	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-    		// The pass parameter contains the position of the text document in
-    		// which code complete got requested. For the example we ignore this
-    		// info and always provide the same completion items.
-    		return [
-    			{
-    				label: 'TypeScript',
-    				kind: CompletionItemKind.Text,
-    				data: 1
-    			},
-    			{
-    				label: 'JavaScript',
-    				kind: CompletionItemKind.Text,
-    				data: 2
-    			}
-    		];
-    	}
-    );
-
-    // This handler resolves additional information for the item selected in
-    // the completion list.
-    connection.onCompletionResolve(
-    	(item: CompletionItem): CompletionItem => {
-    		if (item.data === 1) {
-    			item.detail = 'TypeScript details';
-    			item.documentation = 'TypeScript documentation';
-    		} else if (item.data === 2) {
-    			item.detail = 'JavaScript details';
-    			item.documentation = 'JavaScript documentation';
-    		}
-    		return item;
-    	}
-    );
-
-    documents.listen(connection);
-    connection.listen();
+    onCompletionResolve(item: CompletionItem): CompletionItem {
+        if (item.data === 1) {
+            item.detail = 'TypeScript details'
+            item.documentation = 'TypeScript documentation'
+        } else if (item.data === 2) {
+            item.detail = 'JavaScript details'
+            item.documentation = 'JavaScript documentation'
+        }
+        return item
+    }
 }
