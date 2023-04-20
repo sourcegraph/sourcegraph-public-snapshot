@@ -140,6 +140,7 @@ export interface NotepadProps {
     // selected
     selectable?: boolean
     userId?: string
+    isRepositoryRelatedPage?: boolean
 }
 
 export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadProps>> = ({
