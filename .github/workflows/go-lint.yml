@@ -4,7 +4,7 @@ on:
   - push
 
 jobs:
-  go-test:
+  go-lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
