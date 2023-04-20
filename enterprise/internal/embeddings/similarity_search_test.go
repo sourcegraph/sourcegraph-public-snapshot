@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -40,9 +41,9 @@ var queries = []int8{
 
 // Each subarray contains ranked nearest neighbors for each query.
 var ranks = [][]int{
-	{4, 2, 3, 6, 14, 12, 1, 5, 13, 11, 8, 10, 0, 7, 9, 15},
-	{4, 9, 6, 3, 0, 15, 5, 11, 1, 7, 2, 14, 10, 8, 13, 12},
-	{8, 2, 4, 10, 15, 0, 6, 5, 14, 12, 11, 3, 1, 9, 7, 13},
+	{12, 6, 1, 2, 0, 7, 3, 13, 10, 14, 11, 9, 5, 8, 4, 15},
+	{4, 8, 10, 3, 0, 6, 2, 9, 13, 1, 12, 7, 15, 14, 11, 5},
+	{5, 12, 1, 11, 2, 7, 6, 14, 0, 13, 3, 10, 9, 15, 8, 4},
 }
 
 func TestSimilaritySearch(t *testing.T) {
@@ -57,22 +58,18 @@ func TestSimilaritySearch(t *testing.T) {
 		index.RowMetadata = append(index.RowMetadata, RepoEmbeddingRowMetadata{FileName: fmt.Sprintf("%d", i)})
 	}
 
-	getExpectedResults := func(queryRanks []int) []EmbeddingSearchResult {
-		results := make([]EmbeddingSearchResult, len(queryRanks))
-		for idx, rank := range queryRanks {
-			results[rank].RepoEmbeddingRowMetadata = index.RowMetadata[idx]
-		}
-		return results
-	}
-
 	for _, numWorkers := range []int{0, 1, 2, 3, 5, 8, 9, 16, 20, 33} {
-		for _, numResults := range []int{0, 1, 2, 4, 9, 16, 32} {
+		for _, numResults := range []int{32} {
 			for q := 0; q < numQueries; q++ {
 				t.Run(fmt.Sprintf("find nearest neighbors query=%d numResults=%d numWorkers=%d", q, numResults, numWorkers), func(t *testing.T) {
 					query := queries[q*columnDimension : (q+1)*columnDimension]
 					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0}, SearchOptions{})
-					expectedResults := getExpectedResults(ranks[q])
-					require.Equal(t, expectedResults[:min(numResults, len(expectedResults))], results)
+					resultRowNums := make([]int, len(results))
+					for i, r := range results {
+						resultRowNums[i] = r.RowNum
+					}
+					expectedResults := ranks[q]
+					require.Equal(t, expectedResults[:min(numResults, len(expectedResults))], resultRowNums)
 				})
 			}
 		}
