@@ -24,7 +24,7 @@ To add permissions for a new feature, follow these steps:
 
 2. Generate the access control constants with the command `sg gen`. This will generate access control constants for [Typescript](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@8b4e1cb/-/blob/client/web/src/rbac/constants.ts) and [Go](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@8b4e1cb4374d1449c918f695c21d2c933c5a1d15/-/blob/internal/rbac/constants.go).
 
-3. Once this constants have been generated, you can protect any resource using the access control system. 
+3. Once these constants have been generated, you can protect any resource using the access control system. 
     * In Go, you can do this by importing the [`CheckCurrentUserHasPermission`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@8b4e1cb/-/blob/internal/rbac/permission.go) method from the `internal/rbac` package. [Example](https://github.com/sourcegraph/sourcegraph/pull/49594/files).
 
     * In Typescript, you can do this by accessing the authenticated user's permissions and verifying the [permission](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@8b4e1cb4374d1449c918f695c21d2c933c5a1d15/-/blob/client/web/src/rbac/constants.ts?L5:14-5:41) you require is contained in the array. [Example](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@8b4e1cb4374d1449c918f695c21d2c933c5a1d15/-/blob/client/web/src/batches/utils.ts?L6)
