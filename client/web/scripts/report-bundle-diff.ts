@@ -3,11 +3,9 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 
-import { Storage } from '@google-cloud/storage'
 import { Octokit } from 'octokit'
 import { exec } from 'shelljs'
 
-const storage = new Storage()
 const COMMENT_HEADING = '## Bundle size report 📦'
 const MERGE_BASE = exec('git merge-base HEAD origin/main').toString().trim()
 let COMPARE_REV = ''
