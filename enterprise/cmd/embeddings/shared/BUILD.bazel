@@ -47,10 +47,10 @@ go_library(
         "//lib/errors",
         "@com_github_hashicorp_golang_lru_v2//:golang-lru",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_weaviate_weaviate//entities/models:go_default_library",
-        "@com_github_weaviate_weaviate_go_client_v4//weaviate:go_default_library",
-        "@com_github_weaviate_weaviate_go_client_v4//weaviate/filters:go_default_library",
-        "@com_github_weaviate_weaviate_go_client_v4//weaviate/graphql:go_default_library",
+        "@com_github_weaviate_weaviate//entities/models",
+        "@com_github_weaviate_weaviate_go_client_v4//weaviate",
+        "@com_github_weaviate_weaviate_go_client_v4//weaviate/filters",
+        "@com_github_weaviate_weaviate_go_client_v4//weaviate/graphql",
     ],
 )
 
