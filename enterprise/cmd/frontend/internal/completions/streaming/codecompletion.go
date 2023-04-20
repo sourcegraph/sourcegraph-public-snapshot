@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -12,16 +14,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 // NewCodeCompletionsHandler is an http handler which sends back code completion results
-func NewCodeCompletionsHandler(logger log.Logger) http.Handler {
-	return &codeCompletionHandler{logger: logger}
+func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
+	rl := NewRateLimiter(db, redispool.Store)
+	return &codeCompletionHandler{logger: logger, rl: rl}
 }
 
 type codeCompletionHandler struct {
 	logger log.Logger
+	rl     RateLimiter
 }
 
 func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +64,21 @@ func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	defer done()
 
 	client := anthropic.NewAnthropicClient(httpcli.ExternalDoer, completionsConfig.AccessToken, completionsConfig.CompletionModel)
+
+	// Check rate limit.
+	if err := h.rl.TryAcquire(ctx); err != nil {
+		if unwrap, ok := err.(RateLimitExceededError); ok {
+			// Rate limit exceeded, write well known headers and return correct status code.
+			w.Header().Set("x-ratelimit-limit", strconv.Itoa(unwrap.Limit))
+			w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(unwrap.Limit-unwrap.Used, 0)))
+			w.Header().Set("x-ratelimit-reset", unwrap.RetryAfter.Format(time.RFC3339))
+			http.Error(w, err.Error(), http.StatusTooManyRequests)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	completion, err := client.Complete(ctx, p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

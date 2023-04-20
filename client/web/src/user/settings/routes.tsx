@@ -36,6 +36,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: () => <Navigate to="../security" replace={true} />,
     },
     {
+        path: 'quota',
+        render: lazyComponent(() => import('./quota/UserQuotaProfilePage'), 'UserQuotaProfilePage'),
+        condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
+    },
+    {
         path: 'emails',
         render: lazyComponent(() => import('./emails/UserSettingsEmailsPage'), 'UserSettingsEmailsPage'),
     },
