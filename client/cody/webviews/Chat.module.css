@@ -39,7 +39,9 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 }
 
 .transcript-action {
+    font-size: var(--vscode-editor-font-size);
     background-color: var(--code-background);
+    width: 90%;
 }
 
 .code-blocks-copy-button {

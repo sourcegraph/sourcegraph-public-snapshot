@@ -59,11 +59,11 @@
     word-break: break-word;
     line-height: 150%;
 }
+
 .content pre {
     padding: calc(var(--spacing) * 0.5);
     overflow-x: auto;
 }
-
 
 .content > div:first-child > *:first-child {
     margin-top: 0;
