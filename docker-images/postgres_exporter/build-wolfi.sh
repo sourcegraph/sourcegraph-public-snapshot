@@ -54,7 +54,7 @@ echo "${OUTPUT_FILE}"
 echo "${CODEINTEL_OUTPUT_FILE}"
 echo "${CODEINSIGHTS_OUTPUT_FILE}"
 
-docker build -f ./Dockerfile.wolfi -t "${IMAGE:-sourcegraph/postgres_exporter}" "${OUTPUT}" \
+docker build -f Dockerfile.wolfi -t "${IMAGE:-sourcegraph/postgres_exporter}" "${OUTPUT}" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
