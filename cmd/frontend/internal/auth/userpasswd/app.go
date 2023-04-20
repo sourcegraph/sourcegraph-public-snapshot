@@ -90,10 +90,9 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 			return handler(w, r)
 		}
 
-		// TODO: this breaks in the app bundle, need to sort this out
-		// if !appNonce.Verify(nonce) && !env.InsecureDev {
-		// 	return errors.New("Authentication failed")
-		// }
+		if !appNonce.Verify(nonce) && !env.InsecureDev { {
+			return errors.New("Authentication failed")
+		}
 
 		// Admin should always be UID=0, but just in case we query it.
 		user, err := getByEmailOrUsername(r.Context(), db, appUsername)
