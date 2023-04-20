@@ -8,6 +8,7 @@
 
 (function_declaration (identifier) @descriptor.method body: (_) @local)
 (lexical_declaration (variable_declarator name: (identifier) @descriptor.term))
+(variable_declaration (variable_declarator name: (identifier) @descriptor.term))
 
 (interface_declaration name: (_) @descriptor.type body: (_) @scope)
 (interface_declaration
@@ -37,3 +38,5 @@
 )
 
 (module name: (string (string_fragment) @descriptor.namespace) body: (_) @scope)
+
+[(if_statement) (while_statement) (for_statement) (do_statement)] @local
