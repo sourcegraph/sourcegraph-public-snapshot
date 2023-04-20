@@ -168,59 +168,68 @@ pub fn parse_tree<'a>(
             // );
         }
 
-        let node = node.expect("there must always be at least one descriptor");
+        // let node = node.expect("there must always be at least one descriptor");
 
-        if !local_ends.is_empty() {
-            let mut i = local_ends.len() - 1;
-            loop {
-                if node.end_byte() < *local_ends.get(i).unwrap() {
-                    continue 'match_loop;
-                }
-                local_ends.remove(i);
+        match node {
+            Some(node) => {
+                if !local_ends.is_empty() {
+                    let mut i = local_ends.len() - 1;
+                    loop {
+                        if node.end_byte() < *local_ends.get(i).unwrap() {
+                            continue 'match_loop;
+                        }
+                        local_ends.remove(i);
 
-                if i == 0 {
-                    break;
+                        if i == 0 {
+                            break;
+                        }
+                        i -= 1;
+                    }
                 }
-                i -= 1;
+
+                let descriptors = descriptors
+                    .iter()
+                    .map(|(capture, name)| {
+                        crate::ts_scip::capture_name_to_descriptor(capture, name.to_string())
+                    })
+                    .collect();
+
+                // dbg!(node);
+
+                match scope {
+                    Some(scope_ident) => scopes.push(Scope {
+                        range: [
+                            node.start_position().row as i32,
+                            node.start_position().column as i32,
+                            node.end_position().column as i32,
+                        ],
+                        byte_range: ByteRange {
+                            start: scope_ident.node.start_byte(),
+                            end: scope_ident.node.end_byte(),
+                        },
+                        globals: vec![],
+                        children: vec![],
+                        descriptors,
+                    }),
+                    None => globals.push(Global {
+                        range: [
+                            node.start_position().row as i32,
+                            node.start_position().column as i32,
+                            node.end_position().column as i32,
+                        ],
+                        byte_range: ByteRange {
+                            start: node.start_byte(),
+                            end: node.end_byte(),
+                        },
+                        descriptors,
+                    }),
+                }
             }
-        }
-
-        let descriptors = descriptors
-            .iter()
-            .map(|(capture, name)| {
-                crate::ts_scip::capture_name_to_descriptor(capture, name.to_string())
-            })
-            .collect();
-
-        // dbg!(node);
-
-        match scope {
-            Some(scope_ident) => scopes.push(Scope {
-                range: [
-                    node.start_position().row as i32,
-                    node.start_position().column as i32,
-                    node.end_position().column as i32,
-                ],
-                byte_range: ByteRange {
-                    start: scope_ident.node.start_byte(),
-                    end: scope_ident.node.end_byte(),
-                },
-                globals: vec![],
-                children: vec![],
-                descriptors,
-            }),
-            None => globals.push(Global {
-                range: [
-                    node.start_position().row as i32,
-                    node.start_position().column as i32,
-                    node.end_position().column as i32,
-                ],
-                byte_range: ByteRange {
-                    start: node.start_byte(),
-                    end: node.end_byte(),
-                },
-                descriptors,
-            }),
+            None => {
+                if local_end == None {
+                    panic!("there must always be at least one descriptor (except for @local)");
+                }
+            }
         }
 
         if let Some(local_end) = local_end {
