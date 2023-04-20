@@ -2,6 +2,7 @@ package zoekt
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -289,6 +290,15 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 	defer cancel()
 
 	brs := repos.BranchRepos()
+
+	fmt.Println("zoektSearch: repos.RepoRevs ")
+	for key, repoRev := range repos.RepoRevs {
+		fmt.Printf("Key: %v, RepoRev: %v \n", key, repoRev)
+	}
+	fmt.Println("zoektSearch: repos.branchRepos ")
+	for key, branchRepo := range repos.branchRepos {
+		fmt.Printf("Key: %v, branchRepo: %v \n", key, branchRepo)
+	}
 
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 

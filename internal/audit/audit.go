@@ -2,8 +2,6 @@ package audit
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log"
 
@@ -38,9 +36,9 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 			log.String("X-Forwarded-For", forwardedFor(client)))))
 	fields = append(fields, record.Fields...)
 
-	loggerFunc := getLoggerFuncWithSeverity(logger, siteConfig)
+	// loggerFunc := getLoggerFuncWithSeverity(logger, siteConfig)
 	// message string looks like: #{record.Action} (sampling immunity token: #{auditId})
-	loggerFunc(fmt.Sprintf("%s (sampling immunity token: %s)", record.Action, auditId), fields...)
+	// loggerFunc(fmt.Sprintf("%s (sampling immunity token: %s)", record.Action, auditId), fields...)
 }
 
 func actorId(act *actor.Actor) string {

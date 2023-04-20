@@ -87,6 +87,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter *eventWriter) (err error) {
 	ctx := r.Context()
+	ctx, _ = context.WithDeadline(ctx, time.Now().Add(time.Minute*25))
+
 	start := time.Now()
 
 	args, err := parseURLQuery(r.URL.Query())

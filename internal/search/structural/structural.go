@@ -91,7 +91,10 @@ func streamStructuralSearch(ctx context.Context, clients job.RuntimeClients, arg
 			Features:        args.Features,
 		}
 
-		jobs = append(jobs, &searchRepos{clients: clients, args: searcherArgs, stream: stream, repoSet: repoSet})
+		if len(repoSet.AsList()) > 0 {
+			jobs = append(jobs, &searchRepos{clients: clients, args: searcherArgs, stream: stream, repoSet: repoSet})
+
+		}
 	}
 	return runJobs(ctx, jobs)
 }

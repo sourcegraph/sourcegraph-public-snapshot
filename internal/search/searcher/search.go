@@ -2,6 +2,7 @@ package searcher
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"unicode/utf8"
 
@@ -63,7 +64,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 		// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
 		deadline, ok := ctx.Deadline()
 		if ok {
-			fetchTimeout = time.Until(deadline)
+			fetchTimeout = time.Until(deadline.Add(time.Minute * 15))
 		} else {
 			// In practice, this case should not happen because a deadline should always be set
 			// but if it does happen just set a long but finite timeout.
@@ -99,7 +100,11 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 				continue
 			}
 
+			fmt.Printf("TextSearchJob Run: RepoAllRevs.Repo: %v \n", repoAllRevs.Repo)
+
 			for _, rev := range repoAllRevs.Revs {
+
+				fmt.Printf("TextSearchJob Run: RepoAllRevs.Revs: %v \n", rev)
 				rev := rev // capture rev
 				limitCtx, limitDone, err := textSearchLimiter.Acquire(ctx)
 				if err != nil {
@@ -187,6 +192,9 @@ func (s *TextSearchJob) searchFilesInRepo(
 	if MockSearchFilesInRepo != nil {
 		return MockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout, stream)
 	}
+
+	fmt.Printf("searchFilesInRepo: repo: %v , %v \n", repo.ID, repo.Name)
+	fmt.Printf("searchFilesInRepo: rev: %v \n", rev)
 
 	// Do not trigger a repo-updater lookup (e.g.,
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation

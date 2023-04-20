@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/grafana/regexp"
 	"github.com/prometheus/client_golang/prometheus"
@@ -138,9 +139,11 @@ func (s *searchClient) Execute(
 	inputs *search.Inputs,
 ) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "Execute", "")
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Minute*15))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
+		cancel()
 	}()
 
 	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, s.enterpriseJobs)
