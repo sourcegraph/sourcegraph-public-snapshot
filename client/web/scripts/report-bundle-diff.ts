@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 import { promises as fs } from 'fs'
 import path from 'path'
 
@@ -7,29 +5,26 @@ import { Octokit } from 'octokit'
 import { exec } from 'shelljs'
 
 const COMMENT_HEADING = '## Bundle size report 📦'
-const MERGE_BASE = exec('git merge-base HEAD origin/main').toString().trim()
-let COMPARE_REV = ''
+
+const { BRANCH, BUILDKITE_PULL_REQUEST_REPO, BUILDKITE_PULL_REQUEST, COMMIT, GITHUB_TOKEN } = process.env
 
 const ROOT_PATH = path.join(__dirname, '../../../')
 const STATIC_ASSETS_PATH = process.env.WEB_BUNDLE_PATH || path.join(ROOT_PATH, 'ui/assets')
-const statoscopeBinPath = path.join(ROOT_PATH, 'node_modules/.bin/statoscope')
+const STATOSCOPE_BIN = path.join(ROOT_PATH, 'node_modules/.bin/statoscope')
 
-const {
-    GOOGLE_APPLICATION_CREDENTIALS,
-    BRANCH,
-    BUILDKITE_PULL_REQUEST_REPO,
-    BUILDKITE_PULL_REQUEST,
-    COMMIT,
-    GITHUB_TOKEN,
-} = process.env
+const MERGE_BASE = exec('git merge-base HEAD origin/main').toString().trim()
+let COMPARE_REV = ''
 
-console.log({ GOOGLE_APPLICATION_CREDENTIALS })
-
-async function getCompareRev(): Promise<string | undefined> {
-    const revisions = exec(`git --no-pager log "${MERGE_BASE}" --pretty=format:"%H" -n 20`).toString().split('\n')
-
-    console.log('mergeBase', MERGE_BASE)
-    console.log('revisions', revisions)
+/**
+ * We may not have a stats.json file for the merge base commit as these are only
+ * created for commits that touch frontend files. Instead, we scan for 20 commits
+ * before the merge base and use the latest stats.json file we find.
+ */
+function getTarPath(): string | undefined {
+    console.log('--- Find a commit to compare the bundle size against')
+    const revisions = exec(`git --no-pager log "${MERGE_BASE}" --pretty=format:"%H" -n 20`, { silent: true })
+        .toString()
+        .split('\n')
 
     for (const revision of revisions) {
         try {
@@ -39,13 +34,14 @@ async function getCompareRev(): Promise<string | undefined> {
 
             exec(`gsutil -q cp -r "gs://${bucket}/${file}" "${tarPath}"`)
 
-            console.log(`Found cached archive for ${revision}`, tarPath)
+            console.log(`Found cached archive for ${revision}: `, tarPath)
+            // TODO: remove mutable global variable
             COMPARE_REV = revision
 
             return tarPath
         } catch (error) {
-            console.log(error)
-            console.log(`Cached archive for ${revision} not found, skipping.`)
+            console.log(`Cached archive for ${revision} not found: `, error)
+            process.exit(0)
         }
     }
 
@@ -53,20 +49,11 @@ async function getCompareRev(): Promise<string | undefined> {
 }
 
 async function prepareStats(): Promise<{ commitFile: string; compareFile: string } | undefined> {
-    const tarPath = await getCompareRev()
+    const tarPath = getTarPath()
 
     if (tarPath) {
-        console.log('---------')
-        exec(`tar tvf ${tarPath}`)
-        console.log('---------')
-
-        const cmd = `tar -xf ${tarPath} --strip-components=2 -C ${STATIC_ASSETS_PATH}`
-        console.log(cmd)
-        exec(cmd)
-        console.log('---------')
-
+        exec(`tar -xf ${tarPath} --strip-components=2 -C ${STATIC_ASSETS_PATH}`)
         exec(`ls -la ${STATIC_ASSETS_PATH}`)
-        console.log('---------')
 
         const commitFile = path.join(STATIC_ASSETS_PATH, `stats-${COMMIT}.json`)
         const compareFile = path.join(STATIC_ASSETS_PATH, `stats-${COMPARE_REV}.json`)
@@ -78,7 +65,7 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
 
             const compareReportPath = path.join(STATIC_ASSETS_PATH, 'compare-report.html')
 
-            exec(`${statoscopeBinPath} generate -i "${commitFile}" -r "${compareFile}" -t ${compareReportPath}`)
+            exec(`${STATOSCOPE_BIN} generate -i "${commitFile}" -r "${compareFile}" -t ${compareReportPath}`)
 
             const bucket = 'sourcegraph_reports'
             const file = `statoscope-reports/${BRANCH}/compare-report.html`
@@ -86,9 +73,8 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
 
             return { commitFile, compareFile }
         } catch (error) {
-            console.log('No stats file found, skipping.', error)
-            console.log(commitFile)
-            console.log(compareFile)
+            console.error('Failed to prepare stats:', error)
+            process.exit(1)
         }
     }
 
@@ -103,6 +89,7 @@ async function main(): Promise<void> {
             return
         }
 
+        console.log('--- Report bundle diff')
         const report = parseReport(stats.commitFile, stats.compareFile)
 
         if (hasZeroChanges(report)) {
@@ -141,7 +128,7 @@ type Report = [Header, Metric, Metric, Metric, Metric, Metric, Metric, Metric, M
 
 function parseReport(commitFile: string, compareFile: string): Report {
     const queryFile = path.join(__dirname, 'report-bundle-jora-query')
-    const rawReport = exec(`cat "${queryFile}" | ${statoscopeBinPath} query -i "${compareFile}" -i "${commitFile}"`)
+    const rawReport = exec(`cat "${queryFile}" | ${STATOSCOPE_BIN} query -i "${compareFile}" -i "${commitFile}"`)
 
     return JSON.parse(rawReport) as Report
 }
