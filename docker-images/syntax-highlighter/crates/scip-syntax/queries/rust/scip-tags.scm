@@ -14,9 +14,8 @@
 (function_signature_item
  name: (identifier) @descriptor.method)
 
-;; TODO: @local to stop traversal
 (function_item
- name: (identifier) @descriptor.method)
+ name: (identifier) @descriptor.method body: (_) @local)
 
 (struct_item
  name: (type_identifier) @descriptor.type) @scope

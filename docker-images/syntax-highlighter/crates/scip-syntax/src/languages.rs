@@ -8,6 +8,23 @@ pub struct TagConfiguration {
     pub query: Query,
 }
 
+pub fn cpp() -> &'static TagConfiguration {
+    static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
+
+    INSTANCE.get_or_init(|| {
+        let language = BundledParser::Cpp.get_language();
+        let query = include_scip_query!("cpp", "scip-tags");
+
+        let mut parser = Parser::new();
+        parser.set_language(language).unwrap();
+
+        TagConfiguration {
+            language,
+            query: Query::new(language, query).unwrap(),
+        }
+    })
+}
+
 pub fn typescript() -> &'static TagConfiguration {
     static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
 
@@ -163,6 +180,7 @@ fn perl_locals() -> LocalConfiguration {
 
 pub fn get_tag_configuration(parser: BundledParser) -> Option<&'static TagConfiguration> {
     match parser {
+        BundledParser::Cpp => Some(cpp()),
         BundledParser::Typescript => Some(typescript()),
         BundledParser::Scala => Some(scala()),
         BundledParser::C_Sharp => Some(c_sharp()),
