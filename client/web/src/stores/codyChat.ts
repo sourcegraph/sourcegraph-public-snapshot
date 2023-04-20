@@ -120,10 +120,10 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
 
 export const useChatStore = (
     isCodyEnabled: boolean,
-    repoName: string
-): { store: CodyChatStore; isCodySidebarOpen: boolean | undefined; setIsCodySidebarOpen: (state: boolean) => void } => {
+    repoName: string,
+    setIsCodySidebarOpen: (state: boolean | undefined) => void
+): CodyChatStore => {
     const store = useChatStoreState()
-    const [isCodySidebarOpen, setIsCodySidebarOpen] = useTemporarySetting('cody.showSidebar', false)
 
     const onEvent = useCallback(
         (eventName: 'submit' | 'reset' | 'error') => {
@@ -161,5 +161,5 @@ export const useChatStore = (
         void initializeClient(config, stateRef, onEvent)
     }, [config, initializeClient, isCodyEnabled, stateRef, onEvent])
 
-    return { store, isCodySidebarOpen, setIsCodySidebarOpen }
+    return store
 }
