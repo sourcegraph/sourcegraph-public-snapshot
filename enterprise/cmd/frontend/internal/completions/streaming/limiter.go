@@ -60,6 +60,10 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 		req := requestclient.FromContext(ctx)
 		var ip string
 		if req != nil {
+			// TODO: This has to be tested on our envs to ensure the IP actually propagates
+			// alright. In dev, we seem to add a forwarded-for header twice and the value for
+			// req.ForwardedFor is `127.0.0.1, 127.0.0.1`. As long as one of them is unique
+			// this will work correctly though.
 			ip = req.IP
 			if req.ForwardedFor != "" {
 				ip = req.ForwardedFor
@@ -79,7 +83,7 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	// If the usage exceeds the maximum, we return an error. Consumers can check if
 	// the error is of type RateLimitExceededError and extract additional information
 	// like the limit and the time by when they should retry.
-	if current > limit {
+	if current >= limit {
 		return RateLimitExceededError{
 			Limit:      limit,
 			Used:       current,
