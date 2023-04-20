@@ -29,6 +29,7 @@ go_library(
         "//enterprise/internal/authz/github",
         "//enterprise/internal/authz/gitlab",
         "//enterprise/internal/authz/perforce",
+        "//enterprise/internal/github_apps/store",
         "//enterprise/internal/own/codeowners/v1:codeowners",
         "//enterprise/internal/own/types",
         "//internal/actor",
