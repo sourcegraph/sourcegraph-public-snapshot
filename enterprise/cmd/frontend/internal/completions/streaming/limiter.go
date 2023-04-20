@@ -87,11 +87,8 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 		}
 	}
 
-	// At this point, we let the user pass. We start writing the new limit to the
-	// database now.
-
 	// Open a new connection to redis so we can run a MULTI command.
-	pool, ok := redispool.Store.Pool()
+	pool, ok := r.rstore.Pool()
 	if !ok {
 		return errors.New("redis pool is not available but rate limit has been configured")
 	}

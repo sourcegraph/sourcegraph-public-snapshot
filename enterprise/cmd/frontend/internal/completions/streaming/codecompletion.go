@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -68,11 +66,7 @@ func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	// Check rate limit.
 	if err := h.rl.TryAcquire(ctx); err != nil {
 		if unwrap, ok := err.(RateLimitExceededError); ok {
-			// Rate limit exceeded, write well known headers and return correct status code.
-			w.Header().Set("x-ratelimit-limit", strconv.Itoa(unwrap.Limit))
-			w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(unwrap.Limit-unwrap.Used, 0)))
-			w.Header().Set("x-ratelimit-reset", unwrap.RetryAfter.Format(time.RFC3339))
-			http.Error(w, err.Error(), http.StatusTooManyRequests)
+			respondRateLimited(w, unwrap)
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
