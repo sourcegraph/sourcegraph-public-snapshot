@@ -11,7 +11,7 @@ import (
 
 type nearestNeighbor struct {
 	index int
-	score float32
+	score int32
 	debug string
 }
 
@@ -83,7 +83,7 @@ type WorkerOptions struct {
 
 // SimilaritySearch finds the `nResults` most similar rows to a query vector. It uses the cosine similarity metric.
 // IMPORTANT: The vectors in the embedding index have to be normalized for similarity search to work correctly.
-func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, workerOptions WorkerOptions, opts SearchOptions) []EmbeddingSearchResult {
+func (index *EmbeddingIndex) SimilaritySearch(query []int8, numResults int, workerOptions WorkerOptions, opts SearchOptions) []EmbeddingSearchResult {
 	if numResults == 0 {
 		return []EmbeddingSearchResult{}
 	}
@@ -136,7 +136,7 @@ func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, w
 	return results
 }
 
-func (index *EmbeddingIndex) partialSimilaritySearch(query []float32, numResults int, partialRows partialRows, opts SearchOptions) *nearestNeighborsHeap {
+func (index *EmbeddingIndex) partialSimilaritySearch(query []int8, numResults int, partialRows partialRows, opts SearchOptions) *nearestNeighborsHeap {
 	nRows := partialRows.end - partialRows.start
 	if nRows <= 0 {
 		return nil
@@ -163,15 +163,15 @@ func (index *EmbeddingIndex) partialSimilaritySearch(query []float32, numResults
 }
 
 const (
-	scoreFileRankWeight   float32 = 1.0 / 3.0
-	scoreSimilarityWeight float32 = 2.0 / 3.0
+	scoreFileRankWeight   int32 = 1
+	scoreSimilarityWeight int32 = 2
 )
 
-func (index *EmbeddingIndex) score(query []float32, i int, opts SearchOptions) (score float32, debugInfo string) {
-	addScore := func(what string, s float32) {
+func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) (score int32, debugInfo string) {
+	addScore := func(what string, s int32) {
 		score += s
 		if opts.Debug {
-			debugInfo += fmt.Sprintf("%s:%.2f, ", what, s)
+			debugInfo += fmt.Sprintf("%s:%d, ", what, s)
 		}
 	}
 
@@ -192,20 +192,34 @@ func (index *EmbeddingIndex) score(query []float32, i int, opts SearchOptions) (
 		if normalizedRank > 1.0 {
 			normalizedRank = 1.0
 		}
-		addScore("rank", scoreFileRankWeight*normalizedRank)
+		addScore("rank", int32(float32(scoreFileRankWeight)*normalizedRank))
 	}
 
 	if opts.Debug {
-		debugInfo = fmt.Sprintf("score: %.2f, %s", score, debugInfo)
+		debugInfo = fmt.Sprintf("score: %d, %s", score, debugInfo)
 	}
 
 	return score, debugInfo
 }
 
-func CosineSimilarity(row []float32, query []float32) float32 {
-	similarity := float32(0.0)
-	for i := 0; i < len(row); i++ {
-		similarity += (row[i] * query[i])
+func CosineSimilarity(row []int8, query []int8) int32 {
+	const unrollWidth = 4
+	similarity := int32(0.0)
+	unrolledIters := len(row) / unrollWidth
+	for i := 0; i < unrolledIters; i += unrollWidth {
+		// The loop here is unrolled so that the multiplications
+		// can be pipelined. Got best benchmark results with unrolling
+		// 4 at a time. Results may vary on other arches.
+		m0 := int32(row[i]) * int32(query[i])
+		m1 := int32(row[i+1]) * int32(query[i+1])
+		m2 := int32(row[i+2]) * int32(query[i+2])
+		m3 := int32(row[i+3]) * int32(query[i+3])
+		similarity += m0 + m1 + m2 + m3
+	}
+	// Do any remainder element-wise. This ensures that we
+	// can still handle dimensions that aren't multiples of 4.
+	for i := unrolledIters * unrollWidth; i < len(row); i++ {
+		similarity += int32(row[i]) * int32(query[i])
 	}
 	return similarity
 }

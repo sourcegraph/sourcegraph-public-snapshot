@@ -5,7 +5,7 @@ import (
 )
 
 type EmbeddingIndex struct {
-	Embeddings      []float32
+	Embeddings      []int8
 	ColumnDimension int
 	RowMetadata     []RepoEmbeddingRowMetadata
 	Ranks           []float32

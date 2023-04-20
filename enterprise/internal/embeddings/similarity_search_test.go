@@ -12,30 +12,30 @@ import (
 // Data below was generated using the testdata/generate_similarity_search_test_data.py script.
 
 // Each line represents a separate embedding.
-var embeddings = []float32{
-	0.5061, 0.6595, 0.5558,
-	0.5764, 0.4482, 0.6833,
-	0.3162, 0.6444, 0.6963,
-	0.3736, 0.7713, 0.5153,
-	0.5219, 0.8505, 0.0653,
-	0.1040, 0.0241, 0.9943,
-	0.5109, 0.5712, 0.6425,
-	0.6612, 0.3818, 0.6458,
-	0.1775, 0.9603, 0.2151,
-	0.8171, 0.4514, 0.3587,
-	0.2824, 0.8265, 0.4869,
-	0.6770, 0.0224, 0.7356,
-	0.4771, 0.4809, 0.7356,
-	0.7695, 0.4057, 0.4932,
-	0.7215, 0.0623, 0.6896,
-	0.9385, 0.2944, 0.1804,
+var embeddings = []int8{
+	64, 83, 70,
+	73, 56, 86,
+	40, 81, 88,
+	47, 97, 65,
+	66, 108, 8,
+	13, 3, 126,
+	64, 72, 81,
+	83, 48, 82,
+	22, 121, 27,
+	103, 57, 45,
+	35, 104, 61,
+	85, 2, 93,
+	60, 61, 93,
+	97, 51, 62,
+	91, 7, 87,
+	119, 37, 22,
 }
 
 // Each line represents a separate query.
-var queries = []float32{
-	0.4227, 0.4874, 0.7641,
-	0.4038, 0.9100, 0.0940,
-	0.2965, 0.2290, 0.9272,
+var queries = []int8{
+	53, 61, 97,
+	51, 115, 11,
+	37, 29, 117,
 }
 
 // Each subarray contains ranked nearest neighbors for each query.
@@ -127,10 +127,10 @@ func TestSplitRows(t *testing.T) {
 	}
 }
 
-func getRandomEmbeddings(prng *rand.Rand, numElements int) []float32 {
-	slice := make([]float32, numElements)
+func getRandomEmbeddings(prng *rand.Rand, numElements int) []int8 {
+	slice := make([]int8, numElements)
 	for idx := range slice {
-		slice[idx] = prng.Float32()
+		slice[idx] = int8(prng.Int())
 	}
 	return slice
 }
@@ -172,13 +172,15 @@ func TestScore(t *testing.T) {
 		Ranks:           ranks,
 	}
 	// embeddings[0] = 0.5061, 0.6595, 0.5558
+	// embeddings[0] = 64, 83, 70,
 	// queries[0:3] = 0.4227, 0.4874, 0.7641
+	// queries[0:3] = 53, 61, 97,
 	score, debugInfo := index.score(queries[0:columnDimension], 0, SearchOptions{Debug: true, UseDocumentRanks: true})
 
 	// Check that the score is correct
-	expectedScore := scoreSimilarityWeight*((0.5061*0.4227)+(0.6595*0.4874)+(0.5558*0.7641)) + scoreFileRankWeight*(1.0/32.0)
+	expectedScore := scoreSimilarityWeight * ((64 * 53) + (83 * 61) + (70 * 97))
 	if math.Abs(float64(score-expectedScore)) > 0.0001 {
-		t.Fatalf("Expected score %.4f, but got %.4f", expectedScore, score)
+		t.Fatalf("Expected score %d, but got %d", expectedScore, score)
 	}
 
 	if debugInfo == "" {
