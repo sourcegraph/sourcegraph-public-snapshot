@@ -20,7 +20,7 @@ Once the permissions are synced, they can be used anywhere in Sourcegraph to pro
 ## Adding Permissions
 To add permissions for a new feature, follow these steps:
 
-1. Add the namespace and action to [`schema.yaml`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/rbac/schema.yaml). Namespaces are unique.
+1. Add the namespace and action to [`schema.yaml`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/rbac/schema.yaml). Namespace string must be unique.
 
 2. Generate the access control constants with the command `sg gen`. This will generate access control constants for [Typescript](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@8b4e1cb/-/blob/client/web/src/rbac/constants.ts) and [Go](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@8b4e1cb4374d1449c918f695c21d2c933c5a1d15/-/blob/internal/rbac/constants.go).
 
