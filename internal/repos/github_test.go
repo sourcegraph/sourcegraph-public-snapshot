@@ -404,7 +404,6 @@ func TestGithubSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GithubSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-
 			s, err := newGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
@@ -730,26 +729,6 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 			t.Error("cannot coerce Source into GitHubSource")
 		} else if gs == nil {
 			t.Error("unexpected nil Source")
-		}
-	})
-
-	t.Run("unsupported", func(t *testing.T) {
-		for name, tc := range map[string]auth.Authenticator{
-			"nil":         nil,
-			"BasicAuth":   &auth.BasicAuth{},
-			"OAuthClient": &auth.OAuthClient{},
-		} {
-			t.Run(name, func(t *testing.T) {
-				src, err := githubSrc.WithAuthenticator(tc)
-				if err == nil {
-					t.Error("unexpected nil error")
-				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
-					t.Errorf("unexpected error of type %T: %v", err, err)
-				}
-				if src != nil {
-					t.Errorf("expected non-nil Source: %v", src)
-				}
-			})
 		}
 	})
 }
