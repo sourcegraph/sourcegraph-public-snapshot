@@ -27,7 +27,13 @@ type GithubAppsStore interface {
 	// GetByID retrieves a GitHub App from the database by ID.
 	GetByID(ctx context.Context, id int) (*types.GitHubApp, error)
 
-	//  WithEncryptionKey sets encryption key on store. Returns a new GithubAppStore
+	// GetByAppID retrieves a GitHub App from the database by appID and base url
+	GetByAppID(ctx context.Context, appID int, baseURL string) (*types.GitHubApp, error)
+
+	// GetBySlug retrieves a GitHub App from the database by slug and base url
+	GetBySlug(ctx context.Context, slug string, baseURL string) (*types.GitHubApp, error)
+
+	// WithEncryptionKey sets encryption key on store. Returns a new GithubAppStore
 	WithEncryptionKey(key encryption.Key) GithubAppsStore
 }
 
@@ -145,9 +151,8 @@ func (s *githubAppsStore) Update(ctx context.Context, id int, app *types.GitHubA
 	return s.decrypt(ctx, app)
 }
 
-// GetByID retrieves a GitHub App from the database by ID.
-func (s *githubAppsStore) GetByID(ctx context.Context, id int) (*types.GitHubApp, error) {
-	query := sqlf.Sprintf(`SELECT
+func (s *githubAppsStore) get(ctx context.Context, where *sqlf.Query) (*types.GitHubApp, error) {
+	var selectQuery = `SELECT
 		id,
 		app_id,
 		name,
@@ -161,14 +166,31 @@ func (s *githubAppsStore) GetByID(ctx context.Context, id int) (*types.GitHubApp
 		created_at,
 		updated_at
 	FROM github_apps
-	WHERE id = %s`, id)
+	WHERE %s`
+
+	query := sqlf.Sprintf(selectQuery, where)
 	app, ok, err := scanGithubApp(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		return nil, errors.Newf("no app exists with id: %d", id)
+		return nil, errors.Newf("no app exists matching criteria: %v", *where)
 	}
 
 	return s.decrypt(ctx, app)
+}
+
+// GetByID retrieves a GitHub App from the database by ID.
+func (s *githubAppsStore) GetByID(ctx context.Context, id int) (*types.GitHubApp, error) {
+	return s.get(ctx, sqlf.Sprintf(`id = %s`, id))
+}
+
+// GetByAppID retrieves a GitHub App from the database by appID and base url
+func (s *githubAppsStore) GetByAppID(ctx context.Context, appID int, baseURL string) (*types.GitHubApp, error) {
+	return s.get(ctx, sqlf.Sprintf(`app_id = %s AND base_url = %s`, appID, baseURL))
+}
+
+// GetBySlug retrieves a GitHub App from the database by slug and base url
+func (s *githubAppsStore) GetBySlug(ctx context.Context, slug string, baseURL string) (*types.GitHubApp, error) {
+	return s.get(ctx, sqlf.Sprintf(`slug = %s AND base_url = %s`, slug, baseURL))
 }

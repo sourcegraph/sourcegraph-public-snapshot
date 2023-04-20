@@ -200,3 +200,120 @@ func TestGetByID(t *testing.T) {
 	_, err = store.GetByID(ctx, 3)
 	require.Error(t, err)
 }
+
+func TestGetByAppID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := &githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	app1 := &types.GitHubApp{
+		AppID:        1234,
+		Name:         "Test App 1",
+		Slug:         "test-app-1",
+		BaseURL:      "https://github.com",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	app2 := &types.GitHubApp{
+		AppID:        1234,
+		Name:         "Test App 2",
+		Slug:         "test-app-2",
+		BaseURL:      "https://enterprise.github.com",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	err := store.Create(ctx, app1)
+	require.NoError(t, err)
+	err = store.Create(ctx, app2)
+	require.NoError(t, err)
+
+	fetched, err := store.GetByAppID(ctx, 1234, "https://github.com")
+	require.NoError(t, err)
+	require.Equal(t, app1.AppID, fetched.AppID)
+	require.Equal(t, app1.Name, fetched.Name)
+	require.Equal(t, app1.Slug, fetched.Slug)
+	require.Equal(t, app1.BaseURL, fetched.BaseURL)
+	require.Equal(t, app1.ClientID, fetched.ClientID)
+	require.Equal(t, app1.ClientSecret, fetched.ClientSecret)
+	require.Equal(t, app1.PrivateKey, fetched.PrivateKey)
+	require.Equal(t, app1.Logo, fetched.Logo)
+	require.NotZero(t, fetched.CreatedAt)
+	require.NotZero(t, fetched.UpdatedAt)
+
+	fetched, err = store.GetByAppID(ctx, 1234, "https://enterprise.github.com")
+	require.NoError(t, err)
+	require.Equal(t, app2.AppID, fetched.AppID)
+	require.Equal(t, app2.Slug, fetched.Slug)
+
+	// does not exist
+	_, err = store.GetByAppID(ctx, 3456, "https://github.com")
+	require.Error(t, err)
+}
+
+func TestGetBySlug(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := &githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	app1 := &types.GitHubApp{
+		AppID:        1234,
+		Name:         "Test App 1",
+		Slug:         "test-app",
+		BaseURL:      "https://github.com",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	app2 := &types.GitHubApp{
+		AppID:        5678,
+		Name:         "Test App",
+		Slug:         "test-app",
+		BaseURL:      "https://enterprise.github.com",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	err := store.Create(ctx, app1)
+	require.NoError(t, err)
+	err = store.Create(ctx, app2)
+	require.NoError(t, err)
+
+	fetched, err := store.GetBySlug(ctx, "test-app", "https://github.com")
+	require.NoError(t, err)
+	require.Equal(t, app1.AppID, fetched.AppID)
+	require.Equal(t, app1.Name, fetched.Name)
+	require.Equal(t, app1.Slug, fetched.Slug)
+	require.Equal(t, app1.BaseURL, fetched.BaseURL)
+	require.Equal(t, app1.ClientID, fetched.ClientID)
+	require.Equal(t, app1.ClientSecret, fetched.ClientSecret)
+	require.Equal(t, app1.PrivateKey, fetched.PrivateKey)
+	require.Equal(t, app1.Logo, fetched.Logo)
+	require.NotZero(t, fetched.CreatedAt)
+	require.NotZero(t, fetched.UpdatedAt)
+
+	fetched, err = store.GetBySlug(ctx, "test-app", "https://enterprise.github.com")
+	require.NoError(t, err)
+	require.Equal(t, app2.AppID, fetched.AppID)
+
+	// does not exist
+	_, err = store.GetBySlug(ctx, "foo", "bar")
+	require.Error(t, err)
+}
