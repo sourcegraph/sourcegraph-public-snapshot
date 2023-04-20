@@ -11,6 +11,10 @@ type EmbeddingIndex struct {
 	Ranks           []float32
 }
 
+func (index *EmbeddingIndex) row(i int) []int8 {
+	return index.Embeddings[i*index.ColumnDimension : (i+1)*index.ColumnDimension]
+}
+
 type RepoEmbeddingRowMetadata struct {
 	FileName  string `json:"fileName"`
 	StartLine int    `json:"startLine"`
@@ -25,8 +29,8 @@ type RepoEmbeddingIndex struct {
 }
 
 type ContextDetectionEmbeddingIndex struct {
-	MessagesWithAdditionalContextMeanEmbedding    []float32
-	MessagesWithoutAdditionalContextMeanEmbedding []float32
+	MessagesWithAdditionalContextMeanEmbedding    []int8
+	MessagesWithoutAdditionalContextMeanEmbedding []int8
 }
 
 type EmbeddingSearchResults struct {

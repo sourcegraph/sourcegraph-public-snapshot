@@ -11,7 +11,7 @@ import (
 
 type getContextDetectionEmbeddingIndexFn func(ctx context.Context) (*embeddings.ContextDetectionEmbeddingIndex, error)
 
-const MIN_NO_CONTEXT_SIMILARITY_DIFF = float32(0.02)
+const MIN_NO_CONTEXT_SIMILARITY_DIFF = 3
 
 var CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
 	lazyregexp.New(`(what|where|how) (are|do|does|is)`),
@@ -71,10 +71,11 @@ func isQuerySimilarToNoContextMessages(
 		return false, errors.Wrap(err, "getting context detection embedding index")
 	}
 
-	queryEmbedding, err := getQueryEmbedding(ctx, query)
+	floatEmbedding, err := getQueryEmbedding(ctx, query)
 	if err != nil {
 		return false, errors.Wrap(err, "getting query embedding")
 	}
+	queryEmbedding := embeddings.QuantizeFloats(floatEmbedding)
 
 	messagesWithContextSimilarity := embeddings.CosineSimilarity(contextDetectionEmbeddingIndex.MessagesWithAdditionalContextMeanEmbedding, queryEmbedding)
 	messagesWithoutContextSimilarity := embeddings.CosineSimilarity(contextDetectionEmbeddingIndex.MessagesWithoutAdditionalContextMeanEmbedding, queryEmbedding)

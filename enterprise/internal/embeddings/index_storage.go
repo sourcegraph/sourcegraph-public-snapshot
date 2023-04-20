@@ -118,7 +118,7 @@ func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSi
 				end = len(ei.Embeddings)
 			}
 
-			if err := enc.Encode(ei.Embeddings[start:end]); err != nil {
+			if err := enc.Encode(DequantizeFloats(ei.Embeddings[start:end])); err != nil {
 				return err
 			}
 		}

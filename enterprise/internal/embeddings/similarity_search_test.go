@@ -171,9 +171,7 @@ func TestScore(t *testing.T) {
 		ColumnDimension: columnDimension,
 		Ranks:           ranks,
 	}
-	// embeddings[0] = 0.5061, 0.6595, 0.5558
 	// embeddings[0] = 64, 83, 70,
-	// queries[0:3] = 0.4227, 0.4874, 0.7641
 	// queries[0:3] = 53, 61, 97,
 	score, debugInfo := index.score(queries[0:columnDimension], 0, SearchOptions{Debug: true, UseDocumentRanks: true})
 
