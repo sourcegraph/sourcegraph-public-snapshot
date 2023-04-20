@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate"
-	"github.com/weaviate/weaviate-go-client/v4/weaviate/filters"
 	"github.com/weaviate/weaviate-go-client/v4/weaviate/graphql"
 	"github.com/weaviate/weaviate/entities/models"
 
@@ -67,14 +66,10 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 		return nil, errors.Wrap(err, "getting query embedding")
 	}
 
-	queryBuilder := func(typ string, limit int) *graphql.GetBuilder {
-		return graphql.NewQueryClassBuilder(typ).
+	queryBuilder := func(klass string, limit int) *graphql.GetBuilder {
+		return graphql.NewQueryClassBuilder(klass).
 			WithNearVector((&graphql.NearVectorArgumentBuilder{}).
 				WithVector(embeddedQuery)).
-			WithWhere(filters.Where().
-				WithOperator(filters.Equal).
-				WithPath([]string{"repo"}).
-				WithValueInt(int64(params.RepoID))).
 			WithFields([]graphql.Field{
 				{Name: "file_name"},
 				{Name: "start_line"},
@@ -123,9 +118,15 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 		return filterAndHydrateContent(ctx, w.logger, params.RepoName, commit, w.readFile, srs)
 	}
 
+	// We partition the indexes by type and repository. Each class in
+	// weaviate is its own index, so we achieve partitioning by a class
+	// per repo and type.
+	codeClass := fmt.Sprintf("Code_%d", params.RepoID)
+	textClass := fmt.Sprintf("Text_%d", params.RepoID)
+
 	res, err := w.client.GraphQL().MultiClassGet().
-		AddQueryClass(queryBuilder("Code", params.CodeResultsCount)).
-		AddQueryClass(queryBuilder("Text", params.TextResultsCount)).
+		AddQueryClass(queryBuilder(codeClass, params.CodeResultsCount)).
+		AddQueryClass(queryBuilder(textClass, params.TextResultsCount)).
 		Do(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "doing weaviate request")
@@ -136,8 +137,8 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 	}
 
 	return &embeddings.EmbeddingSearchResults{
-		CodeResults: extractResults(res, "Code"),
-		TextResults: extractResults(res, "Text"),
+		CodeResults: extractResults(res, codeClass),
+		TextResults: extractResults(res, textClass),
 	}, nil
 }
 
