@@ -189,7 +189,7 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
             <Text className="text-wrap text-muted mb-0">
                 {action.type === 'publish' && batchChangesRolloutWindows && batchChangesRolloutWindows.length > 0 ? (
                     <small>
-                        {action.dropdownDescription} <br></br>
+                        {action.dropdownDescription} <br />
                         <b>
                             Note: Rollout windows have been set up by the admin. This means that some of the selected
                             changesets won't be processed until a time in the future.
