@@ -44,6 +44,9 @@ func NewGitHubAppAuthenticator(appID string, privateKey []byte) (auth.Authentica
 	}, nil
 }
 
+// Authenticate adds an Authorization header to the request containing
+// a JSON Web Token (JWT) signed with the GitHub App's private key.
+// The JWT contains claims identifying the GitHub App.
 func (a *GitHubAppAuthenticator) Authenticate(r *http.Request) error {
 	token, err := a.generateJWT()
 	if err != nil {
@@ -156,6 +159,9 @@ func (a *GitHubAppInstallationAuthenticator) Authenticate(r *http.Request) error
 	return nil
 }
 
+// Hash returns a hash of the GitHub App installation ID.
+// We use the installation ID instead of the installation access
+// token because installation access tokens are short lived.
 func (a *GitHubAppInstallationAuthenticator) Hash() string {
 	sum := sha256.Sum256([]byte(strconv.Itoa(a.installationID)))
 	return hex.EncodeToString(sum[:])
