@@ -158,7 +158,12 @@ export const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalService
                 )}
             </div>
             {isExpanded && legends && <ValueLegendList className="mb-0" items={legends} />}
-            {isExpanded && node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
+            {isExpanded && node.failureMessage && (
+                <ErrorAlert
+                    error={`${node.failureMessage}\n\nWarning: Repositories will not be deleted if errors are present in the sync job.`}
+                    className="mt-2 mb-0"
+                />
+            )}
         </li>
     )
 }
