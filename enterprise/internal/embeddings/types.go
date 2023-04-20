@@ -5,7 +5,7 @@ import (
 )
 
 type EmbeddingIndex struct {
-	Embeddings      []float32
+	Embeddings      []int8
 	ColumnDimension int
 	RowMetadata     []RepoEmbeddingRowMetadata
 	Ranks           []float32
@@ -25,8 +25,8 @@ type RepoEmbeddingIndex struct {
 }
 
 type ContextDetectionEmbeddingIndex struct {
-	MessagesWithAdditionalContextMeanEmbedding    []float32
-	MessagesWithoutAdditionalContextMeanEmbedding []float32
+	MessagesWithAdditionalContextMeanEmbedding    []int8
+	MessagesWithoutAdditionalContextMeanEmbedding []int8
 }
 
 type EmbeddingSearchResults struct {
