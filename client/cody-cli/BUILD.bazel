@@ -25,6 +25,7 @@ ts_project(
         "src/interactions.ts",
         "src/preamble.ts",
     ],
+    tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@sourcegraph/cody-shared",
         ":node_modules/@types/prompts",
