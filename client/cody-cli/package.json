@@ -17,7 +17,9 @@
     "@sourcegraph/common": "workspace:*",
     "@types/prompts": "^2.4.4",
     "commander": "^10.0.1",
-    "prompts": "^2.4.2"
+    "prompts": "^2.4.2",
+    "vscode-languageserver": "^8.1.0",
+    "vscode-languageserver-textdocument": "^1.0.8"
   },
   "main": "dist/app.js",
   "bin": {

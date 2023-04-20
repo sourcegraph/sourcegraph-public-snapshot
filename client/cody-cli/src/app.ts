@@ -13,7 +13,9 @@ import { streamCompletions } from './completions'
 import { DEFAULTS, ENVIRONMENT_CONFIG } from './config'
 import { createCodebaseContext } from './context'
 import { interactionFromMessage } from './interactions'
+import { startLSP } from './lsp'
 import { getPreamble } from './preamble'
+import { startREPL } from './repl'
 
 async function startCLI() {
     const program = new Command()
@@ -77,52 +79,11 @@ async function startCLI() {
         customHeaders: {},
     })
 
-    let prompt = options.prompt
-    if (prompt === undefined || prompt === '') {
-        const response = await prompts({
-            type: 'text',
-            name: 'value',
-            message: 'What do you want to ask Cody?',
-        })
-
-        prompt = response.value
+    if (options.lsp) {
+        await startLSP()
+    } else {
+        await startREPL(codebase, options.prompt, intentDetector, codebaseContext, completionsClient)
     }
-
-    const transcript = new Transcript()
-
-    // TODO: Keep track of all user input if we add REPL mode
-
-    const initialMessage: Message = { speaker: 'human', text: prompt }
-    const messages: { human: Message; assistant?: Message }[] = [{ human: initialMessage }]
-    for (const [index, message] of messages.entries()) {
-        const interaction = await interactionFromMessage(
-            message.human,
-            intentDetector,
-            // Fetch codebase context only for the last message
-            index === messages.length - 1 ? codebaseContext : null
-        )
-
-        transcript.addInteraction(interaction)
-
-        if (message.assistant?.text) {
-            transcript.addAssistantResponse(message.assistant?.text)
-        }
-    }
-
-    const finalPrompt = await transcript.toPrompt(getPreamble(codebase))
-
-    let text = ''
-    streamCompletions(completionsClient, finalPrompt, {
-        onChange: chunk => {
-            text = chunk
-        },
-        onComplete: () => {
-            console.log(text)
-        },
-        onError: err => {
-            console.error(err)
-        },
-    })
 }
 
 startCLI()
