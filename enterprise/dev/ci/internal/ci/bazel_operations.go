@@ -112,7 +112,7 @@ func bazelBackCompatTest(optional bool, targets ...string) func(*bk.Pipeline) {
 		bk.Agent("queue", "bazel"),
 
 		// Generate a patch that backports the migration from the new code into the old one.
-		bk.RawCmd("git diff origin/ci/backcompat-v5.0.0 ..HEAD -- migrations/ > migrations/back_compat_migrations.patch"),
+		bk.RawCmd("git diff origin/ci/backcompat-v5.0.0..HEAD -- migrations/ > migrations/back_compat_migrations.patch"),
 	}
 
 	bazelRawCmd := bazelRawCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
