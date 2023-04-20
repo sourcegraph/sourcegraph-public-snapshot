@@ -128,7 +128,9 @@ type Report = [Header, Metric, Metric, Metric, Metric, Metric, Metric, Metric, M
 
 function parseReport(commitFile: string, compareFile: string): Report {
     const queryFile = path.join(__dirname, 'report-bundle-jora-query')
-    const rawReport = exec(`cat "${queryFile}" | ${STATOSCOPE_BIN} query -i "${compareFile}" -i "${commitFile}"`)
+    const rawReport = exec(`cat "${queryFile}" | ${STATOSCOPE_BIN} query -i "${compareFile}" -i "${commitFile}"`, {
+        silent: true,
+    })
 
     return JSON.parse(rawReport) as Report
 }
