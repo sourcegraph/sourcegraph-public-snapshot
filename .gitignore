@@ -192,4 +192,4 @@ index.scip
 
 # Backward compatibility database tests patch, generated on the fly in CI
 # for `bazel test @sourcegraph_back_compat//...` targets.
-/migrations/back_compat_migrations.patch
+/dev/backcompat/back_compat_migrations.patch
