@@ -935,6 +935,20 @@ importers:
       wink-nlp: 1.13.1
       wink-nlp-utils: 2.1.0
 
+  client/cody-cli:
+    specifiers:
+      '@sourcegraph/cody-shared': workspace:*
+      '@sourcegraph/common': workspace:*
+      '@types/prompts': ^2.4.4
+      commander: ^10.0.1
+      prompts: ^2.4.2
+    dependencies:
+      '@sourcegraph/cody-shared': link:../cody-shared
+      '@sourcegraph/common': link:../common
+      '@types/prompts': 2.4.4
+      commander: 10.0.1
+      prompts: 2.4.2
+
   client/cody-shared:
     specifiers:
       '@sourcegraph/common': workspace:*
@@ -9029,6 +9043,13 @@ packages:
     resolution: {integrity: sha512-b/IFHHTkYkTqu41IH9UtpICwqrpKj2oNlb4KHPzFQDMiz+h1BgAeATeO0/XTph4+UkH9W2U0E4B4j64KWOovag==}
     dev: false
 
+  /@types/prompts/2.4.4:
+    resolution: {integrity: sha512-p5N9uoTH76lLvSAaYSZtBCdEXzpOOufsRjnhjVSrZGXikVGHX9+cc9ERtHRV4hvBKHyZb1bg4K+56Bd2TqUn4A==}
+    dependencies:
+      '@types/node': 13.13.5
+      kleur: 3.0.3
+    dev: false
+
   /@types/prop-types/15.7.5:
     resolution: {integrity: sha512-JCB8C6SnDoQf0cNycqd/35A7MjcnK+ZTqE7judS6o7utxUCg6imJg3QK2qzHKszlTjcj2cn+NwMB2i96ubpj7w==}
 
@@ -12382,6 +12403,11 @@ packages:
   /command-exists/1.2.9:
     resolution: {integrity: sha512-LTQ/SGc+s0Xc0Fu5WaKnR0YiygZkm9eKFvyS+fRsU7/ZWFF8ykFM6Pc9aCVf1+xasOOZpO3BAVgVrKvsqKHV7w==}
 
+  /commander/10.0.1:
+    resolution: {integrity: sha512-y4Mg2tXshplEbSGzx7amzPwKKOCGuoSRP/CjEdwwk0FOGlUbq6lKuoyDZTNZkmxHdJtp54hdfY/JUrdL7Xfdug==}
+    engines: {node: '>=14'}
+    dev: false
+
   /commander/2.13.0:
     resolution: {integrity: sha512-MVuS359B+YzaWqjCL/c+22gfryv+mCBPHAv3zyVI2GN8EY6IRP8VwtasXn8jyyhvvq84R4ImN1OKRtcbIasjYA==}
     dev: false
@@ -12888,7 +12914,7 @@ packages:
       postcss-modules-values: 4.0.0_postcss@8.4.21
       postcss-value-parser: 4.2.0
       semver: 7.3.8
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /css-minimizer-webpack-plugin/4.2.2_zj7shrtzhjuywytipisjis56au:
     resolution: {integrity: sha512-s3Of/4jKfw1Hj9CxEO1E5oXhQAxlayuHO2y/ML+C6I9sQ7FdzfEV6QgMLN3vI+qFsjJGIAFLKtQK7t8BOXAIyA==}
@@ -24821,7 +24847,7 @@ packages:
       klona: 2.0.5
       neo-async: 2.6.2
       sass: 1.32.4
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /sass/1.32.4:
     resolution: {integrity: sha512-N0BT0PI/t3+gD8jKa83zJJUb7ssfQnRRfqN+GIErokW6U4guBpfYl8qYB+OFLEho+QvnV5ZH1R9qhUC/Z2Ch9w==}
@@ -26010,7 +26036,7 @@ packages:
     peerDependencies:
       webpack: ^5.0.0
     dependencies:
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /style-mod/4.0.0:
     resolution: {integrity: sha512-OPhtyEjyyN9x3nhPsu76f52yUGXiZcgvsrFVtvTkyGRQJ0XK+GPc6ov1z+lRpbeabka+MYEQxOYRnt5nF30aMw==}
@@ -26554,7 +26580,7 @@ packages:
       schema-utils: 3.1.1
       serialize-javascript: 6.0.0
       terser: 5.16.8
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /terser/4.8.1:
     resolution: {integrity: sha512-4GnLC0x667eJG0ewJTa6z/yXrbLGv80D9Ru6HIpCQmO+Q4PfEtBFi0ObSckqwL6VyQv/7ENJieXHo2ANmdQwgw==}
@@ -28353,6 +28379,7 @@ packages:
       - '@swc/core'
       - esbuild
       - uglify-js
+    dev: false
 
   /webpack/5.75.0_pdcrf7mb3dfag2zju4x4octu4a:
     resolution: {integrity: sha512-piaIaoVJlqMsPtX/+3KTTO6jfvrSYgauFVdt8cr9LTHKmcq/AMd4mhzsiP7ZF/PGRNPGA8336jldh9l2Kt2ogQ==}

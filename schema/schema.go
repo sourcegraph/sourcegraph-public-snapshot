@@ -676,6 +676,7 @@ type EncryptionKeys struct {
 	EnableCache            bool           `json:"enableCache,omitempty"`
 	ExecutorSecretKey      *EncryptionKey `json:"executorSecretKey,omitempty"`
 	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
+	GithubAppKey           *EncryptionKey `json:"githubAppKey,omitempty"`
 	OutboundWebhookKey     *EncryptionKey `json:"outboundWebhookKey,omitempty"`
 	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 	WebhookKey             *EncryptionKey `json:"webhookKey,omitempty"`

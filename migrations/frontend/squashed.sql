@@ -2285,6 +2285,31 @@ COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
 
+CREATE TABLE github_apps (
+    id integer NOT NULL,
+    app_id integer NOT NULL,
+    name text NOT NULL,
+    slug text NOT NULL,
+    base_url text NOT NULL,
+    client_id text NOT NULL,
+    client_secret text NOT NULL,
+    private_key text NOT NULL,
+    encryption_key_id text NOT NULL,
+    logo text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE github_apps_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE github_apps_id_seq OWNED BY github_apps.id;
+
 CREATE TABLE gitserver_relocator_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
@@ -4454,6 +4479,8 @@ ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SE
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
 
+ALTER TABLE ONLY github_apps ALTER COLUMN id SET DEFAULT nextval('github_apps_id_seq'::regclass);
+
 ALTER TABLE ONLY gitserver_relocator_jobs ALTER COLUMN id SET DEFAULT nextval('gitserver_relocator_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY insights_query_runner_jobs ALTER COLUMN id SET DEFAULT nextval('insights_query_runner_jobs_id_seq'::regclass);
@@ -4761,6 +4788,9 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
+
+ALTER TABLE ONLY github_apps
+    ADD CONSTRAINT github_apps_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY gitserver_relocator_jobs
     ADD CONSTRAINT gitserver_relocator_jobs_pkey PRIMARY KEY (id);
@@ -5232,6 +5262,8 @@ CREATE INDEX feature_flag_overrides_org_id ON feature_flag_overrides USING btree
 CREATE INDEX feature_flag_overrides_user_id ON feature_flag_overrides USING btree (namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
 
 CREATE INDEX finished_at_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (finished_at);
+
+CREATE UNIQUE INDEX github_apps_app_id_slug_base_url_unique ON github_apps USING btree (app_id, slug, base_url);
 
 CREATE INDEX gitserver_relocator_jobs_state ON gitserver_relocator_jobs USING btree (state);
 

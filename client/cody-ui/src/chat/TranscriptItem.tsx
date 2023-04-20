@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { FeedbackButtonsProps } from '../Chat'
 import { CodySvg } from '../utils/icons'
 
 import { BlinkingCursor } from './BlinkingCursor'
@@ -31,6 +32,9 @@ export const TranscriptItem: React.FunctionComponent<
         message: ChatMessage
         inProgress: boolean
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
+        FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
+        feedbackButtonsOnSubmit?: (text: string) => void
+        showFeedbackButtons: boolean
     } & TranscriptItemClassNames
 > = ({
     message,
@@ -41,6 +45,9 @@ export const TranscriptItem: React.FunctionComponent<
     transcriptItemParticipantClassName,
     codeBlocksCopyButtonClassName,
     transcriptActionClassName,
+    FeedbackButtonsContainer,
+    feedbackButtonsOnSubmit,
+    showFeedbackButtons,
 }) => (
     <div
         className={classNames(
@@ -59,6 +66,18 @@ export const TranscriptItem: React.FunctionComponent<
                     'Me'
                 )}
             </h2>
+            {/* display feedback buttons on last assistant message only */}
+            <div className={styles.participantName}>
+                {showFeedbackButtons &&
+                    FeedbackButtonsContainer &&
+                    feedbackButtonsOnSubmit &&
+                    message.speaker === 'assistant' && (
+                        <FeedbackButtonsContainer
+                            className={styles.FeedbackButtonsContainer}
+                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                        />
+                    )}
+            </div>
         </header>
         {message.contextFiles && message.contextFiles.length > 0 && (
             <div className={styles.actions}>

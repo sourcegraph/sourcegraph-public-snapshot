@@ -4,6 +4,8 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { FeedbackButtonsProps } from '../Chat'
+
 import { FileLinkProps } from './ContextFiles'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
 
@@ -15,6 +17,8 @@ export const Transcript: React.FunctionComponent<
         messageInProgress: ChatMessage | null
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         className?: string
+        FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
+        feedbackButtonsOnSubmit?: (text: string) => void
     } & TranscriptItemClassNames
 > = ({
     transcript,
@@ -26,6 +30,8 @@ export const Transcript: React.FunctionComponent<
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
     transcriptActionClassName,
+    FeedbackButtonsContainer,
+    feedbackButtonsOnSubmit,
 }) => {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
@@ -73,6 +79,9 @@ export const Transcript: React.FunctionComponent<
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
+                    FeedbackButtonsContainer={FeedbackButtonsContainer}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    showFeedbackButtons={index > 0 && transcript.length - index === 1}
                 />
             ))}
             {messageInProgress && messageInProgress.speaker === 'assistant' && (
@@ -84,6 +93,7 @@ export const Transcript: React.FunctionComponent<
                     transcriptItemClassName={transcriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
+                    showFeedbackButtons={false}
                 />
             )}
         </div>

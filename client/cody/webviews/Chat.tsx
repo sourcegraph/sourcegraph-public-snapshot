@@ -1,11 +1,16 @@
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
+import {
+    Chat as ChatUI,
+    ChatUISubmitButtonProps,
+    ChatUITextAreaProps,
+    FeedbackButtonsProps,
+} from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { FileLink } from './FileLink'
@@ -41,6 +46,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [vscodeAPI]
     )
 
+    const onFeedbackBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'event', event: 'feedback', value: text })
+        },
+        [vscodeAPI]
+    )
+
     return (
         <ChatUI
             messageInProgress={messageInProgress}
@@ -63,6 +75,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             inputRowClassName={styles.inputRow}
             chatInputContextClassName={styles.chatInputContext}
             chatInputClassName={styles.chatInputClassName}
+            FeedbackButtonsContainer={FeedbackButtons}
+            feedbackButtonsOnSubmit={onFeedbackBtnClick}
         />
     )
 }
@@ -129,3 +143,46 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
         <SubmitSvg />
     </VSCodeButton>
 )
+
+const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ className, feedbackButtonsOnSubmit }) => {
+    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+
+    const onFeedbackBtnSubmit = useCallback(
+        (text: string) => {
+            feedbackButtonsOnSubmit(text)
+            setFeedbackSubmitted(true)
+        },
+        [feedbackButtonsOnSubmit]
+    )
+
+    if (feedbackSubmitted) {
+        return (
+            <div className={className}>
+                <VSCodeButton className={classNames(styles.submitButton)} title="Feedback submitted." disabled={true}>
+                    <i className="codicon codicon-check" />
+                </VSCodeButton>
+            </div>
+        )
+    }
+
+    return (
+        <div className={className}>
+            <VSCodeButton
+                className={classNames(styles.submitButton)}
+                appearance="icon"
+                type="button"
+                onClick={() => onFeedbackBtnSubmit('thumbsUp')}
+            >
+                <i className="codicon codicon-thumbsup" />
+            </VSCodeButton>
+            <VSCodeButton
+                className={classNames(styles.submitButton)}
+                appearance="icon"
+                type="button"
+                onClick={() => onFeedbackBtnSubmit('thumbsDown')}
+            >
+                <i className="codicon codicon-thumbsdown" />
+            </VSCodeButton>
+        </div>
+    )
+}
