@@ -35,7 +35,7 @@ Ensure you have the following tools installed:
 2. Run `cd deploy-sourcegraph-helm/charts/sourcegraph-executor`.
 3. Edit the `values.yaml` with any other customizations you may require.
 4. Run the following command:
-  1. `helm upgrade --install -f values.yaml --version 5.0.1 sg-executor sourcegraph/sourcegraph-executor`
+  1. `helm upgrade --install -f values.yaml --version 5.0.2 sg-executor sourcegraph/sourcegraph-executor`
 5. Confirm executors are working are working by checking the _Executors_ page under **Site admin > Executors > Instances** .
 
 
@@ -59,7 +59,7 @@ If you have security concerns, consider deploying via [terraform](deploy_executo
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-> NOTE: This feature is available in Sourcegraph 5.1.0 and later.
+> NOTE: This feature is available in Sourcegraph 5.0.2 and later.
 
 [Kubernetes manifests](https://github.com/sourcegraph/deploy-sourcegraph) are provided to deploy Sourcegraph Executors
 on a running Kubernetes cluster. If you are deploying Sourcegraph with helm, charts are
@@ -111,7 +111,7 @@ The following are Firewall rules that are _highly recommended_ when running Exec
 Environment.
 
 - Disable access to internal resources.
-- Disable access to `169.254.169.254` (AWS / GCP Instance Metadata Service).
+- Disable access to `5.0.2.254` (AWS / GCP Instance Metadata Service).
 
 ### Example Configuration YAML
 
