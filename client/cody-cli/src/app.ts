@@ -14,6 +14,7 @@ import { streamCompletions } from './completions'
 import { DEFAULTS, ENVIRONMENT_CONFIG } from './config'
 import { createCodebaseContext } from './context'
 import { interactionFromMessage } from './interactions'
+import { startLSP } from './lsp'
 import { getPreamble } from './preamble'
 
 async function startCLI() {
@@ -30,9 +31,17 @@ async function startCLI() {
             `How Cody fetches context for query. Default: ${DEFAULTS.contextType}`
         )
         .option('--lsp', 'Start LSP')
+        .option('--stdio', 'Run LSP in stdio mode')
+        .option('--node-ipc', 'Run LSP in node-ipc mode')
+        .option('--socket <number>', 'Run LSP with that socket')
         .parse(process.argv)
 
     const options = program.opts()
+
+    if (options.lsp) {
+        startLSP()
+        return
+    }
 
     const codebase: string = (options.codebase as string) || DEFAULTS.codebase
     const endpoint: string = (options.endpoint as string) || DEFAULTS.serverEndpoint
