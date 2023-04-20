@@ -493,13 +493,20 @@ func (r *UserResolver) ViewerCanChangeUsername() bool {
 }
 
 func (r *UserResolver) CompletionsQuotaOverride(ctx context.Context) (*int32, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to see quotas.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		return nil, err
+	}
+
 	v, err := r.db.Users().GetCompletionsQuota(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
+
 	if v == nil {
 		return nil, nil
 	}
+
 	iv := int32(*v)
 	return &iv, nil
 }
@@ -583,7 +590,7 @@ type SetUserCompletionsQuotaArgs struct {
 }
 
 func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUserCompletionsQuotaArgs) (*UserResolver, error) {
-	// 🚨 SECURITY: Only site admins are allowed to change a user's quota.
+	// 🚨 SECURITY: Only site admins are allowed to change a users quota.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
