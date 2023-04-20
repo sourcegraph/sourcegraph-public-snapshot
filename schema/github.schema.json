@@ -172,6 +172,10 @@
         }
       }
     },
+    "githubAppInstallationID": {
+      "description": "The installation ID of the GitHub App.",
+      "type": "string"
+    },
     "pending": {
       "description": "Whether the code host connection is in a pending state.",
       "type": "boolean",
