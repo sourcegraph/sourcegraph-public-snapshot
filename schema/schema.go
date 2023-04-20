@@ -1054,8 +1054,6 @@ type GitHubConnection struct {
 	//
 	// If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
-	// GithubAppInstallationID description: DEPRECATED: The installation ID of the GitHub App.
-	GithubAppInstallationID string `json:"githubAppInstallationID,omitempty"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. GitHub repositories can no longer be enabled or disabled explicitly. Configure repositories to be mirrored via "repos", "exclude" and "repositoryQuery" instead.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
 	// Orgs description: An array of organization names identifying GitHub organizations whose repositories should be mirrored on Sourcegraph.
