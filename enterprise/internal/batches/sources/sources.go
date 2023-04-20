@@ -11,6 +11,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	gha "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -49,6 +50,10 @@ type SourcerStore interface {
 	ExternalServices() database.ExternalServiceStore
 	UserCredentials() database.UserCredentialsStore
 	GitHubApps() gha.GithubAppsStore
+}
+
+type sourcerStore struct {
+	store *basestore.Store
 }
 
 // Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or

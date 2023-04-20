@@ -32,6 +32,7 @@ go_library(
         "//enterprise/internal/batches/sources/bitbucketcloud",
         "//enterprise/internal/batches/store/author",
         "//enterprise/internal/batches/types",
+        "//enterprise/internal/github_apps/store",
         "//internal/actor",
         "//internal/api",
         "//internal/database",
