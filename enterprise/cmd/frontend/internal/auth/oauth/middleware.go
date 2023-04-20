@@ -123,7 +123,7 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 		logger := log.Scoped("get-github-app-installation", "handler for getting github app installations")
 
 		var privateKey []byte
-		var appID string
+		var appID int
 		var err error
 
 		gitHubAppConfig := conf.SiteConfig().GitHubApp
@@ -134,7 +134,7 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 			return
 		}
 
-		appID = gitHubAppConfig.AppID
+		appID = 0
 
 		installationIDQueryUnecoded := req.URL.Query().Get("installation_id")
 

@@ -22,7 +22,7 @@ import (
 // using a GitHub App. It contains the ID and private key associated with
 // the GitHub App.
 type gitHubAppAuthenticator struct {
-	appID  string
+	appID  int
 	key    *rsa.PrivateKey
 	rawKey []byte
 }
@@ -33,7 +33,7 @@ type gitHubAppAuthenticator struct {
 // The returned Authenticator can be used to sign requests to the GitHub API on behalf of the GitHub App.
 // The requests will contain a JSON Web Token (JWT) in the Authorization header with claims identifying
 // the GitHub App.
-func NewGitHubAppAuthenticator(appID string, privateKey []byte) (*gitHubAppAuthenticator, error) {
+func NewGitHubAppAuthenticator(appID int, privateKey []byte) (*gitHubAppAuthenticator, error) {
 	key, err := jwt.ParseRSAPrivateKeyFromPEM(privateKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse private key")
@@ -74,7 +74,7 @@ func (a *gitHubAppAuthenticator) generateJWT() (string, error) {
 	claims := &jwt.RegisteredClaims{
 		IssuedAt:  jwt.NewNumericDate(iss),
 		ExpiresAt: jwt.NewNumericDate(exp),
-		Issuer:    a.appID,
+		Issuer:    strconv.Itoa(a.appID),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 

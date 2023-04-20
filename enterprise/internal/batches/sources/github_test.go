@@ -425,8 +425,9 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 		})),
 	}
 
+	tx := NewMockSourcerStore()
 	ctx := context.Background()
-	githubSrc, err := NewGitHubSource(ctx, svc, nil)
+	githubSrc, err := NewGitHubSource(ctx, tx, svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

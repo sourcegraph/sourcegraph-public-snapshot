@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	gha "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -47,6 +48,7 @@ type SourcerStore interface {
 	Repos() database.RepoStore
 	ExternalServices() database.ExternalServiceStore
 	UserCredentials() database.UserCredentialsStore
+	GitHubApps() gha.GithubAppsStore
 }
 
 // Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or
@@ -147,7 +149,7 @@ func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service")
 	}
-	css, err := buildChangesetSource(ctx, cf, extSvc)
+	css, err := buildChangesetSource(ctx, tx, cf, extSvc)
 	if err != nil {
 		return nil, errors.Wrap(err, "building changeset source")
 	}
@@ -301,10 +303,10 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 
 // buildChangesetSource builds a ChangesetSource for the given repo to load the
 // changeset state from.
-func buildChangesetSource(ctx context.Context, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
+func buildChangesetSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
 	switch externalService.Kind {
 	case extsvc.KindGitHub:
-		return NewGitHubSource(ctx, externalService, cf)
+		return NewGitHubSource(ctx, tx, externalService, cf)
 	case extsvc.KindGitLab:
 		return NewGitLabSource(ctx, externalService, cf)
 	case extsvc.KindBitbucketServer:

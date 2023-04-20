@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -56,16 +55,11 @@ func Init(
 		return nil
 	}
 
-	auther, err := ghauth.NewGitHubAppAuthenticator(config.AppID, config.PrivateKey)
-	if err != nil {
-		return errors.Wrap(err, "new authenticator with GitHub App")
-	}
-
 	apiURL, err := url.Parse("https://github.com")
 	if err != nil {
 		return errors.Wrap(err, "parse github.com")
 	}
-	client := github.NewV3Client(log.Scoped("app.github.v3", "github v3 client for frontend app"), extsvc.URNGitHubApp, apiURL, auther, nil)
+	client := github.NewV3Client(log.Scoped("app.github.v3", "github v3 client for frontend app"), extsvc.URNGitHubApp, apiURL, nil, nil)
 
 	enterpriseServices.NewGitHubAppSetupHandler = func() http.Handler {
 		return newGitHubAppSetupHandler(db, apiURL, client)

@@ -339,26 +339,6 @@ func getRemoteURLFunc(
 			continue
 		}
 
-		if svc.Kind == extsvc.KindGitHub {
-			config, err := conf.GitHubAppConfig()
-			if err != nil {
-				return "", err
-			}
-			if config.Configured() {
-				rawConfig, err := svc.Config.Decrypt(ctx)
-				if err != nil {
-					return "", err
-				}
-				installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
-				if installationID > 0 {
-					rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, config.PrivateKey, config.AppID, installationID, cli)
-					if err != nil {
-						return "", errors.Wrap(err, "edit GitHub App external service config token")
-					}
-					svc.Config.Set(rawConfig)
-				}
-			}
-		}
 		return repos.EncryptableCloneURL(ctx, log.Scoped("repos.CloneURL", ""), svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
@@ -373,7 +353,7 @@ func editGitHubAppExternalServiceConfigToken(
 	svc *types.ExternalService,
 	rawConfig string,
 	privateKey []byte,
-	appID string,
+	appID int,
 	installationID int64,
 	cli httpcli.Doer,
 ) (string, error) {
@@ -399,7 +379,7 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
 
-	scopedLogger := logger.Scoped("app", "github client for github app").With(log.String("appID", appID))
+	scopedLogger := logger.Scoped("app", "github client for github app").With(log.Int("appID", appID))
 	appClient := github.NewV3Client(scopedLogger, svc.URN(), apiURL, appAuther, cli)
 
 	token, err := appClient.CreateAppInstallationAccessToken(ctx, installationID)

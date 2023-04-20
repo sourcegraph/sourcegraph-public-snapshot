@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -26,7 +27,7 @@ type GitHubSource struct {
 
 var _ ForkableChangesetSource = GitHubSource{}
 
-func NewGitHubSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+func NewGitHubSource(ctx context.Context, tx SourcerStore, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -35,10 +36,10 @@ func NewGitHubSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitHubSource(svc.URN(), &c, cf, nil)
+	return newGitHubSource(ctx, tx, svc.URN(), &c, cf, nil)
 }
 
-func newGitHubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Authenticator) (*GitHubSource, error) {
+func newGitHubSource(ctx context.Context, tx SourcerStore, urn string, c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Authenticator) (*GitHubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -62,9 +63,21 @@ func newGitHubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory
 		return nil, err
 	}
 
-	var authr = au
+	authr := au
 	if au == nil {
-		authr = &auth.OAuthBearerToken{Token: c.Token}
+		if ghDetails := c.GitHubAppDetails; ghDetails != nil {
+			ghApp, err := tx.GitHubApps().GetByAppID(ctx, ghDetails.AppID, ghDetails.BaseURL)
+			if err != nil {
+				return nil, err
+			}
+			appAuther, err := ghauth.NewGitHubAppAuthenticator(ghApp.AppID, []byte(ghApp.PrivateKey))
+			if err != nil {
+				return nil, err
+			}
+			authr = ghauth.NewInstallationAccessToken(ghDetails.InstallationID, appAuther)
+		} else {
+			authr = &auth.OAuthBearerToken{Token: c.Token}
+		}
 	}
 
 	return &GitHubSource{
@@ -242,7 +255,6 @@ func (s GitHubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		Body:          c.Body,
 		BaseRefName:   gitdomain.AbbreviateRef(c.BaseRef),
 	})
-
 	if err != nil {
 		return err
 	}
