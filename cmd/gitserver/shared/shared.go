@@ -142,7 +142,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		ReposDir:           config.ReposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
+			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir, config.CoursierCacheDir)
@@ -315,7 +315,6 @@ func getRemoteURLFunc(
 	ctx context.Context,
 	externalServiceStore database.ExternalServiceStore,
 	repoStore database.RepoStore,
-	cli httpcli.Doer,
 	repo api.RepoName,
 ) (string, error) {
 	r, err := repoStore.GetByName(ctx, repo)
