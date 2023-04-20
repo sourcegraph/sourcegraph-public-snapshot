@@ -1,43 +1,32 @@
 contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
-    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
-    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
   packages:
     ## Base set of packages included in sourcegraph/alpine base image
     - wolfi-baselayout
     - ca-certificates-bundle
     - tzdata
-    - tini
-    - mailcap
-    # Dev tools - may not be required in production
+    # Debugging tools, can be removed
     - busybox
-    - curl
-    - wget
-    # - 'bind-tools>=9.16.33-r0' # TODO: Not available in Wolfi repo
 
-    ## gitserver packages
-    - 'git>=2.38.1'
-    - git-lfs
-    - git-p4
-    - openssh-client
-    # - python2                  # TODO: Not available in Wolfi repo
-    - python3
-    - bash
-    - coursier@sourcegraph
-    - p4cli@sourcegraph
-    - p4-fusion@sourcegraph
+    ## postgres-exporter-specific packages
+    - 'prometheus-postgres-exporter=0.12.0-r1' # IMPORTANT: Pinned version for managed updates
 
 accounts:
   groups:
     - groupname: sourcegraph
       gid: 101
+    - groupname: postgres_exporter
+      gid: 102
   users:
     - username: sourcegraph
       uid: 100
       gid: 101
+    - username: postgres_exporter
+      uid: 20001
+      gid: 102
 
 # NOTE: This is ignored (see build output)
 # To force amd64, first run `docker pull --platform linux/arm64 cgr.dev/chainguard/apko`

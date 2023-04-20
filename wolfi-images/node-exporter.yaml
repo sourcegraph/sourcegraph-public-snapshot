@@ -1,34 +1,16 @@
 contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
-    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
-    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
   packages:
     ## Base set of packages included in sourcegraph/alpine base image
     - wolfi-baselayout
     - ca-certificates-bundle
     - tzdata
-    - tini
-    - mailcap
-    # Dev tools - may not be required in production
-    - busybox
-    - curl
-    - wget
-    # - 'bind-tools>=9.16.33-r0' # TODO: Not available in Wolfi repo
 
-    ## gitserver packages
-    - 'git>=2.38.1'
-    - git-lfs
-    - git-p4
-    - openssh-client
-    # - python2                  # TODO: Not available in Wolfi repo
-    - python3
-    - bash
-    - coursier@sourcegraph
-    - p4cli@sourcegraph
-    - p4-fusion@sourcegraph
+    ## node-exporter-specific packages
+    - 'prometheus-node-exporter=1.5.0-r3' # IMPORTANT: Pinned version for managed updates
 
 accounts:
   groups:
