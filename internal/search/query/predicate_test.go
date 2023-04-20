@@ -23,6 +23,8 @@ func TestRepoContainsFilePredicate(t *testing.T) {
 			{`content and path`, `content:abc path:test.go`, &RepoContainsFilePredicate{Path: "test.go", Content: "abc"}},
 			{`unnamed path`, `test.go`, &RepoContainsFilePredicate{Path: "test.go"}},
 			{`unnamed path regex`, `test(a|b)*.go`, &RepoContainsFilePredicate{Path: "test(a|b)*.go"}},
+			{`negated path`, `-path:test`, &RepoContainsFilePredicate{Path: "test", PathNegated: true}},
+			{`negated content`, `-content:test`, &RepoContainsFilePredicate{Content: "test", ContentNegated: true}},
 		}
 
 		for _, tc := range valid {
@@ -41,8 +43,6 @@ func TestRepoContainsFilePredicate(t *testing.T) {
 
 		invalid := []test{
 			{`empty`, ``, nil},
-			{`negated path`, `-path:test`, nil},
-			{`negated content`, `-content:test`, nil},
 			{`catch invalid content regexp`, `path:foo content:([)`, nil},
 			{`unsupported syntax`, `content1 content2`, nil},
 			{`invalid unnamed path`, `([)`, nil},

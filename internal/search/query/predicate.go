@@ -114,9 +114,11 @@ func (EmptyPredicate) Unmarshal(_ string, negated bool) error {
 // repos that contain a path and/or content. NOTE: this predicate still supports the deprecated
 // syntax `repo:contains.file(name.go)` on a best-effort basis.
 type RepoContainsFilePredicate struct {
-	Path    string
-	Content string
-	Negated bool
+	Path           string
+	PathNegated    bool
+	Content        string
+	ContentNegated bool
+	Negated        bool
 }
 
 func (f *RepoContainsFilePredicate) Unmarshal(params string, negated bool) error {
@@ -163,11 +165,11 @@ func (f *RepoContainsFilePredicate) parseNodes(nodes []Node) error {
 func (f *RepoContainsFilePredicate) parseNode(n Node) error {
 	switch v := n.(type) {
 	case Parameter:
-		if v.Negated {
-			return errors.New("predicates do not currently support negated values")
-		}
 		switch strings.ToLower(v.Field) {
 		case "path":
+			if v.Negated {
+				f.PathNegated = true
+			}
 			if f.Path != "" {
 				return errors.New("cannot specify path multiple times")
 			}
@@ -176,6 +178,9 @@ func (f *RepoContainsFilePredicate) parseNode(n Node) error {
 			}
 			f.Path = v.Value
 		case "content":
+			if v.Negated {
+				f.ContentNegated = true
+			}
 			if f.Content != "" {
 				return errors.New("cannot specify content multiple times")
 			}

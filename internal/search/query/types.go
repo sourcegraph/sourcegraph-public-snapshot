@@ -353,9 +353,11 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 // - repohasfile:f
 type RepoHasFileContentArgs struct {
 	// At least one of these strings should be non-empty
-	Path    string // optional
-	Content string // optional
-	Negated bool
+	Path           string // optional
+	PathNegated    bool   // optional
+	Content        string // optional
+	ContentNegated bool   // optional
+	Negated        bool
 }
 
 func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
@@ -383,9 +385,11 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 
 	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate) {
 		res = append(res, RepoHasFileContentArgs{
-			Path:    pred.Path,
-			Content: pred.Content,
-			Negated: pred.Negated,
+			Path:           pred.Path,
+			PathNegated:    pred.PathNegated,
+			Content:        pred.Content,
+			ContentNegated: pred.ContentNegated,
+			Negated:        pred.Negated,
 		})
 	})
 
