@@ -7,7 +7,6 @@ import { Client, createClient, ClientInit } from '@sourcegraph/cody-shared/src/c
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { PrefilledOptions } from '@sourcegraph/cody-shared/src/editor/withPreselectedOptions'
 import { isErrorLike } from '@sourcegraph/common'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
 import { CodeMirrorEditor } from '../cody/CodeMirrorEditor'
 import { eventLogger } from '../tracking/eventLogger'

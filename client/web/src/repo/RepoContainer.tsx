@@ -1,4 +1,4 @@
-import React, { FC, Suspense, useEffect, useMemo, useState, useCallback } from 'react'
+import React, { FC, Suspense, useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'

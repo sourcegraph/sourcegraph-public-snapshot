@@ -179,7 +179,7 @@ export const useResizablePanel = ({
         return () => {
             currentHandle?.removeEventListener('mousedown', onMouseDown)
         }
-    }, [panelRef, handleRef, position, storageKey, maxSize, minSize])
+    }, [panelRef, handleRef, position, storageKey, maxSize, minSize, onResize])
 
     return { panelSize, isResizing }
 }
