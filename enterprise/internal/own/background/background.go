@@ -1,0 +1,146 @@
+package background
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
+
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+)
+
+type JobType int
+
+const (
+	RecentContributions = iota
+)
+
+type Job struct {
+	ID              int
+	State           string
+	FailureMessage  *string
+	QueuedAt        time.Time
+	StartedAt       *time.Time
+	FinishedAt      *time.Time
+	ProcessAfter    *time.Time
+	NumResets       int
+	NumFailures     int
+	LastHeartbeatAt time.Time
+	ExecutionLogs   []executor.ExecutionLogEntry
+	WorkerHostname  string
+	Cancel          bool
+	RepoId          int
+	JobType         int
+}
+
+func (b *Job) RecordID() int {
+	return b.ID
+}
+
+var jobColumns = []*sqlf.Query{
+	sqlf.Sprintf("id"),
+	sqlf.Sprintf("state"),
+	sqlf.Sprintf("failure_message"),
+	sqlf.Sprintf("queued_at"),
+	sqlf.Sprintf("started_at"),
+	sqlf.Sprintf("finished_at"),
+	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("num_resets"),
+	sqlf.Sprintf("num_failures"),
+	sqlf.Sprintf("last_heartbeat_at"),
+	sqlf.Sprintf("execution_logs"),
+	sqlf.Sprintf("worker_hostname"),
+	sqlf.Sprintf("cancel"),
+	sqlf.Sprintf("repo_id"),
+	sqlf.Sprintf("job_type"),
+}
+
+func scanJob(s dbutil.Scanner) (*Job, error) {
+	var job Job
+	var executionLogs []executor.ExecutionLogEntry
+
+	if err := s.Scan(
+		&job.ID,
+		&job.State,
+		&job.FailureMessage,
+		&job.QueuedAt,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&job.LastHeartbeatAt,
+		pq.Array(&executionLogs),
+		&job.WorkerHostname,
+		&job.Cancel,
+		&job.RepoId,
+		&job.JobType,
+	); err != nil {
+		return nil, err
+	}
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
+	return &job, nil
+}
+
+func NewOwnBackgroundWorker(ctx context.Context, db database.DB, observationCtx *observation.Context) []goroutine.BackgroundRoutine {
+	worker, resetter, _ := makeWorker(ctx, db, observationCtx)
+	return []goroutine.BackgroundRoutine{worker, resetter}
+}
+
+func makeWorker(ctx context.Context, db database.DB, observationCtx *observation.Context) (*workerutil.Worker[*Job], *dbworker.Resetter[*Job], dbworkerstore.Store[*Job]) {
+	name := "own_background_worker"
+
+	workerStore := dbworkerstore.New(observationCtx, db.Handle(), dbworkerstore.Options[*Job]{
+		Name:              fmt.Sprintf("%s_store", name),
+		TableName:         "own_background_jobs",
+		ColumnExpressions: jobColumns,
+		Scan:              dbworkerstore.BuildWorkerScan(scanJob),
+		OrderByExpression: sqlf.Sprintf("id"), // processes oldest records first
+		MaxNumResets:      10,
+		StalledMaxAge:     time.Second * 30,
+		RetryAfter:        time.Second * 30,
+		MaxNumRetries:     3,
+	})
+
+	task := handler{
+		workerStore: workerStore,
+	}
+
+	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*Job](&task), workerutil.WorkerOptions{
+		Name:              name,
+		Description:       "Sourcegraph own background processing partitioned by repository",
+		NumHandlers:       1,
+		Interval:          5 * time.Second,
+		HeartbeatInterval: 15 * time.Second,
+		Metrics:           workerutil.NewMetrics(observationCtx, name),
+	})
+
+	resetter := dbworker.NewResetter(log.Scoped("OwnBackgroundResetter", ""), workerStore, dbworker.ResetterOptions{
+		Name:     fmt.Sprintf("%s_resetter", name),
+		Interval: time.Second * 20,
+		Metrics:  dbworker.NewResetterMetrics(observationCtx, name),
+	})
+
+	return worker, resetter, workerStore
+}
+
+type handler struct {
+	workerStore dbworkerstore.Store[*Job]
+}
+
+func (h *handler) Handle(ctx context.Context, logger log.Logger, record *Job) error {
+	jsonify, _ := json.Marshal(record)
+	logger.Info(fmt.Sprintf("Hello from the own background processor: %v", string(jsonify)))
+	return nil
+}
