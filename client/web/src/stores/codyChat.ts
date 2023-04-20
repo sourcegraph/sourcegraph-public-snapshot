@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { isEqual } from 'lodash'
-import { Transition } from 'react-spring'
 import create from 'zustand'
 
 import { Client, createClient, ClientInit, Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/client'
