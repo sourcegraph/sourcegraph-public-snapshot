@@ -6,6 +6,7 @@ overrides:
   cssnano: 4.1.10
   webpack: '5'
   tslib: 2.1.0
+  react-test-renderer: 18.1.0
 
 packageExtensionsChecksum: 8812149dda0bd1a50035894b0475085d
 
@@ -7227,7 +7228,7 @@ packages:
       pretty-format: 26.6.2
       react: 18.1.0
       react-dom: 18.1.0_react@18.1.0
-      react-test-renderer: 17.0.2_react@18.1.0
+      react-test-renderer: 18.1.0_react@18.1.0
       read-pkg-up: 7.0.1
       regenerator-runtime: 0.13.11
       rxjs: 6.6.7
@@ -23926,16 +23927,15 @@ packages:
       refractor: 3.6.0
     dev: true
 
-  /react-test-renderer/17.0.2_react@18.1.0:
-    resolution: {integrity: sha512-yaQ9cB89c17PUb0x6UfWRs7kQCorVdHlutU1boVPEsB8IDZH6n9tHxMacc3y0JoXOJUsZb/t/Mb8FUWMKaM7iQ==}
+  /react-test-renderer/18.1.0_react@18.1.0:
+    resolution: {integrity: sha512-OfuueprJFW7h69GN+kr4Ywin7stcuqaYAt1g7airM5cUgP0BoF5G5CXsPGmXeDeEkncb2fqYNECO4y18sSqphg==}
     peerDependencies:
-      react: 17.0.2
+      react: ^18.1.0
     dependencies:
-      object-assign: 4.1.1
       react: 18.1.0
-      react-is: 17.0.2
+      react-is: 18.2.0
       react-shallow-renderer: 16.15.0_react@18.1.0
-      scheduler: 0.20.2
+      scheduler: 0.22.0
     dev: true
 
   /react-transition-group/2.9.0_ef5jwxihqo6n7gxfmzogljlgcm:
@@ -24853,13 +24853,6 @@ packages:
       loose-envify: 1.4.0
       object-assign: 4.1.1
     dev: false
-
-  /scheduler/0.20.2:
-    resolution: {integrity: sha512-2eWfGgAqqWFGqtdMmcL5zCMK1U8KlXv8SQFGglL3CEtd0aDVDWgeF/YoCmvln55m5zSk3J/20hTaSBeSObsQDQ==}
-    dependencies:
-      loose-envify: 1.4.0
-      object-assign: 4.1.1
-    dev: true
 
   /scheduler/0.21.0:
     resolution: {integrity: sha512-1r87x5fz9MXqswA2ERLo0EbOAU74DpIUO090gIasYTqlVoJeMcl+Z1Rg7WHz+qtPujhS/hGIt9kxZOYBV3faRQ==}

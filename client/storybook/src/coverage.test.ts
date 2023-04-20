@@ -6,13 +6,15 @@ import { puppeteerTest } from '@storybook/addon-storyshots-puppeteer'
 
 import { recordCoverage } from '@sourcegraph/shared/src/testing/coverage'
 
-// This test suite does not actually test anything.
-// It just loads up the storybook in Puppeteer and records its coverage,
-// so it can be tracked in Codecov.
+// This test suite does not actually test anything. It just loads up the storybook in Puppeteer and
+// records its coverage, so it can be tracked in Codecov.
+//
+// See storyshots.test.ts for a test suite that actually performs snapshot testing (writing and
+// comparing snapshots) for some stories.
 
 initStoryshots({
     configPath: __dirname,
-    suite: 'Storybook',
+    suite: 'Storybook (coverage only)',
     test: puppeteerTest({
         storybookUrl: pathToFileURL(path.resolve(__dirname, '../storybook-static')).href,
         testBody: async page => {

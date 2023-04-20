@@ -40,12 +40,56 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 }
 
 describe('GlobalNavbar', () => {
-    test('default', () => {
-        const { asFragment } = renderWithBrandedContext(
-            <MockedTestProvider>
-                <GlobalNavbar {...PROPS} />
-            </MockedTestProvider>
-        )
-        expect(asFragment()).toMatchSnapshot()
+    describe('default', () => {
+        test('anonymous', () => {
+            const { asFragment } = renderWithBrandedContext(
+                <MockedTestProvider>
+                    <GlobalNavbar {...PROPS} />
+                </MockedTestProvider>
+            )
+            expect(asFragment()).toMatchSnapshot()
+        })
+
+        test('signed in', () => {
+            const { asFragment } = renderWithBrandedContext(
+                <MockedTestProvider>
+                    <GlobalNavbar {...PROPS} />
+                </MockedTestProvider>
+            )
+            expect(asFragment()).toMatchSnapshot()
+        })
+    })
+
+    describe('dotcom', () => {
+        test('anonymous', () => {
+            const { asFragment } = renderWithBrandedContext(
+                <MockedTestProvider>
+                    <GlobalNavbar {...PROPS} />
+                </MockedTestProvider>
+            )
+            expect(asFragment()).toMatchSnapshot()
+        })
+
+        test('signed in', () => {
+            const { asFragment } = renderWithBrandedContext(
+                <MockedTestProvider>
+                    <GlobalNavbar {...PROPS} />
+                </MockedTestProvider>
+            )
+            expect(asFragment()).toMatchSnapshot()
+        })
+    })
+
+    describe('app', () => {
+        // There is no anonymous mode for app that shows the global navbar.
+
+        test('signed in', () => {
+            const { asFragment } = renderWithBrandedContext(
+                <MockedTestProvider>
+                    <GlobalNavbar {...PROPS} />
+                </MockedTestProvider>
+            )
+            expect(asFragment()).toMatchSnapshot()
+        })
     })
 })
