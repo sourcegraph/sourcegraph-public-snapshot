@@ -16,32 +16,9 @@
     <link rel="stylesheet" href="/.assets{{cssBundle}}">
     <link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
     <link rel="preload" href="/.assets/img/sourcegraph-mark.svg?v2" as="image" />
-
-    <script ignore-csp>
-        console.log('Sourcegraph App index.html loaded');
-        window.context = { "externalURL": "https://sourcegraph.com", "xhrHeaders": { "X-Requested-With": "Sourcegraph", "x-sourcegraph-client": "https://sourcegraph.com" }, "userAgentIsBot": false, "assetsRoot": "/.assets", "version": "211629_2023-04-03_5.0-08dba20a8539", "isAuthenticatedUser": false, "currentUser": null, "temporarySettings": { "__typename": "TemporarySettings", "contents": "{}" }, "sentryDSN": "https://ae2f74442b154faf90b5ff0f7cd1c618@sentry.io/1391511", "openTelemetry": { "endpoint": "/-/debug/otlp" }, "siteID": "SourcegraphWeb", "siteGQLID": "U2l0ZToic2l0ZSI=", "debug": false, "needsSiteInit": false, "emailEnabled": true, "site": { "auth.public": true, "authz.enforceForSiteAdmins": true, "update.channel": "release" }, "likelyDockerOnMac": false, "needServerRestart": false, "deployType": "kubernetes", "sourcegraphDotComMode": true, "sourcegraphAppMode": false, "accessTokensAllow": "all-users-create", "allowSignup": true, "resetPasswordEnabled": true, "externalServicesUserMode": "disabled", "authMinPasswordLength": 12, "authPasswordPolicy": { "enabled": false, "numberOfSpecialCharacters": 0, "requireAtLeastOneNumber": false, "requireUpperAndLowerCase": false }, "authProviders": [{ "isBuiltin": true, "displayName": "Builtin username-password authentication", "serviceType": "builtin", "authenticationURL": "", "serviceID": "" }, { "isBuiltin": false, "displayName": "GitHub", "serviceType": "github", "authenticationURL": "/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F%3A%3Ae917b2b7fa9040e1edd4", "serviceID": "https://github.com/" }, { "isBuiltin": false, "displayName": "GitLab", "serviceType": "gitlab", "authenticationURL": "/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F%3A%3A262309265ae76179773477bd50c93c7022007a4810c344c69a7371da11949c48", "serviceID": "https://gitlab.com/" }], "authAccessRequest": null, "branding": { "brandName": "Sourcegraph" }, "batchChangesEnabled": false, "batchChangesDisableWebhooksWarning": false, "batchChangesWebhookLogsEnabled": false, "executorsEnabled": true, "codeIntelAutoIndexingEnabled": true, "codeIntelAutoIndexingAllowGlobalPolicies": false, "codeInsightsEnabled": false, "embeddingsEnabled": true, "RedirectUnsupportedBrowser": false, "productResearchPageEnabled": true, "experimentalFeatures": { "andOrQuery": "enabled", "apidocs.search.indexing": "enabled", "enableGRPC": true, "enableGitServerCommandExecFilter": true, "jvmPackages": "enabled", "npmPackages": "enabled", "pagure": "enabled", "pythonPackages": "enabled", "ranking": { "flushWallTimeMS": 1000, "maxQueueSizeBytes": 50000000, "maxReorderDurationMS": 200, "maxReorderQueueSize": 768 }, "rateLimitAnonymous": 500, "rubyPackages": "enabled", "rustPackages": "enabled", "search.index.branches": { "github.com/go-yaml/yaml": ["v2", "v3"], "github.com/kubernetes/kubernetes": ["release-1.17"], "github.com/sourcegraph/sourcegraph": ["3.17", "v3.0.0"] }, "search.index.revisions": [{ "name": "^src\\.fedoraproject\\.org/", "revisions": ["f35", "f34", "f33", "epel8", "epel8-playground", "epel7"] }], "searchMultipleRevisionsPerRepository": true }, "licenseInfo": null, "outboundRequestLogLimit": 50, "disableFeedbackSurvey": false, "needsRepositoryConfiguration": false, "extsvcConfigFileExists": false, "extsvcConfigAllowEdits": false, "runningOnMacOS": false, "localFilePickerAvailable": false, "srcServeGitUrl": "http://127.0.0.1:3434" }
-        window.pageError = null
-    </script>
 </head>
 
 <body>
-    <script ignore-csp type="application/ld+json">
-		{
-			"@context": "https://schema.org",
-			"@type": "WebSite",
-			"name": "Sourcegraph",
-			"url": "https://sourcegraph.com",
-			"potentialAction": {
-				"@type": "SearchAction",
-				"target": {
-					"@type": "EntryPoint",
-					"urlTemplate": "https://sourcegraph.com/search?q={search_term_string}&utm_source=google-search-result&utm_campaign=google-search-result-searchbox"
-				},
-				"query-input": "required name=search_term_string"
-			}
-		}
-	</script>
-
     <div id="root">
 
     </div>
