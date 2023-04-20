@@ -30,5 +30,5 @@ func (o *ownRepoIndexingQueue) Routines(startupCtx context.Context, observationC
 	if err != nil {
 		return nil, err
 	}
-	return background.NewOwnBackgroundWorker(startupCtx, db, observationCtx), nil
+	return background.NewOwnBackgroundWorker(context.Background(), db, observationCtx), nil
 }
