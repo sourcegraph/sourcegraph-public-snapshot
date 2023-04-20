@@ -17,7 +17,7 @@ import {
     createBlobContentResult,
     createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
+import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, EditorAPI } from './utils'
 
 describe('CodeMirror blob view', () => {

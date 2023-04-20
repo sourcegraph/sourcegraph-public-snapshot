@@ -3,7 +3,6 @@ import { map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
