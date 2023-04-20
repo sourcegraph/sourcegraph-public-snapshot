@@ -13,7 +13,7 @@ import { ContextFiles } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { FileLink } from './FileLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
-import styles from './Chat.module.css'
+import styles from './Chat.module.scss'
 
 interface HistoryProps {
     userHistory: ChatHistory | null

@@ -11,7 +11,7 @@ import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 import { FileLink } from './FileLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
-import styles from './Chat.module.css'
+import styles from './Chat.module.scss'
 
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
