@@ -35,3 +35,5 @@
         (property_identifier) @descriptor.term
     )
 )
+
+(module name: (string (string_fragment) @descriptor.namespace) body: (_) @scope)

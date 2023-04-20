@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use anyhow::Result;
 use protobuf::Enum;
 use scip::types::{Descriptor, Occurrence};
@@ -132,18 +130,16 @@ pub fn parse_tree<'a>(
     // NOTE: I considered a lot of different approaches for eliminating locals:
     // - bitset of size source_bytes with bits in @local range set to denote invalidity (space cost too high)
     // - binary search tree of some sort (maybe? not too confident in implementing this)
-    // final solution is just iterating over children of a local scope and invalidating
-    // them in an id map (which shouldn't be too expensive as ts treecursors are pretty fast)
-    let mut local_nodes = HashMap::new();
-    let mut tree_cursor = root_node.walk();
+    let mut local_ends = vec![];
 
     let matches = cursor.matches(&config.query, root_node, source_bytes);
 
-    for m in matches {
+    'match_loop: for m in matches {
         // eprintln!("\n==== NEW MATCH ====");
 
         let mut node = None;
         let mut scope = None;
+        let mut local_end = None;
         let mut descriptors = vec![];
 
         for capture in m.captures {
@@ -162,9 +158,7 @@ pub fn parse_tree<'a>(
             }
 
             if capture_name.starts_with("local") {
-                for child in capture.node.children(&mut tree_cursor) {
-                    local_nodes.insert(child.id(), ());
-                }
+                local_end = Some(capture.node.end_byte());
             }
 
             // eprintln!(
@@ -176,8 +170,19 @@ pub fn parse_tree<'a>(
 
         let node = node.expect("there must always be at least one descriptor");
 
-        if local_nodes.contains_key(&node.id()) {
-            continue;
+        if !local_ends.is_empty() {
+            let mut i = local_ends.len() - 1;
+            loop {
+                if node.end_byte() < *local_ends.get(i).unwrap() {
+                    continue 'match_loop;
+                }
+                local_ends.remove(i);
+
+                if i == 0 {
+                    break;
+                }
+                i -= 1;
+            }
         }
 
         let descriptors = descriptors
@@ -216,6 +221,10 @@ pub fn parse_tree<'a>(
                 },
                 descriptors,
             }),
+        }
+
+        if let Some(local_end) = local_end {
+            local_ends.push(local_end);
         }
     }
 
