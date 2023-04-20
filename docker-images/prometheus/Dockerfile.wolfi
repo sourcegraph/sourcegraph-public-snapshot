@@ -31,9 +31,6 @@ ARG VERSION="unknown"
 LABEL org.opencontainers.image.revision=${COMMIT_SHA}
 LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
-LABEL org.opencontainers.image.url=https://sourcegraph.com/
-LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
-LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
 # Prometheus - extended from https://github.com/prometheus/prometheus/blob/VERSION/Dockerfile
 # Check the upstream image (replacing VERSION with the appropriate Prometheus version) when upgrading
