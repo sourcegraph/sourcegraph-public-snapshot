@@ -1,5 +1,3 @@
-; TODO: Handle more cases, ensure global specifity with @local
-
 (namespace_import (identifier) @descriptor.term)
 (named_imports
     [
@@ -8,11 +6,8 @@
     ]
 )
 
-(program (function_declaration (identifier) @descriptor.method))
-(program (lexical_declaration (variable_declarator name: (identifier) @descriptor.term)))
-
-(program (export_statement (function_declaration (identifier) @descriptor.method)))
-(program (export_statement (lexical_declaration (variable_declarator name: (identifier) @descriptor.term))))
+(function_declaration (identifier) @descriptor.method body: (_) @local)
+(lexical_declaration (variable_declarator name: (identifier) @descriptor.term))
 
 (interface_declaration name: (_) @descriptor.type body: (_) @scope)
 (interface_declaration
@@ -29,7 +24,7 @@
     (class_body
         [
             (public_field_definition name: (_) @descriptor.term)
-            (method_definition name: (_) @descriptor.method)
+            (method_definition name: (_) @descriptor.method body: (_) @local)
         ]
     )
 )

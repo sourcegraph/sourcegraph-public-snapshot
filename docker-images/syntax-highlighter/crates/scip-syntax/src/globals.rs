@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use anyhow::Result;
 use protobuf::Enum;
 use scip::types::{Descriptor, Occurrence};
@@ -127,6 +129,14 @@ pub fn parse_tree<'a>(
     let mut scopes = vec![];
     let mut globals = vec![];
 
+    // NOTE: I considered a lot of different approaches for eliminating locals:
+    // - bitset of size source_bytes with bits in @local range set to denote invalidity (space cost too high)
+    // - binary search tree of some sort (maybe? not too confident in implementing this)
+    // final solution is just iterating over children of a local scope and invalidating
+    // them in an id map (which shouldn't be too expensive as ts treecursors are pretty fast)
+    let mut local_nodes = HashMap::new();
+    let mut tree_cursor = root_node.walk();
+
     let matches = cursor.matches(&config.query, root_node, source_bytes);
 
     for m in matches {
@@ -151,11 +161,23 @@ pub fn parse_tree<'a>(
                 scope = Some(capture);
             }
 
+            if capture_name.starts_with("local") {
+                for child in capture.node.children(&mut tree_cursor) {
+                    local_nodes.insert(child.id(), ());
+                }
+            }
+
             // eprintln!(
             //     "{}: {}",
             //     capture_name,
             //     capture.node.utf8_text(source_bytes).unwrap()
             // );
+        }
+
+        let node = node.expect("there must always be at least one descriptor");
+
+        if local_nodes.contains_key(&node.id()) {
+            continue;
         }
 
         let descriptors = descriptors
@@ -165,7 +187,6 @@ pub fn parse_tree<'a>(
             })
             .collect();
 
-        let node = node.expect("there must always be at least one descriptor");
         // dbg!(node);
 
         match scope {
