@@ -106,22 +106,27 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Rebuild base images if base image OR package configs have changed
 		updateBaseImages := c.Diff.Has(changed.WolfiBaseImages) || updatePackages
 
+		var numUpdatedPackages int
+		var numUpdatedBaseImages int
+
 		if updatePackages {
-			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
+			var packageOps *operations.Set
+			packageOps, numUpdatedPackages = WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages])
+			ops.Merge(packageOps)
 		}
 		if updateBaseImages {
-			ops.Merge(
-				WolfiBaseImagesOperations(
-					c.ChangedFiles[changed.WolfiBaseImages], // TODO: If packages have changed need to update all base images. Requires a list of all base images
-					c.Version,
-					updatePackages,
-				),
+			var baseImageOps *operations.Set
+			baseImageOps, numUpdatedBaseImages = WolfiBaseImagesOperations(
+				c.ChangedFiles[changed.WolfiBaseImages], // TODO: If packages have changed need to update all base images. Requires a list of all base images
+				c.Version,
+				(numUpdatedPackages > 0),
 			)
+			ops.Merge(baseImageOps)
 		}
 		// Always rebuild Wolfi images
 		ops.Merge(
 			// TODO: Just hardcode specific images initially
-			BuildWolfiOperations([]string{
+			WolfiImagesOperations([]string{
 				"blobstore",
 				"cadvisor",
 				"codeinsights-db",
@@ -138,7 +143,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"search-indexer",
 				"sg",
 				"syntax-highlighter",
-			}, c.Version, c.candidateImageTag()),
+			}, c.Version,
+				c.candidateImageTag(),
+				(numUpdatedBaseImages > 0),
+			),
 		)
 
 	case runtype.PullRequest:
