@@ -58,7 +58,7 @@
       }
     },
     "security": {
-      "csp": "default-src 'self' http://localhost:3080; style-src 'self' http://localhost:3080 'unsafe-eval' 'unsafe-inline'"
+      "csp": "default-src 'self' http://localhost:3080; style-src 'self' http://localhost:3080 'unsafe-eval' 'unsafe-inline'; navigate-to 'self' http://localhost:3080 'unsafe-allow-redirects';"
     },
     "updater": {
       "active": false
