@@ -2138,10 +2138,11 @@ github.com/vmihailenco/tagparser/v2 v2.0.0 h1:y09buUbR+b5aycVFQs/g70pqKVZNBmxwAh
 github.com/vmihailenco/tagparser/v2 v2.0.0/go.mod h1:Wri+At7QHww0WTrCBeu4J6bNtoV6mEfg5OIWRZA9qds=
 github.com/weaviate/contextionary v1.2.0/go.mod h1:nIEM3Gq1BzTZLuY+Pl7t8hD3eR6VAU43fRdZTEZ9LRY=
 github.com/weaviate/sroar v0.0.0-20230210105426-26108af5465d/go.mod h1:bJUcu8a/7XKOeaCWZtSjuBogUGReUiwJTyGSvcAjDzQ=
-github.com/weaviate/weaviate v1.18.2 h1:eKkkSEXF6b2RJY71fhfnsn0rmnptLVG+WeZTNib3NpQ=
 github.com/weaviate/weaviate v1.18.2/go.mod h1:mgF6/828NK0gNh6oYuVc+F7TlbmOIvGQEO+1LQf4pgg=
-github.com/weaviate/weaviate-go-client/v4 v4.7.0 h1:shV7UEp3iYJFq0Gz+14UnVMtQpJ6fOPEXeTULSaQvMU=
-github.com/weaviate/weaviate-go-client/v4 v4.7.0/go.mod h1:yAbmmbSNub8qLGlfBI87NY3fRTtzCOvUkI75NwJTfI8=
+github.com/weaviate/weaviate v1.18.3 h1:lq6yw2Y9pDRznSBtDUhRnW+kpWYQh+wrCC32YaWpEtA=
+github.com/weaviate/weaviate v1.18.3/go.mod h1:kxhoWW4myilbGro6uiWz8vsDo3lfr4o2SKi+B1lIsZ0=
+github.com/weaviate/weaviate-go-client/v4 v4.7.1 h1:ZHAbMroejx+3+jLHKUnNrCe0r+QA3YS+v/8ti5BAkHc=
+github.com/weaviate/weaviate-go-client/v4 v4.7.1/go.mod h1:yAbmmbSNub8qLGlfBI87NY3fRTtzCOvUkI75NwJTfI8=
 github.com/willf/bitset v1.1.10/go.mod h1:RjeCKbqT1RxIR/KWY6phxZiaY1IyutSBfGjNPySAYV4=
 github.com/willf/bitset v1.1.11-0.20200630133818-d5bec3311243/go.mod h1:RjeCKbqT1RxIR/KWY6phxZiaY1IyutSBfGjNPySAYV4=
 github.com/willf/bitset v1.1.11/go.mod h1:83CECat5yLh5zVOf4P1ErAgKA5UDvKtgyUABdr3+MjI=
