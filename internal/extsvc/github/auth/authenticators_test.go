@@ -78,7 +78,6 @@ func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 	req, err := http.NewRequest("GET", "https://api.github.com", nil)
 	require.NoError(t, err)
 
-	err = token.Authenticate(req)
 	require.NoError(t, token.Authenticate(req))
 
 	assert.Equal(t, "Bearer installation-token", req.Header.Get("Authorization"))

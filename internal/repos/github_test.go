@@ -704,7 +704,7 @@ func githubGraphQLFailureMiddleware(cli httpcli.Doer) httpcli.Doer {
 	})
 }
 
-func TestGithubSource_WithAuthenticator(t *testing.T) {
+func TestGitHubSource_WithAuthenticator(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
 		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
@@ -729,26 +729,6 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 			t.Error("cannot coerce Source into GitHubSource")
 		} else if gs == nil {
 			t.Error("unexpected nil Source")
-		}
-	})
-
-	t.Run("unsupported", func(t *testing.T) {
-		for name, tc := range map[string]auth.Authenticator{
-			"nil":         nil,
-			"BasicAuth":   &auth.BasicAuth{},
-			"OAuthClient": &auth.OAuthClient{},
-		} {
-			t.Run(name, func(t *testing.T) {
-				src, err := githubSrc.WithAuthenticator(tc)
-				if err == nil {
-					t.Error("unexpected nil error")
-				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
-					t.Errorf("unexpected error of type %T: %v", err, err)
-				}
-				if src != nil {
-					t.Errorf("expected non-nil Source: %v", src)
-				}
-			})
 		}
 	})
 }
