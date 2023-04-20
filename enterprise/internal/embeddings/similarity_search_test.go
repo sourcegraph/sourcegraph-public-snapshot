@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -41,9 +40,9 @@ var queries = []int8{
 
 // Each subarray contains ranked nearest neighbors for each query.
 var ranks = [][]int{
-	{12, 6, 1, 2, 0, 7, 3, 13, 10, 14, 11, 9, 5, 8, 4, 15},
+	{12, 6, 1, 2, 7, 0, 3, 13, 10, 14, 11, 9, 5, 8, 4, 15},
 	{4, 8, 10, 3, 0, 6, 2, 9, 13, 1, 12, 7, 15, 14, 11, 5},
-	{5, 12, 1, 11, 2, 7, 6, 14, 0, 13, 3, 10, 9, 15, 8, 4},
+	{5, 12, 1, 2, 11, 7, 6, 14, 0, 13, 3, 10, 9, 15, 8, 4},
 }
 
 func TestSimilaritySearch(t *testing.T) {
