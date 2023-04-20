@@ -22,19 +22,19 @@ func WolfiPackagesOperations(changedFiles []string) (*operations.Set, int) {
 	// TODO: Should we require the image name, or the full path to the yaml file?
 	ops := operations.NewNamedSet("Dependency packages")
 
-	var updatedPackages []string
+	var buildStepKeys []string
 	for _, c := range changedFiles {
 		match := packageRegex.FindStringSubmatch(c)
 		if len(match) == 2 {
 			buildFunc, key := buildPackage(match[1])
-			updatedPackages = append(updatedPackages, key)
 			ops.Append(buildFunc)
+			buildStepKeys = append(buildStepKeys, key)
 		}
 	}
 
-	ops.Append(buildRepoIndex("main", updatedPackages))
+	ops.Append(buildRepoIndex("main", buildStepKeys))
 
-	return ops, len(updatedPackages)
+	return ops, len(buildStepKeys)
 }
 
 // WolfiBaseImagesOperations rebuilds any base images whose configurations have changed
@@ -43,20 +43,21 @@ func WolfiBaseImagesOperations(changedFiles []string, tag string, packagesChange
 	ops := operations.NewNamedSet("Base image builds")
 	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
 
-	var updatedBaseImages []string
+	var buildStepKeys []string
 	for _, c := range changedFiles {
 		match := baseImageRegex.FindStringSubmatch(c)
 		if len(match) == 2 {
-			ops.Append(buildWolfiBaseImage(match[1], tag, packagesChanged))
-			updatedBaseImages = append(updatedBaseImages, match[1])
+			buildFunc, key := buildWolfiBaseImage(match[1], tag, packagesChanged)
+			ops.Append(buildFunc)
+			buildStepKeys = append(buildStepKeys, key)
 		} else {
 			logger.Fatal(fmt.Sprintf("Unable to extract base image name from '%s', matches were %+v\n", c, match))
 		}
 	}
 
-	ops.Append(allBaseImagesBuilt(updatedBaseImages))
+	ops.Append(allBaseImagesBuilt(buildStepKeys))
 
-	return ops, len(updatedBaseImages)
+	return ops, len(buildStepKeys)
 }
 
 // WolfiImagesOperations builds the specified docker images, or all images if none are provided
@@ -84,8 +85,7 @@ func WolfiImagesOperations(buildImages []string, version string, tag string, bas
 // (buildPackage[1], buildPackage[2], ...) <-- buildRepoIndex <-- (buildWolfi[1], buildWolfi[2], ...)
 
 func buildPackage(target string) (func(*bk.Pipeline), string) {
-	// TODO: Can this be sanitised?
-	stepKey := fmt.Sprintf("package-dependency-%s", target)
+	stepKey := sanitizeStepKey(fmt.Sprintf("package-dependency-%s", target))
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(fmt.Sprintf(":package: Package dependency '%s'", target),
@@ -110,13 +110,16 @@ func buildRepoIndex(branch string, packageKeys []string) func(*bk.Pipeline) {
 	}
 }
 
-func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) func(*bk.Pipeline) {
+func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func(*bk.Pipeline), string) {
+	stepKey := sanitizeStepKey(fmt.Sprintf("build-base-image-%s", target))
+
 	return func(pipeline *bk.Pipeline) {
 
 		opts := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
+			bk.Key(stepKey),
 		}
 		// If packages have changed, wait for repo to be re-indexed as base images may depend on new packages
 		if dependOnPackages {
@@ -127,7 +130,7 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) func(
 			fmt.Sprintf(":octopus: Build Wolfi base image '%s'", target),
 			opts...,
 		)
-	}
+	}, stepKey
 }
 
 // No-op to ensure all base images are updated before building full images
