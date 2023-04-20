@@ -133,7 +133,8 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) func(
 // No-op to ensure all base images are updated before building full images
 func allBaseImagesBuilt(baseImageKeys []string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":octopus: All base images built"),
+		pipeline.AddStep(":octopus: All base images built",
+			bk.Cmd("echo 'All base images built'"),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
 			// Depend on all previous package building steps
