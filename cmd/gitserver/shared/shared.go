@@ -34,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
@@ -393,7 +394,7 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", nil
 	}
 
-	appAuther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
+	appAuther, err := ghauth.NewGitHubAppAuthenticator(appID, privateKey)
 	if err != nil {
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}

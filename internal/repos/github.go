@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -154,7 +155,7 @@ func newGitHubSource(
 	var auther auth.Authenticator
 	if c.IsGitHubAppInstallation() {
 		// TODO: Fetch GitHub App details
-		auther = github.NewGitHubAppInstallationAuthenticator(logger, c.GitHubAppDetails.InstallationID, "", nil)
+		auther = ghauth.NewGitHubAppInstallationAuthenticator(c.GitHubAppDetails.InstallationID, "", nil)
 	} else {
 		auther = &auth.OAuthBearerToken{Token: c.Token}
 	}
@@ -213,8 +214,8 @@ func (s *GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
 	switch a.(type) {
 	case *auth.OAuthBearerToken,
 		*auth.OAuthBearerTokenWithSSH,
-		*github.GitHubAppAuthenticator,
-		*github.GitHubAppInstallationAuthenticator:
+		*ghauth.GitHubAppAuthenticator,
+		*ghauth.GitHubAppInstallationAuthenticator:
 		break
 
 	default:

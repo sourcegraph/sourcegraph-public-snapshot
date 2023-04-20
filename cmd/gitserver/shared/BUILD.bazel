@@ -25,6 +25,7 @@ go_library(
         "//internal/extsvc",
         "//internal/extsvc/crates",
         "//internal/extsvc/github",
+        "//internal/extsvc/github/auth",
         "//internal/extsvc/gomodproxy",
         "//internal/extsvc/npm",
         "//internal/extsvc/pypi",

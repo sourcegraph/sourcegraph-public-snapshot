@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "auth",
+    srcs = ["authenticators.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/extsvc/auth",
+        "//internal/httpcli",
+        "//lib/errors",
+        "@com_github_golang_jwt_jwt_v4//:jwt",
+    ],
+)
+
+go_test(
+    name = "auth_test",
+    srcs = ["authenticators_test.go"],
+    embed = [":auth"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,4 +1,4 @@
-package github
+package auth
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -70,7 +69,6 @@ func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 	installationID := 1
 	installationToken := "installation-token"
 	authenticator := NewGitHubAppInstallationAuthenticator(
-		logtest.NoOp(t),
 		installationID,
 		installationToken,
 		nil,
@@ -89,7 +87,6 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 	t.Run("with appAuthenticator", func(t *testing.T) {
 		appAuthenticator := &mockAuthenticator{}
 		installationAuthenticator := NewGitHubAppInstallationAuthenticator(
-			logtest.NoOp(t),
 			1,
 			"installation-token",
 			appAuthenticator,
@@ -105,7 +102,6 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 
 	t.Run("without appAuthenticator", func(t *testing.T) {
 		installationAuthenticator := NewGitHubAppInstallationAuthenticator(
-			logtest.NoOp(t),
 			1,
 			"installation-token",
 			nil,

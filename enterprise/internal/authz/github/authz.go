@@ -5,12 +5,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/sourcegraph/log"
 	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -105,7 +104,6 @@ func NewAuthzProviders(
 func newAuthzProvider(
 	c *ExternalConnection,
 ) (*Provider, error) {
-	logger := log.Scoped("GitHub Authz Provider", "")
 	if c.Authorization == nil {
 		return nil, nil
 	}
@@ -126,7 +124,7 @@ func newAuthzProvider(
 
 	var auther auth.Authenticator
 	if c.IsGitHubAppInstallation() {
-		auther = github.NewGitHubAppInstallationAuthenticator(logger, c.GitHubAppDetails.InstallationID, "", nil)
+		auther = ghauth.NewGitHubAppInstallationAuthenticator(c.GitHubAppDetails.InstallationID, "", nil)
 	} else {
 		auther = &auth.OAuthBearerToken{Token: c.Token}
 	}
