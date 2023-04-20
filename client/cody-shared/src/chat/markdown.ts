@@ -12,5 +12,5 @@ export function renderMarkdown(markdown: string): string {
     registerHighlightContributions()
 
     // Add Cody-specific Markdown rendering if needed.
-    return renderMarkdownCommon(markdown)
+    return renderMarkdownCommon(markdown, { breaks: true })
 }

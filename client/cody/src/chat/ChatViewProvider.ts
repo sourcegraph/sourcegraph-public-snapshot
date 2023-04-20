@@ -5,7 +5,7 @@ import * as vscode from 'vscode'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
+import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
@@ -18,15 +18,16 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { View } from '../../webviews/NavBar'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { updateConfiguration } from '../configuration'
 import { logEvent } from '../event-logger'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
-import { ConfigurationSubsetForWebview, ExtensionMessage, WebviewMessage } from './protocol'
+import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, WebviewMessage } from './protocol'
 
-async function isValidLogin(
+export async function isValidLogin(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
 ): Promise<boolean> {
     const client = new SourcegraphGraphQLAPIClient(config)
@@ -86,10 +87,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
-                this.sendTranscript()
-                this.sendChatHistory()
                 this.publishContextStatus()
                 this.publishConfig()
+                this.sendTranscript()
+                this.sendChatHistory()
                 break
             case 'reset':
                 this.onResetChat()
@@ -107,25 +108,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     accessToken: message.accessToken,
                     customHeaders: this.config.customHeaders,
                 })
+                // activate when user has valid login
+                await vscode.commands.executeCommand('setContext', 'cody.activated', isValid)
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
-                    logEvent(
-                        'CodyVSCodeExtension:login:clicked',
-                        { serverEndpoint: this.config.serverEndpoint },
-                        { serverEndpoint: this.config.serverEndpoint }
-                    )
+                    this.sendEvent('auth', 'login')
                 }
                 void this.webview?.postMessage({ type: 'login', isValid })
                 break
             }
+            case 'event':
+                this.sendEvent(message.event, message.value)
+                break
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-                logEvent(
-                    'CodyVSCodeExtension:codyDeleteAccessToken:clicked',
-                    { serverEndpoint: this.config.serverEndpoint },
-                    { serverEndpoint: this.config.serverEndpoint }
-                )
+                this.sendEvent('token', 'Delete')
                 break
             case 'removeHistory':
                 await this.localStorage.removeChatHistory()
@@ -250,11 +248,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
 
-        logEvent(
-            `CodyVSCodeExtension:recipe:${recipe.getID()}:executed`,
-            { serverEndpoint: this.config.serverEndpoint },
-            { serverEndpoint: this.config.serverEndpoint }
-        )
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
     }
 
     private showTab(tab: string): void {
@@ -283,6 +277,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             await this.localStorage.setChatHistory(userHistory)
         }
     }
+
+    /**
+     * Save Login state to webview
+     */
+    public async sendLogin(isValid: boolean): Promise<void> {
+        await vscode.commands.executeCommand('setContext', 'cody.activated', isValid)
+        void this.webview?.postMessage({ type: 'login', isValid })
+    }
+
     /**
      * Sends chat history to webview
      */
@@ -321,15 +324,56 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Publish the config to the webview.
      */
     private publishConfig(): void {
-        const send = (): void => {
+        const send = async (): Promise<void> => {
+            // check if new configuration change is valid or not
+            // log user out if config is invalid
+            const isAuthed = await isValidLogin({
+                serverEndpoint: this.config.serverEndpoint,
+                accessToken: this.config.accessToken,
+                customHeaders: this.config.customHeaders,
+            })
             const configForWebview: ConfigurationSubsetForWebview = {
                 debug: this.config.debug,
-                hasAccessToken: this.config.accessToken !== null && this.config.accessToken !== '',
+                serverEndpoint: this.config.serverEndpoint,
+                hasAccessToken: isAuthed,
             }
+            void vscode.commands.executeCommand('setContext', 'cody.activated', isAuthed)
             void this.webview?.postMessage({ type: 'config', config: configForWebview })
         }
+
         this.disposables.push(this.configurationChangeEvent.event(() => send()))
-        send()
+        send().catch(error => console.error(error))
+    }
+
+    public sendEvent(event: string, value: string): void {
+        const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href
+        switch (event) {
+            case 'feedback':
+                // Only include context for dot com users with connected codebase
+                logEvent(
+                    `CodyVSCodeExtension:codyFeedback:${value}`,
+                    null,
+                    !isPrivateInstance && this.config.codebase ? this.transcript.toChat() : null
+                )
+                break
+            case 'token':
+                logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`)
+                break
+            case 'auth':
+                logEvent(`CodyVSCodeExtension:${value}:clicked`)
+                break
+        }
+    }
+
+    /**
+     * Set webview view
+     */
+    public setWebviewView(view: View): void {
+        void vscode.commands.executeCommand('cody.chat.focus')
+        void this.webview?.postMessage({
+            type: 'view',
+            messages: view,
+        })
     }
 
     /**

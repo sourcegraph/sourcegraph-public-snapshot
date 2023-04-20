@@ -15,7 +15,7 @@ import (
 
 type readFileFn func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error)
 type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
-type getQueryEmbeddingFn func(query string) ([]float32, error)
+type getQueryEmbeddingFn func(ctx context.Context, query string) ([]float32, error)
 
 func searchRepoEmbeddingIndex(
 	ctx context.Context,
@@ -30,7 +30,7 @@ func searchRepoEmbeddingIndex(
 		return nil, errors.Wrap(err, "getting repo embedding index")
 	}
 
-	embeddedQuery, err := getQueryEmbedding(params.Query)
+	embeddedQuery, err := getQueryEmbedding(ctx, params.Query)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting query embedding")
 	}
@@ -66,27 +66,53 @@ func searchEmbeddingIndex(
 	opts embeddings.SearchOptions,
 ) []embeddings.EmbeddingSearchResult {
 	numWorkers := runtime.GOMAXPROCS(0)
-	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT}, opts)
+	results := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT}, opts)
 
-	// Hydrate content
-	for idx, row := range rows {
-		fileContent, err := readFile(ctx, repoName, revision, row.FileName)
+	return filterAndHydrateContent(
+		ctx,
+		logger,
+		repoName,
+		revision,
+		readFile,
+		results,
+	)
+}
+
+// filterAndHydrateContent will mutate unfiltered to populate the Content
+// field. If we fail to read a file (eg permission issues) we will remove the
+// result. As such the returned slice should be used.
+func filterAndHydrateContent(
+	ctx context.Context,
+	logger log.Logger,
+	repoName api.RepoName,
+	revision api.CommitID,
+	readFile readFileFn,
+	unfiltered []embeddings.EmbeddingSearchResult,
+) []embeddings.EmbeddingSearchResult {
+	filtered := unfiltered[:0]
+
+	for idx, result := range unfiltered {
+		fileContent, err := readFile(ctx, repoName, revision, result.FileName)
 		if err != nil {
 			if !os.IsNotExist(err) {
-				logger.Error("error reading file", log.String("repoName", string(repoName)), log.String("revision", string(revision)), log.String("fileName", row.FileName), log.Error(err))
+				logger.Error("error reading file", log.String("repoName", string(repoName)), log.String("revision", string(revision)), log.String("fileName", result.FileName), log.Error(err))
 			}
+			// scrub row just in case we leak it out
+			unfiltered[idx] = embeddings.EmbeddingSearchResult{}
 			continue
 		}
 		lines := strings.Split(string(fileContent), "\n")
 
 		// Sanity check: check that startLine and endLine are within 0 and len(lines).
-		startLine := max(0, min(len(lines), row.StartLine))
-		endLine := max(0, min(len(lines), row.EndLine))
+		result.StartLine = max(0, min(len(lines), result.StartLine))
+		result.EndLine = max(0, min(len(lines), result.EndLine))
 
-		rows[idx].Content = strings.Join(lines[startLine:endLine], "\n")
+		result.Content = strings.Join(lines[result.StartLine:result.EndLine], "\n")
+
+		filtered = append(filtered, result)
 	}
 
-	return rows
+	return filtered
 }
 
 func min(a, b int) int {

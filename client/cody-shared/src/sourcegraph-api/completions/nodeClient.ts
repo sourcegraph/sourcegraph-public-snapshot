@@ -2,6 +2,7 @@ import http from 'http'
 import https from 'https'
 
 import { isError } from '../../utils'
+import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
@@ -79,22 +80,55 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 rejectUnauthorized: !this.config.debug,
             },
             (res: http.IncomingMessage) => {
-                let buffer = ''
+                if (res.statusCode === undefined) {
+                    throw new Error('no status code present')
+                }
+                // For failed requests, we just want to read the entire body and
+                // ultimately return it to the error callback.
+                if (res.statusCode >= 400) {
+                    // Bytes which have not been decoded as UTF-8 text
+                    let bufferBin = Buffer.of()
+                    // Text which has not been decoded as a server-sent event (SSE)
+                    let errorMessage = ''
+                    res.on('data', chunk => {
+                        if (!(chunk instanceof Buffer)) {
+                            throw new TypeError('expected chunk to be a Buffer')
+                        }
+                        // Messages are expected to be UTF-8, but a chunk can terminate
+                        // in the middle of a character
+                        const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
+                        errorMessage += str
+                        bufferBin = buf
+                    })
+
+                    res.on('error', e => cb.onError(e.message))
+                    res.on('end', () => cb.onError(errorMessage))
+                    return
+                }
+
+                // Bytes which have not been decoded as UTF-8 text
+                let bufferBin = Buffer.of()
+                // Text which has not been decoded as a server-sent event (SSE)
+                let bufferText = ''
 
                 res.on('data', chunk => {
                     if (!(chunk instanceof Buffer)) {
                         throw new TypeError('expected chunk to be a Buffer')
                     }
-                    buffer += chunk.toString()
+                    // text/event-stream messages are always UTF-8, but a chunk
+                    // may terminate in the middle of a character
+                    const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
+                    bufferText += str
+                    bufferBin = buf
 
-                    const parseResult = parseEvents(buffer)
+                    const parseResult = parseEvents(bufferText)
                     if (isError(parseResult)) {
                         console.error(parseResult)
                         return
                     }
 
                     this.sendEvents(parseResult.events, cb)
-                    buffer = parseResult.remainingBuffer
+                    bufferText = parseResult.remainingBuffer
                 })
 
                 res.on('error', e => cb.onError(e.message))

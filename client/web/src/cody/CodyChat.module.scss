@@ -1,16 +1,25 @@
 .container {
     font-size: 0.9rem;
-    flex-grow: 1;
+    flex: 1;
+    height: auto !important;
+    min-height: 0.1rem;
 }
 
 .transcript-item {
-    background: linear-gradient(var(--input-bg), var(--input-bg)) padding-box,
-        linear-gradient(130deg, #00cbec, #a112ff) border-box;
+    background: linear-gradient(var(--body-bg), var(--body-bg)) padding-box,
+        linear-gradient(268deg, #00cbec, #a112ff) border-box;
     border-color: transparent;
+    border-top-width: 1px;
+    border-top-style: solid;
+    border-bottom-style: none !important; // Override the Transcript...last-child row
+}
+
+.transcript-action > ol {
+    padding: 0;
 }
 
 .human-transcript-item {
-    background-color: var(--input-bg);
+    background: var(--input-bg);
     border-color: var(--border-color-2);
 }
 
@@ -26,7 +35,7 @@
     border-bottom: solid 1px var(--border-color-2);
     border-radius: 0 !important;
     padding: 0.625rem !important;
-    background: var(--body-bg);
+    background: var(--subtle-bg);
 }
 
 .transcript-item code {
@@ -35,7 +44,7 @@
 
 .transcript-item ul,
 .transcript-item ol {
-    padding-left: 1rem;
+    padding-left: 2rem;
 }
 
 .main-wrapper {
@@ -111,7 +120,8 @@
 
 .submit-button {
     right: 0.6rem !important;
-    bottom: 0.1rem !important;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    bottom: 1px !important;
     color: var(--body-color) !important;
 }
 

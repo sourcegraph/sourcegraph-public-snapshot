@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	gha "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -19,6 +20,7 @@ type EnterpriseDB interface {
 	Perms() PermsStore
 	SubRepoPerms() SubRepoPermsStore
 	Codeowners() CodeownersStore
+	GithubApps() gha.GithubAppsStore
 }
 
 func NewEnterpriseDB(db database.DB) EnterpriseDB {
@@ -50,6 +52,10 @@ func (edb *enterpriseDB) SubRepoPerms() SubRepoPermsStore {
 
 func (edb *enterpriseDB) Codeowners() CodeownersStore {
 	return CodeownersWith(basestore.NewWithHandle(edb.Handle()))
+}
+
+func (edb *enterpriseDB) GithubApps() gha.GithubAppsStore {
+	return gha.GithubAppsWith(basestore.NewWithHandle(edb.Handle()))
 }
 
 type InsightsDB interface {

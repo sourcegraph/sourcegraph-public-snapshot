@@ -83,7 +83,7 @@ export class SourcegraphGraphQLAPIClient {
             name: repoName,
         }).then(response =>
             extractDataOrError(response, data =>
-                data.repository ? data.repository.id : new Error(`repository ${repoName} not found`)
+                data.repository ? data.repository.id : new RepoNotFoundError(`repository ${repoName} not found`)
             )
         )
     }
@@ -179,3 +179,6 @@ function verifyResponseCode(response: Response): Response {
     }
     return response
 }
+
+class RepoNotFoundError extends Error {}
+export const isRepoNotFoundError = (value: unknown): value is RepoNotFoundError => value instanceof RepoNotFoundError

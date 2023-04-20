@@ -231,7 +231,7 @@ func TestUser_LatestSettings(t *testing.T) {
 
 func TestUser_ViewerCanAdminister(t *testing.T) {
 	db := database.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+	t.Run("settings edit only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
 		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -256,13 +256,13 @@ func TestUser_ViewerCanAdminister(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				ok, _ := NewUserResolver(test.ctx, db, &types.User{ID: 1}).ViewerCanAdminister()
+				ok, _ := NewUserResolver(test.ctx, db, &types.User{ID: 1}).viewerCanAdministerSettings()
 				assert.False(t, ok, "ViewerCanAdminister")
 			})
 		}
 	})
 
-	t.Run("allowed by same user or site admin not on Sourcegraph.com", func(t *testing.T) {
+	t.Run("allowed by same user or site admin", func(t *testing.T) {
 		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 

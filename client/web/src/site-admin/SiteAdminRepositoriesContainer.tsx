@@ -289,10 +289,10 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
             },
             {
                 value: data.repositoryStats.notCloned,
-                description: 'Not cloned',
+                description: 'Queued',
                 color: 'var(--body-color)',
                 position: 'right',
-                tooltip: 'The number of repositories that have not been cloned yet.',
+                tooltip: 'The number of repositories that are queued to be cloned.',
                 onClick: () =>
                     setFilterValues(values => {
                         const newValues = new Map(values)

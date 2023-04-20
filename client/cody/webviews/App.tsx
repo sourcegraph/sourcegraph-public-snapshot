@@ -15,10 +15,10 @@ import { NavBar, View } from './NavBar'
 import { Recipes } from './Recipes'
 import { Settings } from './Settings'
 import { UserHistory } from './UserHistory'
-import { vscodeAPI } from './utils/VSCodeApi'
+import type { VSCodeWrapper } from './utils/VSCodeApi'
 
-export function App(): React.ReactElement {
-    const [config, setConfig] = useState<Pick<Configuration, 'debug'> | null>(null)
+export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
+    const [config, setConfig] = useState<Pick<Configuration, 'debug' | 'serverEndpoint'> | null>(null)
     const [debugLog, setDebugLog] = useState(['No data yet'])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -66,25 +66,31 @@ export function App(): React.ReactElement {
                 case 'contextStatus':
                     setContextStatus(message.contextStatus)
                     break
+                case 'view':
+                    setView(message.messages)
+                    break
             }
         })
 
         vscodeAPI.postMessage({ command: 'initialized' })
         // The dependencies array is empty to execute the callback only on component mount.
-    }, [debugLog])
+    }, [debugLog, vscodeAPI])
 
-    const onLogin = useCallback((token: string, endpoint: string) => {
-        if (!token || !endpoint) {
-            return
-        }
-        setIsValidLogin(undefined)
-        vscodeAPI.postMessage({ command: 'settings', serverEndpoint: endpoint, accessToken: token })
-    }, [])
+    const onLogin = useCallback(
+        (token: string, endpoint: string) => {
+            if (!token || !endpoint) {
+                return
+            }
+            setIsValidLogin(undefined)
+            vscodeAPI.postMessage({ command: 'settings', serverEndpoint: endpoint, accessToken: token })
+        },
+        [vscodeAPI]
+    )
 
     const onLogout = useCallback(() => {
         vscodeAPI.postMessage({ command: 'removeToken' })
         setView('login')
-    }, [setView])
+    }, [vscodeAPI])
 
     const onResetClick = useCallback(() => {
         setView('chat')
@@ -93,7 +99,7 @@ export function App(): React.ReactElement {
         setMessageInProgress(null)
         setTranscript([])
         vscodeAPI.postMessage({ command: 'reset' })
-    }, [setView, setMessageInProgress, setTranscript, setDebugLog])
+    }, [vscodeAPI])
 
     if (!view) {
         return <LoadingPage />
@@ -101,19 +107,32 @@ export function App(): React.ReactElement {
 
     return (
         <div className="outer-container">
-            <Header showResetButton={view && view !== 'login'} onResetClick={onResetClick} />
-            {view === 'login' && <Login onLogin={onLogin} isValidLogin={isValidLogin} />}
-            {view && view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
+            <Header />
+            {view === 'login' && (
+                <Login onLogin={onLogin} isValidLogin={isValidLogin} serverEndpoint={config?.serverEndpoint} />
+            )}
+            {view && view !== 'login' && (
+                <NavBar
+                    view={view}
+                    setView={setView}
+                    devMode={Boolean(config?.debug)}
+                    onResetClick={onResetClick}
+                    showResetButton={transcript.length > 0}
+                />
+            )}
             {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}
             {view === 'history' && (
                 <UserHistory
                     userHistory={userHistory}
                     setUserHistory={setUserHistory}
                     setInputHistory={setInputHistory}
+                    vscodeAPI={vscodeAPI}
                 />
             )}
-            {view === 'recipes' && <Recipes />}
-            {view === 'settings' && <Settings setView={setView} onLogout={onLogout} />}
+            {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
+            {view === 'settings' && (
+                <Settings setView={setView} onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />
+            )}
             {view === 'chat' && (
                 <Chat
                     messageInProgress={messageInProgress}
@@ -123,6 +142,7 @@ export function App(): React.ReactElement {
                     setFormInput={setFormInput}
                     inputHistory={inputHistory}
                     setInputHistory={setInputHistory}
+                    vscodeAPI={vscodeAPI}
                 />
             )}
         </div>

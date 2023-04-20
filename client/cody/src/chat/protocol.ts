@@ -2,6 +2,8 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
+import { View } from '../../webviews/NavBar'
+
 /**
  * A message sent from the webview to the extension host.
  */
@@ -10,6 +12,7 @@ export type WebviewMessage =
           command: 'initialized'
       }
     | { command: 'reset' }
+    | { command: 'event'; event: string; value: string }
     | { command: 'submit'; text: string }
     | { command: 'executeRecipe'; recipe: string }
     | { command: 'settings'; serverEndpoint: string; accessToken: string }
@@ -29,10 +32,13 @@ export type ExtensionMessage =
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean }
     | { type: 'debug'; message: string }
     | { type: 'contextStatus'; contextStatus: ChatContextStatus }
+    | { type: 'view'; messages: View }
 
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debug'> {
+export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debug' | 'serverEndpoint'> {
     hasAccessToken: boolean
 }
+
+export const DOTCOM_URL = new URL('https://sourcegraph.com')

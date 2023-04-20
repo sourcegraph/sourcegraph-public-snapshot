@@ -6,9 +6,7 @@ import { getNormalizedLanguageName } from './helpers'
 import { Recipe, RecipeContext } from './recipe'
 
 export class FindCodeSmells implements Recipe {
-    public getID(): string {
-        return 'find-code-smells'
-    }
+    public id = 'find-code-smells'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()

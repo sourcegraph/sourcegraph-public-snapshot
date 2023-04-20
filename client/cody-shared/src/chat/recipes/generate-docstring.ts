@@ -11,9 +11,7 @@ import {
 import { Recipe, RecipeContext } from './recipe'
 
 export class GenerateDocstring implements Recipe {
-    public getID(): string {
-        return 'generate-docstring'
-    }
+    public id = 'generate-docstring'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()

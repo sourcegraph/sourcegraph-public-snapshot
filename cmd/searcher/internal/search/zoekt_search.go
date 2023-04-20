@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
@@ -69,7 +70,7 @@ func buildQuery(args *search.TextPatternInfo, branchRepos []zoektquery.BranchRep
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, client zoekt.Streamer, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, repo api.RepoName, sender matchSender) (err error) {
+func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, repo api.RepoName, sender matchSender) (err error) {
 	if len(branchRepos) == 0 {
 		return nil
 	}
@@ -82,7 +83,7 @@ func zoektSearch(ctx context.Context, client zoekt.Streamer, args *search.TextPa
 	searchOpts := (&zoektutil.Options{
 		NumRepos:       numRepos,
 		FileMatchLimit: args.FileMatchLimit,
-	}).ToSearch(ctx)
+	}).ToSearch(ctx, logger)
 	searchOpts.Whole = true
 
 	filePathPatterns, err := handleFilePathPatterns(args)

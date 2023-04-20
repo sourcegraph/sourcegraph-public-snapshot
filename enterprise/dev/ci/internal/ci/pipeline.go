@@ -98,8 +98,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case runtype.BazelExpBranch:
-		// false means not optional, so this build will fail if Bazel build doesn't pass.
-		ops.Merge(BazelOperations(false))
+		ops.Merge(BazelOperations())
 	case runtype.WolfiExpBranch:
 		if c.Diff.Has(changed.WolfiPackages) {
 			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
@@ -136,12 +135,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 				triggerAsync(buildOptions)))
-
-			// Do not create client PR preview if Go or GraphQL is changed to avoid confusing
-			// preview behavior, because only Client code is used to deploy application preview.
-			if !c.Diff.Has(changed.Go) && !c.Diff.Has(changed.GraphQL) {
-				ops.Append(prPreview())
-			}
 		}
 
 	case runtype.ReleaseNightly:

@@ -1,0 +1,34 @@
+/**
+* CSS styles for storybooks to define variables and otherwise resemble the VS Code.
+*/
+
+.container {
+    max-width: 600px;
+    margin: 2rem auto;
+    border: solid 1px #ffffff33;
+    font-size: var(--vscode-editor-font-size);
+    color: var(--vscode-editor-foreground);
+}
+
+.container a {
+    color: var(--vscode-link-color);
+}
+
+/**
+ * Define any --vscode-* CSS variables needed. These differ per theme and don't need to be
+ * an exact match for any particular VS Code theme. They just need to be good enough.
+ */
+
+:root {
+    --vscode-editor-foreground: var(--foreground);
+    --vscode-editor-background: #151c28;
+    --vscode-inputValidation-errorBorder: #ff0000;
+    --vscode-inputValidation-errorBackground: #ff000033;
+    --vscode-editor-font-size: 13px;
+    --vscode-link-color: #7777ff;
+    --vscode-tab-inactiveBackground: #00000033;
+    --vscode-tab-inactiveForeground: #ffffff77;
+    --vscode-tab-activeForeground: #ffffff;
+    --vscode-sideBarSectionHeader-border: #ffffff33;
+    --vscode-sideBarTitle-foreground: #ffffffcc;
+}

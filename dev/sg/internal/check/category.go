@@ -15,7 +15,6 @@ type Check[Args any] struct {
 	Description string
 	// LegacyAnnotations disables the automatic creation of annotations in the case of legacy
 	// scripts that are handling them on their own.
-	// Ex: ./dev/check/go-lint.sh
 	LegacyAnnotations bool
 
 	// Enabled can be implemented to indicate when this check should be skipped.

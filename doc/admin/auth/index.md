@@ -15,8 +15,11 @@ Sourcegraph supports the following ways for users to sign in:
 - [Username normalization](#username-normalization)
 - [Troubleshooting](#troubleshooting)
 
-The authentication provider is configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
+The authentication providers are configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
 
+## Login form configuration
+
+To configure the presentation of the login form, see the [login form configuration page](./login_form.md).
 ## Recommendations
 
 If you are unsure which auth provider is right for you, we recommend applying the following rules in

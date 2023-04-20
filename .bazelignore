@@ -10,6 +10,7 @@ client/cody/node_modules
 client/cody-shared/node_modules
 client/cody-slack/node_modules
 client/cody-ui/node_modules
+client/cody-cli/node_modules
 client/cody-web/node_modules
 client/common/node_modules
 client/eslint-plugin-wildcard/node_modules
