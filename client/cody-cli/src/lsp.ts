@@ -15,16 +15,26 @@ import {
     Connection,
     DidChangeConfigurationParams,
     DidChangeWatchedFilesParams,
+    LogMessageParams,
+    MessageType,
+    ExecuteCommandParams,
+    WorkDoneProgress,
+    WorkDoneProgressBegin,
 } from 'vscode-languageserver/node'
 
+import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 
+import { streamCompletions } from './completions'
 import { DEFAULTS } from './config'
 import { createCodebaseContext } from './context'
+import { interactionFromMessage } from './interactions'
+import { getPreamble } from './preamble'
 
 export async function startLSP() {
     const server = new CodyLanguageServer()
@@ -75,6 +85,7 @@ class CodyLanguageServer {
         this.connection.onCompletion(this.onCompletion.bind(this))
         this.connection.onDidChangeWatchedFiles(this.onDidChangeWatchedFiles.bind(this))
         this.connection.onCompletionResolve(this.onCompletionResolve.bind(this))
+        this.connection.onExecuteCommand(this.onExecuteCommand.bind(this))
 
         this.documents.onDidClose(e => this.documentSettings.delete(e.document.uri))
         this.documents.onDidChangeContent(change => this.validateTextDocument(change.document))
@@ -85,7 +96,7 @@ class CodyLanguageServer {
         this.connection.listen()
     }
 
-    private onInitialize() {
+    private onInitialize(params: InitializeParams): InitializeResult {
         const result: InitializeResult = {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
@@ -154,7 +165,8 @@ class CodyLanguageServer {
             customHeaders,
         })
 
-        console.error('hey man we did it!!')
+        const params: LogMessageParams = { type: MessageType.Info, message: 'Cody LSP initialized, my friend!' }
+        this.connection.sendNotification('window/logMessage', params)
     }
 
     private onDidChangeWatchedFiles(change: DidChangeWatchedFilesParams) {
@@ -164,15 +176,15 @@ class CodyLanguageServer {
 
     private async validateTextDocument(textDocument: TextDocument): Promise<void> {
         const diagnostics: Diagnostic[] = [
-            {
-                severity: DiagnosticSeverity.Warning,
-                range: {
-                    start: textDocument.positionAt(0),
-                    end: textDocument.positionAt(10),
-                },
-                message: 'Cody was here',
-                source: 'codylsp',
-            },
+            // {
+            //     severity: DiagnosticSeverity.Warning,
+            //     range: {
+            //         start: textDocument.positionAt(0),
+            //         end: textDocument.positionAt(10),
+            //     },
+            //     message: 'Cody was here',
+            //     source: 'codylsp',
+            // },
         ]
 
         await this.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
@@ -205,5 +217,81 @@ class CodyLanguageServer {
             item.documentation = 'JavaScript documentation'
         }
         return item
+    }
+
+    private async onExecuteCommand(params: ExecuteCommandParams): Promise<any> {
+        if (
+            this.intentDetector === undefined ||
+            this.codebaseContext === undefined ||
+            this.completionsClient === undefined
+        ) {
+            console.error('cannot execute command. not initialized', params.command)
+            return
+        }
+
+        let args: any[] = []
+        if (params.arguments !== undefined) {
+            args = params.arguments
+        }
+        let uri: string = args[0] as string
+        let startLine: number | undefined = args[1] as number
+        let endLine: number | undefined = args[2] as number
+        let question: string = args[3] as string
+
+        const doc = this.documents.get(uri)
+        const snippet = doc?.getText({ start: { line: startLine, character: 0 }, end: { line: endLine, character: 0 } })
+        console.error('snippet', snippet)
+
+        const uuid = 'uuid-foobar'
+
+        let param: WorkDoneProgressBegin = {
+            kind: 'begin',
+            title: params.command,
+        }
+
+        this.connection.sendProgress(WorkDoneProgress.type, uuid, param)
+
+        const transcript = new Transcript()
+        const initialMessageText = `I have the following code snippet:\n\n\`\`\`typescript\n${snippet}\n\`\`\`\n\n${question}`
+        const initialMessage: Message = { speaker: 'human', text: initialMessageText }
+        const messages: { human: Message; assistant?: Message }[] = [{ human: initialMessage }]
+        for (const [index, message] of messages.entries()) {
+            const interaction = await interactionFromMessage(
+                message.human,
+                this.intentDetector,
+                // Fetch codebase context only for the last message
+                index === messages.length - 1 ? this.codebaseContext : null
+            )
+
+            transcript.addInteraction(interaction)
+
+            if (message.assistant?.text) {
+                transcript.addAssistantResponse(message.assistant?.text)
+            }
+        }
+
+        const finalPrompt = await transcript.toPrompt(getPreamble(this.globalSettings.sourcegraph.repos[0]))
+
+        let text = ''
+        const completionsClient = this.completionsClient
+        await new Promise<void>(resolve => {
+            streamCompletions(completionsClient, finalPrompt, {
+                onChange: chunk => {
+                    text = chunk
+                },
+                onComplete: () => {
+                    this.connection.sendProgress(WorkDoneProgress.type, uuid, { kind: 'end' })
+                    resolve()
+                },
+                onError: (err: string) => {
+                    text = err
+                    resolve()
+                },
+            })
+        })
+
+        return {
+            message: [text],
+        }
     }
 }

@@ -32,53 +32,53 @@ async function startCLI() {
 
     const options = program.opts()
 
-    const codebase: string = options.codebase || DEFAULTS.codebase
-    const endpoint: string = options.endpoint || DEFAULTS.serverEndpoint
-    const contextType: 'keyword' | 'embeddings' | 'none' | 'blended' = options.contextType || DEFAULTS.contextType
-    const accessToken: string | undefined = ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN
-    if (accessToken === undefined || accessToken === '') {
-        console.error(
-            `No access token found. Set SRC_ACCESS_TOKEN to an access token created on the Sourcegraph instance.`
-        )
-        process.exit(1)
-    }
-
-    const sourcegraphClient = new SourcegraphGraphQLAPIClient({
-        serverEndpoint: endpoint,
-        accessToken: accessToken,
-        customHeaders: {},
-    })
-
-    let codebaseContext
-    try {
-        codebaseContext = await createCodebaseContext(sourcegraphClient, codebase, contextType)
-    } catch (error) {
-        let errorMessage = ''
-        if (isRepoNotFoundError(error)) {
-            errorMessage =
-                `Cody could not find the '${codebase}' repository on your Sourcegraph instance.\n` +
-                'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
-        } else {
-            errorMessage =
-                `Cody could not connect to your Sourcegraph instance: ${error}\n` +
-                'Make sure that cody.serverEndpoint is set to a running Sourcegraph instance and that an access token is configured.'
-        }
-        console.error(errorMessage)
-        process.exit(1)
-    }
-
-    const intentDetector = new SourcegraphIntentDetectorClient(sourcegraphClient)
-
-    const completionsClient = new SourcegraphNodeCompletionsClient({
-        serverEndpoint: endpoint,
-        accessToken: ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN,
-        debug: DEFAULTS.debug === 'development',
-        customHeaders: {},
-    })
-
     if (options.lsp) {
         await startLSP()
     } else {
+        const codebase: string = options.codebase || DEFAULTS.codebase
+        const endpoint: string = options.endpoint || DEFAULTS.serverEndpoint
+        const contextType: 'keyword' | 'embeddings' | 'none' | 'blended' = options.contextType || DEFAULTS.contextType
+        const accessToken: string | undefined = ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN
+        if (accessToken === undefined || accessToken === '') {
+            console.error(
+                `No access token found. Set SRC_ACCESS_TOKEN to an access token created on the Sourcegraph instance.`
+            )
+            process.exit(1)
+        }
+
+        const sourcegraphClient = new SourcegraphGraphQLAPIClient({
+            serverEndpoint: endpoint,
+            accessToken: accessToken,
+            customHeaders: {},
+        })
+
+        let codebaseContext
+        try {
+            codebaseContext = await createCodebaseContext(sourcegraphClient, codebase, contextType)
+        } catch (error) {
+            let errorMessage = ''
+            if (isRepoNotFoundError(error)) {
+                errorMessage =
+                    `Cody could not find the '${codebase}' repository on your Sourcegraph instance.\n` +
+                    'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
+            } else {
+                errorMessage =
+                    `Cody could not connect to your Sourcegraph instance: ${error}\n` +
+                    'Make sure that cody.serverEndpoint is set to a running Sourcegraph instance and that an access token is configured.'
+            }
+            console.error(errorMessage)
+            process.exit(1)
+        }
+
+        const intentDetector = new SourcegraphIntentDetectorClient(sourcegraphClient)
+
+        const completionsClient = new SourcegraphNodeCompletionsClient({
+            serverEndpoint: endpoint,
+            accessToken: ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN,
+            debug: DEFAULTS.debug === 'development',
+            customHeaders: {},
+        })
+
         await startREPL(codebase, options.prompt, intentDetector, codebaseContext, completionsClient)
     }
 }

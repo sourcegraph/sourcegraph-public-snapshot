@@ -6,7 +6,7 @@ import {
     CompletionCallbacks,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionParameters, 'messages'> = {
+export const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionParameters, 'messages'> = {
     temperature: 0.2,
     maxTokensToSample: SOLUTION_TOKEN_LENGTH,
     topK: -1,
