@@ -8,11 +8,8 @@ import { Chat, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
-import { useQuery } from '@sourcegraph/http-client'
-import { Button, ErrorAlert, Icon, LoadingSpinner, Text, TextArea, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, TextArea, Tooltip } from '@sourcegraph/wildcard'
 
-import { RepoEmbeddingExistsQueryResult, RepoEmbeddingExistsQueryVariables } from '../graphql-operations'
-import { REPO_EMBEDDING_EXISTS_QUERY } from '../repo/repoRevisionSidebar/cody/backend'
 import { useChatStoreState } from '../stores/codyChat'
 
 import styles from './CodyChat.module.scss'
@@ -24,7 +21,7 @@ interface CodyChatProps {
 }
 
 export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
-    const { reset, submitMessage, messageInProgress, transcript, repo } = useChatStoreState()
+    const { reset, submitMessage, messageInProgress, transcript, getChatContext } = useChatStoreState()
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
     const [formInput, setFormInput] = useState('')
@@ -58,30 +55,17 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
         }
     }, [transcript, shouldScrollToBottom, messageInProgress])
 
-    const {
-        data: embeddingExistsData,
-        loading: embeddingExistsLoading,
-        error: embeddingExistsError,
-    } = useQuery<RepoEmbeddingExistsQueryResult, RepoEmbeddingExistsQueryVariables>(REPO_EMBEDDING_EXISTS_QUERY, {
-        variables: { repoName: repo },
-    })
-
-    const shouldShowResetButton =
-        !embeddingExistsLoading && !embeddingExistsError && embeddingExistsData?.repository?.embeddingExists
-
     return (
         <div className={styles.mainWrapper}>
             <div className={styles.codySidebar} ref={codySidebarRef} onScroll={handleScroll}>
                 <div className={styles.codySidebarHeader}>
-                    {shouldShowResetButton && (
-                        <div>
-                            <Tooltip content="Start a new conversation">
-                                <Button variant="icon" aria-label="Start a new conversation" onClick={reset}>
-                                    <Icon aria-hidden={true} svgPath={mdiReload} />
-                                </Button>
-                            </Tooltip>
-                        </div>
-                    )}
+                    <div>
+                        <Tooltip content="Start a new conversation">
+                            <Button variant="icon" aria-label="Start a new conversation" onClick={reset}>
+                                <Icon aria-hidden={true} svgPath={mdiReload} />
+                            </Button>
+                        </Tooltip>
+                    </div>
                     <div>
                         <CodyLogo />
                         Ask Cody
@@ -92,35 +76,28 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                         </Button>
                     </div>
                 </div>
-                {embeddingExistsLoading ? (
-                    <LoadingSpinner className="m-3" />
-                ) : embeddingExistsError ? (
-                    <ErrorAlert error={embeddingExistsError} className="m-3" />
-                ) : !embeddingExistsData?.repository?.embeddingExists ? (
-                    <Text className="m-3">Repository embeddings are not available.</Text>
-                ) : (
-                    <Chat
-                        messageInProgress={messageInProgress}
-                        transcript={transcript}
-                        formInput={formInput}
-                        setFormInput={setFormInput}
-                        inputHistory={inputHistory}
-                        setInputHistory={setInputHistory}
-                        onSubmit={submitMessage}
-                        submitButtonComponent={SubmitButton}
-                        fileLinkComponent={FileLink}
-                        className={styles.container}
-                        afterTips={CODY_TERMS_MARKDOWN}
-                        transcriptItemClassName={styles.transcriptItem}
-                        humanTranscriptItemClassName={styles.humanTranscriptItem}
-                        transcriptItemParticipantClassName="text-muted"
-                        inputRowClassName={styles.inputRow}
-                        chatInputClassName={styles.chatInput}
-                        textAreaComponent={AutoResizableTextArea}
-                        codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
-                        transcriptActionClassName={styles.transcriptAction}
-                    />
-                )}
+                <Chat
+                    messageInProgress={messageInProgress}
+                    transcript={transcript}
+                    formInput={formInput}
+                    setFormInput={setFormInput}
+                    inputHistory={inputHistory}
+                    setInputHistory={setInputHistory}
+                    onSubmit={submitMessage}
+                    contextStatus={getChatContext()}
+                    submitButtonComponent={SubmitButton}
+                    fileLinkComponent={FileLink}
+                    className={styles.container}
+                    afterTips={CODY_TERMS_MARKDOWN}
+                    transcriptItemClassName={styles.transcriptItem}
+                    humanTranscriptItemClassName={styles.humanTranscriptItem}
+                    transcriptItemParticipantClassName="text-muted"
+                    inputRowClassName={styles.inputRow}
+                    chatInputClassName={styles.chatInput}
+                    textAreaComponent={AutoResizableTextArea}
+                    codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
+                    transcriptActionClassName={styles.transcriptAction}
+                />
             </div>
             {showScrollDownButton && <ScrollDownButton onClick={() => scrollToBottom('smooth')} />}
         </div>
