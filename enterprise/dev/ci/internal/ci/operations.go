@@ -275,8 +275,6 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("CHECK_BUNDLESIZE", "1"),
-			// To ensure the Bundlesize output can be diffed to the baseline on main
-			bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
 		}
 
 		if opts.CacheBundleSize {
@@ -326,7 +324,7 @@ func addCodyExtensionTests(pipeline *bk.Pipeline) {
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm --filter cody-ai run test:integration"),
-		bk.AutomaticRetry(1),
+		bk.Cmd("pnpm --filter cody-shared run test"),
 	)
 }
 
@@ -1209,14 +1207,4 @@ func exposeBuildMetadata(c Config) (operations.Operation, error) {
 			}),
 		)
 	}, nil
-}
-
-// Request render.com to create client preview app for current PR
-// Preview is deleted from render.com in GitHub Action when PR is closed
-func prPreview() operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":globe_with_meridians: Client PR preview",
-			bk.SoftFail(),
-			bk.Cmd("dev/ci/render-pr-preview.sh"))
-	}
 }

@@ -81,6 +81,7 @@ export interface StreamingSearchResultsListProps
     setQueryState?: (queryState: QueryState) => void
     buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
 
+    searchMode?: SearchMode
     setSearchMode?: (mode: SearchMode) => void
     submitSearch?: (parameters: SubmitSearchParameters) => void
     searchQueryFromURL?: string
@@ -93,6 +94,8 @@ export interface StreamingSearchResultsListProps
      * It's passed the index of the result in the list and the result type.
      */
     logSearchResultClicked?: (index: number, type: string) => void
+
+    enableRepositoryMetadata?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -117,11 +120,13 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     queryState,
     setQueryState,
     buildSearchURLQueryFromQueryState,
+    searchMode,
     setSearchMode,
     submitSearch,
     caseSensitive,
     searchQueryFromURL,
     logSearchResultClicked,
+    enableRepositoryMetadata,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -209,6 +214,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 result={result}
                                 onSelect={() => logSearchResultClicked?.(index, 'repo')}
                                 containerClassName={resultClassName}
+                                enableRepositoryMetadata={enableRepositoryMetadata}
                                 as="li"
                             />
                         )
@@ -242,6 +248,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             )
         },
         [
+            enableRepositoryMetadata,
             prefetchFileEnabled,
             prefetchFile,
             location,
@@ -297,6 +304,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 showSearchContext={searchContextsEnabled}
                                 showQueryExamples={showQueryExamplesOnNoResultsPage}
                                 setQueryState={setQueryState}
+                                searchMode={searchMode}
                                 setSearchMode={setSearchMode}
                                 submitSearch={submitSearch}
                                 caseSensitive={caseSensitive}

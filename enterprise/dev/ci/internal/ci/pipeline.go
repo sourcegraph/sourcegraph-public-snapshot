@@ -136,23 +136,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 				triggerAsync(buildOptions)))
-
-			// Do not create client PR preview if Go or GraphQL is changed to avoid confusing
-			// preview behavior, because only Client code is used to deploy application preview.
-			if !c.Diff.Has(changed.Go) && !c.Diff.Has(changed.GraphQL) {
-				ops.Append(prPreview())
-			}
-		}
-		if c.Diff.Has(changed.DockerImages) {
-			// Build and scan docker images
-			testBuilds := operations.NewNamedSet("Test builds")
-			scanBuilds := operations.NewNamedSet("Scan test builds")
-			for _, image := range images.SourcegraphDockerImages {
-				testBuilds.Append(buildCandidateDockerImage(image, c.Version, c.candidateImageTag(), false))
-				scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
-			}
-			ops.Merge(testBuilds)
-			ops.Merge(scanBuilds)
 		}
 
 	case runtype.ReleaseNightly:

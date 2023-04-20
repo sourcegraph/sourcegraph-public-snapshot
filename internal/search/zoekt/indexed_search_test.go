@@ -577,7 +577,7 @@ func TestZoektSearchOptions(t *testing.T) {
 				}()
 			}
 
-			got := tt.options.ToSearch(tt.context)
+			got := tt.options.ToSearch(tt.context, logtest.Scoped(t))
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Fatalf("search options mismatch (-want +got):\n%s", diff)
 			}

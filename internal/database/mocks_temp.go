@@ -62180,6 +62180,9 @@ type MockUserStore struct {
 	// CountFunc is an instance of a mock function object controlling the
 	// behavior of the method Count.
 	CountFunc *UserStoreCountFunc
+	// CountForSCIMFunc is an instance of a mock function object controlling
+	// the behavior of the method CountForSCIM.
+	CountForSCIMFunc *UserStoreCountForSCIMFunc
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
 	CreateFunc *UserStoreCreateFunc
@@ -62292,6 +62295,11 @@ func NewMockUserStore() *MockUserStore {
 			},
 		},
 		CountFunc: &UserStoreCountFunc{
+			defaultHook: func(context.Context, *UsersListOptions) (r0 int, r1 error) {
+				return
+			},
+		},
+		CountForSCIMFunc: &UserStoreCountForSCIMFunc{
 			defaultHook: func(context.Context, *UsersListOptions) (r0 int, r1 error) {
 				return
 			},
@@ -62478,6 +62486,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.Count")
 			},
 		},
+		CountForSCIMFunc: &UserStoreCountForSCIMFunc{
+			defaultHook: func(context.Context, *UsersListOptions) (int, error) {
+				panic("unexpected invocation of MockUserStore.CountForSCIM")
+			},
+		},
 		CreateFunc: &UserStoreCreateFunc{
 			defaultHook: func(context.Context, NewUser) (*types.User, error) {
 				panic("unexpected invocation of MockUserStore.Create")
@@ -62655,6 +62668,9 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		},
 		CountFunc: &UserStoreCountFunc{
 			defaultHook: i.Count,
+		},
+		CountForSCIMFunc: &UserStoreCountForSCIMFunc{
+			defaultHook: i.CountForSCIM,
 		},
 		CreateFunc: &UserStoreCreateFunc{
 			defaultHook: i.Create,
@@ -62974,6 +62990,114 @@ func (c UserStoreCountFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UserStoreCountForSCIMFunc describes the behavior when the CountForSCIM
+// method of the parent MockUserStore instance is invoked.
+type UserStoreCountForSCIMFunc struct {
+	defaultHook func(context.Context, *UsersListOptions) (int, error)
+	hooks       []func(context.Context, *UsersListOptions) (int, error)
+	history     []UserStoreCountForSCIMFuncCall
+	mutex       sync.Mutex
+}
+
+// CountForSCIM delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUserStore) CountForSCIM(v0 context.Context, v1 *UsersListOptions) (int, error) {
+	r0, r1 := m.CountForSCIMFunc.nextHook()(v0, v1)
+	m.CountForSCIMFunc.appendCall(UserStoreCountForSCIMFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountForSCIM method
+// of the parent MockUserStore instance is invoked and the hook queue is
+// empty.
+func (f *UserStoreCountForSCIMFunc) SetDefaultHook(hook func(context.Context, *UsersListOptions) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountForSCIM method of the parent MockUserStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *UserStoreCountForSCIMFunc) PushHook(hook func(context.Context, *UsersListOptions) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreCountForSCIMFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, *UsersListOptions) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreCountForSCIMFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, *UsersListOptions) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserStoreCountForSCIMFunc) nextHook() func(context.Context, *UsersListOptions) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreCountForSCIMFunc) appendCall(r0 UserStoreCountForSCIMFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreCountForSCIMFuncCall objects
+// describing the invocations of this function.
+func (f *UserStoreCountForSCIMFunc) History() []UserStoreCountForSCIMFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreCountForSCIMFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreCountForSCIMFuncCall is an object that describes an invocation
+// of method CountForSCIM on an instance of MockUserStore.
+type UserStoreCountForSCIMFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *UsersListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreCountForSCIMFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreCountForSCIMFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -2,9 +2,9 @@ import * as vscode from 'vscode'
 
 export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
-export async function getAccessToken(secretStorage: SecretStorage): Promise<string> {
+export async function getAccessToken(secretStorage: SecretStorage): Promise<string | null> {
     const token = await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)
-    return token ?? ''
+    return token ?? null
 }
 
 export interface SecretStorage {

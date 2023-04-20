@@ -2,6 +2,7 @@ import { FC, useEffect, useMemo } from 'react'
 
 import { useLocation } from 'react-router-dom'
 
+import { basename } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -26,7 +27,6 @@ import {
     RepositoryGitCommitsVariables,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
-import { basename } from '../../util/path'
 import { parseBrowserRepoURL } from '../../util/url'
 import { externalLinkFieldsFragment } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'

@@ -1,0 +1,23 @@
+{
+  "name": "@sourcegraph/cody-slack",
+  "private": true,
+  "displayName": "Sourcegraph Cody Slack",
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "description": "Your programming sidekick powered by AI and Sourcegraph's code search and intelligence.",
+  "scripts": {
+    "start": "ts-node-transpile-only ./src/app.ts",
+    "lint": "pnpm run lint:js",
+    "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
+    "build": "esbuild ./src/app.ts --bundle --outfile=dist/app.js --format=cjs --platform=node",
+    "build-ts": "tsc -b --emitDeclarationOnly",
+    "release": "pnpm run build && cd dist && git add . && git commit -m wip && git push heroku master"
+  },
+  "dependencies": {
+    "@slack/bolt": "^3.12.2",
+    "@slack/web-api": "^6.8.1",
+    "@sourcegraph/cody-shared": "workspace:*",
+    "@sourcegraph/common": "workspace:*",
+    "openai": "^3.2.1"
+  }
+}

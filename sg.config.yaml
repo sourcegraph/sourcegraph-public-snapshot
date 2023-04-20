@@ -384,6 +384,21 @@ commands:
       - enterprise/cmd/embeddings
       - enterprise/internal/embeddings
 
+  llm-proxy:
+    cmd: |
+      .bin/llm-proxy
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      go build -gcflags="$GCFLAGS" -o .bin/llm-proxy github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy
+    checkBinary: .bin/llm-proxy
+    watch:
+      - lib
+      - internal
+      - enterprise/cmd/llm-proxy
+
   searcher:
     cmd: .bin/searcher
     install: |
@@ -451,6 +466,15 @@ commands:
       ENTERPRISE: 1
       INTEGRATION_TESTS: true
       NODE_ENV: production
+
+  cody-slack:
+    description: Start Cody-Slack locally server locally
+    cmd: pnpm --filter @sourcegraph/cody-slack run start
+    env:
+      SLACK_APP_TOKEN: XXX
+      SLACK_SIGNING_SECRET: XXX
+      SLACK_BOT_TOKEN: XXX
+      SOURCEGRAPH_ACCESS_TOKEN: XXX
 
   docsite:
     description: Docsite instance serving the docs

@@ -80,18 +80,18 @@ suite('End-to-end', () => {
 
         // Check the chat transcript contains markdown
         const message = await getTranscript(api, 0)
-        assert.match(message.displayText, /^Explain the following code/)
-        assert.match(message.displayText, /public/)
+        assert.match(message.displayText || '', /^Explain the following code/)
+        assert.match(message.displayText || '', /public/)
 
         // Check the server response was handled
         // "hello world" is a canned response from the server
         // in runTest.js responds to all messages with
         await waitUntil(async () => {
             const assistantMessage = await getTranscript(api, 1)
-            return assistantMessage.displayText.length > 0
+            return (assistantMessage.displayText || '').length > 0
         })
         const assistantMessage = await getTranscript(api, 1)
-        assert.match(assistantMessage.displayText, /hello, world/)
+        assert.match(assistantMessage.displayText || '', /hello, world/)
 
         // Clean up.
         await ensureExecuteCommand('cody.delete-access-token')

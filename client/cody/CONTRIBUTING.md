@@ -8,7 +8,7 @@
 
 2. Run `pnpm install` from the **root** of this repository
 3. Select `Launch Cody Extension` from the dropdown menu in the `RUN AND DEBUG` sidebar
-   1. Remove `node_modeules` from `root` and `client/cody` before re-running `pnpm install` if the start up failed
+   1. Remove `node_modules` from `root` and `client/cody` before re-running `pnpm install` if the start up failed
 4. Refresh the extension to see updated changes
 
 ## File structure

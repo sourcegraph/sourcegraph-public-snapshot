@@ -61,6 +61,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
     )
 
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
+    const searchMode = useNavbarQueryState(state => state.searchMode)
     const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
 
     const triggerSearch = useCallback(() => {
@@ -136,6 +137,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 allExpanded={false}
                                 results={results}
                                 executedQuery={location.search}
+                                searchMode={searchMode}
                                 setSearchMode={setSearchMode}
                                 submitSearch={submitSearch}
                                 caseSensitive={caseSensitive}

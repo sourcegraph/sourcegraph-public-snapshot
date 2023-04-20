@@ -54,7 +54,7 @@ describe('Transcript', () => {
         const prompt = await transcript.toPrompt()
         const expectedPrompt = [
             { speaker: 'human', text: 'how do access tokens work in sourcegraph' },
-            { speaker: 'assistant', text: '' },
+            { speaker: 'assistant', text: undefined },
         ]
         assert.deepStrictEqual(prompt, expectedPrompt)
     })
@@ -74,7 +74,11 @@ describe('Transcript', () => {
                 intentDetector: new MockIntentDetector({
                     isCodebaseContextRequired: async () => Promise.resolve(true),
                 }),
-                codebaseContext: new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher),
+                codebaseContext: new CodebaseContext(
+                    { useContext: 'embeddings' },
+                    embeddings,
+                    defaultKeywordContextFetcher
+                ),
             })
         )
 
@@ -88,7 +92,7 @@ describe('Transcript', () => {
             { speaker: 'human', text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```' },
             { speaker: 'assistant', text: 'Ok.' },
             { speaker: 'human', text: 'how do access tokens work in sourcegraph' },
-            { speaker: 'assistant', text: '' },
+            { speaker: 'assistant', text: undefined },
         ]
         assert.deepStrictEqual(prompt, expectedPrompt)
     })
@@ -102,7 +106,11 @@ describe('Transcript', () => {
                 }),
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
-        const codebaseContext = new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
+        const codebaseContext = new CodebaseContext(
+            { useContext: 'embeddings' },
+            embeddings,
+            defaultKeywordContextFetcher
+        )
 
         const chatQuestionRecipe = new ChatQuestion()
         const transcript = new Transcript()
@@ -137,7 +145,7 @@ describe('Transcript', () => {
             { speaker: 'human', text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```' },
             { speaker: 'assistant', text: 'Ok.' },
             { speaker: 'human', text: 'how to create a batch change' },
-            { speaker: 'assistant', text: '' },
+            { speaker: 'assistant', text: undefined },
         ]
         assert.deepStrictEqual(prompt, expectedPrompt)
     })
@@ -182,7 +190,11 @@ describe('Transcript', () => {
                 }),
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
-        const codebaseContext = new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
+        const codebaseContext = new CodebaseContext(
+            { useContext: 'embeddings' },
+            embeddings,
+            defaultKeywordContextFetcher
+        )
 
         const chatQuestionRecipe = new ChatQuestion()
         const transcript = new Transcript()
@@ -208,14 +220,14 @@ describe('Transcript', () => {
             { speaker: 'assistant', text: 'Ok.' },
             {
                 speaker: 'human',
-                text: 'I have the `internal/lib.go` file opened in my editor. You are able to answer questions about `internal/lib.go`. The following code snippet is from the currently open file in my editor `internal/lib.go`:\n```go\npackage lib\n```',
+                text: 'I have the `internal/lib.go` file opened in my editor. Use following code snippet from file `internal/lib.go`:\n```go\npackage lib\n```',
             },
             {
                 speaker: 'assistant',
-                text: "You currently have `internal/lib.go` open in your editor, and I can answer questions about that file's contents.",
+                text: 'Ok.',
             },
             { speaker: 'human', text: 'how do access tokens work in sourcegraph' },
-            { speaker: 'assistant', text: '' },
+            { speaker: 'assistant', text: undefined },
         ]
         assert.deepStrictEqual(prompt, expectedPrompt)
     })
@@ -239,7 +251,7 @@ describe('Transcript', () => {
         const prompt = await transcript.toPrompt()
         const expectedPrompt = [
             { speaker: 'human', text: 'how do access tokens work in sourcegraph' },
-            { speaker: 'assistant', text: '' },
+            { speaker: 'assistant', text: undefined },
         ]
         assert.deepStrictEqual(prompt, expectedPrompt)
     })
@@ -253,7 +265,11 @@ describe('Transcript', () => {
                 }),
         })
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(true) })
-        const codebaseContext = new CodebaseContext('embeddings', embeddings, defaultKeywordContextFetcher)
+        const codebaseContext = new CodebaseContext(
+            { useContext: 'embeddings' },
+            embeddings,
+            defaultKeywordContextFetcher
+        )
 
         const chatQuestionRecipe = new ChatQuestion()
         const transcript = new Transcript()
@@ -298,7 +314,7 @@ describe('Transcript', () => {
             { speaker: 'human', text: 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: 'By setting the Authorization header.' },
             { speaker: 'human', text: 'how do to delete them' },
-            { speaker: 'assistant', text: '' },
+            { speaker: 'assistant', text: undefined },
         ]
         assert.deepStrictEqual(prompt, expectedPrompt)
     })

@@ -1,4 +1,4 @@
-[]types.CompletionEvent{
+[]types.ChatCompletionEvent{
 	{
 		Completion: "Sure!",
 	},

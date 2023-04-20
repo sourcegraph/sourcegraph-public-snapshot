@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "llm-proxy_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//enterprise/cmd/llm-proxy/shared",
+        "//internal/service/svcmain",
+    ],
+)
+
+go_binary(
+    name = "llm-proxy",
+    embed = [":llm-proxy_lib"],
+    visibility = ["//visibility:public"],
+)

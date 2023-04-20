@@ -25,6 +25,21 @@ type Context struct {
 	HoneyDataset *honey.Dataset
 }
 
+func (c *Context) Clone(opts ...Opt) *Context {
+	c1 := &Context{
+		Logger:       c.Logger,
+		Tracer:       c.Tracer,
+		Registerer:   c.Registerer,
+		HoneyDataset: c.HoneyDataset,
+	}
+
+	for _, opt := range opts {
+		opt(c1)
+	}
+
+	return c1
+}
+
 // TestContext is a behaviorless Context usable for unit tests.
 var TestContext = Context{Logger: log.NoOp(), Registerer: metrics.TestRegisterer}
 

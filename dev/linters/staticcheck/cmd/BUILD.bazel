@@ -6,8 +6,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/linters/staticcheck/cmd",
     visibility = ["//visibility:private"],
     deps = [
+        "//dev/linters/staticcheck",
         "@co_honnef_go_tools//analysis/lint",
-        "@co_honnef_go_tools//staticcheck",
     ],
 )
 

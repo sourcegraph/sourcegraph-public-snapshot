@@ -134,7 +134,7 @@ func withQuery(query string, node Node, f func(query *sitter.Query, cursor *sitt
 
 // forEachCapture runs the given tree-sitter query on the given node and calls f(captureName, node) for
 // each capture.
-func forEachCapture(query string, node Node, f func(map[string]Node)) error {
+func forEachCapture(query string, node Node, f func(map[string]Node)) {
 	withQuery(query, node, func(sitterQuery *sitter.Query, cursor *sitter.QueryCursor) {
 		match, _, hasCapture := cursor.NextCapture()
 		for hasCapture {
@@ -152,11 +152,9 @@ func forEachCapture(query string, node Node, f func(map[string]Node)) error {
 			match, _, hasCapture = cursor.NextCapture()
 		}
 	})
-
-	return nil
 }
 
-func allCaptures(query string, node Node) ([]Node, error) {
+func allCaptures(query string, node Node) []Node {
 	var captures []Node
 	withQuery(query, node, func(sitterQuery *sitter.Query, cursor *sitter.QueryCursor) {
 		match, _, hasCapture := cursor.NextCapture()
@@ -173,7 +171,7 @@ func allCaptures(query string, node Node) ([]Node, error) {
 		}
 	})
 
-	return captures, nil
+	return captures
 }
 
 // nodeToRange returns the range of the node.
@@ -244,7 +242,7 @@ var UnsupportedLanguageError = errors.New("unsupported language")
 // Parses a file and returns info about it.
 func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath) (*Node, error) {
 	ext := filepath.Base(repoCommitPath.Path)
-	if strings.Index(ext, ".") >= 0 {
+	if strings.Contains(ext, ".") {
 		ext = strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
 	}
 
@@ -282,7 +280,7 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil
 }
 
-func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.RepoCommitPath) (result.Symbols, error) {
+func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.RepoCommitPath) (result.Symbols, error) { //nolint:unparam
 	root, err := s.parse(context.Background(), repoCommitPath)
 	if err != nil {
 		return nil, err
@@ -295,10 +293,7 @@ func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.R
 		return nil, nil
 	}
 
-	captures, err := allCaptures(query, *root)
-	if err != nil {
-		return nil, err
-	}
+	captures := allCaptures(query, *root)
 	for _, capture := range captures {
 		symbols = append(symbols, result.Symbol{
 			Name:        capture.Node.Content(root.Contents),
@@ -383,7 +378,7 @@ func lazyNodeStringer(node **Node) func() fmt.Stringer {
 			if (*node).Node != nil {
 				return String(fmt.Sprintf("%s ...%s...", (*node).Type(), snippet(*node)))
 			} else {
-				return String(fmt.Sprintf("%s", (*node).RepoCommitPath.Path))
+				return String((*node).RepoCommitPath.Path)
 			}
 		} else {
 			return String("<nil>")
