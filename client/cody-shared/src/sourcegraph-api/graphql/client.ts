@@ -1,7 +1,5 @@
 import fetch from 'isomorphic-fetch'
 
-import { isInstanceOf } from '@sourcegraph/common'
-
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'
 

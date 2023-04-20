@@ -3,117 +3,17 @@ import { Command } from 'commander'
 import prompts from 'prompts'
 
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/interaction'
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { ContextMessage } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
-import { KeywordContextFetcher } from '@sourcegraph/cody-shared/src/keyword-context'
-import { SOLUTION_TOKEN_LENGTH, MAX_HUMAN_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
-import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import {
-    CompletionParameters,
-    CompletionCallbacks,
-    Message,
-} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isRepoNotFoundError } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+import { streamCompletions } from './completions'
 import { DEFAULTS, ENVIRONMENT_CONFIG } from './config'
+import { createCodebaseContext } from './context'
+import { interactionFromMessage } from './interactions'
 import { getPreamble } from './preamble'
-
-/**
- * Memoized function to get the repository ID for a given codebase.
- */
-const getRepoId = async (client: SourcegraphGraphQLAPIClient, codebase: string) => {
-    const repoId = codebase ? await client.getRepoId(codebase) : null
-    return repoId
-}
-
-export async function createCodebaseContext(
-    client: SourcegraphGraphQLAPIClient,
-    codebase: string,
-    contextType: 'embeddings' | 'keyword' | 'none' | 'blended'
-) {
-    const repoId = await getRepoId(client, codebase)
-    if (isError(repoId)) {
-        throw repoId
-    }
-
-    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
-
-    const codebaseContext = new CodebaseContext(
-        { useContext: contextType },
-        embeddingsSearch,
-        new LocalKeywordContextFetcherMock()
-    )
-
-    return codebaseContext
-}
-
-class LocalKeywordContextFetcherMock implements KeywordContextFetcher {
-    public getContext() {
-        return Promise.resolve([])
-    }
-}
-
-const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionParameters, 'messages'> = {
-    temperature: 0.2,
-    maxTokensToSample: SOLUTION_TOKEN_LENGTH,
-    topK: -1,
-    topP: -1,
-}
-
-function streamCompletions(client: SourcegraphNodeCompletionsClient, messages: Message[], cb: CompletionCallbacks) {
-    return client.stream({ messages, ...DEFAULT_CHAT_COMPLETION_PARAMETERS }, cb)
-}
-
-async function getContextMessages(
-    text: string,
-    intentDetector: IntentDetector,
-    codebaseContext: CodebaseContext
-): Promise<ContextMessage[]> {
-    const contextMessages: ContextMessage[] = []
-
-    const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
-
-    if (isCodebaseContextRequired) {
-        const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
-            numCodeResults: 8,
-            numTextResults: 2,
-        })
-
-        contextMessages.push(...codebaseContextMessages)
-    }
-
-    return contextMessages
-}
-
-async function interactionFromMessage(
-    message: Message,
-    intentDetector: IntentDetector,
-    codebaseContext: CodebaseContext | null
-): Promise<Interaction | null> {
-    if (!message.text) {
-        return Promise.resolve(null)
-    }
-
-    const text = truncateText(message.text, MAX_HUMAN_INPUT_TOKENS)
-
-    const contextMessages =
-        codebaseContext === null ? Promise.resolve([]) : getContextMessages(text, intentDetector, codebaseContext)
-
-    return Promise.resolve(
-        new Interaction(
-            { speaker: 'human', text, displayText: text },
-            { speaker: 'assistant', text: '', displayText: '' },
-            contextMessages
-        )
-    )
-}
 
 async function startCLI() {
     const program = new Command()
@@ -128,6 +28,7 @@ async function startCLI() {
             '--context [embeddings,keyword,none,blended]',
             `How Cody fetches context for query. Default: ${DEFAULTS.contextType}`
         )
+        .option('--lsp', 'Start LSP')
         .parse(process.argv)
 
     const options = program.opts()
