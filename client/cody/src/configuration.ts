@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import type { ConfigurationUseContext, Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 /**
+ * This is some comment
  * All configuration values, with some sanitization performed.
  */
 export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get'>): Configuration {
