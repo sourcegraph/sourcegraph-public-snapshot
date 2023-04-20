@@ -7,10 +7,10 @@ import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext } from './recipe'
 
-export class Fixup implements Recipe {
+export class FixupInteractive implements Recipe {
     constructor(private onSelectionChange?: (content: string) => Promise<void>) {}
 
-    public id = 'fixup'
+    public id = 'fixup-interactive'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // TODO: Prompt the user for additional direction.
@@ -48,7 +48,7 @@ export class Fixup implements Recipe {
             selection.fileName
         }. The part of the file I have selected is highlighted with <selection> tags. You are helping me to work on that part.
 
-Follow the instructions in the selected part and produce a rewritten replacement for only that part. Put the rewritten replacement inside <selection> tags.
+Follow the instructions below and produce a rewritten replacement for only that part. Put the rewritten replacement inside <selection> tags.
 
 I only want to see the code within <selection>. Do not move code from outside the selection into the selection in your reply.
 
@@ -59,7 +59,7 @@ It is OK to provide some commentary before you tell me the replacement <selectio
         }</selection>${truncateText(
             selection.followingText,
             quarterFileContext
-        )}\n\`\`\`\n\n${context.responseMultiplexer.prompt()}`
+        )}\n\`\`\`\n\n${context.responseMultiplexer.prompt()}\n\nMy instructions are: ${humanChatInput}`
         // TODO: Move the prompt suffix from the recipe to the chat view. It may have other subscribers.
 
         return Promise.resolve(

@@ -534,15 +534,10 @@ func (f *flushingResponseWriter) Close() {
 	f.mu.Unlock()
 }
 
-// progressWriter is an io.Writer that writes to a buffer.
-// '\r' resets the write offset to the index after last '\n' in the buffer,
-// or the beginning of the buffer if a '\n' has not been written yet.
+
 type progressWriter struct {
-	// writeOffset is the offset in buf where the next write should begin.
 	writeOffset int
 
-	// afterLastNewline is the index after the last '\n' in buf
-	// or 0 if there is no '\n' in buf.
 	afterLastNewline int
 
 	buf []byte
@@ -550,33 +545,35 @@ type progressWriter struct {
 
 func (w *progressWriter) Write(p []byte) (n int, err error) {
 	l := len(p)
+
+	// Loop through the bytes, looking for newlines
 	for {
+		// If no more bytes left, break
 		if len(p) == 0 {
 			// If p ends in a '\r' we still want to include that in the buffer until it is overwritten.
 			break
 		}
+		// Look for newline
 		idx := bytes.IndexAny(p, "\r\n")
 		if idx == -1 {
+			// If no newline found, append bytes to buffer and break
 			w.buf = append(w.buf[:w.writeOffset], p...)
 			w.writeOffset = len(w.buf)
 			break
 		}
+		// Found newline, handle it
 		switch p[idx] {
 		case '\n':
+			// Append up to and including newline to buffer
 			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
+			// Update write offset and record position after newline
 			w.writeOffset = len(w.buf)
 			w.afterLastNewline = len(w.buf)
+			// Slice off handled bytes
 			p = p[idx+1:]
 		case '\r':
-			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
-			// Record that our next write should overwrite the data after the most recent newline.
-			// Don't slice it off immediately here, because we want to be able to return that output
-			// until it is overwritten.
-			w.writeOffset = w.afterLastNewline
-			p = p[idx+1:]
-		default:
-			panic(fmt.Sprintf("unexpected char %q", p[idx]))
-		}
+			// Append up to and including newline to buffer
+			w.buf = append(w.buf[:w.writeOffset], p[:idx		}
 	}
 	return l, nil
 }

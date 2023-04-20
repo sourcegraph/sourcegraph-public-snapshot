@@ -13,7 +13,7 @@ interface HighlightTokensResult {
 
 export async function highlightTokens(
     text: string,
-    fileExists: (filePath: string) => Promise<boolean>
+    fileExists?: (filePath: string) => Promise<boolean>
 ): Promise<HighlightTokensResult> {
     const markdownLines = parseMarkdown(text)
     const tokens = await detectTokens(markdownLines, fileExists)
@@ -25,15 +25,17 @@ export async function highlightTokens(
 
 async function detectTokens(
     lines: MarkdownLine[],
-    fileExists: (filePath: string) => Promise<boolean>
+    fileExists?: (filePath: string) => Promise<boolean>
 ): Promise<HighlightedToken[]> {
     const tokens: HighlightedToken[] = []
-    for (const { line, isCodeBlock } of lines) {
-        if (isCodeBlock) {
-            continue
+    if (fileExists) {
+        for (const { line, isCodeBlock } of lines) {
+            if (isCodeBlock) {
+                continue
+            }
+            const lineTokens = await detectFilePaths(line, fileExists)
+            tokens.push(...lineTokens)
         }
-        const lineTokens = await detectFilePaths(line, fileExists)
-        tokens.push(...lineTokens)
     }
     return deduplicateTokens(tokens)
 }

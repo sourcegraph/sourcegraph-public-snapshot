@@ -212,7 +212,16 @@ const register = async (
         await vscode.commands.executeCommand('setContext', 'cody.interactiveSession.enabled', true)
         disposables.push(
             vscode.interactive.registerInteractiveSessionProvider('cody', new InteractiveSessionProvider()),
-            vscode.interactive.registerInteractiveEditorSessionProvider(new InteractiveEditorSessionProvider())
+            vscode.interactive.registerInteractiveEditorSessionProvider(
+                new InteractiveEditorSessionProvider(
+                    chatProvider,
+                    initialConfig,
+                    chatClient,
+                    intentDetector,
+                    codebaseContext,
+                    editor
+                )
+            )
         )
     }
 

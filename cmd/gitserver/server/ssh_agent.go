@@ -36,10 +36,10 @@ func newSSHAgent(logger log.Logger, raw, passphrase []byte) (*sshAgent, error) {
 		return nil, errors.Wrap(err, "parsing private key")
 	}
 
-	// The keyring type implements the agent.Agent interface we need to provide
-	// when serving an SSH agent. It also provides thread-safe storage for the
-	// keys we provide to it. No need to reinvent the wheel!
+	// Create a new keyring to hold keys
 	keyring := agent.NewKeyring()
+
+	// Add the parsed private key to the keyring
 	err = keyring.Add(agent.AddedKey{
 		PrivateKey: key,
 	})
@@ -47,15 +47,18 @@ func newSSHAgent(logger log.Logger, raw, passphrase []byte) (*sshAgent, error) {
 		return nil, err
 	}
 
-	// Start listening.
+	// Generate a socket filename
 	socketName := generateSocketFilename()
-	l, err := net.ListenUnix("unix", &net.UnixAddr{Net: "unix", Name: socketName})
-	if err != nil {
-		return nil, errors.Wrapf(err, "listening on socket %q", socketName)
-	}
+
+	// Listen on the socket
+
+l, err := net.Listen("tcp", ":0")
+if err != nil {
+	return nil, errors.Wrapf(err, "listening on port")
+}
 	l.SetUnlinkOnClose(true)
 
-	// Set up the type we're going to return.
+	// Create the sshAgent struct
 	a := &sshAgent{
 		logger:  logger.Scoped("sshAgent", "speaks the ssh-agent protocol and can be used by gitserver"),
 		l:       l,
@@ -74,11 +77,12 @@ func (a *sshAgent) Listen() {
 		if err != nil {
 			select {
 			case <-a.done:
+				a.logger.Info("Closing SSH agent listener")
 				return
 			default:
 				a.logger.Error("error accepting socket connection", log.Error(err))
 				return
-			}
+			}  
 		}
 
 		// We don't control how SSH handles the agent, so we should handle
