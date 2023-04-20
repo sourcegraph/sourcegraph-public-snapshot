@@ -2,7 +2,7 @@ package auth
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -142,6 +142,6 @@ func (c *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 
 	return &http.Response{
 		StatusCode: http.StatusOK,
-		Body:       ioutil.NopCloser(strings.NewReader(`{"token": "new-token"}`)),
+		Body:       io.NopCloser(strings.NewReader(`{"token": "new-token"}`)),
 	}, nil
 }

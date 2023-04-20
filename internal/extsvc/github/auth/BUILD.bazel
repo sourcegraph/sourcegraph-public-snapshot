@@ -7,6 +7,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/extsvc/auth",
+        "//internal/extsvc/github",
         "//internal/httpcli",
         "//lib/errors",
         "@com_github_golang_jwt_jwt_v4//:jwt",
