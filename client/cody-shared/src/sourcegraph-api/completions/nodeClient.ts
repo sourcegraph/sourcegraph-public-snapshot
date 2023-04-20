@@ -80,6 +80,32 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 rejectUnauthorized: !this.config.debug,
             },
             (res: http.IncomingMessage) => {
+                if (res.statusCode === undefined) {
+                    throw new Error('no status code present')
+                }
+                // For failed requests, we just want to read the entire body and
+                // ultimately return it to the error callback.
+                if (res.statusCode >= 400) {
+                    // Bytes which have not been decoded as UTF-8 text
+                    let bufferBin = Buffer.of()
+                    // Text which has not been decoded as a server-sent event (SSE)
+                    let errorMessage = ''
+                    res.on('data', chunk => {
+                        if (!(chunk instanceof Buffer)) {
+                            throw new TypeError('expected chunk to be a Buffer')
+                        }
+                        // Messages are expected to be UTF-8, but a chunk can terminate
+                        // in the middle of a character
+                        const { str, buf } = toPartialUtf8String(Buffer.concat([bufferBin, chunk]))
+                        errorMessage += str
+                        bufferBin = buf
+                    })
+
+                    res.on('error', e => cb.onError(e.message))
+                    res.on('end', () => cb.onError(errorMessage))
+                    return
+                }
+
                 // Bytes which have not been decoded as UTF-8 text
                 let bufferBin = Buffer.of()
                 // Text which has not been decoded as a server-sent event (SSE)
