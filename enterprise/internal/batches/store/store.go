@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	gha "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -151,6 +152,11 @@ func (s *Store) ExternalServices() database.ExternalServiceStore {
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
 func (s *Store) UserCredentials() database.UserCredentialsStore {
 	return database.UserCredentialsWith(s.logger, s, s.key)
+}
+
+// GitHubAppsStore returns a store that provides access to GitHub app metadata stored in the database.
+func (s *Store) GitHubApps() gha.GithubAppsStore {
+	return gha.GithubAppsWith(s.Store)
 }
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {

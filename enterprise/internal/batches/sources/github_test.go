@@ -792,7 +792,9 @@ func setup(t *testing.T, ctx context.Context, tName string) (src *GitHubSource, 
 		})),
 	}
 
-	src, err := NewGitHubSource(ctx, svc, cf)
+	tx := NewMockSourcerStore()
+
+	src, err := NewGitHubSource(ctx, tx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

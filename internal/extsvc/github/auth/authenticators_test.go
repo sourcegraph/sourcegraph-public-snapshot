@@ -43,7 +43,7 @@ jSzka5UER3Dj1lSLMk9DkU+jrBxUsFeeiQOYhzQBaZxguvwYRIYHpg==
 
 func TestGitHubAppAuthenticator_Authenticate(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		appID := "1234"
+		appID := 1234
 		privateKey := []byte(testPrivateKey)
 		authenticator, err := NewGitHubAppAuthenticator(appID, privateKey)
 		require.NoError(t, err)
@@ -57,7 +57,7 @@ func TestGitHubAppAuthenticator_Authenticate(t *testing.T) {
 	})
 
 	t.Run("invalid private key", func(t *testing.T) {
-		appID := "1234"
+		appID := 1234
 		privateKey := []byte(`-----BEGIN RSA PRIVATE KEY-----
 invalid key
 -----END RSA PRIVATE KEY-----`)
