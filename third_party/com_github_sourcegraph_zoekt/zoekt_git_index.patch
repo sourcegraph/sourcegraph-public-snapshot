@@ -1,0 +1,10 @@
+diff --git a/cmd/zoekt-git-index/BUILD.bazel b/cmd/zoekt-git-index/BUILD.bazel
+index 0606281..54f3d6b 100644
+--- a/cmd/zoekt-git-index/BUILD.bazel
++++ b/cmd/zoekt-git-index/BUILD.bazel
+@@ -16,4 +16,5 @@ go_binary(
+     name = "zoekt-git-index",
+     embed = [":zoekt-git-index_lib"],
+     visibility = ["//visibility:public"],
++    static = "on",
+ )

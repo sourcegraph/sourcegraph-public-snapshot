@@ -1,0 +1,12 @@
+diff --git a/cmd/zoekt-sourcegraph-indexserver/BUILD.bazel b/cmd/zoekt-sourcegraph-indexserver/BUILD.bazel
+index 503fd67..7b0495a 100644
+--- a/cmd/zoekt-sourcegraph-indexserver/BUILD.bazel
++++ b/cmd/zoekt-sourcegraph-indexserver/BUILD.bazel
+@@ -50,6 +50,7 @@ go_binary(
+     name = "zoekt-sourcegraph-indexserver",
+     embed = [":zoekt-sourcegraph-indexserver_lib"],
+     visibility = ["//visibility:public"],
++    static = "on",
+ )
+
+ go_test(
