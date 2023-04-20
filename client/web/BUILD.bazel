@@ -1902,7 +1902,7 @@ jest_test(
         ":web_tests",
     ],
     patch_node_fs = False,
-    shard_count = 5,  # this is has a large impact on the duration. We came to this number empirically.
+    shard_count = 4,  # originally at 6, but tend to consume too much resource and crash.
     tags = [
         "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],
