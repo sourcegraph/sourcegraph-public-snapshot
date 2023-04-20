@@ -11,7 +11,7 @@ The source of truth for the Access Control system is the [`schema.yaml`](https:/
 
 ## How it works
 
-When Sourcegraph starts, a [background job](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@8b4e1cb4374d1449c918f695c21d2c933c5a1d15/-/blob/cmd/frontend/internal/cli/serve_cmd.go?L205:24) that syncs the namespaces and actions into the `permissions` table in the database is kicked off.
+When Sourcegraph starts, a [background job](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@8b4e1cb4374d1449c918f695c21d2c933c5a1d15/-/blob/cmd/frontend/internal/cli/serve_cmd.go?L205:24) is started that syncs the namespaces and actions into the `permissions` table in the database.
 
 Permissions are a combination of a namespace and an action available in that namespace. The background jobs removes permissions that are in the database but no longer referenced in the [`schema.yaml`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/rbac/schema.yaml) file, and adds permissions contained in the [`schema.yaml`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/rbac/schema.yaml) file but not in the database.
 
