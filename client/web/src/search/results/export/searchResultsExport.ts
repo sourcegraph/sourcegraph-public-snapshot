@@ -128,34 +128,26 @@ export const searchResultsToFileContent = (
         }
 
         case 'repo': {
-            content = !enableRepositoryMetadata
-                ? [
-                      headers,
-                      ...searchResults
-                          .filter((result: SearchMatch): result is RepositoryMatch => result.type === 'repo')
-                          .map(result => [
-                              result.type,
-                              result.repository,
-                              new URL(getRepositoryUrl(result.repository, result.branches), sourcegraphURL).toString(),
-                          ]),
-                  ]
-                : [
-                      [...headers, 'Repository metadata'],
-                      ...searchResults
-                          .filter((result: SearchMatch): result is RepositoryMatch => result.type === 'repo')
-                          .map(result => [
-                              result.type,
-                              result.repository,
-                              new URL(getRepositoryUrl(result.repository, result.branches), sourcegraphURL).toString(),
-                              '"' +
-                                  Object.entries(result.keyValuePairs ?? {})
-                                      .map(([key, value]) => (value ? `${key}:${value}` : key))
-                                      .join('\n')
-                                      .replaceAll('"', '""') +
-                                  '"',
-                          ]),
-                  ]
-
+            content = [
+                enableRepositoryMetadata ? [...headers, 'Repository metadata'] : headers,
+                ...searchResults
+                    .filter((result: SearchMatch): result is RepositoryMatch => result.type === 'repo')
+                    .map(result => [
+                        result.type,
+                        result.repository,
+                        new URL(getRepositoryUrl(result.repository, result.branches), sourcegraphURL).toString(),
+                        ...(enableRepositoryMetadata
+                            ? [
+                                  '"' +
+                                      Object.entries(result.keyValuePairs ?? {})
+                                          .map(([key, value]) => (value ? `${key}:${value}` : key))
+                                          .join('\n')
+                                          .replaceAll('"', '""') +
+                                      '"',
+                              ]
+                            : []),
+                    ]),
+            ]
             break
         }
 
