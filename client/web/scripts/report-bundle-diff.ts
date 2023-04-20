@@ -36,11 +36,10 @@ async function getCompareRev(): Promise<string | undefined> {
     for (const revision of revisions) {
         try {
             const tarPath = path.join(STATIC_ASSETS_PATH, `bundle_size_cache-${revision}.tar.gz`)
+            const bucket = 'sourcegraph_buildkite_cache'
+            const file = `sourcegraph/sourcegraph/bundle_size_cache-${revision}.tar.gz`
 
-            await storage
-                .bucket('sourcegraph_buildkite_cache')
-                .file(`sourcegraph/sourcegraph/bundle_size_cache-${revision}.tar.gz`)
-                .download({ destination: tarPath })
+            exec(`gsutil -q cp -r "gs://${bucket}/${file}" "${tarPath}"`)
 
             console.log(`Found cached archive for ${revision}`, tarPath)
             COMPARE_REV = revision
@@ -83,9 +82,9 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
 
             exec(`${statoscopeBinPath} generate -i "${commitFile}" -r "${compareFile}" -t ${compareReportPath}`)
 
-            await storage.bucket('sourcegraph_reports').upload(compareReportPath, {
-                destination: `statoscope-reports/${BRANCH}/compare-report.html`,
-            })
+            const bucket = 'sourcegraph_reports'
+            const file = `statoscope-reports/${BRANCH}/compare-report.html`
+            exec(`gsutil cp ${compareReportPath} "gs://${bucket}/${file}"`)
 
             return { commitFile, compareFile }
         } catch (error) {
