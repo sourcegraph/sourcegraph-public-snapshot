@@ -53,24 +53,23 @@ const defaultSettings: CodyLSPSettings = {
 }
 
 class CodyLanguageServer {
-    connection: Connection
-    documents: TextDocuments<TextDocument>
+    private connection: Connection
+    private documents: TextDocuments<TextDocument>
 
-    globalSettings: CodyLSPSettings = defaultSettings
-    documentSettings: Map<string, Thenable<CodyLSPSettings>> = new Map()
-
-    hasDiagnosticRelatedInformationCapability: boolean = false
+    private globalSettings: CodyLSPSettings = defaultSettings
+    private documentSettings: Map<string, Thenable<CodyLSPSettings>> = new Map()
 
     // These 3 will be set once we've received the configuration from the LSP
     // client.
-    intentDetector?: IntentDetector
-    codebaseContext?: CodebaseContext
-    completionsClient?: SourcegraphNodeCompletionsClient
+    private intentDetector?: IntentDetector
+    private codebaseContext?: CodebaseContext
+    private completionsClient?: SourcegraphNodeCompletionsClient
 
     constructor() {
         this.connection = createConnection(ProposedFeatures.all)
         this.documents = new TextDocuments(TextDocument)
 
+        this.connection.onInitialize(this.onInitialize.bind(this))
         this.connection.onInitialized(this.onInitialized.bind(this))
         this.connection.onDidChangeConfiguration(this.onDidChangeConfiguration.bind(this))
         this.connection.onCompletion(this.onCompletion.bind(this))
@@ -86,14 +85,7 @@ class CodyLanguageServer {
         this.connection.listen()
     }
 
-    onInitialize(params: InitializeParams) {
-        const capabilities = params.capabilities
-
-        this.hasDiagnosticRelatedInformationCapability = !!(
-            capabilities.textDocument &&
-            capabilities.textDocument.publishDiagnostics &&
-            capabilities.textDocument.publishDiagnostics.relatedInformation
-        )
+    private onInitialize() {
         const result: InitializeResult = {
             capabilities: {
                 textDocumentSync: TextDocumentSyncKind.Incremental,
@@ -107,23 +99,23 @@ class CodyLanguageServer {
         return result
     }
 
-    onInitialized() {
+    private async onInitialized() {
         console.error('onInitialized')
-        this.connection.client.register(DidChangeConfigurationNotification.type, undefined)
+        await this.connection.client.register(DidChangeConfigurationNotification.type, undefined)
     }
 
-    onDidChangeConfiguration(change: DidChangeConfigurationParams) {
+    private async onDidChangeConfiguration(change: DidChangeConfigurationParams) {
         console.error('configuration change', change)
 
         this.globalSettings = (change.settings.codylsp || defaultSettings) as CodyLSPSettings
         if (validSettings(this.globalSettings.sourcegraph)) {
-            this.initializeCody()
+            await this.initializeCody()
         }
 
-        this.documents.all().forEach(this.validateTextDocument)
+        this.documents.all().forEach(this.validateTextDocument.bind(this))
     }
 
-    async initializeCody() {
+    private async initializeCody() {
         // TODO: These two are clunky
         const codebase = this.globalSettings.sourcegraph.repos[0]
         const contextType = 'blended'
@@ -165,12 +157,12 @@ class CodyLanguageServer {
         console.error('hey man we did it!!')
     }
 
-    onDidChangeWatchedFiles(change: DidChangeWatchedFilesParams) {
+    private onDidChangeWatchedFiles(change: DidChangeWatchedFilesParams) {
         // Monitored files have change in VSCode
         console.error('We received an file change event:', change)
     }
 
-    async validateTextDocument(textDocument: TextDocument): Promise<void> {
+    private async validateTextDocument(textDocument: TextDocument): Promise<void> {
         const diagnostics: Diagnostic[] = [
             {
                 severity: DiagnosticSeverity.Warning,
@@ -178,15 +170,15 @@ class CodyLanguageServer {
                     start: textDocument.positionAt(0),
                     end: textDocument.positionAt(10),
                 },
-                message: `Cody was here`,
+                message: 'Cody was here',
                 source: 'codylsp',
             },
         ]
 
-        this.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
+        await this.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
     }
 
-    onCompletion(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] {
+    private onCompletion(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] {
         // The pass parameter contains the position of the text document in
         // which code complete got requested. For the example we ignore this
         // info and always provide the same completion items.
@@ -204,7 +196,7 @@ class CodyLanguageServer {
         ]
     }
 
-    onCompletionResolve(item: CompletionItem): CompletionItem {
+    private onCompletionResolve(item: CompletionItem): CompletionItem {
         if (item.data === 1) {
             item.detail = 'TypeScript details'
             item.documentation = 'TypeScript documentation'
