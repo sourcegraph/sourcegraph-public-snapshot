@@ -8,4 +8,10 @@ export interface Configuration {
     useContext: ConfigurationUseContext
     experimentalSuggest: boolean
     anthropicKey: string | null
+    customHeaders: Record<string, string>
+}
+
+export interface ConfigurationWithAccessToken extends Configuration {
+    /** The access token, which is stored in the secret storage (not configuration). */
+    accessToken: string | null
 }

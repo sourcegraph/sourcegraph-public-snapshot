@@ -1,6 +1,7 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//:bundlesize2/package_json.bzl", bundlesize_bin = "bin")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
@@ -180,7 +181,13 @@ ts_project(
         "src/codeintel/useCodeIntel.ts",
         "src/codeintel/useRepoAndBlob.ts",
         "src/codeintel/util/helpers.ts",
+        "src/cody/CodeMirrorEditor.ts",
+        "src/cody/CodyChat.tsx",
         "src/cody/CodyIcon.tsx",
+        "src/cody/widgets/CodyRecipesWidget.tsx",
+        "src/cody/widgets/components/Recipe.tsx",
+        "src/cody/widgets/components/RecipeAction.tsx",
+        "src/cody/widgets/components/Recipes.tsx",
         "src/communitySearchContexts/Backstage.tsx",
         "src/communitySearchContexts/CommunitySearchContextPage.tsx",
         "src/communitySearchContexts/HomepageConfig.ts",
@@ -1009,7 +1016,6 @@ ts_project(
         "src/initBuildInfo.ts",
         "src/insights/Icons.tsx",
         "src/insights/types.ts",
-        "src/insights/utils/is-code-insights-enabled.ts",
         "src/insights/utils/use-series-toggle.ts",
         "src/jscontext.ts",
         "src/lsif/html.ts",
@@ -1209,6 +1215,7 @@ ts_project(
         "src/repo/blob/codemirror/token-selection/modifier-click.ts",
         "src/repo/blob/codemirror/token-selection/selections.ts",
         "src/repo/blob/codemirror/tooltips/CodeIntelTooltip.tsx",
+        "src/repo/blob/codemirror/tooltips/CodyTooltip.tsx",
         "src/repo/blob/codemirror/tooltips/LoadingTooltip.ts",
         "src/repo/blob/codemirror/tooltips/TemporaryTooltip.tsx",
         "src/repo/blob/codemirror/utils.ts",
@@ -1223,6 +1230,7 @@ ts_project(
         "src/repo/branches/RepositoryBranchesArea.tsx",
         "src/repo/branches/RepositoryBranchesNavbar.tsx",
         "src/repo/branches/RepositoryBranchesOverviewPage.tsx",
+        "src/repo/cody/AskCodyButton.tsx",
         "src/repo/commit/CommitMessageWithLinks.tsx",
         "src/repo/commit/DiffModeSelector.tsx",
         "src/repo/commit/RepositoryCommitPage.tsx",
@@ -1249,7 +1257,6 @@ ts_project(
         "src/repo/repoContainerRoutes.tsx",
         "src/repo/repoHeaderActionButtons.tsx",
         "src/repo/repoRevisionContainerRoutes.tsx",
-        "src/repo/repoRevisionSidebar/cody/RepoRevisionSidebarCody.tsx",
         "src/repo/repoRevisionSidebar/cody/backend.tsx",
         "src/repo/settings/RepoSettingsArea.tsx",
         "src/repo/settings/RepoSettingsIndexPage.tsx",
@@ -1460,6 +1467,7 @@ ts_project(
         "src/site-admin/packages/modal-content/ManagePackageFiltersModalContent.tsx",
         "src/site-admin/permissions-center/PermissionsSyncJobNode.tsx",
         "src/site-admin/permissions-center/PermissionsSyncJobsTable.tsx",
+        "src/site-admin/permissions-center/PermissionsSyncStats.tsx",
         "src/site-admin/permissions-center/backend.ts",
         "src/site-admin/routes.tsx",
         "src/site-admin/sidebaritems.ts",
@@ -1481,6 +1489,8 @@ ts_project(
         "src/site/backend.ts",
         "src/site/index.ts",
         "src/staticAppConfig.ts",
+        "src/stores/codyChat.ts",
+        "src/stores/editor.ts",
         "src/stores/index.ts",
         "src/stores/navbarSearchQueryState.ts",
         "src/stores/notepad.ts",
@@ -1582,7 +1592,6 @@ ts_project(
         "src/util/dom.ts",
         "src/util/getReactElements.ts",
         "src/util/index.tsx",
-        "src/util/path.tsx",
         "src/util/prettyBytesBigint.ts",
         "src/util/security.ts",
         "src/util/settings.ts",
@@ -1893,7 +1902,7 @@ jest_test(
         ":web_tests",
     ],
     patch_node_fs = False,
-    shard_count = 6,  # this is has a large impact on the duration. We came to this number empirically.
+    shard_count = 4,  # originally at 6, but tend to consume too much resource and crash.
     tags = [
         "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],
@@ -1978,6 +1987,7 @@ webpack_bundle(
     ],
     entry_points = {
         "src/enterprise/main.js": "app",
+        "src/enterprise/embed/main.js": "embed",
     },
     env = {
         "NODE_ENV": "production",
@@ -2043,4 +2053,21 @@ build_test(
         ":bundle",
         ":bundle-enterprise",
     ],
+)
+
+bundlesize_bin.bundlesize_test(
+    name = "bundlesize_test",
+    args = [
+        "--config",
+        "$(location bundlesize.config.js)",
+        "--enable-github-checks",
+    ],
+    data = [
+        "bundlesize.config.js",
+        ":bundle-enterprise",
+    ],
+    env = {
+        "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle-enterprise)",
+    },
+    flaky = True,
 )

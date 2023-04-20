@@ -1,5 +1,5 @@
 {
-  "checksum": "538e8b635c321a9af5e7c5b8754ab6ef23ec092fcea886967805ac31b415325f",
+  "checksum": "c4c76b1e50982d0cc357f4d8d89e9909b4c168a028f87c6d621af8ca44322edb",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -8429,6 +8429,10 @@
             {
               "id": "tree-sitter-xlsg 0.0.1",
               "target": "tree_sitter_xlsg"
+            },
+            {
+              "id": "tree-sitter-zig 0.0.1",
+              "target": "tree_sitter_zig"
             }
           ],
           "selects": {}
@@ -12468,6 +12472,74 @@
             },
             {
               "id": "tree-sitter-xlsg 0.0.1",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.0.1"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.73",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
+    "tree-sitter-zig 0.0.1": {
+      "name": "tree-sitter-zig",
+      "version": "0.0.1",
+      "repository": {
+        "Git": {
+          "remote": "https://github.com/maxxnino/tree-sitter-zig",
+          "commitish": {
+            "Rev": "2c7b6308d906d7aec4b3e1fafaaeca447a8a2c2f"
+          }
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_zig",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_zig",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-zig 0.0.1",
               "target": "build_script_build"
             }
           ],

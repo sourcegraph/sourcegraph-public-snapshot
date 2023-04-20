@@ -144,6 +144,8 @@ func (t *traceLogger) AddEvent(name string, attributes ...attribute.KeyValue) {
 	if honey.Enabled() && t.context.HoneyDataset != nil {
 		event := t.context.HoneyDataset.EventWithFields(map[string]any{
 			"operation":            toSnakeCase(name),
+			"meta.hostname":        hostname.Get(),
+			"meta.version":         version.Version(),
 			"meta.annotation_type": "span_event",
 			"trace.trace_id":       t.event.Fields()["trace.trace_id"],
 			"trace.parent_id":      t.event.Fields()["trace.span_id"],

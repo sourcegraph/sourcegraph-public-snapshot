@@ -26,4 +26,5 @@ var treesitterSupportedFiletypes = map[string]struct{}{
 	"tsx":        {},
 	"typescript": {},
 	"xlsg":       {},
+	"zig":        {},
 }

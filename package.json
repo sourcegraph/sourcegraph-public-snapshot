@@ -268,7 +268,7 @@
     "graphql": "^15.4.0",
     "graphql-schema-linter": "^2.0.1",
     "gulp": "^4.0.2",
-    "http-proxy-middleware": "^1.1.2",
+    "http-proxy-middleware": "^2.0.6",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^28.1.0",
     "jest-canvas-mock": "^2.3.0",

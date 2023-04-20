@@ -85,7 +85,62 @@ By default, site-admins bypass all of the permissions checks. Which means, all s
 view all the repositories by default. The default can be changed by setting the site config 
 option `authz.enforceForSiteAdmins` to `true`.
 
-> NOTE: However, we recommend to be cautious with this option, as it might make some operations for site admins more complicated or impossible.
+> NOTE: However, we recommend to be cautious with this option, as it might make some operations for site admins more complicated or impossible. 
 
 E.g. trying to figure out if a specific repository is syncing source code to Sourcegraph correctly 
 might become an impossible task if the site admin cannot access that repository.
+
+## Permissions mechanisms in parallel
+
+<span class="badge badge-experimental">Experimental</span>
+<span class="badge badge-note">Sourcegraph 5.0+</span>
+
+Up to version 5.0 it was not possible to use explicit permissions API alongside permission syncing. 
+Meaning, if explicit permissions API was turned ON, synced permissions were turned OFF. Which also meant it was 
+impossible to use explicit permissions for one code host and synced permissions for another one on the same Sourcegraph instance. 
+
+**Example**:
+
+User `alice` has existing synced permissions to repositories `horsegraph/global` and `horsegraph/hay-v1`. 
+Alice also has explicit API permissions to repository `horsegraph/hay-dev`. So the overall repository permissions 
+of `alice` are the following union set: [`horsegraph/global`, `horsegraph/hay-v1`, `horsegraph/hay-dev`]
+
+### Configuration
+
+**Prerequisites:** 
+1. Sourcegraph version 5.0+
+1. Go to **Site Admin > Migrations** page. There is a migration called `Migrate data from user_permissions table to unified user_repo_permissions.`. 
+Make sure that it finished migrating all the data (it reports as 100%). Contact support if the migration does not seem to complete for a long time (multiple days). 
+
+1. Enable the experimental feature in the [site configuration](../config/site_config.md):
+```json
+{
+  "experimentalFeatures": {
+    "unifiedPermissions": "enabled"
+  }
+  // ...
+}
+```
+1. Continue [configuring the explicit permissions API](api.md#configuration) as you would before. 
+Both mechanisms work at the same time, thanks to a new behind the scenes data model that allows 
+what was previously impossible. 
+
+### Permission updates
+
+Each permission mechanism is going to update only its own data. This means, that permission syncing is not 
+going to touch permissions created by explicit permissions API and vice versa. We consider webhooks permissions 
+as part of the permission syncing mechanism as well, since it is using the same underlying database operations. 
+
+What the above paragraph means is, that when an updated set of accessible repositories for a user is given via 
+permission sync, it will replace the existing set of synced permissions for that user, but not the explicit permissions.
+
+**Example**:
+
+Let's follow the example from above, `alice` has existing synced permissions to repositories `horsegraph/global` and `horsegraph/hay-v1` 
+and explicit permissions to `horsegraph/hay-dev`, meaning a unioned set of effective permissions of [`horsegraph/global`, `horsegraph-hay-v1`, `horsegraph/hay-dev`]. 
+
+An update comes in from permission sync, now returning `alice` permissions as [`horsegraph/global`, `horsegraph/hay-v2`]. Notice 
+the removal of `horsegraph-v1` from the set.
+
+After the update, the synced permissions of `alice` will be [`horsegraph/global`, `horsegraph/hay-v2`], but explicit permissions 
+were not touched, leading to effective permissions of [`horsegraph/global`, `horsegraph-hay-v2`, `horsegraph/hay-dev`]

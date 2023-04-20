@@ -1,38 +1,43 @@
-.bubble-footer {
+.inner-container {
+    height: 100%;
+    overflow: auto;
+}
+
+.transcript-item {
+    font-size: var(--vscode-editor-font-size);
+    font-family: var(--vscode-font-family);
+    font-weight: var(--vscode-font-weight);
+    color: var(--vscode-input-foreground);
+    border-color: var(--vscode-sideBarSectionHeader-border);
+}
+
+/* Apply a slight tint to the human transcript item. */
+body[data-vscode-theme-kind='vscode-light'] .human-transcript-item,
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .human-transcript-item {
+    background-color: rgba(0, 0, 0, 0.07); /* slight dark tint */
+}
+body[data-vscode-theme-kind='vscode-dark'] .human-transcript-item,
+body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
+    background-color: rgba(255, 255, 255, 0.07); /* slight light tint */
+}
+
+.transcript-item-participant {
     font-size: var(--vscode-editor-font-size);
     color: var(--vscode-descriptionForeground);
 }
 
-.bubble-content {
-    font-size: var(--vscode-editor-font-size);
-    font-family: var(--vscode-font-family);
-    font-weight: var(--vscode-font-weight);
-    color: var(--bubble-text-color);
-}
-
-.bubble-content pre,
-.bubble-content span > code,
-.bubble-content p > code {
+.transcript-item pre,
+.transcript-item span > code,
+.transcript-item p > code,
+.transcript-item pre > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
+    color: var(--code-foreground);
 }
 
-.bubble-content pre,
-.bubble-content code {
-    color: var(--vscode-input-foreground);
-}
-
-.human-bubble-content {
-    background-color: var(--human-bubble-color);
-    color: var(--human-text-color);
-}
-
-.bot-bubble-content {
-    background-color: var(--bot-bubble-color);
-}
-
-.bubble-loader-dot {
-    background-color: var(--vscode-icon-foreground);
+.transcript-action {
+    background: var(--button-secondary-background);
+    color: var(--button-secondary-foreground);
 }
 
 .code-blocks-copy-button {
@@ -41,24 +46,24 @@
     border: none;
 }
 
+.input-row {
+    border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
+}
+
+.chat-input-context {
+    color: var(--vscode-input-foreground);
+}
+
 .chat-input {
     outline: none;
-    color: var(--vscode-input-foreground);
-    background-color: var(--vscode-input-background);
 }
 
-.transcript-container {
-    display: flex;
-    flex-direction: column-reverse;
-    flex: 1;
-    overflow: auto;
+:global(.token-hallucinated) {
+    border-bottom: 2px solid var(--vscode-testing-iconQueued);
+    word-break: break-all;
 }
 
-.empty-transcript-container {
-    overflow: auto;
-}
-
-.inner-container {
-    height: 100%;
-    overflow: auto;
+:global(.token-not-hallucinated) {
+    border-bottom: 2px solid var(--vscode-testing-iconPassed);
+    word-break: break-all;
 }

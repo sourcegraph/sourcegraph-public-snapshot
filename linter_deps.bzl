@@ -161,3 +161,17 @@ def linter_dependencies():
     version = "v0.4.3",
     sum = "h1:o/n5/K5gXqk8Gozvs2cnL0F2S1/g1vcGCAx2vETjITw=",
   )
+
+  go_repository(
+    name ="com_github_openpeedeep_depguard_v2",
+    importpath = "github.com/OpenPeeDeeP/depguard/v2",
+    version = "v2.0.1",
+    sum = "h1:yr9ZswukmNxl/hmJHEoLEjCF1d+f2pQrC0m1jzVljAE=",
+  )
+
+  go_repository(
+    name ="cc_mvdan_unparam",
+    importpath = "mvdan.cc/unparam",
+    version = "v0.0.0-20230312165513-e84e2d14e3b8",
+    sum = "h1:VuJo4Mt0EVPychre4fNlDWDuE5AjXtPJpRUWqZDQhaI=",
+  )

@@ -59,7 +59,6 @@ pkgs.mkShell {
     # CI lint tools you need locally
     shfmt
     shellcheck
-    golangci-lint
 
     # Web tools. Need node 16.7 so we use unstable. Yarn should also be built
     # against it.

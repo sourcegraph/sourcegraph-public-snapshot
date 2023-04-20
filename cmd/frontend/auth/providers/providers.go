@@ -3,6 +3,7 @@ package providers
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"sort"
 	"sync"
 
@@ -118,8 +119,9 @@ func Update(pkgName string, providers []Provider) {
 	curProviders[pkgName] = newPkgProviders
 }
 
-// Providers returns the set of currently registered authentication providers. When no providers are
+// Providers returns the list of currently registered authentication providers. When no providers are
 // registered, returns nil (and sign-in is effectively disabled).
+// The list is not sorted in any way.
 func Providers() []Provider {
 	if MockProviders != nil {
 		return MockProviders
@@ -143,10 +145,81 @@ func Providers() []Provider {
 		}
 	}
 
-	// Sort the providers to ensure a stable ordering (this is for the UI display order).
-	sort.Sort(sortProviders(providers))
-
 	return providers
+}
+
+// SortedProviders returns sorted provider slice.
+// Sort the providers to ensure a stable ordering (this is for the UI display order).
+// Puts the builtin provider first and sorts the others based on order.
+// If order field is not specified, puts the rest at the end alphabetically by type and then ID.
+func SortedProviders() []Provider {
+	p := Providers()
+	sort.Slice(p, func(i, j int) bool {
+		// natural ordering based on order int
+		// if order == 0, it means it was not specified, in which case all 0 should go to the end
+		cI := GetAuthProviderCommon(p[i])
+		cJ := GetAuthProviderCommon(p[j])
+		orderI := cI.Order
+		orderJ := cJ.Order
+		// if both have order specified, sort based on order
+		if orderI != 0 && orderJ != 0 {
+			return orderI < orderJ
+		}
+		// if just one has order specified, put the one with 0 last
+		if orderI != 0 || orderJ != 0 {
+			return orderJ == 0
+		}
+
+		if p[i].ConfigID().Type == "builtin" && p[j].ConfigID().Type != "builtin" {
+			return true
+		}
+		if p[j].ConfigID().Type == "builtin" && p[i].ConfigID().Type != "builtin" {
+			return false
+		}
+		if p[i].ConfigID().Type != p[j].ConfigID().Type {
+			return p[i].ConfigID().Type < p[j].ConfigID().Type
+		}
+		return p[i].ConfigID().ID < p[j].ConfigID().ID
+	})
+
+	return p
+}
+
+// GetAuthProviderCommon returns the common fields from a Provider's config struct.
+//
+// p (Provider): The authentication provider to extract common fields from.
+// Returns schema.AuthProviderCommon: The common fields from the provider's config struct.
+func GetAuthProviderCommon(p Provider) schema.AuthProviderCommon {
+	common := schema.AuthProviderCommon{}
+
+	v := reflect.ValueOf(p.Config())
+	for _, f := range reflect.VisibleFields(v.Type()) {
+		field := v.FieldByName(f.Name)
+		if !field.IsNil() {
+			// the field struct incorporates all the fields from schema.AuthProviderCommon
+			// except for builtin and http-header auth providers
+			e := field.Elem()
+			hidden := e.FieldByName("Hidden")
+			if hidden.IsValid() {
+				common.Hidden = hidden.Bool()
+			}
+			order := e.FieldByName("Order")
+			if order.IsValid() {
+				common.Order = order.Interface().(int)
+			}
+			dN := e.FieldByName("DisplayName")
+			if dN.IsValid() {
+				common.DisplayName = dN.Interface().(string)
+			}
+			dP := e.FieldByName("DisplayPrefix")
+			if dP.IsValid() && !dP.IsNil() {
+				s := dP.Elem().String()
+				common.DisplayPrefix = &s
+			}
+		}
+	}
+
+	return common
 }
 
 func BuiltinAuthEnabled() bool {
@@ -156,30 +229,6 @@ func BuiltinAuthEnabled() bool {
 		}
 	}
 	return false
-}
-
-type sortProviders []Provider
-
-func (p sortProviders) Len() int {
-	return len(p)
-}
-
-// Less puts the builtin provider first and sorts the others alphabetically by type and then ID.
-func (p sortProviders) Less(i, j int) bool {
-	if p[i].ConfigID().Type == "builtin" && p[j].ConfigID().Type != "builtin" {
-		return true
-	}
-	if p[j].ConfigID().Type == "builtin" && p[i].ConfigID().Type != "builtin" {
-		return false
-	}
-	if p[i].ConfigID().Type != p[j].ConfigID().Type {
-		return p[i].ConfigID().Type < p[j].ConfigID().Type
-	}
-	return p[i].ConfigID().ID < p[j].ConfigID().ID
-}
-
-func (p sortProviders) Swap(i, j int) {
-	p[i], p[j] = p[j], p[i]
 }
 
 func GetProviderByConfigID(id ConfigID) Provider {

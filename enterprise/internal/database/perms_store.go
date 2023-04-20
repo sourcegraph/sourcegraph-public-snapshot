@@ -1494,8 +1494,8 @@ WITH repos_with_permissions AS (SELECT DISTINCT repo_id FROM user_repo_permissio
 SELECT COUNT(repo.id)
 FROM repo
 	LEFT OUTER JOIN repos_with_permissions ON repos_with_permissions.repo_id = repo.id
-WHERE 
-	repo.deleted_at IS NULL 
+WHERE
+	repo.deleted_at IS NULL
 	AND repo.private = TRUE
 	AND repos_with_permissions.repo_id IS NULL
 `
@@ -1789,8 +1789,7 @@ WHERE perms.repo_id IN
 	return m, nil
 }
 
-//nolint:unparam // unparam complains that `title` always has same value across call-sites, but that's OK
-func (s *permsStore) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) {
+func (s *permsStore) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) { //nolint:unparam // unparam complains that `title` always has same value across call-sites, but that's OK
 	began := s.clock()
 	tr, ctx := trace.New(ctx, "database.PermsStore."+family, title)
 

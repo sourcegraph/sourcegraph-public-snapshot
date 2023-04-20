@@ -132,6 +132,12 @@ type AuthPasswordPolicy struct {
 type AuthProviderCommon struct {
 	// DisplayName description: The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).
 	DisplayName string `json:"displayName,omitempty"`
+	// DisplayPrefix description: Defines the prefix of the auth provider button on the login screen. By default we show `Continue with <displayName>`. This propery allows you to change the `Continue with ` part to something else. Useful in cases where the displayName is not compatible with the prefix.
+	DisplayPrefix *string `json:"displayPrefix,omitempty"`
+	// Hidden description: Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.
+	Hidden bool `json:"hidden,omitempty"`
+	// Order description: Determines order of auth providers on the login screen. Ordered as numbers, for example 1, 2, 3.
+	Order int `json:"order,omitempty"`
 }
 type AuthProviders struct {
 	AzureDevOps    *AzureDevOpsAuthProvider
@@ -216,9 +222,12 @@ type AzureDevOpsAuthProvider struct {
 	// ClientID description: The app ID of the Azure OAuth app.
 	ClientID string `json:"clientID"`
 	// ClientSecret description: The client Secret of the Azure OAuth app.
-	ClientSecret string `json:"clientSecret"`
-	DisplayName  string `json:"displayName,omitempty"`
-	Type         string `json:"type"`
+	ClientSecret  string  `json:"clientSecret"`
+	DisplayName   string  `json:"displayName,omitempty"`
+	DisplayPrefix *string `json:"displayPrefix,omitempty"`
+	Hidden        bool    `json:"hidden,omitempty"`
+	Order         int     `json:"order,omitempty"`
+	Type          string  `json:"type"`
 }
 
 // AzureDevOpsConnection description: Configuration for a connection to Azure DevOps.
@@ -237,23 +246,6 @@ type AzureDevOpsConnection struct {
 	Url string `json:"url"`
 	// Username description: A username for authentication with the Azure DevOps code host.
 	Username string `json:"username"`
-}
-type BackendInsight struct {
-	// Description description: The description of this insight
-	Description string          `json:"description,omitempty"`
-	Filters     *InsightFilters `json:"filters,omitempty"`
-	// Series description: Each query will be represented by one line on the chart.
-	Series []*BackendInsightSeries `json:"series"`
-	// Title description: The short title of this insight
-	Title string `json:"title"`
-}
-type BackendInsightSeries struct {
-	// Name description: The name to use for the series in the graph.
-	Name string `json:"name"`
-	// Query description: Performs a search query and shows the number of results returned.
-	Query string `json:"query"`
-	// Stroke description: The color of the line for the series.
-	Stroke string `json:"stroke,omitempty"`
 }
 type BatchChangeRolloutWindow struct {
 	// Days description: Day(s) the window applies to. If omitted, this rule applies to all days of the week.
@@ -295,9 +287,12 @@ type BitbucketCloudAuthProvider struct {
 	// ClientKey description: The Key of the Bitbucket OAuth app.
 	ClientKey string `json:"clientKey"`
 	// ClientSecret description: The Client Secret of the Bitbucket OAuth app.
-	ClientSecret string `json:"clientSecret"`
-	DisplayName  string `json:"displayName,omitempty"`
-	Type         string `json:"type"`
+	ClientSecret  string  `json:"clientSecret"`
+	DisplayName   string  `json:"displayName,omitempty"`
+	DisplayPrefix *string `json:"displayPrefix,omitempty"`
+	Hidden        bool    `json:"hidden,omitempty"`
+	Order         int     `json:"order,omitempty"`
+	Type          string  `json:"type"`
 	// Url description: URL of the Bitbucket Cloud instance.
 	Url string `json:"url,omitempty"`
 }
@@ -561,9 +556,13 @@ type CloudKMSEncryptionKey struct {
 type Completions struct {
 	// AccessToken description: The access token used to authenticate with the external completions provider.
 	AccessToken string `json:"accessToken"`
+	// ChatModel description: The model used for chat completions.
+	ChatModel string `json:"chatModel,omitempty"`
+	// CompletionModel description: The model used for code completion.
+	CompletionModel string `json:"completionModel,omitempty"`
 	// Enabled description: Toggles whether completions are enabled.
 	Enabled bool `json:"enabled"`
-	// Model description: The model used for completions.
+	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model"`
 	// Provider description: The external completions provider.
 	Provider string `json:"provider"`
@@ -677,6 +676,7 @@ type EncryptionKeys struct {
 	EnableCache            bool           `json:"enableCache,omitempty"`
 	ExecutorSecretKey      *EncryptionKey `json:"executorSecretKey,omitempty"`
 	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
+	GithubAppKey           *EncryptionKey `json:"githubAppKey,omitempty"`
 	OutboundWebhookKey     *EncryptionKey `json:"outboundWebhookKey,omitempty"`
 	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 	WebhookKey             *EncryptionKey `json:"webhookKey,omitempty"`
@@ -761,8 +761,8 @@ type ExpandedGitCommitDescription struct {
 
 // ExperimentalFeatures description: Experimental features and settings.
 type ExperimentalFeatures struct {
-	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
-	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
+	// CodyRestrictUsersFeatureFlag description: Restrict Cody to only be enabled for users that have a feature flag labeled "cody-experimental" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag.
+	CodyRestrictUsersFeatureFlag bool `json:"codyRestrictUsersFeatureFlag,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
@@ -853,7 +853,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	delete(m, "bitbucketServerFastPerm")
+	delete(m, "codyRestrictUsersFeatureFlag")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
 	delete(m, "enableGRPC")
@@ -938,7 +938,11 @@ type FusionClient struct {
 
 // GerritAuthProvider description: Gerrit auth provider
 type GerritAuthProvider struct {
-	Type string `json:"type"`
+	DisplayName   string  `json:"displayName,omitempty"`
+	DisplayPrefix *string `json:"displayPrefix,omitempty"`
+	Hidden        bool    `json:"hidden,omitempty"`
+	Order         int     `json:"order,omitempty"`
+	Type          string  `json:"type"`
 	// Url description: URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.
 	Url string `json:"url"`
 }
@@ -1012,11 +1016,12 @@ type GitHubAuthProvider struct {
 	// ClientID description: The Client ID of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise).
 	ClientID string `json:"clientID"`
 	// ClientSecret description: The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise).
-	ClientSecret string `json:"clientSecret"`
-	DisplayName  string `json:"displayName,omitempty"`
-	// Hidden description: Hides the configured auth provider from regular use through our web interface by omitting it from the JSContext, useful for experimental auth setups.
-	Hidden bool   `json:"hidden,omitempty"`
-	Type   string `json:"type"`
+	ClientSecret  string  `json:"clientSecret"`
+	DisplayName   string  `json:"displayName,omitempty"`
+	DisplayPrefix *string `json:"displayPrefix,omitempty"`
+	Hidden        bool    `json:"hidden,omitempty"`
+	Order         int     `json:"order,omitempty"`
+	Type          string  `json:"type"`
 	// Url description: URL of the GitHub instance, such as https://github.com or https://github-enterprise.example.com.
 	Url string `json:"url,omitempty"`
 }
@@ -1117,8 +1122,11 @@ type GitLabAuthProvider struct {
 	// ClientID description: The Client ID of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance).
 	ClientID string `json:"clientID"`
 	// ClientSecret description: The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance).
-	ClientSecret string `json:"clientSecret"`
-	DisplayName  string `json:"displayName,omitempty"`
+	ClientSecret  string  `json:"clientSecret"`
+	DisplayName   string  `json:"displayName,omitempty"`
+	DisplayPrefix *string `json:"displayPrefix,omitempty"`
+	Hidden        bool    `json:"hidden,omitempty"`
+	Order         int     `json:"order,omitempty"`
 	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
 	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
 	Type                      string `json:"type"`
@@ -1318,40 +1326,6 @@ type ImportChangesets struct {
 	ExternalIDs []any `json:"externalIDs"`
 	// Repository description: The repository name as configured on your Sourcegraph instance.
 	Repository string `json:"repository"`
-}
-type Insight struct {
-	// Description description: The description of this insight
-	Description string `json:"description"`
-	// Id description: A globally  unique identifier for this insight.
-	Id string `json:"id"`
-	// Series description: Series of data to show for this insight
-	Series []*InsightSeries `json:"series"`
-	// Title description: The short title of this insight
-	Title string `json:"title"`
-}
-type InsightDashboard struct {
-	Id string `json:"id"`
-	// InsightIds description: Insights ids that will be included in the dashboard.
-	InsightIds []string `json:"insightIds,omitempty"`
-	// Title description: Title of the dashboard.
-	Title string `json:"title"`
-}
-
-// InsightFilters description: Performs a filter
-type InsightFilters struct {
-	ExcludeRepoRegexp string   `json:"excludeRepoRegexp"`
-	IncludeRepoRegexp string   `json:"includeRepoRegexp"`
-	Repositories      []string `json:"repositories,omitempty"`
-}
-type InsightSeries struct {
-	// Label description: The label to use for the series in the graph.
-	Label string `json:"label"`
-	// RepositoriesList description: Performs a search query and shows the number of results returned.
-	RepositoriesList []any `json:"repositoriesList,omitempty"`
-	// Search description: Performs a search query and shows the number of results returned.
-	Search string `json:"search,omitempty"`
-	// Webhook description: (not yet supported) Fetch data from a webhook URL.
-	Webhook string `json:"webhook,omitempty"`
 }
 
 // JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.
@@ -1602,12 +1576,15 @@ type OpenIDConnectAuthProvider struct {
 	// For Google Apps: obtain this value from the API console (https://console.developers.google.com), as described at https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials
 	ClientSecret string `json:"clientSecret"`
 	// ConfigID description: An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.
-	ConfigID    string `json:"configID,omitempty"`
-	DisplayName string `json:"displayName,omitempty"`
+	ConfigID      string  `json:"configID,omitempty"`
+	DisplayName   string  `json:"displayName,omitempty"`
+	DisplayPrefix *string `json:"displayPrefix,omitempty"`
+	Hidden        bool    `json:"hidden,omitempty"`
 	// Issuer description: The URL of the OpenID Connect issuer.
 	//
 	// For Google Apps: https://accounts.google.com
 	Issuer string `json:"issuer"`
+	Order  int    `json:"order,omitempty"`
 	// RequireEmailDomain description: Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading "@". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
 	Type               string `json:"type"`
@@ -1894,10 +1871,12 @@ type SAMLAuthProvider struct {
 	// AllowSignup description: Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.
 	AllowSignup *bool `json:"allowSignup,omitempty"`
 	// ConfigID description: An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.
-	ConfigID    string `json:"configID,omitempty"`
-	DisplayName string `json:"displayName,omitempty"`
+	ConfigID      string  `json:"configID,omitempty"`
+	DisplayName   string  `json:"displayName,omitempty"`
+	DisplayPrefix *string `json:"displayPrefix,omitempty"`
 	// GroupsAttributeName description: Name of the SAML assertion attribute that holds group membership for allowGroups setting
 	GroupsAttributeName string `json:"groupsAttributeName,omitempty"`
+	Hidden              bool   `json:"hidden,omitempty"`
 	// IdentityProviderMetadata description: The SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is `<EntityDescriptor>` or `<EntityDescriptors>`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	IdentityProviderMetadata string `json:"identityProviderMetadata,omitempty"`
 	// IdentityProviderMetadataURL description: The SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).
@@ -1906,6 +1885,7 @@ type SAMLAuthProvider struct {
 	InsecureSkipAssertionSignatureValidation bool `json:"insecureSkipAssertionSignatureValidation,omitempty"`
 	// NameIDFormat description: The SAML NameID format to use when performing user authentication.
 	NameIDFormat string `json:"nameIDFormat,omitempty"`
+	Order        int    `json:"order,omitempty"`
 	// ServiceProviderCertificate description: The SAML Service Provider certificate in X.509 encoding (begins with "-----BEGIN CERTIFICATE-----"). This certificate is used by the Identity Provider to validate the Service Provider's AuthnRequests and LogoutRequests. It corresponds to the Service Provider's private key (`serviceProviderPrivateKey`). To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	ServiceProviderCertificate string `json:"serviceProviderCertificate,omitempty"`
 	// ServiceProviderIssuer description: The SAML Service Provider name, used to identify this Service Provider. This is required if the "externalURL" field is not set (as the SAML metadata endpoint is computed as "<externalURL>.auth/saml/metadata"), or when using multiple SAML authentication providers.
@@ -1994,8 +1974,6 @@ type Sentry struct {
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
-	// AlertsCodeHostIntegrationMessaging description: What in-app messaging to use around availability of Sourcegraph's code intelligence on code hosts. If the native code host integration is installed, this should be set to "native-integration" and users won't need to install the Sourcegraph browser extension to get code intelligence on code hosts.
-	AlertsCodeHostIntegrationMessaging string `json:"alerts.codeHostIntegrationMessaging,omitempty"`
 	// AlertsHideObservabilitySiteAlerts description: Disables observability-related site alert banners.
 	AlertsHideObservabilitySiteAlerts *bool `json:"alerts.hideObservabilitySiteAlerts,omitempty"`
 	// AlertsShowMajorMinorUpdates description: Whether to show alerts for major and minor version updates. Alerts for patch version updates will be shown if `alerts.showPatchUpdates` is true.
@@ -2031,10 +2009,7 @@ type Settings struct {
 	// HistoryPreferAbsoluteTimestamps description: Show absolute timestamps in the history panel and only show relative timestamps (e.g.: "5 days ago") in tooltip when hovering.
 	HistoryPreferAbsoluteTimestamps bool `json:"history.preferAbsoluteTimestamps,omitempty"`
 	// InsightsAggregationsExtendedTimeout description: The number of seconds to execute the aggregation for when running in extended timeout mode. This value should always be less than any proxy timeout if one exists. The maximum value is equal to searchLimits.maxTimeoutSeconds
-	InsightsAggregationsExtendedTimeout int   `json:"insights.aggregations.extendedTimeout,omitempty"`
-	InsightsDisplayLocationDirectory    *bool `json:"insights.displayLocation.directory,omitempty"`
-	InsightsDisplayLocationHomepage     *bool `json:"insights.displayLocation.homepage,omitempty"`
-	InsightsDisplayLocationInsightsPage *bool `json:"insights.displayLocation.insightsPage,omitempty"`
+	InsightsAggregationsExtendedTimeout int `json:"insights.aggregations.extendedTimeout,omitempty"`
 	// Motd description: DEPRECATED: Use `notices` instead.
 	//
 	// An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).
@@ -2106,7 +2081,6 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	delete(m, "alerts.codeHostIntegrationMessaging")
 	delete(m, "alerts.hideObservabilitySiteAlerts")
 	delete(m, "alerts.showMajorMinorUpdates")
 	delete(m, "alerts.showPatchUpdates")
@@ -2125,9 +2099,6 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "history.defaultPageSize")
 	delete(m, "history.preferAbsoluteTimestamps")
 	delete(m, "insights.aggregations.extendedTimeout")
-	delete(m, "insights.displayLocation.directory")
-	delete(m, "insights.displayLocation.homepage")
-	delete(m, "insights.displayLocation.insightsPage")
 	delete(m, "motd")
 	delete(m, "notices")
 	delete(m, "openInEditor")
@@ -2159,12 +2130,8 @@ type SettingsExperimentalFeatures struct {
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
 	// ClientSearchResultRanking description: How to rank search results in the client
 	ClientSearchResultRanking *string `json:"clientSearchResultRanking,omitempty"`
-	// CodeInsights description: Enables code insights on directory pages.
-	CodeInsights *bool `json:"codeInsights,omitempty"`
 	// CodeInsightsCompute description: Enables Compute powered Code Insights
 	CodeInsightsCompute *bool `json:"codeInsightsCompute,omitempty"`
-	// CodeInsightsLandingPage description: DEPRECATED: Enables code insights landing page layout.
-	CodeInsightsLandingPage *bool `json:"codeInsightsLandingPage,omitempty"`
 	// CodeInsightsRepoUI description: Specifies which (code insight repo) editor to use for repo query UI
 	CodeInsightsRepoUI *string `json:"codeInsightsRepoUI,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
@@ -2245,9 +2212,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "applySearchQuerySuggestionOnEnter")
 	delete(m, "batchChangesExecution")
 	delete(m, "clientSearchResultRanking")
-	delete(m, "codeInsights")
 	delete(m, "codeInsightsCompute")
-	delete(m, "codeInsightsLandingPage")
 	delete(m, "codeInsightsRepoUI")
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "enableCodeMirrorFileView")

@@ -1,12 +1,28 @@
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { Message } from '../../sourcegraph-api'
-import { getShortTimestamp } from '../../timestamp'
 
-import { Interaction } from './interaction'
+import { Interaction, InteractionJSON } from './interaction'
 import { ChatMessage } from './messages'
 
+export interface TranscriptJSON {
+    interactions: InteractionJSON[]
+}
+
 export class Transcript {
+    public static fromJSON(json: TranscriptJSON): Transcript {
+        return new Transcript(
+            json.interactions.map(
+                ({ humanMessage, assistantMessage, context }) =>
+                    new Interaction(humanMessage, assistantMessage, Promise.resolve(context))
+            )
+        )
+    }
+
     private interactions: Interaction[] = []
+
+    constructor(interactions: Interaction[] = []) {
+        this.interactions = interactions
+    }
 
     public addInteraction(interaction: Interaction | null): void {
         if (!interaction) {
@@ -15,16 +31,15 @@ export class Transcript {
         this.interactions.push(interaction)
     }
 
-    private getLastInteraction(): Interaction | null {
+    public getLastInteraction(): Interaction | null {
         return this.interactions.length > 0 ? this.interactions[this.interactions.length - 1] : null
     }
 
-    public addAssistantResponse(text: string): void {
+    public addAssistantResponse(text: string, displayText?: string): void {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',
             text,
-            displayText: text,
-            timestamp: getShortTimestamp(),
+            displayText: displayText ?? text,
         })
     }
 
@@ -58,6 +73,10 @@ export class Transcript {
         return this.interactions.flatMap(interaction => interaction.toChat())
     }
 
+    public async toJSON(): Promise<TranscriptJSON> {
+        return { interactions: await Promise.all(this.interactions.map(interaction => interaction.toJSON())) }
+    }
+
     public reset(): void {
         this.interactions = []
     }
@@ -85,5 +104,5 @@ function truncatePrompt(messages: Message[], maxTokens: number): Message[] {
 }
 
 function estimateTokensUsage(message: Message): number {
-    return Math.round(message.text.length / CHARS_PER_TOKEN)
+    return Math.round((message.text || '').length / CHARS_PER_TOKEN)
 }

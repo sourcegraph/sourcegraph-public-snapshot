@@ -153,6 +153,7 @@ export interface RepositoryMatch {
     private?: boolean
     branches?: string[]
     descriptionMatches?: Range[]
+    keyValuePairs?: Record<string, string>
 }
 
 export type OwnerMatch = PersonMatch | TeamMatch

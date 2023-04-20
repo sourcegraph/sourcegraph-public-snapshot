@@ -1,0 +1,47 @@
+.container {
+    padding: 1rem;
+}
+
+.wrapper {
+    color: var(--vscode-editor-foreground);
+    padding: 0.5rem;
+    background-color: var(--vscode-editor-background);
+    margin-bottom: 1rem;
+}
+
+.label {
+    font-weight: bold;
+}
+
+.input {
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+.button {
+    justify-content: center;
+    width: 100%;
+}
+
+.error {
+    border: 1px solid var(--vscode-inputValidation-errorBorder);
+    background-color: var(--vscode-inputValidation-errorBackground);
+    padding: 0.5rem;
+    margin-top: 1rem;
+}
+
+.terms {
+    font-size: 90%;
+}
+
+.input-label {
+    display: flex;
+    color: var(--vscode-editor-foreground);
+    font-size: var(--vscode-editor-font-size);
+    justify-content: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.input-label i {
+    margin-right: 0.2rem;
+}

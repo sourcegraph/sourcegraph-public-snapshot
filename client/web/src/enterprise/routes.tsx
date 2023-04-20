@@ -2,7 +2,6 @@ import { Navigate, RouteObject } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LegacyRoute } from '../LegacyRouteContext'
 import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
@@ -60,7 +59,7 @@ export const enterpriseRoutes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <CodeInsightsRouter {...props} />}
-                condition={props => isCodeInsightsEnabled(props.settingsCascade)}
+                condition={({ codeInsightsEnabled }) => !!codeInsightsEnabled}
             />
         ),
     },

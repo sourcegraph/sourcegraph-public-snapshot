@@ -32,7 +32,7 @@ export const queryTokens = Facet.define<QueryTokens, QueryTokens>({
 
 export const parsedQuery = Facet.define<ParseResult, Node | null>({
     combine(input) {
-        return input[0]?.type === 'success' ? input[0].nodes[0] : null
+        return input[0]?.type === 'success' ? input[0].node : null
     },
 })
 

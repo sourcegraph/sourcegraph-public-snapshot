@@ -22,6 +22,7 @@ export interface AuthProvider {
         | 'gerrit'
         | 'azuredevops'
     displayName: string
+    displayPrefix?: string
     isBuiltin: boolean
     authenticationURL: string
     serviceID: string
@@ -148,11 +149,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the instance is running on macOS. */
     runningOnMacOS: boolean
-
-    /**
-     * Likely running within a Docker container under a Mac host OS.
-     */
-    likelyDockerOnMac: boolean
 
     /**
      * Whether the setup wizard supports file picker query, it's used

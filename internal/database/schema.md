@@ -1543,6 +1543,28 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
+# Table "public.github_apps"
+```
+      Column       |           Type           | Collation | Nullable |                 Default                 
+-------------------+--------------------------+-----------+----------+-----------------------------------------
+ id                | integer                  |           | not null | nextval('github_apps_id_seq'::regclass)
+ app_id            | integer                  |           | not null | 
+ name              | text                     |           | not null | 
+ slug              | text                     |           | not null | 
+ base_url          | text                     |           | not null | 
+ client_id         | text                     |           | not null | 
+ client_secret     | text                     |           | not null | 
+ private_key       | text                     |           | not null | 
+ encryption_key_id | text                     |           | not null | 
+ logo              | text                     |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+Indexes:
+    "github_apps_pkey" PRIMARY KEY, btree (id)
+    "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
+
+```
+
 # Table "public.gitserver_relocator_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                       Default                        

@@ -1,5 +1,6 @@
 import fetch from 'isomorphic-fetch'
 
+import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'
 
 import {
@@ -8,6 +9,7 @@ import {
     REPOSITORY_ID_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
+    REPOSITORY_EMBEDDING_EXISTS_QUERY,
 } from './queries'
 
 interface APIResponse<T> {
@@ -21,6 +23,10 @@ interface CurrentUserIdResponse {
 
 interface RepositoryIdResponse {
     repository: { id: string } | null
+}
+
+interface RepositoryEmbeddingExistsResponse {
+    repository: { id: string; embeddingExists: boolean } | null
 }
 
 interface EmbeddingsSearchResponse {
@@ -61,7 +67,13 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
 
-    constructor(private instanceUrl: string, private accessToken: string | null) {}
+    constructor(
+        private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+    ) {}
+
+    public onConfigurationChange(newConfig: typeof this.config): void {
+        this.config = newConfig
+    }
 
     public async getCurrentUserId(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
@@ -76,8 +88,19 @@ export class SourcegraphGraphQLAPIClient {
             name: repoName,
         }).then(response =>
             extractDataOrError(response, data =>
-                data.repository ? data.repository.id : new Error(`repository ${repoName} not found`)
+                data.repository ? data.repository.id : new RepoNotFoundError(`repository ${repoName} not found`)
             )
+        )
+    }
+
+    public async getRepoIdIfEmbeddingExists(repoName: string): Promise<string | null | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepositoryEmbeddingExistsResponse>>(
+            REPOSITORY_EMBEDDING_EXISTS_QUERY,
+            {
+                name: repoName,
+            }
+        ).then(response =>
+            extractDataOrError(response, data => (data.repository?.embeddingExists ? data.repository.id : null))
         )
     }
 
@@ -90,7 +113,7 @@ export class SourcegraphGraphQLAPIClient {
         publicArgument?: string | {}
     }): Promise<void | Error> {
         try {
-            if (this.instanceUrl === this.dotcomUrl) {
+            if (this.config.serverEndpoint === this.dotcomUrl) {
                 await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
                     response => {
                         extractDataOrError(response, data => {})
@@ -136,10 +159,17 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
-        return fetch(`${this.instanceUrl}/.api/graphql`, {
-            headers: { ...(this.accessToken ? { Authorization: `token ${this.accessToken}` } : null) },
+        const endpointURL = new URL('/.api/graphql', this.config.serverEndpoint).href
+        const headers = new Headers(this.config.customHeaders as HeadersInit)
+        headers.set('Content-Type', 'application/json; charset=utf-8')
+        if (this.config.accessToken) {
+            headers.set('Authorization', `token ${this.config.accessToken}`)
+        }
+
+        return fetch(endpointURL, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
+            headers,
         })
             .then(verifyResponseCode)
             .then(response => response.json() as T)
@@ -148,7 +178,8 @@ export class SourcegraphGraphQLAPIClient {
 
     // make an anonymous request to the dotcom API
     private async fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
-        return fetch(`${this.dotcomUrl}/.api/graphql`, {
+        const endpointURL = new URL('/.api/graphql', this.dotcomUrl).href
+        return fetch(endpointURL, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
         })
@@ -164,3 +195,6 @@ function verifyResponseCode(response: Response): Response {
     }
     return response
 }
+
+class RepoNotFoundError extends Error {}
+export const isRepoNotFoundError = (value: unknown): value is RepoNotFoundError => value instanceof RepoNotFoundError

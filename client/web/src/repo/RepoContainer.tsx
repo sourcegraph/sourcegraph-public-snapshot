@@ -17,7 +17,9 @@ import {
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { EditorHint, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
@@ -25,14 +27,16 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
-import { Button, Icon, Link, useObservable } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, Panel, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
+import { CodyChat } from '../cody/CodyChat'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
@@ -40,11 +44,13 @@ import { OwnConfigProps } from '../own/OwnConfigProps'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useNavbarQueryState } from '../stores'
+import { useChatStore } from '../stores/codyChat'
 import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { fetchFileExternalLinks, ResolvedRevision, resolveRepoRevision } from './backend'
+import { AskCodyButton } from './cody/AskCodyButton'
 import { RepoContainerError } from './RepoContainerError'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -61,6 +67,8 @@ import { repoSettingsAreaPath } from './settings/routes'
 import styles from './RepoContainer.module.scss'
 
 const RepoSettingsArea = lazyComponent(() => import('./settings/RepoSettingsArea'), 'RepoSettingsArea')
+
+const CODY_SIDEBAR_SIZES = { default: 350, max: 1200, min: 250 }
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -179,6 +187,10 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
             [repoName, revision]
         )
     )
+
+    const [isCodyEnabled] = useFeatureFlag('cody-experimental')
+    const focusCodyShortcut = useKeyboardShortcut('focusCody')
+    const { isCodySidebarOpen, setIsCodySidebarOpen } = useChatStore({ codebase: repoName })
 
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
@@ -329,110 +341,161 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     }
 
     return (
-        <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
-            <RepoHeader
-                actionButtons={props.repoHeaderActionButtons}
-                breadcrumbs={props.breadcrumbs}
-                repoName={repoName}
-                revision={revision}
-                onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
-                settingsCascade={props.settingsCascade}
-                authenticatedUser={authenticatedUser}
-                platformContext={props.platformContext}
-                telemetryService={props.telemetryService}
-            />
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={2}
-                id="go-to-code-host"
-                {...repoHeaderContributionsLifecycleProps}
-            >
-                {({ actionType }) => (
-                    <GoToCodeHostAction
-                        repo={repo}
-                        repoName={repoName}
-                        // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
-                        revision={rawRevision || repo?.defaultBranch?.displayName || 'HEAD'}
-                        filePath={filePath}
-                        commitRange={commitRange}
-                        range={range}
-                        position={position}
-                        perforceCodeHostUrlToSwarmUrlMap={perforceCodeHostUrlToSwarmUrlMap}
-                        fetchFileExternalLinks={fetchFileExternalLinks}
-                        actionType={actionType}
-                        source="repoHeader"
-                        key="go-to-code-host"
-                        externalLinks={externalLinks}
+        <>
+            {isCodyEnabled &&
+                focusCodyShortcut?.keybindings.map((keybinding, index) => (
+                    <Shortcut
+                        key={index}
+                        {...keybinding}
+                        onMatch={() => {
+                            setIsCodySidebarOpen(true)
+                        }}
                     />
-                )}
-            </RepoHeaderContributionPortal>
+                ))}
+            <div className={classNames('w-100 d-flex flex-row')}>
+                <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
+                    <RepoHeader
+                        actionButtons={props.repoHeaderActionButtons}
+                        breadcrumbs={props.breadcrumbs}
+                        repoName={repoName}
+                        revision={revision}
+                        onLifecyclePropsChange={setRepoHeaderContributionsLifecycleProps}
+                        settingsCascade={props.settingsCascade}
+                        authenticatedUser={authenticatedUser}
+                        platformContext={props.platformContext}
+                        telemetryService={props.telemetryService}
+                    />
 
-            {isBrainDotVisible && (
-                <RepoHeaderContributionPortal
-                    position="right"
-                    priority={110}
-                    id="code-intelligence-status"
-                    {...repoHeaderContributionsLifecycleProps}
-                >
-                    {({ actionType }) =>
-                        props.brainDot && actionType === 'nav' ? (
-                            <props.brainDot
-                                key="code-intelligence-status"
-                                repoName={repoName}
-                                path={filePath}
-                                commit={resolvedRevision?.commitID ?? ''}
-                            />
-                        ) : null
-                    }
-                </RepoHeaderContributionPortal>
-            )}
-
-            <Suspense fallback={null}>
-                <Routes>
-                    {repoContainerRoutes.map(({ path, render, condition = () => true }) => (
-                        <Route
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            path={repoSplat + path}
-                            errorElement={<RouteError />}
-                            element={
-                                /**
-                                 * `repoContainerRoutes` depend on `repo`. We render these routes only when
-                                 * the `repo` value is resolved. If repo resolves to error due to empty repository
-                                 * then we return Empty Repository.
-                                 */
-                                repo && condition({ ...repoContainerContext, repo }) ? (
-                                    render({ ...repoContainerContext, repo })
-                                ) : isEmptyRepo ? (
-                                    <EmptyRepo />
+                    {isCodyEnabled ? (
+                        <RepoHeaderContributionPortal
+                            position="right"
+                            priority={1}
+                            id="cody"
+                            {...repoHeaderContributionsLifecycleProps}
+                        >
+                            {() =>
+                                !isCodySidebarOpen ? (
+                                    <AskCodyButton
+                                        onClick={() => {
+                                            props.telemetryService.log('web:codySidebar:chatOpened', {
+                                                repo,
+                                                path: filePath,
+                                            })
+                                            setIsCodySidebarOpen(true)
+                                        }}
+                                    />
                                 ) : null
                             }
-                        />
-                    ))}
-                    <Route
-                        path={repoSplat + repoSettingsAreaPath}
-                        errorElement={<RouteError />}
-                        // Always render the `RepoSettingsArea` even for empty repo to allow side-admins access it.
-                        element={<RepoSettingsArea {...repoRevisionContainerContext} repoName={repoName} />}
-                    />
-                    <Route
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        path="*"
-                        errorElement={<RouteError />}
-                        element={
-                            isEmptyRepo ? (
-                                <EmptyRepo />
-                            ) : (
-                                <RepoRevisionContainer
-                                    {...repoRevisionContainerContext}
-                                    {...childBreadcrumbSetters}
-                                    routes={props.repoRevisionContainerRoutes}
+                        </RepoHeaderContributionPortal>
+                    ) : null}
+
+                    <RepoHeaderContributionPortal
+                        position="right"
+                        priority={2}
+                        id="go-to-code-host"
+                        {...repoHeaderContributionsLifecycleProps}
+                    >
+                        {({ actionType }) => (
+                            <GoToCodeHostAction
+                                repo={repo}
+                                repoName={repoName}
+                                // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                                revision={rawRevision || repo?.defaultBranch?.displayName || 'HEAD'}
+                                filePath={filePath}
+                                commitRange={commitRange}
+                                range={range}
+                                position={position}
+                                perforceCodeHostUrlToSwarmUrlMap={perforceCodeHostUrlToSwarmUrlMap}
+                                fetchFileExternalLinks={fetchFileExternalLinks}
+                                actionType={actionType}
+                                source="repoHeader"
+                                key="go-to-code-host"
+                                externalLinks={externalLinks}
+                            />
+                        )}
+                    </RepoHeaderContributionPortal>
+
+                    {isBrainDotVisible && (
+                        <RepoHeaderContributionPortal
+                            position="right"
+                            priority={110}
+                            id="code-intelligence-status"
+                            {...repoHeaderContributionsLifecycleProps}
+                        >
+                            {({ actionType }) =>
+                                props.brainDot && actionType === 'nav' ? (
+                                    <props.brainDot
+                                        key="code-intelligence-status"
+                                        repoName={repoName}
+                                        path={filePath}
+                                        commit={resolvedRevision?.commitID ?? ''}
+                                    />
+                                ) : null
+                            }
+                        </RepoHeaderContributionPortal>
+                    )}
+
+                    <Suspense fallback={null}>
+                        <Routes>
+                            {repoContainerRoutes.map(({ path, render, condition = () => true }) => (
+                                <Route
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    path={repoSplat + path}
+                                    errorElement={<RouteError />}
+                                    element={
+                                        /**
+                                         * `repoContainerRoutes` depend on `repo`. We render these routes only when
+                                         * the `repo` value is resolved. If repo resolves to error due to empty repository
+                                         * then we return Empty Repository.
+                                         */
+                                        repo && condition({ ...repoContainerContext, repo }) ? (
+                                            render({ ...repoContainerContext, repo })
+                                        ) : isEmptyRepo ? (
+                                            <EmptyRepo />
+                                        ) : null
+                                    }
                                 />
-                            )
-                        }
-                    />
-                </Routes>
-            </Suspense>
-        </div>
+                            ))}
+                            <Route
+                                path={repoSplat + repoSettingsAreaPath}
+                                errorElement={<RouteError />}
+                                // Always render the `RepoSettingsArea` even for empty repo to allow side-admins access it.
+                                element={<RepoSettingsArea {...repoRevisionContainerContext} repoName={repoName} />}
+                            />
+                            <Route
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                path="*"
+                                errorElement={<RouteError />}
+                                element={
+                                    isEmptyRepo ? (
+                                        <EmptyRepo />
+                                    ) : (
+                                        <RepoRevisionContainer
+                                            {...repoRevisionContainerContext}
+                                            {...childBreadcrumbSetters}
+                                            routes={props.repoRevisionContainerRoutes}
+                                        />
+                                    )
+                                }
+                            />
+                        </Routes>
+                    </Suspense>
+                </div>
+
+                {isCodyEnabled && isCodySidebarOpen && (
+                    <Panel
+                        position="right"
+                        ariaLabel="Cody sidebar"
+                        maxSize={CODY_SIDEBAR_SIZES.max}
+                        minSize={CODY_SIDEBAR_SIZES.min}
+                        defaultSize={CODY_SIDEBAR_SIZES.default}
+                        storageKey="size-cache-cody-sidebar"
+                    >
+                        <CodyChat onClose={() => setIsCodySidebarOpen(false)} />
+                    </Panel>
+                )}
+            </div>
+        </>
     )
 }
 

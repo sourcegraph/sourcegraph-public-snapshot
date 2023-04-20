@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/log"
@@ -341,7 +342,17 @@ func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseRe
 }
 
 func (r *UserResolver) ViewerCanAdminister() (bool, error) {
-	// 🚨 SECURITY: Only the authenticated user can administrate themselves on
+	err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID)
+	if errcode.IsUnauthorized(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (r *UserResolver) viewerCanAdministerSettings() (bool, error) {
+	// 🚨 SECURITY: Only the authenticated user can administrate settings themselves on
 	// Sourcegraph.com.
 	var err error
 	if envvar.SourcegraphDotComMode() {

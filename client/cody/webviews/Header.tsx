@@ -1,38 +1,20 @@
 import { VSCodeTag } from '@vscode/webview-ui-toolkit/react'
 
-import './Header.css'
+import { CodyColoredSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
-import { CodySvg, ResetSvg } from '@sourcegraph/cody-ui/src/utils/icons'
+import styles from './Header.module.css'
 
-interface HeaderProps {
-    showResetButton: boolean
-    onResetClick: () => void
-}
-
-export const Header: React.FunctionComponent<React.PropsWithChildren<HeaderProps>> = ({
-    showResetButton,
-    onResetClick,
-}) => (
-    <div className="header-container">
-        <div className="header-container-left">
-            <div className="header-logo">
-                <CodySvg />
+export const Header: React.FunctionComponent = () => (
+    <div className={styles.headerContainer}>
+        <div className={styles.headerContainerLeft}>
+            <div className={styles.headerLogo}>
+                <CodyColoredSvg />
             </div>
-            <div className="header-title">
-                <span className="header-cody">Cody</span>
-                <VSCodeTag className="tag-beta">experimental</VSCodeTag>
+            <div className={styles.headerTitle}>
+                <span className={styles.headerCody}>Cody</span>
+                <VSCodeTag className={styles.tagBeta}>experimental</VSCodeTag>
             </div>
         </div>
-        <div className="header-container-right">
-            {/* eslint-disable jsx-a11y/click-events-have-key-events */}
-            {/* eslint-disable jsx-a11y/no-static-element-interactions */}
-            <div
-                className="reset-conversation"
-                title="Start a new conversation with Cody"
-                onClick={() => onResetClick()}
-            >
-                {showResetButton && <ResetSvg />}
-            </div>
-        </div>
+        <div className={styles.headerContainerRight} />
     </div>
 )
