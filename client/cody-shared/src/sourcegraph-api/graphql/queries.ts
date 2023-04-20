@@ -12,6 +12,14 @@ query Repository($name: String!) {
 	}
 }`
 
+export const REPOSITORY_EMBEDDING_EXISTS_QUERY = `
+query Repository($name: String!) {
+	repository(name: $name) {
+                id
+                embeddingExists
+	}
+}`
+
 export const SEARCH_EMBEDDINGS_QUERY = `
 query EmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
 	embeddingsSearch(repo: $repo, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {

@@ -112,6 +112,11 @@ Code navigation is made up of multiple features that build on top of each other:
      <tr>
         <td>Ruby</td>
         <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-ruby">scip-ruby</a></td>
+        <td>🟢 GA</td>
+      </tr>
+      <tr>
+        <td>C#</td>
+        <td><a href="https://github.com/sourcegraph/scip-dotnet">scip-dotnet</a></td>
         <td>🟡 Partially available</td>
       </tr>
    </tbody>

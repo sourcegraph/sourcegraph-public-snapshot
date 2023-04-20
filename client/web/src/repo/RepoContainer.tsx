@@ -197,7 +197,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         onResize: onCodySidebarResize,
     } = useCodySidebarStore()
     // TODO: This hook call is used to initialize the chat store with the right repo name.
-    useChatStore(isCodyEnabled, repoName, setIsCodySidebarOpen)
+    useChatStore({ codebase: repoName, setIsCodySidebarOpen })
 
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
