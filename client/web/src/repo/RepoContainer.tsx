@@ -190,8 +190,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     const [isCodyEnabled] = useFeatureFlag('cody-experimental')
     const focusCodyShortcut = useKeyboardShortcut('focusCody')
-
-    const { isCodySidebarOpen, setIsCodySidebarOpen } = useChatStore(isCodyEnabled, repoName)
+    const { isCodySidebarOpen, setIsCodySidebarOpen } = useChatStore({ codebase: repoName })
 
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
