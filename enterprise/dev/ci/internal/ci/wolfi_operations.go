@@ -232,3 +232,10 @@ func buildCandidateWolfiDockerImage(app, version, tag string, uploadSourcemaps b
 		pipeline.AddStep(fmt.Sprintf(":octopus: :docker: :construction: Build Wolfi-based %s", app), cmds...)
 	}
 }
+
+var reStepKeySanitizer = lazyregexp.New(`[^a-zA-Z0-9_-]+`)
+
+// sanitizeStepKey sanitizes BuildKite StepKeys by removing any invalid characters
+func sanitizeStepKey(key string) string {
+	return reStepKeySanitizer.ReplaceAllString(key, "")
+}
