@@ -95,7 +95,6 @@ type targetBuild struct {
 // Buildkite build.
 //
 // Requires ciBranchFlag and ciBuildFlag to be registered on the command.
-// Comment to trigger go ci
 func getBuildTarget(cmd *cli.Context) (target targetBuild, err error) {
 	target.pipeline = ciPipelineFlag.Get(cmd)
 	if target.pipeline == "" {
