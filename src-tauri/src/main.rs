@@ -4,7 +4,12 @@
 )]
 
 fn main() {
-    fix_path_env::fix();
+    match fix_path_env::fix() {
+        Ok(_) => {}
+        Err(e) => {
+            println!("Error fixing path environment: {}", e);
+        }
+    }
     tauri::Builder::default()
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
