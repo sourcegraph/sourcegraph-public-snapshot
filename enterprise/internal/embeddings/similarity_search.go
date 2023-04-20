@@ -45,8 +45,17 @@ func (nn *nearestNeighborsHeap) Peek() nearestNeighbor {
 	return nn.neighbors[0]
 }
 
+// Grows the heap to accomodate at least n elements
+func (nn *nearestNeighborsHeap) Reserve(n int) {
+	oldNeighbors := nn.neighbors
+	newNeighbors := make([]nearestNeighbor, n)
+	copy(newNeighbors, oldNeighbors)
+	nn.neighbors = newNeighbors[:len(oldNeighbors):n]
+
+}
+
 func newNearestNeighborsHeap() *nearestNeighborsHeap {
-	nn := &nearestNeighborsHeap{neighbors: make([]nearestNeighbor, 0)}
+	nn := &nearestNeighborsHeap{}
 	heap.Init(nn)
 	return nn
 }
@@ -144,6 +153,7 @@ func (index *EmbeddingIndex) partialSimilaritySearch(query []int8, numResults in
 	numResults = min(nRows, numResults)
 
 	nnHeap := newNearestNeighborsHeap()
+	nnHeap.Reserve(numResults)
 	for i := partialRows.start; i < partialRows.start+numResults; i++ {
 		score, debugInfo := index.score(query, i, opts)
 		heap.Push(nnHeap, nearestNeighbor{index: i, score: score, debug: debugInfo})
