@@ -5,6 +5,7 @@
     /* Our syntax highlighter expects a dark code background color, regardless of the VS Code color
     theme. */
     --code-background: #222222;
+    --code-foreground: #ffffff;
 }
 
 #root {
