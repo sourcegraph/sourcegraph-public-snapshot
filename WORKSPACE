@@ -14,6 +14,15 @@ load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
 
 http_archive(
+    name = "platforms",
+    sha256 = "5308fc1d8865406a49427ba24a9ab53087f17f5266a7aabbfc28823f3916e1ca",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/platforms/releases/download/0.0.6/platforms-0.0.6.tar.gz",
+        "https://github.com/bazelbuild/platforms/releases/download/0.0.6/platforms-0.0.6.tar.gz",
+    ],
+)
+
+http_archive(
     name = "aspect_bazel_lib",
     sha256 = "2518c757715d4f5fc7cc7e0a68742dd1155eaafc78fb9196b8a18e13a738cea2",
     strip_prefix = "bazel-lib-1.28.0",
@@ -74,6 +83,29 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
 )
 
+http_archive(
+    name = "io_tweag_rules_nixpkgs",
+    strip_prefix = "rules_nixpkgs-4dddbafba508cd2dffd95b8562cab91c9336fe36",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/4dddbafba508cd2dffd95b8562cab91c9336fe36.tar.gz"],
+)
+
+load("@io_tweag_rules_nixpkgs//nixpkgs:repositories.bzl", "rules_nixpkgs_dependencies")
+
+rules_nixpkgs_dependencies(
+    # this complains, why
+    # toolchains = [
+    #     "nodejs",
+    #     "rust",
+    # ],
+)
+
+load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_local_repository")
+
+nixpkgs_local_repository(
+    name = "nixpkgs",
+    nix_flake_lock_file = "//:flake.lock",
+)
+
 # rules_js setup ================================
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
@@ -81,10 +113,18 @@ rules_js_dependencies()
 
 # node toolchain setup ==========================
 load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
+load("@io_tweag_rules_nixpkgs//toolchains/nodejs:nodejs.bzl", "nixpkgs_nodejs_configure")
 
 nodejs_register_toolchains(
     name = "nodejs",
     node_version = "16.19.0",
+)
+
+nixpkgs_nodejs_configure(
+    name = "nixpkgs_nodejs",
+    attribute_path = "nodejs-16_x",
+    register = False,
+    repository = "@nixpkgs",
 )
 
 # rules_js npm setup ============================
@@ -215,6 +255,7 @@ protobuf_deps()
 
 # rust toolchain setup
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+load("@io_tweag_rules_nixpkgs//nixpkgs:toolchains/rust.bzl", "nixpkgs_rust_configure")
 
 rules_rust_dependencies()
 
@@ -225,6 +266,13 @@ rust_register_toolchains(
     versions = [
         "1.68.0",
     ],
+)
+
+nixpkgs_rust_configure(
+    name = "nixpkgs_rust",
+    default_edition = "2021",
+    register = False,
+    repository = "@nixpkgs",
 )
 
 load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
