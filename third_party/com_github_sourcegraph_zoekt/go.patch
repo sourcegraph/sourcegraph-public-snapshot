@@ -1,0 +1,12 @@
+diff --git a/cmd/zoekt-archive-index/BUILD.bazel b/cmd/zoekt-archive-index/BUILD.bazel
+index e62a8d2..df641a9 100644
+--- a/cmd/zoekt-archive-index/BUILD.bazel
++++ b/cmd/zoekt-archive-index/BUILD.bazel
+@@ -7,6 +7,7 @@ go_library(
+         "flowrate.go",
+         "main.go",
+     ],
++    linkstatic = True,
+     importpath = "github.com/sourcegraph/zoekt/cmd/zoekt-archive-index",
+     visibility = ["//visibility:private"],
+     deps = [
