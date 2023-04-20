@@ -49,7 +49,6 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@com_github_weaviate_weaviate//entities/models",
         "@com_github_weaviate_weaviate_go_client_v4//weaviate",
-        "@com_github_weaviate_weaviate_go_client_v4//weaviate/filters",
         "@com_github_weaviate_weaviate_go_client_v4//weaviate/graphql",
     ],
 )
