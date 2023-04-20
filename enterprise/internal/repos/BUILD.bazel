@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "repos",
+    srcs = ["repos.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/repos",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/httpcli",
+        "//internal/repos",
+        "//internal/types",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

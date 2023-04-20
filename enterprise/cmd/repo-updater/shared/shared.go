@@ -13,6 +13,7 @@ import (
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -59,6 +60,8 @@ func EnterpriseInit(
 			server.Syncer.EnterpriseUpdateRepoHook = enterpriseUpdateRepoHook
 		}
 	}
+
+	repos.AutherFromConnection = auth.AutherFromConnection
 
 	repoWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeRepo)
 	userWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeUser)

@@ -18,6 +18,7 @@ go_library(
         "//enterprise/internal/authz",
         "//enterprise/internal/batches",
         "//enterprise/internal/database",
+        "//enterprise/internal/github_apps/auth",
         "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/authz",

@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -28,6 +27,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+// AutherFromConnection creates an Authenticator for the provided GitHubConnection.
+// It is substituted in enterprise code to accommodate GitHub Apps.
+var AutherFromConnection = func(_ context.Context, _ database.DB, c *schema.GitHubConnection) (auth.Authenticator, error) {
+	return &auth.OAuthBearerToken{Token: c.Token}, nil
+}
 
 // A GitHubSource yields repositories from a single GitHub connection configured
 // in Sourcegraph via the external services configuration.
@@ -62,7 +67,7 @@ var (
 )
 
 // NewGitHubSource returns a new GitHubSource from the given external service.
-func NewGitHubSource(ctx context.Context, logger log.Logger, externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+func NewGitHubSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -71,7 +76,7 @@ func NewGitHubSource(ctx context.Context, logger log.Logger, externalServicesSto
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitHubSource(logger, svc, &c, cf)
+	return newGitHubSource(ctx, logger, db, svc, &c, cf)
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -86,7 +91,9 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 }, []string{"resource", "name"})
 
 func newGitHubSource(
+	ctx context.Context,
 	logger log.Logger,
+	db database.DB,
 	svc *types.ExternalService,
 	c *schema.GitHubConnection,
 	cf *httpcli.Factory,
@@ -152,12 +159,10 @@ func newGitHubSource(
 	if err != nil {
 		return nil, err
 	}
-	var auther auth.Authenticator
-	if c.IsGitHubAppInstallation() {
-		// TODO: Fetch GitHub App details
-		auther = ghauth.NewInstallationAccessToken(c.GitHubAppDetails.InstallationID, nil)
-	} else {
-		auther = &auth.OAuthBearerToken{Token: c.Token}
+
+	auther, err := AutherFromConnection(ctx, db, c)
+	if err != nil {
+		return nil, err
 	}
 	urn := svc.URN()
 
