@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { mdiClose } from '@mdi/js'
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { sortBy } from 'lodash'
 
@@ -32,7 +33,7 @@ const RepoMetadataItem: React.FunctionComponent<RepoMetadataItemProps> = ({
             {metadataKey}
         </Badge>
         <dd className={classNames('d-flex m-0', { ['d-none']: !metadataValue || !onDelete })}>
-            {metadataValue && (
+            {metadataValue ? (
                 <Badge
                     small={small}
                     variant="secondary"
@@ -43,6 +44,8 @@ const RepoMetadataItem: React.FunctionComponent<RepoMetadataItemProps> = ({
                 >
                     {metadataValue}
                 </Badge>
+            ) : (
+                <VisuallyHidden>No metadata value</VisuallyHidden>
             )}
             {onDelete && (
                 <Button
