@@ -160,37 +160,3 @@ export const fetchBlob = memoizeObservable(
     },
     fetchBlobCacheKey
 )
-
-/**
- * Returns the preferred blob prefetch format.
- *
- * Note: This format should match the format used when the blob is 'normally' fetched. E.g. in `BlobPage.tsx`.
- */
-export const usePrefetchBlobFormat = (): HighlightResponseFormat => {
-    const { enableCodeMirror, enableLazyHighlighting } = useExperimentalFeatures(features => ({
-        enableCodeMirror: features.enableCodeMirrorFileView ?? true,
-        enableLazyHighlighting: features.enableLazyBlobSyntaxHighlighting ?? true,
-    }))
-
-    /**
-     * Highlighted blobs (Fast)
-     *
-     * TODO: For large files, `PLAINTEXT` can still be faster, this is another potential UX improvement.
-     * Outstanding issue before this can be enabled: https://github.com/sourcegraph/sourcegraph/issues/41413
-     */
-    if (enableCodeMirror) {
-        return HighlightResponseFormat.JSON_SCIP
-    }
-
-    /**
-     * Plaintext blobs (Fast)
-     */
-    if (enableLazyHighlighting) {
-        return HighlightResponseFormat.HTML_PLAINTEXT
-    }
-
-    /**
-     * Highlighted blobs (Slow)
-     */
-    return HighlightResponseFormat.HTML_HIGHLIGHT
-}

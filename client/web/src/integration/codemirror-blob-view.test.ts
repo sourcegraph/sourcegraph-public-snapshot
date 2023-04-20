@@ -63,13 +63,6 @@ describe('CodeMirror blob view', () => {
 
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
-        ...createViewerSettingsGraphQLOverride({
-            user: {
-                experimentalFeatures: {
-                    enableCodeMirrorFileView: true,
-                },
-            },
-        }),
         ...blobGraphqlResults,
     }
 

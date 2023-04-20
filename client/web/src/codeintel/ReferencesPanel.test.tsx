@@ -1,7 +1,7 @@
 import { within, fireEvent } from '@testing-library/react'
 import { createPath } from 'react-router-dom'
 
-import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE, SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
@@ -17,12 +17,7 @@ describe('ReferencesPanel', () => {
 
         const result = renderWithBrandedContext(
             <MockedTestProvider mocks={requestMocks}>
-                <SettingsProvider
-                    settingsCascade={{
-                        final: { experimentalFeatures: { enableCodeMirrorFileView: false } },
-                        subjects: [],
-                    }}
-                >
+                <SettingsProvider settingsCascade={EMPTY_SETTINGS_CASCADE}>
                     <ReferencesPanel {...defaultProps} />
                 </SettingsProvider>
             </MockedTestProvider>,

@@ -14,7 +14,7 @@ import {
     createBlobContentResult,
     createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
+import { commonWebGraphQlResults } from './graphQlResults'
 
 describe('Blob viewer', () => {
     let driver: Driver
@@ -40,13 +40,6 @@ describe('Blob viewer', () => {
 
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
-        ...createViewerSettingsGraphQLOverride({
-            user: {
-                experimentalFeatures: {
-                    enableCodeMirrorFileView: false,
-                },
-            },
-        }),
         ResolveRepoRev: () => createResolveRepoRevisionResult(repositorySourcegraphUrl),
         FileExternalLinks: ({ filePath }) =>
             createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),

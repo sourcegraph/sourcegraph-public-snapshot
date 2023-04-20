@@ -49,7 +49,6 @@ import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Scalars } from '../../graphql-operations'
-import { render as renderLsifHtml } from '../../lsif/html'
 import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
@@ -75,7 +74,6 @@ import { fetchBlob } from './backend'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
-import { LegacyBlob } from './LegacyBlob'
 import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
@@ -128,10 +126,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
     const { repoID, repoName, repoServiceType, revision, commitID, filePath, useBreadcrumb, mode } = props
-    const { enableCodeMirror, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(features => ({
-        enableCodeMirror: features.enableCodeMirrorFileView ?? true,
-        enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? true,
-    }))
+    const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
+        features => features.enableLazyBlobSyntaxHighlighting ?? true
+    )
     const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
 
     const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
@@ -259,9 +256,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             revision,
                             filePath,
                             disableTimeout,
-                            format: enableCodeMirror
-                                ? HighlightResponseFormat.JSON_SCIP
-                                : HighlightResponseFormat.HTML_HIGHLIGHT,
+                            format: HighlightResponseFormat.JSON_SCIP,
                             scipSnapshot: indexIDsForSnapshotData[repoName] !== undefined,
                             visibleIndexID: indexIDsForSnapshotData[repoName],
                         })
@@ -269,14 +264,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     map(blob => {
                         if (blob === null) {
                             return blob
-                        }
-
-                        // Replace html with lsif generated HTML, if available
-                        if (!enableCodeMirror && !blob.highlight.html && blob.highlight.lsif) {
-                            const html = renderLsifHtml({ lsif: blob.highlight.lsif, content: blob.content })
-                            if (html) {
-                                blob.highlight.html = html
-                            }
                         }
 
                         const blobInfo: BlobPageInfo = {
@@ -298,7 +285,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, enableCodeMirror, mode, indexIDsForSnapshotData]
+            [repoName, revision, filePath, mode, indexIDsForSnapshotData]
         )
     )
 
@@ -326,10 +313,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     }
 
     const [isBlameVisible] = useBlameVisibility(isPackage)
-    const blameHunks = useBlameHunks(
-        { isPackage, repoName, revision, filePath, enableCodeMirror },
-        props.platformContext.sourcegraphURL
-    )
+    const blameHunks = useBlameHunks({ isPackage, repoName, revision, filePath }, props.platformContext.sourcegraphURL)
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&
@@ -516,8 +500,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         )
     }
 
-    const BlobComponent = enableCodeMirror ? CodeMirrorBlob : LegacyBlob
-
     return (
         <div className={className}>
             {alwaysRender}
@@ -569,11 +551,10 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     attributes={{
                         isSearchNotebook,
                         renderMode,
-                        enableCodeMirror,
                         enableLazyBlobSyntaxHighlighting,
                     }}
                 >
-                    <BlobComponent
+                    <CodeMirrorBlob
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
                         blobInfo={{ ...blobInfoOrError, commitID }}
