@@ -84,8 +84,8 @@ class CodyLanguageServer {
         this.connection.onInitialized(() => {
             this.onInitialized.bind(this)
         })
-        this.connection.onDidChangeConfiguration(() => {
-            this.onDidChangeConfiguration.bind(this)
+        this.connection.onDidChangeConfiguration(change => {
+            this.onDidChangeConfiguration(change)
         })
         this.connection.onCompletion(this.onCompletion.bind(this))
         this.connection.onDidChangeWatchedFiles(this.onDidChangeWatchedFiles.bind(this))
