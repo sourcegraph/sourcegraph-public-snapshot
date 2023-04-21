@@ -74,6 +74,7 @@ import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
+import { getDocument, getNamespaceSymbols } from './dependencyGraph/utils'
 import { GoToRawAction } from './GoToRawAction'
 import { LegacyBlob } from './LegacyBlob'
 import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
@@ -123,6 +124,9 @@ interface BlobPageInfo extends Optional<BlobInfo, 'commitID'> {
 export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ...props }) => {
     const location = useLocation()
     const navigate = useNavigate()
+
+    const document = getDocument(props.filePath)
+    console.log(document)
 
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
@@ -562,6 +566,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     </Alert>
                 </div>
             )}
+
+            {document && getNamespaceSymbols(document).map(symbol => <div>{symbol}</div>)}
+
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
             {renderMode === 'code' && commitID && (
                 <TraceSpanProvider
