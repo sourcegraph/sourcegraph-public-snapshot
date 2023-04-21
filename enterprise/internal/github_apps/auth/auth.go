@@ -188,7 +188,7 @@ func (t *installationAccessToken) Refresh(ctx context.Context, cli httpcli.Doer)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
-		return errors.Newf("failed to refresh: ", resp.StatusCode)
+		return errors.Newf("failed to refresh: %d", resp.StatusCode)
 	}
 
 	var jsonToken jsonToken
