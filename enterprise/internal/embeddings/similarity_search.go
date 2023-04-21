@@ -203,9 +203,18 @@ func (i *searchDebugInfo) String() string {
 
 func CosineSimilarity(row []int8, query []int8) int32 {
 	similarity := int32(0)
-	for i := 0; i < len(row); i++ {
+
+	count := len(row)
+	if count > len(query) {
+		// Do this ahead of time so the compiler doesn't need to bounds check
+		// every time we index into query.
+		panic("mismatched vector lengths")
+	}
+
+	for i := 0; i < count; i += 1 {
 		similarity += int32(row[i]) * int32(query[i])
 	}
+
 	return similarity
 }
 
