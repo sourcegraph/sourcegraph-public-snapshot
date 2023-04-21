@@ -4954,6 +4954,9 @@ type MockDB struct {
 	// OutboundWebhooksFunc is an instance of a mock function object
 	// controlling the behavior of the method OutboundWebhooks.
 	OutboundWebhooksFunc *DBOutboundWebhooksFunc
+	// OwnSignalsFunc is an instance of a mock function object controlling
+	// the behavior of the method OwnSignals.
+	OwnSignalsFunc *DBOwnSignalsFunc
 	// PermissionSyncJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method PermissionSyncJobs.
 	PermissionSyncJobsFunc *DBPermissionSyncJobsFunc
@@ -5155,6 +5158,11 @@ func NewMockDB() *MockDB {
 		},
 		OutboundWebhooksFunc: &DBOutboundWebhooksFunc{
 			defaultHook: func(encryption.Key) (r0 OutboundWebhookStore) {
+				return
+			},
+		},
+		OwnSignalsFunc: &DBOwnSignalsFunc{
+			defaultHook: func() (r0 OwnSignalStore) {
 				return
 			},
 		},
@@ -5415,6 +5423,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.OutboundWebhooks")
 			},
 		},
+		OwnSignalsFunc: &DBOwnSignalsFunc{
+			defaultHook: func() OwnSignalStore {
+				panic("unexpected invocation of MockDB.OwnSignals")
+			},
+		},
 		PermissionSyncJobsFunc: &DBPermissionSyncJobsFunc{
 			defaultHook: func() PermissionSyncJobStore {
 				panic("unexpected invocation of MockDB.PermissionSyncJobs")
@@ -5623,6 +5636,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		OutboundWebhooksFunc: &DBOutboundWebhooksFunc{
 			defaultHook: i.OutboundWebhooks,
+		},
+		OwnSignalsFunc: &DBOwnSignalsFunc{
+			defaultHook: i.OwnSignals,
 		},
 		PermissionSyncJobsFunc: &DBPermissionSyncJobsFunc{
 			defaultHook: i.PermissionSyncJobs,
@@ -8099,6 +8115,104 @@ func (c DBOutboundWebhooksFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBOutboundWebhooksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBOwnSignalsFunc describes the behavior when the OwnSignals method of the
+// parent MockDB instance is invoked.
+type DBOwnSignalsFunc struct {
+	defaultHook func() OwnSignalStore
+	hooks       []func() OwnSignalStore
+	history     []DBOwnSignalsFuncCall
+	mutex       sync.Mutex
+}
+
+// OwnSignals delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) OwnSignals() OwnSignalStore {
+	r0 := m.OwnSignalsFunc.nextHook()()
+	m.OwnSignalsFunc.appendCall(DBOwnSignalsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the OwnSignals method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBOwnSignalsFunc) SetDefaultHook(hook func() OwnSignalStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// OwnSignals method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBOwnSignalsFunc) PushHook(hook func() OwnSignalStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBOwnSignalsFunc) SetDefaultReturn(r0 OwnSignalStore) {
+	f.SetDefaultHook(func() OwnSignalStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBOwnSignalsFunc) PushReturn(r0 OwnSignalStore) {
+	f.PushHook(func() OwnSignalStore {
+		return r0
+	})
+}
+
+func (f *DBOwnSignalsFunc) nextHook() func() OwnSignalStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBOwnSignalsFunc) appendCall(r0 DBOwnSignalsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBOwnSignalsFuncCall objects describing the
+// invocations of this function.
+func (f *DBOwnSignalsFunc) History() []DBOwnSignalsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBOwnSignalsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBOwnSignalsFuncCall is an object that describes an invocation of method
+// OwnSignals on an instance of MockDB.
+type DBOwnSignalsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 OwnSignalStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBOwnSignalsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBOwnSignalsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
