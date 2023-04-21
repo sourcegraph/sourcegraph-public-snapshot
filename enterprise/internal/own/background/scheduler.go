@@ -2,9 +2,12 @@ package background
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -14,6 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var repoCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Name:      "own_background_index_scheduler_repos_queued_total",
+	Help:      "Number of repositories queued for indexing in Sourcegraph Own",
+}, []string{"op"})
 
 func GetOwnIndexSchedulerRoutines(db database.DB, observationCtx *observation.Context) (routines []goroutine.BackgroundRoutine) {
 	redMetrics := metrics.NewREDMetrics(
@@ -33,19 +42,38 @@ func GetOwnIndexSchedulerRoutines(db database.DB, observationCtx *observation.Co
 
 	for _, jobType := range IndexJobTypes {
 		operation := op(jobType.Name)
-		routines = append(routines, goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), jobType.Name, "", jobType.RefreshInterval, &ownRepoIndexSchedulerJob{store: basestore.NewWithHandle(db.Handle()), jobType: jobType, observationCtx: observationCtx}, operation))
+		routines = append(routines, goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), jobType.Name, "", jobType.RefreshInterval, &ownRepoIndexSchedulerJob{store: basestore.NewWithHandle(db.Handle()), jobType: jobType, operation: operation}, operation))
 	}
 	return routines
 }
 
 type ownRepoIndexSchedulerJob struct {
-	store          *basestore.Store
-	jobType        IndexJobType
-	observationCtx *observation.Context
+	store     *basestore.Store
+	jobType   IndexJobType
+	operation *observation.Operation
 }
 
 func (o *ownRepoIndexSchedulerJob) Handle(ctx context.Context) error {
-	lgr := o.observationCtx.Logger
+	lgr := o.operation.Logger
+	logJobDisabled := func() {
+		lgr.Info("skipping own indexing job, job disabled", logger.String("job-name", o.jobType.Name))
+	}
+
+	flag, err := database.FeatureFlagsWith(o.store).GetFeatureFlag(ctx, featureFlagName(o.jobType))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			logJobDisabled()
+			return nil
+		} else {
+			return errors.Wrap(err, "database.FeatureFlagsWith")
+		}
+	}
+	res, ok := flag.EvaluateGlobal()
+	if !ok || !res {
+		logJobDisabled()
+		return nil
+	}
+	// okay, so the job is enabled - proceed!
 	lgr.Info("Scheduling repo indexes for own job", logger.String("job-name", o.jobType.Name))
 
 	// convert duration to hours to match the query
@@ -59,6 +87,7 @@ func (o *ownRepoIndexSchedulerJob) Handle(ctx context.Context) error {
 
 	rows, _ := val.RowsAffected()
 	lgr.Info("Own index job scheduled", logger.String("job-name", o.jobType.Name), logger.Int64("row-count", rows))
+	repoCounter.WithLabelValues(o.jobType.Name).Add(float64(rows))
 	return nil
 }
 

@@ -40,6 +40,10 @@ var IndexJobTypes = []IndexJobType{{
 	RefreshInterval: time.Minute * 5,
 }}
 
+func featureFlagName(jobType IndexJobType) string {
+	return fmt.Sprintf("own-background-index-repo-%s", jobType.Name)
+}
+
 const tableName = "own_background_jobs"
 
 type Job struct {
