@@ -7,6 +7,7 @@
     margin: 2rem auto;
     border: solid 1px #ffffff33;
     font-size: var(--vscode-editor-font-size);
+    font-family: var(--vscode-font-family);
     color: var(--vscode-editor-foreground);
 }
 
@@ -20,6 +21,7 @@
  */
 
 :root {
+    --vscode-font-family: -apple-system, BlinkMacSystemFont, "Ubuntu", "Droid Sans", "Segoe WPC", "Segoe UI", sans-serif;
     --vscode-editor-foreground: var(--foreground);
     --vscode-editor-background: #151c28;
     --vscode-inputValidation-errorBorder: #ff0000;

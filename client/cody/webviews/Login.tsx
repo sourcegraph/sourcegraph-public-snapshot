@@ -39,63 +39,57 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                     Invalid credentials. Please check the Sourcegraph instance URL and access token.
                 </p>
             )}
-            <p className={styles.inputLabel}>
-                <i className="codicon codicon-organization" />
-                <span>Enterprise User</span>
-            </p>
-            <form className={styles.wrapper} onSubmit={onSubmit}>
-                <label htmlFor="endpoint" className={styles.inputLabel}>
-                    <i className="codicon codicon-link" />
-                    <span>Sourcegraph Instance URL</span>
-                </label>
-                <VSCodeTextField
-                    id="endpoint"
-                    value={endpoint || ''}
-                    className={styles.input}
-                    placeholder="https://example.sourcegraph.com"
-                    onInput={(e: any) => setEndpoint(e.target.value)}
-                />
+            <section className={styles.section}>
+                <h2 className={styles.sectionHeader}>Enterprise User</h2>
+                <form className={styles.wrapper} onSubmit={onSubmit}>
+                    <label htmlFor="endpoint" className={styles.label}>
+                        Sourcegraph Instance URL
+                    </label>
+                    <VSCodeTextField
+                        id="endpoint"
+                        value={endpoint || ''}
+                        className={styles.input}
+                        placeholder="https://example.sourcegraph.com"
+                        onInput={(e: any) => setEndpoint(e.target.value)}
+                    />
 
-                <label htmlFor="accessToken" className={styles.inputLabel}>
-                    <i className="codicon codicon-key" />
-                    <span>
+                    <label htmlFor="accessToken" className={styles.label}>
                         Access Token (
                         <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">docs</a>)
-                    </span>
-                </label>
-                <VSCodeTextField
-                    id="accessToken"
-                    value={token}
-                    placeholder=""
-                    className={styles.input}
-                    type={TextFieldType.password}
-                    onInput={(e: any) => setToken(e.target.value)}
-                />
+                    </label>
+                    <VSCodeTextField
+                        id="accessToken"
+                        value={token}
+                        placeholder=""
+                        className={styles.input}
+                        type={TextFieldType.password}
+                        onInput={(e: any) => setToken(e.target.value)}
+                    />
 
-                <VSCodeButton className={styles.button} type="submit">
-                    Sign In
-                </VSCodeButton>
-            </form>
-            <p className={styles.inputLabel}>
-                <i className="codicon codicon-account" />
-                <span>Everyone Else</span>
-            </p>
-            <div className={styles.wrapper}>
-                <p className={styles.input}>
-                    <a href="https://docs.google.com/forms/d/e/1FAIpQLScSI06yGMls-V1FALvFyURi8U9bKRTSKPworBhzZEHDQvo0HQ/viewform">
-                        Fill out this form to request access.
-                    </a>
-                </p>
-                <a href="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY">
-                    <VSCodeButton
-                        className={styles.button}
-                        type="button"
-                        onClick={() => setEndpoint('https://sourcegraph.com')}
-                    >
-                        Continue with Sourcegraph.com
+                    <VSCodeButton className={styles.button} type="submit">
+                        Sign In
                     </VSCodeButton>
-                </a>
-            </div>
+                </form>
+            </section>
+            <section className={styles.section}>
+                <h2 className={styles.sectionHeader}>Everyone Else</h2>
+                <div className={styles.wrapper}>
+                    <p className={styles.linkToForm}>
+                        <a href="https://docs.google.com/forms/d/e/1FAIpQLScSI06yGMls-V1FALvFyURi8U9bKRTSKPworBhzZEHDQvo0HQ/viewform">
+                            Fill out this form to request access.
+                        </a>
+                    </p>
+                    <a href="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY">
+                        <VSCodeButton
+                            className={styles.button}
+                            type="button"
+                            onClick={() => setEndpoint('https://sourcegraph.com')}
+                        >
+                            Continue with Sourcegraph.com
+                        </VSCodeButton>
+                    </a>
+                </div>
+            </section>
             <div className={styles.terms} dangerouslySetInnerHTML={{ __html: renderMarkdown(CODY_TERMS_MARKDOWN) }} />
         </div>
     )

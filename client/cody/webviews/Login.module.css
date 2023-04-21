@@ -1,21 +1,39 @@
 .container {
     padding: 1rem;
+    color: var(--vscode-editor-foreground);
+}
+
+.section {
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    font-weight: bold;
+    color: var(--vscode-editor-foreground);
+    font-size: calc(1.25*var(--vscode-editor-font-size));
+    margin-bottom: 0.25rem;
 }
 
 .wrapper {
-    color: var(--vscode-editor-foreground);
     padding: 0.5rem;
-    background-color: var(--vscode-editor-background);
-    margin-bottom: 1rem;
 }
 
 .label {
+    display: inline-block;
     font-weight: bold;
+    color: var(--vscode-editor-foreground);
+    font-size: var(--vscode-editor-font-size);
+    margin-bottom: 0.25rem;
+}
+
+.link-to-form {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
 }
 
 .input {
     width: 100%;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .button {
@@ -33,14 +51,3 @@
     font-size: 90%;
 }
 
-.input-label {
-    display: flex;
-    color: var(--vscode-editor-foreground);
-    font-size: var(--vscode-editor-font-size);
-    justify-content: flex-start;
-    margin-bottom: 0.5rem;
-}
-
-.input-label i {
-    margin-right: 0.2rem;
-}
