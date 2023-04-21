@@ -3,13 +3,10 @@ package github
 import (
 	"fmt"
 	"net/url"
-	"strconv"
 	"time"
 
 	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,7 +30,6 @@ type ExternalConnection struct {
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
 func NewAuthzProviders(
-	db database.DB,
 	conns []*ExternalConnection,
 	authProviders []schema.AuthProviders,
 	enableGithubInternalRepoVisibility bool,
@@ -59,7 +55,7 @@ func NewAuthzProviders(
 
 	for _, c := range conns {
 		// Initialize authz (permissions) provider.
-		p, err := newAuthzProvider(db, c)
+		p, err := newAuthzProvider(c)
 		if err != nil {
 			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeGitHub)
 			initResults.Problems = append(initResults.Problems, err.Error())
@@ -104,7 +100,6 @@ func NewAuthzProviders(
 // newAuthzProvider instantiates a provider, or returns nil if authorization is disabled.
 // Errors returned are "serious problems".
 func newAuthzProvider(
-	db database.DB,
 	c *ExternalConnection,
 ) (*Provider, error) {
 	if c.Authorization == nil {
@@ -118,23 +113,6 @@ func newAuthzProvider(
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, errors.Errorf("could not parse URL for GitHub instance %q: %s", c.Url, err)
-	}
-
-	if c.GithubAppInstallationID != "" {
-		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
-		if err != nil {
-			return nil, errors.Wrap(err, "parse installation ID")
-		}
-
-		config, err := conf.GitHubAppConfig()
-		if err != nil {
-			return nil, err
-		}
-		if !config.Configured() {
-			return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph is not enabled")
-		}
-
-		return newAppProvider(db, c.ExternalService, c.GitHubConnection.URN, baseURL, config.AppID, config.PrivateKey, installationID, nil)
 	}
 
 	// Disable by default for now
@@ -153,6 +131,6 @@ func newAuthzProvider(
 // ValidateAuthz validates the authorization fields of the given GitHub external
 // service config.
 func ValidateAuthz(c *types.GitHubConnection) error {
-	_, err := newAuthzProvider(nil, &ExternalConnection{GitHubConnection: c})
+	_, err := newAuthzProvider(&ExternalConnection{GitHubConnection: c})
 	return err
 }

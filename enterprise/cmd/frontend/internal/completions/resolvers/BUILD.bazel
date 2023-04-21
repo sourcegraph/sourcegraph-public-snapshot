@@ -11,6 +11,8 @@ go_library(
         "//enterprise/cmd/frontend/internal/completions/types",
         "//enterprise/internal/cody",
         "//internal/conf",
+        "//internal/database",
+        "//internal/redispool",
         "//lib/errors",
     ],
 )
