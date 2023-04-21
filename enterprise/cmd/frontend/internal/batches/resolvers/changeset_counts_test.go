@@ -106,7 +106,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatalf("Failed to Upsert external service: %s", err)
 	}
 
-	githubSrc, err := repos.NewGithubSource(ctx, logger, db.ExternalServices(), githubExtSvc, cf)
+	githubSrc, err := repos.NewGithubSource(ctx, logger, githubExtSvc, cf)
 	if err != nil {
 		t.Fatal(t)
 	}

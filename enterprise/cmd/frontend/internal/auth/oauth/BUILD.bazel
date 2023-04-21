@@ -16,7 +16,6 @@ go_library(
         "//cmd/frontend/auth/providers",
         "//cmd/frontend/external/session",
         "//cmd/frontend/globals",
-        "//enterprise/cmd/frontend/internal/app",
         "//internal/actor",
         "//internal/conf",
         "//internal/cookie",
