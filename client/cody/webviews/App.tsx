@@ -135,7 +135,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 <div className="error">
                     Error: {errorMessage}
                     <button type="button" onClick={() => setErrorMessage('')} className="close-btn">
-                        x
+                        ×
                     </button>
                 </div>
             )}
