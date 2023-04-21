@@ -111,22 +111,27 @@ export async function createClient({
 
         const prompt = await transcript.toPrompt(getPreamble(config.codebase))
         const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
+        const abortController = new AbortController()
 
-        chatClient.chat(prompt, {
-            onChange(rawText) {
-                const text = reformatBotMessage(rawText, responsePrefix)
-                transcript.addAssistantResponse(text)
+        chatClient.chat(
+            prompt,
+            {
+                onChange(rawText) {
+                    const text = reformatBotMessage(rawText, responsePrefix)
+                    transcript.addAssistantResponse(text)
 
-                sendTranscript()
+                    sendTranscript()
+                },
+                onComplete() {
+                    isMessageInProgress = false
+                    sendTranscript()
+                },
+                onError(error) {
+                    console.error(error)
+                },
             },
-            onComplete() {
-                isMessageInProgress = false
-                sendTranscript()
-            },
-            onError(error) {
-                console.error(error)
-            },
-        })
+            abortController.signal
+        )
     }
 
     return {
