@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/binary"
 )
 
 const GET_EMBEDDINGS_MAX_RETRIES = 5
@@ -142,13 +141,10 @@ func embedFiles(
 		if err != nil {
 			return createEmptyEmbeddingIndex(dimensions), errors.Wrap(err, "error while reading a file")
 		}
-		if binary.IsBinary(contentBytes) {
+		if embeddable, _ := isEmbeddableFileContent(contentBytes); !embeddable {
 			continue
 		}
 		content := string(contentBytes)
-		if !isEmbeddableFileContent(content) {
-			continue
-		}
 
 		embeddableChunks = append(embeddableChunks, split.SplitIntoEmbeddableChunks(content, fileName, splitOptions)...)
 
