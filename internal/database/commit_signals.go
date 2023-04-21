@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"hash/fnv"
-	"strings"
+	"path"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -16,12 +16,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-/////
-// TODO: There is no support for directory root now. The fix is simple though.
-
 type OwnSignalStore interface {
 	AddCommit(ctx context.Context, commit Commit) error
 	FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentAuthor, error)
+}
+
+func OwnSignalsStoreWith(other basestore.ShareableStore) OwnSignalStore {
+	return &ownSignalStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
 type Commit struct {
@@ -33,19 +34,28 @@ type Commit struct {
 	FilesChanged []string
 }
 
+type RecentAuthor struct {
+	AuthorName        string
+	AuthorEmail       string
+	ContributionCount int
+}
+
 type ownSignalStore struct {
 	logger log.Logger
 	*basestore.Store
 }
 
-func ensureAuthor(ctx context.Context, tx *basestore.Store, commit Commit) (int, error) {
+// TODO: Use one query for author.
+
+func (s *ownSignalStore) ensureAuthor(ctx context.Context, commit Commit) (int, error) {
+	db := s.Store
 	var authorID int
-	err := tx.QueryRow(
+	err := db.QueryRow(
 		ctx,
 		sqlf.Sprintf(`SELECT id FROM commit_authors WHERE email = %s AND name = %s`, commit.AuthorEmail, commit.AuthorName),
 	).Scan(&authorID)
 	if err == sql.ErrNoRows {
-		err = tx.QueryRow(
+		err = db.QueryRow(
 			ctx,
 			sqlf.Sprintf(`INSERT INTO commit_authors (email, name) VALUES (%s, %s) RETURNING id`, commit.AuthorEmail, commit.AuthorName),
 		).Scan(&authorID)
@@ -56,116 +66,157 @@ func ensureAuthor(ctx context.Context, tx *basestore.Store, commit Commit) (int,
 	return authorID, nil
 }
 
-func ensureRepoPaths(ctx context.Context, tx *basestore.Store, commit Commit) ([]int, error) {
-	pathIDs := make([]int, len(commit.FilesChanged))
-	for i, path := range commit.FilesChanged {
-		pathPrefixes := strings.Split(path, "/")
-		var parentPathID *int
-		var pathID int
-		for j := range pathPrefixes {
-			pathPrefix := strings.Join(pathPrefixes[:j+1], "/")
-			// Get or create repo path
-			err := tx.QueryRow(
-				ctx,
-				sqlf.Sprintf(`
-            SELECT id FROM repo_paths
-            WHERE repo_id = %s
-            AND absolute_path = %s
-            `, commit.RepoID, pathPrefix),
-			).Scan(&pathID)
-			if err == sql.ErrNoRows {
-				err = tx.QueryRow(
-					ctx,
-					sqlf.Sprintf(`
-                INSERT INTO repo_paths (repo_id, absolute_path, parent_id)
-                    VALUES (%s, %s, %s) RETURNING id`, commit.RepoID, pathPrefix, parentPathID),
-				).Scan(&pathID)
-			}
-			if err != nil {
-				return nil, err
-			}
-			parentPathID = &pathID
-		}
-		pathIDs[i] = pathID
-	}
-	return pathIDs, nil
-}
-
 const pathInsertFmtstr = `
-	inderted__ AS (
-		INSERT INTO repo_paths (repo_id, absolute_path, is_dir, parent_id)
-		VALUES (%%s, %%s, %%s, (SELECT id FROM selected_previous))
-		ON CONFLICT DO NOTHING
-		RETURNING id
-	),
-	selected__ AS (
-		SELECT id
-		FROM inserted__
-
-		UNION ALL
-
+	WITH already_exists (id) AS (
 		SELECT id
 		FROM repo_paths
-		WHERE repo_id = %%s
-		AND absolute_path = %%s
+		WHERE repo_id = %s
+		AND absolute_path = %s
+	),
+	need_to_insert (id) AS (
+		INSERT INTO repo_paths (repo_id, absolute_path, parent_id)
+		VALUES (%s, %s, %s)
+		ON CONFLICT (repo_id, absolute_path) DO NOTHING
+		RETURNING id
 	)
-`
+	SELECT id FROM already_exists
+	UNION ALL
+	SELECT id FROM need_to_insert`
 
-func ensureRepoPaths2(ctx context.Context, tx *basestore.Store, commit Commit) ([]int, error) {
-	return nil, nil
+// ensureRepoPaths takes paths of files changed in the given commit
+// and makes sure they all exist in the database (alongside with their ancestor paths)
+// as per the schema.
+//
+// The operation makes a number of queries to the database that is comparable
+// to the size of the given file tree. In other words, every directory mentioned
+// in the `commit.FilesChanged` (including parents and ancestors) will be queried
+// or inserted with a single query (no repetitions though).
+// Optimizing this into fewer queries seems to make the implementation very hard to read.
+//
+// The result int slice is guaranteed to be in order corresponding to the order
+// of `commit.FilesChanged`.
+func (s *ownSignalStore) ensureRepoPaths(ctx context.Context, commit Commit) ([]int, error) {
+	db := s.Store
+	// compute all the ancestor paths for all changed files in a commit
+	var paths []string
+	for _, file := range commit.FilesChanged {
+		for p := file; p != "."; p = path.Dir(p) {
+			paths = append(paths, p)
+		}
+	}
+	// add empty string which references the repo root directory
+	paths = append(paths, "")
+	// reverse paths so we start at the root
+	for i := 0; i < len(paths)/2; i++ {
+		j := len(paths) - i - 1
+		paths[i], paths[j] = paths[j], paths[i]
+	}
+	// remove duplicates from paths, to avoid extra query,
+	// especially if many files within the same directory structure
+	// are referenced
+	seen := make(map[string]bool)
+	j := 0
+	for i := 0; i < len(paths); i++ {
+		if !seen[paths[i]] {
+			seen[paths[i]] = true
+			paths[j] = paths[i]
+			j++
+		}
+	}
+	paths = paths[:j]
+	// insert all directories one query each and note the IDs
+	ids := map[string]int{}
+	for _, p := range paths {
+		var parentID *int
+		parent := path.Dir(p)
+		if parent == "." {
+			parent = ""
+		}
+		if id, ok := ids[parent]; p != "" && ok {
+			parentID = &id
+		} else if p != "" {
+			return nil, errors.Newf("cannot find parent id of %q: this is a bug", p)
+		}
+		r := db.QueryRow(ctx, sqlf.Sprintf(pathInsertFmtstr, commit.RepoID, p, commit.RepoID, p, parentID))
+		var id int
+		if err := r.Scan(&id); err != nil {
+			return nil, errors.Wrapf(err, "failed to insert or retrieve %q", p)
+		}
+		ids[p] = id
+	}
+	// return the IDs of inserted files changed, in order
+	fIDs := make([]int, len(commit.FilesChanged))
+	for i, f := range commit.FilesChanged {
+		id, ok := ids[f]
+		if !ok {
+			return nil, errors.Newf("cannot find id of %q which should have been inserted, this is a bug", f)
+		}
+		fIDs[i] = id
+	}
+	return fIDs, nil
 }
 
+const insertRecentContributorSignalFmtstr = `
+	INSERT INTO own_signal_recent_contribution (
+		commit_author_id,
+		changed_file_path_id,
+		commit_timestamp,
+		commit_id_hash
+	) VALUES (%s, %s, %s, %s)
+`
+
+// AddCommit inserts a recent contribution signal for each file changed by given commit.
+//
+// As per schema, `commit_id_hash` is just a int hash of the git SHA.
+// This is used for the purpose of removing old recent contributor signals.
+// The aggregate signals in `own_aggregate_recent_contribution` are updated atomically
+// for each new signal appearing in `own_signal_recent_contribution` by using
+// a trigger: `update_own_aggregate_recent_contribution`.
 func (s *ownSignalStore) AddCommit(ctx context.Context, commit Commit) error {
-	tx := s.Store
-	// Get or create commit author
-	authorID, err := ensureAuthor(ctx, tx, commit)
+	db := s.Store
+	// Get or create commit author:
+	authorID, err := s.ensureAuthor(ctx, commit)
 	if err != nil {
 		return errors.Wrap(err, "cannot insert commit author")
 	}
-	// Get or create repo paths
-	pathIDs, err := ensureRepoPaths(ctx, tx, commit)
+	// Get or create necessary repo paths:
+	pathIDs, err := s.ensureRepoPaths(ctx, commit)
 	if err != nil {
 		return errors.Wrap(err, "cannot insert repo paths")
 	}
-	// Insert into own_signal_recent_contribution
+	// Insert individual signals into own_signal_recent_contribution:
 	for _, pathID := range pathIDs {
 		commitID := fnv.New32a()
 		commitID.Write([]byte(commit.CommitSHA))
-		q := sqlf.Sprintf(`INSERT INTO own_signal_recent_contribution (commit_author_id, changed_file_path_id,
-				commit_timestamp, commit_id_hash) VALUES (%s, %s, %s, %s)`,
+		q := sqlf.Sprintf(insertRecentContributorSignalFmtstr,
 			authorID,
 			pathID,
 			commit.Timestamp,
 			commitID.Sum32(),
 		)
-		err = tx.Exec(ctx, q)
+		err = db.Exec(ctx, q)
 		if err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
-type RecentAuthor struct {
-	AuthorName        string
-	AuthorEmail       string
-	ContributionCount int
-}
+const findRecentContributorsFmtstr = `
+	SELECT a.name, a.email, g.contributions_count
+	FROM commit_authors AS a
+	INNER JOIN own_aggregate_recent_contribution AS g
+	ON a.id = g.commit_author_id
+	INNER JOIN repo_paths AS p
+	ON p.id = g.changed_file_path_id
+	WHERE p.repo_id = %s
+	AND p.absolute_path = %s
+	ORDER BY 3 DESC
+`
 
 func (s *ownSignalStore) FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentAuthor, error) {
 	var authors []RecentAuthor
-	q := sqlf.Sprintf(`
-		SELECT a.name, a.email, g.contributions_count
-		FROM commit_authors AS a
-		INNER JOIN own_aggregate_recent_contribution AS g
-		ON a.id = g.commit_author_id
-		INNER JOIN repo_paths AS p
-		ON p.id = g.changed_file_path_id
-		WHERE p.repo_id = %s
-		AND p.absolute_path = %s
-		ORDER BY 3 DESC
-	`, repoID, path)
+	q := sqlf.Sprintf(findRecentContributorsFmtstr, repoID, path)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -179,8 +230,4 @@ func (s *ownSignalStore) FindRecentAuthors(ctx context.Context, repoID api.RepoI
 		authors = append(authors, a)
 	}
 	return authors, nil
-}
-
-func OwnSignalsStoreWith(other basestore.ShareableStore) OwnSignalStore {
-	return &ownSignalStore{Store: basestore.NewWithHandle(other.Handle())}
 }
