@@ -214,7 +214,7 @@ fn perl_locals() -> LocalConfiguration {
 
 pub fn get_tag_configuration(parser: BundledParser) -> Option<&'static TagConfiguration> {
     match parser {
-        BundledParser::Ruby => Some(python()),
+        BundledParser::Ruby => Some(ruby()),
         BundledParser::Python => Some(python()),
         BundledParser::Cpp => Some(cpp()),
         BundledParser::Typescript => Some(typescript()),
