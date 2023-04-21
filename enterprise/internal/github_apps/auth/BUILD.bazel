@@ -22,6 +22,10 @@ go_test(
     srcs = ["auth_test.go"],
     embed = [":auth"],
     deps = [
+        "//enterprise/internal/github_apps/store",
+        "//enterprise/internal/github_apps/types",
+        "//internal/extsvc/auth",
+        "//schema",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

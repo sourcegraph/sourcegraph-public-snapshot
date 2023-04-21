@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "store",
-    srcs = ["store.go"],
+    srcs = [
+        "mocks_temp.go",
+        "store.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
@@ -18,7 +21,10 @@ go_library(
 
 go_test(
     name = "store_test",
-    srcs = ["store_test.go"],
+    srcs = [
+        "mocks_test.go",
+        "store_test.go",
+    ],
     embed = [":store"],
     tags = [
         # Test requires localhost database
@@ -29,6 +35,7 @@ go_test(
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
+        "//internal/encryption",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
