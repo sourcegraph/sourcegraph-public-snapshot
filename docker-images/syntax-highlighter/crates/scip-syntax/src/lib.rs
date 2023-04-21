@@ -3,7 +3,6 @@ use scip::types::Occurrence;
 use scip_treesitter_languages::parsers::BundledParser;
 use tree_sitter::Parser;
 
-pub mod byterange;
 pub mod ctags;
 pub mod globals;
 pub mod languages;

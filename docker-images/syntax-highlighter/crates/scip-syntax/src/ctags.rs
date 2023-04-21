@@ -84,7 +84,7 @@ impl<'a> Reply<'a> {
             name,
             path,
             language,
-            line: scope.range[0] as usize + 1,
+            line: scope.scope_range.start_line as usize + 1,
             kind: descriptors_to_kind(&scope.descriptors),
             scope: tag_scope,
         });
@@ -215,7 +215,7 @@ fn emit_tags_for_scope<W: std::io::Write>(
             name: global.descriptors.last().unwrap().name.clone(),
             path,
             language,
-            line: global.range[0] as usize + 1,
+            line: global.range.start_line as usize + 1,
             kind: descriptors_to_kind(&global.descriptors),
             scope: scope_name
                 .is_empty()
