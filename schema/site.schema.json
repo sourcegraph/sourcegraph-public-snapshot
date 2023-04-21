@@ -1551,6 +1551,24 @@
       },
       "default": true
     },
+    "own.background.repoIndexConcurrencyLimit": {
+      "description": "The max number of concurrent Own jobs that will run per worker node.",
+      "type": "integer",
+      "group": "Own",
+      "default": 5
+    },
+    "own.background.repoIndexRateLimit": {
+      "description": "The maximum per second rate of repositories for Own jobs per worker node.",
+      "type": "integer",
+      "group": "Own",
+      "default": 20
+    },
+    "own.background.repoIndexRateBurstLimit": {
+      "description": "The maximum per second burst of repositories for Own jobs per worker node. Generally this value should not be less than the max concurrency.",
+      "type": "integer",
+      "group": "Own",
+      "default": 5
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",

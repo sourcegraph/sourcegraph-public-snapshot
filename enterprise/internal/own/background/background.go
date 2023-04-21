@@ -8,18 +8,22 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type IndexJobType struct {
@@ -132,17 +136,23 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 		MaxNumRetries:     3,
 	})
 
+	limiter := getRateLimiter()
+	conf.Watch(func() {
+		setRateLimitConfig(limiter)
+	})
+
 	task := handler{
 		workerStore: workerStore,
+		limiter:     limiter,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*Job](&task), workerutil.WorkerOptions{
 		Name:              name,
 		Description:       "Sourcegraph own background processing partitioned by repository",
-		NumHandlers:       1,
-		Interval:          5 * time.Second,
-		HeartbeatInterval: 15 * time.Second,
-		Metrics:           workerutil.NewMetrics(observationCtx, name),
+		NumHandlers:       getConcurrencyConfig(),
+		Interval:          10 * time.Second,
+		HeartbeatInterval: 20 * time.Second,
+		Metrics:           workerutil.NewMetrics(observationCtx, name+"_processor"),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("OwnBackgroundResetter", ""), workerStore, dbworker.ResetterOptions{
@@ -156,9 +166,14 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 
 type handler struct {
 	workerStore dbworkerstore.Store[*Job]
+	limiter     *ratelimit.InstrumentedLimiter
 }
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *Job) error {
+	err := h.limiter.Wait(ctx)
+	if err != nil {
+		return errors.Wrap(err, "limiter.Wait")
+	}
 	jsonify, _ := json.Marshal(record)
 	logger.Info(fmt.Sprintf("Hello from the own background processor: %v", string(jsonify)))
 	return nil
@@ -174,4 +189,41 @@ func janitorFunc(db database.DB, retention time.Duration) func(ctx context.Conte
 		affected, _ := result.RowsAffected()
 		return 0, int(affected), nil
 	}
+}
+
+const (
+	DefaultRateLimit      = 20
+	DefaultRateBurstLimit = 5
+	DefaultMaxConcurrency = 5
+)
+
+func getConcurrencyConfig() int {
+	val := conf.Get().SiteConfiguration.OwnBackgroundRepoIndexConcurrencyLimit
+	if val == 0 {
+		val = DefaultMaxConcurrency
+	}
+	return val
+}
+
+func getRateLimitConfig() (rate.Limit, int) {
+	limit := conf.Get().SiteConfiguration.OwnBackgroundRepoIndexRateLimit
+	if limit == 0 {
+		limit = DefaultRateLimit
+	}
+	burst := conf.Get().SiteConfiguration.OwnBackgroundRepoIndexRateBurstLimit
+	if burst == 0 {
+		burst = DefaultRateBurstLimit
+	}
+	return rate.Limit(limit), burst
+}
+
+func getRateLimiter() *ratelimit.InstrumentedLimiter {
+	limit, burst := getRateLimitConfig()
+	return ratelimit.NewInstrumentedLimiter("OwnRepoIndexWorker", rate.NewLimiter(limit, burst))
+}
+
+func setRateLimitConfig(limiter *ratelimit.InstrumentedLimiter) {
+	limit, burst := getRateLimitConfig()
+	limiter.SetLimit(limit)
+	limiter.SetBurst(burst)
 }

@@ -10,13 +10,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func GetOwnIndexSchedulerRoutines(db database.DB, observationCtx *observation.Context) (routines []goroutine.BackgroundRoutine) {
+	redMetrics := metrics.NewREDMetrics(
+		observationCtx.Registerer,
+		"own_background_index_scheduler",
+		metrics.WithLabels("op"),
+		metrics.WithCountHelp("Total number of method invocations."),
+	)
+
+	op := func(name string) *observation.Operation {
+		return observationCtx.Operation(observation.Op{
+			Name:              fmt.Sprintf("own.background.index.scheduler.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           redMetrics,
+		})
+	}
+
 	for _, jobType := range IndexJobTypes {
-		routines = append(routines, goroutine.NewPeriodicGoroutine(context.Background(), jobType.Name, "", jobType.RefreshInterval, &ownRepoIndexSchedulerJob{store: basestore.NewWithHandle(db.Handle()), jobType: jobType, observationCtx: observationCtx}))
+		operation := op(jobType.Name)
+		routines = append(routines, goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), jobType.Name, "", jobType.RefreshInterval, &ownRepoIndexSchedulerJob{store: basestore.NewWithHandle(db.Handle()), jobType: jobType, observationCtx: observationCtx}, operation))
 	}
 	return routines
 }
