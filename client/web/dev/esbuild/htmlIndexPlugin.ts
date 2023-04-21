@@ -2,11 +2,12 @@ import fs from 'fs'
 import path from 'path'
 
 import * as esbuild from 'esbuild'
-const handlebars = require('handlebars')
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
 import { WebpackManifest, HTML_INDEX_PATH } from '../utils'
+
+const handlebars = require('handlebars')
 
 // Note: This is only valid for Sourcegraph App.
 export const assetPathPrefix = '/'
@@ -21,9 +22,9 @@ const writeHtmlIndex = async (manifest: WebpackManifest): Promise<void> => {
     const template = await fs.promises.readFile('index.html.template', 'utf8')
     const render = handlebars.compile(template)
     const content = render({
-      cssBundle: manifest['app.css'],
-      jsBundle: manifest['shell.js'],
-      isModule: manifest.isModule
+        cssBundle: manifest['app.css'],
+        jsBundle: manifest['shell.js'],
+        isModule: manifest.isModule,
     })
     await fs.promises.writeFile(HTML_INDEX_PATH, content)
 }

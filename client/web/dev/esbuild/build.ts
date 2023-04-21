@@ -19,8 +19,8 @@ import { isDefined } from '@sourcegraph/common'
 
 import { ENVIRONMENT_CONFIG, IS_DEVELOPMENT, IS_PRODUCTION } from '../utils'
 
-import { manifestPlugin } from './manifestPlugin'
 import { htmlIndexPlugin } from './htmlIndexPlugin'
+import { manifestPlugin } from './manifestPlugin'
 
 const isEnterpriseBuild = ENVIRONMENT_CONFIG.ENTERPRISE
 const isSourcegraphApp = ENVIRONMENT_CONFIG.SOURCEGRAPH_APP
@@ -33,11 +33,9 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         'scripts/app': isSourcegraphApp
             ? path.join(ROOT_PATH, 'client/web/src/enterprise/app-main.tsx')
             : isEnterpriseBuild
-                ? path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx')
-                : path.join(ROOT_PATH, 'client/web/src/main.tsx'),
-        'scripts/shell': isSourcegraphApp
-            ? path.join(ROOT_PATH, 'client/web/src/enterprise/app-shell.tsx')
-            : undefined
+            ? path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx')
+            : path.join(ROOT_PATH, 'client/web/src/main.tsx'),
+        'scripts/shell': isSourcegraphApp ? path.join(ROOT_PATH, 'client/web/src/enterprise/app-shell.tsx') : undefined,
     },
     bundle: true,
     minify: IS_PRODUCTION,

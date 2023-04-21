@@ -15,6 +15,7 @@ import '@sourcegraph/shared/src/polyfills'
 import '../initBuildInfo'
 import '../monitoring/initMonitoring'
 
+import { Command } from '@tauri-apps/api/shell'
 import { createRoot } from 'react-dom/client'
 
 import { logger } from '@sourcegraph/common'
@@ -22,8 +23,6 @@ import { logger } from '@sourcegraph/common'
 import { initAppShell } from '../storm/app-shell-init'
 
 import { EnterpriseWebApp } from './EnterpriseWebApp'
-
-import { Command } from '@tauri-apps/api/shell'
 
 const appShellPromise = initAppShell()
 

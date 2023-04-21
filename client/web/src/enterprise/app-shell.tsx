@@ -1,3 +1,5 @@
+import { listen } from '@tauri-apps/api/event'
+
 // Sourcegraph desktop app entrypoint. There are two:
 //
 // * app-shell.tsx: before the Go backend has started, this is served. If the Go backend crashes,
@@ -7,9 +9,7 @@
 
 console.log('app-shell.tsx loaded')
 
-import { listen } from '@tauri-apps/api/event'
-
-const outputHandler = (event) => {
+const outputHandler = event => {
     console.log(':: ' + event.payload)
     if (event.payload.startsWith('tauri:sign-in-url: ')) {
         const url = event.payload.slice('tauri:sign-in-url: '.length).trim()

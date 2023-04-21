@@ -29,16 +29,8 @@
       "deb": {
         "depends": []
       },
-      "externalBin": [
-        "../.bin/backend"
-      ],
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
+      "externalBin": ["../.bin/backend"],
+      "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
       "identifier": "com.sourcegraph.app",
       "longDescription": "",
       "macOS": {
