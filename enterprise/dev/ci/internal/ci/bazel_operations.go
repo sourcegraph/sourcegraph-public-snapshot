@@ -183,6 +183,7 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 
 			cmds = append(cmds,
 				bk.RawCmd(fmt.Sprintf(`echo "--- Building candidate %s image..."`, app)),
+				bk.RawCmd("date"),
 				bk.RawCmd("export IMAGE='"+localImage+"'"),
 			)
 
