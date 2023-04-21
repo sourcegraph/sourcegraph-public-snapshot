@@ -219,11 +219,8 @@ func githubCloneURL(logger log.Logger, repo *github.Repository, cfg *schema.GitH
 		return repo.URL, nil
 	}
 
-	if cfg.GithubAppInstallationID != "" {
-		u.User = url.UserPassword("x-access-token", cfg.Token)
-	} else {
-		u.User = url.UserPassword("oauth2", cfg.Token)
-	}
+	u.User = url.UserPassword("oauth2", cfg.Token)
+
 	return u.String(), nil
 }
 

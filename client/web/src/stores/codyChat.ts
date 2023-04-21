@@ -9,7 +9,6 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { PrefilledOptions } from '@sourcegraph/cody-shared/src/editor/withPreselectedOptions'
 import { isErrorLike } from '@sourcegraph/common'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
 import { CodeMirrorEditor } from '../cody/CodeMirrorEditor'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
@@ -192,17 +191,14 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
 })
 
 export const useChatStore = ({
-    codebase = '',
+    codebase,
+    setIsCodySidebarOpen,
 }: {
-    codebase?: string
-}): {
-    store: CodyChatStore
-    isCodySidebarOpen: boolean | undefined
-    setIsCodySidebarOpen: (state: boolean) => void
-} => {
+    codebase: string
+    setIsCodySidebarOpen: (state: boolean | undefined) => void
+}): CodyChatStore => {
     const [isCodyEnabled] = useFeatureFlag('cody-experimental')
     const store = useChatStoreState()
-    const [isCodySidebarOpen, setIsCodySidebarOpen] = useTemporarySetting('cody.showSidebar', false)
 
     const onEvent = useCallback(
         (eventName: 'submit' | 'reset' | 'error') => {
@@ -241,5 +237,5 @@ export const useChatStore = ({
         void initializeClient(config, editorStateRef, onEvent)
     }, [config, initializeClient, currentConfig, isCodyEnabled, editorStateRef, onEvent])
 
-    return { store, isCodySidebarOpen, setIsCodySidebarOpen }
+    return store
 }
