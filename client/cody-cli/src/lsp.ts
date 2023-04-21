@@ -3,7 +3,7 @@ import {
     createConnection,
     TextDocuments,
     Diagnostic,
-    DiagnosticSeverity,
+    // DiagnosticSeverity,
     ProposedFeatures,
     InitializeParams,
     DidChangeConfigurationNotification,
@@ -81,8 +81,12 @@ class CodyLanguageServer {
         this.documents = new TextDocuments(TextDocument)
 
         this.connection.onInitialize(this.onInitialize.bind(this))
-        this.connection.onInitialized(this.onInitialized.bind(this))
-        this.connection.onDidChangeConfiguration(this.onDidChangeConfiguration.bind(this))
+        this.connection.onInitialized(() => {
+            this.onInitialized.bind(this)
+        })
+        this.connection.onDidChangeConfiguration(() => {
+            this.onDidChangeConfiguration.bind(this)
+        })
         this.connection.onCompletion(this.onCompletion.bind(this))
         this.connection.onDidChangeWatchedFiles(this.onDidChangeWatchedFiles.bind(this))
         this.connection.onCompletionResolve(this.onCompletionResolve.bind(this))
@@ -124,7 +128,9 @@ class CodyLanguageServer {
             await this.initializeCody()
         }
 
-        this.documents.all().forEach(this.validateTextDocument.bind(this))
+        for (const doc of this.documents.all()) {
+            await this.validateTextDocument(doc)
+        }
     }
 
     private async initializeCody() {
@@ -167,7 +173,7 @@ class CodyLanguageServer {
         })
 
         const params: LogMessageParams = { type: MessageType.Info, message: 'Cody LSP initialized, my friend!' }
-        this.connection.sendNotification('window/logMessage', params)
+        await this.connection.sendNotification('window/logMessage', params)
     }
 
     private onDidChangeWatchedFiles(change: DidChangeWatchedFilesParams) {
@@ -230,30 +236,47 @@ class CodyLanguageServer {
             return
         }
 
-        let args: any[] = []
-        if (params.arguments !== undefined) {
-            args = params.arguments
+        if (params.arguments === undefined) {
+            console.error('no arguments to command given')
+            return
         }
-        let uri: string = args[0] as string
-        let startLine: number | undefined = args[1] as number
-        let endLine: number | undefined = args[2] as number
-        let question: string = args[3] as string
+
+        const uri: string = params.arguments[0] as string
+        const startLine: number | undefined = params.arguments[1] as number
+        const endLine: number | undefined = params.arguments[2] as number
+        const question: string = params.arguments[3] as string
 
         const doc = this.documents.get(uri)
         const snippet = doc?.getText({ start: { line: startLine, character: 0 }, end: { line: endLine, character: 0 } })
-        console.error('snippet', snippet)
 
         const uuid = 'uuid-foobar'
 
-        let param: WorkDoneProgressBegin = {
+        const param: WorkDoneProgressBegin = {
             kind: 'begin',
             title: params.command,
         }
 
-        this.connection.sendProgress(WorkDoneProgress.type, uuid, param)
+        await this.connection.sendProgress(WorkDoneProgress.type, uuid, param)
 
-        const transcript = new Transcript()
         const initialMessageText = `I have the following code snippet:\n\n\`\`\`typescript\n${snippet}\n\`\`\`\n\n${question}`
+        const text = await this.getCompletion(initialMessageText)
+
+        await this.connection.sendProgress(WorkDoneProgress.type, uuid, { kind: 'end' })
+        return {
+            message: [text],
+        }
+    }
+
+    private async getCompletion(initialMessageText: string): Promise<string> {
+        if (
+            this.intentDetector === undefined ||
+            this.codebaseContext === undefined ||
+            this.completionsClient === undefined
+        ) {
+            console.error('cannot execute command. not initialized')
+            return ''
+        }
+        const transcript = new Transcript()
         const initialMessage: Message = { speaker: 'human', text: initialMessageText }
         const messages: { human: Message; assistant?: Message }[] = [{ human: initialMessage }]
         for (const [index, message] of messages.entries()) {
@@ -281,7 +304,6 @@ class CodyLanguageServer {
                     text = chunk
                 },
                 onComplete: () => {
-                    this.connection.sendProgress(WorkDoneProgress.type, uuid, { kind: 'end' })
                     resolve()
                 },
                 onError: (err: string) => {
@@ -291,8 +313,6 @@ class CodyLanguageServer {
             })
         })
 
-        return {
-            message: [text],
-        }
+        return text
     }
 }

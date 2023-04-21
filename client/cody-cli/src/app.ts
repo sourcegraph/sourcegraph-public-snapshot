@@ -6,7 +6,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isRepoNotFoundError } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
-import { DEFAULTS, ENVIRONMENT_CONFIG } from './config'
+import { DEFAULTS, getEnvConfig } from './config'
 import { createCodebaseContext } from './context'
 import { startLSP } from './lsp'
 import { startREPL } from './repl'
@@ -35,10 +35,11 @@ async function startCLI() {
     if (options.lsp) {
         startLSP()
     } else {
+        const env = getEnvConfig()
         const codebase: string = options.codebase || DEFAULTS.codebase
         const endpoint: string = options.endpoint || DEFAULTS.serverEndpoint
         const contextType: 'keyword' | 'embeddings' | 'none' | 'blended' = options.contextType || DEFAULTS.contextType
-        const accessToken: string | undefined = ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN
+        const accessToken: string = env.SRC_ACCESS_TOKEN
         if (accessToken === undefined || accessToken === '') {
             console.error(
                 'No access token found. Set SRC_ACCESS_TOKEN to an access token created on the Sourcegraph instance.'
@@ -48,7 +49,7 @@ async function startCLI() {
 
         const sourcegraphClient = new SourcegraphGraphQLAPIClient({
             serverEndpoint: endpoint,
-            accessToken: accessToken,
+            accessToken,
             customHeaders: {},
         })
 
@@ -74,7 +75,7 @@ async function startCLI() {
 
         const completionsClient = new SourcegraphNodeCompletionsClient({
             serverEndpoint: endpoint,
-            accessToken: ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN,
+            accessToken,
             debug: DEFAULTS.debug === 'development',
             customHeaders: {},
         })

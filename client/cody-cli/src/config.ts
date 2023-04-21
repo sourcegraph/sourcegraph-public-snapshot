@@ -1,18 +1,10 @@
 import { cleanEnv, str } from 'envalid'
 
-export const ENVIRONMENT_CONFIG = cleanEnv(
-    process.env,
-    {
+export function getEnvConfig(): { SRC_ACCESS_TOKEN: string } {
+    return cleanEnv(process.env, {
         SRC_ACCESS_TOKEN: str(),
-    },
-    {
-        reporter: ({ errors, env }) => {
-            if (errors.SRC_ACCESS_TOKEN) {
-                console.error('SRC_ACCESS_TOKEN not set')
-            }
-        },
-    }
-)
+    })
+}
 
 export const DEFAULTS = {
     codebase: 'github.com/sourcegraph/sourcegraph',
