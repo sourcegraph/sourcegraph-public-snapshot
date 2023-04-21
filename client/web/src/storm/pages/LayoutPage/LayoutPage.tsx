@@ -237,7 +237,10 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                 </Suspense>
             </ErrorBoundary>
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
-                <NotepadContainer userId={props.authenticatedUser?.id} />
+                <NotepadContainer
+                    userId={props.authenticatedUser?.id}
+                    isRepositoryRelatedPage={isRepositoryRelatedPage}
+                />
             )}
             {fuzzyFinder && (
                 <LazyFuzzyFinder
