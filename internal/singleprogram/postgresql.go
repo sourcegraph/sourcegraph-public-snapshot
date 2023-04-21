@@ -138,6 +138,7 @@ func useSinglePostgreSQLDatabase(logger log.Logger, vars *postgresqlEnvVars) {
 	// Use a single PostgreSQL DB.
 	//
 	// For code intel:
+	logger.Debug("setting CODEINTEL database variables")
 	os.Setenv("CODEINTEL_PGPORT", vars.PGPORT)
 	os.Setenv("CODEINTEL_PGHOST", vars.PGHOST)
 	os.Setenv("CODEINTEL_PGUSER", vars.PGUSER)
@@ -147,6 +148,7 @@ func useSinglePostgreSQLDatabase(logger log.Logger, vars *postgresqlEnvVars) {
 	os.Setenv("CODEINTEL_PGDATASOURCE", vars.PGDATASOURCE)
 	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
 	// And for code insights.
+	logger.Debug("setting CODEINSIGHTS database variables")
 	os.Setenv("CODEINSIGHTS_PGPORT", vars.PGPORT)
 	os.Setenv("CODEINSIGHTS_PGHOST", vars.PGHOST)
 	os.Setenv("CODEINSIGHTS_PGUSER", vars.PGUSER)
