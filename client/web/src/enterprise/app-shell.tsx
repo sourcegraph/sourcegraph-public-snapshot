@@ -10,10 +10,10 @@ import { listen, Event } from '@tauri-apps/api/event'
 console.log('app-shell.tsx loaded')
 
 const outputHandler = (event: Event<string>) => {
-  if (event.payload.startsWith('tauri:sign-in-url: ')) {
-    const url = event.payload.slice('tauri:sign-in-url: '.length).trim()
-    window.location.href = url
-  }
+    if (event.payload.startsWith('tauri:sign-in-url: ')) {
+        const url = event.payload.slice('tauri:sign-in-url: '.length).trim()
+        window.location.href = url
+    }
 }
 
 listen('backend-stdout', outputHandler)
