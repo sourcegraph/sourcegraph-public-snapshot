@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -35,10 +36,10 @@ func NewGitHubSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitHubSource(svc.URN(), &c, cf, nil)
+	return newGitHubSource(ctx, svc.URN(), &c, cf)
 }
 
-func newGitHubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Authenticator) (*GitHubSource, error) {
+func newGitHubSource(ctx context.Context, urn string, c *schema.GitHubConnection, cf *httpcli.Factory) (*GitHubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -62,14 +63,14 @@ func newGitHubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory
 		return nil, err
 	}
 
-	var authr = au
-	if au == nil {
-		authr = &auth.OAuthBearerToken{Token: c.Token}
+	auther, err := ghauth.FromConnection(ctx, c)
+	if err != nil {
+		return nil, err
 	}
 
 	return &GitHubSource{
-		au:     authr,
-		client: github.NewV4Client(urn, apiURL, authr, cli),
+		au:     auther,
+		client: github.NewV4Client(urn, apiURL, auther, cli),
 	}, nil
 }
 
@@ -242,7 +243,6 @@ func (s GitHubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		Body:          c.Body,
 		BaseRefName:   gitdomain.AbbreviateRef(c.BaseRef),
 	})
-
 	if err != nil {
 		return err
 	}
