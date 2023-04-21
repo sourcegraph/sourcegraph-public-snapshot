@@ -153,7 +153,7 @@ export interface RepositoryMatch {
     private?: boolean
     branches?: string[]
     descriptionMatches?: Range[]
-    keyValuePairs?: Record<string, string>
+    keyValuePairs?: Record<string, string | undefined>
 }
 
 export type OwnerMatch = PersonMatch | TeamMatch
@@ -476,6 +476,7 @@ export interface StreamSearchOptions {
     decorationContextLines?: number
     displayLimit?: number
     chunkMatches?: boolean
+    enableRepositoryMetadata?: boolean
 }
 
 function initiateSearchStream(

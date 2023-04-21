@@ -8,6 +8,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Alert, Button, Code, H3, Modal, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 
 import { downloadSearchResults, EXPORT_RESULT_DISPLAY_LIMIT } from './searchResultsExport'
 
@@ -43,6 +44,8 @@ export const SearchResultsCsvExportModal: React.FunctionComponent<SearchResultsC
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<ErrorLike | undefined>()
 
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
+
     const downloadResults = useCallback(() => {
         if (!searchCompleted) {
             return
@@ -55,7 +58,13 @@ export const SearchResultsCsvExportModal: React.FunctionComponent<SearchResultsC
         setLoading(true)
         setError(undefined)
 
-        downloadSearchResults(sourcegraphURL, query, options, results, shouldRerunSearch)
+        downloadSearchResults(
+            sourcegraphURL,
+            query,
+            { ...options, enableRepositoryMetadata },
+            results,
+            shouldRerunSearch
+        )
             .then(() => {
                 onClose()
             })
@@ -70,7 +79,17 @@ export const SearchResultsCsvExportModal: React.FunctionComponent<SearchResultsC
             .finally(() => {
                 setLoading(false)
             })
-    }, [searchCompleted, query, sourcegraphURL, options, results, shouldRerunSearch, onClose, telemetryService])
+    }, [
+        searchCompleted,
+        query,
+        sourcegraphURL,
+        options,
+        enableRepositoryMetadata,
+        results,
+        shouldRerunSearch,
+        telemetryService,
+        onClose,
+    ])
 
     return (
         <Modal aria-labelledby={MODAL_LABEL_ID}>

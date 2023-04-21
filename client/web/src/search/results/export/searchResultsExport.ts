@@ -26,7 +26,11 @@ const sanitizeString = (str: string): string =>
         .replaceAll(/ +(?= )/g, '') // remove extra spaces
         .replaceAll(/\n/g, '')}"` // remove extra newlines
 
-export const searchResultsToFileContent = (searchResults: SearchMatch[], sourcegraphURL: string): string => {
+export const searchResultsToFileContent = (
+    searchResults: SearchMatch[],
+    sourcegraphURL: string,
+    enableRepositoryMetadata?: boolean
+): string => {
     let content = []
     const resultType = searchResults[0].type
     const headers = ['Match type', 'Repository', 'Repository external URL']
@@ -125,13 +129,23 @@ export const searchResultsToFileContent = (searchResults: SearchMatch[], sourceg
 
         case 'repo': {
             content = [
-                headers,
+                enableRepositoryMetadata ? [...headers, 'Repository metadata'] : headers,
                 ...searchResults
                     .filter((result: SearchMatch): result is RepositoryMatch => result.type === 'repo')
                     .map(result => [
                         result.type,
                         result.repository,
                         new URL(getRepositoryUrl(result.repository, result.branches), sourcegraphURL).toString(),
+                        ...(enableRepositoryMetadata
+                            ? [
+                                  '"' +
+                                      Object.entries(result.keyValuePairs ?? {})
+                                          .map(([key, value]) => (value ? `${key}:${value}` : key))
+                                          .join('\n')
+                                          .replaceAll('"', '""') +
+                                      '"',
+                              ]
+                            : []),
                     ]),
             ]
             break
@@ -237,7 +251,7 @@ export const downloadSearchResults = (
             throw new Error('No search results found.')
         }
 
-        const content = searchResultsToFileContent(results.results, sourcegraphURL)
+        const content = searchResultsToFileContent(results.results, sourcegraphURL, options.enableRepositoryMetadata)
         const blob = new Blob([content], { type: 'text/csv' })
         const url = URL.createObjectURL(blob)
 
