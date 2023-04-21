@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestRecentContributorsSignalStore(t *testing.T) {
+func TestRecentContributionSignalStore(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -81,13 +81,13 @@ func TestRecentContributorsSignalStore(t *testing.T) {
 		},
 		"": {
 			{
-				AuthorName: "alice",
-				AuthorEmail: "alice@example.com",
+				AuthorName:        "alice",
+				AuthorEmail:       "alice@example.com",
 				ContributionCount: 7,
 			},
 			{
-				AuthorName: "bob",
-				AuthorEmail: "bob@example.com",
+				AuthorName:        "bob",
+				AuthorEmail:       "bob@example.com",
 				ContributionCount: 3,
 			},
 		},
