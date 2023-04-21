@@ -198,7 +198,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             },
             onComplete: () => this.multiplexer.notifyTurnComplete(),
             onError: err => {
-                void vscode.window.showErrorMessage(err)
+                if (err.startsWith('Invalid access token')) {
+                    void this.sendLogin(false)
+                }
+                void vscode.window.showErrorMessage(`Completion failed: ${err}`)
             },
         })
     }
