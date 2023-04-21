@@ -31,7 +31,7 @@ func CreateEnterpriseFromConnection(ghApps store.GitHubAppsStore) ghauth.FromCon
 			return &auth.OAuthBearerToken{Token: conn.Token}, nil
 		}
 
-		ghApp, err := ghApps.GetByAppID(ctx, conn.GitHubAppDetails.AppID, conn.GitHubAppDetails.BaseURL)
+		ghApp, err := ghApps.GetByAppID(ctx, conn.GitHubAppDetails.AppID, conn.Url)
 		if err != nil {
 			return nil, err
 		}
