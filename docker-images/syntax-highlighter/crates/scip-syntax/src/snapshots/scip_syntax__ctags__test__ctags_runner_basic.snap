@@ -1,0 +1,10 @@
+---
+source: crates/scip-syntax/src/ctags.rs
+expression: "String::from_utf8(output.get_ref().to_vec())?"
+---
+{"_type":"program","name":"SCIP Ctags","version":"5.9.0"}
+{"_type":"tag","name":"other","path":"main.rs","language":"go","line":6,"kind":"method","scope":null}
+{"_type":"tag","name":"something","path":"main.rs","language":"go","line":5,"kind":"method","scope":null}
+{"_type":"tag","name":"main","path":"main.rs","language":"go","line":1,"kind":"method","scope":null}
+{"_type":"completed","command":"generate-tags"}
+

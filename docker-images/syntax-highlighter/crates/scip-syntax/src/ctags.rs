@@ -1,5 +1,11 @@
-use std::{collections::HashMap, io::BufWriter, ops::Not, path};
+use std::{
+    collections::HashMap,
+    io::{BufRead, BufReader, BufWriter, Read, Write},
+    ops::Not,
+    path,
+};
 
+use anyhow::Result;
 use scip::types::{descriptor::Suffix, Descriptor};
 use scip_treesitter_languages::parsers::BundledParser;
 use serde::{Deserialize, Serialize};
@@ -23,27 +29,37 @@ pub struct TagEntry {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "command")]
+#[serde(tag = "command", rename_all = "kebab-case")]
 pub enum Request {
-    #[serde(rename = "generate-tags")]
-    GenerateTags {
-        // command == generate-tags
-        filename: String,
-        size: usize,
-    },
+    GenerateTags { filename: String, size: usize },
 }
 
 #[derive(Serialize, Debug)]
-#[serde(tag = "_type")]
+#[serde(tag = "_type", rename_all = "kebab-case")]
 pub enum Reply<'a> {
-    #[serde(rename = "program")]
-    Program { name: String, version: String },
-    #[serde(rename = "completed")]
-    Completed { command: String },
-    #[serde(rename = "error")]
-    Error { message: String, fatal: bool },
-    #[serde(rename = "tag")]
-    Tag(Tag<'a>),
+    Program {
+        name: String,
+        version: String,
+    },
+    Completed {
+        command: String,
+    },
+    Error {
+        message: String,
+        fatal: bool,
+    },
+    Tag {
+        name: String,
+        path: &'a str,
+        language: &'a str,
+        /// Starts at 1
+        line: usize,
+        kind: &'a str,
+        scope: Option<&'a str>,
+        // Can't find any uses of these. If someone reports a bug, we can support this
+        // scope_kind: Option<String>,
+        // signature: Option<String>,
+    },
 }
 
 impl<'a> Reply<'a> {
@@ -80,66 +96,17 @@ impl<'a> Reply<'a> {
         }
         scope_deduplicator.insert(dedup, ());
 
-        let tag = Self::Tag(Tag {
+        let tag = Self::Tag {
             name,
             path,
             language,
             line: scope.scope_range.start_line as usize + 1,
             kind: descriptors_to_kind(&scope.descriptors),
             scope: tag_scope,
-        });
+        };
 
         tag.write(writer);
     }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Tag<'a> {
-    name: String,
-    path: &'a str,
-    language: &'a str,
-    /// Starts at 1
-    line: usize,
-    kind: &'a str,
-    scope: Option<&'a str>,
-    // Can't find any uses of these. If someone reports a bug, we can support this
-    // scope_kind: Option<String>,
-    // signature: Option<String>,
-}
-
-pub fn generate_tags<W: std::io::Write>(
-    buf_writer: &mut BufWriter<W>,
-    filename: String,
-    file_data: &[u8],
-) -> Option<()> {
-    let path = path::Path::new(&filename);
-    let extension = path.extension()?.to_str()?;
-    let filepath = path.file_name()?.to_str()?;
-
-    let parser = BundledParser::get_parser_from_extension(extension)?;
-    let (root_scope, _) = match get_globals(parser, file_data)? {
-        Ok(vals) => vals,
-        Err(err) => {
-            // TODO: Not sure I want to keep this or not
-            #[cfg(debug_assertions)]
-            if true {
-                panic!("Could not parse file: {}", err);
-            }
-
-            return None;
-        }
-    };
-
-    let mut scope_deduplicator = HashMap::new();
-    emit_tags_for_scope(
-        buf_writer,
-        filepath,
-        vec![],
-        &root_scope,
-        "go",
-        &mut scope_deduplicator,
-    );
-    Some(())
 }
 
 fn descriptors_to_kind(descriptors: &[Descriptor]) -> &'static str {
@@ -211,7 +178,7 @@ fn emit_tags_for_scope<W: std::io::Write>(
                 .map(|d| d.name.clone()),
         );
 
-        Reply::Tag(Tag {
+        Reply::Tag {
             name: global.descriptors.last().unwrap().name.clone(),
             path,
             language,
@@ -222,7 +189,134 @@ fn emit_tags_for_scope<W: std::io::Write>(
                 .not()
                 .then(|| scope_name.join("."))
                 .as_deref(),
-        })
+        }
         .write(buf_writer);
+    }
+}
+
+pub fn generate_tags<W: std::io::Write>(
+    buf_writer: &mut BufWriter<W>,
+    filename: String,
+    file_data: &[u8],
+) -> Option<()> {
+    let path = path::Path::new(&filename);
+    let extension = path.extension()?.to_str()?;
+    let filepath = path.file_name()?.to_str()?;
+
+    let parser = BundledParser::get_parser_from_extension(extension)?;
+    let (root_scope, _) = match get_globals(parser, file_data)? {
+        Ok(vals) => vals,
+        Err(err) => {
+            // TODO: Not sure I want to keep this or not
+            #[cfg(debug_assertions)]
+            if true {
+                panic!("Could not parse file: {}", err);
+            }
+
+            return None;
+        }
+    };
+
+    let mut scope_deduplicator = HashMap::new();
+    emit_tags_for_scope(
+        buf_writer,
+        filepath,
+        vec![],
+        &root_scope,
+        "go",
+        &mut scope_deduplicator,
+    );
+    Some(())
+}
+
+pub fn ctags_runner<R: Read, W: Write>(
+    input: &mut BufReader<R>,
+    output: &mut std::io::BufWriter<W>,
+) -> Result<()> {
+    output.write_all(
+        &serde_json::to_string(&Reply::Program {
+            name: "SCIP Ctags".to_string(),
+            version: "5.9.0".to_string(),
+        })?
+        .into_bytes(),
+    )?;
+    output.write_all("\n".as_bytes())?;
+    output.flush()?;
+
+    loop {
+        let mut line = String::new();
+        input.read_line(&mut line)?;
+
+        if line.is_empty() {
+            break;
+        }
+
+        let request = serde_json::from_str::<Request>(&line);
+        let request = match request {
+            Ok(request) => request,
+            Err(_) => {
+                eprintln!("Could not parse request: {}", line);
+                continue;
+            }
+        };
+
+        match request {
+            Request::GenerateTags { filename, size } => {
+                eprintln!("{filename}");
+
+                let mut file_data = vec![0; size];
+                input
+                    .read_exact(&mut file_data)
+                    .expect("Could not fill file data exactly");
+
+                generate_tags(output, filename, &file_data);
+            }
+        }
+
+        Reply::Completed {
+            command: "generate-tags".to_string(),
+        }
+        .write(output);
+
+        output.flush().unwrap();
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_ctags_runner_basic() -> Result<()> {
+        let file = r#"
+fn main() {
+    println!("Hello, world!");
+}
+
+fn something() -> bool { true }
+fn other() -> bool { false }
+"#
+        .trim();
+
+        let command = format!(
+            r#"
+{{ "command":"generate-tags","filename":"main.rs","size":{} }}
+{}
+"#,
+            file.len(),
+            file
+        )
+        .trim()
+        .to_string();
+
+        let mut input = BufReader::new(command.as_bytes());
+        let mut output = BufWriter::new(Vec::new());
+        ctags_runner(&mut input, &mut output)?;
+
+        insta::assert_snapshot!(String::from_utf8(output.get_ref().to_vec())?);
+
+        Ok(())
     }
 }
