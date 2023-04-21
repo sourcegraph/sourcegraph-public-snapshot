@@ -167,7 +167,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
 	handler = actor.HTTPMiddleware(logger, handler)
-	handler = requestclient.HTTPMiddleware(handler)
+	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
