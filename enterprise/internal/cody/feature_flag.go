@@ -8,9 +8,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 )
 
+
 func IsCodyEnabled(ctx context.Context) bool {
-	if envvar.SourcegraphDotComMode() || conf.Get().ExperimentalFeatures.CodyRestrictUsersFeatureFlag {
-		return featureflag.FromContext(ctx).GetBoolOr("cody-experimental", false)
-	}
-	return true
+    if envvar.SourcegraphDotComMode() {
+        if auth.CheckCurrentUser(ctx) != nil {
+            return true
+        }
+        return featureflag.FromContext(ctx).GetBoolOr("cody-experimental", false)
+    }
+    return conf.Get().ExperimentalFeatures.CodyEnabled
 }
+
