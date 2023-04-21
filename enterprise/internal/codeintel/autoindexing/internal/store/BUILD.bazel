@@ -38,6 +38,7 @@ go_library(
 
 go_test(
     name = "store_test",
+    size = "large",
     timeout = "short",
     srcs = [
         "store_configurations_test.go",
