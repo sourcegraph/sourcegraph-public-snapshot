@@ -66,7 +66,7 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 
 	dec := gob.NewDecoder(file)
 
-	rei, err := decodeRepoEmbeddingIndex(dec)
+	rei, err := DecodeRepoEmbeddingIndex(dec)
 	// If decoding fails, assume it is an old index and decode with a generic decoder.
 	if err != nil {
 		// Close the existing file.
@@ -127,7 +127,7 @@ func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSi
 	return nil
 }
 
-func decodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
+func DecodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
 	rei := &RepoEmbeddingIndex{}
 
 	if err := dec.Decode(&rei.RepoName); err != nil {
