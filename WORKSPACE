@@ -251,3 +251,6 @@ crates_repository(
 load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
+
+load("//dev/backcompat:defs.bzl", "back_compat_defs")
+back_compat_defs()

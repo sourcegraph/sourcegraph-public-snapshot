@@ -189,3 +189,7 @@ index.scip
 /an
 /tr
 /cache-*.tar
+
+# Backward compatibility database tests patch, generated on the fly in CI
+# for `bazel test @sourcegraph_back_compat//...` targets.
+/dev/backcompat/back_compat_migrations.patch
