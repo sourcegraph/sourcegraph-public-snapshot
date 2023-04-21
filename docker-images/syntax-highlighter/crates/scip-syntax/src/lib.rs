@@ -66,4 +66,9 @@ mod test {
     fn test_generate_ctags_java_globals() {
         generate_tags_and_snapshot!("../testdata/globals.java");
     }
+
+    #[test]
+    fn test_generate_ctags_typescript_globals() {
+        generate_tags_and_snapshot!("../testdata/globals.ts");
+    }
 }
