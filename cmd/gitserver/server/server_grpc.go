@@ -1,12 +1,15 @@
 package server
 
 import (
+	"context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -100,4 +103,79 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 			LimitHit: limitHit,
 		},
 	})
+}
+
+func (gs *GRPCServer) Archive(ctx context.Context, req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
+	//TODO(mucles): re-enable access logging (see server.go handleArchive)
+	// Log which which actor is accessing the repo.
+	// accesslog.Record(ctx, req.Repo,
+	// 	log.String("treeish", req.Treeish),
+	// 	log.String("format", req.Format),
+	// 	log.Strings("path", req.Pathspecs),
+	// )
+
+	if err := checkSpecArgSafety(req.Treeish); err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	if req.Repo == "" || req.Format == "" {
+		return status.Error(codes.InvalidArgument, "empty repo or format")
+	}
+
+	execReq := &protocol.ExecRequest{
+		Repo: api.RepoName(req.Repo),
+		Args: []string{
+			"archive",
+			"--worktree-attributes",
+			"--format=" + req.Format,
+		},
+	}
+
+	if req.Format == string(gitserver.ArchiveFormatZip) {
+		execReq.Args = append(execReq.Args, "-0")
+	}
+
+	execReq.Args = append(execReq.Args, req.Treeish, "--")
+	execReq.Args = append(execReq.Args, req.Pathspecs...)
+
+	w := streamio.NewWriter(func(p []byte) error {
+		return ss.Send(&proto.ArchiveResponse{
+			Data: p,
+		})
+	})
+
+	// TODO(mucles): set user agent from all grpc clients
+	execStatus, err := gs.Server.exec(ss.Context(), gs.Server.Logger, execReq, "unknown-grpc-client", w)
+	if err != nil {
+		if v := (&NotFoundError{}); errors.As(err, &v) {
+			s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.NotFoundPayload{
+				Repo:            req.GetRepo(),
+				CloneInProgress: v.Payload.CloneInProgress,
+				CloneProgress:   v.Payload.CloneProgress,
+			})
+			if err != nil {
+				gs.Server.Logger.Error("failed to marshal status", log.Error(err))
+				return err
+			}
+			return s.Err()
+
+		} else if errors.Is(err, ErrInvalidCommand) {
+			return status.New(codes.InvalidArgument, "invalid command").Err()
+		}
+
+		return err
+	}
+
+	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
+		s, err := status.New(codes.Unknown, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
+			StatusCode: int32(execStatus.ExitStatus),
+			Stderr:     execStatus.Stderr,
+		})
+		if err != nil {
+			gs.Server.Logger.Error("failed to marshal status", log.Error(err))
+			return err
+		}
+		return s.Err()
+	}
+	return nil
 }
