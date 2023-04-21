@@ -23969,6 +23969,19 @@
           "Comment": ""
         },
         {
+          "Name": "completions_quota",
+          "Index": 20,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "created_at",
           "Index": 5,
           "TypeName": "timestamp with time zone",

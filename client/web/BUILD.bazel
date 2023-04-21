@@ -1584,6 +1584,8 @@ ts_project(
         "src/user/settings/profile/EditUserProfileForm.tsx",
         "src/user/settings/profile/UserProfileFormFields.tsx",
         "src/user/settings/profile/UserSettingsProfilePage.tsx",
+        "src/user/settings/quota/UserQuotaProfilePage.tsx",
+        "src/user/settings/quota/backend.ts",
         "src/user/settings/research/ProductResearch.tsx",
         "src/user/settings/routes.tsx",
         "src/user/settings/sidebaritems.ts",

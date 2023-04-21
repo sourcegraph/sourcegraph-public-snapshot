@@ -485,3 +485,12 @@ func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
 	err := upgradestore.NewWith(r.db.Handle()).SetAutoUpgrade(ctx, args.Enable)
 	return &EmptyResponse{}, err
 }
+
+func (r *siteResolver) PerUserCompletionsQuota() *int32 {
+	c := conf.Get()
+	if c.Completions != nil && c.Completions.PerUserHourlyLimit > 0 {
+		i := int32(c.Completions.PerUserHourlyLimit)
+		return &i
+	}
+	return nil
+}

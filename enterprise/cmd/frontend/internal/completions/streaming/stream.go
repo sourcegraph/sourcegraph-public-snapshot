@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -15,7 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -23,12 +26,14 @@ import (
 const maxRequestDuration = time.Minute
 
 // NewCompletionsStreamHandler is an http handler which streams back completions results.
-func NewCompletionsStreamHandler(logger log.Logger) http.Handler {
-	return &streamHandler{logger: logger}
+func NewCompletionsStreamHandler(logger log.Logger, db database.DB) http.Handler {
+	rl := NewRateLimiter(db, redispool.Store)
+	return &streamHandler{logger: logger, rl: rl}
 }
 
 type streamHandler struct {
 	logger log.Logger
+	rl     RateLimiter
 }
 
 func GetCompletionClient(provider string, accessToken string, model string) (types.CompletionsClient, error) {
@@ -86,6 +91,17 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check rate limit.
+	err = h.rl.TryAcquire(ctx)
+	if err != nil {
+		if unwrap, ok := err.(RateLimitExceededError); ok {
+			respondRateLimited(w, unwrap)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	eventWriter, err := streamhttp.NewWriter(w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -101,4 +117,19 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		eventWriter.Event("error", map[string]string{"error": err.Error()})
 		return
 	}
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError) {
+	// Rate limit exceeded, write well known headers and return correct status code.
+	w.Header().Set("x-ratelimit-limit", strconv.Itoa(err.Limit))
+	w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(err.Limit-err.Used, 0)))
+	w.Header().Set("retry-after", err.RetryAfter.Format(time.RFC3339))
+	http.Error(w, err.Error(), http.StatusTooManyRequests)
 }

@@ -862,6 +862,12 @@ type Mutation {
     Deletes a package repo reference filter.
     """
     deletePackageRepoFilter(id: ID!): EmptyResponse!
+
+    """
+    Sets the completions requests quota for the user per hour. Quota: Null means
+    use the default quota.
+    """
+    setUserCompletionsQuota(user: ID!, quota: Int): User!
 }
 
 """
@@ -6124,6 +6130,11 @@ type User implements Node & SettingsSubject & Namespace {
     The list of permissions granted to this user based on their roles.
     """
     permissions: PermissionConnection!
+    """
+    The configured override for the user to the completions request quota per hour.
+    Null, if not overwritten.
+    """
+    completionsQuotaOverride: Int
 }
 
 """
@@ -6924,6 +6935,11 @@ type Site implements SettingsSubject {
     Wether the current App installation has a connected Sourcegraph.com account.
     """
     appHasConnectedDotComAccount: Boolean!
+
+    """
+    The quota of completions requests allowed per user in an hour. Null, if unlimited.
+    """
+    perUserCompletionsQuota: Int
 }
 
 """

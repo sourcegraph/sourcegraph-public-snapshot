@@ -2122,6 +2122,11 @@
           "description": "The external completions provider.",
           "default": "anthropic",
           "enum": ["anthropic", "openai"]
+        },
+        "perUserHourlyLimit": {
+          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in an hour. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "type": "integer",
+          "default": 0
         }
       }
     }

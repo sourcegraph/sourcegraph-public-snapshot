@@ -3685,6 +3685,7 @@ Foreign-key constraints:
  invalidated_sessions_at | timestamp with time zone |           | not null | now()
  tos_accepted            | boolean                  |           | not null | false
  searchable              | boolean                  |           | not null | true
+ completions_quota       | integer                  |           |          | 
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
