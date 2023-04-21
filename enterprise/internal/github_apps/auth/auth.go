@@ -12,11 +12,37 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+// CreateEnterpriseFromConnection creates a FromConnectionFunc that has access to
+// the provided EnterpriseDB. This gives the function access to GitHub App details
+// in the database.
+func CreateEnterpriseFromConnection(ghApps store.GitHubAppsStore) ghauth.FromConnectionFunc {
+	return func(ctx context.Context, conn *schema.GitHubConnection) (auth.Authenticator, error) {
+		if conn.GitHubAppDetails == nil {
+			return &auth.OAuthBearerToken{Token: conn.Token}, nil
+		}
+
+		ghApp, err := ghApps.GetByAppID(ctx, conn.GitHubAppDetails.AppID, conn.GitHubAppDetails.BaseURL)
+		if err != nil {
+			return nil, err
+		}
+
+		appAuther, err := NewGitHubAppAuthenticator(ghApp.AppID, []byte(ghApp.PrivateKey))
+		if err != nil {
+			return nil, err
+		}
+
+		return NewInstallationAccessToken(conn.GitHubAppDetails.InstallationID, appAuther), nil
+	}
+}
 
 // gitHubAppAuthenticator is used to authenticate requests to the GitHub API
 // using a GitHub App. It contains the ID and private key associated with

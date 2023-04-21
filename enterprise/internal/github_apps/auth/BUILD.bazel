@@ -6,10 +6,13 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/github_apps/store",
         "//internal/extsvc/auth",
         "//internal/extsvc/github",
+        "//internal/extsvc/github/auth",
         "//internal/httpcli",
         "//lib/errors",
+        "//schema",
         "@com_github_golang_jwt_jwt_v4//:jwt",
     ],
 )

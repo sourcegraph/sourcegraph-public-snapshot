@@ -33,7 +33,7 @@ type GitHubAppsStore interface {
 	// GetBySlug retrieves a GitHub App from the database by slug and base url
 	GetBySlug(ctx context.Context, slug string, baseURL string) (*types.GitHubApp, error)
 
-	// WithEncryptionKey sets encryption key on store. Returns a new GithubAppStore
+	// WithEncryptionKey sets encryption key on store. Returns a new GitHubAppStore
 	WithEncryptionKey(key encryption.Key) GitHubAppsStore
 }
 
@@ -50,7 +50,7 @@ func GitHubAppsWith(other *basestore.Store) GitHubAppsStore {
 	}
 }
 
-// WithEncryptionKey sets encryption key on store. Returns a new GithubAppStore
+// WithEncryptionKey sets encryption key on store. Returns a new GitHubAppStore
 func (s *gitHubAppsStore) WithEncryptionKey(key encryption.Key) GitHubAppsStore {
 	return &gitHubAppsStore{Store: s.Store, key: key}
 }
@@ -59,7 +59,7 @@ func (s *gitHubAppsStore) getEncryptionKey() encryption.Key {
 	if s.key != nil {
 		return s.key
 	}
-	return keyring.Default().GithubAppKey
+	return keyring.Default().GitHubAppKey
 }
 
 // Create inserts a new GitHub App into the database.
@@ -152,7 +152,7 @@ func (s *gitHubAppsStore) Update(ctx context.Context, id int, app *types.GitHubA
 }
 
 func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*types.GitHubApp, error) {
-	var selectQuery = `SELECT
+	selectQuery := `SELECT
 		id,
 		app_id,
 		name,
