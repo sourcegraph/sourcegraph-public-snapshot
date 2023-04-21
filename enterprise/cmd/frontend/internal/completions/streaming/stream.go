@@ -14,12 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/openai"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -77,28 +74,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var err error
-	tr, ctx := trace.New(ctx, "completions.ServeStream", "Completions")
-	start := time.Now()
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-
-		if honey.Enabled() {
-			ev := honey.NewEvent("streamCompletions")
-			ev.AddField("model", model)
-			ev.AddField("actor", actor.FromContext(ctx).UIDString())
-			ev.AddField("duration_sec", time.Since(start).Seconds())
-			// This is the header which is useful for client IP on sourcegraph.com
-			ev.AddField("connecting_ip", r.Header.Get("Cf-Connecting-Ip"))
-			ev.AddField("ip_country", r.Header.Get("Cf-Ipcountry"))
-
-			if err != nil {
-				ev.AddField("error", err.Error())
-			}
-
-			_ = ev.Send()
-		}
-	}()
+	ctx, done := Trace(ctx, "stream", model).
+		WithErrorP(&err).
+		WithRequest(r).
+		Build()
+	defer done()
 
 	completionClient, err := GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, model)
 	if err != nil {
