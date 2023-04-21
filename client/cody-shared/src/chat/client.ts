@@ -111,7 +111,6 @@ export async function createClient({
 
         const prompt = await transcript.toPrompt(getPreamble(config.codebase))
         const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
-        const abortController = new AbortController()
 
         chatClient.chat(prompt, {
             onChange(rawText) {
