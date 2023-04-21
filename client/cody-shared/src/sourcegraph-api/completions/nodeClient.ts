@@ -9,7 +9,7 @@ import { parseEvents } from './parse'
 import { CompletionParameters, CompletionCallbacks, CodeCompletionParameters, CodeCompletionResponse } from './types'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
-    public async complete(params: CodeCompletionParameters): Promise<CodeCompletionResponse> {
+    public async complete(params: CodeCompletionParameters, abortSignal: AbortSignal): Promise<CodeCompletionResponse> {
         const requestFn = this.codeCompletionsEndpoint.startsWith('https://') ? https.request : http.request
         const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
         headersInstance.set('Content-Type', 'application/json')
@@ -60,6 +60,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             )
             req.write(JSON.stringify(params))
             req.end()
+
+            abortSignal.addEventListener('abort', () => {
+                req.destroy()
+                reject(new Error('aborted'))
+            })
         })
         return completion
     }

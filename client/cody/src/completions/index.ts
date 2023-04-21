@@ -24,6 +24,9 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private promptTokens: number
     private maxPrefixTokens: number
     private maxSuffixTokens: number
+    private abortOpenInlineCompletions: () => void = () => {}
+    private abortOpenMultilineCompletion: () => void = () => {}
+
     constructor(
         private completionsClient: SourcegraphNodeCompletionsClient,
         private documentProvider: CompletionsDocumentProvider,
@@ -48,6 +51,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
+            if (error.message === 'aborted') {
+                return []
+            }
+
             await vscode.window.showErrorMessage(`Error in provideInlineCompletionItems: ${error}`)
             return []
         }
@@ -63,6 +70,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         context: vscode.InlineCompletionContext,
         token: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
+        this.abortOpenInlineCompletions()
+        const abortController = new AbortController()
+        token.onCancellationRequested(() => abortController.abort())
+        this.abortOpenInlineCompletions = () => abortController.abort()
+
         const docContext = getCurrentDocContext(
             document,
             position,
@@ -79,7 +91,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const completers: CompletionProvider[] = []
         if (precedingLine.trim() === '') {
             // Start of line: medium debounce
-            waitMs = 1500
+            waitMs = 500
             completers.push(
                 new EndOfLineCompletionProvider(
                     this.completionsClient,
@@ -95,7 +107,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         } else {
             // End of line: long debounce, complete until newline
-            waitMs = 3000
+            waitMs = 1000
             completers.push(
                 new EndOfLineCompletionProvider(
                     this.completionsClient,
@@ -104,20 +116,20 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     prefix,
                     '',
                     2 // 2 tries
-                ),
-                new EndOfLineCompletionProvider(
-                    this.completionsClient,
-                    remainingChars,
-                    this.responseTokens,
-                    prefix,
-                    '\n', // force a new line in the case we are at end of line
-                    2 // 2 tries
                 )
+                // TODO: Figure out if this is really useful. Right now it seems that this is not
+                // rendered and a subsequent completion is not properly using the cache yet.
+                //
+                // new EndOfLineCompletionProvider(
+                //     this.completionsClient,
+                //     remainingChars,
+                //     this.responseTokens,
+                //     prefix,
+                //     '\n', // force a new line in the case we are at end of line
+                //     2 // 2 tries
+                // )
             )
         }
-
-        const aborter = new AbortController()
-        token.onCancellationRequested(() => aborter.abort())
 
         // TODO(beyang): trigger on context quality (better context means longer completion)
 
@@ -125,11 +137,23 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             setTimeout(() => resolve(), Math.max(0, waitMs - estimatedLLMResponseLatencyMS))
         )
         await waiter
-        const results = (await Promise.all(completers.map(c => c.generateCompletions()))).flat()
+
+        // We don't need to make a request at all if the signal is already aborted after the
+        // debounce
+        if (abortController.signal.aborted) {
+            return []
+        }
+
+        const results = (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
+
         return results.map(r => new vscode.InlineCompletionItem(r.content))
     }
 
     public async fetchAndShowCompletions(): Promise<void> {
+        this.abortOpenMultilineCompletion()
+        const abortController = new AbortController()
+        this.abortOpenMultilineCompletion = () => abortController.abort()
+
         const currentEditor = vscode.window.activeTextEditor
         if (!currentEditor || currentEditor?.document.uri.scheme === 'cody') {
             return
@@ -186,14 +210,18 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         )
 
         try {
-            const completions = await completer.generateCompletions(3)
+            const completions = await completer.generateCompletions(abortController.signal, 3)
             this.documentProvider.addCompletions(completionsUri, ext, completions, {
                 suffix: '',
                 elapsedMillis: 0,
                 llmOptions: null,
             })
         } catch (error) {
-            await vscode.window.showErrorMessage(`Error in provideInlineCompletionItems: ${error}`)
+            if (error.message === 'aborted') {
+                return
+            }
+
+            await vscode.window.showErrorMessage(`Error in fetchAndShowCompletions: ${error}`)
         }
     }
 }
@@ -280,11 +308,12 @@ function getCurrentDocContext(
 async function batchCompletions(
     client: SourcegraphNodeCompletionsClient,
     params: CodeCompletionParameters,
-    n: number
+    n: number,
+    abortSignal: AbortSignal
 ): Promise<CodeCompletionResponse[]> {
     const responses: Promise<CodeCompletionResponse>[] = []
     for (let i = 0; i < n; i++) {
-        responses.push(client.complete(params))
+        responses.push(client.complete(params, abortSignal))
     }
     return Promise.all(responses)
 }
@@ -296,7 +325,7 @@ export interface Completion {
 }
 
 interface CompletionProvider {
-    generateCompletions(n?: number): Promise<Completion[]>
+    generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]>
 }
 
 export class MultilineCompletionProvider implements CompletionProvider {
@@ -384,7 +413,7 @@ export class MultilineCompletionProvider implements CompletionProvider {
         return completion.trimEnd()
     }
 
-    public async generateCompletions(n?: number): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {
         // Create prompt
         const prompt = this.makePrompt()
         if (prompt.length > this.promptChars) {
@@ -403,7 +432,8 @@ export class MultilineCompletionProvider implements CompletionProvider {
                 topK: -1, // default value
                 topP: -1, // default value
             },
-            n || this.defaultN
+            n || this.defaultN,
+            abortSignal
         )
         // Post-process
         return responses.map(resp => ({
@@ -490,7 +520,7 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
         return completion.trimEnd()
     }
 
-    public async generateCompletions(n?: number): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {
         // Create prompt
         const prompt = this.makePrompt()
         if (prompt.length > this.promptChars) {
@@ -509,7 +539,8 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
                 topK: -1,
                 topP: -1,
             },
-            n || this.defaultN
+            n || this.defaultN,
+            abortSignal
         )
         // Post-process
         return responses.map(resp => ({
