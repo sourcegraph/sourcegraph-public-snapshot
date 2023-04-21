@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -98,6 +99,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// Create HTTP server
 	handler := NewHandler(logger, readFile, getRepoEmbeddingIndex, getQueryEmbedding, weaviate, getContextDetectionEmbeddingIndex)
 	handler = handlePanic(logger, handler)
+	handler = featureflag.Middleware(db.FeatureFlags(), handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = actor.HTTPMiddleware(logger, handler)
@@ -134,7 +136,7 @@ func NewHandler(
 		var args embeddings.EmbeddingsSearchParameters
 		err := json.NewDecoder(r.Body).Decode(&args)
 		if err != nil {
-			http.Error(w, "could not parse request body", http.StatusBadRequest)
+			http.Error(w, "could not parse request body: "+err.Error(), http.StatusBadRequest)
 			return
 		}
 
