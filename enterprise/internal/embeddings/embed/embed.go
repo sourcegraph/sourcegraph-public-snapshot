@@ -67,14 +67,6 @@ func EmbedRepo(
 	return &embeddings.RepoEmbeddingIndex{RepoName: repoName, Revision: revision, CodeIndex: codeIndex, TextIndex: textIndex}, nil
 }
 
-func createEmptyEmbeddingIndex(columnDimension int) embeddings.EmbeddingIndex {
-	return embeddings.EmbeddingIndex{
-		Embeddings:      []int8{},
-		RowMetadata:     []embeddings.RepoEmbeddingRowMetadata{},
-		ColumnDimension: columnDimension,
-	}
-}
-
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
 // entire files. So we split the file contents into chunks and get embeddings for the chunks in batches. Functions returns an EmbeddingIndex containing
 // the embeddings and metadata about the chunks the embeddings correspond to.
@@ -89,7 +81,7 @@ func embedFiles(
 ) (embeddings.EmbeddingIndex, error) {
 	dimensions, err := client.GetDimensions()
 	if err != nil {
-		return createEmptyEmbeddingIndex(dimensions), err
+		return embeddings.EmbeddingIndex{}, err
 	}
 
 	index := embeddings.EmbeddingIndex{
@@ -143,7 +135,7 @@ func embedFiles(
 
 		contentBytes, err := readFile(ctx, fileName)
 		if err != nil {
-			return createEmptyEmbeddingIndex(dimensions), errors.Wrap(err, "error while reading a file")
+			return embeddings.EmbeddingIndex{}, errors.Wrap(err, "error while reading a file")
 		}
 
 		if embeddable, _ := isEmbeddableFileContent(contentBytes); !embeddable {
@@ -152,14 +144,14 @@ func embedFiles(
 
 		for _, chunk := range split.SplitIntoEmbeddableChunks(string(contentBytes), fileName, splitOptions) {
 			if err := addToBatch(chunk); err != nil {
-				return createEmptyEmbeddingIndex(dimensions), err
+				return embeddings.EmbeddingIndex{}, err
 			}
 		}
 	}
 
 	// Always do a final flush
 	if err := flush(); err != nil {
-		return createEmptyEmbeddingIndex(dimensions), err
+		return embeddings.EmbeddingIndex{}, err
 	}
 
 	return index, nil
