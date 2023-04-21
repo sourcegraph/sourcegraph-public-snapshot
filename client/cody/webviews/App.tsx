@@ -28,6 +28,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
+    const [errorMessage, setErrorMessage] = useState<string>('')
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -65,6 +66,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     break
                 case 'contextStatus':
                     setContextStatus(message.contextStatus)
+                    if (message.contextStatus.mode !== 'keyword' && !message.contextStatus?.codebase) {
+                        setErrorMessage(
+                            'Codebase is missing. A codebase must be provided via the cody.codebase setting to enable embeddings. Failling back to local keyword search for context.'
+                        )
+                    }
+                    if (message.contextStatus?.codebase && !message.contextStatus?.connection) {
+                        setErrorMessage(
+                            'Codebase connection failed. Please make sure the codebase in your cody.codebase setting is correct and exists in your Sourcegraph instance. Falling back to local keyword search for context.'
+                        )
+                    }
                     break
                 case 'view':
                     setView(message.messages)
@@ -102,7 +113,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {view === 'login' && (
                 <Login onLogin={onLogin} isValidLogin={isValidLogin} serverEndpoint={config?.serverEndpoint} />
             )}
-            {view && view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
+            {view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
             {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}
             {view === 'history' && (
                 <UserHistory
@@ -115,6 +126,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
             {view === 'settings' && (
                 <Settings setView={setView} onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />
+            )}
+            {view === 'chat' && errorMessage && (
+                <div className="error">
+                    Error: {errorMessage}
+                    <button type="button" onClick={() => setErrorMessage('')} className="close-btn">
+                        ×
+                    </button>
+                </div>
             )}
             {view === 'chat' && (
                 <Chat
