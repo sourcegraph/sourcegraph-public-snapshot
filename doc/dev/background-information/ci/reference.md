@@ -18,7 +18,6 @@ The default run type.
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - Upload build trace
 
 - Pipeline for `Client` changes:
   - **Metadata**: Pipeline metadata
@@ -26,84 +25,69 @@ The default run type.
   - **Linters and static analysis**: Run sg lint
   - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
   - **Pipeline setup**: Trigger async
-  - Upload build trace
 
 - Pipeline for `GraphQL` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
-  - Upload build trace
 
 - Pipeline for `DatabaseSchema` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
-  - Upload build trace
 
 - Pipeline for `Docs` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - Upload build trace
 
 - Pipeline for `Dockerfiles` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - Upload build trace
 
 - Pipeline for `ExecutorVMImage` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
-  - Upload build trace
 
 - Pipeline for `ExecutorDockerRegistryMirror` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
-  - Upload build trace
 
 - Pipeline for `CIScripts` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **CI script tests**: test-trace-command.sh
-  - Upload build trace
 
 - Pipeline for `Terraform` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
-  - Upload build trace
 
 - Pipeline for `SVG` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - Upload build trace
 
 - Pipeline for `Shell` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - Upload build trace
 
 - Pipeline for `DockerImages` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
-  - Upload build trace
 
 - Pipeline for `WolfiPackages` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
-  - Upload build trace
 
 - Pipeline for `WolfiBaseImages` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
-  - Upload build trace
 
 - Pipeline for `Protobuf` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - Upload build trace
 
 ### Bazel Exp Branch
 
@@ -118,7 +102,6 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
-- Upload build trace
 
 ### Wolfi Exp Branch
 
@@ -132,7 +115,6 @@ sg ci build wolfi
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- Upload build trace
 
 ### Release branch nightly healthcheck build
 
@@ -143,7 +125,6 @@ Base pipeline (more steps might be included based on branch changes):
 - **Metadata**: Pipeline metadata
 - Trigger 5.0 release branch healthcheck build
 - Trigger 4.5 release branch healthcheck build
-- Upload build trace
 
 ### Browser extension nightly release build
 
@@ -158,7 +139,6 @@ Base pipeline (more steps might be included based on branch changes):
 - Puppeteer tests for chrome extension
 - Test (all)
 - E2E for chrome extension
-- Upload build trace
 
 ### VS Code extension nightly release build
 
@@ -170,7 +150,6 @@ Base pipeline (more steps might be included based on branch changes):
 - ESLint (web)
 - Stylelint (all)
 - Tests for VS Code extension
-- Upload build trace
 
 ### App release build
 
@@ -179,7 +158,6 @@ The run type for branches matching `app/release` (exact match).
 Base pipeline (more steps might be included based on branch changes):
 
 - App release
-- Upload build trace
 
 ### App insiders build
 
@@ -188,7 +166,6 @@ The run type for branches matching `app/insiders` (exact match).
 Base pipeline (more steps might be included based on branch changes):
 
 - App release
-- Upload build trace
 
 ### Tagged release
 
@@ -207,7 +184,6 @@ Base pipeline (more steps might be included based on branch changes):
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
 - **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, blobstore, blobstore2, node-exporter, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, executor-kubernetes, executor-vm, batcheshelper, opentelemetry-collector, embeddings, dind, bundled-executor, server, sg, llm-proxy, Publish executor image, Publish executor binary, Publish docker registry mirror image
-- Upload build trace
 
 ### Release branch
 
@@ -226,7 +202,6 @@ Base pipeline (more steps might be included based on branch changes):
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
 - **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, blobstore, blobstore2, node-exporter, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, executor-kubernetes, executor-vm, batcheshelper, opentelemetry-collector, embeddings, dind, bundled-executor, server, sg, llm-proxy
-- Upload build trace
 
 ### Browser extension release build
 
@@ -244,7 +219,6 @@ Base pipeline (more steps might be included based on branch changes):
 - Extension release
 - Extension release
 - npm Release
-- Upload build trace
 
 ### VS Code extension release build
 
@@ -257,7 +231,6 @@ Base pipeline (more steps might be included based on branch changes):
 - Stylelint (all)
 - Tests for VS Code extension
 - Extension release
-- Upload build trace
 
 ### Cody VS Code extension release build
 
@@ -270,7 +243,6 @@ Base pipeline (more steps might be included based on branch changes):
 - Stylelint (all)
 - Integration tests for the Cody VS Code extension
 - Cody release
-- Upload build trace
 
 ### Main branch
 
@@ -289,7 +261,6 @@ Base pipeline (more steps might be included based on branch changes):
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
 - **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, blobstore, blobstore2, node-exporter, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, executor-kubernetes, executor-vm, batcheshelper, opentelemetry-collector, embeddings, dind, bundled-executor, server, sg, llm-proxy, Publish executor image, Publish executor binary
-- Upload build trace
 
 ### Main dry run
 
@@ -313,7 +284,6 @@ Base pipeline (more steps might be included based on branch changes):
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
 - **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, blobstore, blobstore2, node-exporter, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, executor-kubernetes, executor-vm, batcheshelper, opentelemetry-collector, embeddings, dind, bundled-executor, server, sg, llm-proxy
-- Upload build trace
 
 ### Patch image
 
@@ -347,7 +317,6 @@ Base pipeline (more steps might be included based on branch changes):
 - **Metadata**: Pipeline metadata
 - **Image builds**: Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build blobstore, Build blobstore2, Build node-exporter, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build executor, Build executor-kubernetes, Build executor-vm, Build batcheshelper, Build opentelemetry-collector, Build embeddings, Build dind, Build bundled-executor, Build server, Build sg, Build llm-proxy
 - **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, blobstore, blobstore2, node-exporter, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, executor-kubernetes, executor-vm, batcheshelper, opentelemetry-collector, embeddings, dind, bundled-executor, server, sg, llm-proxy
-- Upload build trace
 
 ### Build executor without testing
 
@@ -369,7 +338,6 @@ Base pipeline (more steps might be included based on branch changes):
 - Publish executor image
 - Publish docker registry mirror image
 - Publish executor binary
-- Upload build trace
 
 ### Backend integration tests
 
@@ -388,4 +356,3 @@ Base pipeline (more steps might be included based on branch changes):
 - Backend integration tests
 - **Linters and static analysis**: Run sg lint
 - **Go checks**: Test (all), Test (all (gRPC)), Test (enterprise/internal/insights), Test (enterprise/internal/insights (gRPC)), Test (internal/repos), Test (internal/repos (gRPC)), Test (enterprise/internal/batches), Test (enterprise/internal/batches (gRPC)), Test (cmd/frontend), Test (cmd/frontend (gRPC)), Test (enterprise/cmd/frontend/internal/batches/resolvers), Test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Test (dev/sg), Test (dev/sg (gRPC)), Test (internal/database), Test (enterprise/internal/database), Build
-- Upload build trace
