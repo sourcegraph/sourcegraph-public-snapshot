@@ -1490,6 +1490,7 @@ ts_project(
         "src/site/index.ts",
         "src/staticAppConfig.ts",
         "src/stores/codyChat.ts",
+        "src/stores/codySidebar.ts",
         "src/stores/editor.ts",
         "src/stores/index.ts",
         "src/stores/navbarSearchQueryState.ts",
