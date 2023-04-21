@@ -1577,7 +1577,7 @@
       "group": "Sourcegraph Enterprise license"
     },
     "gitHubApp": {
-      "description": "The config options for Sourcegraph GitHub App.",
+      "description": "DEPRECATED: The config options for Sourcegraph GitHub App.",
       "type": "object",
       "properties": {
         "slug": {
