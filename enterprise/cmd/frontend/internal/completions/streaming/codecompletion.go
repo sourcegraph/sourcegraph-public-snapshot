@@ -5,13 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -48,6 +51,21 @@ func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	if honey.Enabled() {
+		start := time.Now()
+		defer func() {
+			ev := honey.NewEvent("codeCompletions")
+			ev.AddField("model", completionsConfig.CompletionModel)
+			ev.AddField("actor", actor.FromContext(ctx).UIDString())
+			ev.AddField("duration_sec", time.Since(start).Seconds())
+			// This is the header which is useful for client IP on sourcegraph.com
+			ev.AddField("connecting_ip", r.Header.Get("Cf-Connecting-Ip"))
+			ev.AddField("ip_country", r.Header.Get("Cf-Ipcountry"))
+
+			_ = ev.Send()
+		}()
 	}
 
 	client := anthropic.NewAnthropicClient(httpcli.ExternalDoer, completionsConfig.AccessToken, completionsConfig.CompletionModel)
