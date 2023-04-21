@@ -1905,7 +1905,7 @@ jest_test(
         ":web_tests",
     ],
     patch_node_fs = False,
-    shard_count = 4,  # originally at 6, but tend to consume too much resource and crash.
+    shard_count = 3,  # originally at 6, but tend to consume too much resource and crash.
     tags = [
         "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],
