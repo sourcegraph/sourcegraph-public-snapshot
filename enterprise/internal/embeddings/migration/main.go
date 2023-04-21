@@ -160,8 +160,10 @@ func getClassNamesForRepoID(repoID api.RepoID) (string, string) {
 // createClass creates a new class in the weaviate schema. If the class already exists, it returns true.
 func (w *weaviateClient) createClass(ctx context.Context, class string) (bool, error) {
 	err := w.client.Schema().ClassCreator().WithClass(&models.Class{
-		Class:        class,
-		ModuleConfig: nil,
+		Class: class,
+		VectorIndexConfig: map[string]interface{}{
+			"vectorCacheMaxObjects": 1000,
+		},
 		Properties: []*models.Property{
 			{
 				Name:     "repo",
