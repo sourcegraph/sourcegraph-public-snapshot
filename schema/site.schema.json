@@ -1931,7 +1931,7 @@
         "externalServiceKey": {
           "$ref": "#/definitions/EncryptionKey"
         },
-        "githubAppKey": {
+        "gitHubAppKey": {
           "$ref": "#/definitions/EncryptionKey"
         },
         "outboundWebhookKey": {

@@ -8081,7 +8081,7 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 			},
 		},
 		GithubAppsFunc: &EnterpriseDBGithubAppsFunc{
-			defaultHook: func() (r0 store.GithubAppsStore) {
+			defaultHook: func() (r0 store.GitHubAppsStore) {
 				return
 			},
 		},
@@ -8363,7 +8363,7 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 			},
 		},
 		GithubAppsFunc: &EnterpriseDBGithubAppsFunc{
-			defaultHook: func() store.GithubAppsStore {
+			defaultHook: func() store.GitHubAppsStore {
 				panic("unexpected invocation of MockEnterpriseDB.GithubApps")
 			},
 		},
@@ -10162,15 +10162,15 @@ func (c EnterpriseDBFeatureFlagsFuncCall) Results() []interface{} {
 // EnterpriseDBGithubAppsFunc describes the behavior when the GithubApps
 // method of the parent MockEnterpriseDB instance is invoked.
 type EnterpriseDBGithubAppsFunc struct {
-	defaultHook func() store.GithubAppsStore
-	hooks       []func() store.GithubAppsStore
+	defaultHook func() store.GitHubAppsStore
+	hooks       []func() store.GitHubAppsStore
 	history     []EnterpriseDBGithubAppsFuncCall
 	mutex       sync.Mutex
 }
 
 // GithubApps delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockEnterpriseDB) GithubApps() store.GithubAppsStore {
+func (m *MockEnterpriseDB) GithubApps() store.GitHubAppsStore {
 	r0 := m.GithubAppsFunc.nextHook()()
 	m.GithubAppsFunc.appendCall(EnterpriseDBGithubAppsFuncCall{r0})
 	return r0
@@ -10179,7 +10179,7 @@ func (m *MockEnterpriseDB) GithubApps() store.GithubAppsStore {
 // SetDefaultHook sets function that is called when the GithubApps method of
 // the parent MockEnterpriseDB instance is invoked and the hook queue is
 // empty.
-func (f *EnterpriseDBGithubAppsFunc) SetDefaultHook(hook func() store.GithubAppsStore) {
+func (f *EnterpriseDBGithubAppsFunc) SetDefaultHook(hook func() store.GitHubAppsStore) {
 	f.defaultHook = hook
 }
 
@@ -10187,7 +10187,7 @@ func (f *EnterpriseDBGithubAppsFunc) SetDefaultHook(hook func() store.GithubApps
 // GithubApps method of the parent MockEnterpriseDB instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *EnterpriseDBGithubAppsFunc) PushHook(hook func() store.GithubAppsStore) {
+func (f *EnterpriseDBGithubAppsFunc) PushHook(hook func() store.GitHubAppsStore) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -10195,20 +10195,20 @@ func (f *EnterpriseDBGithubAppsFunc) PushHook(hook func() store.GithubAppsStore)
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *EnterpriseDBGithubAppsFunc) SetDefaultReturn(r0 store.GithubAppsStore) {
-	f.SetDefaultHook(func() store.GithubAppsStore {
+func (f *EnterpriseDBGithubAppsFunc) SetDefaultReturn(r0 store.GitHubAppsStore) {
+	f.SetDefaultHook(func() store.GitHubAppsStore {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *EnterpriseDBGithubAppsFunc) PushReturn(r0 store.GithubAppsStore) {
-	f.PushHook(func() store.GithubAppsStore {
+func (f *EnterpriseDBGithubAppsFunc) PushReturn(r0 store.GitHubAppsStore) {
+	f.PushHook(func() store.GitHubAppsStore {
 		return r0
 	})
 }
 
-func (f *EnterpriseDBGithubAppsFunc) nextHook() func() store.GithubAppsStore {
+func (f *EnterpriseDBGithubAppsFunc) nextHook() func() store.GitHubAppsStore {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -10243,7 +10243,7 @@ func (f *EnterpriseDBGithubAppsFunc) History() []EnterpriseDBGithubAppsFuncCall 
 type EnterpriseDBGithubAppsFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 store.GithubAppsStore
+	Result0 store.GitHubAppsStore
 }
 
 // Args returns an interface slice containing the arguments of this
