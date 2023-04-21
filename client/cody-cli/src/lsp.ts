@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import {
     createConnection,
@@ -20,6 +21,16 @@ import {
     ExecuteCommandParams,
     WorkDoneProgress,
     WorkDoneProgressBegin,
+    WorkDoneProgressCreateRequest,
+    ApplyWorkspaceEditRequest,
+    ShowMessageNotification,
+    TextDocumentIdentifier,
+    TextDocumentEdit,
+    TextEdit,
+    Range,
+    OptionalVersionedTextDocumentIdentifier,
+    WorkspaceEdit,
+    Position,
 } from 'vscode-languageserver/node'
 
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
@@ -116,18 +127,19 @@ class CodyLanguageServer {
     }
 
     private async onInitialized() {
-        console.error('onInitialized')
         await this.connection.client.register(DidChangeConfigurationNotification.type, undefined)
     }
 
     private async onDidChangeConfiguration(change: DidChangeConfigurationParams) {
-        console.error('configuration change', change)
-
         this.globalSettings = (change.settings.codylsp || defaultSettings) as CodyLSPSettings
         if (validSettings(this.globalSettings.sourcegraph)) {
             await this.initializeCody()
         } else {
-            console.error('invalid settings')
+            this.connection.sendNotification(ShowMessageNotification.type.method, {
+                message: 'Invalid settings',
+                type: MessageType.Error,
+            })
+            return
         }
 
         for (const doc of this.documents.all()) {
@@ -136,7 +148,6 @@ class CodyLanguageServer {
     }
 
     private async initializeCody() {
-        console.error('initializecody. globalSettings', this.globalSettings)
         // TODO: These two are clunky
         const codebase = this.globalSettings.sourcegraph.repos[0]
         const contextType = 'blended'
@@ -151,19 +162,14 @@ class CodyLanguageServer {
         try {
             this.codebaseContext = await createCodebaseContext(sourcegraphClient, codebase, contextType)
         } catch (error) {
-            // TODO: return this to the LSP
-
-            let errorMessage = ''
-            // if (isRepoNotFoundError(error)) {
-            //     errorMessage =
-            //         `Cody could not find the '${codebase}' repository on your Sourcegraph instance.\n` +
-            //         'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
-            // } else {
-            errorMessage =
+            const errorMessage =
                 `Cody could not connect to your Sourcegraph instance: ${error}\n` +
                 'Make sure that cody.serverEndpoint is set to a running Sourcegraph instance and that an access token is configured.'
-            // }
-            console.error(errorMessage)
+
+            this.connection.sendNotification(ShowMessageNotification.type.method, {
+                message: errorMessage,
+                type: MessageType.Error,
+            })
         }
 
         this.intentDetector = new SourcegraphIntentDetectorClient(sourcegraphClient)
@@ -235,38 +241,133 @@ class CodyLanguageServer {
             this.codebaseContext === undefined ||
             this.completionsClient === undefined
         ) {
-            console.error('cannot execute command. not initialized', params.command)
+            this.connection.sendNotification(ShowMessageNotification.type.method, {
+                message: 'Cannot execute command, because not connected to Sourcegraph instance',
+                type: MessageType.Error,
+            })
+
             return
         }
 
         if (params.arguments === undefined) {
-            console.error('no arguments to command given')
+            this.connection.sendNotification(ShowMessageNotification.type.method, {
+                message: 'Cannot execute command, because arguments are missing',
+                type: MessageType.Error,
+            })
             return
         }
 
-        const uri: string = params.arguments[0] as string
-        const startLine: number | undefined = params.arguments[1] as number
-        const endLine: number | undefined = params.arguments[2] as number
-        const question: string = params.arguments[3] as string
-
-        const doc = this.documents.get(uri)
-        const snippet = doc?.getText({ start: { line: startLine, character: 0 }, end: { line: endLine, character: 0 } })
-
-        const uuid = 'uuid-foobar'
-
-        const param: WorkDoneProgressBegin = {
+        // We create a unique token for this command and tell the client that we started work
+        const uuid = uuidv4()
+        await this.connection.sendRequest(WorkDoneProgressCreateRequest.type, { token: uuid })
+        await this.connection.sendProgress(WorkDoneProgress.type, uuid, {
             kind: 'begin',
             title: params.command,
+        })
+
+        let result: any
+
+        switch (params.command) {
+            case 'cody.explain':
+                result = await this.handleCodyExplain({
+                    uri: params.arguments[0],
+                    startLine: params.arguments[1],
+                    endLine: params.arguments[2],
+                    question: params.arguments[3],
+                })
+                break
+
+            case 'cody.replace':
+                result = await this.handleCodyReplace({
+                    uri: params.arguments[0],
+                    startLine: params.arguments[1],
+                    endLine: params.arguments[2],
+                    request: params.arguments[3],
+                })
+                break
         }
 
-        await this.connection.sendProgress(WorkDoneProgress.type, uuid, param)
-
-        const initialMessageText = `I have the following code snippet:\n\n\`\`\`typescript\n${snippet}\n\`\`\`\n\n${question}`
-        const text = await this.getCompletion(initialMessageText)
-
+        // Now we tell the client that the work is done
         await this.connection.sendProgress(WorkDoneProgress.type, uuid, { kind: 'end' })
+
+        return result
+    }
+
+    async handleCodyExplain({
+        uri,
+        startLine,
+        endLine,
+        question,
+    }: {
+        uri: string
+        startLine: number | undefined
+        endLine: number | undefined
+        question: string
+    }): Promise<{ response: string }> {
+        const doc = this.documents.get(uri)
+
+        let initialMessage = ''
+        if (doc !== undefined && startLine !== undefined && endLine !== undefined) {
+            const filetype = doc.languageId
+            const snippet = doc?.getText({
+                start: { line: startLine, character: 0 },
+                end: { line: endLine, character: 0 },
+            })
+
+            initialMessage = `I am looking at the following code snippet:\n\n\`\`\`${filetype}\n${snippet}\n\`\`\`\n\n${question}`
+        } else {
+            initialMessage = `${question}`
+        }
+
+        const text = await this.getCompletion(initialMessage)
         return {
-            message: [text],
+            response: text,
+        }
+    }
+
+    async handleCodyReplace({
+        uri,
+        startLine,
+        endLine,
+        request,
+    }: {
+        uri: string
+        startLine: number
+        endLine: number
+        request: string
+    }): Promise<{ response: string } | { error: string }> {
+        const doc = this.documents.get(uri)
+        if (doc === undefined) {
+            return { error: `cannot find the doc: ${uri}` }
+        }
+        const filetype = doc.languageId
+        const snippet = doc?.getText({
+            start: { line: startLine, character: 0 },
+            end: { line: endLine, character: 0 },
+        })
+
+        const initialMessage = `I am looking at the following code snippet:\n\n\`\`\`${filetype}\n${snippet}\n\`\`\`\n\n${request}`
+
+        const text = await this.getCompletion(initialMessage)
+
+        // TODO: This is incredibly hacky
+        const regex = /```\w+([\s\S]*?)```/g
+        const match = regex.exec(text)
+        const extractedStr = match && match[1] ? match[1] : ''
+
+        const startPosition = Position.create(startLine, 0)
+        const endPosition = Position.create(endLine, 9999999) // this is fucking ugly, jesus
+        const textEdit = TextEdit.replace(Range.create(startPosition, endPosition), extractedStr)
+        const edit = TextDocumentEdit.create({ uri: doc.uri, version: null }, [textEdit])
+
+        await this.connection.sendRequest(ApplyWorkspaceEditRequest.type.method, {
+            edit: {
+                documentChanges: [edit],
+            },
+        })
+
+        return {
+            response: 'done',
         }
     }
 
@@ -276,7 +377,11 @@ class CodyLanguageServer {
             this.codebaseContext === undefined ||
             this.completionsClient === undefined
         ) {
-            console.error('cannot execute command. not initialized')
+            this.connection.sendNotification(ShowMessageNotification.type.method, {
+                message: 'cannot execute command, because not connected to Sourcegraph instance',
+                type: MessageType.Error,
+            })
+
             return ''
         }
         const transcript = new Transcript()
@@ -301,6 +406,7 @@ class CodyLanguageServer {
 
         let text = ''
         const completionsClient = this.completionsClient
+
         await new Promise<void>(resolve => {
             streamCompletions(completionsClient, finalPrompt, {
                 onChange: chunk => {
