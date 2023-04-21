@@ -8618,7 +8618,7 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 			defaultHook: i.FeatureFlags,
 		},
 		GithubAppsFunc: &EnterpriseDBGithubAppsFunc{
-			defaultHook: i.GithubApps,
+			defaultHook: i.GitHubApps,
 		},
 		GitserverLocalCloneFunc: &EnterpriseDBGitserverLocalCloneFunc{
 			defaultHook: i.GitserverLocalClone,

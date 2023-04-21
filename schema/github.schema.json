@@ -173,7 +173,7 @@
       }
     },
     "githubAppInstallationID": {
-      "description": "The installation ID of the GitHub App.",
+      "description": "DEPRECATED: The installation ID of the GitHub App.",
       "type": "string"
     },
     "pending": {
