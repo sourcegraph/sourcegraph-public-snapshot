@@ -92,7 +92,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check rate limit.
-	if err := h.rl.TryAcquire(ctx); err != nil {
+	err = h.rl.TryAcquire(ctx)
+	if err != nil {
 		if unwrap, ok := err.(RateLimitExceededError); ok {
 			respondRateLimited(w, unwrap)
 			return
