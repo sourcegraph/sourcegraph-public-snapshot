@@ -22,7 +22,7 @@ func NewCompletionsResolver() graphqlbackend.CompletionsResolver {
 	return &completionsResolver{}
 }
 
-func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (string, error) {
+func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (_ string, err error) {
 	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
 		return "", errors.New("cody experimental feature flag is not enabled for current user")
 	}
@@ -31,6 +31,11 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 	if completionsConfig == nil || !completionsConfig.Enabled {
 		return "", errors.New("completions are not configured or disabled")
 	}
+
+	ctx, done := streaming.Trace(ctx, "resolver", completionsConfig.Model).
+		WithErrorP(&err).
+		Build()
+	defer done()
 
 	client, err := streaming.GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
 	if err != nil {
