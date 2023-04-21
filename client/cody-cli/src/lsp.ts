@@ -126,6 +126,8 @@ class CodyLanguageServer {
         this.globalSettings = (change.settings.codylsp || defaultSettings) as CodyLSPSettings
         if (validSettings(this.globalSettings.sourcegraph)) {
             await this.initializeCody()
+        } else {
+            console.error('invalid settings')
         }
 
         for (const doc of this.documents.all()) {
@@ -134,6 +136,7 @@ class CodyLanguageServer {
     }
 
     private async initializeCody() {
+        console.error('initializecody. globalSettings', this.globalSettings)
         // TODO: These two are clunky
         const codebase = this.globalSettings.sourcegraph.repos[0]
         const contextType = 'blended'

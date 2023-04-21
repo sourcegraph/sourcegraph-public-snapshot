@@ -54,7 +54,7 @@ vim.api.nvim_create_autocmd({ "FileType" }, {
         codylsp = {
           sourcegraph = {
             url = "https://sourcegraph.sourcegraph.com",
-            accessToken = "sgp_5ac15c9b677628fcc7199d5fa42dca57528ea4a4",
+            accessToken = "<your access token>",
             repos = { "github.com/sourcegraph/sourcegraph" }, -- any repos you want context for
           },
         },
