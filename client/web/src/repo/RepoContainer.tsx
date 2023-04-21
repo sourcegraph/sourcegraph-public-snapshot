@@ -45,6 +45,7 @@ import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useNavbarQueryState } from '../stores'
 import { useChatStore } from '../stores/codyChat'
+import { useCodySidebarStore } from '../stores/codySidebar'
 import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -190,7 +191,13 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     const [isCodyEnabled] = useFeatureFlag('cody-experimental')
     const focusCodyShortcut = useKeyboardShortcut('focusCody')
-    const { isCodySidebarOpen, setIsCodySidebarOpen } = useChatStore({ codebase: repoName })
+    const {
+        isOpen: isCodySidebarOpen,
+        setIsOpen: setIsCodySidebarOpen,
+        onResize: onCodySidebarResize,
+    } = useCodySidebarStore()
+    // TODO: This hook call is used to initialize the chat store with the right repo name.
+    useChatStore({ codebase: repoName, setIsCodySidebarOpen })
 
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
@@ -484,12 +491,14 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
                 {isCodyEnabled && isCodySidebarOpen && (
                     <Panel
+                        className="cody-sidebar-panel"
                         position="right"
                         ariaLabel="Cody sidebar"
                         maxSize={CODY_SIDEBAR_SIZES.max}
                         minSize={CODY_SIDEBAR_SIZES.min}
                         defaultSize={CODY_SIDEBAR_SIZES.default}
                         storageKey="size-cache-cody-sidebar"
+                        onResize={onCodySidebarResize}
                     >
                         <CodyChat onClose={() => setIsCodySidebarOpen(false)} />
                     </Panel>

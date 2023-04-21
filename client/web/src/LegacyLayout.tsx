@@ -240,7 +240,10 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 platformContext={props.platformContext}
             />
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
-                <NotepadContainer userId={props.authenticatedUser?.id} />
+                <NotepadContainer
+                    userId={props.authenticatedUser?.id}
+                    isRepositoryRelatedPage={isRepositoryRelatedPage}
+                />
             )}
             {fuzzyFinder && (
                 <LazyFuzzyFinder

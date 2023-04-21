@@ -37,6 +37,7 @@ import { BlockInput } from '../notebooks'
 import { createNotebook } from '../notebooks/backend'
 import { blockToGQLInput } from '../notebooks/serialize'
 import { EnterprisePageRoutes } from '../routes.constants'
+import { useCodySidebarSize } from '../stores/codySidebar'
 import {
     addNotepadEntry,
     NotepadEntry,
@@ -94,11 +95,13 @@ export const NotepadIcon: React.FunctionComponent<React.PropsWithChildren<unknow
 export interface NotepadContainerProps {
     initialOpen?: boolean
     userId?: string
+    isRepositoryRelatedPage?: boolean
 }
 
 export const NotepadContainer: React.FunctionComponent<React.PropsWithChildren<NotepadContainerProps>> = ({
     initialOpen,
     userId,
+    isRepositoryRelatedPage,
 }) => {
     const newEntry = useNotepadState(state => state.addableEntry)
     const entries = useNotepadState(state => state.entries)
@@ -118,13 +121,13 @@ export const NotepadContainer: React.FunctionComponent<React.PropsWithChildren<N
                 restorePreviousSession={canRestore ? restorePreviousSession : undefined}
                 addEntry={addNotepadEntry}
                 removeEntry={removeFromNotepad}
+                isRepositoryRelatedPage={isRepositoryRelatedPage}
             />
         )
     }
 
     return null
 }
-
 export interface NotepadProps {
     className?: string
     initialOpen?: boolean
@@ -137,6 +140,7 @@ export interface NotepadProps {
     // selected
     selectable?: boolean
     userId?: string
+    isRepositoryRelatedPage?: boolean
 }
 
 export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadProps>> = ({
@@ -149,6 +153,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
     newEntry,
     selectable = true,
     userId,
+    isRepositoryRelatedPage,
 }) => {
     const navigate = useNavigate()
 
@@ -376,11 +381,19 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
         }
     }, [])
 
+    // HACK: This is temporary fix for the overlapping Notepad icon until we either disable notepad
+    //       or move Cody to the top level and mount the Notepad entrypoint inside it
+    const codySidebarWidth = useCodySidebarSize()
+
     return (
         <aside
             className={classNames(styles.root, className, { [styles.open]: open })}
             id={NOTEPAD_ID}
             aria-labelledby={`${NOTEPAD_ID}-button`}
+            // eslint-disable-next-line react/forbid-dom-props
+            style={{
+                marginRight: isRepositoryRelatedPage ? codySidebarWidth : 0,
+            }}
         >
             <Button
                 variant="icon"
