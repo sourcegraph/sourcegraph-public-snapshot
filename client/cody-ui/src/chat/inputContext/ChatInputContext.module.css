@@ -53,5 +53,5 @@
     gap: 0.25rem;
     overflow: hidden;
 
-    color: red;
+    color: var(--vscode-errorForeground, red);
 }

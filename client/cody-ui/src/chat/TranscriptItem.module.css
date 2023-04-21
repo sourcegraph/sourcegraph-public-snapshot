@@ -51,8 +51,7 @@
 .actions {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: calc(var(--spacing) * 0.5);
+    align-items: center;
     padding: 0 var(--spacing);
 }
 
