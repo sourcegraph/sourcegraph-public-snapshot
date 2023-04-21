@@ -1,11 +1,12 @@
 diff --git a/cmd/zoekt-archive-index/BUILD.bazel b/cmd/zoekt-archive-index/BUILD.bazel
-index e62a8d2..1066a03 100644
+index e62a8d2..4b045f7 100644
 --- a/cmd/zoekt-archive-index/BUILD.bazel
 +++ b/cmd/zoekt-archive-index/BUILD.bazel
-@@ -22,6 +22,7 @@ go_binary(
+@@ -22,6 +22,8 @@ go_binary(
      name = "zoekt-archive-index",
      embed = [":zoekt-archive-index_lib"],
      visibility = ["//visibility:public"],
++    pure = "on",
 +    static = "on",
  )
 
