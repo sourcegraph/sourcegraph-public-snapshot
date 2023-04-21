@@ -20,7 +20,7 @@ type EnterpriseDB interface {
 	Perms() PermsStore
 	SubRepoPerms() SubRepoPermsStore
 	Codeowners() CodeownersStore
-	GithubApps() gha.GithubAppsStore
+	GitHubApps() gha.GitHubAppsStore
 }
 
 func NewEnterpriseDB(db database.DB) EnterpriseDB {
@@ -54,8 +54,8 @@ func (edb *enterpriseDB) Codeowners() CodeownersStore {
 	return CodeownersWith(basestore.NewWithHandle(edb.Handle()))
 }
 
-func (edb *enterpriseDB) GithubApps() gha.GithubAppsStore {
-	return gha.GithubAppsWith(basestore.NewWithHandle(edb.Handle()))
+func (edb *enterpriseDB) GitHubApps() gha.GitHubAppsStore {
+	return gha.GitHubAppsWith(basestore.NewWithHandle(edb.Handle()))
 }
 
 type InsightsDB interface {

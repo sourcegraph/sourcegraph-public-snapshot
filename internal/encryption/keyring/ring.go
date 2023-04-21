@@ -99,8 +99,8 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 		}
 	}
 
-	if keyConfig.GithubAppKey != nil {
-		r.GithubAppKey, err = NewKey(ctx, keyConfig.GithubAppKey, keyConfig)
+	if keyConfig.GitHubAppKey != nil {
+		r.GithubAppKey, err = NewKey(ctx, keyConfig.GitHubAppKey, keyConfig)
 		if err != nil {
 			return nil, err
 		}

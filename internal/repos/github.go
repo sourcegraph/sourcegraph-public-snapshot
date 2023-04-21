@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -15,9 +14,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -48,10 +45,6 @@ type GitHubSource struct {
 	// for an originalHostname of github.com).
 	originalHostname string
 
-	// useGitHubApp indicate whether clients are authenticated through GitHub App,
-	// which may need to hit different API endpoints from regular RESTful API.
-	useGitHubApp bool
-
 	logger log.Logger
 }
 
@@ -63,7 +56,7 @@ var (
 )
 
 // NewGithubSource returns a new GitHubSource from the given external service.
-func NewGithubSource(ctx context.Context, logger log.Logger, externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+func NewGithubSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -72,7 +65,7 @@ func NewGithubSource(ctx context.Context, logger log.Logger, externalServicesSto
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(logger, externalServicesStore, svc, &c, cf)
+	return newGithubSource(logger, svc, &c, cf)
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -88,7 +81,6 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 
 func newGithubSource(
 	logger log.Logger,
-	externalServicesStore database.ExternalServiceStore,
 	svc *types.ExternalService,
 	c *schema.GitHubConnection,
 	cf *httpcli.Factory,
@@ -166,27 +158,6 @@ func newGithubSource(
 		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, token, cli)
 	)
 
-	useGitHubApp := false
-	config, err := conf.GitHubAppConfig()
-	if err != nil {
-		return nil, err
-	}
-	if c.GithubAppInstallationID != "" && config.Configured() {
-		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
-		if err != nil {
-			return nil, errors.Wrap(err, "parse installation ID")
-		}
-
-		installationAuther, err := database.BuildGitHubAppInstallationAuther(externalServicesStore, config.AppID, config.PrivateKey, urn, apiURL, cli, installationID, svc)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating GitHub App installation authenticator")
-		}
-
-		v3Client = github.NewV3Client(v3ClientLogger, urn, apiURL, installationAuther, cli)
-		v4Client = github.NewV4Client(urn, apiURL, installationAuther, cli)
-		useGitHubApp = true
-	}
-
 	for resource, monitor := range map[string]*ratelimit.Monitor{
 		"rest":    v3Client.ExternalRateLimiter(),
 		"graphql": v4Client.ExternalRateLimiter(),
@@ -217,28 +188,17 @@ func newGithubSource(
 		v4Client:         v4Client,
 		searchClient:     searchClient,
 		originalHostname: originalHostname,
-		useGitHubApp:     useGitHubApp,
 		logger: logger.With(
 			log.Object("GitHubSource",
 				log.Bool("excludeForks", excludeForks),
 				log.Bool("githubDotCom", githubDotCom),
 				log.String("originalHostname", originalHostname),
-				log.Bool("useGitHubApp", useGitHubApp),
 			),
 		),
 	}, nil
 }
 
 func (s *GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
-	switch a.(type) {
-	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH:
-		break
-
-	default:
-		return nil, newUnsupportedAuthenticatorError("GitHubSource", a)
-	}
-
 	sc := *s
 	sc.v3Client = sc.v3Client.WithAuthenticator(a)
 	sc.v4Client = sc.v4Client.WithAuthenticator(a)
@@ -254,13 +214,7 @@ type githubResult struct {
 
 func (s *GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 	var err error
-	if s.config.GithubAppInstallationID != "" {
-		// GitHub App does not have an affiliated user, use another
-		// request instead.
-		_, err = s.v3Client.GetAuthenticatedOAuthScopes(ctx)
-	} else {
-		_, err = s.v3Client.GetAuthenticatedUser(ctx)
-	}
+	_, err = s.v3Client.GetAuthenticatedUser(ctx)
 	return err
 }
 
@@ -768,9 +722,6 @@ func (s *GitHubSource) listAffiliated(ctx context.Context, results chan *githubR
 				log.Duration("retryAfter", retry),
 			)
 		}()
-		if s.useGitHubApp {
-			return s.v3Client.ListInstallationRepositories(ctx, page)
-		}
 		return s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page, 100)
 	})
 }
@@ -1100,7 +1051,6 @@ func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githu
 // to avoid hitting the GitHub search API 1000 results limit, which would cause
 // use to miss matches.
 func (s *repositoryQuery) Refine() bool {
-
 	if s.Created.Size() < 2*time.Second {
 		// Can't refine further than 1 second
 		return false
@@ -1274,11 +1224,7 @@ func (s *GitHubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 		}
 
 		var repos []*github.Repository
-		if s.useGitHubApp {
-			repos, hasNextPage, _, err = s.v3Client.ListInstallationRepositories(ctx, page)
-		} else {
-			repos, hasNextPage, _, err = s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page, 100)
-		}
+		repos, hasNextPage, _, err = s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page, 100)
 		if err != nil {
 			return nil, err
 		}

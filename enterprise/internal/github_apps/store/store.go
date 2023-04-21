@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Store handles storing and retrieving GitHub Apps from the database.
-type GithubAppsStore interface {
+// GitHubAppsStore handles storing and retrieving GitHub Apps from the database.
+type GitHubAppsStore interface {
 	// Create inserts a new GitHub App into the database.
 	Create(ctx context.Context, app *types.GitHubApp) error
 
@@ -34,28 +34,28 @@ type GithubAppsStore interface {
 	GetBySlug(ctx context.Context, slug string, baseURL string) (*types.GitHubApp, error)
 
 	// WithEncryptionKey sets encryption key on store. Returns a new GithubAppStore
-	WithEncryptionKey(key encryption.Key) GithubAppsStore
+	WithEncryptionKey(key encryption.Key) GitHubAppsStore
 }
 
-// githubAppStore handles storing and retrieving GitHub Apps from the database.
-type githubAppsStore struct {
+// gitHubAppStore handles storing and retrieving GitHub Apps from the database.
+type gitHubAppsStore struct {
 	*basestore.Store
 
 	key encryption.Key
 }
 
-func GithubAppsWith(other *basestore.Store) GithubAppsStore {
-	return &githubAppsStore{
+func GitHubAppsWith(other *basestore.Store) GitHubAppsStore {
+	return &gitHubAppsStore{
 		Store: basestore.NewWithHandle(other.Handle()),
 	}
 }
 
 // WithEncryptionKey sets encryption key on store. Returns a new GithubAppStore
-func (s *githubAppsStore) WithEncryptionKey(key encryption.Key) GithubAppsStore {
-	return &githubAppsStore{Store: s.Store, key: key}
+func (s *gitHubAppsStore) WithEncryptionKey(key encryption.Key) GitHubAppsStore {
+	return &gitHubAppsStore{Store: s.Store, key: key}
 }
 
-func (s *githubAppsStore) getEncryptionKey() encryption.Key {
+func (s *gitHubAppsStore) getEncryptionKey() encryption.Key {
 	if s.key != nil {
 		return s.key
 	}
@@ -63,7 +63,7 @@ func (s *githubAppsStore) getEncryptionKey() encryption.Key {
 }
 
 // Create inserts a new GitHub App into the database.
-func (s *githubAppsStore) Create(ctx context.Context, app *types.GitHubApp) error {
+func (s *gitHubAppsStore) Create(ctx context.Context, app *types.GitHubApp) error {
 	key := s.getEncryptionKey()
 	clientSecret, _, err := encryption.MaybeEncrypt(ctx, key, app.ClientSecret)
 	if err != nil {
@@ -82,7 +82,7 @@ func (s *githubAppsStore) Create(ctx context.Context, app *types.GitHubApp) erro
 }
 
 // Delete removes a GitHub App from the database by ID.
-func (s *githubAppsStore) Delete(ctx context.Context, id int) error {
+func (s *gitHubAppsStore) Delete(ctx context.Context, id int) error {
 	query := sqlf.Sprintf(`DELETE FROM github_apps WHERE id = %s`, id)
 	return s.Exec(ctx, query)
 }
@@ -106,7 +106,7 @@ var scanGithubApp = basestore.NewFirstScanner(func(s dbutil.Scanner) (*types.Git
 	return &app, err
 })
 
-func (s *githubAppsStore) decrypt(ctx context.Context, app *types.GitHubApp) (*types.GitHubApp, error) {
+func (s *gitHubAppsStore) decrypt(ctx context.Context, app *types.GitHubApp) (*types.GitHubApp, error) {
 	key := s.getEncryptionKey()
 	var cs, pk string
 
@@ -125,7 +125,7 @@ func (s *githubAppsStore) decrypt(ctx context.Context, app *types.GitHubApp) (*t
 }
 
 // Update updates a GitHub App in the database and returns the updated struct.
-func (s *githubAppsStore) Update(ctx context.Context, id int, app *types.GitHubApp) (*types.GitHubApp, error) {
+func (s *gitHubAppsStore) Update(ctx context.Context, id int, app *types.GitHubApp) (*types.GitHubApp, error) {
 	key := s.getEncryptionKey()
 	clientSecret, _, err := encryption.MaybeEncrypt(ctx, key, app.ClientSecret)
 	if err != nil {
@@ -151,7 +151,7 @@ func (s *githubAppsStore) Update(ctx context.Context, id int, app *types.GitHubA
 	return s.decrypt(ctx, app)
 }
 
-func (s *githubAppsStore) get(ctx context.Context, where *sqlf.Query) (*types.GitHubApp, error) {
+func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*types.GitHubApp, error) {
 	var selectQuery = `SELECT
 		id,
 		app_id,
@@ -181,16 +181,16 @@ func (s *githubAppsStore) get(ctx context.Context, where *sqlf.Query) (*types.Gi
 }
 
 // GetByID retrieves a GitHub App from the database by ID.
-func (s *githubAppsStore) GetByID(ctx context.Context, id int) (*types.GitHubApp, error) {
+func (s *gitHubAppsStore) GetByID(ctx context.Context, id int) (*types.GitHubApp, error) {
 	return s.get(ctx, sqlf.Sprintf(`id = %s`, id))
 }
 
 // GetByAppID retrieves a GitHub App from the database by appID and base url
-func (s *githubAppsStore) GetByAppID(ctx context.Context, appID int, baseURL string) (*types.GitHubApp, error) {
+func (s *gitHubAppsStore) GetByAppID(ctx context.Context, appID int, baseURL string) (*types.GitHubApp, error) {
 	return s.get(ctx, sqlf.Sprintf(`app_id = %s AND base_url = %s`, appID, baseURL))
 }
 
 // GetBySlug retrieves a GitHub App from the database by slug and base url
-func (s *githubAppsStore) GetBySlug(ctx context.Context, slug string, baseURL string) (*types.GitHubApp, error) {
+func (s *gitHubAppsStore) GetBySlug(ctx context.Context, slug string, baseURL string) (*types.GitHubApp, error) {
 	return s.get(ctx, sqlf.Sprintf(`slug = %s AND base_url = %s`, slug, baseURL))
 }

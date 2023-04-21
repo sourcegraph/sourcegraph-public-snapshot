@@ -21,7 +21,7 @@ func TestCreateGitHubApp(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := &githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
 	app := &types.GitHubApp{
@@ -60,7 +60,7 @@ func TestDeleteGitHubApp(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	store := gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
 	app := &types.GitHubApp{
@@ -95,7 +95,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	store := gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
 	app := &types.GitHubApp{
@@ -149,7 +149,7 @@ func TestGetByID(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := &githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
 	app1 := &types.GitHubApp{
@@ -207,7 +207,7 @@ func TestGetByAppID(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := &githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
 	app1 := &types.GitHubApp{
@@ -266,7 +266,7 @@ func TestGetBySlug(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := &githubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
 	app1 := &types.GitHubApp{

@@ -23,7 +23,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -205,7 +204,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -315,7 +314,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			defer save(t)
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -349,7 +348,7 @@ func TestMakeRepo_NullCharacter(t *testing.T) {
 	schema := &schema.GitHubConnection{
 		Url: "https://github.com",
 	}
-	s, err := newGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, schema, nil)
+	s, err := newGithubSource(logtest.Scoped(t), &svc, schema, nil)
 	require.NoError(t, err)
 	repo := s.makeRepo(r)
 
@@ -404,8 +403,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GithubSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-
-			s, err := newGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, test.schema, nil)
+			s, err := newGithubSource(logtest.Scoped(t), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -679,7 +677,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -715,7 +713,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
+	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -732,26 +730,6 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 			t.Error("unexpected nil Source")
 		}
 	})
-
-	t.Run("unsupported", func(t *testing.T) {
-		for name, tc := range map[string]auth.Authenticator{
-			"nil":         nil,
-			"BasicAuth":   &auth.BasicAuth{},
-			"OAuthClient": &auth.OAuthClient{},
-		} {
-			t.Run(name, func(t *testing.T) {
-				src, err := githubSrc.WithAuthenticator(tc)
-				if err == nil {
-					t.Error("unexpected nil error")
-				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
-					t.Errorf("unexpected error of type %T: %v", err, err)
-				}
-				if src != nil {
-					t.Errorf("expected non-nil Source: %v", src)
-				}
-			})
-		}
-	})
 }
 
 func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
@@ -764,7 +742,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
+	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -791,7 +769,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		githubSrc, err := NewGithubSource(ctx, logger, database.NewMockExternalServiceStore(), svc, nil)
+		githubSrc, err := NewGithubSource(ctx, logger, svc, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -827,7 +805,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		githubSrc, err := NewGithubSource(ctx, logger, database.NewMockExternalServiceStore(), svc, cf)
+		githubSrc, err := NewGithubSource(ctx, logger, svc, cf)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1150,7 +1128,7 @@ func TestGithubSource_SearchRepositories(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}

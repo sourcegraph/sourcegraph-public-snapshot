@@ -3,8 +3,6 @@ package oauth
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,13 +18,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -110,75 +104,6 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 			return
 		}
 		p.Callback(p.OAuth2Config()).ServeHTTP(w, req)
-	}))
-	mux.Handle("/install-github-app", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if !conf.GitHubAppEnabled() {
-			http.NotFound(w, req)
-			return
-		}
-		http.Redirect(w, req, "/install-github-app-success", http.StatusFound)
-	}))
-	mux.Handle("/get-github-app-installation", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		logger := log.Scoped("get-github-app-installation", "handler for getting github app installations")
-
-		var privateKey []byte
-		var appID string
-		var err error
-
-		gitHubAppConfig := conf.SiteConfig().GitHubApp
-		privateKey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
-		if err != nil {
-			logger.Error("Unexpected error while decoding GitHub App private key.", log.Error(err))
-			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
-			return
-		}
-
-		appID = gitHubAppConfig.AppID
-
-		installationIDQueryUnecoded := req.URL.Query().Get("installation_id")
-
-		installationIDParam, err := base64.StdEncoding.DecodeString(installationIDQueryUnecoded)
-		if err != nil {
-			logger.Error("Unexpected error while decoding base64 encoded installation ID.", log.Error(err))
-			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
-			return
-		}
-
-		installationIDDecoded, err := app.DecryptWithPrivateKey(string(installationIDParam), privateKey)
-		if err != nil {
-			logger.Error("Unexpected error while decrypting installation ID.", log.Error(err))
-			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
-			return
-		}
-
-		installationID, err := strconv.ParseInt(installationIDDecoded, 10, 64)
-		if err != nil {
-			logger.Error("Unexpected error while creating parsing installation ID.", log.Error(err))
-			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
-			return
-		}
-
-		auther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
-		if err != nil {
-			logger.Error("Unexpected error while creating Auth token.", log.Error(err))
-			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
-			return
-		}
-
-		client := github.NewV3Client(logger,
-			extsvc.URNGitHubApp, &url.URL{Host: "github.com"}, auther, nil)
-
-		installation, err := client.GetAppInstallation(req.Context(), installationID)
-		if err != nil {
-			logger.Error("Unexpected error while fetching installation.", log.Error(err))
-			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)
-			return
-		}
-
-		err = json.NewEncoder(w).Encode(installation)
-		if err != nil {
-			logger.Error("Failed to encode installation data.", log.Error(err))
-		}
 	}))
 	return mux
 }

@@ -76,9 +76,9 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		},
 		{
 			name:         "has after updated_at",
-			updatedAfter: time.Date(2013, 04, 19, 0, 0, 0, 0, time.UTC),
+			updatedAfter: time.Date(2013, 0o4, 19, 0, 0, 0, 0, time.UTC),
 			wantQuery:    "deleted_at IS NULL AND updated_at > $1",
-			wantArgs:     []any{time.Date(2013, 04, 19, 0, 0, 0, 0, time.UTC)},
+			wantArgs:     []any{time.Date(2013, 0o4, 19, 0, 0, 0, 0, time.UTC)},
 		},
 		{
 			name:             "has OnlyCloudDefault",
@@ -148,7 +148,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			name:    "2 errors",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": ""}`,
-			wantErr: "2 errors occurred:\n\t* token: String length must be greater than or equal to 1\n\t* at least one of token or githubAppInstallationID must be set",
+			wantErr: "2 errors occurred:\n\t* token: String length must be greater than or equal to 1\n\t* token must be set",
 		},
 		{
 			name:   "no conflicting rate limit",
@@ -1801,7 +1801,6 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 				t.Fatalf("Wanted an error")
 			}
 		})
-
 	})
 
 	t.Run("one external service", func(t *testing.T) {
