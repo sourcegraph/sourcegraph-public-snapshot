@@ -234,6 +234,7 @@
           "when": "cody.activated"
         },
         {
+          "command": "cody.focus",
           "when": "!cody.activated"
         }
       ],
