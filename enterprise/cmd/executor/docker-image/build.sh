@@ -21,7 +21,7 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
   cp "$out" "$OUTPUT"
 
   src_cli=$(bazel cquery //internal/cmd/src-cli-version --output=files)
-  SRC_CLI_VERSION=$(eval $src_cli)
+  SRC_CLI_VERSION=$(eval "$src_cli")
 
   docker build -f enterprise/cmd/executor/docker-image/Dockerfile -t "$IMAGE" "$OUTPUT" \
     --progress=plain \
