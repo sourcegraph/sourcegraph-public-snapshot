@@ -5,16 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -53,20 +50,12 @@ func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if honey.Enabled() {
-		start := time.Now()
-		defer func() {
-			ev := honey.NewEvent("codeCompletions")
-			ev.AddField("model", completionsConfig.CompletionModel)
-			ev.AddField("actor", actor.FromContext(ctx).UIDString())
-			ev.AddField("duration_sec", time.Since(start).Seconds())
-			// This is the header which is useful for client IP on sourcegraph.com
-			ev.AddField("connecting_ip", r.Header.Get("Cf-Connecting-Ip"))
-			ev.AddField("ip_country", r.Header.Get("Cf-Ipcountry"))
-
-			_ = ev.Send()
-		}()
-	}
+	var err error
+	ctx, done := Trace(ctx, "codeCompletions", completionsConfig.CompletionModel).
+		WithErrorP(&err).
+		WithRequest(r).
+		Build()
+	defer done()
 
 	client := anthropic.NewAnthropicClient(httpcli.ExternalDoer, completionsConfig.AccessToken, completionsConfig.CompletionModel)
 	completion, err := client.Complete(ctx, p)
