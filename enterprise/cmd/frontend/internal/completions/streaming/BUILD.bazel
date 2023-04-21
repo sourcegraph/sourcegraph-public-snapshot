@@ -4,6 +4,7 @@ go_library(
     name = "streaming",
     srcs = [
         "codecompletion.go",
+        "observability.go",
         "stream.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming",
@@ -17,6 +18,7 @@ go_library(
         "//internal/conf",
         "//internal/honey",
         "//internal/httpcli",
+        "//internal/requestclient",
         "//internal/search/streaming/http",
         "//internal/trace",
         "//lib/errors",
