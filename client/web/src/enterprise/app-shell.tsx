@@ -7,14 +7,14 @@ import { listen, Event } from '@tauri-apps/api/event'
 //   options.
 // * app-main.tsx: served by the Go backend, renders the Sourcegraph web UI that you see everywhere else.
 
-console.log('app-shell.tsx loaded')
-
-const outputHandler = (event: Event<string>) => {
+// TODO(burmudar): use logging service to log that this has been loaded
+const outputHandler = (event: Event<string>): void => {
     if (event.payload.startsWith('tauri:sign-in-url: ')) {
         const url = event.payload.slice('tauri:sign-in-url: '.length).trim()
         window.location.href = url
     }
 }
 
-listen('backend-stdout', outputHandler)
-listen('backend-stderr', outputHandler)
+// Note we currently ignore the unlisten cb returned from listen
+await listen('backend-stdout', outputHandler)
+await listen('backend-stderr', outputHandler)

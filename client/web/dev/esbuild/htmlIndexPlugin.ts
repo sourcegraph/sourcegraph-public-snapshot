@@ -2,17 +2,16 @@ import fs from 'fs'
 import path from 'path'
 
 import * as esbuild from 'esbuild'
+import * as handlebars from 'handlebars'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 
 import { WebpackManifest, HTML_INDEX_PATH } from '../utils'
 
-const handlebars = require('handlebars')
-
 // Note: This is only valid for Sourcegraph App.
 export const assetPathPrefix = '/'
 
-export const getManifest = (jsEntrypoint?: string, cssEntrypoint?: string): WebpackManifest => ({
+export const getManifest = (jsEntrypoint: string, cssEntrypoint?: string): WebpackManifest => ({
     'shell.js': path.join(assetPathPrefix, jsEntrypoint ?? 'scripts/app.js'),
     'app.css': path.join(assetPathPrefix, cssEntrypoint ?? 'scripts/app.css'),
     isModule: true,
