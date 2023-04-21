@@ -1,8 +1,6 @@
 package server
 
 import (
-	"context"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -105,7 +103,7 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 	})
 }
 
-func (gs *GRPCServer) Archive(ctx context.Context, req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
+func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
 	//TODO(mucles): re-enable access logging (see server.go handleArchive)
 	// Log which which actor is accessing the repo.
 	// accesslog.Record(ctx, req.Repo,
