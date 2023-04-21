@@ -1,14 +1,15 @@
 use anyhow::Result;
+use bitvec::prelude::*;
 use protobuf::Enum;
 use scip::types::{Descriptor, Occurrence};
+use scip_treesitter::types::PackedRange;
 
-use crate::{byterange::ByteRange, languages::TagConfiguration};
-use bitvec::prelude::*;
+use crate::languages::TagConfiguration;
 
 #[derive(Debug)]
 pub struct Scope {
-    pub range: [i32; 3],
-    pub byte_range: ByteRange,
+    pub ident_range: PackedRange,
+    pub scope_range: PackedRange,
     pub globals: Vec<Global>,
     pub children: Vec<Scope>,
     pub descriptors: Vec<Descriptor>,
@@ -16,8 +17,7 @@ pub struct Scope {
 
 #[derive(Debug)]
 pub struct Global {
-    pub range: [i32; 3],
-    pub byte_range: ByteRange,
+    pub range: PackedRange,
     pub descriptors: Vec<Descriptor>,
 }
 
@@ -26,7 +26,7 @@ impl Scope {
         if let Some(child) = self
             .children
             .iter_mut()
-            .find(|child| child.byte_range.contains(&scope.byte_range))
+            .find(|child| child.scope_range.contains(&scope.scope_range))
         {
             child.insert_scope(scope);
         } else {
@@ -38,7 +38,7 @@ impl Scope {
         if let Some(child) = self
             .children
             .iter_mut()
-            .find(|child| child.byte_range.contains(&global.byte_range))
+            .find(|child| child.scope_range.contains(&global.range))
         {
             child.insert_global(global)
         } else {
@@ -67,7 +67,7 @@ impl Scope {
 
         if !is_root {
             occurrences.push(scip::types::Occurrence {
-                range: Vec::from(self.range),
+                range: self.ident_range.to_vec(),
                 symbol: scip::symbol::format_symbol(scip::types::Symbol {
                     scheme: "scip-ctags".into(),
                     // TODO: Package?
@@ -96,7 +96,7 @@ impl Scope {
 
             let symbol_roles = scip::types::SymbolRole::Definition.value();
             occurrences.push(scip::types::Occurrence {
-                range: Vec::from(global.range),
+                range: global.range.to_vec(),
                 symbol,
                 symbol_roles,
                 // TODO:
@@ -183,35 +183,20 @@ pub fn parse_tree<'a>(
 
                 match scope {
                     Some(scope_ident) => scopes.push(Scope {
-                        range: [
-                            node.start_position().row as i32,
-                            node.start_position().column as i32,
-                            node.end_position().column as i32,
-                        ],
-                        byte_range: ByteRange {
-                            start: scope_ident.node.start_byte(),
-                            end: scope_ident.node.end_byte(),
-                        },
+                        ident_range: node.into(),
+                        scope_range: scope_ident.node.into(),
                         globals: vec![],
                         children: vec![],
                         descriptors,
                     }),
                     None => globals.push(Global {
-                        range: [
-                            node.start_position().row as i32,
-                            node.start_position().column as i32,
-                            node.end_position().column as i32,
-                        ],
-                        byte_range: ByteRange {
-                            start: node.start_byte(),
-                            end: node.end_byte(),
-                        },
+                        range: node.into(),
                         descriptors,
                     }),
                 }
             }
             None => {
-                if local_range == None {
+                if local_range.is_none() {
                     panic!("there must always be at least one descriptor (except for @local)");
                 }
             }
@@ -222,28 +207,20 @@ pub fn parse_tree<'a>(
         }
     }
 
-    // dbg!(&matched);
-
     let mut root = Scope {
-        range: [
-            root_node.start_position().row as i32,
-            root_node.start_position().column as i32,
-            root_node.end_position().column as i32,
-        ],
-        byte_range: ByteRange {
-            start: root_node.start_byte(),
-            end: root_node.end_byte(),
-        },
+        ident_range: root_node.into(),
+        scope_range: root_node.into(),
         globals: vec![],
         children: vec![],
         descriptors: vec![],
     };
 
     scopes.sort_by_key(|m| {
-        (
-            std::cmp::Reverse(m.byte_range.start),
-            m.byte_range.end - m.byte_range.start,
-        )
+        std::cmp::Reverse((
+            m.scope_range.start_line,
+            m.scope_range.end_line,
+            m.scope_range.start_col,
+        ))
     });
 
     // Add all the scopes to our tree
@@ -254,7 +231,6 @@ pub fn parse_tree<'a>(
     while let Some(m) = globals.pop() {
         root.insert_global(m);
     }
-    // dbg!(&root);
 
     Ok((root, globals.len()))
 }
