@@ -61,4 +61,9 @@ mod test {
     fn test_generate_ctags_python_globals() {
         generate_tags_and_snapshot!("../testdata/globals.py");
     }
+
+    #[test]
+    fn test_generate_ctags_java_globals() {
+        generate_tags_and_snapshot!("../testdata/globals.java");
+    }
 }
