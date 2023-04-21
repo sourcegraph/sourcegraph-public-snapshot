@@ -33,7 +33,7 @@ async function startCLI() {
     const options = program.opts()
 
     if (options.lsp) {
-        await startLSP()
+        startLSP()
     } else {
         const codebase: string = options.codebase || DEFAULTS.codebase
         const endpoint: string = options.endpoint || DEFAULTS.serverEndpoint
@@ -41,7 +41,7 @@ async function startCLI() {
         const accessToken: string | undefined = ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN
         if (accessToken === undefined || accessToken === '') {
             console.error(
-                `No access token found. Set SRC_ACCESS_TOKEN to an access token created on the Sourcegraph instance.`
+                'No access token found. Set SRC_ACCESS_TOKEN to an access token created on the Sourcegraph instance.'
             )
             process.exit(1)
         }

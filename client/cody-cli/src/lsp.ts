@@ -36,10 +36,11 @@ import { createCodebaseContext } from './context'
 import { interactionFromMessage } from './interactions'
 import { getPreamble } from './preamble'
 
-export async function startLSP() {
+export function startLSP() {
     const server = new CodyLanguageServer()
     server.listen()
 }
+
 interface SourcegraphSettings {
     url: string
     accessToken: string
