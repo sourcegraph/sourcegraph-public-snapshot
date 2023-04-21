@@ -27,6 +27,8 @@ import { TestSupport } from '../test-support'
 
 import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, WebviewMessage } from './protocol'
 
+const LOCAL_APP_PORT = 3080
+
 export async function isValidLogin(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
 ): Promise<boolean> {
@@ -60,6 +62,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private disposables: vscode.Disposable[] = []
 
+    private localAppGraphQLClient: SourcegraphGraphQLAPIClient
+
     constructor(
         private extensionPath: string,
         private config: Config,
@@ -77,6 +81,38 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.createNewChatID()
 
         this.disposables.push(this.configurationChangeEvent)
+
+        this.localAppGraphQLClient = new SourcegraphGraphQLAPIClient({
+            serverEndpoint: `http://localhost:${LOCAL_APP_PORT}`,
+            accessToken: '', // Need to set an access token created in the app
+            customHeaders: {},
+        })
+
+        this.detectApp().then(appDetected => {
+            console.log(`App was detected on port ${LOCAL_APP_PORT}: ${appDetected}`)
+        })
+    }
+
+    public async detectApp(): Promise<boolean> {
+        // Try version endpoint (non-GraphQL)
+        try {
+            const baseUrl = `http://localhost:${LOCAL_APP_PORT}`
+            const response = await fetch(`${baseUrl}/__version`)
+            const body = await response.text()
+            console.log(`Detected app version ${body}`)
+        } catch (e) {
+            return false
+        }
+
+        // Try GraphQL endpoint
+        const response = await this.localAppGraphQLClient.getVersion()
+        if (isError(response)) {
+            console.error('detectApp: Error getting version', response)
+            return false
+        } else {
+            console.log('detectApp: Detected via GraphQL with version:', response)
+            return true
+        }
     }
 
     public onConfigurationChange(newConfig: Config): void {

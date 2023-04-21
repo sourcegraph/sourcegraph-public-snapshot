@@ -56,3 +56,10 @@ mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!
 		alwaysNil
 	}
 }`
+
+export const VERSION_QUERY = `
+query Version {
+    site {
+      productVersion
+    }
+}`

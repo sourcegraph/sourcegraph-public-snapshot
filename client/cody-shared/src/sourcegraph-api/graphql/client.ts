@@ -10,6 +10,7 @@ import {
     SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
+    VERSION_QUERY,
 } from './queries'
 
 interface APIResponse<T> {
@@ -34,6 +35,10 @@ interface EmbeddingsSearchResponse {
 }
 
 interface LogEventResponse {}
+
+interface VersionResponse {
+    site: { productVersion: string } | null
+}
 
 export interface EmbeddingsSearchResult {
     fileName: string
@@ -156,6 +161,12 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<IsContextRequiredForChatQueryResponse>>(IS_CONTEXT_REQUIRED_QUERY, {
             query,
         }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
+    }
+
+    public async getVersion(): Promise<string | null | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<VersionResponse>>(VERSION_QUERY, {}).then(response =>
+            extractDataOrError(response, data => data.site?.productVersion || null)
+        )
     }
 
     private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
