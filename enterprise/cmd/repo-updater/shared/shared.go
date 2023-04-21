@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/internal/authz"
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches"
-	edatabase "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
@@ -52,10 +52,10 @@ func EnterpriseInit(
 		}
 	}
 
-	ghAppsStore := edatabase.NewEnterpriseDB(db).GitHubApps().WithEncryptionKey(keyring.GitHubAppKey)
+	ghAppsStore := edb.NewEnterpriseDB(db).GitHubApps().WithEncryptionKey(keyring.GitHubAppKey)
 	auth.FromConnection = ghaauth.CreateEnterpriseFromConnection(ghAppsStore)
 
-	permsStore := edatabase.Perms(observationCtx.Logger, db, timeutil.Now)
+	permsStore := edb.Perms(observationCtx.Logger, db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now)
 
 	if server != nil {
