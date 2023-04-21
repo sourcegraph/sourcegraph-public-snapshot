@@ -25,6 +25,8 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -35,6 +37,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -2402,40 +2407,85 @@ func (c *clientImplementor) ArchiveReader(
 		return nil, err
 	}
 
-	u := c.archiveURL(repo, options)
-
-	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		return &archiveReader{
-			base: &cmdReader{
-				rc:      resp.Body,
-				trailer: resp.Trailer,
-			},
-			repo: repo,
-			spec: options.Treeish,
-		}, nil
-	case http.StatusNotFound:
-		var payload protocol.NotFoundPayload
-		if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-			resp.Body.Close()
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		conn, err := c.ConnForRepo(repo)
+		if err != nil {
 			return nil, err
 		}
-		resp.Body.Close()
-		return nil, &badRequestError{
-			error: &gitdomain.RepoNotExistError{
-				Repo:            repo,
-				CloneInProgress: payload.CloneInProgress,
-				CloneProgress:   payload.CloneProgress,
-			},
+		client := proto.NewGitserverServiceClient(conn)
+
+		req := &proto.ArchiveRequest{
+			Repo:    string(repo),
+			Treeish: options.Treeish,
+			Format:  string(options.Format),
+			Pathspecs: func() []string {
+				if options.Pathspecs == nil {
+					return nil
+				}
+
+				pathspec := make([]string, len(options.Pathspecs))
+
+				for i, path := range options.Pathspecs {
+					pathspec[i] = string(path)
+				}
+				return pathspec
+			}(),
 		}
-	default:
-		resp.Body.Close()
-		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+
+		ctx, cancel := context.WithCancel(ctx)
+
+		stream, err := client.Archive(ctx, req)
+		if err != nil {
+			cancel()
+			return nil, err
+		}
+		r := streamio.NewReader(func() ([]byte, error) {
+			msg, err := stream.Recv()
+			if status.Code(err) == codes.Canceled {
+				return nil, context.Canceled
+			} else if err != nil {
+				return nil, err
+			}
+			return msg.GetData(), nil
+		})
+
+		return &readCloseWrapper{r: r, closeFn: cancel}, err
+
+	} else {
+		// Fall back to http request
+		u := c.archiveURL(repo, options)
+		resp, err := c.do(ctx, repo, "POST", u.String(), nil)
+		if err != nil {
+			return nil, err
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			return &archiveReader{
+				base: &cmdReader{
+					rc:      resp.Body,
+					trailer: resp.Trailer,
+				},
+				repo: repo,
+				spec: options.Treeish,
+			}, nil
+		case http.StatusNotFound:
+			var payload protocol.NotFoundPayload
+			if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+				resp.Body.Close()
+				return nil, err
+			}
+			resp.Body.Close()
+			return nil, &badRequestError{
+				error: &gitdomain.RepoNotExistError{
+					Repo:            repo,
+					CloneInProgress: payload.CloneInProgress,
+					CloneProgress:   payload.CloneProgress,
+				},
+			}
+		default:
+			resp.Body.Close()
+			return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		}
 	}
 }
 
