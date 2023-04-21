@@ -16,9 +16,4 @@ steps:
         # Prioritize generating pipelines so that jobs can get generated and queued up as soon
         # as possible, so as to better assess pipeline load e.g. to scale the Buildkite fleet.
         priority: 10
-        command: |
-          echo "--- generate pipeline"
-          bazel --bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc run '//enterprise/dev/ci:ci' -- | tee generated-pipeline.yml
-          echo ""
-          echo "--- upload pipeline"
-          buildkite-agent pipeline upload generated-pipeline.yml
+        command: './dev/ci/gen-pipeline.sh'
