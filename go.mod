@@ -100,7 +100,7 @@ require (
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.22
 	github.com/mitchellh/hashstructure v1.1.0
-	github.com/moby/buildkit v0.11.3
+	github.com/moby/buildkit v0.11.4
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opentracing-contrib/go-stdlib v1.0.0
