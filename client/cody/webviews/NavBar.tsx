@@ -8,8 +8,6 @@ interface NavBarProps {
     setView: (selectedView: View) => void
     view: View
     devMode: boolean
-    onResetClick: () => void
-    showResetButton: boolean
 }
 
 interface NavBarItem {
@@ -22,13 +20,7 @@ const navBarItems: NavBarItem[] = [
     { tab: 'recipes', title: 'Recipes' },
 ]
 
-export const NavBar: React.FunctionComponent<React.PropsWithChildren<NavBarProps>> = ({
-    setView,
-    view,
-    devMode,
-    onResetClick,
-    showResetButton,
-}) => (
+export const NavBar: React.FunctionComponent<React.PropsWithChildren<NavBarProps>> = ({ setView, view, devMode }) => (
     <div className={styles.tabMenuContainer}>
         <div className={styles.tabMenuGroup}>
             {navBarItems.map(({ title, tab }) => (
@@ -39,18 +31,6 @@ export const NavBar: React.FunctionComponent<React.PropsWithChildren<NavBarProps
             {devMode && (
                 <button onClick={() => setView('debug')} className={styles.tabBtn} type="button">
                     <p className={view === 'debug' ? styles.tabBtnSelected : ''}>Debug</p>
-                </button>
-            )}
-        </div>
-        <div className="tab-menu-group">
-            {showResetButton && (
-                <button
-                    onClick={() => onResetClick()}
-                    className={styles.tabBtn}
-                    type="button"
-                    title="Start a new conversation"
-                >
-                    <i className="codicon codicon-refresh" />
                 </button>
             )}
         </div>
