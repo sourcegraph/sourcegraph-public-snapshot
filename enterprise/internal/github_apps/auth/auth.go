@@ -227,6 +227,7 @@ func (t *installationAccessToken) NeedsRefresh() bool {
 	return time.Until(t.expiresAt) < 5*time.Minute
 }
 
+// Sets the URL's User field to contain the installation access token.
 func (t *installationAccessToken) SetURLUser(u *url.URL) {
 	u.User = url.UserPassword("x-access-token", t.token)
 }

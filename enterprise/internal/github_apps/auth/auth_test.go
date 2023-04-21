@@ -167,6 +167,22 @@ func TestInstallationAccessToken_NeedsRefresh(t *testing.T) {
 	}
 }
 
+func TestInstallationAccessToken_SetURLUser(t *testing.T) {
+	token := "abc123"
+	u, err := url.Parse("https://example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	it := installationAccessToken{token: token}
+	it.SetURLUser(u)
+
+	want := "x-access-token:abc123"
+	if got := u.User.String(); got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
 type mockAuthenticator struct {
 	AuthenticateCalled bool
 }
