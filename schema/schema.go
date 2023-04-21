@@ -1007,8 +1007,6 @@ type GitHubApp struct {
 type GitHubAppDetails struct {
 	// AppID description: The ID of the GitHub App.
 	AppID int `json:"appID,omitempty"`
-	// BaseURL description: The base URL of the GitHub App.
-	BaseURL string `json:"baseURL,omitempty"`
 	// InstallationID description: The installation ID of this connection.
 	InstallationID int `json:"installationID,omitempty"`
 }

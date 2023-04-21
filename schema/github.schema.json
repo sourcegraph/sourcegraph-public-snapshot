@@ -180,10 +180,6 @@
       "description": "If non-null, this is a GitHub App connection with some additional properties.",
       "type": "object",
       "properties": {
-        "baseURL": {
-          "description": "The base URL of the GitHub App.",
-          "type": "string"
-        },
         "appID": {
           "description": "The ID of the GitHub App.",
           "type": "integer"
