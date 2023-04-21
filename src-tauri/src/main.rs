@@ -31,14 +31,20 @@ fn main() {
                                 .emit("backend-stdout", Some(line.clone()))
                                 .expect("failed to emit event");
 
-                            window.eval(&format!("console.log(\"YO: {}\")", line));
+                            window.eval(&format!(
+                                "console.log(\":: {}\")",
+                                line.replace("\"", "\\\"")
+                            ));
                         }
                         CommandEvent::Stderr(line) => {
                             window
                                 .emit("backend-stderr", Some(line.clone()))
                                 .expect("failed to emit event");
 
-                            window.eval(&format!("console.log(\"{}\")", line));
+                            window.eval(&format!(
+                                "console.log(\":: {}\")",
+                                line.replace("\"", "\\\"")
+                            ));
                         }
                         _ => continue,
                     };

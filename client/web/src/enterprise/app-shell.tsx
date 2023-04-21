@@ -10,7 +10,6 @@ import { listen } from '@tauri-apps/api/event'
 console.log('app-shell.tsx loaded')
 
 const outputHandler = event => {
-    console.log(':: ' + event.payload)
     if (event.payload.startsWith('tauri:sign-in-url: ')) {
         const url = event.payload.slice('tauri:sign-in-url: '.length).trim()
         window.location.href = url
