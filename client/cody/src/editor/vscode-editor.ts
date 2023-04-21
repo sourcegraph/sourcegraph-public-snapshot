@@ -44,7 +44,9 @@ export class VSCodeEditor implements Editor {
         const selection = activeEditor.selection
         if (!selection || selection?.start.isEqual(selection.end)) {
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            vscode.window.showErrorMessage('No code selected. Please select some code and try again.')
+            vscode.window.showErrorMessage(
+                'Sprinkle code with inline comments describing improvements, select it, and then get it fixed up'
+            )
             return null
         }
         return this.createActiveTextEditorSelection(activeEditor, selection)
