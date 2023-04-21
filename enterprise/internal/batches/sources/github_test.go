@@ -146,7 +146,7 @@ func TestGithubSource_CreateChangeset_CreationLimit(t *testing.T) {
 	apiURL, err := url.Parse("https://fake.api.github.com")
 	require.NoError(t, err)
 	client := github.NewV4Client("extsvc:github:0", apiURL, nil, cli)
-	source := &GithubSource{
+	source := &GitHubSource{
 		client: client,
 	}
 
@@ -426,7 +426,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGithubSource(ctx, svc, nil)
+	githubSrc, err := NewGitHubSource(ctx, svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -437,7 +437,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if gs, ok := src.(*GithubSource); !ok {
+		if gs, ok := src.(*GitHubSource); !ok {
 			t.Error("cannot coerce Source into GithubSource")
 		} else if gs == nil {
 			t.Error("unexpected nil Source")
@@ -773,7 +773,7 @@ func (mock *mockGithubClientFork) GetRepo(ctx context.Context, owner, repo strin
 	return nil, nil
 }
 
-func setup(t *testing.T, ctx context.Context, tName string) (src *GithubSource, save func(testing.TB)) {
+func setup(t *testing.T, ctx context.Context, tName string) (src *GitHubSource, save func(testing.TB)) {
 	// The GithubSource uses the github.Client under the hood, which uses rcache, a
 	// caching layer that uses Redis. We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
@@ -791,7 +791,7 @@ func setup(t *testing.T, ctx context.Context, tName string) (src *GithubSource, 
 		})),
 	}
 
-	src, err := NewGithubSource(ctx, svc, cf)
+	src, err := NewGitHubSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}
