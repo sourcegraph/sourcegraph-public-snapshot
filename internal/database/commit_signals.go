@@ -64,7 +64,6 @@ func ensureRepoPaths(ctx context.Context, tx *basestore.Store, commit Commit) ([
 		var pathID int
 		for j := range pathPrefixes {
 			pathPrefix := strings.Join(pathPrefixes[:j+1], "/")
-			isDir := j < len(pathPrefixes)-1
 			// Get or create repo path
 			err := tx.QueryRow(
 				ctx,
@@ -78,8 +77,8 @@ func ensureRepoPaths(ctx context.Context, tx *basestore.Store, commit Commit) ([
 				err = tx.QueryRow(
 					ctx,
 					sqlf.Sprintf(`
-                INSERT INTO repo_paths (repo_id, absolute_path, is_dir, parent_id)
-                    VALUES (%s, %s, %s, %s) RETURNING id`, commit.RepoID, pathPrefix, isDir, parentPathID),
+                INSERT INTO repo_paths (repo_id, absolute_path, parent_id)
+                    VALUES (%s, %s, %s) RETURNING id`, commit.RepoID, pathPrefix, parentPathID),
 				).Scan(&pathID)
 			}
 			if err != nil {
@@ -90,6 +89,30 @@ func ensureRepoPaths(ctx context.Context, tx *basestore.Store, commit Commit) ([
 		pathIDs[i] = pathID
 	}
 	return pathIDs, nil
+}
+
+const pathInsertFmtstr = `
+	inderted__ AS (
+		INSERT INTO repo_paths (repo_id, absolute_path, is_dir, parent_id)
+		VALUES (%%s, %%s, %%s, (SELECT id FROM selected_previous))
+		ON CONFLICT DO NOTHING
+		RETURNING id
+	),
+	selected__ AS (
+		SELECT id
+		FROM inserted__
+
+		UNION ALL
+
+		SELECT id
+		FROM repo_paths
+		WHERE repo_id = %%s
+		AND absolute_path = %%s
+	)
+`
+
+func ensureRepoPaths2(ctx context.Context, tx *basestore.Store, commit Commit) ([]int, error) {
+	return nil, nil
 }
 
 func (s *ownSignalStore) AddCommit(ctx context.Context, commit Commit) error {

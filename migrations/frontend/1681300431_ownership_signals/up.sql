@@ -2,7 +2,6 @@ CREATE TABLE IF NOT EXISTS repo_paths (
     id SERIAL PRIMARY KEY,
     repo_id INTEGER NOT NULL REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE,
     absolute_path TEXT NOT NULL,
-    is_dir BOOLEAN NOT NULL,
     parent_id INTEGER NULL REFERENCES repo_paths(id)
 );
 
