@@ -55,8 +55,8 @@ var (
 	_ VersionSource              = &GitHubSource{}
 )
 
-// NewGithubSource returns a new GitHubSource from the given external service.
-func NewGithubSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+// NewGitHubSource returns a new GitHubSource from the given external service.
+func NewGitHubSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -65,7 +65,7 @@ func NewGithubSource(ctx context.Context, logger log.Logger, svc *types.External
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(logger, svc, &c, cf)
+	return newGitHubSource(logger, svc, &c, cf)
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -79,7 +79,7 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "The amount of time spent waiting on the rate limit",
 }, []string{"resource", "name"})
 
-func newGithubSource(
+func newGitHubSource(
 	logger log.Logger,
 	svc *types.ExternalService,
 	c *schema.GitHubConnection,
