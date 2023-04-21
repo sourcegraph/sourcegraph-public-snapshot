@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
+import { logger } from '@sourcegraph/common/src/util/logger'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { ErrorAlert, Text, H3, LoadingSpinner, PageHeader, Input, Container } from '@sourcegraph/wildcard'
 
@@ -52,7 +53,7 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
     const storeCompletionsQuota = useCallback(() => {
         setUserCompletionsQuota({ variables: { userID, quota: quota === '' ? null : parseInt(quota, 10) } }).catch(
             error => {
-                console.error(error)
+                logger.error(error)
             }
         )
     }, [quota, userID, setUserCompletionsQuota])
