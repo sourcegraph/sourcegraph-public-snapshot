@@ -30,6 +30,12 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     },
     {
+        label: 'Quotas',
+        to: '/quota',
+        exact: true,
+        condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
+    },
+    {
         label: 'Product research',
         to: '/product-research',
         condition: () => window.context.productResearchPageEnabled,
