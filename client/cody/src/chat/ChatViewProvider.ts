@@ -37,7 +37,7 @@ export async function isValidLogin(
 
 type Config = Pick<
     ConfigurationWithAccessToken,
-    'codebase' | 'serverEndpoint' | 'debug' | 'customHeaders' | 'accessToken'
+    'codebase' | 'serverEndpoint' | 'debug' | 'customHeaders' | 'accessToken' | 'useContext'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -146,7 +146,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                         await vscode.window.showTextDocument(doc)
                     } catch {
                         // Try to open the file in the sourcegraph view
-                        const sourcegraphInstanceUrl = this.serverEndpoint
+                        const sourcegraphInstanceUrl = this.config.serverEndpoint
                         const sourcegraphWebUrl = new URL(
                             `/search?q=context:global+file:${message.filePath}`,
                             sourcegraphInstanceUrl
@@ -318,6 +318,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             void this.webview?.postMessage({
                 type: 'contextStatus',
                 contextStatus: {
+                    mode: this.config.useContext,
+                    connection: this.codebaseContext.checkEmbeddingsConnection(),
                     codebase: this.config.codebase,
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
                 },

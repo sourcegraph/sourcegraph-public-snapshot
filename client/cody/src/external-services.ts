@@ -1,3 +1,5 @@
+import { window } from 'vscode'
+
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -41,6 +43,7 @@ export async function configureExternalServices(
             `Cody could not find the '${initialConfig.codebase}' repository on your Sourcegraph instance.\n` +
             'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
         console.error(errorMessage)
+        void window.showErrorMessage(errorMessage)
     }
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
 

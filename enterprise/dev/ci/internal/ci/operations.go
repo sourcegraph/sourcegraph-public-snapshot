@@ -172,7 +172,7 @@ func addCIScriptsTests(pipeline *bk.Pipeline) {
 	for _, f := range files {
 		if filepath.Ext(f.Name()) == ".sh" {
 			pipeline.AddStep(fmt.Sprintf(":bash: %s", f.Name()),
-				bk.RawCmd(fmt.Sprintf("%s/%s", testDir, f.Name())))
+				bk.Cmd(fmt.Sprintf("%s/%s", testDir, f.Name())))
 		}
 	}
 }
@@ -1133,14 +1133,6 @@ func publishExecutorDockerMirror(c Config) operations.Operation {
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: Publish docker registry mirror image", stepOpts...)
-	}
-}
-
-func uploadBuildeventTrace() operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":arrow_heading_up: Upload build trace",
-			bk.Cmd("./enterprise/dev/ci/scripts/upload-buildevent-report.sh"),
-		)
 	}
 }
 
