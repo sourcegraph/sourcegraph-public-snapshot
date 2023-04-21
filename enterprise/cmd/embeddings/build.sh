@@ -20,7 +20,7 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
   out=$(bazel cquery //enterprise/cmd/embeddings --output=files)
   cp "$out" "$OUTPUT"
 
-  docker build -f enterprise/cmd/batcheshelper/Dockerfile -t "$IMAGE" "$OUTPUT" \
+  docker build -f enterprise/cmd/embeddings/Dockerfile -t "$IMAGE" "$OUTPUT" \
     --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
