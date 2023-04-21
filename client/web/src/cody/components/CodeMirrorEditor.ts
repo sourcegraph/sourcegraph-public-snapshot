@@ -131,4 +131,11 @@ export class CodeMirrorEditor implements Editor {
         // TODO: Use a proper UI element
         return Promise.resolve(window.prompt('Enter your answer: ') || undefined)
     }
+
+    // TODO: When non-stop fixup is decoupled from chat and no longer a recipe,
+    // remove this entrypoint.
+    public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+        // Not implemented.
+        return Promise.resolve(undefined)
+    }
 }
