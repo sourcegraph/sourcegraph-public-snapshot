@@ -92,10 +92,6 @@ func embedFiles(
 		return createEmptyEmbeddingIndex(dimensions), err
 	}
 
-	if len(fileNames) == 0 {
-		return createEmptyEmbeddingIndex(dimensions), nil
-	}
-
 	index := embeddings.EmbeddingIndex{
 		Embeddings:      make([]int8, 0, len(fileNames)*dimensions),
 		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames)),
@@ -103,34 +99,42 @@ func embedFiles(
 		Ranks:           make([]float32, 0, len(fileNames)),
 	}
 
-	// addEmbeddableChunks batches embeddable chunks, gets embeddings for the batches, and appends them to the index above.
-	addEmbeddableChunks := func(embeddableChunks []split.EmbeddableChunk, batchSize int) error {
-		// The embeddings API operates with batches up to a certain size, so we can't send all embeddable chunks for embedding at once.
-		// We batch them according to `batchSize`, and embed one by one.
-		for i := 0; i < len(embeddableChunks); i += batchSize {
-			end := min(len(embeddableChunks), i+batchSize)
-			batch := embeddableChunks[i:end]
-			batchChunks := make([]string, len(batch))
-			for idx, chunk := range batch {
-				batchChunks[idx] = chunk.Content
-				index.RowMetadata = append(index.RowMetadata, embeddings.RepoEmbeddingRowMetadata{FileName: chunk.FileName, StartLine: chunk.StartLine, EndLine: chunk.EndLine})
+	var batch []split.EmbeddableChunk
 
-				// Unknown documents have rank 0. Zoekt is a bit smarter about this, assigning 0
-				// to "unimportant" files and the average for unknown files. We should probably
-				// add this here, too.
-				index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
-			}
+	flush := func() error {
+		if len(batch) == 0 {
+			return nil
+		}
 
-			batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks, GET_EMBEDDINGS_MAX_RETRIES)
-			if err != nil {
-				return errors.Wrap(err, "error while getting embeddings")
-			}
-			index.Embeddings = append(index.Embeddings, embeddings.Quantize(batchEmbeddings)...)
+		batchChunks := make([]string, len(batch))
+		for idx, chunk := range batch {
+			batchChunks[idx] = chunk.Content
+			index.RowMetadata = append(index.RowMetadata, embeddings.RepoEmbeddingRowMetadata{FileName: chunk.FileName, StartLine: chunk.StartLine, EndLine: chunk.EndLine})
+
+			// Unknown documents have rank 0. Zoekt is a bit smarter about this, assigning 0
+			// to "unimportant" files and the average for unknown files. We should probably
+			// add this here, too.
+			index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
+		}
+
+		batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks, GET_EMBEDDINGS_MAX_RETRIES)
+		if err != nil {
+			return errors.Wrap(err, "error while getting embeddings")
+		}
+		index.Embeddings = append(index.Embeddings, embeddings.Quantize(batchEmbeddings)...)
+		batch = batch[:0] // reset batch
+		return nil
+	}
+
+	addToBatch := func(chunk split.EmbeddableChunk) error {
+		batch = append(batch, chunk)
+		if len(batch) >= EMBEDDING_BATCH_SIZE {
+			// Flush if we've hit batch size
+			return flush()
 		}
 		return nil
 	}
 
-	embeddableChunks := []split.EmbeddableChunk{}
 	for _, fileName := range fileNames {
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
 		if len(index.RowMetadata) > maxEmbeddingVectors {
@@ -141,27 +145,21 @@ func embedFiles(
 		if err != nil {
 			return createEmptyEmbeddingIndex(dimensions), errors.Wrap(err, "error while reading a file")
 		}
+
 		if embeddable, _ := isEmbeddableFileContent(contentBytes); !embeddable {
 			continue
 		}
-		content := string(contentBytes)
 
-		embeddableChunks = append(embeddableChunks, split.SplitIntoEmbeddableChunks(content, fileName, splitOptions)...)
-
-		if len(embeddableChunks) > EMBEDDING_BATCHES*EMBEDDING_BATCH_SIZE {
-			err := addEmbeddableChunks(embeddableChunks, EMBEDDING_BATCH_SIZE)
-			if err != nil {
+		for _, chunk := range split.SplitIntoEmbeddableChunks(string(contentBytes), fileName, splitOptions) {
+			if err := addToBatch(chunk); err != nil {
 				return createEmptyEmbeddingIndex(dimensions), err
 			}
-			embeddableChunks = []split.EmbeddableChunk{}
 		}
 	}
 
-	if len(embeddableChunks) > 0 {
-		err := addEmbeddableChunks(embeddableChunks, EMBEDDING_BATCH_SIZE)
-		if err != nil {
-			return createEmptyEmbeddingIndex(dimensions), err
-		}
+	// Always do a final flush
+	if err := flush(); err != nil {
+		return createEmptyEmbeddingIndex(dimensions), err
 	}
 
 	return index, nil
