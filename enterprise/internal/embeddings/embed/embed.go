@@ -20,7 +20,7 @@ const MAX_TEXT_EMBEDDING_VECTORS = 128_000
 const EMBEDDING_BATCHES = 5
 const EMBEDDING_BATCH_SIZE = 512
 
-type readFile func(fileName string) ([]byte, error)
+type readFile func(ctx context.Context, fileName string) ([]byte, error)
 type ranksGetter func(ctx context.Context, repoName string) (types.RepoPathRanks, error)
 
 // EmbedRepo embeds file contents from the given file names for a repository.
@@ -138,7 +138,7 @@ func embedFiles(
 			break
 		}
 
-		contentBytes, err := readFile(fileName)
+		contentBytes, err := readFile(ctx, fileName)
 		if err != nil {
 			return createEmptyEmbeddingIndex(dimensions), errors.Wrap(err, "error while reading a file")
 		}
