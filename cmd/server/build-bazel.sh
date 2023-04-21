@@ -71,7 +71,7 @@ cp -a ./cmd/server/rootfs/. "$OUTPUT"
 export BINDIR="$OUTPUT/usr/local/bin"
 mkdir -p "$BINDIR"
 for TARGET in "${TARGETS[@]}"; do
-  out=$(bazel cquery "$TARGET" --output=files)
+  out=$(./dev/ci/bazel.sh cquery "$TARGET" --output=files)
   cp "$out" "$BINDIR"
   echo "copying $TARGET"
 done

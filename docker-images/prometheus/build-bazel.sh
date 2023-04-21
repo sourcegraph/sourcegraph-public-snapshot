@@ -19,10 +19,10 @@ trap cleanup EXIT
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh
 
-out=$(bazel cquery //docker-images/prometheus/cmd/prom-wrapper --output=files)
+out=$(./dev/ci/bazel.sh cquery //docker-images/prometheus/cmd/prom-wrapper --output=files)
 cp "$out" "$BUILDDIR"
 
-monitoring_cfg=$(bazel cquery //monitoring:generate_config --output=files)
+monitoring_cfg=$(./dev/ci/bazel.sh cquery //monitoring:generate_config --output=files)
 cp "$monitoring_cfg" "$TMP/"
 pushd "$TMP"
 unzip "monitoring.zip"

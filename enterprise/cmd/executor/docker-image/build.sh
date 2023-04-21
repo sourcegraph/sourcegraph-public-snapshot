@@ -17,10 +17,10 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
 
-  out=$(bazel cquery //enterprise/cmd/executor --output=files)
+  out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/executor --output=files)
   cp "$out" "$OUTPUT"
 
-  src_cli=$(bazel cquery //internal/cmd/src-cli-version --output=files)
+  src_cli=$(./dev/ci/bazel.sh cquery //internal/cmd/src-cli-version --output=files)
   SRC_CLI_VERSION=$(eval "$src_cli")
 
   docker build -f enterprise/cmd/executor/docker-image/Dockerfile -t "$IMAGE" "$OUTPUT" \

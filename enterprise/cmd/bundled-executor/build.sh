@@ -30,7 +30,7 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
 
   for TARGET in "${TARGETS[@]}"; do
-    out=$(bazel cquery "$TARGET" --output=files)
+    out=$(./dev/ci/bazel.sh cquery "$TARGET" --output=files)
     cp "$out" "$OUTPUT"
     echo "copying $TARGET"
   done

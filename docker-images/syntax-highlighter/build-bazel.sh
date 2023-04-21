@@ -13,7 +13,7 @@ trap cleanup EXIT
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh
 
-out=$(bazel cquery //docker-images/syntax-highlighter:syntect_server --output=files)
+out=$(./dev/ci/bazel.sh cquery //docker-images/syntax-highlighter:syntect_server --output=files)
 
 cp "$out" "$BUILDDIR"
 

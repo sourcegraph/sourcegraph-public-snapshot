@@ -83,7 +83,7 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
 
-  out=$(bazel cquery //cmd/migrator --output=files)
+  out=$(./dev/ci/bazel.sh cquery //cmd/migrator --output=files)
   cp "$out" "$OUTPUT"
 
   docker build -f cmd/migrator/Dockerfile -t "$IMAGE" "$OUTPUT" \

@@ -18,7 +18,7 @@ echo "--- bazel build"
   --platforms @zig_sdk//platform:linux_amd64 \
   --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
 
-out=$(bazel cquery //enterprise/cmd/symbols --output=files)
+out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/symbols --output=files)
 cp "$out" "$OUTPUT"
 cp cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 

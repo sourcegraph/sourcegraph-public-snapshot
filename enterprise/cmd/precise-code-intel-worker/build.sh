@@ -17,7 +17,7 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
 
-  out=$(bazel cquery //enterprise/cmd/precise-code-intel-worker --output=files)
+  out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/precise-code-intel-worker --output=files)
   cp "$out" "$OUTPUT"
 
   docker build -f enterprise/cmd/precise-code-intel-worker/Dockerfile -t "$IMAGE" "$OUTPUT" \

@@ -21,7 +21,7 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
 
-  out=$(bazel cquery //enterprise/cmd/batcheshelper --output=files)
+  out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/batcheshelper --output=files)
   cp "$out" "$OUTPUT"
 
   docker build -f enterprise/cmd/batcheshelper/Dockerfile -t "$IMAGE" "$OUTPUT" \

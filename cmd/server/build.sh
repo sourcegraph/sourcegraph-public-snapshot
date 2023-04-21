@@ -145,7 +145,7 @@ cp -a ./cmd/server/rootfs/. "$OUTPUT"
 export BINDIR="$OUTPUT/usr/local/bin"
 mkdir -p "$BINDIR"
 for TARGET in "${TARGETS[@]}"; do
-  out=$(bazel cquery "$TARGET" --output=files)
+  out=$(./dev/ci/bazel.sh cquery "$TARGET" --output=files)
   cp "$out" "$BINDIR"
   echo "copying $TARGET"
 done
@@ -154,7 +154,7 @@ done
 rm -f "$BINDIR/monitoring.zip"
 
 TMP=$(mktemp -d -t sgserver_tmp_XXXXXXX)
-monitoring_cfg=$(bazel cquery //monitoring:generate_config --output=files)
+monitoring_cfg=$(./dev/ci/bazel.sh cquery //monitoring:generate_config --output=files)
 cp "$monitoring_cfg" "$TMP"
 pushd "$TMP"
 unzip "monitoring.zip"
