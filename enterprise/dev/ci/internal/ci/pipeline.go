@@ -346,11 +346,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(publishOps)
 	}
 
-	ops.Append(
-		wait,                    // wait for all steps to pass
-		uploadBuildeventTrace(), // upload the final buildevent trace if the build succeeded.
-	)
-
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
 		Env: env,
