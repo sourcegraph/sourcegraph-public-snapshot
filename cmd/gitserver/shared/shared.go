@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -16,7 +15,6 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sourcegraph/log"
-	"github.com/tidwall/gjson"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
@@ -33,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
@@ -52,7 +49,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -141,7 +137,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		ReposDir:           config.ReposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
+			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir, config.CoursierCacheDir)
@@ -314,7 +310,6 @@ func getRemoteURLFunc(
 	ctx context.Context,
 	externalServiceStore database.ExternalServiceStore,
 	repoStore database.RepoStore,
-	cli httpcli.Doer,
 	repo api.RepoName,
 ) (string, error) {
 	r, err := repoStore.GetByName(ctx, repo)
@@ -338,87 +333,9 @@ func getRemoteURLFunc(
 			continue
 		}
 
-		if svc.Kind == extsvc.KindGitHub {
-			config, err := conf.GitHubAppConfig()
-			if err != nil {
-				return "", err
-			}
-			if config.Configured() {
-				rawConfig, err := svc.Config.Decrypt(ctx)
-				if err != nil {
-					return "", err
-				}
-				installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
-				if installationID > 0 {
-					rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, config.PrivateKey, config.AppID, installationID, cli)
-					if err != nil {
-						return "", errors.Wrap(err, "edit GitHub App external service config token")
-					}
-					svc.Config.Set(rawConfig)
-				}
-			}
-		}
 		return repos.EncryptableCloneURL(ctx, log.Scoped("repos.CloneURL", ""), svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
-}
-
-// editGitHubAppExternalServiceConfigToken updates the "token" field of the given
-// external service config through GitHub App and returns a new copy of the
-// config ensuring the token is always valid.
-func editGitHubAppExternalServiceConfigToken(
-	ctx context.Context,
-	externalServiceStore database.ExternalServiceStore,
-	svc *types.ExternalService,
-	rawConfig string,
-	privateKey []byte,
-	appID string,
-	installationID int64,
-	cli httpcli.Doer,
-) (string, error) {
-	logger := log.Scoped("editGitHubAppExternalServiceConfigToken", "updates the 'token' field of the given external service")
-
-	baseURL, err := url.Parse(gjson.Get(rawConfig, "url").String())
-	if err != nil {
-		return "", errors.Wrap(err, "parse base URL")
-	}
-
-	apiURL, githubDotCom := github.APIRoot(baseURL)
-	if !githubDotCom {
-		return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
-	}
-
-	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return "", nil
-	}
-
-	appAuther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "new authenticator with GitHub App")
-	}
-
-	scopedLogger := logger.Scoped("app", "github client for github app").With(log.String("appID", appID))
-	appClient := github.NewV3Client(scopedLogger, svc.URN(), apiURL, appAuther, cli)
-
-	token, err := appClient.CreateAppInstallationAccessToken(ctx, installationID)
-	if err != nil {
-		return "", errors.Wrap(err, "get or renew GitHub App installation access token")
-	}
-
-	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
-	// validation with missing "repos" property when no repository has been selected,
-	// due to generated JSON tag of ",omitempty".
-	config, err := jsonc.Edit(rawConfig, token.Token, "token")
-	if err != nil {
-		return "", errors.Wrap(err, "edit token")
-	}
-	err = externalServiceStore.Update(ctx, conf.Get().AuthProviders, svc.ID,
-		&database.ExternalServiceUpdate{
-			Config:         &config,
-			TokenExpiresAt: token.ExpiresAt,
-		})
-	return config, err
 }
 
 func getVCSSyncer(

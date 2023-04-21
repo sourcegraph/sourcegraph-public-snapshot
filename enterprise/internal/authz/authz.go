@@ -161,7 +161,7 @@ func ProvidersFromConfig(
 		enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
 	}
 
-	initResult := github.NewAuthzProviders(db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
+	initResult := github.NewAuthzProviders(gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
 	initResult.Append(gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns))
 	initResult.Append(bitbucketserver.NewAuthzProviders(bitbucketServerConns))
 	initResult.Append(perforce.NewAuthzProviders(perforceConns))
