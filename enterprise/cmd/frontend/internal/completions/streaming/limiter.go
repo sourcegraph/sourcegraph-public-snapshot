@@ -60,11 +60,10 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 		req := requestclient.FromContext(ctx)
 		var ip string
 		if req != nil {
-			// TODO: This has to be tested on our envs to ensure the IP actually propagates
-			// alright. In dev, we seem to add a forwarded-for header twice and the value for
-			// req.ForwardedFor is `127.0.0.1, 127.0.0.1`. As long as one of them is unique
-			// this will work correctly though.
 			ip = req.IP
+			// Note: ForwardedFor header in general can be spoofed. For
+			// Sourcegraph.com we use a trusted value for this so this is a
+			// reliable value to rate limit with.
 			if req.ForwardedFor != "" {
 				ip = req.ForwardedFor
 			}
