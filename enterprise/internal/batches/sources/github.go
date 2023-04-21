@@ -79,15 +79,6 @@ func (s GitHubSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfi
 }
 
 func (s GitHubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
-	switch a.(type) {
-	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH:
-		break
-
-	default:
-		return nil, newUnsupportedAuthenticatorError("GithubSource", a)
-	}
-
 	sc := s
 	sc.au = a
 	sc.client = sc.client.WithAuthenticator(a)
