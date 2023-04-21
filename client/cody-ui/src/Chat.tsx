@@ -16,6 +16,8 @@ import styles from './Chat.module.css'
 interface ChatProps extends ChatClassNames {
     transcript: ChatMessage[]
     messageInProgress: ChatMessage | null
+    messageBeingEdited: boolean
+    setMessageBeingEdited: (input: boolean) => void
     contextStatus?: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
@@ -27,6 +29,8 @@ interface ChatProps extends ChatClassNames {
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     afterTips?: string
     className?: string
+    EditButtonContainer?: React.FunctionComponent<EditButtonProps>
+    editButtonOnSubmit?: (text: string) => void
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
 }
@@ -53,6 +57,20 @@ export interface ChatUISubmitButtonProps {
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
+export enum EditButtonAction {
+    Edit = 'edit',
+    Accept = 'accept',
+    Cancel = 'cancel',
+}
+
+export interface EditButtonProps {
+    className: string
+    disabled?: boolean
+    messageBeingEdited: boolean
+    setMessageBeingEdited: (input: boolean) => void
+    editButtonOnSubmit: (text: string) => void
+}
+
 export interface FeedbackButtonsProps {
     className: string
     disabled?: boolean
@@ -63,6 +81,8 @@ export interface FeedbackButtonsProps {
  */
 export const Chat: React.FunctionComponent<ChatProps> = ({
     messageInProgress,
+    messageBeingEdited,
+    setMessageBeingEdited,
     transcript,
     contextStatus,
     formInput,
@@ -83,6 +103,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     inputRowClassName,
     chatInputContextClassName,
     chatInputClassName,
+    EditButtonContainer,
+    editButtonOnSubmit,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
 }) => {
@@ -114,7 +136,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setInputRows(5)
             setFormInput('')
         }
-    }, [formInput, inputHistory, messageInProgress, onSubmit, setFormInput, setInputHistory])
+    }, [formInput, inputHistory, messageInProgress, messageBeingEdited, onSubmit, setFormInput, setInputHistory])
 
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLDivElement>): void => {
@@ -153,6 +175,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             <Transcript
                 transcript={transcriptWithWelcome}
                 messageInProgress={messageInProgress}
+                messageBeingEdited={messageBeingEdited}
+                setMessageBeingEdited={setMessageBeingEdited}
                 fileLinkComponent={fileLinkComponent}
                 codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                 transcriptItemClassName={transcriptItemClassName}
@@ -160,6 +184,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                 transcriptActionClassName={transcriptActionClassName}
                 className={styles.transcriptContainer}
+                textAreaComponent={TextArea}
+                EditButtonContainer={EditButtonContainer}
+                editButtonOnSubmit={editButtonOnSubmit}
                 FeedbackButtonsContainer={FeedbackButtonsContainer}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
             />
