@@ -1,16 +1,17 @@
-.cursor::before {
-    content: "▋";
-    animation: blink 1s infinite;
-}
+.blinkDots::after {
+    content: '.';
+    display: inline-block;
+    animation: dots 1s infinite;
+  }
 
-@keyframes blink {
-    0% {
-      visibility: hidden;
+  @keyframes dots {
+    0%, 20% {
+      content: '.';
     }
-    50% {
-      visibility: hidden;
+    40%, 60% {
+      content: '..';
     }
-    100% {
-      visibility: visible;
+    80%, 100% {
+      content: '...';
     }
-}
+  }

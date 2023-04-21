@@ -56,6 +56,8 @@ It is OK to provide some commentary before you tell me the replacement <selectio
         )}\n\`\`\`\n\n${context.responseMultiplexer.prompt()}`
         // TODO: Move the prompt suffix from the recipe to the chat view. It may have other subscribers.
 
+        const assistantResponsePrefix = 'Here you go!'
+
         return Promise.resolve(
             new Interaction(
                 {
@@ -63,7 +65,11 @@ It is OK to provide some commentary before you tell me the replacement <selectio
                     text: prompt,
                     displayText: 'Replace the instructions in the selection.',
                 },
-                { speaker: 'assistant' },
+                {
+                    speaker: 'assistant',
+                    prefix: assistantResponsePrefix,
+                    text: assistantResponsePrefix,
+                },
                 this.getContextMessages(selection.selectedText, context.codebaseContext)
             )
         )
