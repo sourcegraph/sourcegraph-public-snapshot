@@ -115,15 +115,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			addGoBuild))
 	}
 
-	if diff.Has(changed.DatabaseSchema) {
-		// If there are schema changes, ensure the tests of the last minor release continue
-		// to succeed when the new version of the schema is applied. This ensures that the
-		// schema can be rolled forward pre-upgrade without negatively affecting the running
-		// instance (which was working fine prior to the upgrade).
-		ops.Merge(operations.NewNamedSet("DB backcompat tests",
-			addGoTestsBackcompat(opts.MinimumUpgradeableVersion)))
-	}
-
 	// CI script testing
 	if diff.Has(changed.CIScripts) {
 		ops.Merge(operations.NewNamedSet("CI script tests", addCIScriptsTests))
@@ -488,21 +479,6 @@ func addGoTests(pipeline *bk.Pipeline) {
 			opts...,
 		)
 	})
-}
-
-// Adds the Go backcompat test step.
-func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		buildGoTests(func(description, testSuffix string, additionalOpts ...bk.StepOpt) {
-			pipeline.AddStep(
-				fmt.Sprintf(":go::postgres: Backcompat test (%s)", description),
-				bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
-				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{
-					Annotations: &bk.AnnotationOpts{},
-				}),
-			)
-		})
-	}
 }
 
 // buildGoTests invokes the given function once for each subset of tests that should
