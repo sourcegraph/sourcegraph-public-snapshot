@@ -18542,12 +18542,12 @@
       ],
       "Indexes": [
         {
-          "Name": "own_aggregate_recent_contribution_author_file",
+          "Name": "own_aggregate_recent_contribution_file_author",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX own_aggregate_recent_contribution_author_file ON own_aggregate_recent_contribution USING btree (commit_author_id, changed_file_path_id)",
+          "IndexDefinition": "CREATE UNIQUE INDEX own_aggregate_recent_contribution_file_author ON own_aggregate_recent_contribution USING btree (changed_file_path_id, commit_author_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },

@@ -2792,7 +2792,7 @@ Referenced by:
  contributions_count  | integer |           |          | 0
 Indexes:
     "own_aggregate_recent_contribution_pkey" PRIMARY KEY, btree (id)
-    "own_aggregate_recent_contribution_author_file" UNIQUE, btree (commit_author_id, changed_file_path_id)
+    "own_aggregate_recent_contribution_file_author" UNIQUE, btree (changed_file_path_id, commit_author_id)
 Foreign-key constraints:
     "own_aggregate_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
     "own_aggregate_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)

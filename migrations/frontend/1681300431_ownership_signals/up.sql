@@ -82,6 +82,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_own_aggregate_recent_contribution
-AFTER INSERT ON own_signal_recent_contribution
-FOR EACH ROW EXECUTE PROCEDURE update_own_aggregate_recent_contribution();
+DO $$
+DECLARE
+    trigger_exists INTEGER;
+BEGIN
+    -- Check if the trigger already exists
+    SELECT COUNT(*)
+    INTO trigger_exists
+    FROM pg_trigger
+    WHERE tgname = 'update_own_aggregate_recent_contribution';
+
+    -- If the trigger exists, drop it
+    IF trigger_exists > 0 THEN
+        EXECUTE 'DROP TRIGGER update_own_aggregate_recent_contribution ON own_signal_recent_contribution';
+    END IF;
+
+    -- Create the trigger
+    EXECUTE 'CREATE TRIGGER update_own_aggregate_recent_contribution
+        AFTER INSERT
+        ON own_signal_recent_contribution
+        FOR EACH ROW
+        EXECUTE FUNCTION update_own_aggregate_recent_contribution()';
+END $$;

@@ -5529,7 +5529,7 @@ CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs
 
 CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code);
 
-CREATE UNIQUE INDEX own_aggregate_recent_contribution_author_file ON own_aggregate_recent_contribution USING btree (commit_author_id, changed_file_path_id);
+CREATE UNIQUE INDEX own_aggregate_recent_contribution_file_author ON own_aggregate_recent_contribution USING btree (changed_file_path_id, commit_author_id);
 
 CREATE UNIQUE INDEX package_repo_filters_unique_matcher_per_scheme ON package_repo_filters USING btree (scheme, matcher);
 
