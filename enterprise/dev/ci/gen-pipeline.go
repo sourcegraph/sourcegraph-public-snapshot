@@ -53,6 +53,14 @@ func main() {
 
 	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
 
+	// bazel run changes the directory. If this envvar is present we can go
+	// back to the directory we expect to run from.
+	if root := os.Getenv("BUILD_WORKSPACE_DIRECTORY"); root != "" {
+		if err := os.Chdir(root); err != nil {
+			logger.Fatal("failed to changed to workspace root", log.Error(err))
+		}
+	}
+
 	if docs {
 		renderPipelineDocs(logger, os.Stdout)
 		return
