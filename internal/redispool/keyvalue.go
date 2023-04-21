@@ -77,6 +77,10 @@ func (v Value) String() (string, error) {
 	return redis.String(v.reply, v.err)
 }
 
+func (v Value) IsNil() bool {
+	return v.reply == nil
+}
+
 // Values is a response from an operation on KeyValue which returns multiple
 // items. It provides convenient methods to get at the underlying value of the
 // reply.
