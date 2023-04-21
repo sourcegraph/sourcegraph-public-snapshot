@@ -6,11 +6,27 @@ import { exec } from 'shelljs'
 
 const COMMENT_HEADING = '## Bundle size report 📦'
 
-const { BRANCH, BUILDKITE_PULL_REQUEST_REPO, BUILDKITE_PULL_REQUEST, COMMIT, GITHUB_TOKEN } = process.env
+const { BUILDKITE_COMMIT, BUILDKITE_BRANCH, BUILDKITE_PULL_REQUEST_REPO, BUILDKITE_PULL_REQUEST, GH_TOKEN } =
+    process.env
+
+console.log('ENV: ', {
+    BUILDKITE_COMMIT,
+    BUILDKITE_BRANCH,
+    BUILDKITE_PULL_REQUEST_REPO,
+    BUILDKITE_PULL_REQUEST,
+    GH_TOKEN,
+})
 
 const ROOT_PATH = path.join(__dirname, '../../../')
-const STATIC_ASSETS_PATH = process.env.WEB_BUNDLE_PATH || path.join(ROOT_PATH, 'ui/assets')
-const STATOSCOPE_BIN = path.join(ROOT_PATH, 'node_modules/.bin/statoscope')
+const STATIC_ASSETS_PATH = path.join(ROOT_PATH, process.env.WEB_BUNDLE_PATH || 'ui/assets')
+const STATOSCOPE_BIN = path.join(ROOT_PATH, 'node_modules/@statoscope/cli/bin/cli.js')
+
+console.log({
+    ROOT_PATH,
+    STATIC_ASSETS_PATH,
+    STATOSCOPE_BIN,
+    KEK: true,
+})
 
 const MERGE_BASE = exec('git merge-base HEAD origin/main').toString().trim()
 let COMPARE_REV = ''
@@ -55,7 +71,7 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
         exec(`tar -xf ${tarPath} --strip-components=2 -C ${STATIC_ASSETS_PATH}`)
         exec(`ls -la ${STATIC_ASSETS_PATH}`)
 
-        const commitFile = path.join(STATIC_ASSETS_PATH, `stats-${COMMIT}.json`)
+        const commitFile = path.join(STATIC_ASSETS_PATH, `stats-${BUILDKITE_COMMIT}.json`)
         const compareFile = path.join(STATIC_ASSETS_PATH, `stats-${COMPARE_REV}.json`)
         console.log({ commitFile, compareFile })
 
@@ -68,7 +84,7 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
             exec(`${STATOSCOPE_BIN} generate -i "${commitFile}" -r "${compareFile}" -t ${compareReportPath}`)
 
             const bucket = 'sourcegraph_reports'
-            const file = `statoscope-reports/${BRANCH}/compare-report.html`
+            const file = `statoscope-reports/${BUILDKITE_BRANCH}/compare-report.html`
             exec(`gsutil cp ${compareReportPath} "gs://${bucket}/${file}"`)
 
             return { commitFile, compareFile }
@@ -146,7 +162,7 @@ function reportToMarkdown(report: Report): string {
     const asyncSize = describeMetric(asyncSizeMetric, 10000) // 10kb
     const modules = describeMetric(modulesMetric, 0)
 
-    const url = `https://console.cloud.google.com/storage/browser/_details/sourcegraph_reports/statoscope-reports/${BRANCH}/compare-report.html;tab=live_object`
+    const url = `https://console.cloud.google.com/storage/browser/_details/sourcegraph_reports/statoscope-reports/${BUILDKITE_BRANCH}/compare-report.html;tab=live_object`
 
     let noExactDataWarning = ''
     if (MERGE_BASE !== COMPARE_REV) {
@@ -161,9 +177,9 @@ The intended commit has no frontend pipeline, so we chose the last commit with o
 | --- | --- | --- | --- |
 | ${initialSize} | ${totalSize} | ${asyncSize} | ${modules} |
 
-Look at the [Statoscope report](${url}) for a full comparison between the commits ${shortRev(COMMIT)} and ${shortRev(
-        COMPARE_REV
-    )} or [learn more](https://docs.sourcegraph.com/dev/how-to/testing#bundlesize).
+Look at the [Statoscope report](${url}) for a full comparison between the commits ${shortRev(
+        BUILDKITE_COMMIT
+    )} and ${shortRev(COMPARE_REV)} or [learn more](https://docs.sourcegraph.com/dev/how-to/testing#bundlesize).
 ${noExactDataWarning}
 
 <details>
@@ -190,8 +206,10 @@ async function createOrUpdateComment(body: string): Promise<void> {
     const pullRequest = parseInt(BUILDKITE_PULL_REQUEST ?? '', 10)
     const [owner, _repo] =
         BUILDKITE_PULL_REQUEST_REPO?.replace('https://github.com/', '').replace('.git', '').split('/') ?? []
+
     const repo = { owner, repo: _repo }
-    const octokit = new Octokit({ auth: GITHUB_TOKEN })
+    const octokit = new Octokit({ auth: GH_TOKEN })
+
     if (!pullRequest || !owner || !_repo) {
         console.log(
             'No BUILDKITE_PULL_REQUEST or BUILDKITE_PULL_REQUEST_REPO env vars set, skip posting the following comment:'
@@ -200,11 +218,6 @@ async function createOrUpdateComment(body: string): Promise<void> {
         console.log(body)
         return
     }
-
-    const {
-        data: { login },
-    } = await octokit.rest.users.getAuthenticated()
-    console.log('Hello, %s', login)
 
     const sizeLimitComment = await fetchPreviousComment(octokit, repo, pullRequest)
 
