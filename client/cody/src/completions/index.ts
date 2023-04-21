@@ -116,17 +116,18 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     prefix,
                     '',
                     2 // 2 tries
-                ),
+                )
                 // TODO: Figure out if this is really useful. Right now it seems that this is not
                 // rendered and a subsequent completion is not properly using the cache yet.
-                new EndOfLineCompletionProvider(
-                    this.completionsClient,
-                    remainingChars,
-                    this.responseTokens,
-                    prefix,
-                    '\n', // force a new line in the case we are at end of line
-                    2 // 2 tries
-                )
+                //
+                // new EndOfLineCompletionProvider(
+                //     this.completionsClient,
+                //     remainingChars,
+                //     this.responseTokens,
+                //     prefix,
+                //     '\n', // force a new line in the case we are at end of line
+                //     2 // 2 tries
+                // )
             )
         }
 
