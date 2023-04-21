@@ -46,3 +46,12 @@
     text-overflow: ellipsis;
     overflow: hidden;
 }
+
+.fail {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    overflow: hidden;
+
+    color: var(--vscode-errorForeground, red);
+}

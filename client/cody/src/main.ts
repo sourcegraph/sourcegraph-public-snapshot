@@ -54,8 +54,18 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
             }
         }),
         vscode.workspace.onDidChangeConfiguration(async event => {
-            if (event.affectsConfiguration('cody') || event.affectsConfiguration('sourcegraph')) {
+            if (event.affectsConfiguration('cody')) {
                 onConfigurationChange(await getFullConfig())
+            }
+            if (event.affectsConfiguration('cody.codebase')) {
+                const action = await vscode.window.showInformationMessage(
+                    'You must reload VS Code for Cody to pick up your new codebase.',
+                    'Reload VS Code',
+                    'Close'
+                )
+                if (action === 'Reload VS Code') {
+                    void vscode.commands.executeCommand('workbench.action.reloadWindow')
+                }
             }
         })
     )
@@ -161,13 +171,6 @@ const register = async (
             await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
             logEvent('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
         }),
-        // TOS
-        vscode.commands.registerCommand('cody.accept-tos', version =>
-            localStorage.set('cody.tos-version-accepted', version)
-        ),
-        vscode.commands.registerCommand('cody.get-accepted-tos-version', () =>
-            localStorage.get('cody.tos-version-accepted')
-        ),
         // Commands
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),

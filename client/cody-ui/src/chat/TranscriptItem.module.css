@@ -51,8 +51,7 @@
 .actions {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: calc(var(--spacing) * 0.5);
+    align-items: center;
     padding: 0 var(--spacing);
 }
 
@@ -61,6 +60,7 @@
     word-break: break-word;
     line-height: 150%;
 }
+
 .content pre {
     padding: calc(var(--spacing) * 0.5);
     overflow-x: auto;
