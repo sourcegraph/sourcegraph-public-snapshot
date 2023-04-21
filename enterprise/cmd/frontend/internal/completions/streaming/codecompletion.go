@@ -64,7 +64,8 @@ func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	client := anthropic.NewAnthropicClient(httpcli.ExternalDoer, completionsConfig.AccessToken, completionsConfig.CompletionModel)
 
 	// Check rate limit.
-	if err := h.rl.TryAcquire(ctx); err != nil {
+	err = h.rl.TryAcquire(ctx)
+	if err != nil {
 		if unwrap, ok := err.(RateLimitExceededError); ok {
 			respondRateLimited(w, unwrap)
 			return
