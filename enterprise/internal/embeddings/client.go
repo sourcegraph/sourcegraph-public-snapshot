@@ -47,6 +47,7 @@ type Client struct {
 
 type EmbeddingsSearchParameters struct {
 	RepoName         api.RepoName `json:"repoName"`
+	RepoID           api.RepoID   `json:"repoID"`
 	Query            string       `json:"query"`
 	CodeResultsCount int          `json:"codeResultsCount"`
 	TextResultsCount int          `json:"textResultsCount"`

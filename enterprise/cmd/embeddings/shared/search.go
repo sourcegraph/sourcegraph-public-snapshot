@@ -24,7 +24,12 @@ func searchRepoEmbeddingIndex(
 	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
+	weaviate *weaviateClient,
 ) (*embeddings.EmbeddingSearchResults, error) {
+	if weaviate.Use(ctx) {
+		return weaviate.Search(ctx, params)
+	}
+
 	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting repo embedding index")
