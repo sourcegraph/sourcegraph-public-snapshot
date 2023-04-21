@@ -26,35 +26,34 @@ pub fn get_locals(parser: BundledParser, source_bytes: &[u8]) -> Option<Result<V
     Some(locals::parse_tree(&mut config, &tree, source_bytes))
 }
 
-#[cfg(test)]
-mod test {
-    use std::io::BufWriter;
-
-    use crate::ctags::generate_tags;
-
-    #[test]
-    fn test_generate_ctags_go_globals() {
+#[macro_export]
+macro_rules! generate_tags_and_snapshot {
+    ($a:literal) => {{
         let mut buffer = vec![0u8; 1024];
         let mut buf_writer = BufWriter::new(&mut buffer);
 
-        generate_tags(
-            &mut buf_writer,
-            "go-globals.go".to_string(),
-            include_bytes!("../testdata/go-globals.go"),
-        );
+        generate_tags(&mut buf_writer, $a.to_string(), include_bytes!($a));
         insta::assert_snapshot!(String::from_utf8_lossy(buf_writer.buffer()));
+    }};
+}
+
+#[cfg(test)]
+mod test {
+    use crate::ctags::generate_tags;
+    use std::io::BufWriter;
+
+    #[test]
+    fn test_generate_ctags_go_globals() {
+        generate_tags_and_snapshot!("../testdata/go-globals.go");
     }
 
     #[test]
     fn test_generate_ctags_empty_scope() {
-        let mut buffer = vec![0u8; 1024];
-        let mut buf_writer = BufWriter::new(&mut buffer);
+        generate_tags_and_snapshot!("../testdata/ctags-empty-scope.rs");
+    }
 
-        generate_tags(
-            &mut buf_writer,
-            "ctags-empty-scope.rs".to_string(),
-            include_bytes!("../testdata/ctags-empty-scope.rs"),
-        );
-        insta::assert_snapshot!(String::from_utf8_lossy(buf_writer.buffer()));
+    #[test]
+    fn test_generate_ctags_zig_globals() {
+        generate_tags_and_snapshot!("../testdata/globals.zig");
     }
 }

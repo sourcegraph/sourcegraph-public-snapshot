@@ -13,30 +13,5 @@
     )
 )
 
-; (Decl
-;     (VarDecl
-;         variable_type_function: (_)
-;         @descriptor.term
-;         [
-;             (ErrorUnionExpr
-;                 [
-;                     (SuffixExpr
-;                         [
-;                             (INTEGER)
-;                             (STRINGLITERALSINGLE)
-;                             (FLOAT)
-;                             (BUILTINIDENTIFIER)
-;                         ]
-;                     )
-;                     (SuffixExpr
-;                         variable_type_function: (_)
-;                     )
-;                 ]
-;             )
-;             (PrefixTypeOp)
-;             (Block)
-;         ]
-;     )
-; )
-
-(Decl (FnProto function: (_) @descriptor.method))
+(Decl (FnProto function: (_) @descriptor.method)) @local
+(ContainerField field_member: (IDENTIFIER) @descriptor.term)
