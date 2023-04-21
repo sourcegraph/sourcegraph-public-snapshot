@@ -63,6 +63,7 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 
 	results, err := r.embeddingsClient.Search(ctx, embeddings.EmbeddingsSearchParameters{
 		RepoName:         repo.Name,
+		RepoID:           repoID,
 		Query:            args.Query,
 		CodeResultsCount: int(args.CodeResultsCount),
 		TextResultsCount: int(args.TextResultsCount),

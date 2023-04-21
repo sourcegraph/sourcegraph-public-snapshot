@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
+import { DOTCOM_URL } from './chat/protocol'
 import { LocalStorage } from './command/LocalStorageProvider'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
@@ -119,16 +120,12 @@ const register = async (
         // Register URI Handler to resolve token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
-                await workspaceConfig.update(
-                    'cody.serverEndpoint',
-                    'https://sourcegraph.com',
-                    vscode.ConfigurationTarget.Global
-                )
+                await workspaceConfig.update('cody.serverEndpoint', DOTCOM_URL.href, vscode.ConfigurationTarget.Global)
                 const token = new URLSearchParams(uri.query).get('code')
                 if (token && token.length > 8) {
                     await context.secrets.store(CODY_ACCESS_TOKEN_SECRET, token)
                     const isAuthed = await isValidLogin({
-                        serverEndpoint: 'https://sourcegraph.com',
+                        serverEndpoint: DOTCOM_URL.href,
                         accessToken: token,
                         customHeaders: config.customHeaders,
                     })

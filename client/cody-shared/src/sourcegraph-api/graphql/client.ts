@@ -9,6 +9,7 @@ import {
     REPOSITORY_ID_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
+    REPOSITORY_EMBEDDING_EXISTS_QUERY,
 } from './queries'
 
 interface APIResponse<T> {
@@ -22,6 +23,10 @@ interface CurrentUserIdResponse {
 
 interface RepositoryIdResponse {
     repository: { id: string } | null
+}
+
+interface RepositoryEmbeddingExistsResponse {
+    repository: { id: string; embeddingExists: boolean } | null
 }
 
 interface EmbeddingsSearchResponse {
@@ -83,8 +88,19 @@ export class SourcegraphGraphQLAPIClient {
             name: repoName,
         }).then(response =>
             extractDataOrError(response, data =>
-                data.repository ? data.repository.id : new Error(`repository ${repoName} not found`)
+                data.repository ? data.repository.id : new RepoNotFoundError(`repository ${repoName} not found`)
             )
+        )
+    }
+
+    public async getRepoIdIfEmbeddingExists(repoName: string): Promise<string | null | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepositoryEmbeddingExistsResponse>>(
+            REPOSITORY_EMBEDDING_EXISTS_QUERY,
+            {
+                name: repoName,
+            }
+        ).then(response =>
+            extractDataOrError(response, data => (data.repository?.embeddingExists ? data.repository.id : null))
         )
     }
 
@@ -179,3 +195,6 @@ function verifyResponseCode(response: Response): Response {
     }
     return response
 }
+
+class RepoNotFoundError extends Error {}
+export const isRepoNotFoundError = (value: unknown): value is RepoNotFoundError => value instanceof RepoNotFoundError

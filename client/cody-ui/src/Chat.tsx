@@ -27,6 +27,8 @@ interface ChatProps extends ChatClassNames {
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     afterTips?: string
     className?: string
+    FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
+    feedbackButtonsOnSubmit?: (text: string) => void
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -51,6 +53,11 @@ export interface ChatUISubmitButtonProps {
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
+export interface FeedbackButtonsProps {
+    className: string
+    disabled?: boolean
+    feedbackButtonsOnSubmit: (text: string) => void
+}
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
  */
@@ -76,6 +83,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     inputRowClassName,
     chatInputContextClassName,
     chatInputClassName,
+    FeedbackButtonsContainer,
+    feedbackButtonsOnSubmit,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -151,6 +160,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                 transcriptActionClassName={transcriptActionClassName}
                 className={styles.transcriptContainer}
+                FeedbackButtonsContainer={FeedbackButtonsContainer}
+                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
             />
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>

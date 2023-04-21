@@ -8,20 +8,26 @@ interface VSCodeApi {
     postMessage: (message: unknown) => void
 }
 
-class VSCodeWrapper {
-    private readonly vscodeApi: VSCodeApi = acquireVsCodeApi()
-
-    public postMessage(message: WebviewMessage): void {
-        this.vscodeApi.postMessage(message)
-    }
-
-    public onMessage(callback: (message: ExtensionMessage) => void): () => void {
-        const listener = (event: MessageEvent<ExtensionMessage>): void => {
-            callback(event.data)
-        }
-        window.addEventListener('message', listener)
-        return () => window.removeEventListener('message', listener)
-    }
+export interface VSCodeWrapper {
+    postMessage(message: WebviewMessage): void
+    onMessage(callback: (message: ExtensionMessage) => void): () => void
 }
 
-export const vscodeAPI: VSCodeWrapper = new VSCodeWrapper()
+let api: VSCodeWrapper
+
+export function getVSCodeAPI(): VSCodeWrapper {
+    if (!api) {
+        const vsCodeApi = acquireVsCodeApi()
+        api = {
+            postMessage: message => vsCodeApi.postMessage(message),
+            onMessage: callback => {
+                const listener = (event: MessageEvent<ExtensionMessage>): void => {
+                    callback(event.data)
+                }
+                window.addEventListener('message', listener)
+                return () => window.removeEventListener('message', listener)
+            },
+        }
+    }
+    return api
+}

@@ -267,3 +267,6 @@ http_archive(
 load("@bazel-zig-cc//toolchain:defs.bzl", zig_toolchains = "toolchains")
 
 zig_toolchains()
+
+load("//dev/backcompat:defs.bzl", "back_compat_defs")
+back_compat_defs()

@@ -4,6 +4,12 @@ import { Message } from '../../sourcegraph-api'
 
 import { ChatMessage, InteractionMessage } from './messages'
 
+export interface InteractionJSON {
+    humanMessage: InteractionMessage
+    assistantMessage: InteractionMessage
+    context: ContextMessage[]
+}
+
 export class Interaction {
     private cachedContextFileNames: string[] = []
     private context: Promise<ContextMessage[]>
@@ -51,6 +57,10 @@ export class Interaction {
 
     public toChat(): ChatMessage[] {
         return [this.humanMessage, { ...this.assistantMessage, contextFiles: this.cachedContextFileNames }]
+    }
+
+    public async toJSON(): Promise<InteractionJSON> {
+        return { humanMessage: this.humanMessage, assistantMessage: this.assistantMessage, context: await this.context }
     }
 }
 

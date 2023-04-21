@@ -14,11 +14,11 @@
 /* Apply a slight tint to the human transcript item. */
 body[data-vscode-theme-kind='vscode-light'] .human-transcript-item,
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .human-transcript-item {
-    background-color: #00000011; /* slight dark tint */
+    background-color: rgba(0, 0, 0, 0.07); /* slight dark tint */
 }
 body[data-vscode-theme-kind='vscode-dark'] .human-transcript-item,
 body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
-    background-color: #ffffff18; /* slight light tint */
+    background-color: rgba(255, 255, 255, 0.07); /* slight light tint */
 }
 
 .transcript-item-participant {
@@ -28,18 +28,16 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 
 .transcript-item pre,
 .transcript-item span > code,
-.transcript-item p > code {
+.transcript-item p > code,
+.transcript-item pre > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
-}
-
-.transcript-item pre,
-.transcript-item code {
-    color: var(--vscode-input-foreground);
+    color: var(--code-foreground);
 }
 
 .transcript-action {
-    background-color: var(--code-background);
+    background: var(--button-secondary-background);
+    color: var(--button-secondary-foreground);
 }
 
 .code-blocks-copy-button {

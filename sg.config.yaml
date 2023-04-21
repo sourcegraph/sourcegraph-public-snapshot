@@ -384,6 +384,21 @@ commands:
       - enterprise/cmd/embeddings
       - enterprise/internal/embeddings
 
+  llm-proxy:
+    cmd: |
+      .bin/llm-proxy
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      go build -gcflags="$GCFLAGS" -o .bin/llm-proxy github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy
+    checkBinary: .bin/llm-proxy
+    watch:
+      - lib
+      - internal
+      - enterprise/cmd/llm-proxy
+
   searcher:
     cmd: .bin/searcher
     install: |

@@ -113,6 +113,7 @@ Available commands in `sg.config.yaml`:
 * gitserver-template
 * grafana
 * jaeger
+* llm-proxy
 * loki
 * monitoring-generator
 * oss-frontend

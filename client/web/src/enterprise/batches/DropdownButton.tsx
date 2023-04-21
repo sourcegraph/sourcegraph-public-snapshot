@@ -172,6 +172,9 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
     const onSelect = useCallback(() => {
         setSelectedType(action.type)
     }, [setSelectedType, action.type])
+
+    const { batchChangesRolloutWindows } = window.context
+
     return (
         <MenuItem className={styles.menuListItem} onSelect={onSelect} disabled={action.disabled}>
             <H4 className="mb-1">
@@ -184,7 +187,17 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
                 )}
             </H4>
             <Text className="text-wrap text-muted mb-0">
-                <small>{action.dropdownDescription}</small>
+                {action.type === 'publish' && batchChangesRolloutWindows && batchChangesRolloutWindows.length > 0 ? (
+                    <small>
+                        {action.dropdownDescription} <br />
+                        <b>
+                            Note: Rollout windows have been set up by the admin. This means that some of the selected
+                            changesets won't be processed until a time in the future.
+                        </b>{' '}
+                    </small>
+                ) : (
+                    <small>{action.dropdownDescription}</small>
+                )}
             </Text>
         </MenuItem>
     )
