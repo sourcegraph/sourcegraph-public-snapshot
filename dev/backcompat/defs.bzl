@@ -32,7 +32,7 @@ PATCH_GO_TEST = """_sed_binary="sed"
 if [ "$(uname)" == "Darwin" ]; then
     _sed_binary="gsed"
 fi
-$_sed_binary -i "s/func {}/ func _{}/g" {}/*.go
+$_sed_binary -i "s/func {}/func _{}/g" {}/*.go
 """
 
 # Assemble go test patches, based on the currently defined version.
