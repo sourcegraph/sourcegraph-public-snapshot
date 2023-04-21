@@ -16,12 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type OwnSignalStore interface {
+type RecentContributionSignalStore interface {
 	AddCommit(ctx context.Context, commit Commit) error
 	FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentAuthor, error)
 }
 
-func OwnSignalsStoreWith(other basestore.ShareableStore) OwnSignalStore {
+func RecentContributionSignalStoreWith(other basestore.ShareableStore) RecentContributionSignalStore {
 	return &ownSignalStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 

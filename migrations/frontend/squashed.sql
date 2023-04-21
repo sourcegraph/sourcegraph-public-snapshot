@@ -3886,7 +3886,6 @@ CREATE TABLE repo_paths (
     id integer NOT NULL,
     repo_id integer NOT NULL,
     absolute_path text NOT NULL,
-    is_dir boolean NOT NULL,
     parent_id integer
 );
 

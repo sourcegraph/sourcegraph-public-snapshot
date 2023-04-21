@@ -21142,21 +21142,8 @@
           "Comment": ""
         },
         {
-          "Name": "is_dir",
-          "Index": 4,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "parent_id",
-          "Index": 5,
+          "Index": 4,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",

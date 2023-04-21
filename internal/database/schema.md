@@ -3187,7 +3187,6 @@ Foreign-key constraints:
  id            | integer |           | not null | nextval('repo_paths_id_seq'::regclass)
  repo_id       | integer |           | not null | 
  absolute_path | text    |           | not null | 
- is_dir        | boolean |           | not null | 
  parent_id     | integer |           |          | 
 Indexes:
     "repo_paths_pkey" PRIMARY KEY, btree (id)

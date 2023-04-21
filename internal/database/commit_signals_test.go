@@ -21,7 +21,7 @@ func TestOwnSignalStore_AddCommit(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := OwnSignalsStoreWith(db)
+	store := RecentContributionSignalStoreWith(db)
 
 	ctx := context.Background()
 	repo := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
