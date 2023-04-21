@@ -19,18 +19,23 @@ import { isDefined } from '@sourcegraph/common'
 
 import { ENVIRONMENT_CONFIG, IS_DEVELOPMENT, IS_PRODUCTION } from '../utils'
 
+import { htmlIndexPlugin } from './htmlIndexPlugin'
 import { manifestPlugin } from './manifestPlugin'
 
 const isEnterpriseBuild = ENVIRONMENT_CONFIG.ENTERPRISE
+const isSourcegraphApp = ENVIRONMENT_CONFIG.SOURCEGRAPH_APP
 const omitSlowDeps = ENVIRONMENT_CONFIG.DEV_WEB_BUILDER_OMIT_SLOW_DEPS
 
 export const BUILD_OPTIONS: esbuild.BuildOptions = {
     entryPoints: {
         // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
         // strict superset of the OSS entrypoint.
-        'scripts/app': isEnterpriseBuild
+        'scripts/app': isSourcegraphApp
+            ? path.join(ROOT_PATH, 'client/web/src/enterprise/app-main.tsx')
+            : isEnterpriseBuild
             ? path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx')
             : path.join(ROOT_PATH, 'client/web/src/main.tsx'),
+        'scripts/shell': isSourcegraphApp ? path.join(ROOT_PATH, 'client/web/src/enterprise/app-shell.tsx') : undefined,
     },
     bundle: true,
     minify: IS_PRODUCTION,
@@ -45,6 +50,7 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     plugins: [
         stylePlugin,
         manifestPlugin,
+        isSourcegraphApp ? htmlIndexPlugin : null,
         packageResolutionPlugin({
             path: require.resolve('path-browserify'),
             ...RXJS_RESOLUTIONS,

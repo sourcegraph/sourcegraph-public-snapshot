@@ -51,7 +51,7 @@ import (
 )
 
 var (
-	printLogo = env.MustGetBool("LOGO", deploy.IsApp(), "print Sourcegraph logo upon startup")
+	printLogo = env.MustGetBool("LOGO", false, "print Sourcegraph logo upon startup")
 
 	httpAddr = env.Get("SRC_HTTP_ADDR", func() string {
 		if env.InsecureDev {
