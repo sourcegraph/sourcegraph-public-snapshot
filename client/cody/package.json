@@ -130,7 +130,8 @@
       },
       {
         "command": "cody.settings",
-        "title": "Cody: Settings",
+        "title": "Settings",
+        "group": "Cody",
         "icon": "$(gear)",
         "when": "cody.activated"
       },
@@ -138,6 +139,13 @@
         "command": "cody.focus",
         "title": "Cody: Sign In to Use Cody",
         "when": "!cody.activated"
+      },
+      {
+        "command": "cody.interactive.clear",
+        "title": "Clear & Restart Chat Session",
+        "group": "Cody",
+        "icon": "$(clear-all)",
+        "when": "cody.activated"
       }
     ],
     "keybindings": [
@@ -226,11 +234,15 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.focus",
           "when": "!cody.activated"
         }
       ],
       "view/title": [
+        {
+          "command": "cody.interactive.clear",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation"
+        },
         {
           "command": "cody.settings",
           "when": "view == cody.chat && cody.activated",
