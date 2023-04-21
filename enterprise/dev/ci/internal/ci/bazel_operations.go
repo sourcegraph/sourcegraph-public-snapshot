@@ -81,11 +81,17 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bk.Agent("queue", "bazel"),
 	}
 
-	bazelRawCmd := bazelRawCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
+	runTargets := []string{
+		"//client/web:bundlesize-report",
+	}
+
+	bazelTestCmd := bazelRawCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
+	bazelRunCmd := bazelRawCmd(fmt.Sprintf("run %s", strings.Join(runTargets, " ")))
 	cmds = append(
 		cmds,
 		// TODO(JH): run server image for end-to-end tests on SOURCEGRAPH_BASE_URL similar to run-bazel-server.sh.
-		bk.RawCmd(bazelRawCmd),
+		bk.RawCmd(bazelTestCmd),
+		bk.RawCmd(bazelRunCmd),
 	)
 
 	return func(pipeline *bk.Pipeline) {
