@@ -2055,8 +2055,8 @@ build_test(
     ],
 )
 
-bundlesize_bin.bundlesize_test(
-    name = "bundlesize_test",
+bundlesize_bin.bundlesize_binary(
+    name = "bundlesize-report",
     args = [
         "--config",
         "$(location bundlesize.config.js)",
@@ -2069,5 +2069,4 @@ bundlesize_bin.bundlesize_test(
     env = {
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle-enterprise)",
     },
-    flaky = True,
 )
