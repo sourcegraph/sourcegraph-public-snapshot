@@ -84,16 +84,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.configurationChangeEvent.fire()
     }
 
+    public clearAndRestartSession(): void {
+        this.createNewChatID()
+        this.cancelCompletion()
+        this.isMessageInProgress = false
+        this.transcript.reset()
+        this.sendTranscript()
+        this.sendChatHistory()
+    }
+
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
                 this.publishContextStatus()
                 this.publishConfig()
                 this.sendTranscript()
-                this.sendChatHistory()
-                break
-            case 'reset':
-                this.onResetChat()
                 this.sendChatHistory()
                 break
             case 'submit':
@@ -201,14 +206,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private cancelCompletion(): void {
         this.cancelCompletionCallback?.()
         this.cancelCompletionCallback = null
-    }
-
-    private onResetChat(): void {
-        this.createNewChatID()
-        this.cancelCompletion()
-        this.isMessageInProgress = false
-        this.transcript.reset()
-        this.sendTranscript()
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {

@@ -103,15 +103,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         setView('login')
     }, [vscodeAPI])
 
-    const onResetClick = useCallback(() => {
-        setView('chat')
-        setDebugLog([])
-        setFormInput('')
-        setMessageInProgress(null)
-        setTranscript([])
-        vscodeAPI.postMessage({ command: 'reset' })
-    }, [vscodeAPI])
-
     if (!view) {
         return <LoadingPage />
     }
@@ -122,15 +113,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {view === 'login' && (
                 <Login onLogin={onLogin} isValidLogin={isValidLogin} serverEndpoint={config?.serverEndpoint} />
             )}
-            {view && view !== 'login' && (
-                <NavBar
-                    view={view}
-                    setView={setView}
-                    devMode={Boolean(config?.debug)}
-                    onResetClick={onResetClick}
-                    showResetButton={transcript.length > 0}
-                />
-            )}
+            {view && view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
             {errorMessage && (
                 <div className="error">
                     Error: {errorMessage}
