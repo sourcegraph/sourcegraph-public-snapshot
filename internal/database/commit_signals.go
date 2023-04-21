@@ -2,14 +2,11 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"hash/fnv"
 	"path"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -18,11 +15,11 @@ import (
 
 type RecentContributionSignalStore interface {
 	AddCommit(ctx context.Context, commit Commit) error
-	FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentAuthor, error)
+	FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentContributorSummary, error)
 }
 
 func RecentContributionSignalStoreWith(other basestore.ShareableStore) RecentContributionSignalStore {
-	return &ownSignalStore{Store: basestore.NewWithHandle(other.Handle())}
+	return &recentContributionSignalStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
 type Commit struct {
@@ -34,33 +31,49 @@ type Commit struct {
 	FilesChanged []string
 }
 
-type RecentAuthor struct {
+type RecentContributorSummary struct {
 	AuthorName        string
 	AuthorEmail       string
 	ContributionCount int
 }
 
-type ownSignalStore struct {
-	logger log.Logger
+type recentContributionSignalStore struct {
 	*basestore.Store
 }
 
-// TODO: Use one query for author.
+const commitAuthorInsertFmtstr = `
+	WITH already_exists (id) AS (
+		SELECT id
+		FROM commit_authors
+		WHERE name = %s
+		AND email = %s
+	),
+	need_to_insert (id) AS (
+		INSERT INTO commit_authors (name, email)
+		VALUES (%s, %s)
+		ON CONFLICT (name, email) DO NOTHING
+		RETURNING id
+	)
+	SELECT id FROM already_exists
+	UNION ALL
+	SELECT id FROM need_to_insert
+`
 
-func (s *ownSignalStore) ensureAuthor(ctx context.Context, commit Commit) (int, error) {
+// ensureAuthor makes sure the that commit author designated by name and email
+// exists in the `commit_authors` table, and returns its ID.
+func (s *recentContributionSignalStore) ensureAuthor(ctx context.Context, commit Commit) (int, error) {
 	db := s.Store
 	var authorID int
-	err := db.QueryRow(
+	if err := db.QueryRow(
 		ctx,
-		sqlf.Sprintf(`SELECT id FROM commit_authors WHERE email = %s AND name = %s`, commit.AuthorEmail, commit.AuthorName),
-	).Scan(&authorID)
-	if err == sql.ErrNoRows {
-		err = db.QueryRow(
-			ctx,
-			sqlf.Sprintf(`INSERT INTO commit_authors (email, name) VALUES (%s, %s) RETURNING id`, commit.AuthorEmail, commit.AuthorName),
-		).Scan(&authorID)
-	}
-	if err != nil {
+		sqlf.Sprintf(
+			commitAuthorInsertFmtstr,
+			commit.AuthorName,
+			commit.AuthorEmail,
+			commit.AuthorName,
+			commit.AuthorEmail,
+		),
+	).Scan(&authorID); err != nil {
 		return 0, err
 	}
 	return authorID, nil
@@ -95,7 +108,7 @@ const pathInsertFmtstr = `
 //
 // The result int slice is guaranteed to be in order corresponding to the order
 // of `commit.FilesChanged`.
-func (s *ownSignalStore) ensureRepoPaths(ctx context.Context, commit Commit) ([]int, error) {
+func (s *recentContributionSignalStore) ensureRepoPaths(ctx context.Context, commit Commit) ([]int, error) {
 	db := s.Store
 	// compute all the ancestor paths for all changed files in a commit
 	var paths []string
@@ -172,7 +185,7 @@ const insertRecentContributorSignalFmtstr = `
 // The aggregate signals in `own_aggregate_recent_contribution` are updated atomically
 // for each new signal appearing in `own_signal_recent_contribution` by using
 // a trigger: `update_own_aggregate_recent_contribution`.
-func (s *ownSignalStore) AddCommit(ctx context.Context, commit Commit) error {
+func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Commit) error {
 	db := s.Store
 	// Get or create commit author:
 	authorID, err := s.ensureAuthor(ctx, commit)
@@ -214,8 +227,16 @@ const findRecentContributorsFmtstr = `
 	ORDER BY 3 DESC
 `
 
-func (s *ownSignalStore) FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentAuthor, error) {
-	var authors []RecentAuthor
+// FindRecentAuthors returns all recent authors for given `repoID` and `path`.
+// Since the recent contributor signal aggregate is computed within `AddCommit`
+// This just looks up `own_aggregate_recent_contribution` associated with given
+// repo and path, and pulls all the related authors.
+// Notes:
+// - `path` has not forward slash at the beginning, example: "dir1/dir2/file.go", "file2.go".
+// - Empty string `path` designates repo root (so all contributions for the whole repo).
+// - TODO: Need to support limit & offset here.
+func (s *recentContributionSignalStore) FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentContributorSummary, error) {
+	var contributions []RecentContributorSummary
 	q := sqlf.Sprintf(findRecentContributorsFmtstr, repoID, path)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -223,11 +244,11 @@ func (s *ownSignalStore) FindRecentAuthors(ctx context.Context, repoID api.RepoI
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var a RecentAuthor
-		if err := rows.Scan(&a.AuthorName, &a.AuthorEmail, &a.ContributionCount); err != nil {
+		var rcs RecentContributorSummary
+		if err := rows.Scan(&rcs.AuthorName, &rcs.AuthorEmail, &rcs.ContributionCount); err != nil {
 			return nil, err
 		}
-		authors = append(authors, a)
+		contributions = append(contributions, rcs)
 	}
-	return authors, nil
+	return contributions, nil
 }

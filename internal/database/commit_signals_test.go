@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestOwnSignalStore_AddCommit(t *testing.T) {
+func TestRecentContributorsSignalStore(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -59,7 +59,7 @@ func TestOwnSignalStore_AddCommit(t *testing.T) {
 		}
 	}
 
-	for p, w := range map[string][]RecentAuthor{
+	for p, w := range map[string][]RecentContributorSummary{
 		"dir": {
 			{
 				AuthorName:        "alice",
@@ -77,6 +77,18 @@ func TestOwnSignalStore_AddCommit(t *testing.T) {
 				AuthorName:        "bob",
 				AuthorEmail:       "bob@example.com",
 				ContributionCount: 1,
+			},
+		},
+		"": {
+			{
+				AuthorName: "alice",
+				AuthorEmail: "alice@example.com",
+				ContributionCount: 7,
+			},
+			{
+				AuthorName: "bob",
+				AuthorEmail: "bob@example.com",
+				ContributionCount: 3,
 			},
 		},
 	} {

@@ -40,9 +40,9 @@ CREATE TABLE IF NOT EXISTS own_aggregate_recent_contribution (
     contributions_count INTEGER DEFAULT 0
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS own_aggregate_recent_contribution_author_file
+CREATE UNIQUE INDEX IF NOT EXISTS own_aggregate_recent_contribution_file_author
 ON own_aggregate_recent_contribution
-USING btree (commit_author_id, changed_file_path_id);
+USING btree (changed_file_path_id, commit_author_id);
 
 CREATE OR REPLACE FUNCTION update_own_aggregate_recent_contribution() RETURNS TRIGGER AS $$
 BEGIN
