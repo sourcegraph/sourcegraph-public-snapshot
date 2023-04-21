@@ -67,7 +67,7 @@ func newExternalHTTPHandler(
 	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(logger, db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, logger, apiHandler)                                // API accepts access tokens
-	apiHandler = requestclient.HTTPMiddleware(apiHandler)
+	apiHandler = requestclient.ExternalHTTPMiddleware(apiHandler, envvar.SourcegraphDotComMode())
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 	if envvar.SourcegraphDotComMode() {
 		apiHandler = deviceid.Middleware(apiHandler)
@@ -90,7 +90,7 @@ func newExternalHTTPHandler(
 	appHandler = middleware.OpenGraphMetadataMiddleware(db.FeatureFlags(), appHandler)
 	appHandler = session.CookieMiddleware(logger, db, appHandler)                  // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, logger, appHandler) // app accepts access tokens
-	appHandler = requestclient.HTTPMiddleware(appHandler)
+	appHandler = requestclient.ExternalHTTPMiddleware(appHandler, envvar.SourcegraphDotComMode())
 	if envvar.SourcegraphDotComMode() {
 		appHandler = deviceid.Middleware(appHandler)
 	}
