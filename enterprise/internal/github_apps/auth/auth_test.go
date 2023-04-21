@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -115,6 +116,7 @@ func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 	installationID := 1
 	appAuthenticator := &mockAuthenticator{}
 	token := NewInstallationAccessToken(
+		&url.URL{Host: "https://github.com"},
 		installationID,
 		appAuthenticator,
 	)
@@ -131,6 +133,7 @@ func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 	appAuthenticator := &mockAuthenticator{}
 	token := NewInstallationAccessToken(
+		&url.URL{Host: "https://github.com"},
 		1,
 		appAuthenticator,
 	)
