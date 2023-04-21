@@ -8,6 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,6 +44,47 @@ PMm9gm8SnAhC/Tl3OY8prODLr0I5Ye3X27v0TvWp5xu6DaDSBF032hDiic98Ob8m
 cEoKFPr8HjXXUVCa3Q84tf9nGb4iUFslRSbS6RCP6Nm+JsfbCTtzyglYuPRKITGm
 jSzka5UER3Dj1lSLMk9DkU+jrBxUsFeeiQOYhzQBaZxguvwYRIYHpg==
 -----END RSA PRIVATE KEY-----`
+
+func TestCreateEnterpriseFromConnection(t *testing.T) {
+	t.Run("returns OAuthBearerToken when GitHubAppDetails is nil", func(t *testing.T) {
+		ghAppsStore := store.NewMockGitHubAppsStore()
+		fromConnection := CreateEnterpriseFromConnection(ghAppsStore)
+
+		conn := &schema.GitHubConnection{
+			Token: "abc123",
+		}
+
+		authenticator, err := fromConnection(context.Background(), conn)
+		require.NoError(t, err)
+		assert.IsType(t, &auth.OAuthBearerToken{}, authenticator)
+		assert.Equal(t, "abc123", authenticator.(*auth.OAuthBearerToken).Token)
+	})
+
+	t.Run("returns InstallationAccessToken", func(t *testing.T) {
+		installationID := 1
+		appID := 2
+		ghApp := &types.GitHubApp{
+			AppID:      appID,
+			PrivateKey: testPrivateKey,
+		}
+		ghAppsStore := store.NewMockGitHubAppsStore()
+		ghAppsStore.GetByAppIDFunc.SetDefaultReturn(ghApp, nil)
+		fromConnection := CreateEnterpriseFromConnection(ghAppsStore)
+
+		conn := &schema.GitHubConnection{
+			GitHubAppDetails: &schema.GitHubAppDetails{
+				InstallationID: installationID,
+				AppID:          appID,
+			},
+		}
+
+		authenticator, err := fromConnection(context.Background(), conn)
+		require.NoError(t, err)
+		assert.IsType(t, &installationAccessToken{}, authenticator)
+		assert.Equal(t, installationID,
+			authenticator.(*installationAccessToken).installationID)
+	})
+}
 
 func TestGitHubAppAuthenticator_Authenticate(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
