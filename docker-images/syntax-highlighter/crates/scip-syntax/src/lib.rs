@@ -56,4 +56,9 @@ mod test {
     fn test_generate_ctags_zig_globals() {
         generate_tags_and_snapshot!("../testdata/globals.zig");
     }
+
+    #[test]
+    fn test_generate_ctags_python_globals() {
+        generate_tags_and_snapshot!("../testdata/globals.py");
+    }
 }
