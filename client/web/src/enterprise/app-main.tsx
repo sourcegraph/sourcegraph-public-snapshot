@@ -15,7 +15,6 @@ import '@sourcegraph/shared/src/polyfills'
 import '../initBuildInfo'
 import '../monitoring/initMonitoring'
 
-import { Command } from '@tauri-apps/api/shell'
 import { createRoot } from 'react-dom/client'
 
 import { logger } from '@sourcegraph/common'

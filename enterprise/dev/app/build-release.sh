@@ -2,8 +2,6 @@
 
 set -eu
 
-ROOTDIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")"/../../..)"
-GORELEASER_CROSS_VERSION=v1.20.0
 GCLOUD_APP_CREDENTIALS_FILE=${GCLOUD_APP_CREDENTIALS_FILE-$HOME/.config/gcloud/application_default_credentials.json}
 
 if [ -z "${SKIP_BUILD_WEB-}" ]; then
