@@ -3,7 +3,7 @@
 # This script builds the symbols docker image.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
-set -eu
+set -eux
 
 OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
@@ -12,7 +12,12 @@ cleanup() {
 trap cleanup EXIT
 
 echo "--- bazel build"
-./dev/ci/bazel.sh build //enterprise/cmd/symbols \
+bazel \
+  --bazelrc=.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  build \
+  //enterprise/cmd/symbols \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
   --platforms @zig_sdk//platform:linux_amd64 \
