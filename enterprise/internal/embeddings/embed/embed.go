@@ -184,20 +184,3 @@ type FileLister interface {
 type FileReader interface {
 	Read(context.Context, string) ([]byte, error)
 }
-
-type funcReader func(ctx context.Context, fileName string) ([]byte, error)
-
-func (f funcReader) Read(ctx context.Context, fileName string) ([]byte, error) {
-	return f(ctx, fileName)
-}
-
-type staticLister []FileEntry
-
-func (l staticLister) List(_ context.Context) ([]FileEntry, error) {
-	return l, nil
-}
-
-type listReader struct {
-	FileReader
-	FileLister
-}

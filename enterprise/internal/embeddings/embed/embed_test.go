@@ -155,3 +155,20 @@ func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts
 	}
 	return make([]float32, len(texts)*dimensions), nil
 }
+
+type funcReader func(ctx context.Context, fileName string) ([]byte, error)
+
+func (f funcReader) Read(ctx context.Context, fileName string) ([]byte, error) {
+	return f(ctx, fileName)
+}
+
+type staticLister []FileEntry
+
+func (l staticLister) List(_ context.Context) ([]FileEntry, error) {
+	return l, nil
+}
+
+type listReader struct {
+	FileReader
+	FileLister
+}
