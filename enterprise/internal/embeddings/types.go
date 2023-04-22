@@ -87,13 +87,8 @@ func (o *OldEmbeddingIndex) ToNewIndex() EmbeddingIndex {
 }
 
 type EmbedRepoStats struct {
-	// Repo name
-	RepoName api.RepoName
-	Revision api.CommitID
-
+	Duration       time.Duration
 	HasRanks       bool
-	InputFileCount int
-
 	CodeIndexStats EmbedFilesStats
 	TextIndexStats EmbedFilesStats
 }

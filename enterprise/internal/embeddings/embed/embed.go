@@ -37,6 +37,8 @@ func EmbedRepo(
 	readLister FileReadLister,
 	getDocumentRanks ranksGetter,
 ) (*embeddings.RepoEmbeddingIndex, *embeddings.EmbedRepoStats, error) {
+	start := time.Now()
+
 	allFiles, err := readLister.List(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -75,13 +77,12 @@ func EmbedRepo(
 	}
 
 	stats := &embeddings.EmbedRepoStats{
-		RepoName:       repoName,
-		Revision:       revision,
+		Duration:       time.Since(start),
 		HasRanks:       len(ranks.Paths) > 0,
-		InputFileCount: len(allFiles),
 		CodeIndexStats: codeIndexStats,
 		TextIndexStats: textIndexStats,
 	}
+
 	return index, stats, nil
 }
 
