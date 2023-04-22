@@ -41,16 +41,12 @@ func EmbedRepo(
 		return nil, err
 	}
 
-	codeFileNames, textFileNames := []string{}, []string{}
+	var codeFileNames, textFileNames []FileEntry
 	for _, file := range allFiles {
-		if file.Size > maxFileSize {
-			continue
-		}
-
 		if isValidTextFile(file.Name) {
-			textFileNames = append(textFileNames, file.Name)
+			textFileNames = append(textFileNames, file)
 		} else {
-			codeFileNames = append(codeFileNames, file.Name)
+			codeFileNames = append(codeFileNames, file)
 		}
 	}
 
@@ -77,7 +73,7 @@ func EmbedRepo(
 // the embeddings and metadata about the chunks the embeddings correspond to.
 func embedFiles(
 	ctx context.Context,
-	fileNames []string,
+	files []FileEntry,
 	client EmbeddingsClient,
 	excludePatterns []*paths.GlobPattern,
 	splitOptions split.SplitOptions,
@@ -91,10 +87,10 @@ func embedFiles(
 	}
 
 	index := embeddings.EmbeddingIndex{
-		Embeddings:      make([]int8, 0, len(fileNames)*dimensions),
-		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames)),
+		Embeddings:      make([]int8, 0, len(files)*dimensions/2),
+		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(files)/2),
 		ColumnDimension: dimensions,
-		Ranks:           make([]float32, 0, len(fileNames)),
+		Ranks:           make([]float32, 0, len(files)/2),
 	}
 
 	var batch []split.EmbeddableChunk
@@ -133,13 +129,17 @@ func embedFiles(
 		return nil
 	}
 
-	for _, fileName := range fileNames {
+	for _, file := range files {
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
 		if len(index.RowMetadata) > maxEmbeddingVectors {
 			break
 		}
 
-		contentBytes, err := reader.Read(ctx, fileName)
+		if file.Size > maxFileSize {
+			continue
+		}
+
+		contentBytes, err := reader.Read(ctx, file.Name)
 		if err != nil {
 			return embeddings.EmbeddingIndex{}, errors.Wrap(err, "error while reading a file")
 		}
@@ -148,11 +148,11 @@ func embedFiles(
 			continue
 		}
 
-		if isExcludedFilePath(fileName, excludePatterns) {
+		if isExcludedFilePath(file.Name, excludePatterns) {
 			continue
 		}
 
-		for _, chunk := range split.SplitIntoEmbeddableChunks(string(contentBytes), fileName, splitOptions) {
+		for _, chunk := range split.SplitIntoEmbeddableChunks(string(contentBytes), file.Name, splitOptions) {
 			if err := addToBatch(chunk); err != nil {
 				return embeddings.EmbeddingIndex{}, err
 			}
