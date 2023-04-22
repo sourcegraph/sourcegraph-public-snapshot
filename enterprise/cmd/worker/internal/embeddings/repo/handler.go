@@ -79,6 +79,12 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
+	logger.Info(
+		"finished generating repo embeddings",
+		log.String("repoName", repo.Name),
+		log.String("revision", record.Revision),
+	)
+
 	return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
 }
 
