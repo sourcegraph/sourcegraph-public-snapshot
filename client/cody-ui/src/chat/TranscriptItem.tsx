@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ChatUITextAreaProps, EditButtonAction, EditButtonProps, FeedbackButtonsProps } from '../Chat'
+import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps } from '../Chat'
 import { CodySvg } from '../utils/icons'
 
 import { BlinkingCursor } from './BlinkingCursor'
@@ -61,14 +61,14 @@ export const TranscriptItem: React.FunctionComponent<
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
 }) => {
-    let [formInput, setFormInput] = useState<string>(message.displayText ?? '')
+    const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const inputHandler = useCallback(
         (inputValue: string): void => {
             setFormInput(inputValue)
         },
         [setFormInput]
     )
-    let textarea =
+    const textarea =
         TextArea && beingEdited && editButtonOnSubmit ? (
             <TextArea
                 className={classNames(styles.chatInput)}
@@ -81,7 +81,15 @@ export const TranscriptItem: React.FunctionComponent<
                     inputHandler(value)
                 }}
                 onKeyDown={event => {
-                    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                    if (event.key === 'Escape') setBeingEdited(false)
+
+                    if (
+                        event.key === 'Enter' &&
+                        !event.shiftKey &&
+                        !event.nativeEvent.isComposing &&
+                        formInput &&
+                        formInput.trim()
+                    ) {
                         event.preventDefault()
                         event.stopPropagation()
                         setBeingEdited(false)
@@ -117,8 +125,7 @@ export const TranscriptItem: React.FunctionComponent<
                         TextArea &&
                         message.speaker === 'human' && (
                             <EditButtonContainer
-                                className={styles.EditButtonContainer}
-                                editButtonOnSubmit={editButtonOnSubmit}
+                                className={styles.FeedbackEditButtonsContainer}
                                 messageBeingEdited={beingEdited}
                                 setMessageBeingEdited={setBeingEdited}
                             />
@@ -128,7 +135,7 @@ export const TranscriptItem: React.FunctionComponent<
                         feedbackButtonsOnSubmit &&
                         message.speaker === 'assistant' && (
                             <FeedbackButtonsContainer
-                                className={styles.FeedbackButtonsContainer}
+                                className={styles.FeedbackEditButtonsContainer}
                                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                             />
                         )}

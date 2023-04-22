@@ -57,18 +57,11 @@ export interface ChatUISubmitButtonProps {
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
-export enum EditButtonAction {
-    Edit = 'edit',
-    Accept = 'accept',
-    Cancel = 'cancel',
-}
-
 export interface EditButtonProps {
     className: string
     disabled?: boolean
     messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
-    editButtonOnSubmit: (text: string) => void
 }
 
 export interface FeedbackButtonsProps {
@@ -151,6 +144,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             ) {
                 event.preventDefault()
                 event.stopPropagation()
+                setMessageBeingEdited(false)
                 onChatSubmit()
             }
             // Loop through input history on up arrow press
