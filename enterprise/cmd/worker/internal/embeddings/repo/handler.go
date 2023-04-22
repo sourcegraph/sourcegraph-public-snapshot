@@ -6,6 +6,7 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -66,6 +67,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	}
 
 	embeddingsClient := embed.NewEmbeddingsClient()
+	reader := &revisionReader{
+		repo:      repo.Name,
+		revision:  record.Revision,
+		gitserver: h.gitserverClient,
+	}
 
 	config := conf.Get().Embeddings
 	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
@@ -79,9 +85,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		excludedGlobPatterns,
 		embeddingsClient,
 		splitOptions,
-		func(ctx context.Context, fileName string) ([]byte, error) {
-			return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
-		},
+		reader,
 		getDocumentRanks,
 	)
 	if err != nil {
@@ -89,4 +93,14 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	}
 
 	return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
+}
+
+type revisionReader struct {
+	repo      api.RepoName
+	revision  api.CommitID
+	gitserver gitserver.Client
+}
+
+func (r *revisionReader) Read(ctx context.Context, fileName string) ([]byte, error) {
+	return r.gitserver.ReadFile(ctx, nil, r.repo, r.revision, fileName)
 }
