@@ -135,6 +135,7 @@ func embedFiles(
 			return errors.Wrap(err, "error while getting embeddings")
 		}
 		index.Embeddings = append(index.Embeddings, embeddings.Quantize(batchEmbeddings)...)
+
 		batch = batch[:0] // reset batch
 		return nil
 	}
@@ -149,13 +150,15 @@ func embedFiles(
 	}
 
 	var (
-		hitMaxEmbeddingVectors bool
-		skipStats              = make(SkipStats)
+		statsHitMax        bool
+		statsSkipped       = make(SkipStats)
+		statsSkippedBytes  int
+		statsEmbeddedBytes int
 	)
 	for _, file := range files {
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
 		if len(index.RowMetadata) >= maxEmbeddingVectors {
-			hitMaxEmbeddingVectors = true
+			statsHitMax = true
 			break
 		}
 
@@ -173,7 +176,8 @@ func embedFiles(
 		}
 
 		if embeddable, skipReason := isEmbeddableFileContent(contentBytes); !embeddable {
-			skipStats.Add(skipReason)
+			statsSkipped.Add(skipReason)
+			statsSkippedBytes += len(contentBytes)
 			continue
 		}
 
@@ -181,6 +185,7 @@ func embedFiles(
 			if err := addToBatch(chunk); err != nil {
 				return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
 			}
+			statsEmbeddedBytes += len(chunk.Content)
 		}
 	}
 
@@ -190,14 +195,11 @@ func embedFiles(
 	}
 
 	stats := embeddings.EmbedFilesStats{
-		InputFileCount:                 len(files),
-		Dimensions:                     dimensions,
-		Duration:                       time.Since(start),
-		NoSplitTokensThreshold:         splitOptions.NoSplitTokensThreshold,
-		ChunkTokensThreshold:           splitOptions.ChunkTokensThreshold,
-		ChunkEarlySplitTokensThreshold: splitOptions.ChunkEarlySplitTokensThreshold,
-		MaxEmbeddingVectors:            maxEmbeddingVectors,
-		HitMaxEmbeddingVectors:         hitMaxEmbeddingVectors,
+		Duration:         time.Since(start),
+		EmbeddedBytes:    statsEmbeddedBytes,
+		SkippedBytes:     int(0),
+		SkippedReasons:   statsSkipped.ToMap(),
+		HitMaxEmbeddings: statsHitMax,
 	}
 
 	return index, stats, nil

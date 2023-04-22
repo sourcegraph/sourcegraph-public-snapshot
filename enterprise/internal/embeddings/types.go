@@ -63,16 +63,18 @@ type EmbedRepoStats struct {
 }
 
 type EmbedFilesStats struct {
-	InputFileCount int
-	Dimensions     int
+	// The time it took to generate these embeddings
+	Duration time.Duration
 
-	// Options
-	NoSplitTokensThreshold         int
-	ChunkTokensThreshold           int
-	ChunkEarlySplitTokensThreshold int
-	MaxEmbeddingVectors            int
+	// The sum of the size of the contents of successful embeddings
+	EmbeddedBytes int
 
-	Duration               time.Duration
-	HitMaxEmbeddingVectors bool
-	SkippedReasons         map[string]int
+	// The sum of the size of files that were skipped for any reason
+	SkippedBytes int
+
+	// Counts of reasons files were skipped
+	SkippedReasons map[string]int
+
+	// Whether we stopped early because we hit the embedding count limit
+	HitMaxEmbeddings bool
 }
