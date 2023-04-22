@@ -20,7 +20,7 @@ export const Transcript: React.FunctionComponent<
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         CopyButtonContainer?: React.FunctionComponent<CopyButtonProps>
-        copyButtonOnSubmit?: (text: string) => void
+        copyButtonOnSubmit: (text: string) => void
     } & TranscriptItemClassNames
 > = ({
     transcript,
@@ -100,6 +100,7 @@ export const Transcript: React.FunctionComponent<
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
                     showFeedbackButtons={false}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
                 />
             )}
         </div>

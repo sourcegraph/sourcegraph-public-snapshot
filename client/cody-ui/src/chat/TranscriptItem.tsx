@@ -24,10 +24,6 @@ export interface TranscriptItemClassNames {
     transcriptActionClassName?: string
 }
 
-const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text).catch(err => console.error('Failed to copy text: ', err))
-}
-
 /**
  * A single message in the chat trans cript.
  */
@@ -40,7 +36,7 @@ export const TranscriptItem: React.FunctionComponent<
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
         CopyButtonContainer?: React.FunctionComponent<CopyButtonProps>
-        copyButtonOnSubmit?: (text: string) => void
+        copyButtonOnSubmit: (text: string) => void
     } & TranscriptItemClassNames
 > = ({
     message,
@@ -101,7 +97,7 @@ export const TranscriptItem: React.FunctionComponent<
                 <CodeBlocks
                     displayText={message.displayText}
                     copyButtonClassName={codeBlocksCopyButtonClassName}
-                    CopyButtonProps={{ copyButtonOnSubmit: handleCopy }}
+                    CopyButtonProps={{ copyButtonOnSubmit: copyButtonOnSubmit }}
                 />
             ) : inProgress ? (
                 <BlinkingCursor />
