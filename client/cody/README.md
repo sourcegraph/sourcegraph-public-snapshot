@@ -1,31 +1,10 @@
-<p align="center">
-<a href="https://about.sourcegraph.com/cody" target="_blank">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-white.svg" width="300">
-  <source media="(prefers-color-scheme: light)" srcset="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-black.svg" width="300">
-  <img src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-black.png" width="300">
-</picture>
-</a>
-</p>
-
-<div align="center">
-    <a href="https://docs.sourcegraph.com/cody">Docs</a> •
-    <a href="https://discord.gg/s2qDtYGnAE">Discord</a> •
-    <a href="https://twitter.com/sourcegraph">Twitter</a>
-    <br /><br />
-    <a href="https://srcgr.ph/discord">
-        <img src="https://img.shields.io/discord/969688426372825169?color=5765F2" alt="Discord" />
-    </a>
-    <a href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
-        <img src="https://img.shields.io/vscode-marketplace/v/sourcegraph.cody-ai.svg?label=vs%20marketplace" alt="VS Marketplace" />
-    </a>
-</div>
-
 # Cody: AI code assistant
 
 Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
 
 **Status:** experimental ([join the open beta](https://docs.sourcegraph.com/cody))
+
+[**Full documentation**](https://docs.sourcegraph.com/cody)
 
 ## Features
 
@@ -37,10 +16,9 @@ Cody is an AI code assistant that writes code and answers questions for you by r
 
 ## Usage
 
-### Installation
-
 1. Install the [Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai).
-1. [Join the open beta](https://docs.sourcegraph.com/cody) to get access. Once you're in, follow the rest of the steps on that page to set up Cody.
+1. Open Cody (from the activity bar or by pressing <kbd>Alt+/</kbd>/<kbd>Opt+/</kbd>) and sign in.
+1. Start using it! Read on to learn about the chatbot, fixups, and recipes.
 
 ### 🤖 Chatbot that knows _your_ code
 
