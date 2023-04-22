@@ -6,13 +6,30 @@
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
-  "description": "Your programming sidekick powered by AI and Sourcegraph's code search and intelligence.",
+  "description": "AI code assistant that writes code and answers questions for you",
   "categories": [
-    "Other"
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Education"
   ],
   "keywords": [
-    "developer tools",
-    "ai"
+    "ai",
+    "openai",
+    "anthropic",
+    "assistant",
+    "chatbot",
+    "chat",
+    "refactor",
+    "documentation",
+    "test",
+    "sourcegraph",
+    "codey",
+    "llm",
+    "codegen",
+    "autocomplete",
+    "bot",
+    "model"
   ],
   "repository": {
     "type": "git",
@@ -22,7 +39,14 @@
   "bugs": {
     "url": "https://github.com/sourcegraph/sourcegraph/issues"
   },
-  "homepage": "https://github.com/sourcegraph/sourcegraph#readme",
+  "homepage": "https://docs.sourcegraph.com/cody",
+  "badges": [
+    {
+      "url": "https://img.shields.io/discord/969688426372825169?color=5765F2",
+      "href": "https://srcgr.ph/discord",
+      "description": "Discord"
+    }
+  ],
   "engines": {
     "vscode": "^1.74.0"
   },
