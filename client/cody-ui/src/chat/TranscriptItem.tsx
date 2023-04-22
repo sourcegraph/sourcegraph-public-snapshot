@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { FeedbackButtonsProps } from '../Chat'
+import { FeedbackButtonsProps, CopyButtonProps } from '../Chat'
 import { CodySvg } from '../utils/icons'
 
 import { BlinkingCursor } from './BlinkingCursor'
@@ -24,6 +24,10 @@ export interface TranscriptItemClassNames {
     transcriptActionClassName?: string
 }
 
+const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text).catch(err => console.error('Failed to copy text: ', err))
+}
+
 /**
  * A single message in the chat trans cript.
  */
@@ -35,6 +39,8 @@ export const TranscriptItem: React.FunctionComponent<
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
+        CopyButtonContainer?: React.FunctionComponent<CopyButtonProps>
+        copyButtonOnSubmit?: (text: string) => void
     } & TranscriptItemClassNames
 > = ({
     message,
@@ -48,6 +54,8 @@ export const TranscriptItem: React.FunctionComponent<
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
+    copyButtonOnSubmit,
+    CopyButtonContainer,
 }) => (
     <div
         className={classNames(
@@ -90,7 +98,11 @@ export const TranscriptItem: React.FunctionComponent<
         )}
         <div className={classNames(styles.content)}>
             {message.displayText ? (
-                <CodeBlocks displayText={message.displayText} copyButtonClassName={codeBlocksCopyButtonClassName} />
+                <CodeBlocks
+                    displayText={message.displayText}
+                    copyButtonClassName={codeBlocksCopyButtonClassName}
+                    CopyButtonProps={{ copyButtonOnSubmit: handleCopy }}
+                />
             ) : inProgress ? (
                 <BlinkingCursor />
             ) : null}

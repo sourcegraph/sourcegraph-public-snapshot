@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { FeedbackButtonsProps } from '../Chat'
+import { FeedbackButtonsProps, CopyButtonProps } from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
@@ -19,6 +19,8 @@ export const Transcript: React.FunctionComponent<
         className?: string
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
+        CopyButtonContainer?: React.FunctionComponent<CopyButtonProps>
+        copyButtonOnSubmit?: (text: string) => void
     } & TranscriptItemClassNames
 > = ({
     transcript,
@@ -32,6 +34,8 @@ export const Transcript: React.FunctionComponent<
     transcriptActionClassName,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
+    CopyButtonContainer,
+    copyButtonOnSubmit,
 }) => {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
@@ -81,6 +85,8 @@ export const Transcript: React.FunctionComponent<
                     transcriptActionClassName={transcriptActionClassName}
                     FeedbackButtonsContainer={FeedbackButtonsContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    CopyButtonContainer={CopyButtonContainer}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
                     showFeedbackButtons={index > 0 && transcript.length - index === 1}
                 />
             ))}
