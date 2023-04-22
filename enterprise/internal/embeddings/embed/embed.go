@@ -150,7 +150,7 @@ func embedFiles(
 
 	var (
 		hitMaxEmbeddingVectors bool
-		skipCounts             = map[SkipReason]int{}
+		skipStats              = make(SkipStats)
 	)
 	for _, file := range files {
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
@@ -173,7 +173,7 @@ func embedFiles(
 		}
 
 		if embeddable, skipReason := isEmbeddableFileContent(contentBytes); !embeddable {
-			skipCounts[skipReason] += 1
+			skipStats.Add(skipReason)
 			continue
 		}
 
