@@ -98,7 +98,9 @@ export const TranscriptItem: React.FunctionComponent<
                     CopyButtonProps={{ copyButtonOnSubmit: copyButtonOnSubmit }}
                 />
             ) : inProgress ? (
-                <BlinkingCursor />
+                <span>
+                    Fetching context... <BlinkingCursor />
+                </span>
             ) : null}
         </div>
     </div>

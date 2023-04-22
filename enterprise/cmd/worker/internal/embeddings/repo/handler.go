@@ -79,7 +79,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		excludedGlobPatterns,
 		embeddingsClient,
 		splitOptions,
-		func(fileName string) ([]byte, error) {
+		func(ctx context.Context, fileName string) ([]byte, error) {
 			return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
 		},
 		getDocumentRanks,

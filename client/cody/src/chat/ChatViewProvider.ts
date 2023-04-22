@@ -37,7 +37,7 @@ export async function isValidLogin(
 
 type Config = Pick<
     ConfigurationWithAccessToken,
-    'codebase' | 'serverEndpoint' | 'debug' | 'customHeaders' | 'accessToken'
+    'codebase' | 'serverEndpoint' | 'debug' | 'customHeaders' | 'accessToken' | 'useContext'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -84,16 +84,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.configurationChangeEvent.fire()
     }
 
+    public clearAndRestartSession(): void {
+        this.createNewChatID()
+        this.cancelCompletion()
+        this.isMessageInProgress = false
+        this.transcript.reset()
+        this.sendTranscript()
+        this.sendChatHistory()
+    }
+
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
                 this.publishContextStatus()
                 this.publishConfig()
                 this.sendTranscript()
-                this.sendChatHistory()
-                break
-            case 'reset':
-                this.onResetChat()
                 this.sendChatHistory()
                 break
             case 'submit':
@@ -139,8 +144,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     try {
                         const doc = await vscode.workspace.openTextDocument(uri)
                         await vscode.window.showTextDocument(doc)
-                    } catch (error) {
-                        console.error(`Could not open file: ${error}`)
+                    } catch {
+                        // Try to open the file in the sourcegraph view
+                        const sourcegraphInstanceUrl = this.config.serverEndpoint
+                        const sourcegraphWebUrl = new URL(
+                            `/search?q=context:global+file:${message.filePath}`,
+                            sourcegraphInstanceUrl
+                        ).href
+
+                        try {
+                            await vscode.env.openExternal(vscode.Uri.parse(sourcegraphWebUrl))
+                        } catch (error) {
+                            console.error(`Could not open the file: ${error}`)
+                        }
                     }
                 } else {
                     console.error('Could not open file because rootPath is null')
@@ -201,14 +217,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private cancelCompletion(): void {
         this.cancelCompletionCallback?.()
         this.cancelCompletionCallback = null
-    }
-
-    private onResetChat(): void {
-        this.createNewChatID()
-        this.cancelCompletion()
-        this.isMessageInProgress = false
-        this.transcript.reset()
-        this.sendTranscript()
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
@@ -310,6 +318,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             void this.webview?.postMessage({
                 type: 'contextStatus',
                 contextStatus: {
+                    mode: this.config.useContext,
+                    connection: this.codebaseContext.checkEmbeddingsConnection(),
                     codebase: this.config.codebase,
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
                 },

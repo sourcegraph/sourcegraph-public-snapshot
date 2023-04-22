@@ -79,7 +79,7 @@ func TestEmbedRepo(t *testing.T) {
 		}, nil
 	}
 
-	readFile := func(fileName string) ([]byte, error) {
+	readFile := func(_ context.Context, fileName string) ([]byte, error) {
 		content, ok := mockFiles[fileName]
 		if !ok {
 			return nil, errors.Newf("file %s not found", fileName)
