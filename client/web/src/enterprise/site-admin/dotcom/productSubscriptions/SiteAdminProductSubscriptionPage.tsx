@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
+import { gql as apolloGQL, useMutation } from '@apollo/client'
 import { mdiArrowLeft, mdiPlus } from '@mdi/js'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Observable, Subject, NEVER } from 'rxjs'
@@ -23,6 +24,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
+import { CopyableText } from '../../../../components/CopyableText'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import {
@@ -31,6 +33,8 @@ import {
     DotComProductSubscriptionResult,
     ProductLicensesResult,
     ProductLicenseFields,
+    GenerateProductSubscriptionAccessTokenResult,
+    GenerateProductSubscriptionAccessTokenVariables,
 } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
@@ -123,6 +127,13 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
         licenseUpdates.next()
         toggleShowGenerate()
     }, [licenseUpdates, toggleShowGenerate])
+
+    const [
+        generateAccessTokenMutation,
+        { loading: tokenLoading, called: generateTokenCalled, data: tokenData, error: tokenError },
+    ] = useMutation<GenerateProductSubscriptionAccessTokenResult, GenerateProductSubscriptionAccessTokenVariables>(
+        GENERATE_ACCESS_TOKEN_GQL
+    )
 
     const nodeProps: Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'> = {
         showSubscription: false,
@@ -225,6 +236,36 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             noSummaryIfAllNodesVisible={true}
                             updates={licenseUpdates}
                         />
+                    </Card>
+                    <Card className="mt-3">
+                        <CardHeader className="d-flex align-items-center justify-content-between">
+                            Access token
+                            <Button
+                                onClick={() =>
+                                    generateAccessTokenMutation({
+                                        variables: { productSubscriptionID: productSubscription.id },
+                                    })
+                                }
+                                variant="primary"
+                                size="sm"
+                                disabled={tokenLoading}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate access token
+                            </Button>
+                        </CardHeader>
+                        <CardBody>
+                            {tokenLoading && <LoadingSpinner />}
+                            {tokenError && <ErrorAlert className="mt-2" error={tokenError.message} />}
+                            {generateTokenCalled && !tokenLoading && tokenData && (
+                                <CopyableText
+                                    label="Access token"
+                                    secret={true}
+                                    flex={true}
+                                    text={tokenData.dotcom.generateAccessTokenForSubscription.accessToken}
+                                    className="mt-2"
+                                />
+                            )}
+                        </CardBody>
                     </Card>
                 </>
             )}
@@ -357,3 +398,15 @@ function archiveProductSubscription(args: ArchiveProductSubscriptionVariables): 
         })
     )
 }
+
+const GENERATE_ACCESS_TOKEN_GQL = apolloGQL`
+    mutation GenerateProductSubscriptionAccessToken($productSubscriptionID: ID!) {
+        dotcom {
+            generateAccessTokenForSubscription(
+                productSubscriptionID: $productSubscriptionID
+            ) {
+                accessToken
+            }
+        }
+    }
+`

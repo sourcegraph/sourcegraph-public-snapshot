@@ -3626,7 +3626,8 @@ CREATE TABLE product_licenses (
     license_version integer,
     license_tags text[],
     license_user_count integer,
-    license_expires_at timestamp with time zone
+    license_expires_at timestamp with time zone,
+    access_token_sha256 bytea
 );
 
 CREATE TABLE product_subscriptions (
@@ -4965,6 +4966,9 @@ ALTER TABLE ONLY phabricator_repos
     ADD CONSTRAINT phabricator_repos_repo_name_key UNIQUE (repo_name);
 
 ALTER TABLE ONLY product_licenses
+    ADD CONSTRAINT product_licenses_access_token_sha256_unique UNIQUE (access_token_sha256);
+
+ALTER TABLE ONLY product_licenses
     ADD CONSTRAINT product_licenses_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY product_subscriptions
@@ -5454,6 +5458,8 @@ CREATE INDEX permission_sync_jobs_user_id ON permission_sync_jobs USING btree (u
 CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btree (namespace, action);
 
 CREATE INDEX process_after_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (process_after);
+
+CREATE INDEX product_licenses_access_token_sha256_idx ON product_licenses USING btree (access_token_sha256) WHERE (access_token_sha256 IS NOT NULL);
 
 CREATE INDEX registry_extension_releases_registry_extension_id ON registry_extension_releases USING btree (registry_extension_id, release_tag, created_at DESC) WHERE (deleted_at IS NULL);
 

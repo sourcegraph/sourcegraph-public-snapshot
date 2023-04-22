@@ -32,6 +32,22 @@ type DotcomMutation {
         license: ProductLicenseInput!
     ): ProductLicense!
     """
+    Generates an access token for this subscription based on the latest active license on this
+    account. If a token already exists, the existing token is returned.
+
+    It is meant for use for capabilities detection with the productSubscriptionByAccessToken query.
+
+    Only Sourcegraph.com site admins may perform this mutation.
+    FOR INTERNAL USE ONLY.
+    """
+    generateAccessTokenForSubscription(
+        """
+        The product subscription to associate with the access token.
+        """
+        productSubscriptionID: ID!
+    ): ProductSubscriptionAccessToken!
+
+    """
     Archives an existing product subscription.
     Only Sourcegraph.com site admins may perform this mutation.
     FOR INTERNAL USE ONLY.
@@ -53,6 +69,15 @@ type DotcomQuery {
     """
     productSubscription(uuid: String!): ProductSubscription!
     """
+    The access available to the product subscription with the given access token.
+    The returned ProductSubscription may be archived or not associated with an active license.
+
+    Only Sourcegraph.com site admins, the account owners of the product subscription, and
+    specific service accounts may perform this query.
+    FOR INTERNAL USE ONLY.
+    """
+    productSubscriptionByAccessToken(accessToken: String!): ProductSubscription!
+    """
     A list of product subscriptions.
     FOR INTERNAL USE ONLY.
     """
@@ -71,6 +96,7 @@ type DotcomQuery {
         """
         query: String
     ): ProductSubscriptionConnection!
+
     """
     A list of product licenses.
     Only Sourcegraph.com site admins may perform this query.
@@ -250,4 +276,15 @@ type ProductSubscription implements Node {
     Only Sourcegraph.com site admins may query this field.
     """
     urlForSiteAdmin: String
+}
+
+"""
+The access token representing a product subscription that was created on Sourcegraph.com.
+FOR INTERNAL USE ONLY.
+"""
+type ProductSubscriptionAccessToken {
+    """
+    Access token for authenticating as a subscription.
+    """
+    accessToken: String!
 }

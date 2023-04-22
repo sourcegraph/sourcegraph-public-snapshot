@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,6 +25,7 @@ type dbLicense struct {
 	LicenseTags           []string
 	LicenseUserCount      *int
 	LicenseExpiresAt      *time.Time
+	AccessTokenSHA256     []byte
 }
 
 // errLicenseNotFound occurs when a database operation expects a specific Sourcegraph
@@ -51,13 +53,21 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		expiresAt = &info.ExpiresAt
 	}
 	if err = s.db.QueryRowContext(ctx, `
-INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at)
-VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id
+INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at, access_token_sha256)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id
 `,
-		newUUID, subscriptionID, licenseKey, dbutil.NewNullInt64(int64(version)), pq.Array(info.Tags), dbutil.NewNullInt64(int64(info.UserCount)), dbutil.NullTime{Time: expiresAt},
+		newUUID,
+		subscriptionID,
+		licenseKey,
+		dbutil.NewNullInt64(int64(version)),
+		pq.Array(info.Tags),
+		dbutil.NewNullInt64(int64(info.UserCount)),
+		dbutil.NullTime{Time: expiresAt},
+		hashutil.ToSHA256Bytes(defaultRawAccessToken([]byte(licenseKey))),
 	).Scan(&id); err != nil {
 		return "", errors.Wrap(err, "insert")
 	}
+
 	return id, nil
 }
 
@@ -111,6 +121,21 @@ func (o dbLicensesListOptions) sqlConditions() []*sqlf.Query {
 	return conds
 }
 
+func (s dbLicenses) Active(ctx context.Context, subscriptionID string) (*dbLicense, error) {
+	// Return newest license.
+	licenses, err := s.List(ctx, dbLicensesListOptions{
+		ProductSubscriptionID: subscriptionID,
+		LimitOffset:           &database.LimitOffset{Limit: 1},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(licenses) == 0 {
+		return nil, nil
+	}
+	return licenses[0], nil
+}
+
 // List lists all product licenses that satisfy the options.
 func (s dbLicenses) List(ctx context.Context, opt dbLicensesListOptions) ([]*dbLicense, error) {
 	if mocks.licenses.List != nil {
@@ -130,7 +155,8 @@ SELECT
 	license_version,
 	license_tags,
 	license_user_count,
-	license_expires_at
+	license_expires_at,
+	access_token_sha256
 FROM product_licenses
 WHERE (%s)
 ORDER BY created_at DESC
@@ -148,7 +174,17 @@ ORDER BY created_at DESC
 	var results []*dbLicense
 	for rows.Next() {
 		var v dbLicense
-		if err := rows.Scan(&v.ID, &v.ProductSubscriptionID, &v.LicenseKey, &v.CreatedAt, &v.LicenseVersion, pq.Array(&v.LicenseTags), &v.LicenseUserCount, &v.LicenseExpiresAt); err != nil {
+		if err := rows.Scan(
+			&v.ID,
+			&v.ProductSubscriptionID,
+			&v.LicenseKey,
+			&v.CreatedAt,
+			&v.LicenseVersion,
+			pq.Array(&v.LicenseTags),
+			&v.LicenseUserCount,
+			&v.LicenseExpiresAt,
+			&v.AccessTokenSHA256,
+		); err != nil {
 			return nil, err
 		}
 		results = append(results, &v)

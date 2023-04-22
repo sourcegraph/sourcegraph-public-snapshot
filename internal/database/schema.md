@@ -2935,8 +2935,11 @@ Indexes:
  license_tags            | text[]                   |           |          | 
  license_user_count      | integer                  |           |          | 
  license_expires_at      | timestamp with time zone |           |          | 
+ access_token_sha256     | bytea                    |           |          | 
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
+    "product_licenses_access_token_sha256_unique" UNIQUE CONSTRAINT, btree (access_token_sha256)
+    "product_licenses_access_token_sha256_idx" btree (access_token_sha256) WHERE access_token_sha256 IS NOT NULL
 Foreign-key constraints:
     "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
