@@ -67,6 +67,10 @@ In VS Code, right-click on a selection of code and choose one of the `Ask Cody >
 - Generate Docstring
 - Improve Variable Names
 
+## Troubleshooting
+
+See [Cody troubleshooting guide](troubleshooting.md).
+
 ## Explanations
 
 - [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
