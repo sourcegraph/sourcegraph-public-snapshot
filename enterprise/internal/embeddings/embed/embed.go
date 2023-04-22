@@ -2,7 +2,6 @@ package embed
 
 import (
 	"context"
-	"io/fs"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,6 +19,8 @@ const MAX_TEXT_EMBEDDING_VECTORS = 128_000
 const EMBEDDING_BATCHES = 5
 const EMBEDDING_BATCH_SIZE = 512
 
+const maxFileSize = 1000000 // 1MB
+
 type ranksGetter func(ctx context.Context, repoName string) (types.RepoPathRanks, error)
 
 // EmbedRepo embeds file contents from the given file names for a repository.
@@ -29,19 +30,27 @@ func EmbedRepo(
 	ctx context.Context,
 	repoName api.RepoName,
 	revision api.CommitID,
-	fileNames []string,
 	excludePatterns []*paths.GlobPattern,
 	client EmbeddingsClient,
 	splitOptions split.SplitOptions,
-	readLister FileReader,
+	readLister FileReadLister,
 	getDocumentRanks ranksGetter,
 ) (*embeddings.RepoEmbeddingIndex, error) {
+	allFiles, err := readLister.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	codeFileNames, textFileNames := []string{}, []string{}
-	for _, fileName := range fileNames {
-		if isValidTextFile(fileName) {
-			textFileNames = append(textFileNames, fileName)
+	for _, file := range allFiles {
+		if file.Size > maxFileSize {
+			continue
+		}
+
+		if isValidTextFile(file.Name) {
+			textFileNames = append(textFileNames, file.Name)
 		} else {
-			codeFileNames = append(codeFileNames, fileName)
+			codeFileNames = append(codeFileNames, file.Name)
 		}
 	}
 
@@ -163,8 +172,13 @@ type FileReadLister interface {
 	FileLister
 }
 
+type FileEntry struct {
+	Name string
+	Size int64
+}
+
 type FileLister interface {
-	List(context.Context) ([]fs.FileInfo, error)
+	List(context.Context) ([]FileEntry, error)
 }
 
 type FileReader interface {
@@ -175,4 +189,15 @@ type funcReader func(ctx context.Context, fileName string) ([]byte, error)
 
 func (f funcReader) Read(ctx context.Context, fileName string) ([]byte, error) {
 	return f(ctx, fileName)
+}
+
+type staticLister []FileEntry
+
+func (l staticLister) List(_ context.Context) ([]FileEntry, error) {
+	return l, nil
+}
+
+type listReader struct {
+	FileReader
+	FileLister
 }
