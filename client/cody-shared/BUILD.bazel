@@ -13,6 +13,7 @@ ts_config(
     deps = [
         "//:tsconfig",
         "//client/common:tsconfig",
+        "//client/http-client:tsconfig",
     ],
 )
 
@@ -77,6 +78,7 @@ ts_project(
     # TODO(bazel): "#keep"s required for type-only imports
     deps = [
         ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/http-client",
         "//:node_modules/@microsoft/fetch-event-source",
         "//:node_modules/@types/isomorphic-fetch",
         "//:node_modules/@types/node",

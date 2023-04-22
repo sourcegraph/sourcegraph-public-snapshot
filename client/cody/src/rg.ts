@@ -7,6 +7,10 @@ import { promisify } from 'util'
 const exec = promisify(exec_)
 
 export async function getRgPath(extensionPath: string): Promise<string> {
+    if (process.env.MOCK_RG_PATH) {
+        return process.env.MOCK_RG_PATH
+    }
+
     try {
         const target = await getTarget()
         const resourcesDir = path.join(extensionPath, 'resources', 'bin')

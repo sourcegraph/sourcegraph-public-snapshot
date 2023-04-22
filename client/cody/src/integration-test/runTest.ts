@@ -8,6 +8,10 @@ async function main(): Promise<void> {
     // Set this environment variable so the extension exposes hooks to the test runner.
     process.env.CODY_TESTING = 'true'
 
+    // No rg is installed on CI, so use `true` (which ignores arguments and always returns empty
+    // with exit status 0).
+    process.env.MOCK_RG_PATH = 'true'
+
     // When run, this script's filename is `client/cody/out/src/integration-test/runTest.js`, so
     // __dirname is derived from that path, not this file's source path.
     const codyRoot = path.resolve(__dirname, '..', '..', '..')
