@@ -19,7 +19,7 @@ export const Transcript: React.FunctionComponent<
         setMessageBeingEdited: (input: boolean) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         className?: string
-        textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
+        textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         editButtonOnSubmit?: (text: string) => void
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
