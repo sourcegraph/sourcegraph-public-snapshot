@@ -32,13 +32,7 @@ function createCopyButtonWithContainer(text: string, className: string, copyButt
         navigator.clipboard.writeText(text).catch(error => console.error(error))
         copyButton.textContent = 'Copied!'
         setTimeout(() => (copyButton.textContent = 'Copy'), 3000)
-        if (copyButton) {
-            console.log(copyButton)
-        } else {
-            console.log('copyButton is undefined')
-        }
         copyButtonProps.copyButtonOnSubmit('copyButton')
-        console.log('copyButtonLogged')
     })
 
     // The container will contain the copy button and the <pre> element with the code.
