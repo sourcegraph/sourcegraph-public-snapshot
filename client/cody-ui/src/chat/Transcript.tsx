@@ -100,6 +100,7 @@ export const Transcript: React.FunctionComponent<
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
                     showFeedbackButtons={false}
+                    CopyButtonContainer={CopyButtonContainer}
                     copyButtonOnSubmit={copyButtonOnSubmit}
                 />
             )}
