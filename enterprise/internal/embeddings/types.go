@@ -102,15 +102,15 @@ type EmbedFilesStats struct {
 	// The time it took to generate these embeddings
 	Duration time.Duration
 
+	// The number of files embedded
+	EmbeddedCount int
+
 	// The sum of the size of the contents of successful embeddings
 	EmbeddedBytes int
 
-	// The sum of the size of files that were skipped for any reason
-	SkippedBytes int
+	// Summed byte counts for each of the reasons files were skipped
+	SkippedByteCounts map[string]int
 
 	// Counts of reasons files were skipped
-	SkippedReasons map[string]int
-
-	// Whether we stopped early because we hit the embedding count limit
-	HitMaxEmbeddings bool
+	SkippedCounts map[string]int
 }
