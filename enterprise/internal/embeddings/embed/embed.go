@@ -150,23 +150,24 @@ func embedFiles(
 	}
 
 	var (
-		statsHitMax        bool
-		statsSkipped       = make(SkipStats)
-		statsSkippedBytes  int
 		statsEmbeddedBytes int
+		statsEmbeddedCount int
+		statsSkipped       SkipStats
 	)
 	for _, file := range files {
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
 		if len(index.RowMetadata) >= maxEmbeddingVectors {
-			statsHitMax = true
-			break
+			statsSkipped.Add(SkipReasonMaxEmbeddings, int(file.Size))
+			continue
 		}
 
 		if file.Size > maxFileSize {
+			statsSkipped.Add(SkipReasonLarge, int(file.Size))
 			continue
 		}
 
 		if isExcludedFilePath(file.Name, excludePatterns) {
+			statsSkipped.Add(SkipReasonExcluded, int(file.Size))
 			continue
 		}
 
@@ -176,17 +177,19 @@ func embedFiles(
 		}
 
 		if embeddable, skipReason := isEmbeddableFileContent(contentBytes); !embeddable {
-			statsSkipped.Add(skipReason)
-			statsSkippedBytes += len(contentBytes)
+			statsSkipped.Add(skipReason, len(contentBytes))
 			continue
 		}
+
+		// At this point, we have determined that we want to embed this file.
 
 		for _, chunk := range split.SplitIntoEmbeddableChunks(string(contentBytes), file.Name, splitOptions) {
 			if err := addToBatch(chunk); err != nil {
 				return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
 			}
-			statsEmbeddedBytes += len(chunk.Content)
 		}
+		statsEmbeddedCount += 1
+		statsEmbeddedBytes += len(contentBytes)
 	}
 
 	// Always do a final flush
@@ -195,11 +198,11 @@ func embedFiles(
 	}
 
 	stats := embeddings.EmbedFilesStats{
-		Duration:         time.Since(start),
-		EmbeddedBytes:    statsEmbeddedBytes,
-		SkippedBytes:     int(0),
-		SkippedReasons:   statsSkipped.ToMap(),
-		HitMaxEmbeddings: statsHitMax,
+		Duration:          time.Since(start),
+		EmbeddedBytes:     statsEmbeddedBytes,
+		EmbeddedCount:     statsEmbeddedCount,
+		SkippedCounts:     statsSkipped.Counts(),
+		SkippedByteCounts: statsSkipped.ByteCounts(),
 	}
 
 	return index, stats, nil
