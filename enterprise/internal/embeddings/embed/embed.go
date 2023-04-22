@@ -139,16 +139,16 @@ func embedFiles(
 			continue
 		}
 
+		if isExcludedFilePath(file.Name, excludePatterns) {
+			continue
+		}
+
 		contentBytes, err := reader.Read(ctx, file.Name)
 		if err != nil {
 			return embeddings.EmbeddingIndex{}, errors.Wrap(err, "error while reading a file")
 		}
 
 		if embeddable, _ := isEmbeddableFileContent(contentBytes); !embeddable {
-			continue
-		}
-
-		if isExcludedFilePath(file.Name, excludePatterns) {
 			continue
 		}
 
