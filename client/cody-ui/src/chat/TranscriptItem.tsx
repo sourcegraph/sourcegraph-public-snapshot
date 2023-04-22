@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { FeedbackButtonsProps, CopyButtonProps } from '../Chat'
+import { FeedbackButtonsProps } from '../Chat'
 import { CodySvg } from '../utils/icons'
 
 import { BlinkingCursor } from './BlinkingCursor'
@@ -35,7 +35,6 @@ export const TranscriptItem: React.FunctionComponent<
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
-        CopyButtonContainer?: React.FunctionComponent<CopyButtonProps>
         copyButtonOnSubmit: (text: string) => void
     } & TranscriptItemClassNames
 > = ({
@@ -51,7 +50,6 @@ export const TranscriptItem: React.FunctionComponent<
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
     copyButtonOnSubmit,
-    CopyButtonContainer,
 }) => (
     <div
         className={classNames(

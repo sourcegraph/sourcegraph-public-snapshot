@@ -29,7 +29,6 @@ interface ChatProps extends ChatClassNames {
     className?: string
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
-    CopyButtonContainer?: React.FunctionComponent<CopyButtonProps>
     copyButtonOnSubmit: (text: string) => void
 }
 
@@ -62,8 +61,6 @@ export interface FeedbackButtonsProps {
 }
 
 export interface CopyButtonProps {
-    // className?: string
-    // disabled?: boolean
     copyButtonOnSubmit: (text: string) => void
 }
 /**
@@ -93,7 +90,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     chatInputClassName,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
-    CopyButtonContainer,
     copyButtonOnSubmit,
 }) => {
     const [inputRows, setInputRows] = useState(5)
@@ -172,7 +168,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 className={styles.transcriptContainer}
                 FeedbackButtonsContainer={FeedbackButtonsContainer}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                CopyButtonContainer={CopyButtonContainer}
                 copyButtonOnSubmit={copyButtonOnSubmit}
             />
 
