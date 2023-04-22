@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ChatUITextAreaProps, EditButtonAction, EditButtonProps, FeedbackButtonsProps } from '../Chat'
+import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps } from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'

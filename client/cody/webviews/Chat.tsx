@@ -9,7 +9,6 @@ import {
     Chat as ChatUI,
     ChatUISubmitButtonProps,
     ChatUITextAreaProps,
-    EditButtonAction,
     EditButtonProps,
     FeedbackButtonsProps,
 } from '@sourcegraph/cody-ui/src/Chat'
@@ -163,69 +162,20 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
 
 const EditButton: React.FunctionComponent<EditButtonProps> = ({
     className,
-    editButtonOnSubmit,
     messageBeingEdited,
     setMessageBeingEdited,
-}) => {
-    const onEditBtnSubmit = useCallback(
-        (action: EditButtonAction) => {
-            switch (action) {
-                case EditButtonAction.Edit:
-                    setMessageBeingEdited(true)
-                    break
-
-                case EditButtonAction.Accept:
-                    editButtonOnSubmit(EditButtonAction.Accept)
-                    setMessageBeingEdited(false)
-                    break
-
-                case EditButtonAction.Cancel:
-                    setMessageBeingEdited(false)
-                    break
-
-                default:
-                    break
-            }
-        },
-        [editButtonOnSubmit]
-    )
-
-    if (messageBeingEdited) {
-        return (
-            <div className={className}>
-                {/* <VSCodeButton
-                    className={classNames(styles.submitButton)}
-                    appearance="icon"
-                    type="button"
-                    onClick={() => onEditBtnSubmit(EditButtonAction.Accept)}
-                >
-                    <i className="codicon codicon-check" />
-                </VSCodeButton> */}
-                <VSCodeButton
-                    className={classNames(styles.submitButton)}
-                    appearance="icon"
-                    type="button"
-                    onClick={() => onEditBtnSubmit(EditButtonAction.Cancel)}
-                >
-                    <i className="codicon codicon-close" />
-                </VSCodeButton>
-            </div>
-        )
-    }
-
-    return (
-        <div className={className}>
-            <VSCodeButton
-                className={classNames(styles.submitButton)}
-                appearance="icon"
-                type="button"
-                onClick={() => onEditBtnSubmit(EditButtonAction.Edit)}
-            >
-                <i className="codicon codicon-edit" />
-            </VSCodeButton>
-        </div>
-    )
-}
+}) => (
+    <div className={className}>
+        <VSCodeButton
+            className={classNames(styles.submitButton)}
+            appearance="icon"
+            type="button"
+            onClick={() => setMessageBeingEdited(!messageBeingEdited)}
+        >
+            <i className={messageBeingEdited ? 'codicon codicon-close' : 'codicon codicon-edit'} />
+        </VSCodeButton>
+    </div>
+)
 
 const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ className, feedbackButtonsOnSubmit }) => {
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)

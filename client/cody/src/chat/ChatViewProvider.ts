@@ -228,38 +228,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     public async executeEdit(humanChatInput: string): Promise<void> {
-        if (this.isMessageInProgress) {
-            await vscode.window.showErrorMessage(
-                'Cannot execute multiple recipes. Please wait for the current recipe to finish.'
-            )
-        }
-        const recipe = getRecipe('chat-question')
-        if (!recipe) {
-            return
-        }
-
-        // Create a new multiplexer to drop any old subscribers
-        this.multiplexer = new BotResponseMultiplexer()
-
-        const interaction = await recipe.getInteraction(humanChatInput, {
-            editor: this.editor,
-            intentDetector: this.intentDetector,
-            codebaseContext: this.codebaseContext,
-            responseMultiplexer: this.multiplexer,
-        })
-        if (!interaction) {
-            return
-        }
-        this.isMessageInProgress = true
-        this.transcript.replaceLastInteraction(interaction)
-
-        this.showTab('chat')
-        this.sendTranscript()
-
-        const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
-        this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
-
-        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+        this.transcript.replaceLastInteraction()
+        await this.onHumanMessageSubmitted(humanChatInput)
     }
 
     public async executeRecipe(recipeId: string, humanChatInput: string = ''): Promise<void> {

@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ChatUITextAreaProps, EditButtonAction, EditButtonProps, FeedbackButtonsProps } from '../Chat'
+import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps } from '../Chat'
 import { CodySvg } from '../utils/icons'
 
 import { BlinkingCursor } from './BlinkingCursor'
@@ -61,14 +61,14 @@ export const TranscriptItem: React.FunctionComponent<
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
 }) => {
-    let [formInput, setFormInput] = useState<string>(message.displayText ?? '')
+    const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const inputHandler = useCallback(
         (inputValue: string): void => {
             setFormInput(inputValue)
         },
         [setFormInput]
     )
-    let textarea =
+    const textarea =
         TextArea && beingEdited && editButtonOnSubmit ? (
             <TextArea
                 className={classNames(styles.chatInput)}
