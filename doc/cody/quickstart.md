@@ -35,7 +35,7 @@ The first thing you need to do is install the VS Code extension. You can do this
 
 Or:
 
-- [Download and install the extension from this link](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+- [Download and install the extension from the VS Code marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
 
 ## Generate an access token from your Sourcegraph instance
 

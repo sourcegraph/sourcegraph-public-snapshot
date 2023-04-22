@@ -2,6 +2,10 @@
 
 ### General
 
+#### Troubleshooting
+
+See [Cody troubleshooting guide](troubleshooting.md).
+
 #### Does Cody train on my code?
 
 Cody doesn't train on your code. Our third-party LLM providers do not train on your code either.
