@@ -3,6 +3,7 @@ package embeddings
 import (
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -93,12 +94,25 @@ type EmbedRepoStats struct {
 	TextIndexStats EmbedFilesStats
 }
 
+func (e *EmbedRepoStats) ToFields() []log.Field {
+	return []log.Field{
+		log.Duration("duration", e.Duration),
+		log.Bool("hasRanks", e.HasRanks),
+		log.Object("codeIndex", e.CodeIndexStats.ToFields()...),
+		log.Object("textIndex", e.TextIndexStats.ToFields()...),
+	}
+}
+
 type EmbedFilesStats struct {
 	// The time it took to generate these embeddings
 	Duration time.Duration
 
 	// The number of files embedded
-	EmbeddedCount int
+	EmbeddedFileCount int
+
+	// The number of chunks we generated embeddings for.
+	// Equivalent to the number of embeddings generated.
+	EmbeddedChunkCount int
 
 	// The sum of the size of the contents of successful embeddings
 	EmbeddedBytes int
@@ -108,4 +122,24 @@ type EmbedFilesStats struct {
 
 	// Counts of reasons files were skipped
 	SkippedCounts map[string]int
+}
+
+func (e *EmbedFilesStats) ToFields() []log.Field {
+	var skippedByteCounts []log.Field
+	for reason, count := range e.SkippedByteCounts {
+		skippedByteCounts = append(skippedByteCounts, log.Int(reason, count))
+	}
+
+	var skippedCounts []log.Field
+	for reason, count := range e.SkippedCounts {
+		skippedCounts = append(skippedCounts, log.Int(reason, count))
+	}
+	return []log.Field{
+		log.Duration("duration", e.Duration),
+		log.Int("embeddedFileCount", e.EmbeddedFileCount),
+		log.Int("embeddedChunkCount", e.EmbeddedChunkCount),
+		log.Int("embeddedBytes", e.EmbeddedBytes),
+		log.Object("skippedCounts", skippedCounts...),
+		log.Object("skippedByteCounts", skippedByteCounts...),
+	}
 }

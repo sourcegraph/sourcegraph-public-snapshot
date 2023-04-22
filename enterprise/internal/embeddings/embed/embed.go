@@ -151,9 +151,10 @@ func embedFiles(
 	}
 
 	var (
-		statsEmbeddedBytes int
-		statsEmbeddedCount int
-		statsSkipped       SkipStats
+		statsEmbeddedByteCount  int
+		statsEmbeddedFileCount  int
+		statsEmbeddedChunkCount int
+		statsSkipped            SkipStats
 	)
 	for _, file := range files {
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
@@ -188,9 +189,10 @@ func embedFiles(
 			if err := addToBatch(chunk); err != nil {
 				return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
 			}
+			statsEmbeddedByteCount += len(chunk.Content)
+			statsEmbeddedChunkCount += 1
 		}
-		statsEmbeddedCount += 1
-		statsEmbeddedBytes += len(contentBytes)
+		statsEmbeddedFileCount += 1
 	}
 
 	// Always do a final flush
@@ -199,11 +201,12 @@ func embedFiles(
 	}
 
 	stats := embeddings.EmbedFilesStats{
-		Duration:          time.Since(start),
-		EmbeddedBytes:     statsEmbeddedBytes,
-		EmbeddedCount:     statsEmbeddedCount,
-		SkippedCounts:     statsSkipped.Counts(),
-		SkippedByteCounts: statsSkipped.ByteCounts(),
+		Duration:           time.Since(start),
+		EmbeddedBytes:      statsEmbeddedByteCount,
+		EmbeddedFileCount:  statsEmbeddedFileCount,
+		EmbeddedChunkCount: statsEmbeddedChunkCount,
+		SkippedCounts:      statsSkipped.Counts(),
+		SkippedByteCounts:  statsSkipped.ByteCounts(),
 	}
 
 	return index, stats, nil
