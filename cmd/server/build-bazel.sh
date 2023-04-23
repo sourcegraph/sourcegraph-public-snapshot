@@ -55,37 +55,6 @@ MUSL_TARGETS=(
   @com_github_sourcegraph_zoekt//cmd/zoekt-webserver
 )
 
-if [[ "${ENTERPRISE:-"false"}" == "false" ]]; then
-  TARGETS=("${OSS_TARGETS[@]}")
-  exit $?
-else
-  TARGETS=("${ENTERPRISE_TARGETS[@]}")
-fi
-
-echo "--- bazel build"
-./dev/ci/bazel.sh build "${TARGETS[@]}"
-
-bazel \
-  --bazelrc=.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-  build \
-  "${MUSL_TARGETS[@]}" \
-  --stamp \
-  --workspace_status_command=./dev/bazel_stamp_vars.sh \
-  --platforms @zig_sdk//platform:linux_amd64 \
-  --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
-
-echo "-- preparing rootfs"
-cp -a ./cmd/server/rootfs/. "$OUTPUT"
-export BINDIR="$OUTPUT/usr/local/bin"
-mkdir -p "$BINDIR"
-for TARGET in "${TARGETS[@]}"; do
-  out=$(./dev/ci/bazel.sh cquery "$TARGET" --output=files)
-  cp "$out" "$BINDIR"
-  echo "copying $TARGET"
-done
-
 echo "--- bazel build musl"
 bazel \
   --bazelrc=.bazelrc \
@@ -111,6 +80,26 @@ for MUSL_TARGET in "${MUSL_TARGETS[@]}"; do
     --output=files)
   cp "$out" "$BINDIR"
   echo "copying $MUSL_TARGET"
+done
+
+if [[ "${ENTERPRISE:-"false"}" == "false" ]]; then
+  TARGETS=("${OSS_TARGETS[@]}")
+  exit $?
+else
+  TARGETS=("${ENTERPRISE_TARGETS[@]}")
+fi
+
+echo "--- bazel build"
+./dev/ci/bazel.sh build "${TARGETS[@]}"
+
+echo "-- preparing rootfs"
+cp -a ./cmd/server/rootfs/. "$OUTPUT"
+export BINDIR="$OUTPUT/usr/local/bin"
+mkdir -p "$BINDIR"
+for TARGET in "${TARGETS[@]}"; do
+  out=$(./dev/ci/bazel.sh cquery "$TARGET" --output=files)
+  cp "$out" "$BINDIR"
+  echo "copying $TARGET"
 done
 
 echo "--- prometheus"

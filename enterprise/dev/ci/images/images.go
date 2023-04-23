@@ -57,6 +57,7 @@ var SourcegraphDockerImages = append(DeploySourcegraphDockerImages,
 // Used to cross check images in the deploy-sourcegraph repo. If you are adding or removing an image to https://github.com/sourcegraph/deploy-sourcegraph
 // it must also be added to this list.
 var DeploySourcegraphDockerImages = []string{
+	"symbols",
 	"server",
 	"alpine-3.14",
 	"cadvisor",
@@ -83,9 +84,6 @@ var DeploySourcegraphDockerImages = []string{
 	"repo-updater",
 	"search-indexer",
 	"searcher",
-	"symbols",
-	"syntax-highlighter",
-	"worker",
 	"migrator",
 	"executor",
 	"executor-kubernetes",
@@ -93,6 +91,7 @@ var DeploySourcegraphDockerImages = []string{
 	"batcheshelper",
 	"opentelemetry-collector",
 	"embeddings",
+	"worker",
 	"dind",
 	"bundled-executor",
 }
