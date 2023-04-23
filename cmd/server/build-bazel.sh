@@ -43,9 +43,12 @@ ENTERPRISE_TARGETS=(
   //enterprise/cmd/worker
   //enterprise/cmd/migrator
   //enterprise/cmd/repo-updater
-  //enterprise/cmd/symbols
   //enterprise/cmd/precise-code-intel-worker
   //enterprise/cmd/server
+)
+
+MUSL_TARGETS=(
+  //enterprise/cmd/symbols
   @com_github_sourcegraph_zoekt//cmd/zoekt-archive-index
   @com_github_sourcegraph_zoekt//cmd/zoekt-git-index
   @com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver
@@ -60,7 +63,14 @@ else
 fi
 
 echo "--- bazel build"
-./dev/ci/bazel.sh build "${TARGETS[@]}" \
+./dev/ci/bazel.sh build "${TARGETS[@]}"
+
+bazel \
+  --bazelrc=.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  build \
+  "${MUSL_TARGETS[@]}" \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
   --platforms @zig_sdk//platform:linux_amd64 \
@@ -74,6 +84,33 @@ for TARGET in "${TARGETS[@]}"; do
   out=$(./dev/ci/bazel.sh cquery "$TARGET" --output=files)
   cp "$out" "$BINDIR"
   echo "copying $TARGET"
+done
+
+echo "--- bazel build musl"
+bazel \
+  --bazelrc=.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  build \
+  "${MUSL_TARGETS[@]}" \
+  --stamp \
+  --workspace_status_command=./dev/bazel_stamp_vars.sh \
+  --platforms @zig_sdk//platform:linux_amd64 \
+  --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
+
+for MUSL_TARGET in "${MUSL_TARGETS[@]}"; do
+  out=$(bazel --bazelrc=.bazelrc \
+    --bazelrc=.aspect/bazelrc/ci.bazelrc \
+    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+    cquery \
+    "$MUSL_TARGET" \
+    --stamp \
+    --workspace_status_command=./dev/bazel_stamp_vars.sh \
+    --platforms @zig_sdk//platform:linux_amd64 \
+    --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl \
+    --output=files)
+  cp "$out" "$BINDIR"
+  echo "copying $MUSL_TARGET"
 done
 
 echo "--- prometheus"

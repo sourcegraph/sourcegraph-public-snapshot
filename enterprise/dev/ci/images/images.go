@@ -49,7 +49,7 @@ func maybeTaggedImage(rootImage, tag string) string {
 //
 // The `addDockerImages` pipeline step determines what images are built and published.
 var SourcegraphDockerImages = append(DeploySourcegraphDockerImages,
-	"server", "sg", "llm-proxy")
+	"sg", "llm-proxy")
 
 // DeploySourcegraphDockerImages denotes all Docker images that are included in a typical
 // deploy-sourcegraph installation.
@@ -57,6 +57,7 @@ var SourcegraphDockerImages = append(DeploySourcegraphDockerImages,
 // Used to cross check images in the deploy-sourcegraph repo. If you are adding or removing an image to https://github.com/sourcegraph/deploy-sourcegraph
 // it must also be added to this list.
 var DeploySourcegraphDockerImages = []string{
+	"server",
 	"alpine-3.14",
 	"cadvisor",
 	"codeinsights-db",
