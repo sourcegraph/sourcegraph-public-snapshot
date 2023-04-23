@@ -11,6 +11,8 @@ set -eux
 OUTPUT=$(mktemp -d -t sgserver_XXXXXXX)
 TMP=$(mktemp -d -t sgserver_tmp_XXXXXXX)
 export OUTPUT
+export BINDIR="$OUTPUT/usr/local/bin"
+mkdir -p "$BINDIR"
 cleanup() {
   rm -rf "$OUTPUT"
   rm -rf "$TMP"
@@ -94,8 +96,6 @@ echo "--- bazel build"
 
 echo "-- preparing rootfs"
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
-export BINDIR="$OUTPUT/usr/local/bin"
-mkdir -p "$BINDIR"
 for TARGET in "${TARGETS[@]}"; do
   out=$(./dev/ci/bazel.sh cquery "$TARGET" --output=files)
   cp "$out" "$BINDIR"
