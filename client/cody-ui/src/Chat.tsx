@@ -29,7 +29,7 @@ interface ChatProps extends ChatClassNames {
     className?: string
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
-    copyButtonOnSubmit: CopyButtonProps['copyButtonOnSubmit']
+    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {

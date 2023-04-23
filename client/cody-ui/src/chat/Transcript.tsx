@@ -19,7 +19,7 @@ export const Transcript: React.FunctionComponent<
         className?: string
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
-        copyButtonOnSubmit: CopyButtonProps['copyButtonOnSubmit']
+        copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
     } & TranscriptItemClassNames
 > = ({
     transcript,
