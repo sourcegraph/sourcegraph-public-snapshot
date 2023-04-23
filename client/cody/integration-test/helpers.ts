@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ExtensionApi } from '../extension-api'
+import { ExtensionApi } from '../src/extension-api'
 
 import * as mockServer from './mock-server'
 
