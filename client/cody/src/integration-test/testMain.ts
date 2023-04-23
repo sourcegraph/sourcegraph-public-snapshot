@@ -18,25 +18,28 @@ async function main(): Promise<void> {
 
     // The test workspace is not copied to out/ during the TypeScript build, so we need to refer to
     // it in the src/ dir.
-    const testWorkspacePath = path.resolve(codyRoot, 'src', 'integration-test', 'workspace')
+    const testWorkspacePath = path.resolve(codyRoot, 'src', 'integration-test', 'testdata', 'workspace')
+
+    // The directory containing the extension's package.json, passed to --extensionDevelopmentPath.
+    const extensionDevelopmentPath = codyRoot
+
+    // The path to the test runner script, passed to --extensionTestsPath.
+    const extensionTestsPath = path.resolve(codyRoot, 'out', 'src', 'integration-test', 'index')
 
     try {
-        // The directory containing the extension's package.json, passed to
-        // --extensionDevelopmentPath.
-        const extensionDevelopmentPath = codyRoot
-
-        // The path to the test runner script, passed to --extensionTestsPath.
-        const extensionTestsPath = path.resolve(codyRoot, 'out', 'src', 'integration-test', 'index')
-
-        const launchArgs = [
-            testWorkspacePath,
-            '--disable-extensions', // disable other extensions
-        ]
-
         // Download VS Code, unzip it, and run the integration test.
-        await mockServer.run(() => runTests({ extensionDevelopmentPath, extensionTestsPath, launchArgs }))
-    } catch {
-        console.error('Failed to run tests')
+        await mockServer.run(() =>
+            runTests({
+                extensionDevelopmentPath,
+                extensionTestsPath,
+                launchArgs: [
+                    testWorkspacePath,
+                    '--disable-extensions', // disable other extensions
+                ],
+            })
+        )
+    } catch (error) {
+        console.error('Failed to run tests:', error)
         process.exit(1)
     }
 }
