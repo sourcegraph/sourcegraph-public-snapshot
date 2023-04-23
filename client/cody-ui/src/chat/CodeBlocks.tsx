@@ -13,7 +13,7 @@ interface CodeBlocksProps {
 
     copyButtonClassName?: string
 
-    CopyButtonProps: CopyButtonProps
+    CopyButtonProps: CopyButtonProps['copyButtonOnSubmit']
 }
 
 function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
@@ -24,7 +24,11 @@ function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
     wrapperElement.append(element)
 }
 
-function createCopyButtonWithContainer(text: string, className: string, copyButtonProps: CopyButtonProps): HTMLElement {
+function createCopyButtonWithContainer(
+    text: string,
+    className: string,
+    copyButtonOnSubmit: CopyButtonProps['copyButtonOnSubmit']
+): HTMLElement {
     const copyButton = document.createElement('button')
     copyButton.textContent = 'Copy'
     copyButton.className = className
@@ -32,7 +36,7 @@ function createCopyButtonWithContainer(text: string, className: string, copyButt
         navigator.clipboard.writeText(text).catch(error => console.error(error))
         copyButton.textContent = 'Copied!'
         setTimeout(() => (copyButton.textContent = 'Copy'), 3000)
-        copyButtonProps.copyButtonOnSubmit('copyButton')
+        copyButtonOnSubmit('copyButton')
     })
 
     // The container will contain the copy button and the <pre> element with the code.

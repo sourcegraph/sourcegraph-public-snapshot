@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { FeedbackButtonsProps } from '../Chat'
+import { FeedbackButtonsProps, CopyButtonProps } from '../Chat'
 import { CodySvg } from '../utils/icons'
 
 import { BlinkingCursor } from './BlinkingCursor'
@@ -35,7 +35,7 @@ export const TranscriptItem: React.FunctionComponent<
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
-        copyButtonOnSubmit: (text: string) => void
+        copyButtonOnSubmit: CopyButtonProps['copyButtonOnSubmit']
     } & TranscriptItemClassNames
 > = ({
     message,
@@ -95,7 +95,7 @@ export const TranscriptItem: React.FunctionComponent<
                 <CodeBlocks
                     displayText={message.displayText}
                     copyButtonClassName={codeBlocksCopyButtonClassName}
-                    CopyButtonProps={{ copyButtonOnSubmit: copyButtonOnSubmit }}
+                    CopyButtonProps={copyButtonOnSubmit}
                 />
             ) : inProgress ? (
                 <span>
