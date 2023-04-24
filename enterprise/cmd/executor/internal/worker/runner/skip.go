@@ -26,9 +26,7 @@ func NextStep(workingDirectory string) (string, error) {
 	if err = json.Unmarshal(b, &s); err != nil {
 		return "", errors.Wrap(err, "unmarshalling skip file")
 	}
-	// Remove the skip file. If not removed, the file will hang around and get read multiple times.
-	if err = os.Remove(path); err != nil {
-		return "", errors.Wrap(err, "removing skip file")
-	}
+	// Try to remove the skip file.
+	defer os.Remove(path)
 	return s.NextStep, nil
 }
