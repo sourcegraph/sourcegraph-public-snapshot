@@ -30,8 +30,8 @@ type RepoEmbeddingIndex struct {
 }
 
 type ContextDetectionEmbeddingIndex struct {
-	MessagesWithAdditionalContextMeanEmbedding    []int8
-	MessagesWithoutAdditionalContextMeanEmbedding []int8
+	MessagesWithAdditionalContextMeanEmbedding    []float32
+	MessagesWithoutAdditionalContextMeanEmbedding []float32
 }
 
 type EmbeddingSearchResults struct {

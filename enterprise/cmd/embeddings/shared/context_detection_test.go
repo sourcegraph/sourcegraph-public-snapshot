@@ -10,8 +10,8 @@ import (
 func TestIsContextRequiredForChatQuery(t *testing.T) {
 	getContextDetectionEmbeddingIndex := func(ctx context.Context) (*embeddings.ContextDetectionEmbeddingIndex, error) {
 		return &embeddings.ContextDetectionEmbeddingIndex{
-			MessagesWithAdditionalContextMeanEmbedding:    []int8{0, 1},
-			MessagesWithoutAdditionalContextMeanEmbedding: []int8{1, 0},
+			MessagesWithAdditionalContextMeanEmbedding:    []float32{0.0, 1.0},
+			MessagesWithoutAdditionalContextMeanEmbedding: []float32{1.0, 0.0},
 		}, nil
 	}
 

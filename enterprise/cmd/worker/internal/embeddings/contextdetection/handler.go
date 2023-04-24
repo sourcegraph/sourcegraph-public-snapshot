@@ -45,8 +45,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetec
 	}
 
 	contextDetectionIndex := embeddings.ContextDetectionEmbeddingIndex{
-		MessagesWithAdditionalContextMeanEmbedding:    embeddings.Quantize(messagesWithAdditionalContextMeanEmbedding),
-		MessagesWithoutAdditionalContextMeanEmbedding: embeddings.Quantize(messagesWithoutAdditionalContextMeanEmbedding),
+		MessagesWithAdditionalContextMeanEmbedding:    messagesWithAdditionalContextMeanEmbedding,
+		MessagesWithoutAdditionalContextMeanEmbedding: messagesWithoutAdditionalContextMeanEmbedding,
 	}
 
 	return embeddings.UploadIndex(ctx, h.uploadStore, embeddings.CONTEXT_DETECTION_INDEX_NAME, contextDetectionIndex)
