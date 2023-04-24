@@ -164,20 +164,18 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
     className,
     messageBeingEdited,
     setMessageBeingEdited,
-}) => {
-    return (
-        <div className={className}>
-            <VSCodeButton
-                className={classNames(styles.submitButton)}
-                appearance="icon"
-                type="button"
-                onClick={() => setMessageBeingEdited(!messageBeingEdited)}
-            >
-                <i className={messageBeingEdited ? 'codicon codicon-close' : 'codicon codicon-edit'} />
-            </VSCodeButton>
-        </div>
-    )
-}
+}) => (
+    <div className={className}>
+        <VSCodeButton
+            className={classNames(styles.submitButton)}
+            appearance="icon"
+            type="button"
+            onClick={() => setMessageBeingEdited(!messageBeingEdited)}
+        >
+            <i className={messageBeingEdited ? 'codicon codicon-close' : 'codicon codicon-edit'} />
+        </VSCodeButton>
+    </div>
+)
 
 const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ className, feedbackButtonsOnSubmit }) => {
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
