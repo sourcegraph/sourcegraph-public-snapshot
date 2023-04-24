@@ -138,9 +138,9 @@ func GetServiceRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oau
 	}
 }
 
-func GetAccountRefreshAndStoreOAuthTokenFunc(db DB, externalAccountID int32, oauthContext *oauthutil.OAuthContext) func(context.Context, httpcli.Doer, *auth.OAuthBearerToken) (string, string, time.Time, error) {
+func GetAccountRefreshAndStoreOAuthTokenFunc(store UserExternalAccountsStore, externalAccountID int32, oauthContext *oauthutil.OAuthContext) func(context.Context, httpcli.Doer, *auth.OAuthBearerToken) (string, string, time.Time, error) {
 	return func(ctx context.Context, cli httpcli.Doer, a *auth.OAuthBearerToken) (string, string, time.Time, error) {
-		tokenRefresher := externalAccountTokenRefresher(db.UserExternalAccounts(), externalAccountID, a.RefreshToken)
+		tokenRefresher := externalAccountTokenRefresher(store, externalAccountID, a.RefreshToken)
 		token, err := tokenRefresher(ctx, cli, *oauthContext)
 		if err != nil {
 			return "", "", time.Time{}, err
