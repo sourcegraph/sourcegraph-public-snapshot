@@ -34,12 +34,18 @@ func TestCreateGitHubApp(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	err := store.Create(ctx, app)
+	created, err := store.Create(ctx, app)
 	require.NoError(t, err)
 
+	query := sqlf.Sprintf(`SELECT id FROM github_apps WHERE id=%s`, created.ID)
+	err = store.QueryRow(ctx, query).Scan(&app.ID)
+	require.NoError(t, err)
+	require.Equal(t, app.ID, created.ID)
+
 	var createdApp types.GitHubApp
-	query := sqlf.Sprintf(`SELECT app_id, name, slug, base_url, client_id, client_secret, private_key, encryption_key_id, logo FROM github_apps WHERE app_id=%s`, app.AppID)
+	query = sqlf.Sprintf(`SELECT id, app_id, name, slug, base_url, client_id, client_secret, private_key, encryption_key_id, logo FROM github_apps WHERE app_id=%s`, app.AppID)
 	err = store.QueryRow(ctx, query).Scan(
+		&createdApp.ID,
 		&createdApp.AppID,
 		&createdApp.Name,
 		&createdApp.Slug,
@@ -72,7 +78,7 @@ func TestDeleteGitHubApp(t *testing.T) {
 		PrivateKey:   "private-key",
 	}
 
-	err := store.Create(ctx, app)
+	_, err := store.Create(ctx, app)
 	require.NoError(t, err)
 
 	err = store.Delete(ctx, app.ID)
@@ -108,10 +114,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 		PrivateKey:   "private-key",
 	}
 
-	err := store.Create(ctx, app)
-	require.NoError(t, err)
-
-	app, err = store.GetByID(ctx, 1)
+	app, err := store.Create(ctx, app)
 	require.NoError(t, err)
 
 	updated := &types.GitHubApp{
@@ -124,7 +127,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 		PrivateKey:   "updated-private-key",
 	}
 
-	fetched, err := store.Update(ctx, 1, updated)
+	fetched, err := store.Update(ctx, app.ID, updated)
 	require.NoError(t, err)
 
 	require.Greater(t, fetched.UpdatedAt, app.UpdatedAt)
@@ -174,12 +177,12 @@ func TestGetByID(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	err := store.Create(ctx, app1)
+	created1, err := store.Create(ctx, app1)
 	require.NoError(t, err)
-	err = store.Create(ctx, app2)
+	created2, err := store.Create(ctx, app2)
 	require.NoError(t, err)
 
-	fetched, err := store.GetByID(ctx, 1)
+	fetched, err := store.GetByID(ctx, created1.ID)
 	require.NoError(t, err)
 	require.Equal(t, app1.AppID, fetched.AppID)
 	require.Equal(t, app1.Name, fetched.Name)
@@ -192,7 +195,7 @@ func TestGetByID(t *testing.T) {
 	require.NotZero(t, fetched.CreatedAt)
 	require.NotZero(t, fetched.UpdatedAt)
 
-	fetched, err = store.GetByID(ctx, 2)
+	fetched, err = store.GetByID(ctx, created2.ID)
 	require.NoError(t, err)
 	require.Equal(t, app2.AppID, fetched.AppID)
 
@@ -232,9 +235,9 @@ func TestGetByAppID(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	err := store.Create(ctx, app1)
+	_, err := store.Create(ctx, app1)
 	require.NoError(t, err)
-	err = store.Create(ctx, app2)
+	_, err = store.Create(ctx, app2)
 	require.NoError(t, err)
 
 	fetched, err := store.GetByAppID(ctx, 1234, "https://github.com")
@@ -291,9 +294,9 @@ func TestGetBySlug(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	err := store.Create(ctx, app1)
+	_, err := store.Create(ctx, app1)
 	require.NoError(t, err)
-	err = store.Create(ctx, app2)
+	_, err = store.Create(ctx, app2)
 	require.NoError(t, err)
 
 	fetched, err := store.GetBySlug(ctx, "test-app", "https://github.com")

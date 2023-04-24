@@ -489,6 +489,12 @@ func NewSchema(
 		}
 	}
 
+	if gitHubApps := optional.GitHubAppsResolver; gitHubApps != nil {
+		EnterpriseResolvers.gitHubAppsResolver = gitHubApps
+		resolver.GitHubAppsResolver = gitHubApps
+		schemas = append(schemas, gitHubAppsSchema)
+	}
+
 	if license := optional.LicenseResolver; license != nil {
 		EnterpriseResolvers.licenseResolver = license
 		resolver.LicenseResolver = license
@@ -635,6 +641,7 @@ type OptionalResolver struct {
 	OwnResolver
 	AppResolver
 	CompletionsResolver
+	GitHubAppsResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -744,6 +751,7 @@ var EnterpriseResolvers = struct {
 	rbacResolver                RBACResolver
 	ownResolver                 OwnResolver
 	completionsResolver         CompletionsResolver
+	gitHubAppsResolver          GitHubAppsResolver
 }{}
 
 // Root returns a new schemaResolver.

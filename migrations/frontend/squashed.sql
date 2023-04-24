@@ -2288,8 +2288,8 @@ COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that r
 CREATE TABLE github_apps (
     id integer NOT NULL,
     app_id integer NOT NULL,
-    name text NOT NULL,
-    slug text NOT NULL,
+    name text,
+    slug text,
     base_url text NOT NULL,
     client_id text NOT NULL,
     client_secret text NOT NULL,

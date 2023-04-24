@@ -16,7 +16,7 @@ import (
 // GitHubAppsStore handles storing and retrieving GitHub Apps from the database.
 type GitHubAppsStore interface {
 	// Create inserts a new GitHub App into the database.
-	Create(ctx context.Context, app *types.GitHubApp) error
+	Create(ctx context.Context, app *types.GitHubApp) (*types.GitHubApp, error)
 
 	// Delete removes a GitHub App from the database by ID.
 	Delete(ctx context.Context, id int) error
@@ -62,23 +62,46 @@ func (s *gitHubAppsStore) getEncryptionKey() encryption.Key {
 	return keyring.Default().GitHubAppKey
 }
 
+var scanIDAndTimes = basestore.NewFirstScanner(func(s dbutil.Scanner) (*types.GitHubApp, error) {
+	var app types.GitHubApp
+
+	err := s.Scan(
+		&app.ID,
+		&app.CreatedAt,
+		&app.UpdatedAt)
+	return &app, err
+})
+
 // Create inserts a new GitHub App into the database.
-func (s *gitHubAppsStore) Create(ctx context.Context, app *types.GitHubApp) error {
+func (s *gitHubAppsStore) Create(ctx context.Context, app *types.GitHubApp) (*types.GitHubApp, error) {
 	key := s.getEncryptionKey()
 	clientSecret, _, err := encryption.MaybeEncrypt(ctx, key, app.ClientSecret)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	privateKey, keyID, err := encryption.MaybeEncrypt(ctx, key, app.PrivateKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	query := sqlf.Sprintf(`INSERT INTO
 	    github_apps (app_id, name, slug, base_url, client_id, client_secret, private_key, encryption_key_id, logo)
-    	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)`,
+    	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+		RETURNING id, created_at, updated_at`,
 		app.AppID, app.Name, app.Slug, app.BaseURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
-	return s.Exec(ctx, query)
+	created, ok, err := scanIDAndTimes(s.Query(ctx, query))
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+
+	o := *app
+	o.ID = created.ID
+	o.CreatedAt = created.CreatedAt
+	o.UpdatedAt = created.UpdatedAt
+	return &o, nil
 }
 
 // Delete removes a GitHub App from the database by ID.
