@@ -92,7 +92,9 @@ export const TranscriptItem: React.FunctionComponent<
             {message.displayText ? (
                 <CodeBlocks displayText={message.displayText} copyButtonClassName={codeBlocksCopyButtonClassName} />
             ) : inProgress ? (
-                <BlinkingCursor />
+                <span>
+                    Fetching context... <BlinkingCursor />
+                </span>
             ) : null}
         </div>
     </div>

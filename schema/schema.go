@@ -564,6 +564,8 @@ type Completions struct {
 	Enabled bool `json:"enabled"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model"`
+	// PerUserHourlyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in an hour. On instances that allow anonymous requests, the rate limit is enforced by IP.
+	PerUserHourlyLimit int `json:"perUserHourlyLimit,omitempty"`
 	// Provider description: The external completions provider.
 	Provider string `json:"provider"`
 }
@@ -676,7 +678,7 @@ type EncryptionKeys struct {
 	EnableCache            bool           `json:"enableCache,omitempty"`
 	ExecutorSecretKey      *EncryptionKey `json:"executorSecretKey,omitempty"`
 	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
-	GithubAppKey           *EncryptionKey `json:"githubAppKey,omitempty"`
+	GitHubAppKey           *EncryptionKey `json:"gitHubAppKey,omitempty"`
 	OutboundWebhookKey     *EncryptionKey `json:"outboundWebhookKey,omitempty"`
 	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 	WebhookKey             *EncryptionKey `json:"webhookKey,omitempty"`
@@ -989,7 +991,7 @@ type GitCommitDescription struct {
 	Version int `json:"version,omitempty"`
 }
 
-// GitHubApp description: The config options for Sourcegraph GitHub App.
+// GitHubApp description: DEPRECATED: The config options for Sourcegraph GitHub App.
 type GitHubApp struct {
 	// AppID description: The app ID of the GitHub App for Sourcegraph.
 	AppID string `json:"appID,omitempty"`
@@ -1001,6 +1003,16 @@ type GitHubApp struct {
 	PrivateKey string `json:"privateKey,omitempty"`
 	// Slug description: The slug of the GitHub App for Sourcegraph.
 	Slug string `json:"slug,omitempty"`
+}
+
+// GitHubAppDetails description: If non-null, this is a GitHub App connection with some additional properties.
+type GitHubAppDetails struct {
+	// AppID description: The ID of the GitHub App.
+	AppID int `json:"appID,omitempty"`
+	// BaseURL description: The base URL of the GitHub App.
+	BaseURL string `json:"baseURL,omitempty"`
+	// InstallationID description: The installation ID of this connection.
+	InstallationID int `json:"installationID,omitempty"`
 }
 
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
@@ -1048,13 +1060,15 @@ type GitHubConnection struct {
 	//
 	// Note: ID is the GitHub GraphQL ID, not the GitHub database ID. eg: "curl https://api.github.com/repos/vuejs/vue | jq .node_id"
 	Exclude []*ExcludedGitHubRepo `json:"exclude,omitempty"`
+	// GitHubAppDetails description: If non-null, this is a GitHub App connection with some additional properties.
+	GitHubAppDetails *GitHubAppDetails `json:"gitHubAppDetails,omitempty"`
 	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.
 	//
 	// If "http", Sourcegraph will access GitHub repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).
 	//
 	// If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
-	// GithubAppInstallationID description: The installation ID of the GitHub App.
+	// GithubAppInstallationID description: DEPRECATED: The installation ID of the GitHub App.
 	GithubAppInstallationID string `json:"githubAppInstallationID,omitempty"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. GitHub repositories can no longer be enabled or disabled explicitly. Configure repositories to be mirrored via "repos", "exclude" and "repositoryQuery" instead.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
@@ -2413,7 +2427,7 @@ type SiteConfiguration struct {
 	ExternalURL string `json:"externalURL,omitempty"`
 	// GitCloneURLToRepositoryName description: JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
-	// GitHubApp description: The config options for Sourcegraph GitHub App.
+	// GitHubApp description: DEPRECATED: The config options for Sourcegraph GitHub App.
 	GitHubApp *GitHubApp `json:"gitHubApp,omitempty"`
 	// GitLongCommandTimeout description: Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.
 	GitLongCommandTimeout int `json:"gitLongCommandTimeout,omitempty"`

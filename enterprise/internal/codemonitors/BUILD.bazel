@@ -33,7 +33,7 @@ go_library(
 
 go_test(
     name = "codemonitors_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = ["search_test.go"],
     embed = [":codemonitors"],
     tags = [

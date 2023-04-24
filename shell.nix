@@ -81,10 +81,12 @@ pkgs.mkShell {
     clippy
 
     bazelisk
+    bazel-watcher
   ];
 
   # Startup postgres
   shellHook = ''
+    set -h # command hashmap is disabled by default
     . ./dev/nix/shell-hook.sh
   '';
 

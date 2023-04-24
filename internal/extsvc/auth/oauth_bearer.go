@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -45,6 +46,10 @@ func (token *OAuthBearerToken) Refresh(ctx context.Context, cli httpcli.Doer) er
 }
 
 func (token *OAuthBearerToken) NeedsRefresh() bool {
+	// If there is no refresh token, always return false since we can't refresh
+	if token.RefreshToken == "" {
+		return false
+	}
 	// Refresh if the current time falls within the buffer period to expiry, and is not zero
 	return !token.Expiry.IsZero() && (time.Until(token.Expiry) <= time.Duration(token.NeedsRefreshBuffer)*time.Minute)
 }
@@ -66,6 +71,11 @@ func (token *OAuthBearerToken) WithToken(newToken string) *OAuthBearerToken {
 	return &OAuthBearerToken{
 		Token: newToken,
 	}
+}
+
+// SetURLUser authenticates the provided URL by setting the User field.
+func (token *OAuthBearerToken) SetURLUser(u *url.URL) {
+	u.User = url.UserPassword("oauth2", token.Token)
 }
 
 // OAuthBearerTokenWithSSH implements OAuth Bearer Token authentication for extsvc
