@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -19,14 +20,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type GithubSource struct {
+type GitHubSource struct {
 	client *github.V4Client
 	au     auth.Authenticator
 }
 
-var _ ForkableChangesetSource = GithubSource{}
+var _ ForkableChangesetSource = GitHubSource{}
 
-func NewGithubSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGitHubSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -35,10 +36,10 @@ func NewGithubSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(svc.URN(), &c, cf, nil)
+	return newGitHubSource(ctx, svc.URN(), &c, cf)
 }
 
-func newGithubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Authenticator) (*GithubSource, error) {
+func newGitHubSource(ctx context.Context, urn string, c *schema.GitHubConnection, cf *httpcli.Factory) (*GitHubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -62,31 +63,22 @@ func newGithubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory
 		return nil, err
 	}
 
-	var authr = au
-	if au == nil {
-		authr = &auth.OAuthBearerToken{Token: c.Token}
+	auther, err := ghauth.FromConnection(ctx, c)
+	if err != nil {
+		return nil, err
 	}
 
-	return &GithubSource{
-		au:     authr,
-		client: github.NewV4Client(urn, apiURL, authr, cli),
+	return &GitHubSource{
+		au:     auther,
+		client: github.NewV4Client(urn, apiURL, auther, cli),
 	}, nil
 }
 
-func (s GithubSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+func (s GitHubSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
 	return GitserverPushConfig(repo, s.au)
 }
 
-func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
-	switch a.(type) {
-	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH:
-		break
-
-	default:
-		return nil, newUnsupportedAuthenticatorError("GithubSource", a)
-	}
-
+func (s GitHubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
 	sc := s
 	sc.au = a
 	sc.client = sc.client.WithAuthenticator(a)
@@ -94,13 +86,13 @@ func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, 
 	return &sc, nil
 }
 
-func (s GithubSource) ValidateAuthenticator(ctx context.Context) error {
+func (s GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.client.GetAuthenticatedUser(ctx)
 	return err
 }
 
 // CreateChangeset creates the given changeset on the code host.
-func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
+func (s GitHubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	input, err := buildCreatePullRequestInput(c)
 	if err != nil {
 		return false, err
@@ -110,7 +102,7 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, 
 }
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
-func (s GithubSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
+func (s GitHubSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	input, err := buildCreatePullRequestInput(c)
 	if err != nil {
 		return false, err
@@ -140,7 +132,7 @@ func buildCreatePullRequestInput(c *Changeset) (*github.CreatePullRequestInput, 
 	}, nil
 }
 
-func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput *github.CreatePullRequestInput) (bool, error) {
+func (s GitHubSource) createChangeset(ctx context.Context, c *Changeset, prInput *github.CreatePullRequestInput) (bool, error) {
 	var exists bool
 	pr, err := s.client.CreatePullRequest(ctx, prInput)
 	if err != nil {
@@ -173,7 +165,7 @@ func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput
 
 // CloseChangeset closes the given *Changeset on the code host and updates the
 // Metadata column in the *batches.Changeset to the newly closed pull request.
-func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+func (s GitHubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
@@ -188,7 +180,7 @@ func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 }
 
 // UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
+func (s GitHubSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
@@ -203,7 +195,7 @@ func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error 
 }
 
 // LoadChangeset loads the latest state of the given Changeset from the codehost.
-func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
+func (s GitHubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 	repo := cs.TargetRepo.Metadata.(*github.Repository)
 	number, err := strconv.ParseInt(cs.ExternalID, 10, 64)
 	if err != nil {
@@ -230,7 +222,7 @@ func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 }
 
 // UpdateChangeset updates the given *Changeset in the code host.
-func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+func (s GitHubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
@@ -242,7 +234,6 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		Body:          c.Body,
 		BaseRefName:   gitdomain.AbbreviateRef(c.BaseRef),
 	})
-
 	if err != nil {
 		return err
 	}
@@ -251,7 +242,7 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 }
 
 // ReopenChangeset reopens the given *Changeset on the code host.
-func (s GithubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
+func (s GitHubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
@@ -266,7 +257,7 @@ func (s GithubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 }
 
 // CreateComment posts a comment on the Changeset.
-func (s GithubSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
+func (s GitHubSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
@@ -277,7 +268,7 @@ func (s GithubSource) CreateComment(ctx context.Context, c *Changeset, text stri
 
 // MergeChangeset merges a Changeset on the code host, if in a mergeable state.
 // If squash is true, a squash-then-merge merge will be performed.
-func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
+func (s GitHubSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitHub pull request")
@@ -293,11 +284,11 @@ func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, squash b
 	return c.Changeset.SetMetadata(pr)
 }
 
-func (GithubSource) IsPushResponseArchived(s string) bool {
+func (GitHubSource) IsPushResponseArchived(s string) bool {
 	return strings.Contains(s, "This repository was archived so it is read-only.")
 }
 
-func (s GithubSource) GetFork(ctx context.Context, targetRepo *types.Repo, namespace, n *string) (*types.Repo, error) {
+func (s GitHubSource) GetFork(ctx context.Context, targetRepo *types.Repo, namespace, n *string) (*types.Repo, error) {
 	return getGitHubForkInternal(ctx, targetRepo, s.client, namespace, n)
 }
 

@@ -123,7 +123,7 @@ SSH into the VM as user `sourcegraph` and run the following command:
 
 ```bash
 # Please update the version number according to the upgrade notes
-helm upgrade -i -f /home/sourcegraph/deploy/install/override.yaml --version 5.0.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade -i -f /home/sourcegraph/deploy/install/override.yaml --version 5.0.2 sourcegraph sourcegraph/sourcegraph
 # Note: /home/sourcegraph/deploy/install/override.yaml is the override file for your instance size
 ```
 

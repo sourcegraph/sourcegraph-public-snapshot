@@ -98,8 +98,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
 	case runtype.BazelExpBranch:
-		// false means not optional, so this build will fail if Bazel build doesn't pass.
-		ops.Merge(BazelOperations(false))
+		ops.Merge(BazelOperations())
 	case runtype.WolfiExpBranch:
 		// Rebuild packages if package configs have changed
 		updatePackages := c.Diff.Has(changed.WolfiPackages)
@@ -365,11 +364,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		ops.Merge(publishOps)
 	}
-
-	ops.Append(
-		wait,                    // wait for all steps to pass
-		uploadBuildeventTrace(), // upload the final buildevent trace if the build succeeded.
-	)
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
