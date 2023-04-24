@@ -17,6 +17,6 @@
     ".eslintrc.js",
     "jest.config.js",
   ],
-  "exclude": ["scripts", "out", "dist"],
+  "exclude": ["scripts", "out", "dist", "integration-test"],
   "references": [{ "path": "../cody-shared" }, { "path": "../cody-ui" }],
 }
