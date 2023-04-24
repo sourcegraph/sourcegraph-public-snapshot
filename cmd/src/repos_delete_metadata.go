@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 )
 
@@ -13,21 +14,22 @@ func init() {
 	usage := `
 Examples:
 
-  Delete a key-value pair from a repository:
+  Delete a key-value pair metadata from a repository:
 
-    	$ src repos delete-kvp -repo=repoID -key=mykey
+		$ src repos delete-metadata -repo=repoID -key=mykey
 
+  [DEPRECATED] Note 'delete-kvp' is deprecated and will be removed in future release. Use 'delete-metadata' instead.
 `
 
-	flagSet := flag.NewFlagSet("delete-kvp", flag.ExitOnError)
+	flagSet := flag.NewFlagSet("delete-metadata", flag.ExitOnError)
 	usageFunc := func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'src repos %s':\n", flagSet.Name())
 		flagSet.PrintDefaults()
 		fmt.Println(usage)
 	}
 	var (
-		repoFlag = flagSet.String("repo", "", `The ID of the repo with the key-value pair to be deleted (required)`)
-		keyFlag  = flagSet.String("key", "", `The name of the key to be deleted (required)`)
+		repoFlag = flagSet.String("repo", "", `The ID of the repo with the key-value pair metadata to be deleted (required)`)
+		keyFlag  = flagSet.String("key", "", `The name of the  metadata key to be deleted (required)`)
 		apiFlags = api.NewFlags(flagSet)
 	)
 
@@ -52,7 +54,7 @@ Examples:
 
 		client := cfg.apiClient(apiFlags, flagSet.Output())
 
-		query := `mutation deleteKVP(
+		query := `mutation deleteRepoMetadata(
   $repo: ID!,
   $key: String!,
 ) {
@@ -71,13 +73,14 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Key-value pair with key '%s' deleted.\n", *keyFlag)
+		fmt.Printf("Key-value pair metadata with key '%s' deleted.\n", *keyFlag)
 		return nil
 	}
 
 	// Register the command.
 	reposCommands = append(reposCommands, &command{
 		flagSet:   flagSet,
+		aliases:   []string{"delete-kvp"},
 		handler:   handler,
 		usageFunc: usageFunc,
 	})

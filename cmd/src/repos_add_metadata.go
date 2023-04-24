@@ -13,23 +13,25 @@ func init() {
 	usage := `
 Examples:
 
-  Update the value for a key on a repository:
+  Add a key-value pair metadata to a repository:
 
-    	$ src repos update-kvp -repo=repoID -key=my-key -value=new-value
+    	$ src repos add-metadata -repo=repoID -key=mykey -value=myvalue
 
-  Omitting -value will set the value of the key to null.
+  Omitting -value will create a tag (a key with a null value).
+
+  [DEPRECATED] Note that 'add-kvp' is deprecated and will be removed in future release. Use 'add-metadata' instead.
 `
 
-	flagSet := flag.NewFlagSet("update-kvp", flag.ExitOnError)
+	flagSet := flag.NewFlagSet("add-metadata", flag.ExitOnError)
 	usageFunc := func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of 'src repos %s':\n", flagSet.Name())
 		flagSet.PrintDefaults()
 		fmt.Println(usage)
 	}
 	var (
-		repoFlag  = flagSet.String("repo", "", `The ID of the repo with the key to be updated (required)`)
-		keyFlag   = flagSet.String("key", "", `The name of the key to be updated (required)`)
-		valueFlag = flagSet.String("value", "", `The new value of the key to be set. Defaults to null.`)
+		repoFlag  = flagSet.String("repo", "", `The ID of the repo to add the key-value pair metadata to (required)`)
+		keyFlag   = flagSet.String("key", "", `The name of the  metadata key to add (required)`)
+		valueFlag = flagSet.String("value", "", `The  metadata value associated with the  metadata key. Defaults to null.`)
 		apiFlags  = api.NewFlags(flagSet)
 	)
 
@@ -60,12 +62,12 @@ Examples:
 
 		client := cfg.apiClient(apiFlags, flagSet.Output())
 
-		query := `mutation updateKVP(
+		query := `mutation addRepoMetadata(
   $repo: ID!,
   $key: String!,
   $value: String,
 ) {
-  updateRepoKeyValuePair(
+  addRepoKeyValuePair(
     repo: $repo,
     key: $key,
     value: $value,
@@ -83,9 +85,9 @@ Examples:
 		}
 
 		if valueFlag != nil {
-			fmt.Printf("Value of key '%s' updated to '%v'\n", *keyFlag, *valueFlag)
+			fmt.Printf("Key-value pair metadata '%s:%v' created.\n", *keyFlag, *valueFlag)
 		} else {
-			fmt.Printf("Value of key '%s' updated to <nil>\n", *keyFlag)
+			fmt.Printf("Key-value pair metadata '%s:<nil>' created.\n", *keyFlag)
 		}
 		return nil
 	}
@@ -93,6 +95,7 @@ Examples:
 	// Register the command.
 	reposCommands = append(reposCommands, &command{
 		flagSet:   flagSet,
+		aliases:   []string{"add-kvp"},
 		handler:   handler,
 		usageFunc: usageFunc,
 	})

@@ -20,12 +20,12 @@ Usage:
 
 The commands are:
 
-	get        gets a repository
-	list       lists repositories
-	delete 	   deletes repositories
-	add-kvp	   adds a key-value pair to a repository
-	update-kvp updates a key-value pair on a repository
-	delete-kvp deletes a key-value pair from a repository
+	get        		gets a repository
+	list       		lists repositories
+	delete 	   		deletes repositories
+	add-metadata    adds a key-value pair metadata to a repository
+	update-metadata updates a key-value pair metadata on a repository
+	delete-metadata deletes a key-value pair metadata from a repository
 
 Use "src repos [command] -h" for more information about a command.
 `
