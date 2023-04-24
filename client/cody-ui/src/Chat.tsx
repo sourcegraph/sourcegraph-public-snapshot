@@ -156,7 +156,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
         },
-        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput]
+        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput, setMessageBeingEdited]
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(

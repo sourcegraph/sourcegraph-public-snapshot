@@ -81,7 +81,9 @@ export const TranscriptItem: React.FunctionComponent<
                     inputHandler(value)
                 }}
                 onKeyDown={event => {
-                    if (event.key === 'Escape') setBeingEdited(false)
+                    if (event.key === 'Escape') {
+                        setBeingEdited(false)
+                    }
 
                     if (
                         event.key === 'Enter' &&
