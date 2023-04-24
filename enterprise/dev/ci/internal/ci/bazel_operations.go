@@ -176,10 +176,10 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 		// }
 		// key = key + ":candidate"
 		cmds = append(cmds,
-			bk.Key("bazel-docker"),
+			bk.Key(candidateImageStepKey(apps[0])),
 			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Env("VERSION", version),
-			bk.Agent("queue", "bazel-dave"),
+			bk.Agent("queue", "bazel"),
 		)
 
 		// Allow all build scripts to emit info annotations
