@@ -5,6 +5,8 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
+	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -69,7 +71,6 @@ type GitCommitResolver struct {
 // you have batch-loaded a bunch of them and already have them at hand.
 func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	repoName := repo.RepoName()
-
 	return &GitCommitResolver{
 		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").
 			With(log.String("repo", string(repoName)),
@@ -119,11 +120,25 @@ func (r *GitCommitResolver) ID() graphql.ID {
 
 func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
 
-func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
+func (r *GitCommitResolver) OID() GitObjectID {
+	if r.repoResolver.IsPerforceDepot() && r.commit != nil {
+		p4change := ParseP4Change(r.commit.Message.Body())
+		if p4change == nil {
+			return "failed to parse"
+		}
+		return GitObjectID(p4change.Change)
+	}
+
+	return r.oid
+}
 
 func (r *GitCommitResolver) InputRev() *string { return r.inputRev }
 
 func (r *GitCommitResolver) AbbreviatedOID() string {
+	if r.repoResolver.IsPerforceDepot() && r.commit != nil {
+		return string(r.OID())
+	}
+
 	return string(r.oid)[:7]
 }
 
@@ -149,6 +164,7 @@ func (r *GitCommitResolver) Message(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return string(commit.Message), err
+
 }
 
 func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
@@ -156,10 +172,32 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	// Special handling for perforce depots converted to git using p4-fusion. We want to return the
+	// subject from the original changelist and not the subject that is generated during the
+	// conversion.
+	//
+	// For depots converted with git-p4, this special handling is not required.
+	if strings.HasPrefix(commit.Message.Body(), "[p4-fusion") {
+		subject, err := parseP4FusionCommitSubject(r.logger, commit.Message.Subject())
+		if err == nil {
+			return subject, nil
+		} else {
+			// If parsing this commit message fails for some reason, log the reason and fall-through
+			// to return the the original git-commit's subject instead of a hard failure or an empty
+			// subject.
+			r.logger.Error(err.Error())
+		}
+	}
+
 	return commit.Message.Subject(), nil
 }
 
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
+	if r.repoResolver.IsPerforceDepot() {
+		return nil, nil
+	}
+
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
 		return nil, err
@@ -416,4 +454,36 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 	repoUrl := *r.repoResolver.RepoMatch.URL()
 	repoUrl.Path += "@" + string(r.oid)
 	return &repoUrl
+}
+
+var p4FusionCommitSubjectPattern = regexp.MustCompile(`^(\d+) - (.*)$`)
+
+func parseP4FusionCommitSubject(logger log.Logger, subject string) (string, error) {
+	matches := p4FusionCommitSubjectPattern.FindStringSubmatch(subject)
+	if len(matches) != 3 {
+		return "", errors.Newf("failed to parse commit subject %q for commit that was converted by p4-fusion", subject)
+	}
+	return matches[2], nil
+}
+
+type P4Change struct {
+	DepotPaths string
+	Change     string
+}
+
+// Either git-p4 or p4-fusion could be used to convert a perforce depot to a git repo. In which case the
+// [git-p4: depot-paths = "//test-perms/": change = 83725]
+// [p4-fusion: depot-paths = "//test-perms/": change = 80972]
+var gitP4Pattern = regexp.MustCompile(`\[(?:git-p4|p4-fusion): depot-paths = "(.*?)"\: change = (\d+)\]`)
+
+func ParseP4Change(input string) *P4Change {
+	matches := gitP4Pattern.FindStringSubmatch(input)
+	if len(matches) != 3 {
+		return nil
+	}
+
+	return &P4Change{
+		DepotPaths: matches[1],
+		Change:     matches[2],
+	}
 }

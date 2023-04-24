@@ -448,6 +448,10 @@ func (r *RepositoryResolver) PermissionsInfo(ctx context.Context) (PermissionsIn
 	return EnterpriseResolvers.authzResolver.RepositoryPermissionsInfo(ctx, r.ID())
 }
 
+func (r *RepositoryResolver) IsPerforceDepot() bool {
+	return r.innerRepo.ExternalRepo.ServiceType == extsvc.TypePerforce
+}
+
 func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	Callsign string
 	Name     *string
