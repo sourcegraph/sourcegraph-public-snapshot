@@ -6,7 +6,7 @@
     "distDir": "./assets"
   },
   "package": {
-    "productName": "Sourcegraph Desktop",
+    "productName": "Sourcegraph App",
     "version": "1.0.0"
   },
   "tauri": {
