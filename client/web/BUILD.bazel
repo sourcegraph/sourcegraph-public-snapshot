@@ -311,6 +311,8 @@ ts_project(
         "src/components/useUserHistory.ts",
         "src/contributions.ts",
         "src/enterprise/EnterpriseWebApp.tsx",
+        "src/enterprise/app-main.tsx",
+        "src/enterprise/app-shell.tsx",
         "src/enterprise/app/AppAuthCallbackPage.tsx",
         "src/enterprise/app/AppComingSoonPage.tsx",
         "src/enterprise/batches/BatchChangeTabs.tsx",
@@ -1490,6 +1492,7 @@ ts_project(
         "src/site/index.ts",
         "src/staticAppConfig.ts",
         "src/stores/codyChat.ts",
+        "src/stores/codySidebar.ts",
         "src/stores/editor.ts",
         "src/stores/index.ts",
         "src/stores/navbarSearchQueryState.ts",
@@ -1584,6 +1587,8 @@ ts_project(
         "src/user/settings/profile/EditUserProfileForm.tsx",
         "src/user/settings/profile/UserProfileFormFields.tsx",
         "src/user/settings/profile/UserSettingsProfilePage.tsx",
+        "src/user/settings/quota/UserQuotaProfilePage.tsx",
+        "src/user/settings/quota/backend.ts",
         "src/user/settings/research/ProductResearch.tsx",
         "src/user/settings/routes.tsx",
         "src/user/settings/sidebaritems.ts",
@@ -1646,6 +1651,7 @@ ts_project(
         "//:node_modules/@sentry/browser",  #keep
         "//:node_modules/@sourcegraph/extension-api-classes",
         "//:node_modules/@storybook/client-api",  #keep
+        "//:node_modules/@tauri-apps/api",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",
@@ -1902,7 +1908,7 @@ jest_test(
         ":web_tests",
     ],
     patch_node_fs = False,
-    shard_count = 4,  # originally at 6, but tend to consume too much resource and crash.
+    shard_count = 3,  # originally at 6, but tend to consume too much resource and crash.
     tags = [
         "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],
@@ -2055,8 +2061,8 @@ build_test(
     ],
 )
 
-bundlesize_bin.bundlesize_test(
-    name = "bundlesize_test",
+bundlesize_bin.bundlesize_binary(
+    name = "bundlesize-report",
     args = [
         "--config",
         "$(location bundlesize.config.js)",
@@ -2069,5 +2075,4 @@ bundlesize_bin.bundlesize_test(
     env = {
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle-enterprise)",
     },
-    flaky = True,
 )
