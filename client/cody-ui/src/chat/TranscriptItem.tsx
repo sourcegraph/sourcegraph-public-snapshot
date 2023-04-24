@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -62,12 +62,6 @@ export const TranscriptItem: React.FunctionComponent<
     showFeedbackButtons,
 }) => {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
-    const inputHandler = useCallback(
-        (inputValue: string): void => {
-            setFormInput(inputValue)
-        },
-        [setFormInput]
-    )
     const textarea =
         TextArea && beingEdited && editButtonOnSubmit ? (
             <TextArea
@@ -78,7 +72,7 @@ export const TranscriptItem: React.FunctionComponent<
                 required={true}
                 onInput={({ target }) => {
                     const { value } = target as HTMLInputElement
-                    inputHandler(value)
+                    setFormInput(value)
                 }}
                 onKeyDown={event => {
                     if (event.key === 'Escape') {
