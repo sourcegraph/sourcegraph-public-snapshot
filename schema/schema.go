@@ -1005,6 +1005,16 @@ type GitHubApp struct {
 	Slug string `json:"slug,omitempty"`
 }
 
+// GitHubAppDetails description: If non-null, this is a GitHub App connection with some additional properties.
+type GitHubAppDetails struct {
+	// AppID description: The ID of the GitHub App.
+	AppID int `json:"appID,omitempty"`
+	// BaseURL description: The base URL of the GitHub App.
+	BaseURL string `json:"baseURL,omitempty"`
+	// InstallationID description: The installation ID of this connection.
+	InstallationID int `json:"installationID,omitempty"`
+}
+
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
 type GitHubAuthProvider struct {
 	// AllowGroupsPermissionsSync description: Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching).
@@ -1050,6 +1060,8 @@ type GitHubConnection struct {
 	//
 	// Note: ID is the GitHub GraphQL ID, not the GitHub database ID. eg: "curl https://api.github.com/repos/vuejs/vue | jq .node_id"
 	Exclude []*ExcludedGitHubRepo `json:"exclude,omitempty"`
+	// GitHubAppDetails description: If non-null, this is a GitHub App connection with some additional properties.
+	GitHubAppDetails *GitHubAppDetails `json:"gitHubAppDetails,omitempty"`
 	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.
 	//
 	// If "http", Sourcegraph will access GitHub repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).

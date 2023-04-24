@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -55,8 +56,8 @@ var (
 	_ VersionSource              = &GitHubSource{}
 )
 
-// NewGithubSource returns a new GitHubSource from the given external service.
-func NewGithubSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+// NewGitHubSource returns a new GitHubSource from the given external service.
+func NewGitHubSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -65,7 +66,7 @@ func NewGithubSource(ctx context.Context, logger log.Logger, svc *types.External
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(logger, svc, &c, cf)
+	return newGitHubSource(ctx, logger, svc, &c, cf)
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -79,7 +80,8 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "The amount of time spent waiting on the rate limit",
 }, []string{"resource", "name"})
 
-func newGithubSource(
+func newGitHubSource(
+	ctx context.Context,
 	logger log.Logger,
 	svc *types.ExternalService,
 	c *schema.GitHubConnection,
@@ -146,16 +148,19 @@ func newGithubSource(
 	if err != nil {
 		return nil, err
 	}
-	token := &auth.OAuthBearerToken{Token: c.Token}
+	auther, err := ghauth.FromConnection(ctx, c)
+	if err != nil {
+		return nil, err
+	}
 	urn := svc.URN()
 
 	var (
 		v3ClientLogger = log.Scoped("source", "github client for github source")
-		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, token, cli)
-		v4Client       = github.NewV4Client(urn, apiURL, token, cli)
+		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cli)
+		v4Client       = github.NewV4Client(urn, apiURL, auther, cli)
 
 		searchClientLogger = log.Scoped("search", "github client for search")
-		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, token, cli)
+		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, auther, cli)
 	)
 
 	for resource, monitor := range map[string]*ratelimit.Monitor{
