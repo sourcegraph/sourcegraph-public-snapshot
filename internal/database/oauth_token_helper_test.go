@@ -61,7 +61,6 @@ func TestExternalServiceTokenRefresher(t *testing.T) {
 				StatusCode: http.StatusOK,
 				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 			}, nil
-
 		},
 	}
 
@@ -93,7 +92,6 @@ func TestExternalServiceTokenRefresher(t *testing.T) {
 
 func TestExternalAccountTokenRefresher(t *testing.T) {
 	ctx := context.Background()
-	db := NewMockDB()
 
 	externalAccounts := NewMockUserExternalAccountsStore()
 	extAccts := []*extsvc.Account{{
@@ -103,7 +101,7 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 			AccountID:   "accountId",
 		},
 		AccountData: extsvc.AccountData{
-			AuthData: extsvc.NewUnencryptedData([]byte(``)),
+			AuthData: extsvc.NewUnencryptedData([]byte(`{"token": "expired", "refresh_token": "refresh_token"}`)),
 		},
 	}}
 
@@ -111,13 +109,12 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 		extAccts,
 		nil,
 	)
+	externalAccounts.TransactFunc.SetDefaultReturn(externalAccounts, nil)
 
 	externalAccounts.GetFunc.SetDefaultReturn(extAccts[0], nil)
 	externalAccounts.LookupUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (int32, error) {
 		return 1, nil
 	})
-
-	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 
 	doer := &mockDoer{
 		do: func(r *http.Request) (*http.Response, error) {
@@ -135,12 +132,11 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 				StatusCode: http.StatusOK,
 				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 			}, nil
-
 		},
 	}
 
 	expectedNewToken := "new-token"
-	newToken, err := externalAccountTokenRefresher(db, 1, "refresh_token")(ctx, doer, oauthutil.OAuthContext{})
+	newToken, err := externalAccountTokenRefresher(externalAccounts, 1, "refresh_token")(ctx, doer, oauthutil.OAuthContext{})
 	require.NoError(t, err)
 	assert.Equal(t, expectedNewToken, newToken.Token)
 }
