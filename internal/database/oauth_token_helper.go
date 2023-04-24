@@ -43,10 +43,10 @@ func externalAccountTokenRefresher(store UserExternalAccountsStore, externalAcco
 			RefreshToken: tok.RefreshToken,
 			Expiry:       tok.Expiry,
 		}
-		// Compare the stored refresh token with the provided one.
+		// Compare the stored token with the provided one.
 		// If they differ, the token was most likely refreshed in the meantime.
 		// Check `NeedsRefresh` for good measure.
-		if fetchedToken.RefreshToken != originalToken.RefreshToken && !fetchedToken.NeedsRefresh() {
+		if fetchedToken.Token != originalToken.Token && !fetchedToken.NeedsRefresh() {
 			return fetchedToken, nil
 		}
 
