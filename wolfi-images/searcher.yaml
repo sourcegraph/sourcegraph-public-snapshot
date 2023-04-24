@@ -4,7 +4,7 @@ contents:
     - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
-    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main/'
+    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
   packages:
     ## Base set of packages included in sourcegraph/alpine base image
     - wolfi-baselayout
@@ -16,7 +16,7 @@ contents:
     - busybox
     - curl
     - wget
-    # - 'bind-tools>=9.16.33-r0' # TODO: Not available in Wolfi repo
+    - bind-tools
 
     ## Searcher packages
     - pcre                       # TODO: Can we upgrade to pcre2, which is maintained?

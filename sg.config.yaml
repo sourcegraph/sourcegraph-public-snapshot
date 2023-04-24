@@ -892,6 +892,10 @@ commands:
       - lib
       - schema
 
+  tauri:
+    description: App shell (Tauri)
+    cmd: pnpm tauri dev
+
   sourcegraph-oss:
     description: Single program (Go static binary) distribution, OSS variant
     cmd: |
@@ -1410,6 +1414,7 @@ commandsets:
       - docsite
       - web
       - caddy
+      - tauri
     env:
       DISABLE_CODE_INSIGHTS: false
 
