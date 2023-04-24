@@ -1,0 +1,43 @@
+contents:
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
+  repositories:
+    - https://packages.wolfi.dev/os
+    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
+  packages:
+    - wolfi-baselayout # replaces alpine-baselayout-data
+    - ca-certificates-bundle
+    - tzdata
+    # Included by existing SG base image
+    - tini
+    - mailcap
+    # These are dev tools - may not be required in production
+    - busybox
+    - curl
+    - wget
+    - bind-tools
+
+    ## opentelemetry-collector-specific packages
+    - opentelemetry-collector@sourcegraph
+
+# Run as root
+accounts:
+  run-as: 0
+  groups:
+    - groupname: sourcegraph
+      gid: 101
+  users:
+    - username: sourcegraph
+      uid: 100
+      gid: 101
+
+# NOTE: This is ignored (see build output)
+# To force amd64, first run `docker pull --platform linux/arm64 cgr.dev/chainguard/apko`
+archs:
+ - amd64
+
+annotations:
+  org.opencontainers.image.url: https://sourcegraph.com/
+  org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
+  org.opencontainers.image.documentation: https://docs.sourcegraph.com/

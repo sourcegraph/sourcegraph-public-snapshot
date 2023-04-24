@@ -1,9 +1,10 @@
 contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
-    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main/'
+    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
   packages:
     - wolfi-baselayout # replaces alpine-baselayout-data
     - ca-certificates-bundle
@@ -15,7 +16,7 @@ contents:
     - busybox
     - curl
     - wget
-    # - 'bind-tools>=9.16.33-r0' # TODO: Not available in Wolfi repo
+    - bind-tools
 
     ## Dev-specific tools
     - apk-tools
@@ -23,6 +24,13 @@ contents:
 # Run as root
 accounts:
   run-as: 0
+  groups:
+    - groupname: sourcegraph
+      gid: 101
+  users:
+    - username: sourcegraph
+      uid: 100
+      gid: 101
 
 # NOTE: This is ignored (see build output)
 # To force amd64, first run `docker pull --platform linux/arm64 cgr.dev/chainguard/apko`
