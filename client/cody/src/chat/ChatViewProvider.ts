@@ -356,7 +356,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Publish the current context status to the webview.
      */
     private publishContextStatus(): void {
-        const send = async (): Promise<void> => {
+        const send = (): void => {
             const editorContext = this.editor.getActiveTextEditor()
             void this.webview?.postMessage({
                 type: 'contextStatus',
@@ -530,7 +530,7 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
         // Handle HTTP/HTTPS URL format
         try {
             parsed = new URL(cloneURL)
-        } catch (error) {
+        } catch {
             return null
         }
     }
@@ -563,7 +563,7 @@ async function getCodebaseContext(config: Config, rgPath: string, editor: Editor
     const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
     const gitOutput = gitCommand.stdout.toString().trim()
     if (!gitOutput) {
-        vscode.window.showErrorMessage(
+        void vscode.window.showErrorMessage(
             `Unable to determine the git clone URL for this workspace.\ngit output: ${gitOutput}`
         )
         return null
@@ -572,7 +572,7 @@ async function getCodebaseContext(config: Config, rgPath: string, editor: Editor
     // Get repository name from git clone URL
     const codebase = convertGitCloneURLToCodebaseName(gitOutput)
     if (!codebase) {
-        vscode.window.showErrorMessage(`could not extract repo name from clone URL ${gitOutput}`)
+        void vscode.window.showErrorMessage(`could not extract repo name from clone URL ${gitOutput}`)
         return null
     }
     const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
