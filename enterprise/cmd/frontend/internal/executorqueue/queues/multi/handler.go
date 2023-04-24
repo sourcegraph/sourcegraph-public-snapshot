@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 	"golang.org/x/exp/slices"
 
@@ -29,7 +30,7 @@ type TransformerFunc[T workerutil.Record] func(ctx context.Context, version stri
 
 func NewMultiHandler(multiQueueHandler MultiQueueHandler) handler.ExecutorHandler {
 	return &multiHandler{
-		logger:            log.Scoped("executor-queue-handler-%s", "The route handler for all executor dbworker API tunnel queue endpoints"),
+		logger:            log.Scoped("executor-multi-queue-handler", "The generic route handler for all executor queues"),
 		multiQueueHandler: multiQueueHandler,
 	}
 }
@@ -63,6 +64,8 @@ func (m *multiHandler) HandleDequeue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, queue := range req.Queues {
+		// simulate as if the request was POSTed to /{queueName}/dequeue
+		mux.Vars(r)["queueName"] = queue
 		m.multiQueueHandler.Handlers[queue].HandleDequeue(w, r)
 	}
 }
