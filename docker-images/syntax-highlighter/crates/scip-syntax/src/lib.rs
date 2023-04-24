@@ -39,8 +39,9 @@ macro_rules! generate_tags_and_snapshot {
 
 #[cfg(test)]
 mod test {
-    use crate::ctags::generate_tags;
     use std::io::BufWriter;
+
+    use crate::ctags::generate_tags;
 
     #[test]
     fn test_generate_ctags_go_globals() {

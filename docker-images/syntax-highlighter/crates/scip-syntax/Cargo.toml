@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+itertools.workspace = true
 protobuf.workspace = true
 scip.workspace = true
 tree-sitter.workspace = true

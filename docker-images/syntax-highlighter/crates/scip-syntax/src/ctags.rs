@@ -5,7 +5,8 @@ use std::{
     path,
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
+use itertools::intersperse;
 use scip::types::{descriptor::Suffix, Descriptor};
 use scip_treesitter_languages::parsers::BundledParser;
 use serde::{Deserialize, Serialize};
@@ -79,11 +80,8 @@ impl<'a> Reply<'a> {
         scope_deduplicator: &mut HashMap<String, ()>,
     ) {
         let descriptors = &scope.descriptors;
-        let name = descriptors
-            .iter()
-            .map(|d| d.name.as_str())
-            .collect::<Vec<_>>()
-            .join(".");
+        let names = descriptors.iter().map(|d| d.name.as_str());
+        let name = intersperse(names, ".").collect::<String>();
 
         let mut dedup = match tag_scope {
             Some(ts) => vec![ts],
@@ -262,8 +260,6 @@ pub fn ctags_runner<R: Read, W: Write>(
 
         match request {
             Request::GenerateTags { filename, size } => {
-                eprintln!("{filename}");
-
                 let mut file_data = vec![0; size];
                 input
                     .read_exact(&mut file_data)
@@ -284,6 +280,26 @@ pub fn ctags_runner<R: Read, W: Write>(
     Ok(())
 }
 
+pub fn helper_execute_one_file(name: &str, contents: &str) -> Result<String> {
+    let command = format!(
+        r#"
+{{ "command":"generate-tags","filename":"{}","size":{} }}
+{}
+"#,
+        name,
+        contents.len(),
+        contents
+    )
+    .trim()
+    .to_string();
+
+    let mut input = BufReader::new(command.as_bytes());
+    let mut output = BufWriter::new(Vec::new());
+    ctags_runner(&mut input, &mut output)?;
+
+    String::from_utf8(output.get_ref().to_vec()).context("Could not parse output")
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -300,22 +316,8 @@ fn other() -> bool { false }
 "#
         .trim();
 
-        let command = format!(
-            r#"
-{{ "command":"generate-tags","filename":"main.rs","size":{} }}
-{}
-"#,
-            file.len(),
-            file
-        )
-        .trim()
-        .to_string();
-
-        let mut input = BufReader::new(command.as_bytes());
-        let mut output = BufWriter::new(Vec::new());
-        ctags_runner(&mut input, &mut output)?;
-
-        insta::assert_snapshot!(String::from_utf8(output.get_ref().to_vec())?);
+        let output = helper_execute_one_file("main.rs", file)?;
+        insta::assert_snapshot!(output);
 
         Ok(())
     }
