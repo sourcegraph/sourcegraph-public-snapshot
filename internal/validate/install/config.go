@@ -52,6 +52,11 @@ type Insight struct {
 	DeleteWhenDone bool             `yaml:"deleteWhenDone"`
 }
 
+type Smtp struct {
+	Enabled bool   `yaml:"enabled"`
+	To      string `yaml:"to"`
+}
+
 type ValidationSpec struct {
 	// Search queries used for validation testing, e.g. "repo:^github\\.com/gorilla/mux$ Router".
 	SearchQuery []string `yaml:"searchQuery"`
@@ -61,6 +66,9 @@ type ValidationSpec struct {
 
 	// Insight used for validation testing.
 	Insight Insight `yaml:"insight"`
+
+	//Test SMTP configuration
+	Smtp Smtp `yaml:"smtp"`
 }
 
 // DefaultConfig returns a default configuration to be used for testing.
@@ -107,6 +115,10 @@ func DefaultConfig() *ValidationSpec {
 				},
 			},
 			DeleteWhenDone: true,
+		},
+		Smtp: Smtp{
+			Enabled: false,
+			To:      "example@domain.com",
 		},
 	}
 }
