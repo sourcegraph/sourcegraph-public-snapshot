@@ -21,6 +21,7 @@ go_library(
         "//enterprise/cmd/worker/internal/embeddings/repo",
         "//enterprise/cmd/worker/internal/executors",
         "//enterprise/cmd/worker/internal/insights",
+        "//enterprise/cmd/worker/internal/own",
         "//enterprise/cmd/worker/internal/permissions",
         "//enterprise/cmd/worker/internal/telemetry",
         "//enterprise/internal/authz",
