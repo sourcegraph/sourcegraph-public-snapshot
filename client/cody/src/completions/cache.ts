@@ -16,6 +16,7 @@ export class CompletionsCache {
     public get(prefix: string): Completion[] | undefined {
         const results = this.cache.get(prefix)
         if (results) {
+            console.log('CACHE HIT')
             return results.map(result => {
                 if (prefix.length === result.prefix.length) {
                     return result
@@ -38,9 +39,17 @@ export class CompletionsCache {
 
     public add(completions: Completion[]): void {
         for (const completion of completions) {
-            // Cache the exact prefix first and then add characters from the
-            // completion one after the other
-            for (let i = 0; i <= Math.min(10, completion.content.length); i++) {
+            // Cache the exact prefix first and then append characters from the
+            // completion one after the other until the first line is exceeded.
+            //
+            // If the completion starts with a `\n`, this logic will append the
+            // second line instead.
+            let maxCharsAppended = completion.content.indexOf('\n', completion.content.at(0) === '\n' ? 1 : 0)
+            if (maxCharsAppended === -1) {
+                maxCharsAppended = completion.content.length
+            }
+
+            for (let i = 0; i <= maxCharsAppended; i++) {
                 const key = completion.prefix + completion.content.slice(0, i)
                 if (!this.cache.has(key)) {
                     this.cache.set(key, [completion])
