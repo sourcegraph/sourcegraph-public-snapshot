@@ -4,4 +4,5 @@ set -x
 
 rm -rf assets/
 mkdir -p assets
+cd .. && pnpm build && cd -
 cp -r ../client/app-shell/dist/* assets/

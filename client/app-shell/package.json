@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@sourcegraph/app",
+  "name": "@sourcegraph/app-shell",
   "version": "1.00",
   "description": "The Sourcegraph Shell",
   "scripts": {
