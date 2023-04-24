@@ -3,8 +3,12 @@
     windows_subsystem = "windows"
 )]
 
-use tauri::api::process::Command;
-use tauri::api::process::CommandEvent;
+#[cfg(not(dev))]
+use {
+    tauri::api::process::Command,
+    tauri::api::process::CommandEvent
+};
+
 use tauri::Manager;
 
 fn main() {
@@ -14,6 +18,7 @@ fn main() {
             println!("Error fixing path environment: {}", e);
         }
     }
+    
     tauri::Builder::default()
         .setup(|app| {
             let window = app.get_window("main").unwrap();
@@ -24,15 +29,13 @@ fn main() {
         .expect("error while running tauri application");
 }
 
-fn start_embedded_services(window: tauri::Window) {
-    #[cfg(dev)]
-    println!("embedded Sourcegraph backend disabled for local development");
-        
-    #[cfg(not(dev))]
-    launch_backend(window)
+#[cfg(dev)]
+fn start_embedded_services(_window:tauri::Window) {
+    println!("embedded Sourcegraph services disabled for local development");
 }
 
-fn launch_backend(window: tauri::Window) {
+#[cfg(not(dev))]
+fn start_embedded_services(window :tauri::Window) {
     let (mut rx, _child) = Command::new_sidecar("backend")
                 .expect("failed to create `backend` binary command")
                 .spawn()
@@ -47,7 +50,7 @@ fn launch_backend(window: tauri::Window) {
                         .emit("backend-stdout", Some(line.clone()))
                         .expect("failed to emit event");
 
-                    window.eval(&format!(
+                    let _ = window.eval(&format!(
                         "console.log(\":: {}\")",
                         line.replace("\"", "\\\"")
                     ));
@@ -57,7 +60,7 @@ fn launch_backend(window: tauri::Window) {
                         .emit("backend-stderr", Some(line.clone()))
                         .expect("failed to emit event");
 
-                    window.eval(&format!(
+                    let _ = window.eval(&format!(
                         "console.log(\":: {}\")",
                         line.replace("\"", "\\\"")
                     ));
