@@ -18,6 +18,7 @@ import (
 
 type Store interface {
 	WithTransaction(ctx context.Context, f func(s Store) error) error
+	Handle() *basestore.Store
 
 	// Upload records
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) ([]shared.Upload, int, error)
@@ -144,4 +145,8 @@ func (s *store) Transact(ctx context.Context) (*store, error) {
 
 func (s *store) Done(err error) error {
 	return s.db.Done(err)
+}
+
+func (s *store) Handle() *basestore.Store {
+	return s.db
 }

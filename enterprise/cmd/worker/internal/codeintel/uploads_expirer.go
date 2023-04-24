@@ -40,5 +40,5 @@ func (j *uploadExpirerJob) Routines(_ context.Context, observationCtx *observati
 		return nil, err
 	}
 
-	return uploads.NewExpirationTasks(observationCtx, services.UploadsService, db.Repos()), nil
+	return uploads.NewExpirationTasks(observationCtx, services.UploadsService, services.PoliciesService, db.Repos()), nil
 }

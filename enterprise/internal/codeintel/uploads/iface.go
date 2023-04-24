@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background/expirer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background/processor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -16,8 +15,6 @@ type UploadService interface {
 }
 
 type (
-	Locker        = commitgraph.Locker
 	RepoStore     = processor.RepoStore
 	PolicyService = expirer.PolicyService
-	PolicyMatcher = expirer.PolicyMatcher
 )

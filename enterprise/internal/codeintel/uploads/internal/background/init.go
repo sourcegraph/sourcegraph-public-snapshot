@@ -87,14 +87,12 @@ func NewJanitor(
 
 func NewCommitGraphUpdater(
 	store uploadsstore.Store,
-	locker commitgraph.Locker,
 	gitserverClient gitserver.Client,
 	config *commitgraph.Config,
 ) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		commitgraph.NewCommitGraphUpdater(
 			store,
-			locker,
 			gitserverClient,
 			config,
 		),
@@ -105,7 +103,7 @@ func NewExpirationTasks(
 	observationCtx *observation.Context,
 	store uploadsstore.Store,
 	policySvc expirer.PolicyService,
-	policyMatcher expirer.PolicyMatcher,
+	gitserverClient gitserver.Client,
 	repoStore database.RepoStore,
 	config *expirer.Config,
 ) []goroutine.BackgroundRoutine {
@@ -115,7 +113,7 @@ func NewExpirationTasks(
 			store,
 			repoStore,
 			policySvc,
-			policyMatcher,
+			gitserverClient,
 			config,
 		),
 	}

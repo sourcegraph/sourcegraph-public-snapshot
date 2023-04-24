@@ -1,15 +1,9 @@
 package uploads
 
 import (
-	"context"
 	"time"
 
-	"cloud.google.com/go/storage"
-	"github.com/sourcegraph/log"
-	"google.golang.org/api/option"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background/backfiller"
@@ -20,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	uploadsstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -37,27 +30,6 @@ func NewService(
 	store := uploadsstore.New(scopedContext("uploadsstore", observationCtx), db)
 	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserverClient)
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
-	policyMatcher := policies.NewMatcher(gitserverClient, policies.RetentionExtractor, true, false)
-	ciLocker := locker.NewWith(db, "codeintel")
-
-	rankingBucket := func() *storage.BucketHandle {
-		if rankingBucketCredentialsFile == "" {
-			return nil
-		}
-
-		var opts []option.ClientOption
-		if rankingBucketCredentialsFile != "" {
-			opts = append(opts, option.WithCredentialsFile(rankingBucketCredentialsFile))
-		}
-
-		client, err := storage.NewClient(context.Background(), opts...)
-		if err != nil {
-			log.Scoped("codenav", "").Error("failed to create storage client", log.Error(err))
-			return nil
-		}
-
-		return client.Bucket(bucketName)
-	}()
 
 	svc := newService(
 		scopedContext("service", observationCtx),
@@ -65,12 +37,7 @@ func NewService(
 		repoStore,
 		lsifStore,
 		gitserverClient,
-		rankingBucket,
-		nil, // written in circular fashion
-		policyMatcher,
-		ciLocker,
 	)
-	svc.policySvc = policies.NewService(observationCtx, db, svc, gitserverClient)
 
 	return svc
 }
@@ -148,7 +115,6 @@ func NewCommitGraphUpdater(
 	return background.NewCommitGraphUpdater(
 		// TODO - context
 		uploadSvc.store,
-		uploadSvc.locker,
 		gitserverClient,
 		CommitGraphConfigInst,
 	)
@@ -157,13 +123,14 @@ func NewCommitGraphUpdater(
 func NewExpirationTasks(
 	observationCtx *observation.Context,
 	uploadSvc *Service,
+	policySvc expirer.PolicyService,
 	repoStore database.RepoStore,
 ) []goroutine.BackgroundRoutine {
 	return background.NewExpirationTasks(
 		scopedContext("expiration", observationCtx),
 		uploadSvc.store,
-		uploadSvc.policySvc,
-		uploadSvc.policyMatcher,
+		policySvc,
+		uploadSvc.gitserverClient,
 		repoStore,
 		ExpirerConfigInst,
 	)
