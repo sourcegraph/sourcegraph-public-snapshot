@@ -52,6 +52,11 @@ type Insight struct {
 	DeleteWhenDone bool             `yaml:"deleteWhenDone"`
 }
 
+type Executor struct {
+	Enabled bool `yaml:"enabled"`
+	Count   bool `yaml:"count"`
+}
+
 type Smtp struct {
 	Enabled bool   `yaml:"enabled"`
 	To      string `yaml:"to"`
@@ -66,6 +71,9 @@ type ValidationSpec struct {
 
 	// Insight used for validation testing.
 	Insight Insight `yaml:"insight"`
+
+	// Executor check configuration
+	Executor Executor `yaml:"executor"`
 
 	//Test SMTP configuration
 	Smtp Smtp `yaml:"smtp"`
@@ -115,6 +123,9 @@ func DefaultConfig() *ValidationSpec {
 				},
 			},
 			DeleteWhenDone: true,
+		},
+		Executor: Executor{
+			Enabled: false,
 		},
 		Smtp: Smtp{
 			Enabled: false,
