@@ -18,8 +18,8 @@ The following is a guide to setting up a local development environment for the e
 - Start MiniKube
   - `minikube start`
 - Load the images
-  - `miniube image load executor-kubernetes:latest`
-  - `miniube image load sourcegraph/batcheshelper:insiders`
+  - `minikube image load executor-kubernetes:latest`
+  - `minikube image load sourcegraph/batcheshelper:insiders`
 
 ## Build Image
 
