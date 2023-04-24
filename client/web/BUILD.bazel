@@ -312,7 +312,6 @@ ts_project(
         "src/contributions.ts",
         "src/enterprise/EnterpriseWebApp.tsx",
         "src/enterprise/app-main.tsx",
-        "src/enterprise/app-shell.tsx",
         "src/enterprise/app/AppAuthCallbackPage.tsx",
         "src/enterprise/app/AppComingSoonPage.tsx",
         "src/enterprise/batches/BatchChangeTabs.tsx",
@@ -1651,7 +1650,6 @@ ts_project(
         "//:node_modules/@sentry/browser",  #keep
         "//:node_modules/@sourcegraph/extension-api-classes",
         "//:node_modules/@storybook/client-api",  #keep
-        "//:node_modules/@tauri-apps/api",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",

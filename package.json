@@ -26,6 +26,7 @@
     "lint:graphql": "graphql-schema-linter",
     "build-ts": "tsc --build tsconfig.all.json --emitDeclarationOnly",
     "build-web": "pnpm --filter @sourcegraph/web run build",
+    "build-app-shell": "pnpm --filter @sourcegraph/app-shell run build",
     "watch-web": "pnpm --filter @sourcegraph/web run watch",
     "generate": "gulp generate",
     "watch-generate": "gulp watchGenerate",
