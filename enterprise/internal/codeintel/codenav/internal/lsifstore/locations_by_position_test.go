@@ -436,7 +436,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 						{
 							Range:       []int32{3, 300, 4, 400},
 							Symbol:      "react 17.1 main.go iface",
-							SymbolRoles: 1, // is definition
+							SymbolRoles: 0, // not a definition so its a reference
 						},
 					},
 					Symbols: []*scip.SymbolInformation{
