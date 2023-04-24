@@ -894,7 +894,7 @@ commands:
 
   tauri:
     description: App shell (Tauri)
-    cmd: pnpm tauri dev
+    cmd: pnpm tauri dev --config src-tauri/tauri.dev.conf.json
 
   sourcegraph-oss:
     description: Single program (Go static binary) distribution, OSS variant
