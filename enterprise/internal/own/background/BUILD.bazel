@@ -37,6 +37,7 @@ go_test(
     name = "background_test",
     srcs = ["scheduler_test.go"],
     embed = [":background"],
+    timeout = "moderate",
     deps = [
         "//internal/database",
         "//internal/database/basestore",
