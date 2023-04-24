@@ -94,9 +94,7 @@ func (sourcegraphOwn) NewOwnRepoIndexerResetterGroup(containerName string) monit
 	})
 }
 
-// src_codeintel_autoindexing_total{op='HandleIndexSchedule'}
-// src_codeintel_autoindexing_duration_seconds_bucket{op='HandleIndexSchedule'}
-// src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule'}
+// src_own_background_index_scheduler_total{op=”}
 func (sourcegraphOwn) NewOwnRepoIndexerSchedulerGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
