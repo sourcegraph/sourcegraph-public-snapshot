@@ -139,7 +139,7 @@ export const searchResultsToFileContent = (
                         ...(enableRepositoryMetadata
                             ? [
                                   '"' +
-                                      Object.entries(result.keyValuePairs ?? {})
+                                      Object.entries(result.metadata ?? {})
                                           .map(([key, value]) => (value ? `${key}:${value}` : key))
                                           .join('\n')
                                           .replaceAll('"', '""') +

@@ -40,13 +40,13 @@ const RepoMetadataItem: React.FunctionComponent<RepoMetadataItemProps> = ({ meta
 )
 
 interface RepoMetadataProps {
-    keyValuePairs: [string, string | null | undefined][]
+    metadata: [string, string | null | undefined][]
     className?: string
     small?: boolean
 }
 
-export const RepoMetadata: React.FunctionComponent<RepoMetadataProps> = ({ keyValuePairs, small, className }) => {
-    const sortedPairs = useMemo(() => sortBy(keyValuePairs), [keyValuePairs])
+export const RepoMetadata: React.FunctionComponent<RepoMetadataProps> = ({ metadata, small, className }) => {
+    const sortedPairs = useMemo(() => sortBy(metadata), [metadata])
     if (sortedPairs.length === 0) {
         return null
     }

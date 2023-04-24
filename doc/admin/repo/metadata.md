@@ -31,23 +31,23 @@ Currently, there are two ways to add metadata to a repository: Sourcegraph's Gra
 
 ### GraphQL
 
-Metadata can be added with the `addRepoKeyValuePair` mutation, updated with the `updateRepoKeyValuePair` mutation, and deleted with the `deleteRepoKeyValuePair` mutation. You will need the GraphQL ID for the repository being targeted.
+Metadata can be added with the `addRepoMetadata` mutation, updated with the `updateRepoMetadata` mutation, and deleted with the `deleteRepoMetadata` mutation. You will need the GraphQL ID for the repository being targeted.
 
 ```graphql
 mutation AddSecurityOwner($repoID: ID!) {
-  addRepoKeyValuePair(repo: $repoID, key: "owning-team", value: "security") {
+  addRepoMetadata(repo: $repoID, key: "owning-team", value: "security") {
     alwaysNil
   }
 }
 
 mutation UpdateSecurityOwner($repoID: ID!) {
-  updateRepoKeyValuePair(repo: $repoID, key: "owning-team", value: "security++") {
+  updateRepoMetadata(repo: $repoID, key: "owning-team", value: "security++") {
     alwaysNil
   }
 }
 
 mutation DeleteSecurityOwner($repoID: ID!) {
-  deleteRepoKeyValuePair(repo: $repoID, key: "owning-team") {
+  deleteRepoMetadata(repo: $repoID, key: "owning-team") {
     alwaysNil
   }
 }

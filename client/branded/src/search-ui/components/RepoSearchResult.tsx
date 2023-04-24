@@ -92,9 +92,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                     <div className="d-flex align-items-center flex-row">
                         <div className={classNames(styles.matchType, 'd-flex align-items-start')}>
                             <small>Repository match</small>
-                            {enableRepositoryMetadata && !!result.keyValuePairs && (
+                            {enableRepositoryMetadata && !!result.metadata && (
                                 <RepoMetadata
-                                    keyValuePairs={Object.entries(result.keyValuePairs)}
+                                    metadata={Object.entries(result.metadata)}
                                     className="justify-content-end ml-2 mr-4"
                                     small={true}
                                 />

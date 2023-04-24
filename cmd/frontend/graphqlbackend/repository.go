@@ -371,7 +371,12 @@ func (r *RepositoryResolver) Stars(ctx context.Context) (int32, error) {
 	return int32(repo.Stars), nil
 }
 
+// Deprecated: Use RepositoryResolver.Metadata instead.
 func (r *RepositoryResolver) KeyValuePairs(ctx context.Context) ([]KeyValuePair, error) {
+	return r.Metadata(ctx)
+}
+
+func (r *RepositoryResolver) Metadata(ctx context.Context) ([]KeyValuePair, error) {
 	repo, err := r.repo(ctx)
 	if err != nil {
 		return nil, err
@@ -640,7 +645,17 @@ func (k KeyValuePair) Value() *string {
 	return k.value
 }
 
+// Deprecated: Use AddRepoMetadata instead.
 func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+},
+) (*EmptyResponse, error) {
+	return r.AddRepoMetadata(ctx, args)
+}
+
+func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
 	Repo  graphql.ID
 	Key   string
 	Value *string
@@ -662,7 +677,17 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
 }
 
+// Deprecated: Use UpdateRepoMetadata instead.
 func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+},
+) (*EmptyResponse, error) {
+	return r.UpdateRepoMetadata(ctx, args)
+}
+
+func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
 	Repo  graphql.ID
 	Key   string
 	Value *string
@@ -685,7 +710,16 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 	return &EmptyResponse{}, err
 }
 
+// Deprecated: Use DeleteRepoMetadata instead.
 func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
+	Repo graphql.ID
+	Key  string
+},
+) (*EmptyResponse, error) {
+	return r.DeleteRepoMetadata(ctx, args)
+}
+
+func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 	Repo graphql.ID
 	Key  string
 },

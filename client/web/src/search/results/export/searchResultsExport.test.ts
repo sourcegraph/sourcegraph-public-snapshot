@@ -923,7 +923,7 @@ describe('searchResultsToFileContent', () => {
                     repoLastFetched: '2022-12-15T03:33:35.440014Z',
                     description:
                         "Download and generate EPUB of your favorite books from O'Reilly Learning (aka Safari Books Online) library.",
-                    keyValuePairs: {
+                    metadata: {
                         oss: undefined,
                         deprecated: undefined,
                         'some",non-standard-key': 'value',
