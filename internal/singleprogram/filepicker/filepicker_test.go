@@ -118,7 +118,7 @@ func TestPicker(t *testing.T) {
 				return
 			}
 
-			got, err := picker(context.Background())
+			got, err := picker(context.Background(), true)
 			if (err != nil) != tc.wantErr {
 				t.Fatalf("%q: unexpected error from picker: %v", tc.name, err)
 			}

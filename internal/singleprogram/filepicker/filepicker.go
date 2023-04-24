@@ -17,12 +17,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func osascript(ctx context.Context) ([]string, error) {
+func osascript(ctx context.Context, allowMultiple bool) ([]string, error) {
 	var paths []string
+
+	const promptMultiple = `set theFolders to choose folder with prompt "Select repositories or folders with repositories" with multiple selections allowed`
+	const promptSingle = `set theFolders to choose folder with prompt "Select a repository or folder with repositories"`
+	var prompt string
+	if allowMultiple {
+		prompt = promptMultiple
+	} else {
+		prompt = promptSingle
+	}
 
 	cmd := exec.CommandContext(ctx,
 		"osascript", "-e",
-		`set theFolders to choose folder with prompt "Select repositories or folders with repositories" with multiple selections allowed`,
+		prompt,
 		"-e",
 		"set posixPaths to {}",
 		"-e",
@@ -51,7 +60,7 @@ func osascript(ctx context.Context) ([]string, error) {
 	return paths, nil
 }
 
-func zenity(ctx context.Context) ([]string, error) {
+func zenity(ctx context.Context, allowMultiple bool) ([]string, error) {
 	// nix-shell -p gnome.zenity
 	cmd := exec.CommandContext(ctx, "zenity", "--file-selection", "--directory")
 	path, err := cmd.Output()
@@ -62,7 +71,7 @@ func zenity(ctx context.Context) ([]string, error) {
 	return []string{trimTrailingNewline(path)}, nil
 }
 
-func kdialog(ctx context.Context) ([]string, error) {
+func kdialog(ctx context.Context, allowMultiple bool) ([]string, error) {
 	// nix-shell -p kdialog
 	cmd := exec.CommandContext(ctx, "kdialog", "--getexistingdirectory")
 	pathRaw, err := cmd.Output()
@@ -89,7 +98,7 @@ func trimTrailingNewline(b []byte) string {
 // Picker returns the filepath to a directory a user picked. It should exclude
 // the trailing /. If the operation times out or the user cancels, an error is
 // returned.
-type Picker func(ctx context.Context) ([]string, error)
+type Picker func(ctx context.Context, allowMultiple bool) ([]string, error)
 
 // Lookup finds a Picker to run. If no Picker can be found, ok is false.
 func Lookup(logger log.Logger) (_ Picker, ok bool) {

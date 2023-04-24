@@ -73,7 +73,7 @@ func (r *appResolver) LocalDirectoriesPicker(ctx context.Context) (LocalDirector
 		return nil, errors.New("filepicker is not available")
 	}
 
-	paths, err := picker(ctx)
+	paths, err := picker(ctx, true)
 	if err != nil {
 		return nil, err
 	}
