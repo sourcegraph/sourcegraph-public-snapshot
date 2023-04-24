@@ -350,7 +350,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
 		publishList := append(append(images.SourcegraphDockerImages, images.SourcegraphDockerImagesMusl...), images.DeploySourcegraphDockerImages...)
-		publishOps.Append(bazelPublishFinalDockerImage(c, publishList))
+		// Add final artifacts
+		for _, dockerImage := range publishList {
+			publishOps.Append(publishFinalDockerImage(c, dockerImage))
+		}
 		// Executor VM image
 		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
 			publishOps.Append(publishExecutorVM(c, skipHashCompare))
