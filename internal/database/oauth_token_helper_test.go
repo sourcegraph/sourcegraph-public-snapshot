@@ -99,8 +99,6 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 		Token:        "expired",
 		RefreshToken: "refresh_token",
 	}
-	marshalled, err := json.Marshal(originalToken)
-	require.NoError(t, err)
 	extAccts := []*extsvc.Account{{
 		AccountSpec: extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitLab,
@@ -108,7 +106,7 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 			AccountID:   "accountId",
 		},
 		AccountData: extsvc.AccountData{
-			AuthData: extsvc.NewUnencryptedData(marshalled),
+			AuthData: extsvc.NewUnencryptedData([]byte(`{"access_token": "expired", "refresh_token": "refresh_token"}`)),
 		},
 	}}
 
