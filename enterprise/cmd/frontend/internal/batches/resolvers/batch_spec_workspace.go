@@ -182,7 +182,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 				if e, preLogOk := findExecutionLogEntry(r.execution, logKeyPreRegex); preLogOk {
 					logLines := btypes.ParseJSONLogsFromOutput(e.Out)
 					stepInfo := &btypes.StepInfo{}
-					btypes.ParseLines(logLines, btypes.DefaultSetSafeFunc(stepInfo))
+					btypes.ParseLines(logLines, btypes.DefaultSetFunc(stepInfo))
 					resolver.stepInfo = stepInfo
 					if resolver.stepInfo.Skipped {
 						resolver.skipped = true
