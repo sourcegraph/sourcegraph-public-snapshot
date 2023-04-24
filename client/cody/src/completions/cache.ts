@@ -16,7 +16,6 @@ export class CompletionsCache {
     public get(prefix: string): Completion[] | undefined {
         const results = this.cache.get(prefix)
         if (results) {
-            console.log('CACHE HIT')
             return results.map(result => {
                 if (prefix.length === result.prefix.length) {
                     return result
