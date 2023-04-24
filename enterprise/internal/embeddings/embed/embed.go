@@ -69,7 +69,7 @@ func EmbedRepo(
 
 func createEmptyEmbeddingIndex(columnDimension int) embeddings.EmbeddingIndex {
 	return embeddings.EmbeddingIndex{
-		Embeddings:      []float32{},
+		Embeddings:      []int8{},
 		RowMetadata:     []embeddings.RepoEmbeddingRowMetadata{},
 		ColumnDimension: columnDimension,
 	}
@@ -97,7 +97,7 @@ func embedFiles(
 	}
 
 	index := embeddings.EmbeddingIndex{
-		Embeddings:      make([]float32, 0, len(fileNames)*dimensions),
+		Embeddings:      make([]int8, 0, len(fileNames)*dimensions),
 		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames)),
 		ColumnDimension: dimensions,
 		Ranks:           make([]float32, 0, len(fileNames)),
@@ -125,7 +125,7 @@ func embedFiles(
 			if err != nil {
 				return errors.Wrap(err, "error while getting embeddings")
 			}
-			index.Embeddings = append(index.Embeddings, batchEmbeddings...)
+			index.Embeddings = append(index.Embeddings, embeddings.Quantize(batchEmbeddings)...)
 		}
 		return nil
 	}

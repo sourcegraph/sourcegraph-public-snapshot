@@ -6,6 +6,7 @@ go_library(
         "client.go",
         "index_name.go",
         "index_storage.go",
+        "quantize.go",
         "similarity_search.go",
         "tokens.go",
         "types.go",

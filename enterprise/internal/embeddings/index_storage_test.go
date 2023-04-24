@@ -105,12 +105,12 @@ func TestRepoEmbeddingIndexStorage(t *testing.T) {
 		RepoName: api.RepoName("repo"),
 		Revision: api.CommitID("commit"),
 		CodeIndex: EmbeddingIndex{
-			Embeddings:      []float32{0.0, 0.1, 0.2},
+			Embeddings:      []int8{0, 1, 2},
 			ColumnDimension: 3,
 			RowMetadata:     []RepoEmbeddingRowMetadata{{FileName: "a.go", StartLine: 0, EndLine: 1}},
 		},
 		TextIndex: EmbeddingIndex{
-			Embeddings:      []float32{1.0, 2.1, 3.2},
+			Embeddings:      []int8{10, 21, 32},
 			ColumnDimension: 3,
 			RowMetadata:     []RepoEmbeddingRowMetadata{{FileName: "b.py", StartLine: 0, EndLine: 1}},
 		},
@@ -133,12 +133,12 @@ func TestRepoEmbeddingVersionMismatch(t *testing.T) {
 		RepoName: api.RepoName("repo"),
 		Revision: api.CommitID("commit"),
 		CodeIndex: EmbeddingIndex{
-			Embeddings:      []float32{0.0, 0.1, 0.2},
+			Embeddings:      []int8{0, 1, 2},
 			ColumnDimension: 3,
 			RowMetadata:     []RepoEmbeddingRowMetadata{{FileName: "a.go", StartLine: 0, EndLine: 1}},
 		},
 		TextIndex: EmbeddingIndex{
-			Embeddings:      []float32{1.0, 2.1, 3.2},
+			Embeddings:      []int8{10, 21, 32},
 			ColumnDimension: 3,
 			RowMetadata:     []RepoEmbeddingRowMetadata{{FileName: "b.py", StartLine: 0, EndLine: 1}},
 		},
@@ -159,9 +159,9 @@ func TestRepoEmbeddingVersionMismatch(t *testing.T) {
 }
 
 func getMockEmbeddingIndex(nRows int, columnDimension int) EmbeddingIndex {
-	embeddings := make([]float32, nRows*columnDimension)
+	embeddings := make([]int8, nRows*columnDimension)
 	for idx := range embeddings {
-		embeddings[idx] = rand.Float32()
+		embeddings[idx] = int8(rand.Int())
 	}
 
 	rowMetadata := make([]RepoEmbeddingRowMetadata, nRows)

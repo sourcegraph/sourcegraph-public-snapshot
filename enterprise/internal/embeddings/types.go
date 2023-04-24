@@ -5,10 +5,15 @@ import (
 )
 
 type EmbeddingIndex struct {
-	Embeddings      []float32
+	Embeddings      []int8
 	ColumnDimension int
 	RowMetadata     []RepoEmbeddingRowMetadata
 	Ranks           []float32
+}
+
+// Row returns the embeddings for the nth row in the index
+func (index *EmbeddingIndex) Row(n int) []int8 {
+	return index.Embeddings[n*index.ColumnDimension : (n+1)*index.ColumnDimension]
 }
 
 type RepoEmbeddingRowMetadata struct {
@@ -36,6 +41,8 @@ type EmbeddingSearchResults struct {
 
 type EmbeddingSearchResult struct {
 	RepoEmbeddingRowMetadata
+	// The row number in the index to correlate this result back with its source.
+	RowNum  int    `json:"rowNum"`
 	Content string `json:"content"`
 	// Experimental: Clients should not rely on any particular format of debug
 	Debug string `json:"debug,omitempty"`
