@@ -137,6 +137,7 @@ go_library(
         "@com_github_xeipuuv_gojsonschema//:gojsonschema",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_x_crypto//bcrypt",
+        "@org_golang_x_oauth2//:oauth2",
         "@org_golang_x_sync//errgroup",
     ],
 )

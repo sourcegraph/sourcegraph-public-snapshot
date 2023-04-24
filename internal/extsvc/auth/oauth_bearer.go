@@ -45,6 +45,10 @@ func (token *OAuthBearerToken) Refresh(ctx context.Context, cli httpcli.Doer) er
 }
 
 func (token *OAuthBearerToken) NeedsRefresh() bool {
+	// If there is no refresh token, always return false since we can't refresh
+	if token.RefreshToken == "" {
+		return false
+	}
 	// Refresh if the current time falls within the buffer period to expiry, and is not zero
 	return !token.Expiry.IsZero() && (time.Until(token.Expiry) <= time.Duration(token.NeedsRefreshBuffer)*time.Minute)
 }

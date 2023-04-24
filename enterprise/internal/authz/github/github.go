@@ -339,9 +339,11 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	oauthToken := &auth.OAuthBearerToken{
-		Token:        tok.AccessToken,
-		RefreshToken: tok.RefreshToken,
-		Expiry:       tok.Expiry,
+		Token:              tok.AccessToken,
+		RefreshToken:       tok.RefreshToken,
+		Expiry:             tok.Expiry,
+		RefreshFunc:        database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternalAccounts(), account.ID, github.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
+		NeedsRefreshBuffer: 5,
 	}
 
 	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)

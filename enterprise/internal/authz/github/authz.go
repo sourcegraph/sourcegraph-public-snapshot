@@ -7,6 +7,7 @@ import (
 
 	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,6 +31,7 @@ type ExternalConnection struct {
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
 func NewAuthzProviders(
+	db database.DB,
 	conns []*ExternalConnection,
 	authProviders []schema.AuthProviders,
 	enableGithubInternalRepoVisibility bool,
@@ -55,7 +57,7 @@ func NewAuthzProviders(
 
 	for _, c := range conns {
 		// Initialize authz (permissions) provider.
-		p, err := newAuthzProvider(c)
+		p, err := newAuthzProvider(db, c)
 		if err != nil {
 			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeGitHub)
 			initResults.Problems = append(initResults.Problems, err.Error())
@@ -100,6 +102,7 @@ func NewAuthzProviders(
 // newAuthzProvider instantiates a provider, or returns nil if authorization is disabled.
 // Errors returned are "serious problems".
 func newAuthzProvider(
+	db database.DB,
 	c *ExternalConnection,
 ) (*Provider, error) {
 	if c.Authorization == nil {
@@ -125,12 +128,13 @@ func newAuthzProvider(
 		GitHubURL:      baseURL,
 		BaseToken:      c.Token,
 		GroupsCacheTTL: ttl,
+		DB:             db,
 	}), nil
 }
 
 // ValidateAuthz validates the authorization fields of the given GitHub external
 // service config.
 func ValidateAuthz(c *types.GitHubConnection) error {
-	_, err := newAuthzProvider(&ExternalConnection{GitHubConnection: c})
+	_, err := newAuthzProvider(nil, &ExternalConnection{GitHubConnection: c})
 	return err
 }

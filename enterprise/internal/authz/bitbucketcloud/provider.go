@@ -110,7 +110,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		Expiry:             tok.Expiry,
 		NeedsRefreshBuffer: 5,
 	}
-	oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, bitbucketcloud.GetOAuthContext(p.codeHost.BaseURL.String()))
+	oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternalAccounts(), account.ID, bitbucketcloud.GetOAuthContext(p.codeHost.BaseURL.String()))
 
 	client := p.client.WithAuthenticator(oauthToken)
 
