@@ -35,7 +35,9 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
             : isEnterpriseBuild
             ? path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx')
             : path.join(ROOT_PATH, 'client/web/src/main.tsx'),
-        'scripts/shell': isSourcegraphApp ? path.join(ROOT_PATH, 'client/web/src/enterprise/app-shell.tsx') : undefined,
+        ...(isSourcegraphApp
+            ? { 'scripts/shell': path.join(ROOT_PATH, 'client/web/src/enterprise/app-shell.tsx') }
+            : {}),
     },
     bundle: true,
     minify: IS_PRODUCTION,
