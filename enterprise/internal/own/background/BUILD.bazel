@@ -38,6 +38,9 @@ go_test(
     timeout = "moderate",
     srcs = ["scheduler_test.go"],
     embed = [":background"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/basestore",
