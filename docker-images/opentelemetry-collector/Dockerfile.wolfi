@@ -1,3 +1,4 @@
+# hadolint ignore=DL3007
 FROM us.gcr.io/sourcegraph-dev/wolfi-opentelemetry-collector-base:latest
 
 ARG COMMIT_SHA="unknown"

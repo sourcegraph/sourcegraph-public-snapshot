@@ -1,3 +1,4 @@
+# hadolint ignore=DL3007
 FROM us.gcr.io/sourcegraph-dev/wolfi-redis-base:latest
 
 COPY redis.conf /etc/redis/redis.conf

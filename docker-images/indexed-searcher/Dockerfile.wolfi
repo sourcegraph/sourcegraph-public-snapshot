@@ -3,6 +3,7 @@ ARG ZOEKT_IMAGE="index.docker.io/sourcegraph/zoekt-webserver"
 ARG ZOEKT_VERSION
 FROM $ZOEKT_IMAGE:$ZOEKT_VERSION AS zoekt_upstream
 
+# hadolint ignore=DL3007
 FROM us.gcr.io/sourcegraph-dev/wolfi-sourcegraph-base:latest
 
 ARG COMMIT_SHA="unknown"

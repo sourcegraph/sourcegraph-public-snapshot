@@ -13,6 +13,7 @@ RUN mvn package -DskipTests && \
     cp src/main/resources/run-docker-container.sh /opt/s3proxy
 
 # Build our final Wolfi-based image
+# hadolint ignore=DL3007
 FROM us.gcr.io/sourcegraph-dev/wolfi-blobstore-base:latest
 
 ARG COMMIT_SHA="unknown"

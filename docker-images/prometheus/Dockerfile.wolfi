@@ -11,6 +11,7 @@ FROM ${BASE_IMAGE} AS prom_upstream
 FROM prom/alertmanager:v0.25.0@sha256:db8303fa05341f5dc6b19b36a97325cd1b8307254ed9042a2c554af71f3c0284 AS am_upstream
 
 # Build monitoring definitions
+# hadolint ignore=DL3007
 FROM cgr.dev/chainguard/bash:latest AS monitoring_builder
 RUN mkdir -p '/generated/prometheus'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
@@ -18,6 +19,7 @@ RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=t
 RUN ls '/generated/prometheus'
 
 # Prepare final image
+# hadolint ignore=DL3007
 FROM us.gcr.io/sourcegraph-dev/wolfi-sourcegraph-base:latest
 
 # Should reflect versions above

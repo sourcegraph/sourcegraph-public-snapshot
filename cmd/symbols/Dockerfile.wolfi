@@ -3,6 +3,7 @@
 #   file if you change the regular Dockerfile.
 
 # TODO: See if we can switch back to cgr.dev/chainguard/go:latest
+# hadolint ignore=DL3007
 FROM cgr.dev/chainguard/go:latest AS symbols-build
 # hadolint ignore=DL3002
 USER root
@@ -38,6 +39,7 @@ RUN \
     -o /symbols \
     $PKG
 
+# hadolint ignore=DL3007
 FROM us.gcr.io/sourcegraph-dev/wolfi-symbols-base:latest AS symbols
 
 # TODO(security): This container should not run as root!

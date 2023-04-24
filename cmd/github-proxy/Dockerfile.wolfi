@@ -2,6 +2,7 @@
 # This is currently being tested in parallel to Alpine - you don't need to update this
 #   file if you change the regular Dockerfile.
 
+# hadolint ignore=DL3007
 FROM us.gcr.io/sourcegraph-dev/wolfi-sourcegraph-base:latest
 
 ARG COMMIT_SHA="unknown"

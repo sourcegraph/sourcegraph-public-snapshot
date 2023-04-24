@@ -1,6 +1,7 @@
 # TODO: Experimental cAdvisor Dockerfile. Entirely untested, and may require additional libraries
 
 # NOTE: Check the README before updating
+# hadolint ignore=DL3007
 FROM us.gcr.io/sourcegraph-dev/wolfi-sourcegraph-base:latest
 LABEL com.sourcegraph.cadvisor.version=v0.47.0
 
