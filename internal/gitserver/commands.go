@@ -2419,10 +2419,6 @@ func (c *clientImplementor) ArchiveReader(
 			Treeish: options.Treeish,
 			Format:  string(options.Format),
 			Pathspecs: func() []string {
-				if options.Pathspecs == nil {
-					return nil
-				}
-
 				pathspec := make([]string, len(options.Pathspecs))
 
 				for i, path := range options.Pathspecs {
