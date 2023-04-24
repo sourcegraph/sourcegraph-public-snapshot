@@ -893,7 +893,7 @@ commands:
       - schema
 
   tauri:
-    description: Sourcegraph App Tauri shell
+    description: App shell (Tauri)
     cmd: pnpm tauri dev
 
   sourcegraph-oss:
