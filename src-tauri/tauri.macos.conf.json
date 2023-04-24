@@ -1,0 +1,9 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "build": {
+    "beforeDevCommand": {
+      "script": "go build -o .bin/backend-aarch64-apple-darwin -tags dist -ldflags '-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app' ./enterprise/cmd/sourcegraph",
+      "wait": true
+    }
+  }
+}
