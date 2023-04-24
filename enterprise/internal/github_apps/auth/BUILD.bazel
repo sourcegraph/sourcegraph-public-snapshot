@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "auth",
+    srcs = ["auth.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/github_apps/store",
+        "//internal/extsvc/auth",
+        "//internal/extsvc/github",
+        "//internal/extsvc/github/auth",
+        "//internal/httpcli",
+        "//lib/errors",
+        "//schema",
+        "@com_github_golang_jwt_jwt_v4//:jwt",
+    ],
+)
+
+go_test(
+    name = "auth_test",
+    srcs = ["auth_test.go"],
+    embed = [":auth"],
+    deps = [
+        "//enterprise/internal/github_apps/store",
+        "//enterprise/internal/github_apps/types",
+        "//internal/extsvc/auth",
+        "//schema",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
