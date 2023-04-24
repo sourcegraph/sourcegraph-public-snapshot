@@ -65,6 +65,7 @@ go_library(
 
 go_test(
     name = "database_test",
+    size = "large",
     timeout = "long",
     srcs = [
         "authz_test.go",
