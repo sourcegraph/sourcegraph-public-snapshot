@@ -13,7 +13,6 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	authcheck "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -22,18 +21,18 @@ const authPrefix = auth.AuthURLPrefix + "/githubapp"
 func Middleware(db database.DB) *auth.Middleware {
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
-			return newMiddleware(db, extsvc.TypeGitHub, authPrefix, true, next)
+			return newMiddleware(db, authPrefix, true, next)
 		},
 		App: func(next http.Handler) http.Handler {
-			return newMiddleware(db, extsvc.TypeGitHub, authPrefix, false, next)
+			return newMiddleware(db, authPrefix, false, next)
 		},
 	}
 }
 
-func newMiddleware(ossDB database.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
+func newMiddleware(ossDB database.DB, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
 	db := edb.NewEnterpriseDB(ossDB)
 	handler := newServeMux(db, authPrefix)
-	traceFamily := fmt.Sprintf("githubapp")
+	traceFamily := "githubapp"
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This span should be manually finished before delegating to the next handler or

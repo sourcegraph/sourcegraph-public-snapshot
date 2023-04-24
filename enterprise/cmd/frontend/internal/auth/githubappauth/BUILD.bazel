@@ -10,7 +10,6 @@ go_library(
         "//enterprise/internal/database",
         "//internal/auth",
         "//internal/database",
-        "//internal/extsvc",
         "//internal/trace",
         "@com_github_gorilla_mux//:mux",
         "@io_opentelemetry_go_otel//attribute",
