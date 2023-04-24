@@ -50,7 +50,7 @@ func newExecutorQueuesHandler(
 	handlers := []handler.ExecutorHandler{codeintelHandler, batchesHandler}
 
 	multiQueueHandler := multi.QueueHandler(map[string]handler.ExecutorHandler{"codeintel": codeintelHandler, "batches": batchesHandler})
-	multiHandler := multi.NewMultiHandler(multiQueueHandler)
+	multiHandler := handler.NewMultiHandler(multiQueueHandler)
 
 	gitserverClient := gitserver.NewClient()
 

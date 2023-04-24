@@ -1,7 +1,6 @@
-package multi
+package handler
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,10 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 	"golang.org/x/exp/slices"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
-	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type multiHandler struct {
@@ -22,13 +17,10 @@ type multiHandler struct {
 }
 
 type MultiQueueHandler struct {
-	Handlers map[string]handler.ExecutorHandler
+	Handlers map[string]ExecutorHandler
 }
 
-// TransformerFunc is the function to transform a workerutil.Record into an executor.Job.
-type TransformerFunc[T workerutil.Record] func(ctx context.Context, version string, record T, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error)
-
-func NewMultiHandler(multiQueueHandler MultiQueueHandler) handler.ExecutorHandler {
+func NewMultiHandler(multiQueueHandler MultiQueueHandler) ExecutorHandler {
 	return &multiHandler{
 		logger:            log.Scoped("executor-multi-queue-handler", "The generic route handler for all executor queues"),
 		multiQueueHandler: multiQueueHandler,
