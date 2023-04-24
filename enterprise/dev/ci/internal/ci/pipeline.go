@@ -311,7 +311,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		} else {
 			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMusl, c.Version, c.candidateImageTag(), c.RunType))
-			// imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 		}
 		ops.Merge(imageBuildOps)
 
