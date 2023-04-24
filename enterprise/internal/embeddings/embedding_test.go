@@ -1,6 +1,8 @@
 package embeddings
 
 import (
+	"fmt"
+	"math"
 	"testing"
 	"testing/quick"
 )
@@ -41,6 +43,21 @@ func TestDot(t *testing.T) {
 	})
 
 	t.Run("float32", func(t *testing.T) {
+		cleanInput := func(input []float32) []float32 {
+			for i, f := range input {
+				if math.IsInf(float64(f), 0) {
+					input[i] = 0.9
+				} else if math.IsNaN(float64(f)) {
+					input[i] = 0.2
+				} else if f > 1.0 {
+					input[i] = 1.0
+				} else if f < -1.0 {
+					input[i] = -1.0
+				}
+			}
+			return input
+		}
+
 		f := func(a, b Float32Embedding) bool {
 			if len(a) > len(b) {
 				a = a[:len(b)]
@@ -48,9 +65,24 @@ func TestDot(t *testing.T) {
 				b = b[:len(a)]
 			}
 
+			a = cleanInput(a)
+			b = cleanInput(b)
+
 			want := simpleDotFloat32(a, b)
 			got := a.Dot(b)
-			return want == got
+
+			if want == got {
+				return true
+			}
+
+			// There is no guarantee that reordering/instruction merging
+			// will return the exact same results, so test with an epsilon.
+			if math.Abs(float64(want-got))/float64(want) < 0.001 {
+				return true
+			}
+
+			fmt.Printf("got: %.10f, want: %.10f\n", got, want)
+			return false
 		}
 		err := quick.Check(f, nil)
 		if err != nil {

@@ -67,11 +67,7 @@ func (e Float32Embedding) Dot(other Float32Embedding) float32 {
 		m2 := e[i+2] * other[i+2]
 		m3 := e[i+3] * other[i+3]
 
-		// Individual additions to minimize floating-point error
-		similarity += m0
-		similarity += m1
-		similarity += m2
-		similarity += m3
+		similarity += (m0 + m1 + m2 + m3)
 	}
 
 	for ; i < count; i++ {
