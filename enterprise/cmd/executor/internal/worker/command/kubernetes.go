@@ -26,8 +26,8 @@ const (
 const (
 	// KubernetesMountPath is the path where the Kubernetes volume is mounted in the container.
 	KubernetesMountPath = "/data"
-	// KubernetesMountSubPath is the path that is mounted in the Kubernetes pod.
-	KubernetesMountSubPath = "/data/"
+	// KubernetesVolumeMountSubPath is the path that is mounted in the Kubernetes pod container.
+	KubernetesVolumeMountSubPath = "/data/"
 )
 
 // KubernetesContainerOptions contains options for the Kubernetes Job containers.
@@ -223,7 +223,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 								{
 									Name:      kubernetesVolumeName,
 									MountPath: KubernetesMountPath,
-									SubPath:   strings.TrimPrefix(path, KubernetesMountSubPath),
+									SubPath:   strings.TrimPrefix(path, KubernetesVolumeMountSubPath),
 								},
 							},
 						},
