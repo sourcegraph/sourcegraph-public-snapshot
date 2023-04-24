@@ -9,7 +9,7 @@ GCLOUD_APP_CREDENTIALS_FILE=${GCLOUD_APP_CREDENTIALS_FILE-$HOME/.config/gcloud/a
 if [ -z "${SKIP_BUILD_WEB-}" ]; then
   # Use esbuild because it's faster. This is just a personal preference by me (@sqs); if there is a
   # good reason to change it, feel free to do so.
-  NODE_ENV=production ENTERPRISE=1 DEV_WEB_BUILDER=esbuild pnpm run build-web
+  SOURCEGRAPH_APP=1 NODE_ENV=production ENTERPRISE=1 DEV_WEB_BUILDER=esbuild pnpm run build-web
 fi
 
 if [ -z "${GITHUB_TOKEN-}" ]; then
