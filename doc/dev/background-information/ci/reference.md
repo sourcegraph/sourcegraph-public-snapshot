@@ -237,7 +237,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
-- **Publish images**: Publish images, Publish executor image, Publish executor binary, Publish docker registry mirror image
+- **Publish images**: batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg, symbols, server, alpine-3.14, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, worker, Publish executor image, Publish executor binary, Publish docker registry mirror image
 - Upload build trace
 
 ### Release branch
@@ -255,7 +255,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
-- **Publish images**: Publish images
+- **Publish images**: batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg, symbols, server, alpine-3.14, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, worker
 - Upload build trace
 
 ### Browser extension release build
@@ -317,7 +317,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
-- **Publish images**: Publish images, Publish executor image, Publish executor binary
+- **Publish images**: batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg, symbols, server, alpine-3.14, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, worker, Publish executor image, Publish executor binary
 - Upload build trace
 
 ### Main dry run
@@ -340,7 +340,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
-- **Publish images**: Publish images
+- **Publish images**: batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg, symbols, server, alpine-3.14, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, worker
 - Upload build trace
 
 ### Patch image
