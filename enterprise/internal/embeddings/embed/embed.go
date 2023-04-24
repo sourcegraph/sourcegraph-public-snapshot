@@ -163,13 +163,13 @@ func embedFiles(
 			continue
 		}
 
-		if isExcludedFilePath(file.Name, excludePatterns) {
-			statsSkipped.Add(SkipReasonExcluded, int(file.Size))
+		if file.Size > maxFileSize {
+			statsSkipped.Add(SkipReasonLarge, int(file.Size))
 			continue
 		}
 
-		if file.Size > maxFileSize {
-			statsSkipped.Add(SkipReasonLarge, int(file.Size))
+		if isExcludedFilePath(file.Name, excludePatterns) {
+			statsSkipped.Add(SkipReasonExcluded, int(file.Size))
 			continue
 		}
 
