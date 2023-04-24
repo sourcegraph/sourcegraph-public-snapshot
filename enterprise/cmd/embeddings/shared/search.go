@@ -15,7 +15,7 @@ import (
 
 type readFileFn func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error)
 type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
-type getQueryEmbeddingFn func(ctx context.Context, query string) ([]float32, error)
+type getQueryEmbeddingFn func(ctx context.Context, query string) (embeddings.Float32Embedding, error)
 
 func searchRepoEmbeddingIndex(
 	ctx context.Context,
@@ -35,11 +35,11 @@ func searchRepoEmbeddingIndex(
 		return nil, errors.Wrapf(err, "getting repo embedding index for repo %q", params.RepoName)
 	}
 
-	floatQuery, err := getQueryEmbedding(ctx, params.Query)
+	float32Query, err := getQueryEmbedding(ctx, params.Query)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting query embedding")
 	}
-	embeddedQuery := embeddings.Quantize(floatQuery)
+	query := float32Query.Quantize()
 
 	opts := embeddings.SearchOptions{
 		Debug:            params.Debug,
@@ -48,11 +48,11 @@ func searchRepoEmbeddingIndex(
 
 	var codeResults, textResults []embeddings.EmbeddingSearchResult
 	if params.CodeResultsCount > 0 && len(embeddingIndex.CodeIndex.Embeddings) > 0 {
-		codeResults = searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount, opts)
+		codeResults = searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, query, params.CodeResultsCount, opts)
 	}
 
 	if params.TextResultsCount > 0 && len(embeddingIndex.TextIndex.Embeddings) > 0 {
-		textResults = searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount, opts)
+		textResults = searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, query, params.TextResultsCount, opts)
 	}
 
 	return &embeddings.EmbeddingSearchResults{CodeResults: codeResults, TextResults: textResults}, nil

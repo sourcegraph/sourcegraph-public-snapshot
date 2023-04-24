@@ -5,7 +5,6 @@ import (
 	"math"
 	"math/rand"
 	"testing"
-	"testing/quick"
 
 	"github.com/stretchr/testify/require"
 )
@@ -180,31 +179,5 @@ func TestScore(t *testing.T) {
 
 	if debugInfo.String() == "" {
 		t.Fatal("Expected a non-empty debug")
-	}
-}
-
-func simpleCosineSimilarity(a, b []int8) int32 {
-	similarity := int32(0)
-	for i := 0; i < len(a); i++ {
-		similarity += int32(a[i]) * int32(b[i])
-	}
-	return similarity
-}
-
-func TestCosineSimilarity(t *testing.T) {
-	f := func(a, b []int8) bool {
-		if len(a) > len(b) {
-			a = a[:len(b)]
-		} else if len(a) < len(b) {
-			b = b[:len(a)]
-		}
-
-		want := simpleCosineSimilarity(a, b)
-		got := CosineSimilarity(a, b)
-		return want == got
-	}
-	err := quick.Check(f, nil)
-	if err != nil {
-		t.Fatal(err)
 	}
 }

@@ -15,7 +15,7 @@ type EmbeddingIndex struct {
 }
 
 // Row returns the embeddings for the nth row in the index
-func (index *EmbeddingIndex) Row(n int) []int8 {
+func (index *EmbeddingIndex) Row(n int) Int8Embedding {
 	return index.Embeddings[n*index.ColumnDimension : (n+1)*index.ColumnDimension]
 }
 
@@ -33,8 +33,8 @@ type RepoEmbeddingIndex struct {
 }
 
 type ContextDetectionEmbeddingIndex struct {
-	MessagesWithAdditionalContextMeanEmbedding    []float32
-	MessagesWithoutAdditionalContextMeanEmbedding []float32
+	MessagesWithAdditionalContextMeanEmbedding    Float32Embedding
+	MessagesWithoutAdditionalContextMeanEmbedding Float32Embedding
 }
 
 type EmbeddingSearchResults struct {

@@ -135,7 +135,7 @@ func embedFiles(
 		if err != nil {
 			return errors.Wrap(err, "error while getting embeddings")
 		}
-		index.Embeddings = append(index.Embeddings, embeddings.Quantize(batchEmbeddings)...)
+		index.Embeddings = append(index.Embeddings, batchEmbeddings.Quantize()...)
 
 		batch = batch[:0] // reset batch
 		return nil

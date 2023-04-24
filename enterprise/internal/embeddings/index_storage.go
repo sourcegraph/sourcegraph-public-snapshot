@@ -120,7 +120,7 @@ func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSi
 				end = len(ei.Embeddings)
 			}
 
-			if err := enc.Encode(Dequantize(ei.Embeddings[start:end])); err != nil {
+			if err := enc.Encode(Int8Embedding(ei.Embeddings[start:end]).Dequantize()); err != nil {
 				return err
 			}
 		}
@@ -164,7 +164,7 @@ func decodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
 			if err := dec.Decode(&embeddingSlice); err != nil {
 				return nil, err
 			}
-			ei.Embeddings = append(ei.Embeddings, Quantize(embeddingSlice)...)
+			ei.Embeddings = append(ei.Embeddings, Float32Embedding(embeddingSlice).Quantize()...)
 		}
 	}
 

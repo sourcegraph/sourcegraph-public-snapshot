@@ -239,7 +239,7 @@ func (c *mockEmbeddingsClient) GetDimensions() (int, error) {
 	return 3, nil
 }
 
-func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, maxRetries int) ([]float32, error) {
+func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, maxRetries int) (embeddings.Float32Embedding, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err

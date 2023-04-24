@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -31,7 +32,7 @@ type EmbeddingAPIResponse struct {
 }
 
 type EmbeddingsClient interface {
-	GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error)
+	GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) (embeddings.Float32Embedding, error)
 	GetDimensions() (int, error)
 }
 
@@ -70,7 +71,7 @@ func (c *embeddingsClient) GetDimensions() (int, error) {
 // GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
 // In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
 // often hangs up when downloading large embedding responses.
-func (c *embeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
+func (c *embeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) (embeddings.Float32Embedding, error) {
 	if c.isDisabled() {
 		return nil, errors.New("embeddings are not configured or disabled")
 	}
