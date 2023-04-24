@@ -11,8 +11,8 @@ import (
 
 type nearestNeighbor struct {
 	index int
-	score float32
-	debug string
+	score int32
+	debug searchDebugInfo
 }
 
 type nearestNeighborsHeap struct {
@@ -83,7 +83,7 @@ type WorkerOptions struct {
 
 // SimilaritySearch finds the `nResults` most similar rows to a query vector. It uses the cosine similarity metric.
 // IMPORTANT: The vectors in the embedding index have to be normalized for similarity search to work correctly.
-func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, workerOptions WorkerOptions, opts SearchOptions) []EmbeddingSearchResult {
+func (index *EmbeddingIndex) SimilaritySearch(query []int8, numResults int, workerOptions WorkerOptions, opts SearchOptions) []EmbeddingSearchResult {
 	if numResults == 0 {
 		return []EmbeddingSearchResult{}
 	}
@@ -129,14 +129,15 @@ func (index *EmbeddingIndex) SimilaritySearch(query []float32, numResults int, w
 	for idx := 0; idx < min(numResults, len(neighbors)); idx++ {
 		results[idx] = EmbeddingSearchResult{
 			RepoEmbeddingRowMetadata: index.RowMetadata[neighbors[idx].index],
-			Debug:                    neighbors[idx].debug,
+			RowNum:                   neighbors[idx].index,
+			Debug:                    neighbors[idx].debug.String(),
 		}
 	}
 
 	return results
 }
 
-func (index *EmbeddingIndex) partialSimilaritySearch(query []float32, numResults int, partialRows partialRows, opts SearchOptions) *nearestNeighborsHeap {
+func (index *EmbeddingIndex) partialSimilaritySearch(query []int8, numResults int, partialRows partialRows, opts SearchOptions) *nearestNeighborsHeap {
 	nRows := partialRows.end - partialRows.start
 	if nRows <= 0 {
 		return nil
@@ -163,26 +164,15 @@ func (index *EmbeddingIndex) partialSimilaritySearch(query []float32, numResults
 }
 
 const (
-	scoreFileRankWeight   float32 = 1.0 / 3.0
-	scoreSimilarityWeight float32 = 2.0 / 3.0
+	scoreFileRankWeight   int32 = 1
+	scoreSimilarityWeight int32 = 2
 )
 
-func (index *EmbeddingIndex) score(query []float32, i int, opts SearchOptions) (score float32, debugInfo string) {
-	addScore := func(what string, s float32) {
-		score += s
-		if opts.Debug {
-			debugInfo += fmt.Sprintf("%s:%.2f, ", what, s)
-		}
-	}
-
-	similarity := CosineSimilarity(
-		index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension],
-		query,
-	)
-
-	addScore("similarity", scoreSimilarityWeight*similarity)
+func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) (score int32, debugInfo searchDebugInfo) {
+	similarityScore := scoreSimilarityWeight * CosineSimilarity(index.Row(i), query)
 
 	// handle missing ranks
+	rankScore := int32(0)
 	if opts.UseDocumentRanks && len(index.Ranks) > i {
 		// The file rank represents a log (base 2) count. The log ranks should be
 		// bounded at 32, but we cap it just in case to ensure it falls in the range [0,
@@ -192,21 +182,74 @@ func (index *EmbeddingIndex) score(query []float32, i int, opts SearchOptions) (
 		if normalizedRank > 1.0 {
 			normalizedRank = 1.0
 		}
-		addScore("rank", scoreFileRankWeight*normalizedRank)
+		rankScore = int32(float32(scoreFileRankWeight) * normalizedRank)
 	}
 
-	if opts.Debug {
-		debugInfo = fmt.Sprintf("score: %.2f, %s", score, debugInfo)
-	}
-
-	return score, debugInfo
+	return similarityScore + rankScore, searchDebugInfo{similarity: similarityScore, rank: rankScore, enabled: opts.Debug}
 }
 
-func CosineSimilarity(row []float32, query []float32) float32 {
-	similarity := float32(0.0)
-	for i := 0; i < len(row); i++ {
-		similarity += (row[i] * query[i])
+type searchDebugInfo struct {
+	similarity int32
+	rank       int32
+	enabled    bool
+}
+
+func (i *searchDebugInfo) String() string {
+	if !i.enabled {
+		return ""
 	}
+	return fmt.Sprintf("score:%d, similarity:%d, rank:%d", i.similarity+i.rank, i.similarity, i.rank)
+}
+
+func CosineSimilarity(row []int8, query []int8) int32 {
+	similarity := int32(0)
+
+	count := len(row)
+	if count > len(query) {
+		// Do this ahead of time so the compiler doesn't need to bounds check
+		// every time we index into query.
+		panic("mismatched vector lengths")
+	}
+
+	i := 0
+	for ; i+3 < count; i += 4 {
+		m0 := int32(row[i]) * int32(query[i])
+		m1 := int32(row[i+1]) * int32(query[i+1])
+		m2 := int32(row[i+2]) * int32(query[i+2])
+		m3 := int32(row[i+3]) * int32(query[i+3])
+		similarity += (m0 + m1 + m2 + m3)
+	}
+
+	for ; i < count; i++ {
+		similarity += int32(row[i]) * int32(query[i])
+	}
+
+	return similarity
+}
+
+func CosineSimilarityFloat32(row []float32, query []float32) float32 {
+	similarity := float32(0)
+
+	count := len(row)
+	if count > len(query) {
+		// Do this ahead of time so the compiler doesn't need to bounds check
+		// every time we index into query.
+		panic("mismatched vector lengths")
+	}
+
+	i := 0
+	for ; i+3 < count; i += 4 {
+		m0 := row[i] * query[i]
+		m1 := row[i+1] * query[i+1]
+		m2 := row[i+2] * query[i+2]
+		m3 := row[i+3] * query[i+3]
+		similarity += (m0 + m1 + m2 + m3)
+	}
+
+	for ; i < count; i++ {
+		similarity += row[i] * query[i]
+	}
+
 	return similarity
 }
 
