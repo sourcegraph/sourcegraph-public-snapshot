@@ -93,17 +93,18 @@ func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, er
 }
 
 func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
-
 	fileInfos, err := r.gitserver.ReadDir(ctx, nil, r.repo, r.revision, "", true)
 	if err != nil {
 		return nil, err
 	}
 
-	entries := make([]embed.FileEntry, len(fileInfos))
-	for i, fileInfo := range fileInfos {
-		entries[i] = embed.FileEntry{
-			Name: fileInfo.Name(),
-			Size: fileInfo.Size(),
+	entries := make([]embed.FileEntry, 0, len(fileInfos))
+	for _, fileInfo := range fileInfos {
+		if !fileInfo.IsDir() {
+			entries = append(entries, embed.FileEntry{
+				Name: fileInfo.Name(),
+				Size: fileInfo.Size(),
+			})
 		}
 	}
 	return entries, nil
