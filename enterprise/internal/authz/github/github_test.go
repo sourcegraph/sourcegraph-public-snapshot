@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -47,8 +48,9 @@ func newMockClientWithTokenMock() *MockClient {
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
+	db := database.NewMockDB()
 	t.Run("nil account", func(t *testing.T) {
-		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
 		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -58,7 +60,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the account", func(t *testing.T) {
-		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -76,7 +78,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("no token found in account data", func(t *testing.T) {
-		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -182,6 +184,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		p := NewProvider("", ProviderOptions{
 			GitHubURL:      mustURL(t, "https://github.com"),
 			GroupsCacheTTL: time.Duration(-1),
+			DB:             db,
 		})
 		p.client = mockClientFunc(mockClient)
 		if p.groupsCache != nil {
@@ -228,7 +231,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					return mockClient
 				})
 
-			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
 			p.client = mockClientFunc(mockClient)
 			if p.groupsCache == nil {
 				t.Fatal("expected groupsCache")
@@ -444,7 +447,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					}, false, 1, nil
 				})
 
-			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
 			p.client = mockClientFunc(mockClient)
 			memCache := memGroupsCache()
 			p.groupsCache = memCache
@@ -538,6 +541,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
+				DB:        db,
 			})
 			p.client = mockClientFunc(mockClient)
 			memCache := memGroupsCache()
@@ -547,14 +551,16 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			p.groupsCache.setGroup(cachedGroup{
 				Org:          mockOrgRead.Login,
 				Users:        []extsvc.AccountID{"1234"},
-				Repositories: []extsvc.RepoID{}},
+				Repositories: []extsvc.RepoID{},
+			},
 			)
 			// cache populated from user-centric sync (should not add self)
 			p.groupsCache.setGroup(cachedGroup{
 				Org:          mockOrgNoRead.Login,
 				Team:         "ns-team-2",
 				Users:        []extsvc.AccountID{},
-				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}},
+				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+			},
 			)
 
 			// run a sync
@@ -1160,14 +1166,16 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				Org:          "org",
 				Team:         "team1",
 				Users:        []extsvc.AccountID{},
-				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}},
+				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+			},
 			)
 			// cache populated from repo-centric sync (should not add self)
 			p.groupsCache.setGroup(cachedGroup{
 				Org:          "org",
 				Team:         "team2",
 				Users:        []extsvc.AccountID{"1234"},
-				Repositories: []extsvc.RepoID{}},
+				Repositories: []extsvc.RepoID{},
+			},
 			)
 
 			// run a sync
@@ -1272,7 +1280,8 @@ func TestProvider_ValidateConnection(t *testing.T) {
 }
 
 func setupProvider(t *testing.T, mc *MockClient) *Provider {
-	p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+	db := database.NewMockDB()
+	p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
 	p.client = mockClientFunc(mc)
 	p.groupsCache = memGroupsCache()
 	return p

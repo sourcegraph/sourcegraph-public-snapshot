@@ -18,6 +18,7 @@ go_library(
         "//internal/api",
         "//internal/database",
         "//internal/env",
+        "//internal/gitserver",
         "//internal/goroutine",
         "//internal/memo",
         "//internal/observation",

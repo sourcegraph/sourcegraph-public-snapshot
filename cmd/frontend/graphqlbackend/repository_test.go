@@ -231,7 +231,7 @@ func TestRepository_DefaultBranch(t *testing.T) {
 	}
 }
 
-func TestRepository_KVPs(t *testing.T) {
+func TestRepository_RepoMetadata(t *testing.T) {
 	ctx := context.Background()
 
 	flags := map[string]bool{"repository-metadata": true}
@@ -256,7 +256,7 @@ func TestRepository_KVPs(t *testing.T) {
 	strPtr := func(s string) *string { return &s }
 
 	t.Run("add", func(t *testing.T) {
-		_, err = schema.AddRepoKeyValuePair(ctx, struct {
+		_, err = schema.AddRepoMetadata(ctx, struct {
 			Repo  graphql.ID
 			Key   string
 			Value *string
@@ -267,7 +267,7 @@ func TestRepository_KVPs(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		_, err = schema.AddRepoKeyValuePair(ctx, struct {
+		_, err = schema.AddRepoMetadata(ctx, struct {
 			Repo  graphql.ID
 			Key   string
 			Value *string
@@ -281,7 +281,7 @@ func TestRepository_KVPs(t *testing.T) {
 		repoResolver, err := schema.repositoryByID(ctx, gqlID)
 		require.NoError(t, err)
 
-		kvps, err := repoResolver.KeyValuePairs(ctx)
+		kvps, err := repoResolver.Metadata(ctx)
 		require.NoError(t, err)
 		sort.Slice(kvps, func(i, j int) bool {
 			return kvps[i].key < kvps[j].key
@@ -296,7 +296,7 @@ func TestRepository_KVPs(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		_, err = schema.UpdateRepoKeyValuePair(ctx, struct {
+		_, err = schema.UpdateRepoMetadata(ctx, struct {
 			Repo  graphql.ID
 			Key   string
 			Value *string
@@ -307,7 +307,7 @@ func TestRepository_KVPs(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		_, err = schema.UpdateRepoKeyValuePair(ctx, struct {
+		_, err = schema.UpdateRepoMetadata(ctx, struct {
 			Repo  graphql.ID
 			Key   string
 			Value *string
@@ -321,7 +321,7 @@ func TestRepository_KVPs(t *testing.T) {
 		repoResolver, err := schema.repositoryByID(ctx, gqlID)
 		require.NoError(t, err)
 
-		kvps, err := repoResolver.KeyValuePairs(ctx)
+		kvps, err := repoResolver.Metadata(ctx)
 		require.NoError(t, err)
 		sort.Slice(kvps, func(i, j int) bool {
 			return kvps[i].key < kvps[j].key
@@ -336,7 +336,7 @@ func TestRepository_KVPs(t *testing.T) {
 	})
 
 	t.Run("delete", func(t *testing.T) {
-		_, err = schema.DeleteRepoKeyValuePair(ctx, struct {
+		_, err = schema.DeleteRepoMetadata(ctx, struct {
 			Repo graphql.ID
 			Key  string
 		}{
@@ -345,7 +345,7 @@ func TestRepository_KVPs(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		_, err = schema.DeleteRepoKeyValuePair(ctx, struct {
+		_, err = schema.DeleteRepoMetadata(ctx, struct {
 			Repo graphql.ID
 			Key  string
 		}{
@@ -357,7 +357,7 @@ func TestRepository_KVPs(t *testing.T) {
 		repoResolver, err := schema.repositoryByID(ctx, gqlID)
 		require.NoError(t, err)
 
-		kvps, err := repoResolver.KeyValuePairs(ctx)
+		kvps, err := repoResolver.Metadata(ctx)
 		require.NoError(t, err)
 		sort.Slice(kvps, func(i, j int) bool {
 			return kvps[i].key < kvps[j].key
