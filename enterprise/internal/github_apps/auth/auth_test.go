@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -114,7 +115,10 @@ invalid key
 func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 	installationID := 1
 	appAuthenticator := &mockAuthenticator{}
+	u, err := url.Parse("https://github.com")
+	require.NoError(t, err)
 	token := NewInstallationAccessToken(
+		u,
 		installationID,
 		appAuthenticator,
 	)
@@ -130,7 +134,10 @@ func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 
 func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 	appAuthenticator := &mockAuthenticator{}
+	u, err := url.Parse("https://github.com")
+	require.NoError(t, err)
 	token := NewInstallationAccessToken(
+		u,
 		1,
 		appAuthenticator,
 	)
@@ -143,6 +150,9 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 	require.True(t, appAuthenticator.AuthenticateCalled)
 
 	require.Equal(t, token.token, "new-token")
+	wantTime, err := time.Parse(time.RFC3339, "2016-07-11T22:14:10Z")
+	require.NoError(t, err)
+	require.True(t, token.expiresAt.Equal(wantTime))
 }
 
 func TestInstallationAccessToken_NeedsRefresh(t *testing.T) {
@@ -161,6 +171,22 @@ func TestInstallationAccessToken_NeedsRefresh(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, tc.needsRefresh, tc.token.NeedsRefresh())
 		})
+	}
+}
+
+func TestInstallationAccessToken_SetURLUser(t *testing.T) {
+	token := "abc123"
+	u, err := url.Parse("https://example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	it := installationAccessToken{token: token}
+	it.SetURLUser(u)
+
+	want := "x-access-token:abc123"
+	if got := u.User.String(); got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }
 
@@ -185,7 +211,7 @@ func (c *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	c.DoCalled = true
 
 	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body:       io.NopCloser(strings.NewReader(`{"token": "new-token"}`)),
+		StatusCode: http.StatusCreated,
+		Body:       io.NopCloser(strings.NewReader(`{"token": "new-token", "expires_at": "2016-07-11T22:14:10Z"}`)),
 	}, nil
 }

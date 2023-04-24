@@ -1,6 +1,7 @@
 package repos
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -169,7 +170,7 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 func TestGitHubCloneURLs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	t.Run("empty repo.URL", func(t *testing.T) {
-		_, err := githubCloneURL(logger, &github.Repository{}, &schema.GitHubConnection{})
+		_, err := githubCloneURL(context.Background(), logger, &github.Repository{}, &schema.GitHubConnection{})
 		got := fmt.Sprintf("%v", err)
 		want := "empty repo.URL"
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -202,7 +203,7 @@ func TestGitHubCloneURLs(t *testing.T) {
 
 			repo.URL = test.RepoURL
 
-			got, err := githubCloneURL(logger, &repo, &cfg)
+			got, err := githubCloneURL(context.Background(), logger, &repo, &cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
