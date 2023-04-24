@@ -701,7 +701,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 				},
 			}),
 			// Run tests against the candidate server image
-			bk.DependsOn("bazel-docker"),
+			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
@@ -737,7 +737,7 @@ func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn("bazel-docker"),
+			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -756,7 +756,7 @@ func serverQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::chromium: Sourcegraph QA",
 			// Run tests against the candidate server image
-			bk.DependsOn("bazel-docker"),
+			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
@@ -777,7 +777,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
 			// Run tests against the candidate server image
-			bk.DependsOn("bazel-docker"),
+			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
 			bk.Env("DISPLAY", ":99"),
