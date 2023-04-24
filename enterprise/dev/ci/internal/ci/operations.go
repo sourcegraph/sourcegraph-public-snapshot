@@ -544,7 +544,7 @@ func backendIntegrationTests(candidateImageTag string) operations.Operation {
 			pipeline.AddStep(
 				description,
 				// Run tests against the candidate server image
-				bk.DependsOn("bazel-docker"),
+				bk.DependsOn(candidateImageStepKey("symbols")),
 				bk.Env("IMAGE",
 					images.DevRegistryImage("server", candidateImageTag)),
 				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
