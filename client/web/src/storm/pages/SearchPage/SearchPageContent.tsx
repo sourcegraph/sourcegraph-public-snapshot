@@ -99,7 +99,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                                             })
                                         }
                                     >
-                                        Ask Cody to contsruct a query from natural language <CodyIcon />{' '}
+                                        Ask Cody to construct a query from natural language <CodyIcon />{' '}
                                         <Icon svgPath={mdiArrowRight} aria-hidden={true} />
                                     </Link>
                                 </Text>
