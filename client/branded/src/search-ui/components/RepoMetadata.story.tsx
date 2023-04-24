@@ -26,11 +26,11 @@ export const RepoMetadataStory: Story = () => (
             <div className="m-3">
                 <div className="d-flex align-items-center mb-2">
                     <Text className="mb-0 mr-3 text-no-wrap">Default</Text>
-                    <RepoMetadata keyValuePairs={mockMetadata} />
+                    <RepoMetadata metadata={mockMetadata} />
                 </div>
                 <div className="d-flex align-items-center mb-2">
                     <Text className="mb-0 mr-3 text-no-wrap">Small</Text>
-                    <RepoMetadata keyValuePairs={mockMetadata} small={true} />
+                    <RepoMetadata metadata={mockMetadata} small={true} />
                 </div>
             </div>
         )}
