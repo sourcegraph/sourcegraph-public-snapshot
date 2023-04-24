@@ -45,6 +45,7 @@ type dequeueRequest struct {
 
 func (m *multiHandler) HandleDequeue(w http.ResponseWriter, r *http.Request) {
 	var req dequeueRequest
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		// TODO: should we also log errors here? Not sure
 		http.Error(w, fmt.Sprintf("Failed to unmarshal payload: %s", err.Error()), http.StatusBadRequest)
