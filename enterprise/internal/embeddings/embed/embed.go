@@ -30,7 +30,7 @@ func EmbedRepo(
 	repoName api.RepoName,
 	revision api.CommitID,
 	fileNames []string,
-	excludedFilePathPatterns []*paths.GlobPattern,
+	excludePatterns []*paths.GlobPattern,
 	client EmbeddingsClient,
 	splitOptions split.SplitOptions,
 	readFile readFile,
@@ -38,10 +38,6 @@ func EmbedRepo(
 ) (*embeddings.RepoEmbeddingIndex, error) {
 	codeFileNames, textFileNames := []string{}, []string{}
 	for _, fileName := range fileNames {
-		if isExcludedFilePath(fileName, excludedFilePathPatterns) {
-			continue
-		}
-
 		if isValidTextFile(fileName) {
 			textFileNames = append(textFileNames, fileName)
 		} else {
@@ -54,12 +50,12 @@ func EmbedRepo(
 		return nil, err
 	}
 
-	codeIndex, err := embedFiles(ctx, codeFileNames, client, splitOptions, readFile, MAX_CODE_EMBEDDING_VECTORS, ranks)
+	codeIndex, err := embedFiles(ctx, codeFileNames, client, excludePatterns, splitOptions, readFile, MAX_CODE_EMBEDDING_VECTORS, ranks)
 	if err != nil {
 		return nil, err
 	}
 
-	textIndex, err := embedFiles(ctx, textFileNames, client, splitOptions, readFile, MAX_TEXT_EMBEDDING_VECTORS, ranks)
+	textIndex, err := embedFiles(ctx, textFileNames, client, excludePatterns, splitOptions, readFile, MAX_TEXT_EMBEDDING_VECTORS, ranks)
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +70,7 @@ func embedFiles(
 	ctx context.Context,
 	fileNames []string,
 	client EmbeddingsClient,
+	excludePatterns []*paths.GlobPattern,
 	splitOptions split.SplitOptions,
 	readFile readFile,
 	maxEmbeddingVectors int,
@@ -131,6 +128,10 @@ func embedFiles(
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
 		if len(index.RowMetadata) > maxEmbeddingVectors {
 			break
+		}
+
+		if isExcludedFilePath(fileName, excludePatterns) {
+			continue
 		}
 
 		contentBytes, err := readFile(ctx, fileName)
