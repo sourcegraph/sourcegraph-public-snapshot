@@ -816,7 +816,7 @@ importers:
       yaml: 2.2.1
       yauzl: 2.10.0
 
-  client/app:
+  client/app-shell:
     specifiers:
       '@sourcegraph/build-config': workspace:*
       '@sourcegraph/common': workspace:*
@@ -25597,7 +25597,7 @@ packages:
     resolution: {integrity: sha512-J69LQ22xrQB1cIFJhPfgtLuI6BpWRiWu1Y3vSsIwK/eAScqJxd/+CJlUuHQRdX2C9NGFamq+KqNywGgaThwfHw==}
     hasBin: true
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.4.14
+      '@jridgewell/sourcemap-codec': 1.4.15
       buffer-crc32: 0.2.13
       minimist: 1.2.8
       sander: 0.5.1
