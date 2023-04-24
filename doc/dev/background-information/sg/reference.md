@@ -136,6 +136,7 @@ Available commands in `sg.config.yaml`:
 * storybook
 * symbols
 * syntax-highlighter
+* tauri: App shell (Tauri)
 * web-integration-build-prod: Build production web application for integration tests
 * web-integration-build: Build development web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
