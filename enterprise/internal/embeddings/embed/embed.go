@@ -19,7 +19,8 @@ const MAX_TEXT_EMBEDDING_VECTORS = 128_000
 const EMBEDDING_BATCHES = 5
 const EMBEDDING_BATCH_SIZE = 512
 
-type readFile func(ctx context.Context, fileName string) ([]byte, error)
+const maxFileSize = 1000000 // 1MB
+
 type ranksGetter func(ctx context.Context, repoName string) (types.RepoPathRanks, error)
 
 // EmbedRepo embeds file contents from the given file names for a repository.
@@ -29,19 +30,23 @@ func EmbedRepo(
 	ctx context.Context,
 	repoName api.RepoName,
 	revision api.CommitID,
-	fileNames []string,
 	excludePatterns []*paths.GlobPattern,
 	client EmbeddingsClient,
 	splitOptions split.SplitOptions,
-	readFile readFile,
+	readLister FileReadLister,
 	getDocumentRanks ranksGetter,
 ) (*embeddings.RepoEmbeddingIndex, error) {
-	codeFileNames, textFileNames := []string{}, []string{}
-	for _, fileName := range fileNames {
-		if isValidTextFile(fileName) {
-			textFileNames = append(textFileNames, fileName)
+	allFiles, err := readLister.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var codeFileNames, textFileNames []FileEntry
+	for _, file := range allFiles {
+		if isValidTextFile(file.Name) {
+			textFileNames = append(textFileNames, file)
 		} else {
-			codeFileNames = append(codeFileNames, fileName)
+			codeFileNames = append(codeFileNames, file)
 		}
 	}
 
@@ -50,12 +55,12 @@ func EmbedRepo(
 		return nil, err
 	}
 
-	codeIndex, err := embedFiles(ctx, codeFileNames, client, excludePatterns, splitOptions, readFile, MAX_CODE_EMBEDDING_VECTORS, ranks)
+	codeIndex, err := embedFiles(ctx, codeFileNames, client, excludePatterns, splitOptions, readLister, MAX_CODE_EMBEDDING_VECTORS, ranks)
 	if err != nil {
 		return nil, err
 	}
 
-	textIndex, err := embedFiles(ctx, textFileNames, client, excludePatterns, splitOptions, readFile, MAX_TEXT_EMBEDDING_VECTORS, ranks)
+	textIndex, err := embedFiles(ctx, textFileNames, client, excludePatterns, splitOptions, readLister, MAX_TEXT_EMBEDDING_VECTORS, ranks)
 	if err != nil {
 		return nil, err
 	}
@@ -68,11 +73,11 @@ func EmbedRepo(
 // the embeddings and metadata about the chunks the embeddings correspond to.
 func embedFiles(
 	ctx context.Context,
-	fileNames []string,
+	files []FileEntry,
 	client EmbeddingsClient,
 	excludePatterns []*paths.GlobPattern,
 	splitOptions split.SplitOptions,
-	readFile readFile,
+	reader FileReader,
 	maxEmbeddingVectors int,
 	repoPathRanks types.RepoPathRanks,
 ) (embeddings.EmbeddingIndex, error) {
@@ -82,10 +87,10 @@ func embedFiles(
 	}
 
 	index := embeddings.EmbeddingIndex{
-		Embeddings:      make([]int8, 0, len(fileNames)*dimensions),
-		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames)),
+		Embeddings:      make([]int8, 0, len(files)*dimensions/2),
+		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(files)/2),
 		ColumnDimension: dimensions,
-		Ranks:           make([]float32, 0, len(fileNames)),
+		Ranks:           make([]float32, 0, len(files)/2),
 	}
 
 	var batch []split.EmbeddableChunk
@@ -124,17 +129,21 @@ func embedFiles(
 		return nil
 	}
 
-	for _, fileName := range fileNames {
+	for _, file := range files {
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
 		if len(index.RowMetadata) > maxEmbeddingVectors {
 			break
 		}
 
-		if isExcludedFilePath(fileName, excludePatterns) {
+		if isExcludedFilePath(file.Name, excludePatterns) {
 			continue
 		}
 
-		contentBytes, err := readFile(ctx, fileName)
+		if file.Size > maxFileSize {
+			continue
+		}
+
+		contentBytes, err := reader.Read(ctx, file.Name)
 		if err != nil {
 			return embeddings.EmbeddingIndex{}, errors.Wrap(err, "error while reading a file")
 		}
@@ -143,7 +152,7 @@ func embedFiles(
 			continue
 		}
 
-		for _, chunk := range split.SplitIntoEmbeddableChunks(string(contentBytes), fileName, splitOptions) {
+		for _, chunk := range split.SplitIntoEmbeddableChunks(string(contentBytes), file.Name, splitOptions) {
 			if err := addToBatch(chunk); err != nil {
 				return embeddings.EmbeddingIndex{}, err
 			}
@@ -156,4 +165,22 @@ func embedFiles(
 	}
 
 	return index, nil
+}
+
+type FileReadLister interface {
+	FileReader
+	FileLister
+}
+
+type FileEntry struct {
+	Name string
+	Size int64
+}
+
+type FileLister interface {
+	List(context.Context) ([]FileEntry, error)
+}
+
+type FileReader interface {
+	Read(context.Context, string) ([]byte, error)
 }
