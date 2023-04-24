@@ -717,7 +717,7 @@ func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::packer: Executors E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("batcheshelper")),
+			bk.DependsOn(candidateImageStepKey("alpine-3.14")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
