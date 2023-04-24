@@ -41,7 +41,7 @@ export const build = async (): Promise<void> => {
     const metafile = process.env.ESBUILD_METAFILE
     const result = await esbuild.build({
         ...BUILD_OPTIONS,
-        outdir: "dist/scripts/",
+        outdir: 'dist/scripts/',
         metafile: Boolean(metafile),
     })
     if (metafile) {
