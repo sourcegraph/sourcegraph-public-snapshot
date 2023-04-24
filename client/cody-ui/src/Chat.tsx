@@ -106,15 +106,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 
     const onChatSubmit = useCallback((): void => {
-        // Submit chat only when input is not empty
-        if (formInput.trim()) {
+        // Submit chat only when input is not empty and not in progress
+        if (formInput.trim() && !messageInProgress) {
             onSubmit(formInput)
             setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, formInput])
             setInputRows(5)
             setFormInput('')
         }
-    }, [formInput, inputHistory, onSubmit, setFormInput, setInputHistory])
+    }, [formInput, inputHistory, messageInProgress, onSubmit, setFormInput, setInputHistory])
 
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLDivElement>): void => {

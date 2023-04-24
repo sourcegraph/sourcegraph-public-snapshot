@@ -2,15 +2,19 @@
 
 set -e
 
-echo "--- generate pipeline"
+echo "--- :bazel: build pipeline generator"
 bazel \
   --bazelrc=.bazelrc \
   --bazelrc=.aspect/bazelrc/ci.bazelrc \
   --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-  run \
-  --run_under="cd $PWD && " \
-  //enterprise/dev/ci:ci -- | tee generated-pipeline.yml
+  build \
+  //enterprise/dev/ci:ci
+
+pipeline_gen="$(bazel cquery //enterprise/dev/ci:ci --output files)"
+
+echo "--- :writing_hand: generate pipeline"
+$pipeline_gen | tee generated-pipeline.yml
 
 echo ""
-echo "--- upload pipeline"
+echo "--- :arrow_up: upload pipeline"
 buildkite-agent pipeline upload generated-pipeline.yml

@@ -4,6 +4,7 @@
     { "path": "client/template-parser" },
     { "path": "client/build-config" },
     { "path": "client/cody" },
+    { "path": "client/cody/integration-test" },
     { "path": "client/cody-shared" },
     { "path": "client/cody-ui" },
     { "path": "client/cody-web" },
