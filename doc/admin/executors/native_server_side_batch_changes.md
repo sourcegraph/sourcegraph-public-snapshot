@@ -13,6 +13,12 @@
 Native Server-Side Batch Changes is an image that runs Batch Changes without
 requiring [`src-cli`](https://github.com/sourcegraph/src-cli) to be installed on the Executor machine.
 
+Native Server-Side Batch Changes is required when running Batch Changes in Kubernetes. No docker-in-docker or privileged
+containers are required.
+
+This is also useful for environments where it is difficult to install `src-cli` on the Executor machine, e.g. air-gapped
+environments.
+
 ## Enable
 
 Native Server-Side Batch Changes is configured using a feature flag. To enable it,
