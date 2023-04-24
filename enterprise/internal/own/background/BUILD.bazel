@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "background",
+    srcs = [
+        "background.go",
+        "scheduler.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/own/background",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/codeintel/shared/background",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/executor",
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/ratelimit",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker",
+        "//internal/workerutil/dbworker/store",
+        "//lib/errors",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_time//rate",
+    ],
+)
+
+go_test(
+    name = "background_test",
+    timeout = "moderate",
+    srcs = ["scheduler_test.go"],
+    embed = [":background"],
+    tags = [
+        "requires-network",
+    ],
+    deps = [
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/observation",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -24,6 +24,7 @@ go_library(
         "kubernetes.go",
         "node_exporter.go",
         "observation.go",
+        "own.go",
         "provisioning.go",
         "queues.go",
         "shared.go",

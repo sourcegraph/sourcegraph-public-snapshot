@@ -12324,6 +12324,394 @@ Query: `sum by(app) (up{app=~".*worker"}) / count by (app) (up{app=~".*worker"})
 
 <br />
 
+### Worker: Own: repo indexer dbstore
+
+#### worker: workerutil_dbworker_store_own_background_worker_store_total
+
+<p class="subtitle">Aggregate store operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph own team](https://handbook.sourcegraph.com/departments/engineering/teams/own).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_workerutil_dbworker_store_own_background_worker_store_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: workerutil_dbworker_store_own_background_worker_store_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph own team](https://handbook.sourcegraph.com/departments/engineering/teams/own).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_workerutil_dbworker_store_own_background_worker_store_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: workerutil_dbworker_store_own_background_worker_store_errors_total
+
+<p class="subtitle">Aggregate store operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103302` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph own team](https://handbook.sourcegraph.com/departments/engineering/teams/own).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_workerutil_dbworker_store_own_background_worker_store_errors_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: workerutil_dbworker_store_own_background_worker_store_error_rate
+
+<p class="subtitle">Aggregate store operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103303` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph own team](https://handbook.sourcegraph.com/departments/engineering/teams/own).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_workerutil_dbworker_store_own_background_worker_store_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_workerutil_dbworker_store_own_background_worker_store_total{job=~"^worker.*"}[5m])) + sum(increase(src_workerutil_dbworker_store_own_background_worker_store_errors_total{job=~"^worker.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+#### worker: workerutil_dbworker_store_own_background_worker_store_total
+
+<p class="subtitle">Store operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph own team](https://handbook.sourcegraph.com/departments/engineering/teams/own).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_workerutil_dbworker_store_own_background_worker_store_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: workerutil_dbworker_store_own_background_worker_store_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful store operation duration over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103311` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph own team](https://handbook.sourcegraph.com/departments/engineering/teams/own).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_workerutil_dbworker_store_own_background_worker_store_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+
+</details>
+
+<br />
+
+#### worker: workerutil_dbworker_store_own_background_worker_store_errors_total
+
+<p class="subtitle">Store operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103312` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph own team](https://handbook.sourcegraph.com/departments/engineering/teams/own).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_workerutil_dbworker_store_own_background_worker_store_errors_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: workerutil_dbworker_store_own_background_worker_store_error_rate
+
+<p class="subtitle">Store operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103313` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph own team](https://handbook.sourcegraph.com/departments/engineering/teams/own).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_workerutil_dbworker_store_own_background_worker_store_errors_total{job=~"^worker.*"}[5m])) / (sum by (op)(increase(src_workerutil_dbworker_store_own_background_worker_store_total{job=~"^worker.*"}[5m])) + sum by (op)(increase(src_workerutil_dbworker_store_own_background_worker_store_errors_total{job=~"^worker.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Worker: Own: repo indexer worker queue
+
+#### worker: own_background_worker_handlers
+
+<p class="subtitle">Handler active handlers</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(src_own_background_worker_processor_handlers{job=~"^worker.*"})`
+
+</details>
+
+<br />
+
+#### worker: own_background_worker_processor_total
+
+<p class="subtitle">Handler operations every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103410` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_own_background_worker_processor_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: own_background_worker_processor_99th_percentile_duration
+
+<p class="subtitle">Aggregate successful handler operation duration distribution over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103411` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum  by (le)(rate(src_own_background_worker_processor_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: own_background_worker_processor_errors_total
+
+<p class="subtitle">Handler operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103412` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_own_background_worker_processor_errors_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: own_background_worker_processor_error_rate
+
+<p class="subtitle">Handler operation error rate over 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103413` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_own_background_worker_processor_errors_total{job=~"^worker.*"}[5m])) / (sum(increase(src_own_background_worker_processor_total{job=~"^worker.*"}[5m])) + sum(increase(src_own_background_worker_processor_errors_total{job=~"^worker.*"}[5m]))) * 100`
+
+</details>
+
+<br />
+
+### Worker: Own: own repo indexer record resetter
+
+#### worker: own_background_worker_record_resets_total
+
+<p class="subtitle">Own repo indexer queue records reset to queued state every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103500` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_own_background_worker_record_resets_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: own_background_worker_record_reset_failures_total
+
+<p class="subtitle">Own repo indexer queue records reset to errored state every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103501` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_own_background_worker_record_reset_failures_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### worker: own_background_worker_record_reset_errors_total
+
+<p class="subtitle">Own repo indexer queue operation errors every 5m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103502` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_own_background_worker_record_reset_errors_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
+### Worker: Own: index job scheduler
+
+#### worker: own_background_index_scheduler_total
+
+<p class="subtitle">Own index job scheduler operations every 10m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103600` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_own_background_index_scheduler_total{job=~"^worker.*"}[10m]))`
+
+</details>
+
+<br />
+
+#### worker: own_background_index_scheduler_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful own index job scheduler operation duration over 10m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103601` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_own_background_index_scheduler_duration_seconds_bucket{job=~"^worker.*"}[10m])))`
+
+</details>
+
+<br />
+
+#### worker: own_background_index_scheduler_errors_total
+
+<p class="subtitle">Own index job scheduler operation errors every 10m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103602` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_own_background_index_scheduler_errors_total{job=~"^worker.*"}[10m]))`
+
+</details>
+
+<br />
+
+#### worker: own_background_index_scheduler_error_rate
+
+<p class="subtitle">Own index job scheduler operation error rate over 10m</p>
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=103603` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (op)(increase(src_own_background_index_scheduler_errors_total{job=~"^worker.*"}[10m])) / (sum by (op)(increase(src_own_background_index_scheduler_total{job=~"^worker.*"}[10m])) + sum by (op)(increase(src_own_background_index_scheduler_errors_total{job=~"^worker.*"}[10m]))) * 100`
+
+</details>
+
+<br />
+
 ## Repo Updater
 
 <p class="subtitle">Manages interaction with code hosts, instructs Gitserver to update repositories.</p>
