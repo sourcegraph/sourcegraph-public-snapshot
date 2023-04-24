@@ -57,7 +57,7 @@
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
-    "test:integration": "tsc -b && pnpm run --silent build:dev && node ./out/src/integration-test/runTest.js",
+    "test:integration": "tsc -b ./integration-test && pnpm run --silent build:dev && ts-node out/integration-test/main.js",
     "test:unit": "jest",
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
