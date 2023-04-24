@@ -100,6 +100,9 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 	if err != nil {
 		return nil, err
 	}
+	if bitbucketUser == nil {
+		return nil, nil
+	}
 
 	accountData, err := json.Marshal(bitbucketUser)
 	if err != nil {
@@ -254,7 +257,7 @@ func (p *Provider) user(ctx context.Context, username string, fs ...bitbucketser
 		t = next
 	}
 
-	return nil, errNoResults
+	return nil, nil
 }
 
 func (p *Provider) userIDs(ctx context.Context, repoID string) (ids []int, err error) {
