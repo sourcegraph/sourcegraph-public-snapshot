@@ -4,9 +4,9 @@ go_library(
     name = "embeddings",
     srcs = [
         "client.go",
+        "embedding.go",
         "index_name.go",
         "index_storage.go",
-        "quantize.go",
         "similarity_search.go",
         "tokens.go",
         "types.go",
@@ -34,6 +34,7 @@ go_test(
     name = "embeddings_test",
     timeout = "short",
     srcs = [
+        "embedding_test.go",
         "index_storage_test.go",
         "similarity_search_test.go",
     ],
