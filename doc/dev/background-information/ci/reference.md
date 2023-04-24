@@ -19,6 +19,7 @@ The default run type.
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - Build Docker images
+  - Build Docker images
   - Upload build trace
 
 - Pipeline for `Client` changes:
@@ -28,6 +29,7 @@ The default run type.
   - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
   - **Pipeline setup**: Trigger async
   - Build Docker images
+  - Build Docker images
   - Upload build trace
 
 - Pipeline for `GraphQL` changes:
@@ -35,11 +37,13 @@ The default run type.
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
   - Build Docker images
+  - Build Docker images
   - Upload build trace
 
 - Pipeline for `DatabaseSchema` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
+  - Build Docker images
   - Build Docker images
   - Upload build trace
 
@@ -48,6 +52,7 @@ The default run type.
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - Build Docker images
+  - Build Docker images
   - Upload build trace
 
 - Pipeline for `Dockerfiles` changes:
@@ -55,17 +60,20 @@ The default run type.
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - Build Docker images
+  - Build Docker images
   - Upload build trace
 
 - Pipeline for `ExecutorVMImage` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - Build Docker images
+  - Build Docker images
   - Upload build trace
 
 - Pipeline for `ExecutorDockerRegistryMirror` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
+  - Build Docker images
   - Build Docker images
   - Upload build trace
 
@@ -74,11 +82,13 @@ The default run type.
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **CI script tests**: test-trace-command.sh
   - Build Docker images
+  - Build Docker images
   - Upload build trace
 
 - Pipeline for `Terraform` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
+  - Build Docker images
   - Build Docker images
   - Upload build trace
 
@@ -87,6 +97,7 @@ The default run type.
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - Build Docker images
+  - Build Docker images
   - Upload build trace
 
 - Pipeline for `Shell` changes:
@@ -94,11 +105,13 @@ The default run type.
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - Build Docker images
+  - Build Docker images
   - Upload build trace
 
 - Pipeline for `DockerImages` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
+  - Build Docker images
   - Build Docker images
   - Upload build trace
 
@@ -106,11 +119,13 @@ The default run type.
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - Build Docker images
+  - Build Docker images
   - Upload build trace
 
 - Pipeline for `WolfiBaseImages` changes:
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
+  - Build Docker images
   - Build Docker images
   - Upload build trace
 
@@ -118,6 +133,7 @@ The default run type.
   - **Metadata**: Pipeline metadata
   - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - Build Docker images
   - Build Docker images
   - Upload build trace
 
@@ -214,13 +230,13 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images
+- **Image builds**: Build Docker images, Build Docker images, Build Docker images
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
 - **Publish images**: Publish images, Publish executor image, Publish executor binary, Publish docker registry mirror image
 - Upload build trace
 
@@ -232,13 +248,13 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images
+- **Image builds**: Build Docker images, Build Docker images, Build Docker images
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
 - **Publish images**: Publish images
 - Upload build trace
 
@@ -294,13 +310,13 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images
+- **Image builds**: Build Docker images, Build Docker images, Build Docker images
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
 - **Publish images**: Publish images, Publish executor image, Publish executor binary
 - Upload build trace
 
@@ -317,13 +333,13 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images
+- **Image builds**: Build Docker images, Build Docker images, Build Docker images
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
 - **Publish images**: Publish images
 - Upload build trace
 
