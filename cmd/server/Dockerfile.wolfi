@@ -2,10 +2,7 @@
 # This is currently being tested in parallel to Alpine - you don't need to update this
 #   file if you change the regular Dockerfile.
 
-# TODO: This is untested and WIP
-
 FROM us.gcr.io/sourcegraph-dev/wolfi-server-base:latest
-# FROM --platform=x86_64 sourcegraph-wolfi/server-base:latest-amd64
 
 # TODO(security): This container should not be running as root!
 #
@@ -58,7 +55,6 @@ COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboard
 
 COPY . /
 
-# TODO: Check
 # symbols is cgo, ensure we have the requisite dynamic libraries
 RUN env SANITY_CHECK=true /usr/local/bin/symbols
 
