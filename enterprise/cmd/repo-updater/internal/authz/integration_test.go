@@ -310,6 +310,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				GitHubURL:      uri,
 				BaseToken:      token,
 				GroupsCacheTTL: -1,
+				DB:             testDB,
 			})
 
 			authz.SetProviders(false, []authz.Provider{provider})

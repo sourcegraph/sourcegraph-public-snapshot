@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -94,6 +95,12 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 	ctx := context.Background()
 
 	externalAccounts := NewMockUserExternalAccountsStore()
+	originalToken := &auth.OAuthBearerToken{
+		Token:        "expired",
+		RefreshToken: "refresh_token",
+	}
+	marshalled, err := json.Marshal(originalToken)
+	require.NoError(t, err)
 	extAccts := []*extsvc.Account{{
 		AccountSpec: extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitLab,
@@ -101,7 +108,7 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 			AccountID:   "accountId",
 		},
 		AccountData: extsvc.AccountData{
-			AuthData: extsvc.NewUnencryptedData([]byte(`{"token": "expired", "refresh_token": "refresh_token"}`)),
+			AuthData: extsvc.NewUnencryptedData(marshalled),
 		},
 	}}
 
@@ -136,7 +143,7 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 	}
 
 	expectedNewToken := "new-token"
-	newToken, err := externalAccountTokenRefresher(externalAccounts, 1, "refresh_token")(ctx, doer, oauthutil.OAuthContext{})
+	newToken, err := externalAccountTokenRefresher(externalAccounts, 1, originalToken)(ctx, doer, oauthutil.OAuthContext{})
 	require.NoError(t, err)
 	assert.Equal(t, expectedNewToken, newToken.Token)
 }

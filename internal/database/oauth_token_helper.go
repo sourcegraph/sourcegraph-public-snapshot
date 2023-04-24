@@ -17,7 +17,7 @@ import (
 
 // externalAccountTokenRefresher returns an oauthutil.TokenRefresher for the
 // given external account.
-func externalAccountTokenRefresher(store UserExternalAccountsStore, externalAccountID int32, refreshToken string) oauthutil.TokenRefresher {
+func externalAccountTokenRefresher(store UserExternalAccountsStore, externalAccountID int32, originalToken *auth.OAuthBearerToken) oauthutil.TokenRefresher {
 	return func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OAuthContext) (token *auth.OAuthBearerToken, err error) {
 		// Start a transaction so that multiple refreshes don't happen simultaneously
 		tx, err := store.Transact(ctx)
@@ -38,7 +38,7 @@ func externalAccountTokenRefresher(store UserExternalAccountsStore, externalAcco
 		if err != nil {
 			return nil, err
 		}
-		oauthToken := &auth.OAuthBearerToken{
+		fetchedToken := &auth.OAuthBearerToken{
 			Token:        tok.AccessToken,
 			RefreshToken: tok.RefreshToken,
 			Expiry:       tok.Expiry,
@@ -46,12 +46,12 @@ func externalAccountTokenRefresher(store UserExternalAccountsStore, externalAcco
 		// Compare the stored refresh token with the provided one.
 		// If they differ, the token was most likely refreshed in the meantime.
 		// Check `NeedsRefresh` for good measure.
-		if oauthToken.RefreshToken != refreshToken && !oauthToken.NeedsRefresh() {
-			return oauthToken, nil
+		if fetchedToken.RefreshToken != originalToken.RefreshToken && !fetchedToken.NeedsRefresh() {
+			return fetchedToken, nil
 		}
 
 		// Otherwise, do the token refresh
-		refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, oauthToken.RefreshToken, oauthutil.AuthStyleInParams)
+		refreshedToken, err := oauthutil.RetrieveToken(doer, oauthCtx, fetchedToken.RefreshToken, oauthutil.AuthStyleInParams)
 		if err != nil {
 			return nil, errors.Wrap(err, "refresh token")
 		}
@@ -140,7 +140,7 @@ func GetServiceRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oau
 
 func GetAccountRefreshAndStoreOAuthTokenFunc(store UserExternalAccountsStore, externalAccountID int32, oauthContext *oauthutil.OAuthContext) func(context.Context, httpcli.Doer, *auth.OAuthBearerToken) (string, string, time.Time, error) {
 	return func(ctx context.Context, cli httpcli.Doer, a *auth.OAuthBearerToken) (string, string, time.Time, error) {
-		tokenRefresher := externalAccountTokenRefresher(store, externalAccountID, a.RefreshToken)
+		tokenRefresher := externalAccountTokenRefresher(store, externalAccountID, a)
 		token, err := tokenRefresher(ctx, cli, *oauthContext)
 		if err != nil {
 			return "", "", time.Time{}, err
