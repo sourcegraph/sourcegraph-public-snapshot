@@ -124,26 +124,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Merge(baseImageOps)
 		}
 		// Always rebuild Wolfi images
+		// Rebuild all images seems reasonable. We need a list somewhere! Maybe we can just use the standard image list though? But not all are wolfi-ified
 		ops.Merge(
 			// TODO: Just hardcode specific images initially
-			WolfiImagesOperations([]string{
-				"blobstore",
-				"cadvisor",
-				"codeinsights-db",
-				"codeintel-db",
-				"indexed-searcher",
-				"node-exporter",
-				"opentelemetry-collector",
-				"postgres-12-alpine",
-				"prometheus",
-				"prometheus-gcp",
-				"redis-cache",
-				"redis-store",
-				"redis_exporter",
-				"search-indexer",
-				"sg",
-				"syntax-highlighter",
-			}, c.Version,
+			WolfiImagesOperations([]string{}, c.Version,
 				c.candidateImageTag(),
 				(numUpdatedBaseImages > 0),
 			),
