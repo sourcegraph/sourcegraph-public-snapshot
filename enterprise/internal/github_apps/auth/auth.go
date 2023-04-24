@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -25,12 +26,12 @@ import (
 // the provided EnterpriseDB. This gives the function access to GitHub App details
 // in the database.
 func CreateEnterpriseFromConnection(ghApps store.GitHubAppsStore) ghauth.FromConnectionFunc {
-	return func(ctx context.Context, conn *schema.GitHubConnection) (auth.Authenticator, error) {
+	return func(ctx context.Context, conn *schema.GitHubConnection) (ghauth.RefreshableURLRequestAuthenticator, error) {
 		if conn.GitHubAppDetails == nil {
 			return &auth.OAuthBearerToken{Token: conn.Token}, nil
 		}
 
-		ghApp, err := ghApps.GetByAppID(ctx, conn.GitHubAppDetails.AppID, conn.GitHubAppDetails.BaseURL)
+		ghApp, err := ghApps.GetByAppID(ctx, conn.GitHubAppDetails.AppID, conn.Url)
 		if err != nil {
 			return nil, err
 		}
@@ -40,7 +41,12 @@ func CreateEnterpriseFromConnection(ghApps store.GitHubAppsStore) ghauth.FromCon
 			return nil, err
 		}
 
-		return NewInstallationAccessToken(conn.GitHubAppDetails.InstallationID, appAuther), nil
+		baseURL, err := url.Parse(conn.Url)
+		if err != nil {
+			return nil, err
+		}
+
+		return NewInstallationAccessToken(baseURL, conn.GitHubAppDetails.InstallationID, appAuther), nil
 	}
 }
 
@@ -130,8 +136,8 @@ type installationAccessToken struct {
 	installationID   int
 	token            string
 	expiresAt        time.Time
+	baseURL          *url.URL
 	appAuthenticator auth.Authenticator
-	cli              *github.V3Client
 }
 
 func (t *installationAccessToken) updateFromJSON(jt *jsonToken) {
@@ -148,10 +154,12 @@ func (t *installationAccessToken) updateFromJSON(jt *jsonToken) {
 //
 // appAuthenticator must not be nil.
 func NewInstallationAccessToken(
+	baseURL *url.URL,
 	installationID int,
 	appAuthenticator auth.Authenticator,
 ) *installationAccessToken {
 	auther := &installationAccessToken{
+		baseURL:          baseURL,
 		installationID:   installationID,
 		appAuthenticator: appAuthenticator,
 	}
@@ -164,7 +172,10 @@ func NewInstallationAccessToken(
 // installation associated with the Authenticator.
 // Returns an error if the request fails.
 func (t *installationAccessToken) Refresh(ctx context.Context, cli httpcli.Doer) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("/app/installations/%d/access_tokens", t.installationID), nil)
+	apiURL, _ := github.APIRoot(t.baseURL)
+	apiURL = apiURL.JoinPath(fmt.Sprintf("/app/installations/%d/access_tokens", t.installationID))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL.String(), nil)
 	if err != nil {
 		return err
 	}
@@ -175,6 +186,10 @@ func (t *installationAccessToken) Refresh(ctx context.Context, cli httpcli.Doer)
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return errors.Newf("failed to refresh: %d", resp.StatusCode)
+	}
 
 	var jsonToken jsonToken
 	if err := json.NewDecoder(resp.Body).Decode(&jsonToken); err != nil {
@@ -210,4 +225,9 @@ func (t *installationAccessToken) NeedsRefresh() bool {
 		return false
 	}
 	return time.Until(t.expiresAt) < 5*time.Minute
+}
+
+// Sets the URL's User field to contain the installation access token.
+func (t *installationAccessToken) SetURLUser(u *url.URL) {
+	u.User = url.UserPassword("x-access-token", t.token)
 }
