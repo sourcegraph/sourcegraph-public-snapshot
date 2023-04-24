@@ -1,47 +1,54 @@
 name: Sourcegraph App Release
 on:
   push:
-    - wb/app/*
-    - wb/app/release-*
+    branches:
+      - wb/app/release-*
+      - main/app/release-*
 
 jobs:
   build-app:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-20.04, windows-latest]
+        platform: [macos-latest, ubuntu-20.04] # can't build on windows-latest as Sourcegraph has incompatible paths
 
     runs-on: ${{ matrix.platform }}
     steps:
+      # dependncies
       - uses: actions/checkout@v3
-      - name: Download linux binary
-        if: matrix.platform == 'ubuntu-20.04'
-        run: |
-          echo "HERE I WILL DOWNLOAD THE BINARY FOR LINUX"
-      - name: Download Mac binary
-        if: matrix.platform == 'macos-latest'
-        run: |
-          echo "HERE I WILL DOWNLOAD THE BINARY FOR MacOS"
-      - name: Download Windows binary
-        if: matrix.platform == 'windows-latest'
-        run: |
-          echo "HERE I WILL DOWNLOAD THE BINARY FOR Windows"
       - name: setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 16.18.1
+      - name: install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8.1.0
+          run_install: false
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
+      - name: install golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.19.8
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-20.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
       - name: install frontend dependencies
-        run: pnpm install # change this to npm or pnpm depending on which one you use
+        run: pnpm install
+      # start building things
+      - name: build app-shell, Sourcegraph web and Sourcegraph Backend
+        run: |
+          ./enterprise/dev/app/build-release.sh go
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: ./src-tauri
+          tagName: app-v__VERSION__
+          releaseName: "Sourcegraph App v__VERSION__"
+          releaseDraft: true
+          prerelease: true
 
