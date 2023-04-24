@@ -45,7 +45,7 @@ export class VSCodeEditor implements Editor {
         if (!selection || selection?.start.isEqual(selection.end)) {
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             vscode.window.showErrorMessage(
-                'Sprinkle code with inline comments describing improvements, select it, and then get it fixed up'
+                'No code was selected. To use this recipe, add inline comments describing improvements, select the code to which to apply the changes, and then invoke this recipe.'
             )
             return null
         }
