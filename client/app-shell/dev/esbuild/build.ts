@@ -48,7 +48,7 @@ export const build = async (): Promise<void> => {
         fs.writeFileSync(metafile, JSON.stringify(result.metafile), 'utf-8')
     }
 
-    if (result.errors.length == 0) {
+    if (result.errors.length === 0) {
         const content = await fs.promises.readFile('index.html', 'utf8')
         fs.writeFileSync('dist/index.html', content)
         console.info('index.html written to dist/index.html')

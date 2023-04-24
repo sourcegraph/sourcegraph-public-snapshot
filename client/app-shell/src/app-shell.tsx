@@ -18,7 +18,7 @@ const outputHandler = (event: Event<string>): void => {
 // Note we currently ignore the unlisten cb returned from listen
 listen('backend-stdout', outputHandler)
     .then(() => console.log('backend-stdout listener registered'))
-    .catch(e => console.error(`failed to register backend-stdout handler: ${e}`))
+    .catch(error => console.error(`failed to register backend-stdout handler: ${error}`))
 listen('backend-stderr', outputHandler)
     .then(() => console.log('backend-stderr listener registered'))
-    .catch(e => console.error(`failed to register backend-stderr handler: ${e}`))
+    .catch(error => console.error(`failed to register backend-stderr handler: ${error}`))
