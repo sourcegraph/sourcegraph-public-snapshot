@@ -129,7 +129,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setInputRows(5)
             setFormInput('')
         }
-    }, [formInput, inputHistory, messageInProgress, messageBeingEdited, onSubmit, setFormInput, setInputHistory])
+    }, [formInput, inputHistory, messageInProgress, onSubmit, setFormInput, setInputHistory])
 
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLDivElement>): void => {
