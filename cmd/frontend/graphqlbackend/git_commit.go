@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
+	"regexp"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -45,6 +46,8 @@ type GitCommitResolver struct {
 	gitserverClient gitserver.Client
 	repoResolver    *RepositoryResolver
 
+	isPerforce bool
+
 	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
 	inputRev *string
@@ -69,12 +72,12 @@ type GitCommitResolver struct {
 // you have batch-loaded a bunch of them and already have them at hand.
 func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	repoName := repo.RepoName()
-
 	return &GitCommitResolver{
 		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").
 			With(log.String("repo", string(repoName)),
 				log.String("commitID", string(id))),
 		db:              db,
+		isPerforce:      repo.ExternalServiceTypePerforce(),
 		gitserverClient: gsClient,
 		repoResolver:    repo,
 		includeUserInfo: true,
@@ -119,11 +122,25 @@ func (r *GitCommitResolver) ID() graphql.ID {
 
 func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
 
-func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
+func (r *GitCommitResolver) OID() GitObjectID {
+	if r.isPerforce && r.commit != nil {
+		p4change := ParseP4Change(r.commit.Message.Body())
+		if p4change == nil {
+			return "failed to parse"
+		}
+		return GitObjectID(p4change.Change)
+	}
+
+	return r.oid
+}
 
 func (r *GitCommitResolver) InputRev() *string { return r.inputRev }
 
 func (r *GitCommitResolver) AbbreviatedOID() string {
+	if r.isPerforce && r.commit != nil {
+		return string(r.OID())
+	}
+
 	return string(r.oid)[:7]
 }
 
@@ -149,6 +166,7 @@ func (r *GitCommitResolver) Message(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return string(commit.Message), err
+
 }
 
 func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
@@ -156,10 +174,33 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return commit.Message.Subject(), nil
 }
 
+type P4Change struct {
+	DepotPaths string
+	Change     string
+}
+
+func ParseP4Change(input string) *P4Change {
+	re := regexp.MustCompile(`\[git-p4: depot-paths = "(.*?)"\: change = (\d+)\]`)
+	matches := re.FindStringSubmatch(input)
+	if len(matches) != 3 {
+		return nil
+	}
+
+	return &P4Change{
+		DepotPaths: matches[1],
+		Change:     matches[2],
+	}
+}
+
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
+	if r.isPerforce {
+		return nil, nil
+	}
+
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
 		return nil, err
