@@ -44,7 +44,7 @@ func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, decs ...
 func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
-		return NewGithubSource(ctx, logger.Scoped("GithubSource", "GitHub repo source"), svc, cf)
+		return NewGitHubSource(ctx, logger.Scoped("GithubSource", "GitHub repo source"), svc, cf)
 	case extsvc.KindGitLab:
 		return NewGitLabSource(ctx, logger.Scoped("GitLabSource", "GitLab repo source"), svc, cf)
 	case extsvc.KindAzureDevOps:

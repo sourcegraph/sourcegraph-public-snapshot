@@ -68,7 +68,7 @@ var (
 	rateLimitSyncerLimitPerSecond = env.MustGetInt("SRC_REPOS_SYNC_RATE_LIMIT_RATE_PER_SECOND", 80, "Rate limit applied to rate limit syncing")
 )
 
-type EnterpriseInit func(db database.DB)
+type EnterpriseInit func(db database.DB, keyring keyring.Ring)
 
 type Config struct {
 	env.BaseConfig
@@ -124,7 +124,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	if enterpriseInit != nil {
-		enterpriseInit(db)
+		enterpriseInit(db, keyring.Default())
 	}
 
 	if err != nil {

@@ -65,6 +65,7 @@ go_library(
         "//internal/extsvc/crates",
         "//internal/extsvc/gerrit",
         "//internal/extsvc/github",
+        "//internal/extsvc/github/auth",
         "//internal/extsvc/gitlab",
         "//internal/extsvc/gitolite",
         "//internal/extsvc/gomodproxy",
