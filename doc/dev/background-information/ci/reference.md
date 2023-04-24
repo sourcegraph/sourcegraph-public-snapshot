@@ -236,7 +236,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
 - **Publish images**: Publish images, Publish executor image, Publish executor binary, Publish docker registry mirror image
 - Upload build trace
 
@@ -254,7 +254,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
 - **Publish images**: Publish images
 - Upload build trace
 
@@ -316,7 +316,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
 - **Publish images**: Publish images, Publish executor image, Publish executor binary
 - Upload build trace
 
@@ -339,7 +339,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
 - **Publish images**: Publish images
 - Upload build trace
 
