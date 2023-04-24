@@ -4,7 +4,9 @@ import { Completion } from '.'
 
 export class CompletionsCache {
     private cache = new LRUCache<string, Completion[]>({
-        max: 500, // maximum input prefixes in the cache
+        // Maximum input prefixes in the cache. For every completion, we cache
+        // the input prefix as well as
+        max: 500,
     })
 
     // TODO: The caching strategy only takes the file content prefix into
@@ -38,7 +40,7 @@ export class CompletionsCache {
         for (const completion of completions) {
             // Cache the exact prefix first and then add characters from the
             // completion one after the other
-            for (let i = 0; i <= 10; i++) {
+            for (let i = 0; i <= Math.min(10, completion.content.length); i++) {
                 const key = completion.prefix + completion.content.slice(0, i)
                 if (!this.cache.has(key)) {
                     this.cache.set(key, [completion])
@@ -48,7 +50,5 @@ export class CompletionsCache {
                 }
             }
         }
-
-        console.log(this.cache)
     }
 }
