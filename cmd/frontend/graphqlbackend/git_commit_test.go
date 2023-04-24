@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -135,6 +136,72 @@ func TestGitCommitResolver(t *testing.T) {
 				}
 			})
 		}
+	})
+
+	t.Run("perforce depot, git-p4 commit", func(t *testing.T) {
+		commit := &gitdomain.Commit{
+			ID: "c1",
+			Message: `subject: Changes things
+[git-p4: depot-paths = "//test-depot/": change = 123]"`,
+			Parents: []api.CommitID{"p1", "p2"},
+			Author: gitdomain.Signature{
+				Name:  "Bob",
+				Email: "bob@alice.com",
+			},
+			Committer: &gitdomain.Signature{
+				Name:  "Alice",
+				Email: "alice@bob.com",
+			},
+		}
+
+		repo := NewRepositoryResolver(db, gitserver.NewClient(), &types.Repo{
+			Name:         "perforce/test-depot",
+			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
+		})
+		commitResolver := NewGitCommitResolver(db, client, repo, "c1", commit)
+
+		require.True(t, commitResolver.repoResolver.IsPerforceDepot())
+
+		cid, err := commitResolver.PerforceChangelistID(context.Background())
+		require.NoError(t, err)
+
+		require.Equal(t, "123", *cid)
+		subject, err := commitResolver.Subject(context.Background())
+		require.NoError(t, err)
+		require.Equal(t, "subject: Changes things", subject)
+	})
+
+	t.Run("perforce depot, p4-fusion commit", func(t *testing.T) {
+		commit := &gitdomain.Commit{
+			ID: "c1",
+			Message: `123 - subject: Changes things
+[p4-fusion: depot-paths = "//test-perms/": change = 123]"`,
+			Parents: []api.CommitID{"p1", "p2"},
+			Author: gitdomain.Signature{
+				Name:  "Bob",
+				Email: "bob@alice.com",
+			},
+			Committer: &gitdomain.Signature{
+				Name:  "Alice",
+				Email: "alice@bob.com",
+			},
+		}
+
+		repo := NewRepositoryResolver(db, gitserver.NewClient(), &types.Repo{
+			Name:         "perforce/test-depot",
+			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
+		})
+		commitResolver := NewGitCommitResolver(db, client, repo, "c1", commit)
+
+		require.True(t, commitResolver.repoResolver.IsPerforceDepot())
+
+		cid, err := commitResolver.PerforceChangelistID(context.Background())
+		require.NoError(t, err)
+
+		require.Equal(t, "123", *cid)
+		subject, err := commitResolver.Subject(context.Background())
+		require.NoError(t, err)
+		require.Equal(t, "subject: Changes things", subject)
 	})
 }
 
@@ -513,4 +580,81 @@ func TestGitCommitAncestors(t *testing.T) {
 				}`,
 		},
 	})
+}
+
+func TestGetP4ChangelistID(t *testing.T) {
+	testCases := []struct {
+		input                string
+		expectedChangeListID string
+	}{
+		{
+			input:                `[git-p4: depot-paths = "//test-perms/": change = 83725]`,
+			expectedChangeListID: "83725",
+		},
+		{
+			input:                `[p4-fusion: depot-paths = "//test-perms/": change = 80972]`,
+			expectedChangeListID: "80972",
+		},
+		{
+			input:                "invalid string",
+			expectedChangeListID: "",
+		},
+		{
+			input:                "",
+			expectedChangeListID: "",
+		},
+	}
+
+	for _, tc := range testCases {
+		result, err := getP4ChangelistID(tc.input)
+		if tc.expectedChangeListID != "" {
+			require.NoError(t, err)
+		} else {
+			require.Error(t, err)
+		}
+
+		if !reflect.DeepEqual(result, tc.expectedChangeListID) {
+			t.Errorf("getP4ChangelistID failed (%q) => got %q, want %q", tc.input, result, tc.expectedChangeListID)
+		}
+	}
+}
+
+func TestParseP4FusionCommitSubject(t *testing.T) {
+	testCases := []struct {
+		input           string
+		expectedSubject string
+		expectedErr     string
+	}{
+		{
+			input:           "83732 - adding sourcegraph repos",
+			expectedSubject: "adding sourcegraph repos",
+		},
+		{
+			input:           "abc1234 - updating config",
+			expectedSubject: "",
+			expectedErr:     `failed to parse commit subject "abc1234 - updating config" for commit converted by p4-fusion`,
+		},
+		{
+			input:           "- fixing bug",
+			expectedSubject: "",
+			expectedErr:     `failed to parse commit subject "- fixing bug" for commit converted by p4-fusion`,
+		},
+		{
+			input:           "fixing bug",
+			expectedSubject: "",
+			expectedErr:     `failed to parse commit subject "fixing bug" for commit converted by p4-fusion`,
+		},
+	}
+
+	for _, tc := range testCases {
+		subject, err := parseP4FusionCommitSubject(tc.input)
+		if err != nil && err.Error() != tc.expectedErr {
+			t.Errorf("Expected error %q, got %q", err.Error(), tc.expectedErr)
+		}
+
+		if subject != tc.expectedSubject {
+			t.Errorf("Expected subject %q, got %q", tc.expectedSubject, subject)
+		}
+
+	}
 }

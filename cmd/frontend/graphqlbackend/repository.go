@@ -448,6 +448,15 @@ func (r *RepositoryResolver) PermissionsInfo(ctx context.Context) (PermissionsIn
 	return EnterpriseResolvers.authzResolver.RepositoryPermissionsInfo(ctx, r.ID())
 }
 
+func (r *RepositoryResolver) IsPerforceDepot() bool {
+	if r.innerRepo != nil {
+		return r.innerRepo.ExternalRepo.ServiceType == extsvc.TypePerforce
+	}
+
+	r.logger.Warn("cannot reliably determine if nil innerRepo is a perforce depot, default git terms will be used to represent this repo and its artifacts (eg: commit, commit SHA will be used)")
+	return false
+}
+
 func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	Callsign string
 	Name     *string
