@@ -51,14 +51,16 @@ func maybeTaggedImage(rootImage, tag string) string {
 var SourcegraphDockerImages = append(DeploySourcegraphDockerImages,
 	"sg", "llm-proxy")
 
+// These are images that use the musl build chain for bazel, and break the cache if built
+// on a system with glibc. They are built on a separate pipeline.
+var SourcegraphDockerImagesMusl = []string{"symbols", "server"}
+
 // DeploySourcegraphDockerImages denotes all Docker images that are included in a typical
 // deploy-sourcegraph installation.
 //
 // Used to cross check images in the deploy-sourcegraph repo. If you are adding or removing an image to https://github.com/sourcegraph/deploy-sourcegraph
 // it must also be added to this list.
 var DeploySourcegraphDockerImages = []string{
-	"symbols",
-	"server",
 	"alpine-3.14",
 	"cadvisor",
 	"codeinsights-db",
