@@ -35,6 +35,7 @@ export class Transcript {
         return this.interactions.length > 0 ? this.interactions[this.interactions.length - 1] : null
     }
 
+    // TODO(sqs): need to refactor this. the Interaction is probably not the best current API design for this. It mutates fields in a way that I don't fully understand
     public addAssistantResponse(text: string, displayText?: string): void {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',
