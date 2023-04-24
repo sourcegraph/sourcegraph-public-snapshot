@@ -115,7 +115,7 @@ sg ci build wolfi
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- **Wolfi image builds**: Build Wolfi-based alpine-3.14, Build Wolfi-based cadvisor, Build Wolfi-based codeinsights-db, Build Wolfi-based codeintel-db, Build Wolfi-based frontend, Build Wolfi-based github-proxy, Build Wolfi-based gitserver, Build Wolfi-based grafana, Build Wolfi-based indexed-searcher, Build Wolfi-based jaeger-agent, Build Wolfi-based jaeger-all-in-one, Build Wolfi-based blobstore, Build Wolfi-based blobstore2, Build Wolfi-based node-exporter, Build Wolfi-based postgres-12-alpine, Build Wolfi-based postgres_exporter, Build Wolfi-based precise-code-intel-worker, Build Wolfi-based prometheus, Build Wolfi-based prometheus-gcp, Build Wolfi-based redis-cache, Build Wolfi-based redis-store, Build Wolfi-based redis_exporter, Build Wolfi-based repo-updater, Build Wolfi-based search-indexer, Build Wolfi-based searcher, Build Wolfi-based symbols, Build Wolfi-based syntax-highlighter, Build Wolfi-based worker, Build Wolfi-based migrator, Build Wolfi-based executor, Build Wolfi-based executor-kubernetes, Build Wolfi-based executor-vm, Build Wolfi-based batcheshelper, Build Wolfi-based opentelemetry-collector, Build Wolfi-based embeddings, Build Wolfi-based dind, Build Wolfi-based bundled-executor, Build Wolfi-based server, Build Wolfi-based sg, Build Wolfi-based llm-proxy
+- **Wolfi image builds**: Build Wolfi-based postgres-12-alpine
 - Upload build trace
 
 ### Release branch nightly healthcheck build
