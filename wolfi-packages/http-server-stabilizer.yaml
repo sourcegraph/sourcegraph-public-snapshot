@@ -32,4 +32,5 @@ pipeline:
   - uses: go/build
     with:
       packages: main.go
+      prefix: /usr/local
       output: http-server-stabilizer

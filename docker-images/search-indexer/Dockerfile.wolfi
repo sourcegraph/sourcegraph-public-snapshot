@@ -1,0 +1,32 @@
+# Note: to be able to use an ARG with a FROM it has to be at the TOP of the Dockerfile
+ARG ZOEKT_IMAGE="index.docker.io/sourcegraph/zoekt-indexserver"
+ARG ZOEKT_VERSION
+FROM $ZOEKT_IMAGE:$ZOEKT_VERSION AS zoekt_upstream
+
+# hadolint ignore=DL3007
+FROM us.gcr.io/sourcegraph-dev/wolfi-search-indexer-base:latest
+
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+
+ENV SRC_FRONTEND_INTERNAL http://sourcegraph-frontend-internal
+ENV DATA_DIR /data/index
+RUN mkdir -p ${DATA_DIR}
+RUN chown -R sourcegraph:sourcegraph /data
+
+USER sourcegraph
+WORKDIR /home/sourcegraph
+
+COPY --from=zoekt_upstream \
+    /usr/local/bin/zoekt-sourcegraph-indexserver \
+    /usr/local/bin/zoekt-archive-index \
+    /usr/local/bin/zoekt-git-index \
+    /usr/local/bin/zoekt-merge-index \
+    /usr/local/bin/
+
+ENTRYPOINT ["/sbin/tini", "--", "zoekt-sourcegraph-indexserver"]

@@ -15,21 +15,22 @@ cd "wolfi-images"
 
 # Normalise name by adding .yaml if necessary
 name=${1%/}
-name=$(echo "$name" | sed -r 's/^([a-zA-Z0-9_-]+)$/\1.yaml/')
+file_name=$(echo "$name" | sed -r 's/^([a-zA-Z0-9_-]+)$/\1.yaml/')
+image_name=$(echo "$name" | sed -r 's/^([a-zA-Z0-9_-]+)$/\1/')
 
-if [ ! -f "$name" ]; then
-  echo "File '$name' does not exist"
+if [ ! -f "$file_name" ]; then
+  echo "File '$file_name' does not exist"
   exit 1
 fi
 
 ## Build base image using apko build container
-echo " * Building base image '$name' using apko"
+echo " * Building base image '$image_name' using apko"
 docker run \
   -v "$PWD":/work \
   cgr.dev/chainguard/apko \
-  build --debug "${name}" \
-  "sourcegraph-wolfi/$name-base:latest" \
-  "sourcegraph-wolfi-$name-base.tar" ||
+  build --debug "${file_name}" \
+  "sourcegraph-wolfi/$image_name-base:latest" \
+  "sourcegraph-wolfi-$image_name-base.tar" ||
   (echo "*** Build failed ***" && exit 1)
 
 # To build images against a local repo with a custom signing key:
@@ -41,10 +42,9 @@ docker run \
 
 ## Import into Docker
 echo " * Loading tarball into Docker"
-docker load <"sourcegraph-wolfi-$name-base.tar"
+docker load <"sourcegraph-wolfi-$image_name-base.tar"
 
 ## Cleanup
 echo " * Cleaning up tarball and SBOM"
-rm "sourcegraph-wolfi-$name-base.tar"
+rm "sourcegraph-wolfi-$image_name-base.tar"
 rm sbom*
-rmdir keys/ packages/

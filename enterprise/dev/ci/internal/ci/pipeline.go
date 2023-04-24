@@ -100,18 +100,72 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.BazelExpBranch:
 		ops.Merge(BazelOperations())
 	case runtype.WolfiExpBranch:
-		if c.Diff.Has(changed.WolfiPackages) {
-			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
+		// Rebuild packages if package configs have changed
+		updatePackages := c.Diff.Has(changed.WolfiPackages)
+		// Rebuild base images if base image OR package configs have changed
+		updateBaseImages := c.Diff.Has(changed.WolfiBaseImages) || updatePackages
+
+		var numUpdatedPackages int
+		var numUpdatedBaseImages int
+
+		if updatePackages {
+			var packageOps *operations.Set
+			packageOps, numUpdatedPackages = WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages])
+			ops.Merge(packageOps)
 		}
-		if c.Diff.Has(changed.WolfiBaseImages) {
-			ops.Merge(
-				WolfiBaseImagesOperations(
-					c.ChangedFiles[changed.WolfiBaseImages],
-					c.Version,
-					c.Diff.Has(changed.WolfiPackages),
-				),
+		if updateBaseImages {
+			var baseImageOps *operations.Set
+			baseImageOps, numUpdatedBaseImages = WolfiBaseImagesOperations(
+				c.ChangedFiles[changed.WolfiBaseImages], // TODO: If packages have changed need to update all base images. Requires a list of all base images
+				c.Version,
+				(numUpdatedPackages > 0),
 			)
+			ops.Merge(baseImageOps)
 		}
+		// Always rebuild Wolfi images
+		// Rebuild all images seems reasonable. We need a list somewhere! Maybe we can just use the standard image list though? But not all are wolfi-ified
+		ops.Merge(
+			// TODO: Just hardcode specific images initially
+			WolfiImagesOperations([]string{
+				"batcheshelper",
+				"embeddings",
+				"executor-kubernetes",
+				"frontend",
+				"github-proxy",
+				"gitserver",
+				"llm-proxy",
+				"loadtest",
+				"migrator",
+				"precise-code-intel-worker",
+				"repo-updater",
+				"searcher",
+				"server",
+				"symbols",
+				"worker",
+				"blobstore",
+				"cadvisor",
+				"codeinsights-db",
+				"codeintel-db",
+				"indexed-searcher",
+				"jaeger-agent",
+				"jaeger-all-in-one",
+				"node-exporter",
+				"opentelemetry-collector",
+				"postgres-12-alpine",
+				"postgres_exporter",
+				"prometheus",
+				"prometheus-gcp",
+				"redis-cache",
+				"redis-store",
+				"redis_exporter",
+				"search-indexer",
+				"sg",
+				"syntax-highlighter",
+			}, c.Version,
+				c.candidateImageTag(),
+				(numUpdatedBaseImages > 0),
+			),
+		)
 
 	case runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
