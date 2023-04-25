@@ -230,7 +230,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images
+- **Image builds**: Build batcheshelper, Build blobstore2, Build bundled-executor, Build dind, Build embeddings, Build executor, Build executor-kubernetes, Build executor-vm, Build jaeger-agent, Build jaeger-all-in-one, Build llm-proxy, Build sg, Build symbols, Build server, Build alpine-3.14, Build blobstore, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build migrator, Build node-exporter, Build opentelemetry-collector, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build worker
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
@@ -248,7 +248,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images
+- **Image builds**: Build batcheshelper, Build blobstore2, Build bundled-executor, Build dind, Build embeddings, Build executor, Build executor-kubernetes, Build executor-vm, Build jaeger-agent, Build jaeger-all-in-one, Build llm-proxy, Build sg, Build symbols, Build server, Build alpine-3.14, Build blobstore, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build migrator, Build node-exporter, Build opentelemetry-collector, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build worker
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
@@ -310,7 +310,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images
+- **Image builds**: Build batcheshelper, Build blobstore2, Build bundled-executor, Build dind, Build embeddings, Build executor, Build executor-kubernetes, Build executor-vm, Build jaeger-agent, Build jaeger-all-in-one, Build llm-proxy, Build sg, Build symbols, Build server, Build alpine-3.14, Build blobstore, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build migrator, Build node-exporter, Build opentelemetry-collector, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build worker
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
@@ -333,7 +333,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images
+- **Image builds**: Build batcheshelper, Build blobstore2, Build bundled-executor, Build dind, Build embeddings, Build executor, Build executor-kubernetes, Build executor-vm, Build jaeger-agent, Build jaeger-all-in-one, Build llm-proxy, Build sg, Build symbols, Build server, Build alpine-3.14, Build blobstore, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build migrator, Build node-exporter, Build opentelemetry-collector, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build worker
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)

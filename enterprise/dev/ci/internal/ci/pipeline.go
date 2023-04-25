@@ -310,9 +310,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				}
 			}
 		} else {
-			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.DeploySourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
-			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMusl, c.Version, c.candidateImageTag(), c.RunType))
-			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+
+			buildList := append(append(images.SourcegraphDockerImages, images.SourcegraphDockerImagesMusl...), images.DeploySourcegraphDockerImages...)
+			for _, dockerImage := range buildList {
+				imageBuildOps.Append(bazelBuildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), c.RunType))
+				// imageBuildOps.Append(bazelBuildCandidateDockerImages(images.DeploySourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+				// imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMusl, c.Version, c.candidateImageTag(), c.RunType))
+				// imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+			}
 		}
 		ops.Merge(imageBuildOps)
 
