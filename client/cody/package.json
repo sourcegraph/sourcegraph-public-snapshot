@@ -149,6 +149,11 @@
         "title": "Ask Cody: Codebase Context Search"
       },
       {
+        "command": "cody.recipe.non-stop-cody",
+        "title": "Cody: Non-stop Fixup",
+        "when": "cody.activated"
+      },
+      {
         "command": "cody.set-access-token",
         "title": "Cody: Set Access Token"
       },
@@ -260,6 +265,10 @@
       },
       {
         "command": "cody.recipe.fixup",
+        "when": "cody.activated && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.recipe.non-stop-cody",
         "key": "ctrl+alt+/",
         "mac": "ctrl+alt+/",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
@@ -338,7 +347,7 @@
         },
         {
           "command": "cody.comment.load",
-          "when": "false"
+          "when": "false"<
         },
         {
           "command": "cody.fixup.apply",
@@ -367,6 +376,10 @@
         {
           "command": "cody.inline.insert",
           "when": "false"
+	},
+	{
+          "command": "cody.recipe.non-stop-cody",
+          "when": "cody.activated"
         }
       ],
       "editor/context": [
