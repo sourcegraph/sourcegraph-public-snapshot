@@ -70,12 +70,11 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 	rei, err := decodeRepoEmbeddingIndex(dec)
 	// If decoding fails, assume it is an old index and decode with a generic decoder.
 	if err != nil {
-		originalErr := err
-		rei, err = DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, key)
-		if err != nil {
-			// Return both errors in case the first one is the one we care about
-			return nil, errors.Append(originalErr, err)
+		oldRei, err2 := DownloadIndex[OldRepoEmbeddingIndex](ctx, uploadStore, key)
+		if err2 != nil {
+			return nil, errors.Append(err, err2)
 		}
+		return oldRei.ToNewIndex(), nil
 	}
 
 	return rei, nil
