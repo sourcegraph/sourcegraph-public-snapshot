@@ -91,7 +91,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	for _, target := range targets {
 		cmd := bazelCmd(fmt.Sprintf("test %s", target))
 		bazelTestCmds = append(bazelTestCmds,
-			bazelAnnouncef("test %s", target),
+			bazelAnnouncef("bazel test %s", target),
 			bk.Cmd(cmd))
 	}
 	cmds = append(cmds, bazelTestCmds...)
@@ -102,7 +102,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	}
 	bazelRunCmd := bazelCmd(fmt.Sprintf("run %s", strings.Join(runTargets, " ")))
 	cmds = append(cmds,
-		bazelAnnouncef("run %s", strings.Join(runTargets, " ")),
+		bazelAnnouncef("bazel run %s", strings.Join(runTargets, " ")),
 		bk.Cmd(bazelRunCmd),
 	)
 
