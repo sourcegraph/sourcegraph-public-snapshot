@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps } from '../Chat'
+import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps, CopyButtonProps } from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
@@ -24,6 +24,7 @@ export const Transcript: React.FunctionComponent<
         editButtonOnSubmit?: (text: string) => void
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
+        copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
     } & TranscriptItemClassNames
 > = ({
     transcript,
@@ -42,6 +43,7 @@ export const Transcript: React.FunctionComponent<
     editButtonOnSubmit,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
+    copyButtonOnSubmit,
 }) => {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
@@ -100,6 +102,7 @@ export const Transcript: React.FunctionComponent<
                             showEditButton={index > 0 && transcript.length - index === 2}
                             FeedbackButtonsContainer={FeedbackButtonsContainer}
                             feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                            copyButtonOnSubmit={copyButtonOnSubmit}
                             showFeedbackButtons={index > 0 && transcript.length - index === 1}
                         />
                     )
@@ -117,6 +120,7 @@ export const Transcript: React.FunctionComponent<
                     transcriptActionClassName={transcriptActionClassName}
                     showEditButton={false}
                     showFeedbackButtons={false}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
                 />
             )}
         </div>

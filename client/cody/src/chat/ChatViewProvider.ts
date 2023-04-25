@@ -393,6 +393,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'auth':
                 logEvent(`CodyVSCodeExtension:${value}:clicked`)
                 break
+            // aditya combine this with above statemenet for auth or click
+            case 'click':
+                logEvent(`CodyVSCodeExtension:${value}:clicked`)
+                break
         }
     }
 

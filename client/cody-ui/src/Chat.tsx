@@ -33,6 +33,7 @@ interface ChatProps extends ChatClassNames {
     editButtonOnSubmit?: (text: string) => void
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
+    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -69,6 +70,10 @@ export interface FeedbackButtonsProps {
     disabled?: boolean
     feedbackButtonsOnSubmit: (text: string) => void
 }
+
+export interface CopyButtonProps {
+    copyButtonOnSubmit: (text: string) => void
+}
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
  */
@@ -100,6 +105,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     editButtonOnSubmit,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
+    copyButtonOnSubmit,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -183,6 +189,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 editButtonOnSubmit={editButtonOnSubmit}
                 FeedbackButtonsContainer={FeedbackButtonsContainer}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                copyButtonOnSubmit={copyButtonOnSubmit}
             />
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
