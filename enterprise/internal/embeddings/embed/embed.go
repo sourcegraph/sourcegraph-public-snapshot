@@ -2,6 +2,7 @@ package embed
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -35,10 +36,12 @@ func EmbedRepo(
 	splitOptions split.SplitOptions,
 	readLister FileReadLister,
 	getDocumentRanks ranksGetter,
-) (*embeddings.RepoEmbeddingIndex, error) {
+) (*embeddings.RepoEmbeddingIndex, *embeddings.EmbedRepoStats, error) {
+	start := time.Now()
+
 	allFiles, err := readLister.List(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var codeFileNames, textFileNames []FileEntry
@@ -52,20 +55,35 @@ func EmbedRepo(
 
 	ranks, err := getDocumentRanks(ctx, string(repoName))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	codeIndex, err := embedFiles(ctx, codeFileNames, client, excludePatterns, splitOptions, readLister, MAX_CODE_EMBEDDING_VECTORS, ranks)
+	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, excludePatterns, splitOptions, readLister, MAX_CODE_EMBEDDING_VECTORS, ranks)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	textIndex, err := embedFiles(ctx, textFileNames, client, excludePatterns, splitOptions, readLister, MAX_TEXT_EMBEDDING_VECTORS, ranks)
+	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, excludePatterns, splitOptions, readLister, MAX_TEXT_EMBEDDING_VECTORS, ranks)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+
 	}
 
-	return &embeddings.RepoEmbeddingIndex{RepoName: repoName, Revision: revision, CodeIndex: codeIndex, TextIndex: textIndex}, nil
+	index := &embeddings.RepoEmbeddingIndex{
+		RepoName:  repoName,
+		Revision:  revision,
+		CodeIndex: codeIndex,
+		TextIndex: textIndex,
+	}
+
+	stats := &embeddings.EmbedRepoStats{
+		Duration:       time.Since(start),
+		HasRanks:       len(ranks.Paths) > 0,
+		CodeIndexStats: codeIndexStats,
+		TextIndexStats: textIndexStats,
+	}
+
+	return index, stats, nil
 }
 
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
@@ -80,10 +98,12 @@ func embedFiles(
 	reader FileReader,
 	maxEmbeddingVectors int,
 	repoPathRanks types.RepoPathRanks,
-) (embeddings.EmbeddingIndex, error) {
+) (embeddings.EmbeddingIndex, embeddings.EmbedFilesStats, error) {
+	start := time.Now()
+
 	dimensions, err := client.GetDimensions()
 	if err != nil {
-		return embeddings.EmbeddingIndex{}, err
+		return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
 	}
 
 	index := embeddings.EmbeddingIndex{
@@ -116,6 +136,7 @@ func embedFiles(
 			return errors.Wrap(err, "error while getting embeddings")
 		}
 		index.Embeddings = append(index.Embeddings, embeddings.Quantize(batchEmbeddings)...)
+
 		batch = batch[:0] // reset batch
 		return nil
 	}
@@ -129,42 +150,66 @@ func embedFiles(
 		return nil
 	}
 
+	var (
+		statsEmbeddedByteCount  int
+		statsEmbeddedFileCount  int
+		statsEmbeddedChunkCount int
+		statsSkipped            SkipStats
+	)
 	for _, file := range files {
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
-		if len(index.RowMetadata) > maxEmbeddingVectors {
-			break
-		}
-
-		if isExcludedFilePath(file.Name, excludePatterns) {
+		if len(index.RowMetadata) >= maxEmbeddingVectors {
+			statsSkipped.Add(SkipReasonMaxEmbeddings, int(file.Size))
 			continue
 		}
 
 		if file.Size > maxFileSize {
+			statsSkipped.Add(SkipReasonLarge, int(file.Size))
+			continue
+		}
+
+		if isExcludedFilePath(file.Name, excludePatterns) {
+			statsSkipped.Add(SkipReasonExcluded, int(file.Size))
 			continue
 		}
 
 		contentBytes, err := reader.Read(ctx, file.Name)
 		if err != nil {
-			return embeddings.EmbeddingIndex{}, errors.Wrap(err, "error while reading a file")
+			return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, errors.Wrap(err, "error while reading a file")
 		}
 
-		if embeddable, _ := isEmbeddableFileContent(contentBytes); !embeddable {
+		if embeddable, skipReason := isEmbeddableFileContent(contentBytes); !embeddable {
+			statsSkipped.Add(skipReason, len(contentBytes))
 			continue
 		}
 
+		// At this point, we have determined that we want to embed this file.
+
 		for _, chunk := range split.SplitIntoEmbeddableChunks(string(contentBytes), file.Name, splitOptions) {
 			if err := addToBatch(chunk); err != nil {
-				return embeddings.EmbeddingIndex{}, err
+				return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
 			}
+			statsEmbeddedByteCount += len(chunk.Content)
+			statsEmbeddedChunkCount += 1
 		}
+		statsEmbeddedFileCount += 1
 	}
 
 	// Always do a final flush
 	if err := flush(); err != nil {
-		return embeddings.EmbeddingIndex{}, err
+		return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
 	}
 
-	return index, nil
+	stats := embeddings.EmbedFilesStats{
+		Duration:           time.Since(start),
+		EmbeddedBytes:      statsEmbeddedByteCount,
+		EmbeddedFileCount:  statsEmbeddedFileCount,
+		EmbeddedChunkCount: statsEmbeddedChunkCount,
+		SkippedCounts:      statsSkipped.Counts(),
+		SkippedByteCounts:  statsSkipped.ByteCounts(),
+	}
+
+	return index, stats, nil
 }
 
 type FileReadLister interface {

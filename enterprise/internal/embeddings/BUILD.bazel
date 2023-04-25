@@ -25,6 +25,7 @@ go_library(
         "//internal/uploadstore",
         "//lib/errors",
         "@com_github_sourcegraph_conc//:conc",
+        "@com_github_sourcegraph_log//:log",
         "@org_golang_x_sync//errgroup",
     ],
 )
