@@ -9,7 +9,16 @@ use {
     tauri::api::process::CommandEvent
 };
 
-use tauri::Manager;
+use tauri::{
+    api::shell,
+    AppHandle,
+    SystemTray,
+    SystemTrayMenu,
+    SystemTrayMenuItem,
+    SystemTrayEvent,
+    CustomMenuItem,
+    Manager,
+};
 
 fn main() {
     match fix_path_env::fix() {
@@ -18,8 +27,20 @@ fn main() {
             println!("Error fixing path environment: {}", e);
         }
     }
-    
+
+    let tray_menu = create_tray_menu();
+    let tray = SystemTray::new().with_menu(tray_menu);
+
     tauri::Builder::default()
+        .system_tray(tray)
+        .on_system_tray_event(on_system_tray_event)
+        .on_window_event(|event| match event.event() {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+              event.window().hide().unwrap();
+              api.prevent_close();
+            }
+            _ => {}
+        })
         .setup(|app| {
             let window = app.get_window("main").unwrap();
             start_embedded_services(window);
@@ -69,4 +90,64 @@ fn start_embedded_services(window :tauri::Window) {
             };
         }
     });
+}
+
+fn create_tray_menu() -> SystemTrayMenu {
+    SystemTrayMenu::new()
+        .add_item(CustomMenuItem::new("status".to_string(), "🟢 Sourcegraph App is running").disabled())
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(CustomMenuItem::new("open".to_string(), "Sourcegraph App"))
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(CustomMenuItem::new("settings".to_string(), "Settings").accelerator("CmdOrCtrl+,"))
+        .add_item(CustomMenuItem::new("log".to_string(), "Troubleshoot"))
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(CustomMenuItem::new("updates".to_string(), "Check for updates"))
+        .add_item(CustomMenuItem::new("about".to_string(), "About Sourcegraph"))
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(CustomMenuItem::new("toggle-status".to_string(), "Pause"))
+        .add_item(CustomMenuItem::new("quit".to_string(), "Quit").accelerator("CmdOrCtrl+Q"))
+}
+
+fn open_window(app: &AppHandle) {
+    let window = app.get_window("main").unwrap();
+    match window.is_visible() {
+        Ok(true) => {
+            // noop
+        }
+        Ok(false) => {
+            window.show();
+        }
+        Err(e) => {
+            println!("Error getting window visibility: {}", e);
+        }
+    }
+}
+
+fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
+    if let SystemTrayEvent::MenuItemClick { id, .. } = event {
+        let _item_handle = app.tray_handle().get_item(&id);
+        dbg!(&id);
+        match id.as_str() {
+            "open" => open_window(app),
+            "settings" => {
+                let window = app.get_window("main").unwrap();
+                window.eval("window.location.href = '/setup-wizard'").unwrap();
+                open_window(app);
+            }
+            "log" => {
+                // TODO: Open log file
+            }
+            "updates" => {
+                // TODO: Check for updates
+            }
+            "about" => {
+                shell::open(&app.shell_scope(), "https://about.sourcegraph.com", None).unwrap()
+            }
+            "toggle-status" => {
+                // Allow resuming/pausing depending on if the app is running
+            }
+            "quit" => app.exit(0),
+            _ => {}
+        }
+    }
 }
