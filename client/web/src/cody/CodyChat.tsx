@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiClose, mdiSend, mdiArrowDown, mdiReload, mdiPencil } from '@mdi/js'
+import { mdiClose, mdiSend, mdiArrowDown, mdiReload, mdiPencil, mdiHistory } from '@mdi/js'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
@@ -12,6 +12,8 @@ import { Button, Icon, TextArea, Tooltip } from '@sourcegraph/wildcard'
 
 import { useChatStoreState } from '../stores/codyChat'
 
+import { ChatHistory } from './ChatHistory'
+
 import styles from './CodyChat.module.scss'
 
 export const SCROLL_THRESHOLD = 100
@@ -21,10 +23,21 @@ interface CodyChatProps {
 }
 
 export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
-    const { reset, submitMessage, editMessage, messageInProgress, transcript, getChatContext } = useChatStoreState()
+    const {
+        reset,
+        submitMessage,
+        editMessage,
+        messageInProgress,
+        transcript,
+        getChatContext,
+        transcriptHistory,
+        loadTranscriptFromHistory,
+        clearHistory,
+    } = useChatStoreState()
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
     const [formInput, setFormInput] = useState('')
+    const [showHistory, setShowHistory] = useState(false)
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
     const [showScrollDownButton, setShowScrollDownButton] = useState(false)
@@ -49,6 +62,11 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
         }
     }
 
+    const onReset = useCallback(() => {
+        reset()
+        setShowHistory(false)
+    }, [reset, setShowHistory])
+
     useEffect(() => {
         const sidebar = codySidebarRef.current
         if (sidebar && shouldScrollToBottom) {
@@ -62,7 +80,7 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                 <div className={styles.codySidebarHeader}>
                     <div>
                         <Tooltip content="Start a new conversation">
-                            <Button variant="icon" aria-label="Start a new conversation" onClick={reset}>
+                            <Button variant="icon" aria-label="Start a new conversation" onClick={onReset}>
                                 <Icon aria-hidden={true} svgPath={mdiReload} />
                             </Button>
                         </Tooltip>
@@ -71,38 +89,57 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                         <CodyLogo />
                         Ask Cody
                     </div>
-                    <div>
+                    <div className="d-flex">
+                        <Tooltip content="Chat history">
+                            <Button
+                                variant="icon"
+                                className="mr-2"
+                                aria-label="Chat history"
+                                onClick={() => setShowHistory(showing => !showing)}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiHistory} />
+                            </Button>
+                        </Tooltip>
                         <Button variant="icon" aria-label="Close" onClick={onClose}>
                             <Icon aria-hidden={true} svgPath={mdiClose} />
                         </Button>
                     </div>
                 </div>
-                <Chat
-                    messageInProgress={messageInProgress}
-                    messageBeingEdited={messageBeingEdited}
-                    setMessageBeingEdited={setMessageBeingEdited}
-                    transcript={transcript}
-                    formInput={formInput}
-                    setFormInput={setFormInput}
-                    inputHistory={inputHistory}
-                    setInputHistory={setInputHistory}
-                    onSubmit={submitMessage}
-                    contextStatus={getChatContext()}
-                    submitButtonComponent={SubmitButton}
-                    fileLinkComponent={FileLink}
-                    className={styles.container}
-                    afterTips={CODY_TERMS_MARKDOWN}
-                    transcriptItemClassName={styles.transcriptItem}
-                    humanTranscriptItemClassName={styles.humanTranscriptItem}
-                    transcriptItemParticipantClassName="text-muted"
-                    inputRowClassName={styles.inputRow}
-                    chatInputClassName={styles.chatInput}
-                    EditButtonContainer={EditButton}
-                    editButtonOnSubmit={editMessage}
-                    textAreaComponent={AutoResizableTextArea}
-                    codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
-                    transcriptActionClassName={styles.transcriptAction}
-                />
+                {showHistory ? (
+                    <ChatHistory
+                        transcriptHistory={transcriptHistory}
+                        loadTranscript={loadTranscriptFromHistory}
+                        closeHistory={() => setShowHistory(false)}
+                        clearHistory={clearHistory}
+                    />
+                ) : (
+                    <Chat
+                        messageInProgress={messageInProgress}
+                        messageBeingEdited={messageBeingEdited}
+                        setMessageBeingEdited={setMessageBeingEdited}
+                        transcript={transcript}
+                        formInput={formInput}
+                        setFormInput={setFormInput}
+                        inputHistory={inputHistory}
+                        setInputHistory={setInputHistory}
+                        onSubmit={submitMessage}
+                        contextStatus={getChatContext()}
+                        submitButtonComponent={SubmitButton}
+                        fileLinkComponent={FileLink}
+                        className={styles.container}
+                        afterTips={CODY_TERMS_MARKDOWN}
+                        transcriptItemClassName={styles.transcriptItem}
+                        humanTranscriptItemClassName={styles.humanTranscriptItem}
+                        transcriptItemParticipantClassName="text-muted"
+                        inputRowClassName={styles.inputRow}
+                        chatInputClassName={styles.chatInput}
+                        EditButtonContainer={EditButton}
+                        editButtonOnSubmit={editMessage}
+                        textAreaComponent={AutoResizableTextArea}
+                        codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
+                        transcriptActionClassName={styles.transcriptAction}
+                    />
+                )}
             </div>
             {showScrollDownButton && <ScrollDownButton onClick={() => scrollToBottom('smooth')} />}
         </div>
