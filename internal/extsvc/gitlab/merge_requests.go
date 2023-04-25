@@ -11,6 +11,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -217,10 +218,11 @@ func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project
 }
 
 type UpdateMergeRequestOpts struct {
-	TargetBranch string                       `json:"target_branch,omitempty"`
-	Title        string                       `json:"title,omitempty"`
-	Description  string                       `json:"description,omitempty"`
-	StateEvent   UpdateMergeRequestStateEvent `json:"state_event,omitempty"`
+	TargetBranch       string                       `json:"target_branch,omitempty"`
+	Title              string                       `json:"title,omitempty"`
+	Description        string                       `json:"description,omitempty"`
+	StateEvent         UpdateMergeRequestStateEvent `json:"state_event,omitempty"`
+	RemoveSourceBranch bool                         `json:"remove_source_branch,omitempty"`
 }
 
 type UpdateMergeRequestStateEvent string
@@ -241,6 +243,12 @@ const (
 func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *MergeRequest, opts UpdateMergeRequestOpts) (*MergeRequest, error) {
 	if MockUpdateMergeRequest != nil {
 		return MockUpdateMergeRequest(c, ctx, project, mr, opts)
+	}
+
+	if conf.Get().BatchChangesAutoDeleteBranch == true {
+		opts.RemoveSourceBranch = true
+	} else {
+		opts.RemoveSourceBranch = false
 	}
 
 	data, err := json.Marshal(opts)
