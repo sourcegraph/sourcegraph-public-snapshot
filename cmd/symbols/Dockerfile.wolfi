@@ -1,0 +1,68 @@
+# Dockerfile for Wolfi-based images
+# This is currently being tested in parallel to Alpine - you don't need to update this
+#   file if you change the regular Dockerfile.
+
+# TODO: See if we can switch back to cgr.dev/chainguard/go:latest
+# hadolint ignore=DL3007
+FROM cgr.dev/chainguard/go:latest AS symbols-build
+# hadolint ignore=DL3002
+USER root
+
+ENV GO111MODULE on
+ENV GOARCH amd64
+ENV GOOS linux
+ENV CGO_ENABLED 1
+
+# RUN apt-get update && \
+#     apt-get install -y \
+#     gcc \
+#     g++
+
+COPY . /repo
+
+WORKDIR /repo
+
+ARG VERSION="unknown"
+ENV VERSION $VERSION
+
+ARG PKG
+ENV PKG=$PKG
+
+RUN \
+    --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/root/go/pkg/mod \
+    go build \
+    -trimpath \
+    -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" \
+    -buildmode exe \
+    -tags dist \
+    -o /symbols \
+    $PKG
+
+# hadolint ignore=DL3007
+FROM us.gcr.io/sourcegraph-dev/wolfi-symbols-base:latest AS symbols
+
+# TODO(security): This container should not run as root!
+#
+# See https://github.com/sourcegraph/sourcegraph/issues/13237
+# hadolint ignore=DL3002
+USER root
+
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
+
+COPY --from=symbols-build /symbols /usr/local/bin/symbols
+
+# symbols is cgo, ensure we have the requisite dynamic libraries
+RUN env SANITY_CHECK=true /usr/local/bin/symbols
+
+ENV CACHE_DIR=/mnt/cache/symbols
+RUN mkdir -p ${CACHE_DIR}
+EXPOSE 3184
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/symbols"]

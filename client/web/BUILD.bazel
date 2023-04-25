@@ -181,6 +181,7 @@ ts_project(
         "src/codeintel/useCodeIntel.ts",
         "src/codeintel/useRepoAndBlob.ts",
         "src/codeintel/util/helpers.ts",
+        "src/cody/ChatHistory.tsx",
         "src/cody/CodeMirrorEditor.ts",
         "src/cody/CodyChat.tsx",
         "src/cody/CodyIcon.tsx",
@@ -312,7 +313,6 @@ ts_project(
         "src/contributions.ts",
         "src/enterprise/EnterpriseWebApp.tsx",
         "src/enterprise/app-main.tsx",
-        "src/enterprise/app-shell.tsx",
         "src/enterprise/app/AppAuthCallbackPage.tsx",
         "src/enterprise/app/AppComingSoonPage.tsx",
         "src/enterprise/batches/BatchChangeTabs.tsx",
@@ -1651,7 +1651,6 @@ ts_project(
         "//:node_modules/@sentry/browser",  #keep
         "//:node_modules/@sourcegraph/extension-api-classes",
         "//:node_modules/@storybook/client-api",  #keep
-        "//:node_modules/@tauri-apps/api",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",
@@ -1908,8 +1907,9 @@ jest_test(
         ":web_tests",
     ],
     patch_node_fs = False,
-    shard_count = 3,  # originally at 6, but tend to consume too much resource and crash.
+    shard_count = 12,  # empirical
     tags = [
+        "manual",  # we manually run those tests after everything else, to ensure we have enough resources.
         "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],
 )

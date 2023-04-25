@@ -22,6 +22,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [debugLog, setDebugLog] = useState(['No data yet'])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
+    const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [isValidLogin, setIsValidLogin] = useState<boolean>()
     const [formInput, setFormInput] = useState('')
@@ -66,16 +67,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     break
                 case 'contextStatus':
                     setContextStatus(message.contextStatus)
-                    if (message.contextStatus.mode !== 'keyword' && !message.contextStatus?.codebase) {
-                        setErrorMessage(
-                            'Codebase is missing. A codebase must be provided via the cody.codebase setting to enable embeddings. Failling back to local keyword search for context.'
-                        )
-                    }
-                    if (message.contextStatus?.codebase && !message.contextStatus?.connection) {
-                        setErrorMessage(
-                            'Codebase connection failed. Please make sure the codebase in your cody.codebase setting is correct and exists in your Sourcegraph instance. Falling back to local keyword search for context.'
-                        )
-                    }
                     break
                 case 'view':
                     setView(message.messages)
@@ -138,6 +129,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {view === 'chat' && (
                 <Chat
                     messageInProgress={messageInProgress}
+                    messageBeingEdited={messageBeingEdited}
+                    setMessageBeingEdited={setMessageBeingEdited}
                     transcript={transcript}
                     contextStatus={contextStatus}
                     formInput={formInput}

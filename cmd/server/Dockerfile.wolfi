@@ -1,0 +1,70 @@
+# Dockerfile for Wolfi-based images
+# This is currently being tested in parallel to Alpine - you don't need to update this
+#   file if you change the regular Dockerfile.
+
+# hadolint ignore=DL3007
+FROM us.gcr.io/sourcegraph-dev/wolfi-server-base:latest
+
+# TODO(security): This container should not be running as root!
+#
+# The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
+# cannot be easily migrated we have not changed this from root -> sourcegraph. See:
+# https://github.com/sourcegraph/sourcegraph/issues/13238
+# hadolint ignore=DL3002
+USER root
+
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
+
+# IMPORTANT: If you update the syntax-highlighter version below, you MUST confirm
+# the ENV variables from its Dockerfile (https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/syntax-highlighter/Dockerfile)
+# have been appropriately set in cmd/server/shared/shared.go.
+# TODO: Update this to use the correct syntax-highlighter build
+# hadolint ignore=DL3022
+COPY --from=us.gcr.io/sourcegraph-dev/wolfi-syntax-highlighter:latest /usr/local/bin/syntax_highlighter /usr/local/bin/
+
+
+# install blobstore (keep this up to date with the upstream Docker image
+# referenced in docker-images/)
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/blobstore:server /opt/s3proxy /opt/s3proxy
+
+
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /bin/prom-wrapper /bin
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /bin/alertmanager /bin
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /alertmanager.sh /alertmanager.sh
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /bin/prometheus /bin
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /prometheus.sh /prometheus.sh
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:server /usr/share/prometheus /usr/share/prometheus
+
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/grafana:server /usr/share/grafana /usr/share/grafana
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/grafana:server /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
+
+COPY . /
+
+# symbols is cgo, ensure we have the requisite dynamic libraries
+RUN env SANITY_CHECK=true /usr/local/bin/symbols
+
+WORKDIR /
+
+# TODO: Nginx expects these directories but doesn't create them by default, figure out why
+RUN mkdir /var/lib/nginx/tmp /var/run
+
+# TODO: Check all paths in script still line up
+ENV GO111MODULES=on
+# ENV LANG=en_US.utf8 # TODO: Not setting this seems to fix a postgres startup issue
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/server"]
