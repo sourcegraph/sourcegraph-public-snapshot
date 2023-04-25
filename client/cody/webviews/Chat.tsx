@@ -65,6 +65,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [vscodeAPI]
     )
 
+    const onCopyBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'event', event: 'click', value: text })
+        },
+        [vscodeAPI]
+    )
+
     return (
         <ChatUI
             messageInProgress={messageInProgress}
@@ -93,6 +100,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             editButtonOnSubmit={onEditBtnClick}
             FeedbackButtonsContainer={FeedbackButtons}
             feedbackButtonsOnSubmit={onFeedbackBtnClick}
+            copyButtonOnSubmit={onCopyBtnClick}
         />
     )
 }
