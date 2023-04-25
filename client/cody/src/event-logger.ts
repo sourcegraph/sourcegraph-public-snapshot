@@ -2,6 +2,8 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
+import { version as packageVersion } from '../package.json'
+
 import { LocalStorage } from './command/LocalStorageProvider'
 
 let eventLoggerGQLClient: SourcegraphGraphQLAPIClient
@@ -23,5 +25,16 @@ export function logEvent(eventName: string, eventProperties?: any, publicPropert
     if (!eventLogger) {
         return
     }
-    void eventLogger.log(eventName, eventProperties, publicProperties)
+
+    const argument = {
+        ...eventProperties,
+        version: packageVersion,
+    }
+
+    const publicArgument = {
+        ...publicProperties,
+        version: packageVersion,
+    }
+
+    void eventLogger.log(eventName, argument, publicArgument)
 }

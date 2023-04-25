@@ -20,7 +20,6 @@ ts_config(
 ts_project(
     name = "cody-shared_lib",
     srcs = [
-        "package.json",
         "src/chat/bot-response-multiplexer.ts",
         "src/chat/chat.ts",
         "src/chat/client.ts",
@@ -92,7 +91,10 @@ ts_project(
 
 npm_package(
     name = "cody-shared_pkg",
-    srcs = [":cody-shared_lib"],
+    srcs = [
+        "package.json",
+        ":cody-shared_lib",
+    ],
 )
 
 ts_project(
