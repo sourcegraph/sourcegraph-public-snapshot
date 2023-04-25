@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -130,7 +129,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 	}
 
 	userID := actor.FromContext(ctx).UID
-	userPrimaryEmail, _, _ := db.UserEmails().GetPrimaryEmail(ctx, userID)
+	userPrimaryEmail, _, _ := r.db.UserEmails().GetPrimaryEmail(ctx, userID)
 
 	events := make([]usagestats.Event, 0, len(*args.Events))
 	for _, args := range *args.Events {
@@ -161,8 +160,8 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 
 		// On Sourcegraph.com only, log a HubSpot event indicating when the user installed a Cody client.
 		if args.Event == "CodyInstalled" && userID != 0 && userPrimaryEmail != "" && envvar.SourcegraphDotComMode() {
-			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubSpot.UserProperties{
-				UserID: userID,
+			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubspot.ContactProperties{
+				DatabaseID: userID,
 			})
 		}
 
