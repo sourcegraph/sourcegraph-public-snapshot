@@ -19,7 +19,6 @@ import { isDefined } from '@sourcegraph/common'
 
 import { ENVIRONMENT_CONFIG, IS_DEVELOPMENT, IS_PRODUCTION } from '../utils'
 
-import { htmlIndexPlugin } from './htmlIndexPlugin'
 import { manifestPlugin } from './manifestPlugin'
 
 const isEnterpriseBuild = ENVIRONMENT_CONFIG.ENTERPRISE
@@ -35,9 +34,6 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
             : isEnterpriseBuild
             ? path.join(ROOT_PATH, 'client/web/src/enterprise/main.tsx')
             : path.join(ROOT_PATH, 'client/web/src/main.tsx'),
-        ...(isSourcegraphApp
-            ? { 'scripts/shell': path.join(ROOT_PATH, 'client/web/src/enterprise/app-shell.tsx') }
-            : {}),
     },
     bundle: true,
     minify: IS_PRODUCTION,
@@ -52,7 +48,6 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     plugins: [
         stylePlugin,
         manifestPlugin,
-        isSourcegraphApp ? htmlIndexPlugin : null,
         packageResolutionPlugin({
             path: require.resolve('path-browserify'),
             ...RXJS_RESOLUTIONS,

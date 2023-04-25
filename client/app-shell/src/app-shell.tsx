@@ -16,9 +16,10 @@ const outputHandler = (event: Event<string>): void => {
 }
 
 // Note we currently ignore the unlisten cb returned from listen
-listen('backend-stdout', outputHandler)
-    .then(() => console.log('backend-stdout listener registered'))
+let sidecar: String = 'sourcegraph-backend'
+listen(`${sidecar}-stdout`, outputHandler)
+    .then(() => console.log(`${sidecar}-stdout listener registered`))
     .catch(error => console.error(`failed to register backend-stdout handler: ${error}`))
-listen('backend-stderr', outputHandler)
-    .then(() => console.log('backend-stderr listener registered'))
+listen(`${sidecar}-stderr`, outputHandler)
+    .then(() => console.log(`${sidecar}-stderr listener registered`))
     .catch(error => console.error(`failed to register backend-stderr handler: ${error}`))
