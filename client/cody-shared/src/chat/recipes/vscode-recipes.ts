@@ -3,6 +3,7 @@ import { ExplainCodeDetailed } from './explain-code-detailed'
 import { ExplainCodeHighLevel } from './explain-code-high-level'
 import { FindCodeSmells } from './find-code-smells'
 import { Fixup } from './fixup'
+import { FuzzySearch } from './fuzzy-search'
 import { GenerateDocstring } from './generate-docstring'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
@@ -36,6 +37,7 @@ function init(): void {
         new Fixup(),
         new TranslateToLanguage(),
         new FindCodeSmells(),
+        new FuzzySearch(),
     ]
 
     for (const recipe of recipes) {

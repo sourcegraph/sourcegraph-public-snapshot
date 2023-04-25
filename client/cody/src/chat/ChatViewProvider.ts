@@ -221,10 +221,27 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
         this.inputHistory.push(text)
-        await this.executeRecipe('chat-question', text)
+        await this.runChatCommands(text)
     }
 
-    public async executeRecipe(recipeId: string, humanChatInput: string = ''): Promise<void> {
+    private async runChatCommands(text: string): Promise<void> {
+        switch (text.length > 0) {
+            case text.startsWith('/reset') || text.startsWith('/r'):
+                this.clearAndRestartSession()
+                break
+            case text.startsWith('/search ') || text.startsWith('/s '):
+                await this.executeRecipe('fuzzy-search', text, false)
+                break
+            default:
+                return this.executeRecipe('chat-question', text)
+        }
+    }
+
+    public async executeRecipe(
+        recipeId: string,
+        humanChatInput: string = '',
+        connectToLLM: boolean = true
+    ): Promise<void> {
         if (this.isMessageInProgress) {
             await vscode.window.showErrorMessage(
                 'Cannot execute multiple recipes. Please wait for the current recipe to finish.'
@@ -253,9 +270,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.showTab('chat')
         this.sendTranscript()
 
-        const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
-        this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
-
+        if (connectToLLM) {
+            const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
+            this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
+        } else {
+            this.isMessageInProgress = false
+            this.cancelCompletion()
+            this.sendTranscript()
+            await this.saveChatHistory()
+        }
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
     }
 
