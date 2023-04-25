@@ -11,62 +11,77 @@ interface ChatHistoryProps {
     clearHistory: () => void
 }
 
-export function ChatHistory({ transcriptHistory, loadTranscript, closeHistory, clearHistory }: ChatHistoryProps) {
-    return (
-        <>
-            <Text className="p-2 pb-0" as="h3">
-                Chat History
-            </Text>
-            {transcriptHistory.length === 0 && <Text className="p-2 pb-0 text-muted text-center">No chats yet</Text>}
-            <ul className="p-0 d-flex flex-column">
-                {transcriptHistory.reverse().map(({ id, interactions, lastInteractionTimestamp }) => {
-                    if (interactions.length === 0) {
-                        return null
-                    }
+export const ChatHistory: React.FunctionComponent<ChatHistoryProps> = ({
+    transcriptHistory,
+    loadTranscript,
+    closeHistory,
+    clearHistory,
+}) => (
+    <>
+        <Text className="p-2 pb-0" as="h3">
+            Chat History
+        </Text>
+        {transcriptHistory.length === 0 && <Text className="p-2 pb-0 text-muted text-center">No chats yet</Text>}
+        <ul className="p-0 d-flex flex-column">
+            {transcriptHistory.reverse().map(({ id, interactions, lastInteractionTimestamp }) => {
+                if (interactions.length === 0) {
+                    return null
+                }
 
-                    const lastInteraction = interactions[interactions.length - 1]
-                    const lastMessage = lastInteraction.assistantMessage || lastInteraction.humanMessage
+                const lastInteraction = interactions[interactions.length - 1]
+                const lastMessage = lastInteraction.assistantMessage || lastInteraction.humanMessage
 
-                    if (!lastMessage?.displayText) {
-                        return null
-                    }
+                if (!lastMessage?.displayText) {
+                    return null
+                }
 
-                    return (
-                        <li
-                            key={id}
-                            className={styles.historyItem}
-                            onClick={() => {
-                                closeHistory()
-                                loadTranscript(id)
-                            }}
-                        >
-                            <div className={styles.itemBody}>
-                                <Text className="mb-1 text-muted" size="small">
-                                    <Timestamp date={new Date(lastInteractionTimestamp)} />
-                                </Text>
-                                <Text className="mb-0 truncate text-body">
-                                    {lastMessage.displayText.slice(0, 80)}
-                                    {lastMessage.displayText.length > 80 ? '...' : ''}
-                                </Text>
-                            </div>
-                        </li>
-                    )
-                })}
-            </ul>
-            {transcriptHistory.length > 0 && (
-                <div className="text-center">
-                    <Button
-                        variant="secondary"
-                        outline={true}
+                /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+                return (
+                    <li
+                        key={id}
+                        className={styles.historyItem}
                         onClick={() => {
                             closeHistory()
-                            clearHistory()
+                            loadTranscript(id)
+                        }}
+                        onKeyDown={() => {
+                            closeHistory()
+                            loadTranscript(id)
                         }}
                     >
-                        Clear History
-                    </Button>
-                </div>
-            )}
-        </>
-    )
-}
+                        <div className={styles.itemBody}>
+                            <Text className="mb-1 text-muted" size="small">
+                                <Timestamp
+                                    date={
+                                        isNaN(new Date(lastInteractionTimestamp) as any)
+                                            ? new Date()
+                                            : new Date(lastInteractionTimestamp)
+                                    }
+                                />
+                            </Text>
+                            <Text className="mb-0 truncate text-body">
+                                {lastMessage.displayText.slice(0, 80)}
+                                {lastMessage.displayText.length > 80 ? '...' : ''}
+                            </Text>
+                        </div>
+                    </li>
+                )
+                /* eslint-enable jsx-a11y/no-noninteractive-element-interactions */
+            })}
+        </ul>
+        {transcriptHistory.length > 0 && (
+            <div className="text-center">
+                <Button
+                    variant="secondary"
+                    outline={true}
+                    onClick={() => {
+                        closeHistory()
+                        clearHistory()
+                    }}
+                >
+                    Clear History
+                </Button>
+            </div>
+        )}
+    </>
+)

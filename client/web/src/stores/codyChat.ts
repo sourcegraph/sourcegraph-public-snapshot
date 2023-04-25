@@ -40,16 +40,20 @@ interface CodyChatStore {
     ) => Promise<void>
     reset: () => void
     getChatContext: () => ChatContextStatus
-    loadTranscriptFromHistory: (id: string) => void
+    loadTranscriptFromHistory: (id: string) => Promise<void>
     clearHistory: () => void
 }
 
 const CODY_TRANSCRIPT_HISTORY_KEY = 'cody:transcript-history'
 const SAVE_MAX_TRANSCRIPT_HISTORY = 20
 
-// TODO(naman):
-// 1. make transcriptHistory database backed
-// 2. integrate editor and full filePath context from it
+const safeTimestampToDate = (timestamp: string = ''): Date => {
+    if (isNaN(new Date(timestamp) as any)) {
+        return new Date()
+    }
+
+    return new Date(timestamp)
+}
 
 export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore => {
     const fetchTranscriptHistory = (): TranscriptJSON[] => {
@@ -63,7 +67,9 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     const saveTranscriptHistory = (transcriptHistory: TranscriptJSON[]): void => {
         const sorted = transcriptHistory
             .sort(
-                (a, b) => (new Date(a.lastInteractionTimestamp) as any) - (new Date(b.lastInteractionTimestamp) as any)
+                (a, b) =>
+                    (safeTimestampToDate(a.lastInteractionTimestamp) as any) -
+                    (safeTimestampToDate(b.lastInteractionTimestamp) as any)
             )
             .slice(0, SAVE_MAX_TRANSCRIPT_HISTORY)
 
@@ -71,7 +77,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         set({ transcriptHistory: sorted })
     }
 
-    const clearHistory = () => {
+    const clearHistory = (): void => {
         const { client, onEvent } = get()
         if (client && !isErrorLike(client)) {
             onEvent?.('reset')
@@ -195,7 +201,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
                 editor,
                 setMessageInProgress,
                 initialTranscript,
-                setTranscript,
+                setTranscript: (transcript: Transcript) => void setTranscript(transcript),
             })
 
             set({ client })
@@ -228,7 +234,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             oldClient.reset()
         }
 
-        let transcriptHistory = fetchTranscriptHistory()
+        const transcriptHistory = fetchTranscriptHistory()
         const transcriptJSONFromHistory = transcriptHistory.find(json => json.id === id)
         if (!transcriptJSONFromHistory) {
             return
@@ -243,15 +249,15 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
                 editor,
                 setMessageInProgress,
                 initialTranscript: transcript,
-                setTranscript,
+                setTranscript: (transcript: Transcript) => void setTranscript(transcript),
             })
 
             set({ client, transcript: messages })
-            setTranscript(transcript)
+            await setTranscript(transcript)
         } catch (error) {
             eventLogger.log('web:codySidebar:clientError', { repo: config?.codebase })
             onEvent?.('error')
-            set({ client: oldClient })
+            set({ client: error })
         }
     }
 

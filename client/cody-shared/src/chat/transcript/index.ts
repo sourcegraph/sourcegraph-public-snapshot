@@ -34,6 +34,16 @@ export class Transcript {
         return this.interactions.length === 0
     }
 
+    public get lastInteractionTimestamp(): string {
+        const timestamp = this.getLastInteraction()?.timestamp || ''
+
+        if (isNaN(new Date(timestamp) as any)) {
+            return new Date().toISOString()
+        }
+
+        return timestamp
+    }
+
     public addInteraction(interaction: Interaction | null): void {
         if (!interaction) {
             return
@@ -93,7 +103,7 @@ export class Transcript {
         return {
             id: this.id,
             interactions,
-            lastInteractionTimestamp: this.getLastInteraction()?.timestamp ?? new Date().toISOString(),
+            lastInteractionTimestamp: this.lastInteractionTimestamp,
         }
     }
 

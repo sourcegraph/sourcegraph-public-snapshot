@@ -7,11 +7,11 @@
     cursor: pointer;
 }
 
-.itemBody {
+.item-body {
     background: var(--body-bg);
     padding: var(--spacing);
-    margin-top: 1px;
-    margin-bottom: 0px;
+    margin-top: 0.0625rem;
+    margin-bottom: 0;
     cursor: pointer;
 
     &:hover {
