@@ -12,6 +12,10 @@ func BazelOperations() *operations.Set {
 	ops := operations.NewNamedSet("Bazel")
 	ops.Append(bazelConfigure())
 	ops.Append(bazelTest("//..."))
+	// Very often those tests are exhausting all resources. So we run them
+	// after everything else to ensure they're running with all available
+	// resources.
+	ops.Append(bazelTest("//client/web:test"))
 	ops.Append(bazelBackCompatTest(
 		"@sourcegraph_back_compat//cmd/...",
 		"@sourcegraph_back_compat//lib/...",
