@@ -20,6 +20,7 @@ import { ReferencesPanel } from '../../../codeintel/ReferencesPanel'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { OwnConfigProps } from '../../../own/OwnConfigProps'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
+import { DependencyGraphPanel } from '../dependencyGraph/DependencyGraphPanel'
 import { FileOwnershipPanel } from '../own/FileOwnershipPanel'
 
 interface Props
@@ -72,6 +73,7 @@ function useBlobPanelViews({
     }, [location.hash, location.search])
 
     const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
+    const dependencyGraphEnabled = true
 
     useBuiltinTabbedPanelViews(
         useMemo(() => {
@@ -138,6 +140,23 @@ function useBlobPanelViews({
                                       revision={revision}
                                       filePath={filePath}
                                       telemetryService={telemetryService}
+                                  />
+                              </PanelContent>
+                          ),
+                      }
+                    : null,
+                dependencyGraphEnabled
+                    ? {
+                          id: 'dependencyGraph',
+                          title: 'Dependency Graph',
+                          productStatus: 'experimental' as const,
+                          element: (
+                              <PanelContent>
+                                  <DependencyGraphPanel
+                                      key="dependencyGraph"
+                                      repoID={repoID}
+                                      revision={revision}
+                                      filePath={filePath}
                                   />
                               </PanelContent>
                           ),
