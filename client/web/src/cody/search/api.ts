@@ -8,23 +8,20 @@ export interface CompletionRequest {
     topP: number
 }
 
-const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionRequest, 'messages'> = {
+export const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionRequest, 'messages'> = {
     temperature: 0.2,
     maxTokensToSample: 1000,
     topK: -1,
     topP: -1,
 }
 
-export function getCodyCompletionOneShot(messages: CompletionRequest['messages']): Promise<string> {
+export function getCodyCompletionOneShot(params: CompletionRequest, abortSignal: AbortSignal | null): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         let lastCompletion: string | undefined
         fetchEventSource('/.api/completions/stream', {
             method: 'POST',
             headers: { 'X-Requested-With': 'Sourcegraph', 'Content-Type': 'application/json; charset=utf-8' },
-            body: JSON.stringify({
-                ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
-                messages,
-            } satisfies CompletionRequest),
+            body: JSON.stringify(params),
             onmessage(message) {
                 if (message.event === 'completion') {
                     const data = JSON.parse(message.data) as { completion: string }
@@ -41,6 +38,7 @@ export function getCodyCompletionOneShot(messages: CompletionRequest['messages']
             onerror(error) {
                 reject(error)
             },
+            signal: abortSignal,
         }).catch(error => reject(error))
     })
 }

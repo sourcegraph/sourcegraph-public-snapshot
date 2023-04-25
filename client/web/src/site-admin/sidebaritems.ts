@@ -210,6 +210,10 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/background-jobs',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
+        {
+            label: 'Prompt tester',
+            to: '/site-admin/prompt-tester',
+        },
     ],
 }
 
