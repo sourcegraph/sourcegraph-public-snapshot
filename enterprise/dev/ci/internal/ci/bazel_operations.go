@@ -34,8 +34,8 @@ func bazelCmd(args ...string) string {
 		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
 		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
 	}
-	rawCmd := append(pre, args...)
-	return strings.Join(rawCmd, " ")
+	Cmd := append(pre, args...)
+	return strings.Join(Cmd, " ")
 }
 
 // bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
@@ -115,10 +115,10 @@ func bazelBackCompatTest(targets ...string) func(*bk.Pipeline) {
 		bk.Cmd("git diff origin/ci/backcompat-v5.0.0..HEAD -- migrations/ > dev/backcompat/patches/back_compat_migrations.patch"),
 	}
 
-	bazelRawCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
+	bazelCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
 	cmds = append(
 		cmds,
-		bk.Cmd(bazelRawCmd),
+		bk.Cmd(bazelCmd),
 	)
 
 	return func(pipeline *bk.Pipeline) {
@@ -133,8 +133,8 @@ func bazelTestWithDepends(optional bool, dependsOn string, targets ...string) fu
 		bk.Agent("queue", "bazel"),
 	}
 
-	bazelRawCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
-	cmds = append(cmds, bk.Cmd(bazelRawCmd))
+	bazelCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
+	cmds = append(cmds, bk.Cmd(bazelCmd))
 	cmds = append(cmds, bk.DependsOn(dependsOn))
 
 	return func(pipeline *bk.Pipeline) {
@@ -151,8 +151,8 @@ func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Agent("queue", "bazel"),
 	}
-	bazelRawCmd := bazelCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
-	cmds = append(cmds, bk.Cmd(bazelRawCmd))
+	bazelCmd := bazelCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
+	cmds = append(cmds, bk.Cmd(bazelCmd))
 
 	return func(pipeline *bk.Pipeline) {
 		if optional {
@@ -205,8 +205,8 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 			}
 
 			cmds = append(cmds,
-				bk.RawCmd(fmt.Sprintf(`echo "--- Building candidate %s image..."`, app)),
-				bk.RawCmd("export IMAGE='"+localImage+"'"),
+				bk.Cmd(fmt.Sprintf(`echo "--- Building candidate %s image..."`, app)),
+				bk.Cmd("export IMAGE='"+localImage+"'"),
 			)
 
 			if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
@@ -219,8 +219,8 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 				}
 
 				cmds = append(cmds,
-					bk.RawCmd("ls -lah "+buildScriptPath),
-					bk.RawCmd(buildScriptPath),
+					bk.Cmd("ls -lah "+buildScriptPath),
+					bk.Cmd(buildScriptPath),
 				)
 			} else {
 				// Building Docker images located under $REPO_ROOT/cmd/
@@ -257,11 +257,11 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 
 			devImage := images.DevRegistryImage(app, tag)
 			cmds = append(cmds,
-				bk.RawCmd(fmt.Sprintf(`echo "--- Tagging and Pushing candidate %s image..."`, app)),
+				bk.Cmd(fmt.Sprintf(`echo "--- Tagging and Pushing candidate %s image..."`, app)),
 				// Retag the local image for dev registry
-				bk.RawCmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
+				bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 				// Publish tagged image
-				bk.RawCmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
+				bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
 				// Retry in case of flakes when pushing
 				// bk.AutomaticRetryStatus(3, 10),
 				// Retry in case of flakes when pushing
@@ -312,8 +312,8 @@ func bazelBuildCandidateDockerImage(app string, version string, tag string, rt r
 		}
 
 		cmds = append(cmds,
-			bk.RawCmd(fmt.Sprintf(`echo "--- Building candidate %s image..."`, app)),
-			bk.RawCmd("export IMAGE='"+localImage+"'"),
+			bk.Cmd(fmt.Sprintf(`echo "--- Building candidate %s image..."`, app)),
+			bk.Cmd("export IMAGE='"+localImage+"'"),
 		)
 
 		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
@@ -326,8 +326,8 @@ func bazelBuildCandidateDockerImage(app string, version string, tag string, rt r
 			}
 
 			cmds = append(cmds,
-				bk.RawCmd("ls -lah "+buildScriptPath),
-				bk.RawCmd(buildScriptPath),
+				bk.Cmd("ls -lah "+buildScriptPath),
+				bk.Cmd(buildScriptPath),
 			)
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
@@ -364,11 +364,11 @@ func bazelBuildCandidateDockerImage(app string, version string, tag string, rt r
 
 		devImage := images.DevRegistryImage(app, tag)
 		cmds = append(cmds,
-			bk.RawCmd(fmt.Sprintf(`echo "--- Tagging and Pushing candidate %s image..."`, app)),
+			bk.Cmd(fmt.Sprintf(`echo "--- Tagging and Pushing candidate %s image..."`, app)),
 			// Retag the local image for dev registry
-			bk.RawCmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
+			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 			// Publish tagged image
-			bk.RawCmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
+			bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
 			// Retry in case of flakes when pushing
 			// bk.AutomaticRetryStatus(3, 10),
 			// Retry in case of flakes when pushing
@@ -423,7 +423,7 @@ func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation 
 			}
 
 			candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
-			cmds = append(cmds, bk.RawCmd(fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " "))))
+			cmds = append(cmds, bk.Cmd(fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " "))))
 		}
 		pipeline.AddStep(":docker: :truck: Publish images", cmds...)
 		// This step just pulls a prebuild image and pushes it to some registries. The
