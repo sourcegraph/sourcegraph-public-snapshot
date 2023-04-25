@@ -84,7 +84,7 @@ func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podN
 	logEntry := cmdLogger.LogEntry(key, command)
 	defer logEntry.Close()
 
-	pipeReaderWaitGroup := readProcessPipe(logEntry, stream)
+	pipeReaderWaitGroup := readProcessPipe(logEntry, stream, c.Logger)
 
 	select {
 	case <-ctx.Done():
@@ -99,11 +99,11 @@ func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podN
 	return nil
 }
 
-func readProcessPipe(w io.WriteCloser, stdout io.Reader) *errgroup.Group {
+func readProcessPipe(w io.WriteCloser, stdout io.Reader, logger log.Logger) *errgroup.Group {
 	eg := &errgroup.Group{}
 
 	eg.Go(func() error {
-		return readIntoBuffer("stdout", w, stdout)
+		return readIntoBuffer("stdout", w, stdout, logger)
 	})
 
 	return eg
