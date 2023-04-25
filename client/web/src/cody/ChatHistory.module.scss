@@ -1,16 +1,14 @@
 .history-item {
     display: flex;
     flex-direction: column;
-    background: linear-gradient(268deg, #00cbec, #a112ff) border-box;
+    background: var(--body-bg);
     border-bottom: 1px solid var(--border-color-2);
     gap: var(--spacing);
     cursor: pointer;
 }
 
 .item-body {
-    background: var(--body-bg);
     padding: var(--spacing);
-    margin-top: 0.0625rem;
     margin-bottom: 0;
     cursor: pointer;
 
