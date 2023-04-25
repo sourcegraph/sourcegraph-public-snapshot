@@ -27,7 +27,7 @@ export class CodebaseContext {
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
         switch (this.config.useContext) {
             case 'embeddings' || 'blended':
-                return this.embeddings || true
+                return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
                     : this.getKeywordContextMessages(query, options)
             case 'keyword':
