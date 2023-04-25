@@ -45,6 +45,40 @@ type IndexedRepoRevs struct {
 	branchRepos map[string]*zoektquery.BranchRepos
 }
 
+// GetRepoRevsFromBranchRepos creates a copy of RepoRevs and replaces revision values that are not defined branches in
+// Zoekt. Make a best effort to replace the revision with confirmed branches in Zoekt which are available in branchRepos.
+// Replacement is required typically because the revision is a commit that resolves to the latest indexed commit
+// for a branch in Zoekt but the branch name in Zoekt (either "HEAD" or a value defined in experimentalFeatures.search.index.branches)
+// is a values that is not the commit.
+func (rb *IndexedRepoRevs) GetRepoRevsFromBranchRepos() map[api.RepoID]*search.RepositoryRevisions {
+	repoRevs := make(map[api.RepoID]*search.RepositoryRevisions, len(rb.RepoRevs))
+
+	for repoID, repoRev := range rb.RepoRevs {
+		updated := *repoRev
+
+		for i, rev := range updated.Revs {
+			// check if revision should be used as a branch name for zoekt branchRepos queries and replace if not
+			if rev != "" && rb.branchRepos[rev] == nil {
+				if len(rb.branchRepos) == 1 {
+					// use the single branch that zoekt returned in branchRepos as the revision
+					for k := range rb.branchRepos {
+						updated.Revs[i] = k
+						break
+					}
+				} else {
+					// if there are multiple branches then fall back to HEAD
+					// clear value to identify to zoekt to utilize branch HEAD regardless of repo ID
+					updated.Revs[i] = ""
+				}
+			}
+		}
+
+		repoRevs[repoID] = &updated
+	}
+
+	return repoRevs
+}
+
 // add will add reporev and repo to the list of repository and branches to
 // search if reporev's refs are a subset of repo's branches. It will return
 // the revision specifiers it can't add.
