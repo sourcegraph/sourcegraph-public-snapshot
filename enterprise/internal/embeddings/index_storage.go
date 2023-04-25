@@ -63,19 +63,22 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
 	dec := gob.NewDecoder(file)
 
 	rei, err := decodeRepoEmbeddingIndex(dec)
 	// If decoding fails, assume it is an old index and decode with a generic decoder.
 	if err != nil {
-		// Close the existing file.
-		_ = file.Close()
-
-		return DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, key)
+		originalErr := err
+		rei, err = DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, key)
+		if err != nil {
+			// Return both errors in case the first one is the one we care about
+			return nil, errors.Append(originalErr, err)
+		}
 	}
 
-	return rei, err
+	return rei, nil
 }
 
 const embeddingsChunkSize = 10_000
