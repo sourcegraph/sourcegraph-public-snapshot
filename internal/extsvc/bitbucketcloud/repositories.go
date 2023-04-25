@@ -19,7 +19,7 @@ func (c *client) Repo(ctx context.Context, namespace, slug string) (*Repo, error
 	}
 
 	var repo Repo
-	if err := c.do(ctx, req, &repo); err != nil {
+	if _, err := c.do(ctx, req, &repo); err != nil {
 		return nil, errors.Wrap(err, "sending request")
 	}
 
@@ -132,7 +132,7 @@ func (c *client) ForkRepository(ctx context.Context, upstream *Repo, input ForkI
 	}
 
 	var fork Repo
-	if err := c.do(ctx, req, &fork); err != nil {
+	if _, err := c.do(ctx, req, &fork); err != nil {
 		return nil, errors.Wrap(err, "sending request")
 	}
 
