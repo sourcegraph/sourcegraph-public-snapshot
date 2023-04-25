@@ -608,6 +608,19 @@ func Frontend() *monitoring.Dashboard {
 				},
 			},
 			{
+				Title:  "Cody API requests",
+				Hidden: true,
+				Rows: []monitoring.Row{{{
+					Name:           "cody_api_rate",
+					Description:    "rate of API requests to cody endpoints (excluding GraphQL)",
+					Query:          `sum by (route, code)(irate(src_http_request_duration_seconds_count{route=~"^completions.*"}[5m]))`,
+					NoAlert:        true,
+					Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
+					Owner:          monitoring.ObservableOwnerCody,
+					Interpretation: `Rate (QPS) of requests to cody related endpoints. completions.stream is for the conversational endpoints. completions.code is for the code auto-complete endpoints.`,
+				}}},
+			},
+			{
 				Title:  "Organisation GraphQL API requests",
 				Hidden: true,
 				Rows:   orgMetricRows(orgMetricSpec),
