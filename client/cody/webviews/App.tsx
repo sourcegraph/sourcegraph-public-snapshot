@@ -28,6 +28,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
+    const [errorMessage, setErrorMessage] = useState<string>('')
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -92,15 +93,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         setView('login')
     }, [vscodeAPI])
 
-    const onResetClick = useCallback(() => {
-        setView('chat')
-        setDebugLog([])
-        setFormInput('')
-        setMessageInProgress(null)
-        setTranscript([])
-        vscodeAPI.postMessage({ command: 'reset' })
-    }, [vscodeAPI])
-
     if (!view) {
         return <LoadingPage />
     }
@@ -111,15 +103,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {view === 'login' && (
                 <Login onLogin={onLogin} isValidLogin={isValidLogin} serverEndpoint={config?.serverEndpoint} />
             )}
-            {view && view !== 'login' && (
-                <NavBar
-                    view={view}
-                    setView={setView}
-                    devMode={Boolean(config?.debug)}
-                    onResetClick={onResetClick}
-                    showResetButton={transcript.length > 0}
-                />
-            )}
+            {view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
             {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}
             {view === 'history' && (
                 <UserHistory
@@ -132,6 +116,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
             {view === 'settings' && (
                 <Settings setView={setView} onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />
+            )}
+            {view === 'chat' && errorMessage && (
+                <div className="error">
+                    Error: {errorMessage}
+                    <button type="button" onClick={() => setErrorMessage('')} className="close-btn">
+                        ×
+                    </button>
+                </div>
             )}
             {view === 'chat' && (
                 <Chat

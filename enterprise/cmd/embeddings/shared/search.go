@@ -24,16 +24,22 @@ func searchRepoEmbeddingIndex(
 	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
+	weaviate *weaviateClient,
 ) (*embeddings.EmbeddingSearchResults, error) {
-	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting repo embedding index")
+	if weaviate.Use(ctx) {
+		return weaviate.Search(ctx, params)
 	}
 
-	embeddedQuery, err := getQueryEmbedding(ctx, params.Query)
+	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting repo embedding index for repo %q", params.RepoName)
+	}
+
+	floatQuery, err := getQueryEmbedding(ctx, params.Query)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting query embedding")
 	}
+	embeddedQuery := embeddings.Quantize(floatQuery)
 
 	opts := embeddings.SearchOptions{
 		Debug:            params.Debug,
@@ -61,7 +67,7 @@ func searchEmbeddingIndex(
 	revision api.CommitID,
 	index *embeddings.EmbeddingIndex,
 	readFile readFileFn,
-	query []float32,
+	query []int8,
 	nResults int,
 	opts embeddings.SearchOptions,
 ) []embeddings.EmbeddingSearchResult {

@@ -5,7 +5,7 @@ Cody uses Sourcegraph to fetch relevant context to generate answers and code. Th
 ## Initial setup
 
 1. Sign into [Sourcegraph.com](https://sourcegraph.com). {You can create an account for free](https://sourcegraph.com/sign-up) if you don't already have one.
-2. [Join the open beta](https://forms.gle/cffMa8mrr8YuHv8o8). We'll email you when you're added, usually within a day.
+2. Share your Sourcegraph username with us in [Discord](https://discord.gg/sourcegraph-969688426372825169) and we'll get you set up to use Cody on open source code.
 3. [Create a Sourcegraph access token](https://sourcegraph.com/user/settings/tokens)
 4. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
 5. Set the Sourcegraph URL to be `https://sourcegraph.com`
@@ -17,7 +17,7 @@ You're now ready to use Cody!
 
 ## Configure code graph context for code-aware answers
 
-After installing, you can optionally use [code graph context](code_graph_context.md) to improve Cody's context of existing code. Note that code graph context is only available for public repositories on sourcegraph.com which have embeddings. [See the list](embedded-repos.md) of repositories with embeddings and request any that you'd like to add by pinging a Sourcegraph team member in [Discord](https://discord.gg/8wJF5EdAyA).
+After installing, you can optionally use [code graph context](code_graph_context.md) to improve Cody's context of existing code. Note that code graph context is only available for public repositories on sourcegraph.com which have embeddings. [See the list](../embedded-repos.md) of repositories with embeddings and request any that you'd like to add by pinging a Sourcegraph team member in [Discord](https://discord.gg/8wJF5EdAyA).
 
 If you want to use Cody with code graph context on private code, consider moving to a Sourcegraph Enterprise instance.
 

@@ -196,7 +196,7 @@ export const predicateCompletion = (field: string): Completion[] => {
             {
                 label: 'has.topic(...)',
                 insertText: 'has.topic(${1})',
-                description: 'Search only inside repositories that have a matching GitHub tag',
+                description: 'Search only inside repositories that have a matching GitHub topic',
                 asSnippet: true,
             },
             {
