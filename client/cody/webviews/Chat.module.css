@@ -41,6 +41,10 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     font-size: var(--vscode-editor-font-size);
 }
 
+.transcript-action > button {
+    font-size: var(--vscode-editor-font-size);
+}
+
 .code-blocks-copy-button {
     color: var(--vscode-button-secondaryForeground);
     background-color: var(--vscode-button-secondaryBackground);
