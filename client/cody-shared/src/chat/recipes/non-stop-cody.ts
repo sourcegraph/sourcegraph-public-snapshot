@@ -87,7 +87,7 @@ export class NonStopCody implements Recipe {
                         end: decoration.range.end.translate(
                             change.range.start.line - change.range.end.line + insertedLines,
                             change.range.end.line === decoration.range.end.line
-                                ? change.range.start.character - change.range.end.character
+                                ? change.range.start.character - change.range.end.character + insertedLastLine
                                 : 0
                         ),
                     })
