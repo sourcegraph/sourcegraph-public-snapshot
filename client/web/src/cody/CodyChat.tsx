@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiClose, mdiSend, mdiArrowDown, mdiReload } from '@mdi/js'
+import { mdiClose, mdiSend, mdiArrowDown, mdiReload, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { Chat, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
+import { Chat, ChatUISubmitButtonProps, ChatUITextAreaProps, EditButtonProps } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
@@ -21,13 +21,14 @@ interface CodyChatProps {
 }
 
 export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
-    const { reset, submitMessage, messageInProgress, transcript, getChatContext } = useChatStoreState()
+    const { reset, submitMessage, editMessage, messageInProgress, transcript, getChatContext } = useChatStoreState()
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
     const [showScrollDownButton, setShowScrollDownButton] = useState(false)
+    const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
 
     const handleScroll = useCallback(() => {
         if (codySidebarRef.current) {
@@ -78,6 +79,8 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                 </div>
                 <Chat
                     messageInProgress={messageInProgress}
+                    messageBeingEdited={messageBeingEdited}
+                    setMessageBeingEdited={setMessageBeingEdited}
                     transcript={transcript}
                     formInput={formInput}
                     setFormInput={setFormInput}
@@ -94,6 +97,8 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                     transcriptItemParticipantClassName="text-muted"
                     inputRowClassName={styles.inputRow}
                     chatInputClassName={styles.chatInput}
+                    EditButtonContainer={EditButton}
+                    editButtonOnSubmit={editMessage}
                     textAreaComponent={AutoResizableTextArea}
                     codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
                     transcriptActionClassName={styles.transcriptAction}
@@ -109,6 +114,26 @@ const ScrollDownButton = ({ onClick }: { onClick: () => void }): JSX.Element => 
         <Button className={styles.scrollButton} onClick={onClick}>
             <Icon aria-label="Scroll down" svgPath={mdiArrowDown} />
         </Button>
+    </div>
+)
+
+const EditButton: React.FunctionComponent<EditButtonProps> = ({
+    className,
+    messageBeingEdited,
+    setMessageBeingEdited,
+}) => (
+    <div className={className}>
+        <button
+            className={classNames(className, styles.editButton)}
+            type="button"
+            onClick={() => setMessageBeingEdited(!messageBeingEdited)}
+        >
+            {messageBeingEdited ? (
+                <Icon aria-label="Close" svgPath={mdiClose} />
+            ) : (
+                <Icon aria-label="Edit" svgPath={mdiPencil} />
+            )}
+        </button>
     </div>
 )
 
