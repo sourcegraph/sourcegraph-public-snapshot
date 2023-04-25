@@ -580,8 +580,13 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		pr.ToRef.Repository.Slug,
 	)
 
-	_, err = c.send(ctx, "POST", path, nil, payload, pr)
+	resp, err := c.send(ctx, "POST", path, nil, payload, pr)
+
 	if err != nil {
+		var code int
+		if resp != nil {
+			code = resp.StatusCode
+		}
 		if IsDuplicatePullRequest(err) {
 			pr, extractErr := ExtractExistingPullRequest(err)
 			if extractErr != nil {
@@ -591,7 +596,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 				Existing: pr,
 			}
 		}
-		return err
+		return errcode.MaybeMakeNonRetryable(code, err)
 	}
 	return nil
 }
@@ -971,18 +976,18 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, errors.WithStack(&httpError{
+		return resp, errors.WithStack(&httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
