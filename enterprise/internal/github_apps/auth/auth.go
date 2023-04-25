@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -138,6 +140,7 @@ type installationAccessToken struct {
 	expiresAt        time.Time
 	baseURL          *url.URL
 	appAuthenticator auth.Authenticator
+	cache            *rcache.Cache
 }
 
 func (t *installationAccessToken) updateFromJSON(jt *jsonToken) {
@@ -158,10 +161,12 @@ func NewInstallationAccessToken(
 	installationID int,
 	appAuthenticator auth.Authenticator,
 ) *installationAccessToken {
+	cache := rcache.NewWithTTL("github_app_installation_token", 55*60)
 	auther := &installationAccessToken{
 		baseURL:          baseURL,
 		installationID:   installationID,
 		appAuthenticator: appAuthenticator,
+		cache:            cache,
 	}
 	return auther
 }
@@ -172,6 +177,19 @@ func NewInstallationAccessToken(
 // installation associated with the Authenticator.
 // Returns an error if the request fails.
 func (t *installationAccessToken) Refresh(ctx context.Context, cli httpcli.Doer) error {
+	token, ok := t.cache.Get(t.baseURL.String() + strconv.Itoa(t.installationID))
+	if ok {
+		var storedTokenJSON jsonToken
+		if err := json.Unmarshal(token, &storedTokenJSON); err == nil {
+			if storedTokenJSON.Token != t.token {
+				t.updateFromJSON(&storedTokenJSON)
+				if !t.NeedsRefresh() {
+					return nil
+				}
+			}
+		}
+	}
+
 	apiURL, _ := github.APIRoot(t.baseURL)
 	apiURL = apiURL.JoinPath(fmt.Sprintf("/app/installations/%d/access_tokens", t.installationID))
 
@@ -191,11 +209,19 @@ func (t *installationAccessToken) Refresh(ctx context.Context, cli httpcli.Doer)
 		return errors.Newf("failed to refresh: %d", resp.StatusCode)
 	}
 
+	jsonBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
 	var jsonToken jsonToken
-	if err := json.NewDecoder(resp.Body).Decode(&jsonToken); err != nil {
+	if err := json.Unmarshal(jsonBody, &jsonToken); err != nil {
 		return err
 	}
 	t.updateFromJSON(&jsonToken)
+
+	t.cache.Set(t.baseURL.String()+strconv.Itoa(t.installationID), jsonBody)
 	return nil
 }
 
