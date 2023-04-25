@@ -1,8 +1,8 @@
 # Embeddings for repositories with 5+ stars
 
-Last updated: 04-22-2023 · 11:01 PM PDT
+Last updated: 04-24-2023 · 4:32 PM PDT
 
-1. `ithub.com/152334H/DL-Art-School`
+1. `github.com/152334H/DL-Art-School`
 1. `github.com/152334H/tortoise-tts-fast`
 1. `github.com/6irdviewEth/laba_widgets`
 1. `github.com/6irdviewEth/laba-app`
@@ -133,6 +133,7 @@ Last updated: 04-22-2023 · 11:01 PM PDT
 1. `github.com/cfillion/reaimgui`
 1. `github.com/cfillion/reascripts`
 1. `github.com/ChenYFan/ClientWorker`
+1. `github.com/Chocobozzz/PeerTube`
 1. `github.com/chroma-core/chroma`
 1. `github.com/chubin/wttr.in`
 1. `github.com/ciel-lang/CIEL`
@@ -652,6 +653,7 @@ Last updated: 04-22-2023 · 11:01 PM PDT
 1. `github.com/plokhotnyuk/jsoniter-scala`
 1. `github.com/plokhotnyuk/rtree2d`
 1. `github.com/pmndrs/jotai`
+1. `github.com/pnpm/pnpm`
 1. `github.com/pola-rs/polars`
 1. `github.com/pola-rs/polars/`
 1. `github.com/polarsignals/frostdb`
@@ -659,12 +661,17 @@ Last updated: 04-22-2023 · 11:01 PM PDT
 1. `github.com/postgres/postgres`
 1. `github.com/PowerShell/PowerShell`
 1. `github.com/primefaces/primeng`
+1. `github.com/prisma/docs`
+1. `github.com/prisma/ecosystem-tests`
+1. `github.com/prisma/language-tools`
 1. `github.com/prisma/prisma`
+1. `github.com/prisma/prisma-engines`
 1. `github.com/Pritts/MeetingApp`
 1. `github.com/probml/pyprobml`
 1. `github.com/processing/p5.js`
 1. `github.com/prometheus/prometheus`
 1. `github.com/provectus/kafka-ui`
+1. `github.com/psf/black`
 1. `github.com/pubkey/rxdb`
 1. `github.com/public-apis/public-apis`
 1. `github.com/pulumi/pulumi`
@@ -711,6 +718,7 @@ Last updated: 04-22-2023 · 11:01 PM PDT
 1. `github.com/redis/redis`
 1. `github.com/reduxjs/redux`
 1. `github.com/reduxjs/redux-toolkit`
+1. `github.com/redwoodjs/redwood`
 1. `github.com/release-it/release-it`
 1. `github.com/remix-run/remix`
 1. `github.com/replicatedhq/kots`
@@ -838,6 +846,7 @@ Last updated: 04-22-2023 · 11:01 PM PDT
 1. `github.com/stryker-mutator/stryker4s`
 1. `github.com/subspace/subspace`
 1. `github.com/suika2engine/suika2`
+1. `github.com/supabase/supabase`
 1. `github.com/supabase/supabaseJS`
 1. `github.com/supranational/blst`
 1. `github.com/suprsend/suprsend-py-sdk`
@@ -911,6 +920,7 @@ Last updated: 04-22-2023 · 11:01 PM PDT
 1. `github.com/trpc/trpc`
 1. `github.com/tullytim/pinecone-cli`
 1. `github.com/typeorm/typeorm`
+1. `github.com/typescript-eslint/typescript-eslint`
 1. `github.com/ultralytics/yolov5`
 1. `github.com/vercel/next.js`
 1. `github.com/vitejs/vite`
