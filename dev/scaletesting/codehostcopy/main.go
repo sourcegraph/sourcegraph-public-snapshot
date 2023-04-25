@@ -105,7 +105,7 @@ func createDestinationCodeHost(ctx context.Context, logger log.Logger, cfg CodeH
 	case "gitlab":
 		return NewGitLabCodeHost(ctx, &cfg)
 	case "github":
-		return NewGithubCodeHost(ctx, &cfg)
+		return NewGitHubCodeHost(ctx, &cfg)
 	default:
 		return nil, errors.Newf("unknown code host %q", cfg.Kind)
 	}
@@ -116,7 +116,7 @@ func createSourceCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDe
 	case "bitbucket":
 		return NewBitbucketCodeHost(logger, &cfg)
 	case "github":
-		return NewGithubCodeHost(ctx, &cfg)
+		return NewGitHubCodeHost(ctx, &cfg)
 	case "gitlab":
 		return NewGitLabCodeHost(ctx, &cfg)
 	default:

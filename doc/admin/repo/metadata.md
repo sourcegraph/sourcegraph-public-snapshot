@@ -55,15 +55,15 @@ mutation DeleteSecurityOwner($repoID: ID!) {
 
 ### src-cli
 
-Metadata can be added using `src repos add-kvp`, updated using `src repos update-kvp`, and deleted using `src repos delete-kvp`. You will need the GraphQL ID for the repository being targeted.
+Metadata can be added using `src repos add-metadata`, updated using `src repos update-metadata`, and deleted using `src repos delete-metadata`. You will need the GraphQL ID for the repository being targeted.
 
 ```text
-$ src repos add-kvp -repo=repoID -key=owning-team -value=security
+$ src repos add-metadata -repo=repoID -key=owning-team -value=security
 Key-value pair 'owning-team:security' created.
 
-$ src repos update-kvp -repo=repoID -key=owning-team -value=security++
+$ src repos update-metadata -repo=repoID -key=owning-team -value=security++
 Value of key 'owning-team' updated to 'security++'
 
-$ src repos delete-kvp -repo=repoID -key=owning-team
+$ src repos delete-metadata -repo=repoID -key=owning-team
 Key-value pair with key 'owning-team' deleted.
 ```

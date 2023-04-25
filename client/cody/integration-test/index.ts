@@ -4,13 +4,12 @@ import glob from 'glob'
 import Mocha from 'mocha'
 
 export function run(): Promise<void> {
-    // Create the mocha test
     const mocha = new Mocha({
         ui: 'tdd',
         color: true,
+        timeout: 15000,
+        grep: process.env.TEST_PATTERN ? new RegExp(process.env.TEST_PATTERN, 'i') : undefined,
     })
-    // To debug tests interactively, extend this timeout.
-    mocha.timeout(15000)
 
     const testsRoot = __dirname
 
