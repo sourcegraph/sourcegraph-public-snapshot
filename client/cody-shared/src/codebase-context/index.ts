@@ -46,11 +46,12 @@ export class CodebaseContext {
         options: ContextSearchOptions
     ): Promise<{ results: KeywordContextFetcherResult[] | EmbeddingsSearchResult[]; endpoint: string }> {
         if (this.embeddings && this.config.useContext !== 'keyword') {
-            const emSearchResults = await this.getEmbeddingSearchResults(query, options)
-            return { results: emSearchResults, endpoint: this.config.serverEndpoint }
+            return {
+                results: await this.getEmbeddingSearchResults(query, options),
+                endpoint: this.config.serverEndpoint,
+            }
         }
-        const kwSearchResults = await this.getKeywordSearchResults(query, options)
-        return { results: kwSearchResults, endpoint: this.config.serverEndpoint }
+        return { results: await this.getKeywordSearchResults(query, options), endpoint: this.config.serverEndpoint }
     }
 
     // We split the context into multiple messages instead of joining them into a single giant message.
