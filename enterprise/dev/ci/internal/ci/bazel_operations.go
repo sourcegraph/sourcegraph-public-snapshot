@@ -11,11 +11,7 @@ import (
 func BazelOperations() *operations.Set {
 	ops := operations.NewNamedSet("Bazel")
 	ops.Append(bazelConfigure())
-	ops.Append(bazelTest("//..."))
-	// Very often those tests are exhausting all resources. So we run them
-	// after everything else to ensure they're running with all available
-	// resources.
-	ops.Append(bazelTest("//client/web:test"))
+	ops.Append(bazelTest("//...", "//client/web:test"))
 	ops.Append(bazelBackCompatTest(
 		"@sourcegraph_back_compat//cmd/...",
 		"@sourcegraph_back_compat//lib/...",
@@ -89,13 +85,16 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		"//client/web:bundlesize-report",
 	}
 
-	bazelTestCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
+	bazelTestCmds := []bk.StepOpt{}
+	for _, target := range targets {
+		cmd := bazelCmd(fmt.Sprintf("test %s", target))
+		bazelTestCmds = append(bazelTestCmds, bk.Cmd(cmd))
+	}
+
 	bazelRunCmd := bazelCmd(fmt.Sprintf("run %s", strings.Join(runTargets, " ")))
-	cmds = append(
-		cmds,
-		bk.Cmd(bazelTestCmd),
-		bk.Cmd(bazelRunCmd),
-	)
+
+	cmds = append(cmds, bazelTestCmds...)
+	cmds = append(cmds, bk.Cmd(bazelRunCmd))
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":bazel: Tests",
