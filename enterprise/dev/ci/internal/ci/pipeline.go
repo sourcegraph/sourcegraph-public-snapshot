@@ -311,7 +311,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		} else {
 
-			buildList := append(append(images.SourcegraphDockerImages, images.SourcegraphDockerImagesMusl...), images.DeploySourcegraphDockerImages...)
+			buildList := append(append(images.SourcegraphDockerImagesMusl, images.SourcegraphDockerImages...), images.DeploySourcegraphDockerImages...)
 			for _, dockerImage := range buildList {
 				imageBuildOps.Append(bazelBuildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), c.RunType))
 				// imageBuildOps.Append(bazelBuildCandidateDockerImages(images.DeploySourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))

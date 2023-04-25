@@ -989,7 +989,6 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 			// This step just pulls a prebuild image and pushes it to some registries. The
 			// only possible failure here is a registry flake, so we retry a few times.
 			bk.AutomaticRetry(3),
-			bk.Agent("queue", "bazel"),
 			bk.Cmd(cmd))
 	}
 }
