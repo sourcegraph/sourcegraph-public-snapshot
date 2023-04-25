@@ -213,7 +213,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
             const refType = getRefType(true)
 
             return { key: refType, element: <>{capitalize(refType)}</> }
-        }, [repo])
+        }, [repo, isPerforceDepot])
     )
 
     return (
