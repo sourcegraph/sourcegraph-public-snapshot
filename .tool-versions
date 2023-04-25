@@ -4,7 +4,7 @@ fd 8.6.0
 shfmt 3.5.0
 shellcheck 0.7.1
 kubectl 1.21.7
-github-cli 2.23.0
+github-cli 2.27.0
 packer 1.8.3
 trivy 0.30.3
 kustomize 4.5.7
