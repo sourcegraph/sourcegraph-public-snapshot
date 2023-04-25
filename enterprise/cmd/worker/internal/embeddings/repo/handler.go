@@ -6,9 +6,7 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
@@ -19,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type handler struct {
@@ -30,8 +29,6 @@ type handler struct {
 var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
 
 var matchEverythingRegexp = regexp.MustCompile(``)
-
-const maxFileSize = 1000000 // 1MB
 
 // The threshold to embed the entire file is slightly larger than the chunk threshold to
 // avoid splitting small files unnecessarily.
@@ -57,15 +54,12 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
-	validFiles, err := h.gitserverClient.ListFiles(ctx, nil, repo.Name, record.Revision, &protocol.ListFilesOpts{
-		IncludeDirs:      false,
-		MaxFileSizeBytes: maxFileSize,
-	})
-	if err != nil {
-		return err
-	}
-
 	embeddingsClient := embed.NewEmbeddingsClient()
+	fetcher := &revisionFetcher{
+		repo:      repo.Name,
+		revision:  record.Revision,
+		gitserver: h.gitserverClient,
+	}
 
 	config := conf.Get().Embeddings
 	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
@@ -75,13 +69,10 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		ctx,
 		repo.Name,
 		record.Revision,
-		validFiles,
 		excludedGlobPatterns,
 		embeddingsClient,
 		splitOptions,
-		func(ctx context.Context, fileName string) ([]byte, error) {
-			return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
-		},
+		fetcher,
 		getDocumentRanks,
 	)
 	if err != nil {
@@ -89,4 +80,32 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	}
 
 	return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
+}
+
+type revisionFetcher struct {
+	repo      api.RepoName
+	revision  api.CommitID
+	gitserver gitserver.Client
+}
+
+func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, error) {
+	return r.gitserver.ReadFile(ctx, nil, r.repo, r.revision, fileName)
+}
+
+func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
+	fileInfos, err := r.gitserver.ReadDir(ctx, nil, r.repo, r.revision, "", true)
+	if err != nil {
+		return nil, err
+	}
+
+	entries := make([]embed.FileEntry, 0, len(fileInfos))
+	for _, fileInfo := range fileInfos {
+		if !fileInfo.IsDir() {
+			entries = append(entries, embed.FileEntry{
+				Name: fileInfo.Name(),
+				Size: fileInfo.Size(),
+			})
+		}
+	}
+	return entries, nil
 }

@@ -330,8 +330,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
     "@sourcegraph/cody-shared": "workspace:*",
-    "openai": "^3.2.1",
     "@sourcegraph/cody-ui": "workspace:*",
+    "lru-cache": "^9.1.1",
+    "openai": "^3.2.1",
     "wink-eng-lite-web-model": "^1.5.0",
     "wink-nlp": "^1.13.1",
     "wink-nlp-utils": "^2.1.0"

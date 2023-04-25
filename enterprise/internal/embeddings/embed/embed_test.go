@@ -79,25 +79,36 @@ func TestEmbedRepo(t *testing.T) {
 		}, nil
 	}
 
-	readFile := func(_ context.Context, fileName string) ([]byte, error) {
+	reader := funcReader(func(_ context.Context, fileName string) ([]byte, error) {
 		content, ok := mockFiles[fileName]
 		if !ok {
 			return nil, errors.Newf("file %s not found", fileName)
 		}
 		return content, nil
+	})
+
+	newReadLister := func(fileNames ...string) FileReadLister {
+		fileEntries := make([]FileEntry, len(fileNames))
+		for i, fileName := range fileNames {
+			fileEntries[i] = FileEntry{Name: fileName, Size: 350}
+		}
+		return listReader{
+			FileReader: reader,
+			FileLister: staticLister(fileEntries),
+		}
 	}
 
 	excludedGlobPatterns := GetDefaultExcludedFilePathPatterns()
 
 	t.Run("no files", func(t *testing.T) {
-		index, err := EmbedRepo(ctx, repoName, revision, []string{}, excludedGlobPatterns, client, splitOptions, readFile, getDocumentRanks)
+		index, err := EmbedRepo(ctx, repoName, revision, excludedGlobPatterns, client, splitOptions, newReadLister(), getDocumentRanks)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 	})
 
 	t.Run("code files only", func(t *testing.T) {
-		index, err := EmbedRepo(ctx, repoName, revision, []string{"a.go"}, excludedGlobPatterns, client, splitOptions, readFile, getDocumentRanks)
+		index, err := EmbedRepo(ctx, repoName, revision, excludedGlobPatterns, client, splitOptions, newReadLister("a.go"), getDocumentRanks)
 		require.NoError(t, err)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 		require.Len(t, index.CodeIndex.Embeddings, 6)
@@ -106,7 +117,7 @@ func TestEmbedRepo(t *testing.T) {
 	})
 
 	t.Run("text files only", func(t *testing.T) {
-		index, err := EmbedRepo(ctx, repoName, revision, []string{"b.md"}, excludedGlobPatterns, client, splitOptions, readFile, getDocumentRanks)
+		index, err := EmbedRepo(ctx, repoName, revision, excludedGlobPatterns, client, splitOptions, newReadLister("b.md"), getDocumentRanks)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 6)
@@ -115,8 +126,8 @@ func TestEmbedRepo(t *testing.T) {
 	})
 
 	t.Run("mixed code and text files", func(t *testing.T) {
-		files := []string{"a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin"}
-		index, err := EmbedRepo(ctx, repoName, revision, files, excludedGlobPatterns, client, splitOptions, readFile, getDocumentRanks)
+		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
+		index, err := EmbedRepo(ctx, repoName, revision, excludedGlobPatterns, client, splitOptions, rl, getDocumentRanks)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 15)
 		require.Len(t, index.CodeIndex.RowMetadata, 5)
@@ -143,4 +154,21 @@ func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts
 		return nil, err
 	}
 	return make([]float32, len(texts)*dimensions), nil
+}
+
+type funcReader func(ctx context.Context, fileName string) ([]byte, error)
+
+func (f funcReader) Read(ctx context.Context, fileName string) ([]byte, error) {
+	return f(ctx, fileName)
+}
+
+type staticLister []FileEntry
+
+func (l staticLister) List(_ context.Context) ([]FileEntry, error) {
+	return l, nil
+}
+
+type listReader struct {
+	FileReader
+	FileLister
 }

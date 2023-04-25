@@ -8459,6 +8459,7 @@ def go_dependencies():
         sum = "h1:MUes2rbdXa1ce9mwKYzTyBG0CtqpLT0NgKTFAz8FIDs=",
         version = "v0.39.0",
     )
+
     # See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/872
     go_repository(
         name = "io_opentelemetry_go_contrib_instrumentation_net_http_httptrace_otelhttptrace",
@@ -8549,6 +8550,7 @@ def go_dependencies():
         sum = "h1:pa05sNT/P8OsIQ8mPZKTIyiBuzS/xDGLVx+DCt0y6Vs=",
         version = "v1.13.0",
     )
+
     # See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/872
     go_repository(
         name = "io_opentelemetry_go_otel_exporters_otlp_otlptrace",
@@ -8561,6 +8563,7 @@ def go_dependencies():
         sum = "h1:Any/nVxaoMq1T2w0W85d6w5COlLuCCgOYKQhJJWEMwQ=",
         version = "v1.13.0",
     )
+
     # See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/872
     go_repository(
         name = "io_opentelemetry_go_otel_exporters_otlp_otlptrace_otlptracegrpc",
@@ -8573,6 +8576,7 @@ def go_dependencies():
         sum = "h1:Wz7UQn7/eIqZVDJbuNEM6PmqeA71cWXrWcXekP5HZgU=",
         version = "v1.13.0",
     )
+
     # See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/872
     go_repository(
         name = "io_opentelemetry_go_otel_exporters_otlp_otlptrace_otlptracehttp",

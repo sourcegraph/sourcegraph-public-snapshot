@@ -47,3 +47,39 @@ type EmbeddingSearchResult struct {
 	// Experimental: Clients should not rely on any particular format of debug
 	Debug string `json:"debug,omitempty"`
 }
+
+// DEPRECATED: to support decoding old indexes, we need a struct
+// we can decode into directly. This struct is the same shape
+// as the old indexes and should not be changed without migrating
+// all existing indexes to the new format.
+type OldRepoEmbeddingIndex struct {
+	RepoName  api.RepoName
+	Revision  api.CommitID
+	CodeIndex OldEmbeddingIndex
+	TextIndex OldEmbeddingIndex
+}
+
+func (o *OldRepoEmbeddingIndex) ToNewIndex() *RepoEmbeddingIndex {
+	return &RepoEmbeddingIndex{
+		RepoName:  o.RepoName,
+		Revision:  o.Revision,
+		CodeIndex: o.CodeIndex.ToNewIndex(),
+		TextIndex: o.TextIndex.ToNewIndex(),
+	}
+}
+
+type OldEmbeddingIndex struct {
+	Embeddings      []float32
+	ColumnDimension int
+	RowMetadata     []RepoEmbeddingRowMetadata
+	Ranks           []float32
+}
+
+func (o *OldEmbeddingIndex) ToNewIndex() EmbeddingIndex {
+	return EmbeddingIndex{
+		Embeddings:      Quantize(o.Embeddings),
+		ColumnDimension: o.ColumnDimension,
+		RowMetadata:     o.RowMetadata,
+		Ranks:           o.Ranks,
+	}
+}
