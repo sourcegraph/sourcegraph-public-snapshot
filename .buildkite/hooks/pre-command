@@ -1,33 +1,12 @@
 #!/usr/bin/env bash
 
-set -eux
-
-# Honeycomb's buildevent plumbing.
-# -------------------------------
-
-echo "~~~ Setting up Honeycomb tracing for the build"
-
-envsubst <./enterprise/dev/ci/scripts/buildevent_file >.buildevent_file
-BUILDEVENT_FILE="$(pwd)/.buildevent_file"
-export BUILDEVENT_FILE
-
-# Record start time if we need to exit
-BUILD_START_TIME=$(curl --retry 10 --retry-delay 2 -H "Authorization: Bearer $BUILDKITE_API_TOKEN" "https://api.buildkite.com/v2/organizations/$BUILDKITE_ORGANIZATION_SLUG/pipelines/$BUILDKITE_PIPELINE_SLUG/builds/$BUILDKITE_BUILD_NUMBER/" | jq -r .started_at)
-
-# Convert to UTC & Epoch
-BUILD_START_TIME=$(TZ=UTC date -d "$BUILD_START_TIME" +'%s')
-export BUILD_START_TIME
-
-# Init the step
-STEP_START=$(date +'%s')
-export STEP_START
+set -eu
 
 # Create the folder for annotations
 mkdir -p ./annotations/
 
 # asdf setup
 # ----------
-
 if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" ]]; then
   echo "~~~ Preparing asdf dependencies"
 
