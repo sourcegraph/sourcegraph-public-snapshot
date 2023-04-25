@@ -3692,6 +3692,11 @@ type Repository implements Node & GenericSearchResultInterface {
     Returns true if embeddings for the repo are generated.
     """
     embeddingExists: Boolean!
+
+    """
+    Returns true if this git-repo was converted from a perforce depot.
+    """
+    isPerforceDepot: Boolean!
 }
 
 """

@@ -121,7 +121,7 @@ func (r *GitCommitResolver) ID() graphql.ID {
 func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
 
 func (r *GitCommitResolver) OID() GitObjectID {
-	if r.repoResolver.isPerforceDepot() && r.commit != nil {
+	if r.repoResolver.IsPerforceDepot() && r.commit != nil {
 		p4change := ParseP4Change(r.commit.Message.Body())
 		if p4change == nil {
 			return "failed to parse"
@@ -135,7 +135,7 @@ func (r *GitCommitResolver) OID() GitObjectID {
 func (r *GitCommitResolver) InputRev() *string { return r.inputRev }
 
 func (r *GitCommitResolver) AbbreviatedOID() string {
-	if r.repoResolver.isPerforceDepot() && r.commit != nil {
+	if r.repoResolver.IsPerforceDepot() && r.commit != nil {
 		return string(r.OID())
 	}
 
@@ -194,7 +194,7 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 }
 
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
-	if r.repoResolver.isPerforceDepot() {
+	if r.repoResolver.IsPerforceDepot() {
 		return nil, nil
 	}
 
