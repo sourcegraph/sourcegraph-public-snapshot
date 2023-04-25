@@ -172,15 +172,6 @@ export const fetchDiffStats = (args: {
         catchError(() => []) // ignore errors
     )
 
-interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
-    filePath: string
-    tree: TreeFields
-    repo: TreePageRepositoryFields
-    commitID: string
-    revision: string
-    isPackage: boolean
-}
-
 const ExtraInfoSectionHeader: React.FunctionComponent<React.PropsWithChildren<{ title: string; tooltip?: string }>> = ({
     title,
     tooltip,
@@ -199,7 +190,11 @@ const ExtraInfoSectionHeader: React.FunctionComponent<React.PropsWithChildren<{ 
     </div>
 )
 
-const ExtraInfoSection: React.FC<{ repo: TreePageRepositoryFields; className?: string }> = ({ repo, className }) => {
+const ExtraInfoSection: React.FC<{
+    repo: TreePageRepositoryFields
+    className?: string
+    viewerCanAdminister?: boolean
+}> = ({ repo, className, viewerCanAdminister }) => {
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
 
     const metadataItems = useMemo(() => repo.metadata.map(({ key, value }) => ({ key, value })) || [], [repo.metadata])
@@ -214,14 +209,16 @@ const ExtraInfoSection: React.FC<{ repo: TreePageRepositoryFields; className?: s
                         title="Metadata"
                         tooltip="Repository metadata allows you to search, filter and navigate between repositories. Administrators can add repository metadata via the web, cli or API. Learn more about Repository Metadata"
                     >
-                        <Tooltip content="Edit repository metadata">
-                            <ButtonLink
-                                to={`/${encodeURIPathComponent(repo.name)}/-/settings/metadata`}
-                                className="p-0"
-                            >
-                                <Icon svgPath={mdiCog} aria-label="Edit repository metadata" />
-                            </ButtonLink>
-                        </Tooltip>
+                        {viewerCanAdminister && (
+                            <Tooltip content="Edit repository metadata">
+                                <ButtonLink
+                                    to={`/${encodeURIPathComponent(repo.name)}/-/settings/metadata`}
+                                    className="p-0"
+                                >
+                                    <Icon svgPath={mdiCog} aria-label="Edit repository metadata" />
+                                </ButtonLink>
+                            </Tooltip>
+                        )}
                     </ExtraInfoSectionHeader>
                     {metadataItems.length ? (
                         <RepoMetadata items={metadataItems} />
@@ -232,6 +229,15 @@ const ExtraInfoSection: React.FC<{ repo: TreePageRepositoryFields; className?: s
             )}
         </Card>
     )
+}
+
+interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
+    filePath: string
+    tree: TreeFields
+    repo: TreePageRepositoryFields
+    commitID: string
+    revision: string
+    isPackage: boolean
 }
 
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
@@ -271,7 +277,11 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                         className={styles.files}
                     />
                 )}
-                <ExtraInfoSection repo={repo} className={classNames(styles.contributors, 'p-3')} />
+                <ExtraInfoSection
+                    repo={repo}
+                    className={classNames(styles.contributors, 'p-3')}
+                    viewerCanAdminister={repo.viewerCanAdminister}
+                />
             </section>
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
