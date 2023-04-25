@@ -295,6 +295,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public async sendLogin(isValid: boolean): Promise<void> {
         await vscode.commands.executeCommand('setContext', 'cody.activated', isValid)
+        if (isValid) {
+            this.sendEvent('auth', 'login')
+        }
         void this.webview?.postMessage({ type: 'login', isValid })
     }
 
