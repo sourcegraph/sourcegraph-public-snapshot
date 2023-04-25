@@ -72,7 +72,7 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 	if err != nil {
 		oldRei, err2 := DownloadIndex[OldRepoEmbeddingIndex](ctx, uploadStore, key)
 		if err2 != nil {
-			return nil, err2
+			return nil, errors.Append(err, err2)
 		}
 		return oldRei.ToNewIndex(), nil
 	}
