@@ -215,7 +215,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
 
                             const blobInfo: BlobPageInfo = {
                                 content: blob.content,
-                                html: blob.highlight.html ?? '',
                                 repoName,
                                 revision,
                                 filePath,
@@ -268,7 +267,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
 
                         const blobInfo: BlobPageInfo = {
                             content: blob.content,
-                            html: blob.highlight.html ?? '',
                             lsif: blob.highlight.lsif ?? '',
                             repoName,
                             revision,

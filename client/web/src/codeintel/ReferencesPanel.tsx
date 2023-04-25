@@ -709,7 +709,7 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         return <>Nothing found</>
     }
 
-    const { html, lsif } = data?.repository?.commit?.blob?.highlight
+    const { lsif } = data?.repository?.commit?.blob?.highlight
 
     // TODO: display a helpful message if syntax highlighting aborted, see https://github.com/sourcegraph/sourcegraph/issues/40841
 
@@ -721,7 +721,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
             className={styles.sideBlobCode}
             navigateToLineOnAnyClick={true}
             blobInfo={{
-                html: html ?? '',
                 lsif: lsif ?? '',
                 content: data?.repository?.commit?.blob?.content ?? '',
                 filePath: props.file,
