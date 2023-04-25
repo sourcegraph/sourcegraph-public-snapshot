@@ -31,6 +31,7 @@ interface CodyChatStore {
         onEvent: (eventName: 'submit' | 'reset' | 'error') => void
     ) => Promise<void>
     submitMessage: (text: string) => void
+    editMessage: (text: string) => void
     executeRecipe: (
         recipeId: string,
         options?: {
@@ -58,6 +59,21 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
                 text,
             })
             onEvent?.('submit')
+            void client.submitMessage(text)
+        }
+    }
+
+    const editMessage = (text: string): void => {
+        const { client, onEvent, getChatContext } = get()
+        if (client && !isErrorLike(client)) {
+            const { codebase, filePath } = getChatContext()
+            eventLogger.log('web:codySidebar:edit', {
+                repo: codebase,
+                path: filePath,
+                text,
+            })
+            onEvent?.('submit')
+            client.transcript.removeLastInteraction()
             void client.submitMessage(text)
         }
     }
@@ -184,6 +200,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         onEvent: null,
         initializeClient,
         submitMessage,
+        editMessage,
         executeRecipe,
         reset: () => void reset(),
         getChatContext,

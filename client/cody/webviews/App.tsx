@@ -22,6 +22,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [debugLog, setDebugLog] = useState(['No data yet'])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
+    const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [isValidLogin, setIsValidLogin] = useState<boolean>()
     const [formInput, setFormInput] = useState('')
@@ -128,6 +129,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {view === 'chat' && (
                 <Chat
                     messageInProgress={messageInProgress}
+                    messageBeingEdited={messageBeingEdited}
+                    setMessageBeingEdited={setMessageBeingEdited}
                     transcript={transcript}
                     contextStatus={contextStatus}
                     formInput={formInput}

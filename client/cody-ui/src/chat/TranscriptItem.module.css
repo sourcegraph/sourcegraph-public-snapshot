@@ -15,9 +15,11 @@
     border-bottom-width: 1px;
     border-bottom-style: solid;
 }
+
 .row:last-child:not(:only-child) {
     margin-bottom: -1px;
 }
+
 .row:only-child {
     /* For the welcome message, make it visually consume the entire height instead of being a
     discrete message. */
@@ -67,14 +69,15 @@
     overflow-x: auto;
 }
 
-.content > div:first-child > *:first-child {
+.content>div:first-child>*:first-child {
     margin-top: 0;
 }
-.content > div:first-child > *:last-child {
+
+.content>div:first-child>*:last-child {
     margin-bottom: 0;
 }
 
-.feedback-buttons-container {
+.feedback-edit-buttons-container {
     display: flex;
     gap: 0.25rem;
     align-items: center;
@@ -85,7 +88,13 @@
     font-size: 0.8rem;
 }
 
-.feedback-buttons {
+.feedback-edit-buttons {
     display: flex;
     margin: 0;
+}
+
+.chat-input {
+    width: 100%;
+    height: 100%;
+    resize: none;
 }

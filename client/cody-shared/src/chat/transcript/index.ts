@@ -35,6 +35,10 @@ export class Transcript {
         return this.interactions.length > 0 ? this.interactions[this.interactions.length - 1] : null
     }
 
+    public removeLastInteraction(): void {
+        this.interactions.pop()
+    }
+
     public addAssistantResponse(text: string, displayText?: string): void {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',
