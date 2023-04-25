@@ -35,7 +35,7 @@ var SignupEventID = "000001776813"
 var SelfHostedSiteInitEventID = "000010399089"
 
 // CodyClientInstalledEventID is the HubSpot Event ID for when a user reports installing a Cody client.
-var CodyClientInstalledEventID = "DANADLERTODO"
+var CodyClientInstalledEventID = "000018021981"
 
 var client *hubspot.Client
 
