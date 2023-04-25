@@ -68,6 +68,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 case 'contextStatus':
                     setContextStatus(message.contextStatus)
                     break
+                case 'errors':
+                    setErrorMessage(message.errors)
+                    break
                 case 'view':
                     setView(message.messages)
                     break
