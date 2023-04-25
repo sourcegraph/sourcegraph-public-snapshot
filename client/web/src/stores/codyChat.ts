@@ -188,6 +188,8 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             codebase: config?.codebase,
             filePath: editor?.getActiveTextEditorSelectionOrEntireFile()?.fileName,
             supportsKeyword: false,
+            mode: config?.useContext,
+            connection: true,
         }
     }
 
