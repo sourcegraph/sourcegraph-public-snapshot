@@ -16,7 +16,9 @@ import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
 // CodeMirror editor relies on contenteditable property which is not supported by `jsdom`: https://github.com/jsdom/jsdom/issues/1670.
 // We need to mock `CodeMirrorBlob to avoid errors.
 // More details on CodeMirror react components testing: https://gearheart.io/articles/codemirror-unit-testing-codemirror-react-components/.
-jest.doMock('../repo/blob/CodeMirrorBlob', () => {
+jest.mock('../repo/blob/CodeMirrorBlob', () => {
+    const React = require('react')
+
     return {
         // eslint-disable-next-line react/forbid-elements
         CodeMirrorBlob: (props: BlobProps) => <code data-testid="codeMirrorBlobMock">{props.blobInfo.content}</code>,
