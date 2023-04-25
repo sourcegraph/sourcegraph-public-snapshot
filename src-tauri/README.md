@@ -34,21 +34,21 @@ The Sourcegraph backend or as it was previously known "single binary", contains 
     ./enterprise/cmd/sourcegraph
    ```
 
-```
 3. The previous command will put a binary in `.bin` named `sourcegraph-backend-aarch64-apple-darwin`. Take note of the name, which is `sourcegraph-backend`. This name has to match the sidecar name in the `tauri.conf.json` and in the Rust code!
 
 ### Tauri
 
 Tauri has two modes that you can run.
 
-* `pnpm tauri dev` which will run all of tauri except the tauri frontend, instead it will directly just open you app according to the `devPath` set in `tauri.conf.json`
-* `pnpm tauri build` this will build the complete Tauri bundle, which, if you're on mac, will be called `Sourcegrap App.dmg`. The other noticable difference is that is will run the `client/app-shell` code.
+- `pnpm tauri dev` which will run all of tauri except the tauri frontend and any sidecars, instead it will directly just open you app according to the `devPath` set in `tauri.conf.json`. Since it's not running the `sourcegraph-backend`, you have to start it! So make sure you run have to Sourcegraph backend running!. In short, you need to following commands to run in 'dev' mode:
+- - `sg start app`
+- - `pnpm tauri dev`
+- `pnpm tauri build` this will build the complete Tauri bundle, which, if you're on mac, will be called `Sourcegrap App.dmg`. The other noticable difference is that is will run the `client/app-shell` code.
 
 ## Where to get help or support
 
 You can join us in Slack! We have a few channels that you might be interested in:
 
-* Join #ask-app to ask any app related questions.
-* Join #job-fair-app to get a constant stream of the progress that we're making on the app.
-* Join #announce-app get app related news and announcements.
-```
+- Join #ask-app to ask any app related questions.
+- Join #job-fair-app to get a constant stream of the progress that we're making on the app.
+- Join #announce-app get app related news and announcements.
