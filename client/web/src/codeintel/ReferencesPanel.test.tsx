@@ -16,14 +16,7 @@ import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
 // CodeMirror editor relies on contenteditable property which is not supported by `jsdom`: https://github.com/jsdom/jsdom/issues/1670.
 // We need to mock `CodeMirrorBlob to avoid errors.
 // More details on CodeMirror react components testing: https://gearheart.io/articles/codemirror-unit-testing-codemirror-react-components/.
-jest.mock('../repo/blob/CodeMirrorBlob', () => {
-    const React = require('react')
-
-    return {
-        CodeMirrorBlob: (props: BlobProps) =>
-            React.createElement('code', { 'data-testid': 'codeMirrorBlobMock', children: props.blobInfo.content }),
-    }
-})
+jest.mock('../repo/blob/CodeMirrorBlob', () => ({ CodeMirrorBlob: (props: BlobProps) => props.blobInfo.content }))
 
 describe('ReferencesPanel', () => {
     async function renderReferencesPanel() {
@@ -111,8 +104,7 @@ describe('ReferencesPanel', () => {
         expect(fileLink).toBeVisible()
 
         // Assert the code view is rendered, by doing a partial match against its content
-        const codeView = within(rightPane).getByTestId('codeMirrorBlobMock')
-        expect(codeView).toHaveTextContent('package diff import')
+        expect(rightPane).toHaveTextContent('package diff import')
 
         // Assert the current URL points at the reference panel
         expect(createPath(locationRef.current!)).toBe(
