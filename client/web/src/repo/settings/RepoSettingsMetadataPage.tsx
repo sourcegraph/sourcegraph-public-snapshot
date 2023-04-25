@@ -169,13 +169,13 @@ export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props
 
     const filteredMetadata = useMemo(
         (): [string, string | undefined | null][] =>
-            repo.keyValuePairs
+            repo.metadata
                 .filter(({ key, value }) => {
                     const search = searchQuery.toLowerCase()
                     return key.toLowerCase().includes(search) || value?.toLowerCase().includes(search)
                 })
                 .map(({ key, value }) => [key, value]),
-        [repo.keyValuePairs, searchQuery]
+        [repo.metadata, searchQuery]
     )
 
     return (

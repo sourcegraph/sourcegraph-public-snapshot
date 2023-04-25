@@ -53,7 +53,7 @@ export const settingsAreaRepositoryFragment = gql`
                 ...SettingsAreaExternalServiceFields
             }
         }
-        keyValuePairs {
+        metadata {
             key
             value
         }
