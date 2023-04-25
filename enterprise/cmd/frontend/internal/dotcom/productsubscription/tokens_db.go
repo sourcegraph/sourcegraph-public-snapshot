@@ -57,10 +57,9 @@ SELECT product_subscription_id
 FROM product_licenses
 WHERE access_token_sha256=%s`,
 		hashutil.ToSHA256Bytes(decoded))
-	var subscriptionID string
-	if err := t.db.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).
-		Scan(&subscriptionID); err != nil {
+	subID, _, err := basestore.ScanFirstString(t.db.Query(ctx, query))
+	if err != nil {
 		return "", errors.New("invalid token")
 	}
-	return subscriptionID, nil
+	return subID, nil
 }
