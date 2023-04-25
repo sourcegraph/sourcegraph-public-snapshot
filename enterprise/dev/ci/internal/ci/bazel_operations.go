@@ -75,26 +75,36 @@ func bazelConfigure() func(*bk.Pipeline) {
 	}
 }
 
+func bazelAnnouncef(format string, args ...any) bk.StepOpt {
+	msg := fmt.Sprintf(format, args...)
+	return bk.Cmd(fmt.Sprintf(`echo "--- :bazel: %s"`, msg))
+}
+
 func bazelTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 	}
 
-	runTargets := []string{
-		"//client/web:bundlesize-report",
-	}
-
+	// Test commands
 	bazelTestCmds := []bk.StepOpt{}
 	for _, target := range targets {
 		cmd := bazelCmd(fmt.Sprintf("test %s", target))
-		bazelTestCmds = append(bazelTestCmds, bk.Cmd(cmd))
+		bazelTestCmds = append(bazelTestCmds,
+			bazelAnnouncef("test %s", target),
+			bk.Cmd(cmd))
 	}
-
-	bazelRunCmd := bazelCmd(fmt.Sprintf("run %s", strings.Join(runTargets, " ")))
-
 	cmds = append(cmds, bazelTestCmds...)
-	cmds = append(cmds, bk.Cmd(bazelRunCmd))
+
+	// Run commands
+	runTargets := []string{
+		"//client/web:bundlesize-report",
+	}
+	bazelRunCmd := bazelCmd(fmt.Sprintf("run %s", strings.Join(runTargets, " ")))
+	cmds = append(cmds,
+		bazelAnnouncef("run %s", strings.Join(runTargets, " ")),
+		bk.Cmd(bazelRunCmd),
+	)
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":bazel: Tests",
