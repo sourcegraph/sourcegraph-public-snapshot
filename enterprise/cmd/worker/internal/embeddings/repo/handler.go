@@ -3,16 +3,14 @@ package repo
 import (
 	"context"
 
-	"github.com/grafana/regexp"
-
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
@@ -27,8 +25,6 @@ type handler struct {
 }
 
 var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
-
-var matchEverythingRegexp = regexp.MustCompile(``)
 
 // The threshold to embed the entire file is slightly larger than the chunk threshold to
 // avoid splitting small files unnecessarily.
@@ -65,7 +61,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
 	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(config.ExcludedFilePathPatterns)...)
 
-	repoEmbeddingIndex, err := embed.EmbedRepo(
+	repoEmbeddingIndex, stats, err := embed.EmbedRepo(
 		ctx,
 		repo.Name,
 		record.Revision,
@@ -78,6 +74,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	if err != nil {
 		return err
 	}
+
+	logger.Info(
+		"finished generating repo embeddings",
+		log.String("repoName", string(repo.Name)),
+		log.String("revision", string(record.Revision)),
+		log.Object("stats", stats.ToFields()...),
+	)
 
 	return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
 }
