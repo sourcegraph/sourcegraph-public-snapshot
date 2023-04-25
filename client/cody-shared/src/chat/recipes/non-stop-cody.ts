@@ -16,12 +16,12 @@ export class NonStopCody implements Recipe {
     public id = 'non-stop-cody'
     private decoCodyContribution: vscode.TextEditorDecorationType
     private decoCodyContributionFade: vscode.TextEditorDecorationType
-    private tick: int = 0
+    private tick = 0
     private decorations: Map<vscode.Uri, TrackedDecoration[]> = new Map()
 
     constructor() {
         // TODO: Dispose the subscription. Array of disposables?
-        const subscription = vscode.workspace.onDidChangeTextDocument(this.textDocumentChanged, this)
+        const subscription = vscode.workspace.onDidChangeTextDocument(this.textDocumentChanged.bind(this))
         this.decoCodyContribution = vscode.window.createTextEditorDecorationType({
             backgroundColor: '#0ca67888', // oc-teal-7; TODO(dpc): Account for themes. See: light, dark.
             rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
@@ -42,6 +42,12 @@ export class NonStopCody implements Recipe {
         const decorationsToDelete: TrackedDecoration[] = []
         for (const decoration of decorations) {
             for (const change of event.contentChanges) {
+                const lines = change.text.split(/\r\n|\r|\n/m)
+                const insertedTextIsOneLine = lines.length === 0
+                const insertedFirstLine = lines[0].length
+                const insertedLastLine = lines.at(-1)!.length
+                const insertedLines = lines.length - 1
+
                 if (change.text.length === 0) {
                     // Handle character deletions
                     // ...after
@@ -50,21 +56,22 @@ export class NonStopCody implements Recipe {
                     }
                     // ...before
                     else if (change.range.end.isBeforeOrEqual(decoration.range.start)) {
+                        console.log(change.range.start.character - change.range.end.character)
                         decoration.range = decoration.range.with(
                             decoration.range.start.translate(
                                 change.range.start.line - change.range.end.line,
                                 change.range.end.line === decoration.range.start.line
                                     ? change.range.start.line === change.range.end.line
                                         ? change.range.start.character - change.range.end.character
-                                        : -change.range.end.character
+                                        : change.range.start.character - change.range.end.character
                                     : 0
                             ),
                             decoration.range.end.translate(
                                 change.range.start.line - change.range.end.line,
-                                change.range.end.line === decoration.range.start.line
+                                change.range.end.line === decoration.range.end.line
                                     ? change.range.start.line === change.range.end.line
                                         ? change.range.start.character - change.range.end.character
-                                        : -change.range.end.character
+                                        : change.range.start.character - change.range.end.character
                                     : 0
                             )
                         )
@@ -85,9 +92,7 @@ export class NonStopCody implements Recipe {
                             end: decoration.range.end.translate(
                                 change.range.start.line - change.range.end.line,
                                 change.range.end.line === decoration.range.end.line
-                                    ? change.range.start.line === change.range.end.line
-                                        ? change.range.start.character - change.range.end.character
-                                        : -change.range.end.character
+                                    ? change.range.start.character - change.range.end.character
                                     : 0
                             ),
                         })
@@ -145,14 +150,15 @@ export class NonStopCody implements Recipe {
             range: vscode.window.activeTextEditor!.selection,
             // TODO: Render options
         }
-        if (!this.decorations.has(vscode.window.activeTextEditor?.document.uri)) {
-            this.decorations.set(vscode.window.activeTextEditor!.document.uri, [])
+        let decorations: TrackedDecoration[]
+        if (this.decorations.has(vscode.window.activeTextEditor!.document.uri)) {
+            decorations = this.decorations.get(vscode.window.activeTextEditor!.document.uri)!
+        } else {
+            decorations = []
+            this.decorations.set(vscode.window.activeTextEditor!.document.uri, decorations)
         }
-        this.decorations.get(vscode.window.activeTextEditor?.document.uri)?.push(deco)
-
-        // TODO: Map the decorations.
-        // TODO: Insert the decorations from the map
-        // vscode.window.activeTextEditor?.setDecorations(this.decoCodyContribution, [deco])
+        decorations!.push(deco)
+        vscode.window.activeTextEditor?.setDecorations(this.decoCodyContribution, decorations)
 
         const selection = context.editor.getActiveTextEditorSelection()
         if (!selection) {
@@ -175,7 +181,8 @@ export class NonStopCody implements Recipe {
                     )
                     return
                 }
-                await context.editor.replaceSelection(selection.fileName, selection.selectedText, content)
+                // TODO: Reinstate this
+                // await context.editor.replaceSelection(selection.fileName, selection.selectedText, content)
             })
         )
 
