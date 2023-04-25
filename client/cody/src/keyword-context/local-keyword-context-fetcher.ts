@@ -123,7 +123,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 return { fileName: filename, content }
             })
         )
-        return messagePairs.reverse().flat()
+        return messagePairs.flat()
     }
 
     private async fetchFileStats(
