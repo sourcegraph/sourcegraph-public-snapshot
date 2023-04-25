@@ -77,29 +77,33 @@ export const Transcript: React.FunctionComponent<
 
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
-            {transcript.map((message, index) => (
-                <TranscriptItem
-                    // eslint-disable-next-line react/no-array-index-key
-                    key={index}
-                    message={message}
-                    inProgress={false}
-                    beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
-                    setBeingEdited={setMessageBeingEdited}
-                    fileLinkComponent={fileLinkComponent}
-                    codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                    transcriptItemClassName={transcriptItemClassName}
-                    humanTranscriptItemClassName={humanTranscriptItemClassName}
-                    transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                    transcriptActionClassName={transcriptActionClassName}
-                    textAreaComponent={textAreaComponent}
-                    EditButtonContainer={EditButtonContainer}
-                    editButtonOnSubmit={editButtonOnSubmit}
-                    showEditButton={index > 0 && transcript.length - index === 2}
-                    FeedbackButtonsContainer={FeedbackButtonsContainer}
-                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                    showFeedbackButtons={index > 0 && transcript.length - index === 1}
-                />
-            ))}
+            {transcript.map(
+                (message, index) =>
+                    message?.displayText &&
+                    (!messageInProgress || index !== transcript.length - 1) && (
+                        <TranscriptItem
+                            // eslint-disable-next-line react/no-array-index-key
+                            key={index}
+                            message={message}
+                            inProgress={false}
+                            beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
+                            setBeingEdited={setMessageBeingEdited}
+                            fileLinkComponent={fileLinkComponent}
+                            codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                            transcriptItemClassName={transcriptItemClassName}
+                            humanTranscriptItemClassName={humanTranscriptItemClassName}
+                            transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                            transcriptActionClassName={transcriptActionClassName}
+                            textAreaComponent={textAreaComponent}
+                            EditButtonContainer={EditButtonContainer}
+                            editButtonOnSubmit={editButtonOnSubmit}
+                            showEditButton={index > 0 && transcript.length - index === 2}
+                            FeedbackButtonsContainer={FeedbackButtonsContainer}
+                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                            showFeedbackButtons={index > 0 && transcript.length - index === 1}
+                        />
+                    )
+            )}
             {messageInProgress && messageInProgress.speaker === 'assistant' && (
                 <TranscriptItem
                     message={messageInProgress}
