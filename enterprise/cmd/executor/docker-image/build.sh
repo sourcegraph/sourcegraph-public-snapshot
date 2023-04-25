@@ -13,7 +13,6 @@ trap cleanup EXIT
 if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
 
   ./dev/ci/bazel.sh build //enterprise/cmd/executor //internal/cmd/src-cli-version
-
   out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/executor --output=files)
   cp "$out" "$OUTPUT"
 

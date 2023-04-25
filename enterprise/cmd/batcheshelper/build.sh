@@ -16,11 +16,7 @@ export GOOS=linux
 export CGO_ENABLED=0
 
 if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
-  ./dev/ci/bazel.sh build //enterprise/cmd/batcheshelper \
-    --stamp \
-    --workspace_status_command=./dev/bazel_stamp_vars.sh \
-    --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
-
+  ./dev/ci/bazel.sh build //enterprise/cmd/batcheshelper
   out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/batcheshelper --output=files)
   cp "$out" "$OUTPUT"
 

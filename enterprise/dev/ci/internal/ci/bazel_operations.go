@@ -164,16 +164,11 @@ func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
 	}
 }
 
+// Keep: allows building an array of images on one agent. Useful for streamlining and rules_oci in the future.
 func bazelBuildCandidateDockerImages(apps []string, version string, tag string, rt runtype.RunType) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{}
 
-		// var key string
-		// for _, app := range apps {
-		// 	name := strings.ReplaceAll(app, ".", "-")
-		// 	key = key + "_" + name
-		// }
-		// key = key + ":candidate"
 		cmds = append(cmds,
 			bk.Key(candidateImageStepKey(apps[0])),
 			bk.Env("DOCKER_BAZEL", "true"),
@@ -275,13 +270,6 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 func bazelBuildCandidateDockerImage(app string, version string, tag string, rt runtype.RunType) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{}
-
-		// var key string
-		// for _, app := range apps {
-		// 	name := strings.ReplaceAll(app, ".", "-")
-		// 	key = key + "_" + name
-		// }
-		// key = key + ":candidate"
 		cmds = append(cmds,
 			bk.Key(candidateImageStepKey(app)),
 			bk.Env("DOCKER_BAZEL", "true"),

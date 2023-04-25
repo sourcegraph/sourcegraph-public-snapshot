@@ -30,7 +30,6 @@ OSS_TARGETS=(
   //cmd/server
   # https://github.com/sourcegraph/s3proxy is still the default for now.
   # //cmd/blobstore
-  //cmd/symbols
   @com_github_sourcegraph_zoekt//cmd/zoekt-archive-index
   @com_github_sourcegraph_zoekt//cmd/zoekt-git-index
   @com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver
@@ -50,12 +49,18 @@ ENTERPRISE_TARGETS=(
 )
 
 MUSL_TARGETS=(
-  //enterprise/cmd/symbols
   @com_github_sourcegraph_zoekt//cmd/zoekt-archive-index
   @com_github_sourcegraph_zoekt//cmd/zoekt-git-index
   @com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver
   @com_github_sourcegraph_zoekt//cmd/zoekt-webserver
 )
+
+if [[ "${ENTERPRISE:-"false"}" == "false" ]]; then
+  MUSL_TARGETS+=(//cmd/symbols)
+  exit $?
+else
+  MUSL_TARGETS+=(//enterprise/cmd/symbols)
+fi
 
 echo "--- bazel build musl"
 bazel \

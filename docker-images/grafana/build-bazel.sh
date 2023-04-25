@@ -11,10 +11,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-./dev/ci/bazel.sh build //monitoring:generate_config \
-  --stamp \
-  --workspace_status_command=./dev/bazel_stamp_vars.sh
-
+./dev/ci/bazel.sh build //monitoring:generate_config
 monitoring_cfg=$(./dev/ci/bazel.sh cquery //monitoring:generate_config --output=files)
 
 cp "$monitoring_cfg" "$TMP"

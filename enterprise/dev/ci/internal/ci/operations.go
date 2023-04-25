@@ -922,7 +922,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: Scan %s", app),
-			bk.DependsOn("bazel-docker"),
+			bk.DependsOn(candidateImageStepKey(app)),
 
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
 

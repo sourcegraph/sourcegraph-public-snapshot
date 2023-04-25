@@ -48,7 +48,15 @@ func maybeTaggedImage(rootImage, tag string) string {
 // - app must be a legal Docker image name (e.g. no `/`)
 //
 // The `addDockerImages` pipeline step determines what images are built and published.
-var SourcegraphDockerImages = []string{
+//
+// This appends all images to a single array in the case where we want to build a single image and don't want to
+// introduce other logic upstream, as the contents of these arrays may change.
+
+var SourcegraphDockerImages = append(append(SourcegraphDockerImagesMusl, DeploySourcegraphDockerImages...), SourcegraphDockerImagesMisc...)
+
+// These images are miscellaneous and can be built out of sync with others. They're not part of the
+// base deployment, nor do they require a special bazel toolchain ie: musl
+var SourcegraphDockerImagesMisc = []string{
 	"batcheshelper",
 	"blobstore2",
 	"bundled-executor",
@@ -96,6 +104,7 @@ var DeploySourcegraphDockerImages = []string{
 	"repo-updater",
 	"search-indexer",
 	"searcher",
+	"syntax-highlighter",
 	"worker",
 }
 

@@ -24,11 +24,7 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
     //enterprise/cmd/batcheshelper
     //enterprise/cmd/executor
   )
-  ./dev/ci/bazel.sh build "${TARGETS[@]}" \
-    --stamp \
-    --workspace_status_command=./dev/bazel_stamp_vars.sh \
-    --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
-
+  ./dev/ci/bazel.sh build "${TARGETS[@]}"
   for TARGET in "${TARGETS[@]}"; do
     out=$(./dev/ci/bazel.sh cquery "$TARGET" --output=files)
     cp "$out" "$OUTPUT"

@@ -15,13 +15,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-./dev/ci/bazel.sh build //docker-images/prometheus/cmd/prom-wrapper //monitoring:generate_config \
-  --stamp \
-  --workspace_status_command=./dev/bazel_stamp_vars.sh
-
+./dev/ci/bazel.sh build //docker-images/prometheus/cmd/prom-wrapper //monitoring:generate_config
 out=$(./dev/ci/bazel.sh cquery //docker-images/prometheus/cmd/prom-wrapper --output=files)
 cp "$out" "$BUILDDIR"
-
 monitoring_cfg=$(./dev/ci/bazel.sh cquery //monitoring:generate_config --output=files)
 cp "$monitoring_cfg" "$TMP/"
 pushd "$TMP"

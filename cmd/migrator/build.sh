@@ -78,11 +78,7 @@ for version in "${git_versions[@]}"; do
 done
 
 if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
-  ./dev/ci/bazel.sh build //cmd/migrator \
-    --stamp \
-    --workspace_status_command=./dev/bazel_stamp_vars.sh \
-    --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
-
+  ./dev/ci/bazel.sh build //cmd/migrator
   out=$(./dev/ci/bazel.sh cquery //cmd/migrator --output=files)
   cp "$out" "$OUTPUT"
 
