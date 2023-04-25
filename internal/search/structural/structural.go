@@ -2,11 +2,11 @@ package structural
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -27,12 +27,15 @@ type repoData interface {
 
 type IndexedMap map[api.RepoID]*search.RepositoryRevisions
 
+//type IndexedMap []*search.RepositoryRevisions
+
 func (m IndexedMap) AsList() []*search.RepositoryRevisions {
 	reposList := make([]*search.RepositoryRevisions, 0, len(m))
 	for _, repo := range m {
 		reposList = append(reposList, repo)
 	}
 	return reposList
+	//return m
 }
 
 func (IndexedMap) IsIndexed() bool {
@@ -194,7 +197,8 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 
 		repoSet := []repoData{UnindexedList(unindexed)}
 		if indexed != nil {
-			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
+			repoRevsFromBranchRepos := indexed.GetRepoRevsFromBranchRepos()
+			repoSet = append(repoSet, IndexedMap(repoRevsFromBranchRepos))
 		}
 		err = runStructuralSearch(ctx, clients, s.SearcherArgs, s.BatchRetry, repoSet, stream)
 		if err != nil {

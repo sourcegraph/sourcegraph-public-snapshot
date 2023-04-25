@@ -3,7 +3,9 @@ package search
 import (
 	"archive/tar"
 	"context"
-	"log"
+	"fmt"
+
+	//"log"
 	"path/filepath"
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"strings"
@@ -132,7 +134,7 @@ func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, 
 				}
 				select {
 				case tarInputEventC <- tarInput:
-					log.Printf("send tarInput to channel: %v \n", tarInput.Header.Name)
+					fmt.Printf("send tarInput to channel: %v \n", tarInput.Header.Name)
 				case <-ctx.Done():
 					return
 				}
