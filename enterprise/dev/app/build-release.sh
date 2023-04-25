@@ -23,8 +23,9 @@ ldflags="-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION
 ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)"
 ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app"
 
+NODE_ENV=production pnpm run build-app-shell
 go build \
-  -o ./src-tauri/.bin/sourcegraph-aarch64-apple-darwin \
+  -o .bin/sourcegraph-backend-aarch64-apple-darwin \
   -trimpath \
   -tags dist \
   -ldflags "$ldflags" \
