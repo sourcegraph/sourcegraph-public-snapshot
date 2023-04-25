@@ -7,6 +7,7 @@ import { GenerateDocstring } from './generate-docstring'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
 import { ImproveVariableNames } from './improve-variable-names'
+import { NonStopCody } from './non-stop-cody'
 import { Recipe } from './recipe'
 import { TranslateToLanguage } from './translate'
 
@@ -36,6 +37,7 @@ function init(): void {
         new Fixup(),
         new TranslateToLanguage(),
         new FindCodeSmells(),
+        new NonStopCody(),
     ]
 
     for (const recipe of recipes) {
