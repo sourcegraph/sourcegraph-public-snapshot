@@ -108,7 +108,7 @@ func (c *RealCommand) Run(ctx context.Context, cmdLogger Logger, spec Spec) (err
 	defer logEntry.Close()
 
 	// Starts writing the stdout and stderr of the command to the log entry.
-	pipeReaderWaitGroup := readProcessPipes(logEntry, stdout, stderr, c.Logger)
+	pipeReaderWaitGroup := readProcessPipes(logEntry, stdout, stderr)
 	// Start the command and wait for it to finish.
 	exitCode, err := startCommand(ctx, cmd, pipeReaderWaitGroup)
 	// Finalize the log entry with the exit code.
@@ -175,20 +175,20 @@ func (c *RealCommand) prepCommand(ctx context.Context, options Spec) (cmd *exec.
 // we invoke, such as calling docker commands.
 var forwardedHostEnvVars = []string{"HOME", "PATH", "USER", "DOCKER_HOST"}
 
-func readProcessPipes(w io.WriteCloser, stdout, stderr io.Reader, logger log.Logger) *errgroup.Group {
+func readProcessPipes(w io.WriteCloser, stdout, stderr io.Reader) *errgroup.Group {
 	eg := &errgroup.Group{}
 
 	eg.Go(func() error {
-		return readIntoBuffer("stdout", w, stdout, logger)
+		return readIntoBuffer("stdout", w, stdout)
 	})
 	eg.Go(func() error {
-		return readIntoBuffer("stderr", w, stderr, logger)
+		return readIntoBuffer("stderr", w, stderr)
 	})
 
 	return eg
 }
 
-func readIntoBuffer(prefix string, w io.WriteCloser, r io.Reader, logger log.Logger) error {
+func readIntoBuffer(prefix string, w io.WriteCloser, r io.Reader) error {
 	scanner := bufio.NewScanner(r)
 	// Allocate an initial buffer of 4k.
 	buf := make([]byte, 4*1024)
@@ -196,9 +196,7 @@ func readIntoBuffer(prefix string, w io.WriteCloser, r io.Reader, logger log.Log
 	// TODO: Tweak this value as needed.
 	scanner.Buffer(buf, maxBuffer)
 	for scanner.Scan() {
-		text := scanner.Text()
-		logger.Info(text)
-		_, err := fmt.Fprintf(w, "%s: %s\n", prefix, text)
+		_, err := fmt.Fprintf(w, "%s: %s\n", prefix, scanner.Text())
 		if err != nil {
 			return err
 		}
