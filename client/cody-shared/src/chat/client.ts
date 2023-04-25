@@ -4,7 +4,6 @@ import { Editor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
-import { KeywordContextFetcher } from '../keyword-context'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
 import { isError } from '../utils'
@@ -63,7 +62,7 @@ export async function createClient({
 
     const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
 
-    const codebaseContext = new CodebaseContext(config, embeddingsSearch, noopKeywordFetcher)
+    const codebaseContext = new CodebaseContext(config, embeddingsSearch, null)
 
     const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
 
@@ -141,11 +140,4 @@ export async function createClient({
             sendTranscript()
         },
     }
-}
-
-const noopKeywordFetcher: KeywordContextFetcher = {
-    // eslint-disable-next-line @typescript-eslint/require-await
-    async getContext() {
-        throw new Error('noopKeywordFetcher: not implemented')
-    },
 }

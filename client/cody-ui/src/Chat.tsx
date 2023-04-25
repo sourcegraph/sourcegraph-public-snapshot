@@ -16,6 +16,8 @@ import styles from './Chat.module.css'
 interface ChatProps extends ChatClassNames {
     transcript: ChatMessage[]
     messageInProgress: ChatMessage | null
+    messageBeingEdited: boolean
+    setMessageBeingEdited: (input: boolean) => void
     contextStatus?: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
@@ -27,6 +29,8 @@ interface ChatProps extends ChatClassNames {
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     afterTips?: string
     className?: string
+    EditButtonContainer?: React.FunctionComponent<EditButtonProps>
+    editButtonOnSubmit?: (text: string) => void
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
     copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
@@ -54,6 +58,13 @@ export interface ChatUISubmitButtonProps {
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
+export interface EditButtonProps {
+    className: string
+    disabled?: boolean
+    messageBeingEdited: boolean
+    setMessageBeingEdited: (input: boolean) => void
+}
+
 export interface FeedbackButtonsProps {
     className: string
     disabled?: boolean
@@ -68,6 +79,8 @@ export interface CopyButtonProps {
  */
 export const Chat: React.FunctionComponent<ChatProps> = ({
     messageInProgress,
+    messageBeingEdited,
+    setMessageBeingEdited,
     transcript,
     contextStatus,
     formInput,
@@ -88,6 +101,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     inputRowClassName,
     chatInputContextClassName,
     chatInputClassName,
+    EditButtonContainer,
+    editButtonOnSubmit,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
@@ -135,6 +150,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             ) {
                 event.preventDefault()
                 event.stopPropagation()
+                setMessageBeingEdited(false)
                 onChatSubmit()
             }
             // Loop through input history on up arrow press
@@ -146,7 +162,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
         },
-        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput]
+        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput, setMessageBeingEdited]
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
@@ -159,6 +175,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             <Transcript
                 transcript={transcriptWithWelcome}
                 messageInProgress={messageInProgress}
+                messageBeingEdited={messageBeingEdited}
+                setMessageBeingEdited={setMessageBeingEdited}
                 fileLinkComponent={fileLinkComponent}
                 codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                 transcriptItemClassName={transcriptItemClassName}
@@ -166,6 +184,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                 transcriptActionClassName={transcriptActionClassName}
                 className={styles.transcriptContainer}
+                textAreaComponent={TextArea}
+                EditButtonContainer={EditButtonContainer}
+                editButtonOnSubmit={editButtonOnSubmit}
                 FeedbackButtonsContainer={FeedbackButtonsContainer}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}

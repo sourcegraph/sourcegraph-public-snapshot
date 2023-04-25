@@ -149,17 +149,17 @@ func addKVPs(t *testing.T, client *gqltestutil.Client) {
 	}
 
 	testVal := "testval"
-	err = client.AddRepoKVP(repo1.ID, "testkey", &testVal)
+	err = client.AddRepoMetadata(repo1.ID, "testkey", &testVal)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = client.AddRepoKVP(repo2.ID, "testkey", &testVal)
+	err = client.AddRepoMetadata(repo2.ID, "testkey", &testVal)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = client.AddRepoKVP(repo2.ID, "testtag", nil)
+	err = client.AddRepoMetadata(repo2.ID, "testtag", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

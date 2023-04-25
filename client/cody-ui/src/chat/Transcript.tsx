@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { FeedbackButtonsProps, CopyButtonProps } from '../Chat'
+import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps, CopyButtonProps } from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
@@ -15,8 +15,13 @@ export const Transcript: React.FunctionComponent<
     {
         transcript: ChatMessage[]
         messageInProgress: ChatMessage | null
+        messageBeingEdited: boolean
+        setMessageBeingEdited: (input: boolean) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         className?: string
+        textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
+        EditButtonContainer?: React.FunctionComponent<EditButtonProps>
+        editButtonOnSubmit?: (text: string) => void
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
@@ -24,6 +29,8 @@ export const Transcript: React.FunctionComponent<
 > = ({
     transcript,
     messageInProgress,
+    messageBeingEdited,
+    setMessageBeingEdited,
     fileLinkComponent,
     className,
     codeBlocksCopyButtonClassName,
@@ -31,6 +38,9 @@ export const Transcript: React.FunctionComponent<
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
     transcriptActionClassName,
+    textAreaComponent,
+    EditButtonContainer,
+    editButtonOnSubmit,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
@@ -75,12 +85,18 @@ export const Transcript: React.FunctionComponent<
                     key={index}
                     message={message}
                     inProgress={false}
+                    beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
+                    setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
+                    textAreaComponent={textAreaComponent}
+                    EditButtonContainer={EditButtonContainer}
+                    editButtonOnSubmit={editButtonOnSubmit}
+                    showEditButton={index > 0 && transcript.length - index === 2}
                     FeedbackButtonsContainer={FeedbackButtonsContainer}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
@@ -91,11 +107,14 @@ export const Transcript: React.FunctionComponent<
                 <TranscriptItem
                     message={messageInProgress}
                     inProgress={true}
+                    beingEdited={false}
+                    setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
+                    showEditButton={false}
                     showFeedbackButtons={false}
                     copyButtonOnSubmit={copyButtonOnSubmit}
                 />

@@ -75,8 +75,8 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 <h2 className={styles.sectionHeader}>Everyone Else</h2>
                 <div className={styles.wrapper}>
                     <p className={styles.linkToForm}>
-                        <a href="https://docs.google.com/forms/d/e/1FAIpQLScSI06yGMls-V1FALvFyURi8U9bKRTSKPworBhzZEHDQvo0HQ/viewform">
-                            Fill out this form to request access.
+                        <a href="https://discord.gg/sourcegraph-969688426372825169">
+                            Join our Discord to request access.
                         </a>
                     </p>
                     <a href="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY">

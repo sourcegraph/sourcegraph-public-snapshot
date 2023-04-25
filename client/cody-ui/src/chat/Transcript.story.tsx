@@ -41,6 +41,8 @@ export const Simple: ComponentStoryObj<typeof Transcript> = {
     render: args => (
         <Transcript
             messageInProgress={{ speaker: 'assistant' }}
+            messageBeingEdited={false}
+            setMessageBeingEdited={() => {}}
             transcript={args.transcript}
             fileLinkComponent={FileLink}
             transcriptItemClassName={styles.transcriptItem}

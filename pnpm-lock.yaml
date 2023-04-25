@@ -816,6 +816,18 @@ importers:
       yaml: 2.2.1
       yauzl: 2.10.0
 
+  client/app-shell:
+    specifiers:
+      '@sourcegraph/build-config': workspace:*
+      '@sourcegraph/common': workspace:*
+      esbuild: ^0.17.7
+      ts-node: ^10.9.1
+    devDependencies:
+      '@sourcegraph/build-config': link:../build-config
+      '@sourcegraph/common': link:../common
+      esbuild: 0.17.14
+      ts-node: 10.9.1_mywb7jd72dw7cd2gthqi4igidu
+
   client/branded:
     specifiers:
       '@sourcegraph/client-api': workspace:*
@@ -930,6 +942,7 @@ importers:
       '@anthropic-ai/sdk': ^0.4.2
       '@sourcegraph/cody-shared': workspace:*
       '@sourcegraph/cody-ui': workspace:*
+      lru-cache: ^9.1.1
       openai: ^3.2.1
       wink-eng-lite-web-model: ^1.5.0
       wink-nlp: ^1.13.1
@@ -938,6 +951,7 @@ importers:
       '@anthropic-ai/sdk': 0.4.2
       '@sourcegraph/cody-shared': link:../cody-shared
       '@sourcegraph/cody-ui': link:../cody-ui
+      lru-cache: 9.1.1
       openai: 3.2.1
       wink-eng-lite-web-model: 1.5.0_wink-nlp@1.13.1
       wink-nlp: 1.13.1
@@ -4391,7 +4405,7 @@ packages:
       '@jest/test-result': 28.1.3
       '@jest/transform': 28.1.3
       '@jest/types': 28.1.3
-      '@jridgewell/trace-mapping': 0.3.17
+      '@jridgewell/trace-mapping': 0.3.18
       '@types/node': 13.13.5
       chalk: 4.1.2
       collect-v8-coverage: 1.0.0
@@ -4431,7 +4445,7 @@ packages:
     resolution: {integrity: sha512-cV8Lx3BeStJb8ipPHnqVw/IM2VCMWO3crWZzYodSIkxXnRcXJipCdx1JCK0K5MsJJouZQTH73mzf4vgxRaH9ww==}
     engines: {node: ^12.13.0 || ^14.15.0 || ^16.10.0 || >=17.0.0}
     dependencies:
-      '@jridgewell/trace-mapping': 0.3.17
+      '@jridgewell/trace-mapping': 0.3.18
       callsites: 3.1.0
       graceful-fs: 4.2.11
     dev: true
@@ -4549,15 +4563,15 @@ packages:
     engines: {node: '>=6.0.0'}
     dependencies:
       '@jridgewell/set-array': 1.1.2
-      '@jridgewell/sourcemap-codec': 1.4.14
+      '@jridgewell/sourcemap-codec': 1.4.15
 
   /@jridgewell/gen-mapping/0.3.2:
     resolution: {integrity: sha512-mh65xKQAzI6iBcFzwv28KVWSmCkdRBWoOh+bYQGW3+6OZvbbN3TqMGo5hqYxQniRcH9F2VZIoJCm4pa3BPDK/A==}
     engines: {node: '>=6.0.0'}
     dependencies:
       '@jridgewell/set-array': 1.1.2
-      '@jridgewell/sourcemap-codec': 1.4.14
-      '@jridgewell/trace-mapping': 0.3.17
+      '@jridgewell/sourcemap-codec': 1.4.15
+      '@jridgewell/trace-mapping': 0.3.18
 
   /@jridgewell/gen-mapping/0.3.3:
     resolution: {integrity: sha512-HLhSWOLRi875zjjMG/r+Nv0oCW8umGb0BgEhyX3dDX3egwZtB8PqLnjz3yedt8R5StBrzcg4aBpnh8UA9D1BoQ==}
@@ -4580,7 +4594,7 @@ packages:
     resolution: {integrity: sha512-m7O9o2uR8k2ObDysZYzdfhb08VuEml5oWGiosa1VdaPZ/A6QyPkAJuwN0Q1lhULOf6B7MtQmHENS743hWtCrgw==}
     dependencies:
       '@jridgewell/gen-mapping': 0.3.2
-      '@jridgewell/trace-mapping': 0.3.17
+      '@jridgewell/trace-mapping': 0.3.18
 
   /@jridgewell/source-map/0.3.3:
     resolution: {integrity: sha512-b+fsZXeLYi9fEULmfBrhxn4IrPlINf8fiNarzTof004v3lFdntdwa9PF7vFJqm3mg7s+ScJMxXaE3Acp1irZcg==}
@@ -4594,7 +4608,6 @@ packages:
 
   /@jridgewell/sourcemap-codec/1.4.15:
     resolution: {integrity: sha512-eF2rxCRulEKXHTRiDrDy6erMYWqNw4LPdQ8UQA4huuxaQsVeRPFl2oM8oDGxMFhJUWZf9McpLtJasDDZb/Bpeg==}
-    dev: false
 
   /@jridgewell/trace-mapping/0.3.17:
     resolution: {integrity: sha512-MCNzAp77qzKca9+W/+I0+sEpaUnZoeasnghNeVc41VZCEKaCH73Vq3BZZ/SzWIgrqE4H4ceI+p+b6C0mHf9T4g==}
@@ -4607,13 +4620,12 @@ packages:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.0
       '@jridgewell/sourcemap-codec': 1.4.14
-    dev: false
 
   /@jridgewell/trace-mapping/0.3.9:
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
     dependencies:
       '@jridgewell/resolve-uri': 3.1.0
-      '@jridgewell/sourcemap-codec': 1.4.14
+      '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
   /@jsdevtools/ono/7.1.3:
@@ -13025,7 +13037,7 @@ packages:
       postcss-modules-values: 4.0.0_postcss@8.4.21
       postcss-value-parser: 4.2.0
       semver: 7.3.8
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /css-minimizer-webpack-plugin/4.2.2_zj7shrtzhjuywytipisjis56au:
     resolution: {integrity: sha512-s3Of/4jKfw1Hj9CxEO1E5oXhQAxlayuHO2y/ML+C6I9sQ7FdzfEV6QgMLN3vI+qFsjJGIAFLKtQK7t8BOXAIyA==}
@@ -20261,6 +20273,11 @@ packages:
     engines: {node: '>=12'}
     dev: false
 
+  /lru-cache/9.1.1:
+    resolution: {integrity: sha512-65/Jky17UwSb0BuB9V+MyDpsOtXKmYwzhyl+cOa9XUiI4uV2Ouy/2voFP3+al0BjZbJgMBD8FojMpAf+Z+qn4A==}
+    engines: {node: 14 || >=16.14}
+    dev: false
+
   /lru-queue/0.1.0:
     resolution: {integrity: sha512-BpdYkt9EvGl8OfWHDQPISVpcl5xZthb+XPsbELj5AQXxIC8IriDZIQYjBJPEm5rS420sjZ0TLEzRcq5KdBhYrQ==}
     dependencies:
@@ -24964,7 +24981,7 @@ packages:
       klona: 2.0.5
       neo-async: 2.6.2
       sass: 1.32.4
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /sass/1.32.4:
     resolution: {integrity: sha512-N0BT0PI/t3+gD8jKa83zJJUb7ssfQnRRfqN+GIErokW6U4guBpfYl8qYB+OFLEho+QvnV5ZH1R9qhUC/Z2Ch9w==}
@@ -25587,7 +25604,7 @@ packages:
     resolution: {integrity: sha512-J69LQ22xrQB1cIFJhPfgtLuI6BpWRiWu1Y3vSsIwK/eAScqJxd/+CJlUuHQRdX2C9NGFamq+KqNywGgaThwfHw==}
     hasBin: true
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.4.14
+      '@jridgewell/sourcemap-codec': 1.4.15
       buffer-crc32: 0.2.13
       minimist: 1.2.8
       sander: 0.5.1
@@ -26153,7 +26170,7 @@ packages:
     peerDependencies:
       webpack: ^5.0.0
     dependencies:
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /style-mod/4.0.0:
     resolution: {integrity: sha512-OPhtyEjyyN9x3nhPsu76f52yUGXiZcgvsrFVtvTkyGRQJ0XK+GPc6ov1z+lRpbeabka+MYEQxOYRnt5nF30aMw==}
@@ -26697,7 +26714,7 @@ packages:
       schema-utils: 3.1.1
       serialize-javascript: 6.0.0
       terser: 5.16.8
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /terser/4.8.1:
     resolution: {integrity: sha512-4GnLC0x667eJG0ewJTa6z/yXrbLGv80D9Ru6HIpCQmO+Q4PfEtBFi0ObSckqwL6VyQv/7ENJieXHo2ANmdQwgw==}
@@ -27882,7 +27899,7 @@ packages:
     resolution: {integrity: sha512-74Y4LqY74kLE6IFyIjPtkSTWzUZmj8tdHT9Ii/26dvQ6K9Dl2NbEfj0XgU2sHCtKgt5VupqhlO/5aWuqS+IY1w==}
     engines: {node: '>=10.12.0'}
     dependencies:
-      '@jridgewell/trace-mapping': 0.3.17
+      '@jridgewell/trace-mapping': 0.3.18
       '@types/istanbul-lib-coverage': 2.0.4
       convert-source-map: 1.7.0
     dev: true
@@ -28496,6 +28513,7 @@ packages:
       - '@swc/core'
       - esbuild
       - uglify-js
+    dev: false
 
   /webpack/5.75.0_pdcrf7mb3dfag2zju4x4octu4a:
     resolution: {integrity: sha512-piaIaoVJlqMsPtX/+3KTTO6jfvrSYgauFVdt8cr9LTHKmcq/AMd4mhzsiP7ZF/PGRNPGA8336jldh9l2Kt2ogQ==}

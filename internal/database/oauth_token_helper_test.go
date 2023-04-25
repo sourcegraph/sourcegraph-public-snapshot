@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -61,7 +62,6 @@ func TestExternalServiceTokenRefresher(t *testing.T) {
 				StatusCode: http.StatusOK,
 				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 			}, nil
-
 		},
 	}
 
@@ -93,9 +93,12 @@ func TestExternalServiceTokenRefresher(t *testing.T) {
 
 func TestExternalAccountTokenRefresher(t *testing.T) {
 	ctx := context.Background()
-	db := NewMockDB()
 
 	externalAccounts := NewMockUserExternalAccountsStore()
+	originalToken := &auth.OAuthBearerToken{
+		Token:        "expired",
+		RefreshToken: "refresh_token",
+	}
 	extAccts := []*extsvc.Account{{
 		AccountSpec: extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitLab,
@@ -103,7 +106,7 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 			AccountID:   "accountId",
 		},
 		AccountData: extsvc.AccountData{
-			AuthData: extsvc.NewUnencryptedData([]byte(``)),
+			AuthData: extsvc.NewUnencryptedData([]byte(`{"access_token": "expired", "refresh_token": "refresh_token"}`)),
 		},
 	}}
 
@@ -111,13 +114,12 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 		extAccts,
 		nil,
 	)
+	externalAccounts.TransactFunc.SetDefaultReturn(externalAccounts, nil)
 
 	externalAccounts.GetFunc.SetDefaultReturn(extAccts[0], nil)
 	externalAccounts.LookupUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (int32, error) {
 		return 1, nil
 	})
-
-	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 
 	doer := &mockDoer{
 		do: func(r *http.Request) (*http.Response, error) {
@@ -135,12 +137,11 @@ func TestExternalAccountTokenRefresher(t *testing.T) {
 				StatusCode: http.StatusOK,
 				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 			}, nil
-
 		},
 	}
 
 	expectedNewToken := "new-token"
-	newToken, err := externalAccountTokenRefresher(db, 1, "refresh_token")(ctx, doer, oauthutil.OAuthContext{})
+	newToken, err := externalAccountTokenRefresher(externalAccounts, 1, originalToken)(ctx, doer, oauthutil.OAuthContext{})
 	require.NoError(t, err)
 	assert.Equal(t, expectedNewToken, newToken.Token)
 }

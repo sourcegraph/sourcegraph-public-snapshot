@@ -9,6 +9,7 @@ import {
     Chat as ChatUI,
     ChatUISubmitButtonProps,
     ChatUITextAreaProps,
+    EditButtonProps,
     FeedbackButtonsProps,
 } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
@@ -20,6 +21,8 @@ import styles from './Chat.module.css'
 
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
+    messageBeingEdited: boolean
+    setMessageBeingEdited: (input: boolean) => void
     transcript: ChatMessage[]
     contextStatus: ChatContextStatus | null
     formInput: string
@@ -31,6 +34,8 @@ interface ChatboxProps {
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
+    messageBeingEdited,
+    setMessageBeingEdited,
     transcript,
     contextStatus,
     formInput,
@@ -42,6 +47,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const onSubmit = useCallback(
         (text: string) => {
             vscodeAPI.postMessage({ command: 'submit', text })
+        },
+        [vscodeAPI]
+    )
+
+    const onEditBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'edit', text })
         },
         [vscodeAPI]
     )
@@ -63,6 +75,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     return (
         <ChatUI
             messageInProgress={messageInProgress}
+            messageBeingEdited={messageBeingEdited}
+            setMessageBeingEdited={setMessageBeingEdited}
             transcript={transcript}
             contextStatus={contextStatus}
             formInput={formInput}
@@ -82,6 +96,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             inputRowClassName={styles.inputRow}
             chatInputContextClassName={styles.chatInputContext}
             chatInputClassName={styles.chatInputClassName}
+            EditButtonContainer={EditButton}
+            editButtonOnSubmit={onEditBtnClick}
             FeedbackButtonsContainer={FeedbackButtons}
             feedbackButtonsOnSubmit={onFeedbackBtnClick}
             copyButtonOnSubmit={onCopyBtnClick}
@@ -150,6 +166,23 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
     >
         <SubmitSvg />
     </VSCodeButton>
+)
+
+const EditButton: React.FunctionComponent<EditButtonProps> = ({
+    className,
+    messageBeingEdited,
+    setMessageBeingEdited,
+}) => (
+    <div className={className}>
+        <VSCodeButton
+            className={classNames(styles.submitButton)}
+            appearance="icon"
+            type="button"
+            onClick={() => setMessageBeingEdited(!messageBeingEdited)}
+        >
+            <i className={messageBeingEdited ? 'codicon codicon-close' : 'codicon codicon-edit'} />
+        </VSCodeButton>
+    </div>
 )
 
 const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ className, feedbackButtonsOnSubmit }) => {
