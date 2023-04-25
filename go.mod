@@ -30,7 +30,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
-	github.com/crewjam/saml v0.4.9
+	github.com/crewjam/saml v0.4.13
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v1.0.0
 	github.com/derision-test/glock v1.0.0
@@ -249,7 +249,6 @@ require (
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/coreos/go-iptables v0.6.0
-	github.com/crewjam/saml/samlidp v0.0.0-20221211125903-d951aa2d145a
 	github.com/di-wu/xsd-datetime v1.0.0
 	github.com/elimity-com/scim v0.0.0-20220121082953-15165b1a61c8
 	github.com/fergusstrange/embedded-postgres v1.19.0
@@ -520,8 +519,6 @@ replace (
 // These entries indicate temporary replace directives due to a pending pull request upstream
 // or issues with specific versions.
 replace (
-	// Pending: https://github.com/crewjam/saml/pull/450
-	github.com/crewjam/saml => github.com/sourcegraph/saml v0.0.0-20220728002234-ab6b53f6f94d
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).
