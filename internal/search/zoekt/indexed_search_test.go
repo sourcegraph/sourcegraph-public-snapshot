@@ -1118,13 +1118,14 @@ func TestGetRepoRevsFromBranchRepos_SingleRepo(t *testing.T) {
 
 			inputBranchRepos := make(map[string]*zoektquery.BranchRepos, len(tc.indexedBranches))
 
-			if len(repoRevs) > 1 {
-				t.Fatal("repoRevs map should represent revisions for no more than one repo with ID 0")
+			if len(repoRevs) != 1 {
+				t.Fatal("repoRevs map should represent revisions for no more than one repo with ID")
 			}
 
 			var wantRepoID api.RepoID
-			for repoID, _ := range repoRevs {
+			for repoID := range repoRevs {
 				wantRepoID = repoID
+				break
 			}
 
 			for _, branch := range tc.indexedBranches {
