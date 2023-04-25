@@ -80,6 +80,10 @@ export class MockEditor implements Editor {
     public showWarningMessage(message: string): Promise<void> {
         return this.mocks.showWarningMessage?.(message) ?? Promise.resolve()
     }
+
+    public showInputBox(): Promise<string | undefined> {
+        return this.mocks.showInputBox?.() ?? Promise.resolve(undefined)
+    }
 }
 
 export const defaultEmbeddingsClient = new MockEmbeddingsClient()
