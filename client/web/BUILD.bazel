@@ -181,6 +181,7 @@ ts_project(
         "src/codeintel/useCodeIntel.ts",
         "src/codeintel/useRepoAndBlob.ts",
         "src/codeintel/util/helpers.ts",
+        "src/cody/ChatHistory.tsx",
         "src/cody/CodeMirrorEditor.ts",
         "src/cody/CodyChat.tsx",
         "src/cody/CodyIcon.tsx",

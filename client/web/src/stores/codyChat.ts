@@ -40,15 +40,51 @@ interface CodyChatStore {
     ) => Promise<void>
     reset: () => void
     getChatContext: () => ChatContextStatus
+    loadTranscriptFromHistory: (id: string) => Promise<void>
+    clearHistory: () => void
 }
 
 const CODY_TRANSCRIPT_HISTORY_KEY = 'cody:transcript-history'
+const SAVE_MAX_TRANSCRIPT_HISTORY = 20
 
-// TODO(naman):
-// 1. make transcriptHistory database backed
-// 2. integrate editor and full filePath context from it
+export const safeTimestampToDate = (timestamp: string = ''): Date => {
+    if (isNaN(new Date(timestamp) as any)) {
+        return new Date()
+    }
+
+    return new Date(timestamp)
+}
 
 export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore => {
+    const fetchTranscriptHistory = (): TranscriptJSON[] => {
+        try {
+            return JSON.parse(window.localStorage.getItem(CODY_TRANSCRIPT_HISTORY_KEY) || '[]')
+        } catch {
+            return []
+        }
+    }
+
+    const saveTranscriptHistory = (transcriptHistory: TranscriptJSON[]): void => {
+        const sorted = transcriptHistory
+            .sort(
+                (a, b) =>
+                    (safeTimestampToDate(a.lastInteractionTimestamp) as any) -
+                    (safeTimestampToDate(b.lastInteractionTimestamp) as any)
+            )
+            .slice(0, SAVE_MAX_TRANSCRIPT_HISTORY)
+
+        window.localStorage.setItem(CODY_TRANSCRIPT_HISTORY_KEY, JSON.stringify(sorted))
+        set({ transcriptHistory: sorted })
+    }
+
+    const clearHistory = (): void => {
+        const { client, onEvent } = get()
+        if (client && !isErrorLike(client)) {
+            onEvent?.('reset')
+            void client.reset()
+        }
+        saveTranscriptHistory([])
+    }
     const submitMessage = (text: string): void => {
         const { client, onEvent, getChatContext } = get()
         if (client && !isErrorLike(client)) {
@@ -96,39 +132,40 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     }
 
     const reset = async (): Promise<void> => {
-        const { client, onEvent, transcriptHistory } = get()
+        const { client, onEvent } = get()
+        const transcriptHistory = fetchTranscriptHistory()
 
         if (client && !isErrorLike(client)) {
-            // push current transcript to transcript history and save to localstorage
+            // push current transcript to transcript history and save
             const transcript = await client.transcript.toJSON()
-            if (transcript.interactions.length) {
+            if (transcript.interactions.length && !transcriptHistory.find(({ id }) => id === transcript.id)) {
                 transcriptHistory.push(transcript)
             }
-            window.localStorage.setItem(CODY_TRANSCRIPT_HISTORY_KEY, JSON.stringify(transcriptHistory))
-            set({ transcriptHistory: [...transcriptHistory], messageInProgress: null, transcript: [] })
+            set({ messageInProgress: null, transcript: [] })
+            saveTranscriptHistory(transcriptHistory)
 
             onEvent?.('reset')
             void client.reset()
         }
     }
 
-    const setTranscript = async (transcript: ChatMessage[]): Promise<void> => {
-        const { transcriptHistory, client } = get()
+    const setTranscript = async (transcript: Transcript): Promise<void> => {
+        set({ transcript: transcript.toChat() })
 
-        if (client && !isErrorLike(client)) {
-            set({ transcript })
-
-            const transcriptJSON = await client.transcript.toJSON()
-
-            if (!transcriptHistory.length) {
-                transcriptHistory.push(transcriptJSON)
-            } else {
-                transcriptHistory[transcriptHistory.length - 1] = transcriptJSON
-            }
-
-            window.localStorage.setItem(CODY_TRANSCRIPT_HISTORY_KEY, JSON.stringify(transcriptHistory))
-            set({ transcriptHistory: [...transcriptHistory] })
+        if (transcript.isEmpty) {
+            return
         }
+
+        // find the transcript in history and update it
+        const transcriptHistory = fetchTranscriptHistory()
+        const transcriptJSONIndex = transcriptHistory.findIndex(({ id }) => id === transcript.id)
+        if (transcriptJSONIndex === -1) {
+            transcriptHistory.push(await transcript.toJSON())
+        } else {
+            transcriptHistory[transcriptJSONIndex] = await transcript.toJSON()
+        }
+
+        saveTranscriptHistory(transcriptHistory)
     }
 
     const setMessageInProgress = (message: ChatMessage | null): void => set({ messageInProgress: message })
@@ -140,13 +177,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     ): Promise<void> => {
         const editor = new CodeMirrorEditor(editorStateRef)
 
-        const transcriptHistory = ((): TranscriptJSON[] => {
-            try {
-                return JSON.parse(window.localStorage.getItem(CODY_TRANSCRIPT_HISTORY_KEY) || '[]')
-            } catch {
-                return []
-            }
-        })()
+        const transcriptHistory = fetchTranscriptHistory()
 
         const initialTranscript = ((): Transcript => {
             try {
@@ -170,7 +201,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
                 editor,
                 setMessageInProgress,
                 initialTranscript,
-                setTranscript: (transcript: ChatMessage[]): void => void setTranscript(transcript),
+                setTranscript: (transcript: Transcript) => void setTranscript(transcript),
             })
 
             set({ client })
@@ -193,13 +224,50 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         }
     }
 
+    const loadTranscriptFromHistory = async (id: string): Promise<void> => {
+        const { client: oldClient, config, editor, onEvent } = get()
+        if (!config || !editor) {
+            return
+        }
+
+        if (oldClient && !isErrorLike(oldClient)) {
+            oldClient.reset()
+        }
+
+        const transcriptHistory = fetchTranscriptHistory()
+        const transcriptJSONFromHistory = transcriptHistory.find(json => json.id === id)
+        if (!transcriptJSONFromHistory) {
+            return
+        }
+
+        const transcript = Transcript.fromJSON(transcriptJSONFromHistory)
+        const messages = transcript.toChat()
+
+        try {
+            const client = await createClient({
+                config,
+                editor,
+                setMessageInProgress,
+                initialTranscript: transcript,
+                setTranscript: (transcript: Transcript) => void setTranscript(transcript),
+            })
+
+            set({ client, transcript: messages })
+            await setTranscript(transcript)
+        } catch (error) {
+            eventLogger.log('web:codySidebar:clientError', { repo: config?.codebase })
+            onEvent?.('error')
+            set({ client: error })
+        }
+    }
+
     return {
         client: null,
         editor: null,
         messageInProgress: null,
         config: null,
         transcript: [],
-        transcriptHistory: [],
+        transcriptHistory: fetchTranscriptHistory(),
         onEvent: null,
         initializeClient,
         submitMessage,
@@ -207,6 +275,8 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         executeRecipe,
         reset: () => void reset(),
         getChatContext,
+        loadTranscriptFromHistory,
+        clearHistory,
     }
 })
 

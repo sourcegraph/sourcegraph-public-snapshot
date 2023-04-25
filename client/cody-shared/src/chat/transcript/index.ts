@@ -5,15 +5,22 @@ import { Interaction, InteractionJSON } from './interaction'
 import { ChatMessage } from './messages'
 
 export interface TranscriptJSON {
+    id: string
     interactions: InteractionJSON[]
+    lastInteractionTimestamp: string
 }
 
 export class Transcript {
     public static fromJSON(json: TranscriptJSON): Transcript {
         return new Transcript(
             json.interactions.map(
-                ({ humanMessage, assistantMessage, context }) =>
-                    new Interaction(humanMessage, assistantMessage, Promise.resolve(context))
+                ({ humanMessage, assistantMessage, context, timestamp }) =>
+                    new Interaction(
+                        humanMessage,
+                        assistantMessage,
+                        Promise.resolve(context),
+                        timestamp || new Date().toISOString()
+                    )
             )
         )
     }
@@ -22,6 +29,27 @@ export class Transcript {
 
     constructor(interactions: Interaction[] = []) {
         this.interactions = interactions
+    }
+
+    public get id(): string {
+        return (
+            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
+            new Date().toISOString()
+        )
+    }
+
+    public get isEmpty(): boolean {
+        return this.interactions.length === 0
+    }
+
+    public get lastInteractionTimestamp(): string {
+        const timestamp = this.getLastInteraction()?.timestamp || ''
+
+        if (isNaN(new Date(timestamp) as any)) {
+            return new Date().toISOString()
+        }
+
+        return timestamp
     }
 
     public addInteraction(interaction: Interaction | null): void {
@@ -78,7 +106,13 @@ export class Transcript {
     }
 
     public async toJSON(): Promise<TranscriptJSON> {
-        return { interactions: await Promise.all(this.interactions.map(interaction => interaction.toJSON())) }
+        const interactions = await Promise.all(this.interactions.map(interaction => interaction.toJSON()))
+
+        return {
+            id: this.id,
+            interactions,
+            lastInteractionTimestamp: this.lastInteractionTimestamp,
+        }
     }
 
     public reset(): void {

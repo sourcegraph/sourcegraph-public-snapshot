@@ -22,13 +22,13 @@ export { Transcript }
 export interface ClientInit {
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken'>
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
-    setTranscript: (transcript: ChatMessage[]) => void
+    setTranscript: (transcript: Transcript) => void
     editor: Editor
     initialTranscript?: Transcript
 }
 
 export interface Client {
-    transcript: Transcript
+    readonly transcript: Transcript
     submitMessage: (text: string) => Promise<void>
     executeRecipe: (
         recipeId: string,
@@ -73,10 +73,10 @@ export async function createClient({
     const sendTranscript = (): void => {
         if (isMessageInProgress) {
             const messages = transcript.toChat()
-            setTranscript(messages.slice(0, -1))
+            setTranscript(transcript)
             setMessageInProgress(messages[messages.length - 1])
         } else {
-            setTranscript(transcript.toChat())
+            setTranscript(transcript)
             setMessageInProgress(null)
         }
     }
