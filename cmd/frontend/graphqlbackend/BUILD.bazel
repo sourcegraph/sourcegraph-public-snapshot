@@ -213,6 +213,7 @@ go_library(
         "//cmd/frontend/graphqlbackend/externallink",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//cmd/frontend/hooks",
+        "//cmd/frontend/hubspot",
         "//cmd/frontend/hubspot/hubspotutil",
         "//cmd/frontend/internal/app/updatecheck",
         "//cmd/frontend/internal/auth/userpasswd",
