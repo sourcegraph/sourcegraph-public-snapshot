@@ -2,7 +2,6 @@ package siteid
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -80,8 +79,7 @@ func TestGet(t *testing.T) {
 
 	t.Run("from env var", func(t *testing.T) {
 		defer reset()
-		os.Setenv("TRACKING_APP_ID", "a")
-		defer os.Unsetenv("TRACKING_APP_ID")
+		t.Setenv("TRACKING_APP_ID", "a")
 
 		db := database.NewMockDB()
 
@@ -98,8 +96,7 @@ func TestGet(t *testing.T) {
 
 	t.Run("env var takes precedence over DB", func(t *testing.T) {
 		defer reset()
-		os.Setenv("TRACKING_APP_ID", "a")
-		defer os.Unsetenv("TRACKING_APP_ID")
+		t.Setenv("TRACKING_APP_ID", "a")
 
 		gss := database.NewMockGlobalStateStore()
 		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "b"}, nil)
