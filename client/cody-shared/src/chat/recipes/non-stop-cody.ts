@@ -48,84 +48,74 @@ export class NonStopCody implements Recipe {
                 const insertedLastLine = lines.at(-1)!.length
                 const insertedLines = lines.length - 1
 
-                if (change.text.length === 0) {
-                    // Handle character deletions
-                    // ...after
-                    if (change.range.start.isAfterOrEqual(decoration.range.end)) {
-                        continue
-                    }
-                    // ...before
-                    else if (change.range.end.isBeforeOrEqual(decoration.range.start)) {
-                        console.log(change.range.start.character - change.range.end.character)
-                        decoration.range = decoration.range.with(
-                            decoration.range.start.translate(
-                                change.range.start.line - change.range.end.line,
-                                change.range.end.line === decoration.range.start.line
-                                    ? change.range.start.line === change.range.end.line
-                                        ? change.range.start.character - change.range.end.character
-                                        : change.range.start.character - change.range.end.character
-                                    : 0
-                            ),
-                            decoration.range.end.translate(
-                                change.range.start.line - change.range.end.line,
-                                change.range.end.line === decoration.range.end.line
-                                    ? change.range.start.line === change.range.end.line
-                                        ? change.range.start.character - change.range.end.character
-                                        : change.range.start.character - change.range.end.character
-                                    : 0
-                            )
-                        )
-                    }
-                    // ...around
-                    else if (
-                        change.range.start.isBeforeOrEqual(decoration.range.start) &&
-                        change.range.end.isAfterOrEqual(decoration.range.end)
-                    ) {
-                        decorationsToDelete.push(decoration)
-                    }
-                    // ...within
-                    else if (
-                        change.range.start.isAfterOrEqual(decoration.range.start) &&
-                        change.range.end.isBeforeOrEqual(decoration.range.end)
-                    ) {
-                        decoration.range = decoration.range.with({
-                            end: decoration.range.end.translate(
-                                change.range.start.line - change.range.end.line,
-                                change.range.end.line === decoration.range.end.line
-                                    ? change.range.start.character - change.range.end.character
-                                    : 0
-                            ),
-                        })
-                    }
-                    // ...overlapping start
-                    else if (change.range.end.isBefore(decoration.range.end)) {
-                        decoration.range = decoration.range.with(
-                            // Move the start of the decoration to the end of the change
-                            change.range.end.translate(
-                                change.range.start.line - change.range.end.line,
-                                change.range.start.character - change.range.end.character
-                            ),
-                            // Adjust the end of the decoration for the range deletion
-                            decoration.range.end.translate(
-                                change.range.start.line - change.range.end.line,
-                                change.range.end.line === decoration.range.end.line
-                                    ? change.range.start.character - change.range.end.character
-                                    : 0
-                            )
-                        )
-                    }
-                    // ...overlapping end
-                    else {
-                        decoration.range = decoration.range.with({
-                            // Move the end of the decoration to the start of the change
-                            end: change.range.start,
-                        })
-                    }
-                }
-                // Handle single character insertions
-                // ...before
-                // ...within
+                // Handle character deletions
                 // ...after
+                if (change.range.start.isAfterOrEqual(decoration.range.end)) {
+                    continue
+                }
+                // ...before
+                else if (change.range.end.isBeforeOrEqual(decoration.range.start)) {
+                    console.log(change.range.start.character - change.range.end.character)
+                    decoration.range = decoration.range.with(
+                        decoration.range.start.translate(
+                            change.range.start.line - change.range.end.line + insertedLines,
+                            change.range.end.line === decoration.range.start.line
+                                ? change.range.start.character - change.range.end.character + insertedLastLine
+                                : 0
+                        ),
+                        decoration.range.end.translate(
+                            change.range.start.line - change.range.end.line + insertedLines,
+                            change.range.end.line === decoration.range.end.line
+                                ? change.range.start.character - change.range.end.character + insertedLastLine
+                                : 0
+                        )
+                    )
+                }
+                // ...around
+                else if (
+                    change.range.start.isBeforeOrEqual(decoration.range.start) &&
+                    change.range.end.isAfterOrEqual(decoration.range.end)
+                ) {
+                    decorationsToDelete.push(decoration)
+                }
+                // ...within
+                else if (
+                    change.range.start.isAfterOrEqual(decoration.range.start) &&
+                    change.range.end.isBeforeOrEqual(decoration.range.end)
+                ) {
+                    decoration.range = decoration.range.with({
+                        end: decoration.range.end.translate(
+                            change.range.start.line - change.range.end.line + insertedLines,
+                            change.range.end.line === decoration.range.end.line
+                                ? change.range.start.character - change.range.end.character
+                                : 0
+                        ),
+                    })
+                }
+                // ...overlapping start
+                else if (change.range.end.isBefore(decoration.range.end)) {
+                    decoration.range = decoration.range.with(
+                        // Move the start of the decoration to the end of the change
+                        change.range.end.translate(
+                            change.range.start.line - change.range.end.line,
+                            change.range.start.character - change.range.end.character
+                        ),
+                        // Adjust the end of the decoration for the range deletion
+                        decoration.range.end.translate(
+                            change.range.start.line - change.range.end.line,
+                            change.range.end.line === decoration.range.end.line
+                                ? change.range.start.character - change.range.end.character
+                                : 0
+                        )
+                    )
+                }
+                // ...overlapping end
+                else {
+                    decoration.range = decoration.range.with({
+                        // Move the end of the decoration to the start of the change
+                        end: change.range.start,
+                    })
+                }
             }
             if (decorationsToDelete) {
                 decorations = decorations.filter(decoration => !decorationsToDelete.includes(decoration))
