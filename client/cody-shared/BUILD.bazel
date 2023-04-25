@@ -93,7 +93,7 @@ npm_package(
     name = "cody-shared_pkg",
     srcs = [
         "package.json",
-        ":cody-shared_lib"
+        ":cody-shared_lib",
     ],
 )
 
