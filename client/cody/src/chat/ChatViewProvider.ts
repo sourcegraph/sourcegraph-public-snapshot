@@ -104,6 +104,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text)
                 break
+            case 'edit':
+                this.transcript.removeLastInteraction()
+                await this.onHumanMessageSubmitted(message.text)
+                break
             case 'executeRecipe':
                 await this.executeRecipe(message.recipe)
                 break
@@ -345,6 +349,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
                     codebase: this.config.codebase,
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
+                    supportsKeyword: true,
                 },
             })
         }

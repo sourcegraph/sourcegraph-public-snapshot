@@ -19,7 +19,8 @@ const MAX_TEXT_EMBEDDING_VECTORS = 128_000
 const EMBEDDING_BATCHES = 5
 const EMBEDDING_BATCH_SIZE = 512
 
-type readFile func(ctx context.Context, fileName string) ([]byte, error)
+const maxFileSize = 1000000 // 1MB
+
 type ranksGetter func(ctx context.Context, repoName string) (types.RepoPathRanks, error)
 
 // EmbedRepo embeds file contents from the given file names for a repository.
@@ -29,23 +30,23 @@ func EmbedRepo(
 	ctx context.Context,
 	repoName api.RepoName,
 	revision api.CommitID,
-	fileNames []string,
-	excludedFilePathPatterns []*paths.GlobPattern,
+	excludePatterns []*paths.GlobPattern,
 	client EmbeddingsClient,
 	splitOptions split.SplitOptions,
-	readFile readFile,
+	readLister FileReadLister,
 	getDocumentRanks ranksGetter,
 ) (*embeddings.RepoEmbeddingIndex, error) {
-	codeFileNames, textFileNames := []string{}, []string{}
-	for _, fileName := range fileNames {
-		if isExcludedFilePath(fileName, excludedFilePathPatterns) {
-			continue
-		}
+	allFiles, err := readLister.List(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-		if isValidTextFile(fileName) {
-			textFileNames = append(textFileNames, fileName)
+	var codeFileNames, textFileNames []FileEntry
+	for _, file := range allFiles {
+		if isValidTextFile(file.Name) {
+			textFileNames = append(textFileNames, file)
 		} else {
-			codeFileNames = append(codeFileNames, fileName)
+			codeFileNames = append(codeFileNames, file)
 		}
 	}
 
@@ -54,12 +55,12 @@ func EmbedRepo(
 		return nil, err
 	}
 
-	codeIndex, err := embedFiles(ctx, codeFileNames, client, splitOptions, readFile, MAX_CODE_EMBEDDING_VECTORS, ranks)
+	codeIndex, err := embedFiles(ctx, codeFileNames, client, excludePatterns, splitOptions, readLister, MAX_CODE_EMBEDDING_VECTORS, ranks)
 	if err != nil {
 		return nil, err
 	}
 
-	textIndex, err := embedFiles(ctx, textFileNames, client, splitOptions, readFile, MAX_TEXT_EMBEDDING_VECTORS, ranks)
+	textIndex, err := embedFiles(ctx, textFileNames, client, excludePatterns, splitOptions, readLister, MAX_TEXT_EMBEDDING_VECTORS, ranks)
 	if err != nil {
 		return nil, err
 	}
@@ -67,102 +68,119 @@ func EmbedRepo(
 	return &embeddings.RepoEmbeddingIndex{RepoName: repoName, Revision: revision, CodeIndex: codeIndex, TextIndex: textIndex}, nil
 }
 
-func createEmptyEmbeddingIndex(columnDimension int) embeddings.EmbeddingIndex {
-	return embeddings.EmbeddingIndex{
-		Embeddings:      []int8{},
-		RowMetadata:     []embeddings.RepoEmbeddingRowMetadata{},
-		ColumnDimension: columnDimension,
-	}
-}
-
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
 // entire files. So we split the file contents into chunks and get embeddings for the chunks in batches. Functions returns an EmbeddingIndex containing
 // the embeddings and metadata about the chunks the embeddings correspond to.
 func embedFiles(
 	ctx context.Context,
-	fileNames []string,
+	files []FileEntry,
 	client EmbeddingsClient,
+	excludePatterns []*paths.GlobPattern,
 	splitOptions split.SplitOptions,
-	readFile readFile,
+	reader FileReader,
 	maxEmbeddingVectors int,
 	repoPathRanks types.RepoPathRanks,
 ) (embeddings.EmbeddingIndex, error) {
 	dimensions, err := client.GetDimensions()
 	if err != nil {
-		return createEmptyEmbeddingIndex(dimensions), err
-	}
-
-	if len(fileNames) == 0 {
-		return createEmptyEmbeddingIndex(dimensions), nil
+		return embeddings.EmbeddingIndex{}, err
 	}
 
 	index := embeddings.EmbeddingIndex{
-		Embeddings:      make([]int8, 0, len(fileNames)*dimensions),
-		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames)),
+		Embeddings:      make([]int8, 0, len(files)*dimensions/2),
+		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(files)/2),
 		ColumnDimension: dimensions,
-		Ranks:           make([]float32, 0, len(fileNames)),
+		Ranks:           make([]float32, 0, len(files)/2),
 	}
 
-	// addEmbeddableChunks batches embeddable chunks, gets embeddings for the batches, and appends them to the index above.
-	addEmbeddableChunks := func(embeddableChunks []split.EmbeddableChunk, batchSize int) error {
-		// The embeddings API operates with batches up to a certain size, so we can't send all embeddable chunks for embedding at once.
-		// We batch them according to `batchSize`, and embed one by one.
-		for i := 0; i < len(embeddableChunks); i += batchSize {
-			end := min(len(embeddableChunks), i+batchSize)
-			batch := embeddableChunks[i:end]
-			batchChunks := make([]string, len(batch))
-			for idx, chunk := range batch {
-				batchChunks[idx] = chunk.Content
-				index.RowMetadata = append(index.RowMetadata, embeddings.RepoEmbeddingRowMetadata{FileName: chunk.FileName, StartLine: chunk.StartLine, EndLine: chunk.EndLine})
+	var batch []split.EmbeddableChunk
 
-				// Unknown documents have rank 0. Zoekt is a bit smarter about this, assigning 0
-				// to "unimportant" files and the average for unknown files. We should probably
-				// add this here, too.
-				index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
-			}
+	flush := func() error {
+		if len(batch) == 0 {
+			return nil
+		}
 
-			batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks, GET_EMBEDDINGS_MAX_RETRIES)
-			if err != nil {
-				return errors.Wrap(err, "error while getting embeddings")
-			}
-			index.Embeddings = append(index.Embeddings, embeddings.Quantize(batchEmbeddings)...)
+		batchChunks := make([]string, len(batch))
+		for idx, chunk := range batch {
+			batchChunks[idx] = chunk.Content
+			index.RowMetadata = append(index.RowMetadata, embeddings.RepoEmbeddingRowMetadata{FileName: chunk.FileName, StartLine: chunk.StartLine, EndLine: chunk.EndLine})
+
+			// Unknown documents have rank 0. Zoekt is a bit smarter about this, assigning 0
+			// to "unimportant" files and the average for unknown files. We should probably
+			// add this here, too.
+			index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
+		}
+
+		batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks, GET_EMBEDDINGS_MAX_RETRIES)
+		if err != nil {
+			return errors.Wrap(err, "error while getting embeddings")
+		}
+		index.Embeddings = append(index.Embeddings, embeddings.Quantize(batchEmbeddings)...)
+		batch = batch[:0] // reset batch
+		return nil
+	}
+
+	addToBatch := func(chunk split.EmbeddableChunk) error {
+		batch = append(batch, chunk)
+		if len(batch) >= EMBEDDING_BATCH_SIZE {
+			// Flush if we've hit batch size
+			return flush()
 		}
 		return nil
 	}
 
-	embeddableChunks := []split.EmbeddableChunk{}
-	for _, fileName := range fileNames {
+	for _, file := range files {
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
 		if len(index.RowMetadata) > maxEmbeddingVectors {
 			break
 		}
 
-		contentBytes, err := readFile(ctx, fileName)
-		if err != nil {
-			return createEmptyEmbeddingIndex(dimensions), errors.Wrap(err, "error while reading a file")
+		if isExcludedFilePath(file.Name, excludePatterns) {
+			continue
 		}
+
+		if file.Size > maxFileSize {
+			continue
+		}
+
+		contentBytes, err := reader.Read(ctx, file.Name)
+		if err != nil {
+			return embeddings.EmbeddingIndex{}, errors.Wrap(err, "error while reading a file")
+		}
+
 		if embeddable, _ := isEmbeddableFileContent(contentBytes); !embeddable {
 			continue
 		}
-		content := string(contentBytes)
 
-		embeddableChunks = append(embeddableChunks, split.SplitIntoEmbeddableChunks(content, fileName, splitOptions)...)
-
-		if len(embeddableChunks) > EMBEDDING_BATCHES*EMBEDDING_BATCH_SIZE {
-			err := addEmbeddableChunks(embeddableChunks, EMBEDDING_BATCH_SIZE)
-			if err != nil {
-				return createEmptyEmbeddingIndex(dimensions), err
+		for _, chunk := range split.SplitIntoEmbeddableChunks(string(contentBytes), file.Name, splitOptions) {
+			if err := addToBatch(chunk); err != nil {
+				return embeddings.EmbeddingIndex{}, err
 			}
-			embeddableChunks = []split.EmbeddableChunk{}
 		}
 	}
 
-	if len(embeddableChunks) > 0 {
-		err := addEmbeddableChunks(embeddableChunks, EMBEDDING_BATCH_SIZE)
-		if err != nil {
-			return createEmptyEmbeddingIndex(dimensions), err
-		}
+	// Always do a final flush
+	if err := flush(); err != nil {
+		return embeddings.EmbeddingIndex{}, err
 	}
 
 	return index, nil
+}
+
+type FileReadLister interface {
+	FileReader
+	FileLister
+}
+
+type FileEntry struct {
+	Name string
+	Size int64
+}
+
+type FileLister interface {
+	List(context.Context) ([]FileEntry, error)
+}
+
+type FileReader interface {
+	Read(context.Context, string) ([]byte, error)
 }

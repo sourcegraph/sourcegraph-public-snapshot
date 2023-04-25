@@ -536,6 +536,11 @@ var (
 		handbookSlug: "cody",
 		teamName:     "Cody",
 	}
+	ObservableOwnerOwn = ObservableOwner{
+		identifier:   "own",
+		teamName:     "own",
+		handbookSlug: "own",
+	}
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page in the handbook.

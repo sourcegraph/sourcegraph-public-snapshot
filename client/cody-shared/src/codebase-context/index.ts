@@ -17,7 +17,7 @@ export class CodebaseContext {
     constructor(
         private config: Pick<Configuration, 'useContext' | 'serverEndpoint'>,
         private embeddings: EmbeddingsSearch | null,
-        private keywords: KeywordContextFetcher
+        private keywords: KeywordContextFetcher | null
     ) {}
 
     public onConfigurationChange(newConfig: typeof this.config): void {
@@ -110,8 +110,10 @@ export class CodebaseContext {
         query: string,
         options: ContextSearchOptions
     ): Promise<KeywordContextFetcherResult[]> {
-        const results = await this.keywords.getSearchContext(query, options.numCodeResults + options.numTextResults)
-        return results
+        if (!this.keywords) {
+            return []
+        }
+        return this.keywords.getSearchContext(query, options.numCodeResults + options.numTextResults)
     }
 }
 
