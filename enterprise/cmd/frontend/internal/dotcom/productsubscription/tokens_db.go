@@ -24,17 +24,13 @@ type dbTokens struct {
 // SetAccessTokenSHA256 activates the value as a valid token for the license.
 // The value should not contain any token prefixes.
 func (t dbTokens) SetAccessTokenSHA256(ctx context.Context, licenseID string, value []byte) error {
-	query := sqlf.Sprintf("UPDATE product_licenses SET access_token_sha256=%s WHERE id=%s",
+	query := sqlf.Sprintf("UPDATE product_licenses SET access_token_sha256=%s WHERE id=%s RETURNING id",
 		hashutil.ToSHA256Bytes(value), licenseID)
-	res, err := t.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	_, ok, err := basestore.ScanFirstInt(t.db.Query(ctx, query))
 	if err != nil {
 		return err
 	}
-	nrows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if nrows == 0 {
+	if !ok {
 		return errLicenseNotFound
 	}
 	return nil
