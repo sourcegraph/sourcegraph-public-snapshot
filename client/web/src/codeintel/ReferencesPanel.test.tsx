@@ -20,8 +20,8 @@ jest.mock('../repo/blob/CodeMirrorBlob', () => {
     const React = require('react')
 
     return {
-        // eslint-disable-next-line react/forbid-elements
-        CodeMirrorBlob: (props: BlobProps) => <code data-testid="codeMirrorBlobMock">{props.blobInfo.content}</code>,
+        CodeMirrorBlob: (props: BlobProps) =>
+            React.createElement('code', { 'data-testid': 'codeMirrorBlobMock', children: props.blobInfo.content }),
     }
 })
 
