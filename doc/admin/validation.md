@@ -75,6 +75,15 @@ insight:
       }
     ]
   deleteWhenDone: true
+
+# checks if there have been active executors in the past 15 minutes and returns the total count
+executor:
+  enabled: true
+
+# tests the smtp configuration in instance site config by sending an email to the email address in smtp.to
+smtp:
+  enabled: true
+  to: "example@domain.com"
 ```
 #### JSON File Specification
 
@@ -127,6 +136,15 @@ insight:
       }
     ],
     "deleteWhenDone": true
+  },
+
+  "executor": {
+    "enabled": true
+  },
+
+  "smtp": {
+    "enabled": true,
+    "to": "example@domain.com"
   }
 
 }
@@ -140,8 +158,10 @@ With this configuration, the validation command executes the following steps:
 * removes the external service
 * creates a code insight
 * removes the code insight
+* checks the number of connected executor instances
+* sends a test email to confirm SMTP configuration
  
->NOTE: Every step is optional (if the corresponding top-level key is not present then the step is skipped).
+>NOTE: Every step is optional (if the corresponding top-level key is not present then the step is skipped). Without setting `executor.enabled` and `smtp.enabled` explicitly to true, these steps will be omitted as they default to false.
 > 
 
 ### Passing in secrets
