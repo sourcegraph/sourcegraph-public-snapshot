@@ -126,6 +126,43 @@ func (f *FeaturePrivateRepositories) Check(info *Info) error {
 	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
 }
 
+type FeatureLLMProxyTier string
+
+const (
+	FeatureLLMProxyTierDefault FeatureLLMProxyTier = "default"
+)
+
+// FeatureLLMProxy is what degree of LLM-proxy access is enabled for this license.
+type FeatureLLMProxy struct {
+	// TODO: Figure out specific tiers we will have.
+	Tier FeatureLLMProxyTier
+}
+
+func (*FeatureLLMProxy) FeatureName() string { return "llm-proxy" }
+
+func (f *FeatureLLMProxy) Check(info *Info) error {
+	if info == nil {
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
+	}
+
+	for _, tag := range info.Tags {
+		if tag == f.FeatureName() {
+			// Set a default tier for just the 'llm-proxy' tag
+			f.Tier = FeatureLLMProxyTierDefault
+			return nil
+		}
+
+		if parts := strings.SplitN(tag, f.FeatureName()+":", 2); len(parts) == 2 {
+			// Set the specified tier
+			// TODO: Handle known/unknown tiers.
+			f.Tier = FeatureLLMProxyTier(parts[1])
+			return nil
+		}
+	}
+
+	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+}
+
 // Check checks whether the feature is activated based on the current license. If
 // it is disabled, it returns a non-nil error.
 //

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 )
 
@@ -189,5 +190,14 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanTeam0)), false)
 		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanEnterprise0)), false)
 		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanEnterprise0), string(FeatureBackupAndRestore)), true)
+	})
+
+	t.Run((&FeatureLLMProxy{}).FeatureName(), func(t *testing.T) {
+		check(t, &FeatureLLMProxy{}, nil, false)
+
+		checkAs(t, &FeatureLLMProxy{}, licenseInfo("llm-proxy"), true, &FeatureLLMProxy{Tier: FeatureLLMProxyTierDefault})
+
+		// TODO: Update when we have real tiers defined
+		checkAs(t, &FeatureLLMProxy{}, licenseInfo("llm-proxy:tier"), true, &FeatureLLMProxy{Tier: "tier"})
 	})
 }

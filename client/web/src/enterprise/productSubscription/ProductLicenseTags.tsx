@@ -29,7 +29,12 @@ const getTagDescription = (tag: string): string => {
 }
 
 export const isUnknownTag = (tag: string): boolean =>
-    !window.context.licenseInfo?.knownLicenseTags?.includes(tag) && !tag.startsWith('customer:')
+    !window.context.licenseInfo?.knownLicenseTags?.some(
+        knownTag =>
+            knownTag === tag ||
+            // Also allow scoped tags, e.g. `tag:value`
+            tag.match(`${knownTag}:.+`)
+    ) && !tag.startsWith('customer:')
 
 export const hasUnknownTags = (tags: string[]): boolean => tags.some(isUnknownTag)
 

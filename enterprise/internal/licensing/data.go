@@ -100,6 +100,7 @@ var AllFeatures = []Feature{
 	FeatureCodeInsights,
 	&FeatureBatchChanges{},
 	FeatureSCIM,
+	&FeatureLLMProxy{},
 }
 
 type PlanDetails struct {
