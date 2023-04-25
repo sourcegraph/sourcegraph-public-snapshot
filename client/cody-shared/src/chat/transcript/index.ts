@@ -32,7 +32,10 @@ export class Transcript {
     }
 
     public get id(): string {
-        return this.interactions[0]?.timestamp ?? new Date().toISOString()
+        return (
+            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
+            new Date().toISOString()
+        )
     }
 
     public get isEmpty(): boolean {

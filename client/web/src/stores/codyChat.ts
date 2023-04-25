@@ -47,7 +47,7 @@ interface CodyChatStore {
 const CODY_TRANSCRIPT_HISTORY_KEY = 'cody:transcript-history'
 const SAVE_MAX_TRANSCRIPT_HISTORY = 20
 
-const safeTimestampToDate = (timestamp: string = ''): Date => {
+export const safeTimestampToDate = (timestamp: string = ''): Date => {
     if (isNaN(new Date(timestamp) as any)) {
         return new Date()
     }

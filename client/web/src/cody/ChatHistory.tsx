@@ -2,6 +2,8 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/client'
 import { Button, Text } from '@sourcegraph/wildcard'
 
+import { safeTimestampToDate } from '../stores/codyChat'
+
 import styles from './ChatHistory.module.scss'
 
 interface ChatHistoryProps {
@@ -35,9 +37,10 @@ export const ChatHistory: React.FunctionComponent<ChatHistoryProps> = ({
                     return null
                 }
 
-                /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+                /* eslint-disable jsx-a11y/no-noninteractive-element-to-interactive-role */
                 return (
                     <li
+                        role="button"
                         key={id}
                         className={styles.historyItem}
                         onClick={() => {
@@ -51,13 +54,7 @@ export const ChatHistory: React.FunctionComponent<ChatHistoryProps> = ({
                     >
                         <div className={styles.itemBody}>
                             <Text className="mb-1 text-muted" size="small">
-                                <Timestamp
-                                    date={
-                                        isNaN(new Date(lastInteractionTimestamp) as any)
-                                            ? new Date()
-                                            : new Date(lastInteractionTimestamp)
-                                    }
-                                />
+                                <Timestamp date={safeTimestampToDate(lastInteractionTimestamp)} />
                             </Text>
                             <Text className="mb-0 truncate text-body">
                                 {lastMessage.displayText.slice(0, 80)}
