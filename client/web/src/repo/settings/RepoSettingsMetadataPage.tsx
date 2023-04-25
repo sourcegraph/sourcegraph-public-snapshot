@@ -1,21 +1,19 @@
-import { FC, useCallback, useMemo, useState, useEffect } from 'react'
+import { FC, useCallback, useMemo, useState } from 'react'
 
-import { mdiPlus } from '@mdi/js'
-
-import { RepoMetadata } from '@sourcegraph/branded'
+import { RepoMetadata, RepoMetadataItem } from '@sourcegraph/branded'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import {
     Container,
     PageHeader,
     ErrorAlert,
     Input,
-    Button,
-    Icon,
-    Modal,
+    Text,
     Label,
     Form,
     Alert,
     LoadingSpinner,
+    H2,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
@@ -45,17 +43,9 @@ const AddRepoMetadata: FC<{ onDidAdd: () => void; repoID: string }> = ({ onDidAd
         setValue(event.target.value)
     }, [])
 
-    const [addRepoMetadata, { called, loading, error, reset }] = useMutation<
-        AddRepoMetadataResult,
-        AddRepoMetadataVariables
-    >(ADD_REPO_METADATA_GQL)
-
-    const [isOpen, setIsOpen] = useState<boolean>(false)
-    const onClose = (): void => setIsOpen(false)
-    const onOpen = (): void => {
-        setIsOpen(true)
-        reset()
-    }
+    const [addRepoMetadata, { called, loading, error }] = useMutation<AddRepoMetadataResult, AddRepoMetadataVariables>(
+        ADD_REPO_METADATA_GQL
+    )
 
     const onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
@@ -66,57 +56,52 @@ const AddRepoMetadata: FC<{ onDidAdd: () => void; repoID: string }> = ({ onDidAd
                 value,
             },
         })
-            .then(() => onDidAdd())
+            .then(() => {
+                onDidAdd()
+                setKey('')
+                setValue('')
+            })
             .catch(console.error)
     }
 
     return (
-        <>
-            <div className="mb-2 d-flex justify-content-end">
-                <Button variant="primary" size="sm" onClick={onOpen}>
-                    <Icon svgPath={mdiPlus} aria-hidden={true} className="mr-1" />
-                    Add New Metadata
-                </Button>
-            </div>
-            <Modal title="Add new metadata" aria-label="Add new metadata" isOpen={isOpen} onDismiss={onClose}>
-                <Form onSubmit={onSubmit}>
-                    {!loading && error && <ErrorAlert className="flex-grow-1 m-0 mb-3" error={error} />}
-                    {!loading && !error && called && (
-                        <Alert className="flex-grow-1 m-0 mb-3" variant="success">
-                            Metadata added successfully
-                        </Alert>
-                    )}
-                    <div className="form-group">
-                        <Label htmlFor="metadata-key">Key*</Label>
-                        <Input
-                            id="metadata-key"
-                            value={key}
-                            onChange={handleKeyChange}
-                            autoFocus={true}
-                            required={true}
-                            disabled={loading}
-                            placeholder="e.g. 'team', 'owner', 'language'"
-                        />
-                    </div>
-                    <div className="form-group">
-                        <Label htmlFor="metadata-value">Value</Label>
-                        <Input
-                            id="metadata-value"
-                            value={value}
-                            onChange={handleValueChange}
-                            disabled={loading}
-                            placeholder="e.g. 'frontend', 'engineering', 'Go'"
-                        />
-                    </div>
-                    <div className="d-flex justify-content-end">
-                        <Button variant="secondary" onClick={onClose} className="mr-2" disabled={loading}>
-                            Cancel
-                        </Button>
-                        <LoaderButton variant="primary" type="submit" loading={loading} label="Add" />
-                    </div>
-                </Form>
-            </Modal>
-        </>
+        <section>
+            <H2>Add metadata</H2>
+            <Text>Add an additional key, or key-value pair, to this repository.</Text>
+            <Form onSubmit={onSubmit}>
+                {!loading && error && <ErrorAlert className="flex-grow-1 m-0 mb-3" error={error} />}
+                {!loading && !error && called && (
+                    <Alert className="flex-grow-1 m-0 mb-3" variant="success">
+                        Metadata added successfully
+                    </Alert>
+                )}
+                <div className="form-group">
+                    <Label htmlFor="metadata-key">Key</Label>
+                    <Input
+                        id="metadata-key"
+                        value={key}
+                        onChange={handleKeyChange}
+                        autoFocus={true}
+                        autoComplete="off"
+                        required={true}
+                        disabled={loading}
+                        placeholder="e.g. 'status', 'license', 'language'"
+                    />
+                </div>
+                <div className="form-group">
+                    <Label htmlFor="metadata-value">Value (optional)</Label>
+                    <Input
+                        id="metadata-value"
+                        value={value}
+                        autoComplete="off"
+                        onChange={handleValueChange}
+                        disabled={loading}
+                        placeholder="e.g. 'deprecated', 'MIT', 'Go'"
+                    />
+                </div>
+                <LoaderButton variant="primary" type="submit" loading={loading} label="Add" />
+            </Form>
+        </section>
     )
 }
 
@@ -146,14 +131,14 @@ export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props
     >(DELETE_REPO_METADATA_GQL, {})
 
     const onDelete = useCallback(
-        (key: string): void => {
-            if (!window.confirm(`Delete metadata key "${key}"?`)) {
+        (meta: RepoMetadataItem): void => {
+            if (!window.confirm(`Are you sure to delete metadata ${meta.key}${meta.value && ':'}${meta.value}?`)) {
                 return
             }
             deleteRepoMetadata({
                 variables: {
                     repo: repo.id,
-                    key,
+                    key: meta.key,
                 },
             })
                 .then(() => refetch())
@@ -168,13 +153,13 @@ export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props
     }, [])
 
     const filteredMetadata = useMemo(
-        (): [string, string | undefined | null][] =>
+        () =>
             repo.metadata
                 .filter(({ key, value }) => {
                     const search = searchQuery.toLowerCase()
                     return key.toLowerCase().includes(search) || value?.toLowerCase().includes(search)
                 })
-                .map(({ key, value }) => [key, value]),
+                .map(({ key, value }) => ({ key, value })),
         [repo.metadata, searchQuery]
     )
 
@@ -182,18 +167,29 @@ export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props
         <>
             <PageTitle title="Repo metadata settings" />
             <PageHeader path={[{ text: 'Repo metadata' }]} headingElement="h2" className="mb-3" />
-            <Container className="repo-settings-metadata-page">
+            <Text>
+                Repository metadata allows you to search, filter and navigate between repositories. Administrators can
+                add repository metadata via the web, cli or API. Learn more about{' '}
+                <Link to="/help/admin/repo/metadata">Repository Metadata</Link>
+            </Text>
+            <Container className="repo-settings-metadata-page mb-2">
                 {fetchError && <ErrorAlert error={fetchError} />}
                 {deleteError && <ErrorAlert error={deleteError} />}
                 {fetchLoading && deleteLoading && <LoadingSpinner />}
-                <AddRepoMetadata onDidAdd={refetch} repoID={repo.id} />
                 <Input
-                    placeholder="Search repo metadata"
+                    placeholder="Search repo metadata key or value"
                     value={searchQuery}
                     onChange={handleSearchChange}
                     className="mb-3"
                 />
-                <RepoMetadata keyValuePairs={filteredMetadata} onDelete={onDelete} />
+                {filteredMetadata.length ? (
+                    <RepoMetadata items={filteredMetadata} onDelete={onDelete} />
+                ) : (
+                    <Text className="text-muted">No metadata</Text>
+                )}
+            </Container>
+            <Container className="repo-settings-metadata-page">
+                <AddRepoMetadata onDidAdd={refetch} repoID={repo.id} />
             </Container>
         </>
     )

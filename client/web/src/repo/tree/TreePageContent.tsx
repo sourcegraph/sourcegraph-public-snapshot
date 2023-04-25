@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { mdiCog, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 
-import { numberWithCommas, pluralize } from '@sourcegraph/common'
+import { RepoMetadata } from '@sourcegraph/branded'
+import { encodeURIPathComponent, numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -14,7 +16,7 @@ import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-o
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Card, CardHeader, Link, Tooltip } from '@sourcegraph/wildcard'
+import { Card, CardHeader, Icon, Link, Tooltip, Text, ButtonLink } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -25,6 +27,7 @@ import {
     SummaryContainer,
     ConnectionError,
 } from '../../components/FilteredConnection/ui'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import {
     CommitAtTimeResult,
     CommitAtTimeVariables,
@@ -178,6 +181,59 @@ interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps
     isPackage: boolean
 }
 
+const ExtraInfoSectionHeader: React.FunctionComponent<React.PropsWithChildren<{ title: string; tooltip?: string }>> = ({
+    title,
+    tooltip,
+    children,
+}) => (
+    <div className="d-flex align-items-center justify-content-between mb-2">
+        <div className="d-flex align-items-center">
+            <Text className="mr-2 mb-0" weight="bold">
+                {title}
+            </Text>
+            <Tooltip content={tooltip}>
+                <Icon svgPath={mdiInformationOutline} aria-label="Extra information icon" />
+            </Tooltip>
+        </div>
+        {children}
+    </div>
+)
+
+const ExtraInfoSection: React.FC<{ repo: TreePageRepositoryFields; className?: string }> = ({ repo, className }) => {
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
+
+    const metadataItems = useMemo(() => repo.metadata.map(({ key, value }) => ({ key, value })) || [], [repo.metadata])
+
+    return (
+        <Card className={className}>
+            <ExtraInfoSectionHeader title="Description" tooltip="Repository description synced from the code host." />
+            {repo.description && <Text>{repo.description}</Text>}
+            {enableRepositoryMetadata && (
+                <>
+                    <ExtraInfoSectionHeader
+                        title="Metadata"
+                        tooltip="Repository metadata allows you to search, filter and navigate between repositories. Administrators can add repository metadata via the web, cli or API. Learn more about Repository Metadata"
+                    >
+                        <Tooltip content="Edit repository metadata">
+                            <ButtonLink
+                                to={`/${encodeURIPathComponent(repo.name)}/-/settings/metadata`}
+                                className="p-0"
+                            >
+                                <Icon svgPath={mdiCog} aria-label="Edit repository metadata" />
+                            </ButtonLink>
+                        </Tooltip>
+                    </ExtraInfoSectionHeader>
+                    {metadataItems.length ? (
+                        <RepoMetadata items={metadataItems} />
+                    ) : (
+                        <Text className="text-muted">None</Text>
+                    )}
+                </>
+            )}
+        </Card>
+    )
+}
+
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
     const { filePath, tree, repo, revision, isPackage } = props
 
@@ -206,7 +262,17 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            {readmeEntry && <ReadmePreviewCard entry={readmeEntry} repoName={repo.name} revision={revision} />}
+            <section className={classNames('container mb-3 px-0', styles.section)}>
+                {readmeEntry && (
+                    <ReadmePreviewCard
+                        entry={readmeEntry}
+                        repoName={repo.name}
+                        revision={revision}
+                        className={styles.files}
+                    />
+                )}
+                <ExtraInfoSection repo={repo} className={classNames(styles.contributors, 'p-3')} />
+            </section>
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
 
