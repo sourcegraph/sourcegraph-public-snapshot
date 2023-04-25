@@ -21,10 +21,6 @@ extend type Query {
         The number of text results to return. Text results contain Markdown files and similar file types primarily used for writing documentation.
         """
         textResultsCount: Int!
-        """
-        Whether to return debug information about scoring
-        """
-        debug: Boolean
     ): EmbeddingsSearchResults!
     """
     Experimental: Determines whether the given query requires further context before it can be answered.
@@ -91,10 +87,6 @@ type EmbeddingsSearchResult {
     The content of the file from start line to end line.
     """
     content: String!
-    """
-    Optional debugging information about scoring.
-    """
-    debug: String!
 }
 
 """
