@@ -448,7 +448,7 @@ func (r *RepositoryResolver) PermissionsInfo(ctx context.Context) (PermissionsIn
 	return EnterpriseResolvers.authzResolver.RepositoryPermissionsInfo(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) ExternalServiceTypePerforce() bool {
+func (r *RepositoryResolver) isPerforceDepot() bool {
 	return r.innerRepo.ExternalRepo.ServiceType == extsvc.TypePerforce
 }
 
