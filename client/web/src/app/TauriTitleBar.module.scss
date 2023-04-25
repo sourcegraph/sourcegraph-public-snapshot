@@ -1,3 +1,6 @@
+// We need to allow pixels for the height and padding to match the native titlebar
+/* stylelint-disable declaration-property-unit-allowed-list */
+
 .titlebar {
     position: sticky;
     top: 0;
