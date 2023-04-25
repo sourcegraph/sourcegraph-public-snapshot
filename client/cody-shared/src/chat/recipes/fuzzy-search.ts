@@ -6,29 +6,45 @@ import { Interaction } from '../transcript/interaction'
 import { getFileExtension } from './helpers'
 import { Recipe, RecipeContext } from './recipe'
 
+/*
+This class implements the fuzzy-search recipe.
+
+Parameters:
+- humanChatInput: The input from the human. If empty, a prompt will be shown to enter a search query.
+- context: The recipe context.
+
+Functionality:
+- Gets a search query from the human input or a prompt.
+- Truncates the query to MAX_HUMAN_INPUT_TOKENS.
+- Searches the vactor database for code and text results matching the query.
+- If codebase is not embedded or if keyword context is selected, get local keyword context instead
+- Returns up to 12 code results and 3 text results.
+- Generates a markdown string displaying the results with file names linking to the search page for that file.
+- Sanitizes the content by removing newlines, tabs and backticks before displaying.
+*/
+
 export class FuzzySearch implements Recipe {
     public id = 'fuzzy-search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const truncatedText = truncateText(
-            humanChatInput.replace('/search ', '').replace('/s ', ''),
-            MAX_HUMAN_INPUT_TOKENS
-        )
+        const query = humanChatInput || (await context.editor.showInputBox()) || ''
+        if (!query) {
+            return null
+        }
+        const truncatedText = truncateText(query.replace('/search ', '').replace('/s ', ''), MAX_HUMAN_INPUT_TOKENS)
 
-        return Promise.resolve(
-            new Interaction(
-                {
-                    speaker: 'human',
-                    text: '',
-                    displayText: humanChatInput,
-                },
-                {
-                    speaker: 'assistant',
-                    text: '',
-                    displayText: await this.displaySearchResults(truncatedText, context.codebaseContext),
-                },
-                new Promise(resolve => resolve([]))
-            )
+        return new Interaction(
+            {
+                speaker: 'human',
+                text: '',
+                displayText: query,
+            },
+            {
+                speaker: 'assistant',
+                text: '',
+                displayText: await this.displaySearchResults(truncatedText, context.codebaseContext),
+            },
+            new Promise(resolve => resolve([]))
         )
     }
 

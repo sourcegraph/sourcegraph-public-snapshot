@@ -142,4 +142,8 @@ export class VSCodeEditor implements Editor {
     public async showWarningMessage(message: string): Promise<void> {
         await vscode.window.showWarningMessage(message)
     }
+
+    public async showInputBox(): Promise<string | undefined> {
+        return vscode.window.showInputBox()
+    }
 }

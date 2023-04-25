@@ -274,6 +274,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.showTab('chat')
         this.sendTranscript()
 
+        // Check whether or not to connect to LLM backend for responses
+        // Ex: performing fuzzy search does not require responses from LLM backend
         if (connectToLLM) {
             const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
             this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')

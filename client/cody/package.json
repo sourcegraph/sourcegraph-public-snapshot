@@ -98,6 +98,10 @@
         "title": "Cody: Toggle Enabled/Disabled"
       },
       {
+        "command": "cody.fuzzy-search",
+        "title": "Ask Cody: Quick Search"
+      },
+      {
         "command": "cody.recipe.explain-code",
         "title": "Ask Cody: Explain Code in Detail",
         "when": "cody.activated"
@@ -195,6 +199,10 @@
       "commandPalette": [
         {
           "command": "cody.recipe.explain-code",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.fuzzy-search",
           "when": "cody.activated"
         },
         {

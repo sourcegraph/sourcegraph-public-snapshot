@@ -118,15 +118,16 @@ const register = async (
     )
     disposables.push({ dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) })
 
-    const executeRecipe = async (recipe: string): Promise<void> => {
+    const executeRecipe = async (recipe: string, connectLLM: boolean = true): Promise<void> => {
         await vscode.commands.executeCommand('cody.chat.focus')
-        await chatProvider.executeRecipe(recipe)
+        await chatProvider.executeRecipe(recipe, '', connectLLM)
     }
 
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
     disposables.push(
+        vscode.commands.registerCommand('cody.fuzzy-search', () => executeRecipe('fuzzy-search', false)),
         // Register URI Handler to resolve token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
