@@ -87,6 +87,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     public clearAndRestartSession(): void {
         this.createNewChatID()
         this.cancelCompletion()
+        this.isMessageInProgress = false
         this.transcript.reset()
         this.sendTranscript()
         this.sendChatHistory()
