@@ -5,4 +5,5 @@ export interface ChatContextStatus {
     connection?: boolean
     codebase?: string
     filePath?: string
+    supportsKeyword?: boolean
 }
