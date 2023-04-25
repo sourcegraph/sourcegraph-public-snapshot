@@ -73,7 +73,6 @@ export async function createClient({
     const sendTranscript = (): void => {
         if (isMessageInProgress) {
             const messages = transcript.toChat()
-            //setTranscript(messages.slice(0, -1))
             setTranscript(transcript)
             setMessageInProgress(messages[messages.length - 1])
         } else {
