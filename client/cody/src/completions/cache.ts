@@ -4,9 +4,7 @@ import { Completion } from '.'
 
 export class CompletionsCache {
     private cache = new LRUCache<string, Completion[]>({
-        // Maximum input prefixes in the cache. For every completion, we cache
-        // the input prefix as well as
-        max: 500,
+        max: 500, // Maximum input prefixes in the cache.
     })
 
     // TODO: The caching strategy only takes the file content prefix into
