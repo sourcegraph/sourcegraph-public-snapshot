@@ -6,6 +6,7 @@ import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shar
 
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
 
+import { Code } from '@sourcegraph/wildcard'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { BlobProps } from '../repo/blob/CodeMirrorBlob'
@@ -20,7 +21,7 @@ import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
  */
 const codeMirrorBlobMockTestId = 'codeMirrorBlobMock'
 jest.mock('../repo/blob/CodeMirrorBlob', () => ({
-    CodeMirrorBlob: (props: BlobProps) => <code data-testid={codeMirrorBlobMockTestId}>{props.blobInfo.content}</code>,
+    CodeMirrorBlob: (props: BlobProps) => <Code data-testid={codeMirrorBlobMockTestId}>{props.blobInfo.content}</Code>,
 }))
 
 describe('ReferencesPanel', () => {
