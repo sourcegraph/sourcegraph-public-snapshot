@@ -68,7 +68,7 @@ func Test_isEmbeddableFileContent(t *testing.T) {
 	}, {
 		content:    bytes.Repeat([]byte("somewhat long line "), 10),
 		embeddable: true,
-		reason:     0,
+		reason:     SkipReasonNone,
 	}}
 
 	for _, tc := range cases {
