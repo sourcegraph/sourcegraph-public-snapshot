@@ -7,7 +7,7 @@ import { LocalStorage } from './command/LocalStorageProvider'
 
 let eventLoggerGQLClient: SourcegraphGraphQLAPIClient
 let eventLogger: EventLogger | null = null
-let version = packageVersion
+const version = packageVersion
 
 export async function updateEventLogger(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
