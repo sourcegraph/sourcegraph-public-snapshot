@@ -32,7 +32,7 @@ func searchRepoEmbeddingIndex(
 
 	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting repo embedding index")
+		return nil, errors.Wrapf(err, "getting repo embedding index for repo %q", params.RepoName)
 	}
 
 	floatQuery, err := getQueryEmbedding(ctx, params.Query)
