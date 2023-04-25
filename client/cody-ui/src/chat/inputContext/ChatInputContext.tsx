@@ -14,7 +14,6 @@ export const ChatInputContext: React.FunctionComponent<{
     contextStatus: ChatContextStatus
     className?: string
 }> = ({ contextStatus, className }) => {
-    console.log(contextStatus)
     const items: Pick<React.ComponentProps<typeof ContextItem>, 'icon' | 'text' | 'tooltip'>[] = useMemo(
         () =>
             [
