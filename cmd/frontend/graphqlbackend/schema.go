@@ -95,7 +95,7 @@ var appSchema string
 //go:embed completions.graphql
 var completionSchema string
 
-// authzSchema is the Authz raw graqhql schema.
+// gitHubAppsSchema is the GitHub apps raw graqhql schema.
 //
 //go:embed githubapps.graphql
 var gitHubAppsSchema string
