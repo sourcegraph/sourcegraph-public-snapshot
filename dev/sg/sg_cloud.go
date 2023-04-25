@@ -49,7 +49,8 @@ func checkGKEAuthPlugin() error {
 	const executable = "gke-gcloud-auth-plugin"
 	existingPath, err := exec.LookPath(executable)
 	if err != nil {
-		return errors.Wrap(err, "gcloud auth plugin is not installed, run `brew info google-cloud-sdk` for instructions")
+		return errors.Wrapf(err, "gke-gcloud-auth-plugin not found on path, run `brew info google-cloud-sdk` for instructions OR \n"+
+			"run `gcloud components install gke-gcloud-auth-plugin` to install it manually")
 	}
 	std.Out.WriteNoticef("Using gcloud auth plugin at %q", existingPath)
 	return nil
@@ -57,6 +58,13 @@ func checkGKEAuthPlugin() error {
 
 func installCloudCLI(ctx context.Context) error {
 	const executable = "mi2"
+
+	// Ensure gh is installed
+	ghPath, err := exec.LookPath("gh")
+	if err != nil {
+		return errors.Wrap(err, "GitHub CLI (https://cli.github.com/) is required for installation")
+	}
+	std.Out.Writef("Using GitHub CLI at %q", ghPath)
 
 	// Use the same directory as sg, since we add that to path
 	homeDir, err := os.UserHomeDir()
@@ -79,12 +87,7 @@ func installCloudCLI(ctx context.Context) error {
 		}
 	}
 
-	// Ensure gh is installed
-	if _, err := exec.LookPath("gh"); err != nil {
-		return errors.Wrap(err, "GitHub CLI (https://cli.github.com/) is required for installation")
-	}
-
-	version, err := run.Cmd(ctx, "gh", "version").Run().String()
+	version, err := run.Cmd(ctx, ghPath, "version").Run().String()
 	if err != nil {
 		return errors.Wrap(err, "get gh version")
 	}
@@ -94,14 +97,15 @@ func installCloudCLI(ctx context.Context) error {
 	pending := std.Out.Pending(output.Styledf(output.StylePending, "Downloading %q to %q... (hang tight, this might take a while!)",
 		executable, locationDir))
 
-	// Get release
 	const tempExecutable = "mi2_tmp"
-	_ = os.Remove(filepath.Join(locationDir, tempExecutable))
+	tempInstallPath := filepath.Join(locationDir, tempExecutable)
+	finalInstallPath := filepath.Join(locationDir, executable)
+	_ = os.Remove(tempInstallPath)
+	// Get release
 	if err := run.Cmd(ctx,
-		"gh release download -R github.com/sourcegraph/controller",
+		ghPath, " release download -R github.com/sourcegraph/controller",
 		"--pattern", fmt.Sprintf("mi2_%s_%s", runtime.GOOS, runtime.GOARCH),
-		"--output", tempExecutable).
-		Dir(locationDir).
+		"--output", tempInstallPath).
 		Run().Wait(); err != nil {
 		pending.Close()
 		return errors.Wrap(err, "download mi2")
@@ -111,16 +115,12 @@ func installCloudCLI(ctx context.Context) error {
 		time.Since(start).String()))
 
 	// Move binary to final destination
-	if err := run.Cmd(ctx, "mv", tempExecutable, executable).
-		Dir(locationDir).
-		Run().Wait(); err != nil {
+	if err := os.Rename(tempInstallPath, finalInstallPath); err != nil {
 		return errors.Wrap(err, "move mi2 to final path")
 	}
 
 	// Make binary executable
-	if err := run.Cmd(ctx, "chmod +x", executable).
-		Dir(locationDir).
-		Run().Wait(); err != nil {
+	if err := os.Chmod(finalInstallPath, 0755); err != nil {
 		return errors.Wrap(err, "make mi2 executable")
 	}
 
