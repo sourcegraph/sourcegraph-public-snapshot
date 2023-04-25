@@ -18,6 +18,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@sourcegraph/common": "workspace:*"
+    "@sourcegraph/common": "workspace:*",
+    "@sourcegraph/http-client": "workspace:*"
   }
 }

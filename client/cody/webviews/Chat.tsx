@@ -1,44 +1,75 @@
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
+import {
+    Chat as ChatUI,
+    ChatUISubmitButtonProps,
+    ChatUITextAreaProps,
+    EditButtonProps,
+    FeedbackButtonsProps,
+} from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { FileLink } from './FileLink'
-import { vscodeAPI } from './utils/VSCodeApi'
+import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
 
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
+    messageBeingEdited: boolean
+    setMessageBeingEdited: (input: boolean) => void
     transcript: ChatMessage[]
     contextStatus: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
+    vscodeAPI: VSCodeWrapper
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
+    messageBeingEdited,
+    setMessageBeingEdited,
     transcript,
     contextStatus,
     formInput,
     setFormInput,
     inputHistory,
     setInputHistory,
+    vscodeAPI,
 }) => {
-    const onSubmit = useCallback((text: string) => {
-        vscodeAPI.postMessage({ command: 'submit', text })
-    }, [])
+    const onSubmit = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'submit', text })
+        },
+        [vscodeAPI]
+    )
+
+    const onEditBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'edit', text })
+        },
+        [vscodeAPI]
+    )
+
+    const onFeedbackBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'event', event: 'feedback', value: text })
+        },
+        [vscodeAPI]
+    )
 
     return (
         <ChatUI
             messageInProgress={messageInProgress}
+            messageBeingEdited={messageBeingEdited}
+            setMessageBeingEdited={setMessageBeingEdited}
             transcript={transcript}
             contextStatus={contextStatus}
             formInput={formInput}
@@ -58,6 +89,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             inputRowClassName={styles.inputRow}
             chatInputContextClassName={styles.chatInputContext}
             chatInputClassName={styles.chatInputClassName}
+            EditButtonContainer={EditButton}
+            editButtonOnSubmit={onEditBtnClick}
+            FeedbackButtonsContainer={FeedbackButtons}
+            feedbackButtonsOnSubmit={onFeedbackBtnClick}
         />
     )
 }
@@ -124,3 +159,63 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
         <SubmitSvg />
     </VSCodeButton>
 )
+
+const EditButton: React.FunctionComponent<EditButtonProps> = ({
+    className,
+    messageBeingEdited,
+    setMessageBeingEdited,
+}) => (
+    <div className={className}>
+        <VSCodeButton
+            className={classNames(styles.submitButton)}
+            appearance="icon"
+            type="button"
+            onClick={() => setMessageBeingEdited(!messageBeingEdited)}
+        >
+            <i className={messageBeingEdited ? 'codicon codicon-close' : 'codicon codicon-edit'} />
+        </VSCodeButton>
+    </div>
+)
+
+const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ className, feedbackButtonsOnSubmit }) => {
+    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+
+    const onFeedbackBtnSubmit = useCallback(
+        (text: string) => {
+            feedbackButtonsOnSubmit(text)
+            setFeedbackSubmitted(true)
+        },
+        [feedbackButtonsOnSubmit]
+    )
+
+    if (feedbackSubmitted) {
+        return (
+            <div className={className}>
+                <VSCodeButton className={classNames(styles.submitButton)} title="Feedback submitted." disabled={true}>
+                    <i className="codicon codicon-check" />
+                </VSCodeButton>
+            </div>
+        )
+    }
+
+    return (
+        <div className={className}>
+            <VSCodeButton
+                className={classNames(styles.submitButton)}
+                appearance="icon"
+                type="button"
+                onClick={() => onFeedbackBtnSubmit('thumbsUp')}
+            >
+                <i className="codicon codicon-thumbsup" />
+            </VSCodeButton>
+            <VSCodeButton
+                className={classNames(styles.submitButton)}
+                appearance="icon"
+                type="button"
+                onClick={() => onFeedbackBtnSubmit('thumbsDown')}
+            >
+                <i className="codicon codicon-thumbsdown" />
+            </VSCodeButton>
+        </div>
+    )
+}

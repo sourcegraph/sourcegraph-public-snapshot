@@ -1128,6 +1128,65 @@ func TestUsers_SetIsSiteAdmin(t *testing.T) {
 	})
 }
 
+func TestUsers_GetSetCompletionsQuota(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	user, err := db.Users().Create(ctx, NewUser{
+		Email:           "alice@example.com",
+		Username:        "alice",
+		EmailIsVerified: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Initially, no quota should be set and nil should be returned.
+	{
+		quota, err := db.Users().GetCompletionsQuota(ctx, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Nil(t, quota, "expected unconfigured quota to be nil")
+	}
+
+	// Set a quota. Expect it to be returned correctly.
+	{
+		wantQuota := 10
+		err := db.Users().SetCompletionsQuota(ctx, user.ID, &wantQuota)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		quota, err := db.Users().GetCompletionsQuota(ctx, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.NotNil(t, quota, "expected quota to be non-nil after storing")
+		require.Equal(t, wantQuota, *quota, "invalid quota returned")
+	}
+
+	// Now unset the quota.
+	{
+		err := db.Users().SetCompletionsQuota(ctx, user.ID, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		quota, err := db.Users().GetCompletionsQuota(ctx, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Nil(t, quota, "expected unconfigured quota to be nil")
+	}
+}
+
 func normalizeUsers(users []*types.User) []*types.User {
 	for _, u := range users {
 		u.CreatedAt = u.CreatedAt.Local().Round(time.Second)

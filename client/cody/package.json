@@ -2,17 +2,34 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Sourcegraph Cody",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
-  "description": "Your programming sidekick powered by AI and Sourcegraph's code search and intelligence.",
+  "description": "AI code assistant that writes code and answers questions for you",
   "categories": [
-    "Other"
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Education"
   ],
   "keywords": [
-    "developer tools",
-    "ai"
+    "ai",
+    "openai",
+    "anthropic",
+    "assistant",
+    "chatbot",
+    "chat",
+    "refactor",
+    "documentation",
+    "test",
+    "sourcegraph",
+    "codey",
+    "llm",
+    "codegen",
+    "autocomplete",
+    "bot",
+    "model"
   ],
   "repository": {
     "type": "git",
@@ -22,7 +39,14 @@
   "bugs": {
     "url": "https://github.com/sourcegraph/sourcegraph/issues"
   },
-  "homepage": "https://github.com/sourcegraph/sourcegraph#readme",
+  "homepage": "https://docs.sourcegraph.com/cody",
+  "badges": [
+    {
+      "url": "https://img.shields.io/discord/969688426372825169?color=5765F2",
+      "href": "https://srcgr.ph/discord",
+      "description": "Discord"
+    }
+  ],
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -33,7 +57,7 @@
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
-    "test:integration": "tsc -b && pnpm run --silent build:dev && node ./out/src/integration-test/runTest.js",
+    "test:integration": "tsc -b ./integration-test && pnpm run --silent build:dev && ts-node out/integration-test/main.js",
     "test:unit": "jest",
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
@@ -41,7 +65,8 @@
     "release": "ts-node ./scripts/release.ts",
     "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
     "watch:esbuild": "pnpm esbuild --sourcemap --watch",
-    "watch:webview": "vite build --mode development --watch"
+    "watch:webview": "vite build --mode development --watch",
+    "storybook": "STORIES_GLOB='client/cody/webviews/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start"
   },
   "main": "./dist/extension.js",
   "activationEvents": [
@@ -129,7 +154,8 @@
       },
       {
         "command": "cody.settings",
-        "title": "Cody: Settings",
+        "title": "Settings",
+        "group": "Cody",
         "icon": "$(gear)",
         "when": "cody.activated"
       },
@@ -137,6 +163,13 @@
         "command": "cody.focus",
         "title": "Cody: Sign In to Use Cody",
         "when": "!cody.activated"
+      },
+      {
+        "command": "cody.interactive.clear",
+        "title": "Clear & Restart Chat Session",
+        "group": "Cody",
+        "icon": "$(clear-all)",
+        "when": "cody.activated"
       }
     ],
     "keybindings": [
@@ -231,6 +264,11 @@
       ],
       "view/title": [
         {
+          "command": "cody.interactive.clear",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation"
+        },
+        {
           "command": "cody.settings",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation"
@@ -292,8 +330,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
     "@sourcegraph/cody-shared": "workspace:*",
-    "openai": "^3.2.1",
     "@sourcegraph/cody-ui": "workspace:*",
+    "lru-cache": "^9.1.1",
+    "openai": "^3.2.1",
     "wink-eng-lite-web-model": "^1.5.0",
     "wink-nlp": "^1.13.1",
     "wink-nlp-utils": "^2.1.0"

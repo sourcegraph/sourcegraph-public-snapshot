@@ -8,14 +8,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
-func BazelOperations(optional bool) *operations.Set {
+func BazelOperations() *operations.Set {
 	ops := operations.NewNamedSet("Bazel")
-	ops.Append(bazelConfigure(optional))
-	ops.Append(bazelTest(optional, "//..."))
+	ops.Append(bazelConfigure())
+	ops.Append(bazelTest("//..."))
+	ops.Append(bazelBackCompatTest(
+		"@sourcegraph_back_compat//cmd/...",
+		"@sourcegraph_back_compat//lib/...",
+		"@sourcegraph_back_compat//internal/...",
+		"@sourcegraph_back_compat//enterprise/cmd/...",
+		"@sourcegraph_back_compat//enterprise/internal/...",
+	))
 	return ops
 }
 
-func bazelRawCmd(args ...string) string {
+func bazelCmd(args ...string) string {
 	pre := []string{
 		"bazel",
 		"--bazelrc=.bazelrc",
@@ -28,9 +35,9 @@ func bazelRawCmd(args ...string) string {
 
 // bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
 // are correct, but do not actually build anything.
-func bazelAnalysisPhase(optional bool) func(*bk.Pipeline) {
+func bazelAnalysisPhase() func(*bk.Pipeline) {
 	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
-	cmd := bazelRawCmd(
+	cmd := bazelCmd(
 		"build",
 		"--nobuild", // this is the key flag to enable this.
 		"//...",
@@ -39,20 +46,16 @@ func bazelAnalysisPhase(optional bool) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Key("bazel-analysis"),
 		bk.Agent("queue", "bazel"),
-		bk.RawCmd(cmd),
+		bk.Cmd(cmd),
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		if optional {
-			cmds = append(cmds, bk.SoftFail())
-		}
-
 		pipeline.AddStep(":bazel: Analysis phase",
 			cmds...,
 		)
 	}
 }
-func bazelConfigure(optional bool) func(*bk.Pipeline) {
+func bazelConfigure() func(*bk.Pipeline) {
 	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
 	cmds := []bk.StepOpt{
 		bk.Key("bazel-configure"),
@@ -66,33 +69,54 @@ func bazelConfigure(optional bool) func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		if optional {
-			cmds = append(cmds, bk.SoftFail())
-		}
 		pipeline.AddStep(":bazel: Ensure buildfiles are up to date",
 			cmds...,
 		)
 	}
 }
 
-func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
+func bazelTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 	}
 
-	bazelRawCmd := bazelRawCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
+	runTargets := []string{
+		"//client/web:bundlesize-report",
+	}
+
+	bazelTestCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
+	bazelRunCmd := bazelCmd(fmt.Sprintf("run %s", strings.Join(runTargets, " ")))
 	cmds = append(
 		cmds,
-		// TODO(JH): run server image for end-to-end tests on SOURCEGRAPH_BASE_URL similar to run-bazel-server.sh.
-		bk.RawCmd(bazelRawCmd),
+		bk.Cmd(bazelTestCmd),
+		bk.Cmd(bazelRunCmd),
 	)
 
 	return func(pipeline *bk.Pipeline) {
-		if optional {
-			cmds = append(cmds, bk.SoftFail())
-		}
 		pipeline.AddStep(":bazel: Tests",
+			cmds...,
+		)
+	}
+}
+
+func bazelBackCompatTest(targets ...string) func(*bk.Pipeline) {
+	cmds := []bk.StepOpt{
+		bk.DependsOn("bazel-configure"),
+		bk.Agent("queue", "bazel"),
+
+		// Generate a patch that backports the migration from the new code into the old one.
+		bk.Cmd("git diff origin/ci/backcompat-v5.0.0..HEAD -- migrations/ > dev/backcompat/patches/back_compat_migrations.patch"),
+	}
+
+	bazelRawCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
+	cmds = append(
+		cmds,
+		bk.Cmd(bazelRawCmd),
+	)
+
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":bazel: BackCompat Tests",
 			cmds...,
 		)
 	}
@@ -103,8 +127,8 @@ func bazelTestWithDepends(optional bool, dependsOn string, targets ...string) fu
 		bk.Agent("queue", "bazel"),
 	}
 
-	bazelRawCmd := bazelRawCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
-	cmds = append(cmds, bk.RawCmd(bazelRawCmd))
+	bazelRawCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
+	cmds = append(cmds, bk.Cmd(bazelRawCmd))
 	cmds = append(cmds, bk.DependsOn(dependsOn))
 
 	return func(pipeline *bk.Pipeline) {
@@ -121,8 +145,8 @@ func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Agent("queue", "bazel"),
 	}
-	bazelRawCmd := bazelRawCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
-	cmds = append(cmds, bk.RawCmd(bazelRawCmd))
+	bazelRawCmd := bazelCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
+	cmds = append(cmds, bk.Cmd(bazelRawCmd))
 
 	return func(pipeline *bk.Pipeline) {
 		if optional {

@@ -203,7 +203,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	if p.IsStructuralPat && p.Indexed {
 		// Execute the new structural search path that directly calls Zoekt.
 		// TODO use limit in indexed structural search
-		return structuralSearchWithZoekt(ctx, s.Indexed, p, sender)
+		return structuralSearchWithZoekt(ctx, s.Log, s.Indexed, p, sender)
 	}
 
 	// Compile pattern before fetching from store incase it is bad.

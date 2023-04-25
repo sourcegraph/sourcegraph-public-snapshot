@@ -50,7 +50,7 @@
                 }
             </script>
 
-            <script type="module" src="https://esm.sh/@markprompt/web@0.2.2-beta34" defer></script>
+            <script type="module" src="https://esm.sh/@markprompt/web@0.3.2-beta3" defer></script>
 
             <script>
                 function showMarkprompt() {
@@ -168,13 +168,11 @@
                     <markprompt-content
                         model="gpt-4"
                         projectKey="sk_test_5FCapaMpGj2ghoQmFWzl7K1kdE2RJgbc"
-                        accentColor="#0055c5"
-                        placeholder="Ask docs"
+                        placeholder="Ask docs..."
                     />
                 </div>
             </div>
             <script>
-
                 const markprompt = localStorage.getItem('markprompt') !== null
                 const markpromptButton = document.getElementById("markprompt-button");
                 const searchForm = document.getElementById("search-form");
@@ -183,6 +181,7 @@
                 searchForm.style.display = markprompt ? 'none' : 'block';
 
                 const component = document.getElementsByTagName('markprompt-content')[0];
+
                 component.getRefFromId = (id) => {
                     const parts = id.split("/")
                     let label = parts.slice(-1)[0].replace(/\.md$/, '')
@@ -200,6 +199,45 @@
 
                     return { label, href }
                 };
+
+component.promptTemplate = `You are a very enthusiastic company representative from Sourcegraph who loves to help people! Below is a list of context sections separated by three dashes ('---'). They consist of a section id, which corresponds to the file from which the section is in, followed by the actual section content, in Markdown format.
+
+In the content, you may find relative links in Markdown format. Some examples are [Step 1](#step1), [Writing an indexer](explanations/writing_an_indexer.md), [Home](/docs/index.md). If you encounter such a link, you need to reconstruct the full path. Here is how you should do it:
+- First, transform the section id to an absolute URL path, and remove the "/doc" prefix. For instance, "/doc/code_navigation/step-1.md" should be turned into "/code_navigation/step-1". Note that filenames like "index.md" corresponding to a root path, so for instance, "/doc/code_navigation/index.md" becomes "/doc/code_navigation".
+- Given this absolute base path, prepend it to the relative link. For instance, if the link "[Step 1](#step1)" comes from a section whose id is "/doc/code_navigation/getting-started.md", then this link should be turned into "[Step 1](/code_navigation/getting-started#step1)". Similarly, if the link [Writing an indexer](explanations/writing_an_indexer.md), comes from a section whose id is "/doc/code_navigation/index.md", then this link should be turned into "[Writing an indexer](/code_navigation/explanations/writing_an_indexer)".
+- In insist: if a link starts with "/doc/", replace the "/doc/" prefix by "/".
+
+Finally, you should always offer answers with high conviction, based on the provided context. If you are unsure and the answer is not explicitly written in the documentation, say "I don't know".
+
+Here are the context sections:
+---
+\{\{CONTEXT\}\}
+
+Question: "\{\{PROMPT\}\}"
+
+Answer (including related code snippets if available):`
+
+                function setDark(dark) {
+                    if (dark) {
+                        component.classList.add('dark')
+                    } else {
+                        component.classList.remove('dark')
+                    }
+                }
+
+                const body = document.querySelector('body');
+
+                setDark(body.className.includes("theme-dark"))
+
+                const observer = new MutationObserver((mutationsList) => {
+                    for (const mutation of mutationsList) {
+                        if (mutation.target === body && mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                            setDark(body.className.includes("theme-dark"))
+                        }
+                    }
+                });
+
+                observer.observe(body, { attributes: true });
             </script>
 		</body>
 	</html>

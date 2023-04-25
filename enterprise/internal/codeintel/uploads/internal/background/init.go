@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background/processor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	uploadsstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -20,7 +19,7 @@ import (
 
 func NewUploadProcessorJob(
 	observationCtx *observation.Context,
-	store store.Store,
+	store uploadsstore.Store,
 	lsifstore lsifstore.Store,
 	repoStore processor.RepoStore,
 	gitserverClient gitserver.Client,
@@ -30,7 +29,7 @@ func NewUploadProcessorJob(
 ) []goroutine.BackgroundRoutine {
 	metrics := processor.NewResetterMetrics(observationCtx)
 	uploadsProcessorStore := dbworkerstore.New(observationCtx, db.Handle(), uploadsstore.UploadWorkerStoreOptions)
-	uploadsResetterStore := dbworkerstore.New(observationCtx, db.Handle(), uploadsstore.UploadWorkerStoreOptions)
+	uploadsResetterStore := dbworkerstore.New(observationCtx.Clone(observation.Honeycomb(nil)), db.Handle(), uploadsstore.UploadWorkerStoreOptions)
 	dbworker.InitPrometheusMetric(observationCtx, uploadsProcessorStore, "codeintel", "upload", nil)
 
 	return []goroutine.BackgroundRoutine{
@@ -49,7 +48,7 @@ func NewUploadProcessorJob(
 }
 
 func NewCommittedAtBackfillerJob(
-	store store.Store,
+	store uploadsstore.Store,
 	gitserverClient gitserver.Client,
 	config *backfiller.Config,
 ) []goroutine.BackgroundRoutine {
@@ -64,7 +63,7 @@ func NewCommittedAtBackfillerJob(
 
 func NewJanitor(
 	observationCtx *observation.Context,
-	store store.Store,
+	store uploadsstore.Store,
 	lsifstore lsifstore.Store,
 	gitserverClient gitserver.Client,
 	config *janitor.Config,
@@ -87,15 +86,13 @@ func NewJanitor(
 }
 
 func NewCommitGraphUpdater(
-	store store.Store,
-	locker commitgraph.Locker,
+	store uploadsstore.Store,
 	gitserverClient gitserver.Client,
 	config *commitgraph.Config,
 ) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		commitgraph.NewCommitGraphUpdater(
 			store,
-			locker,
 			gitserverClient,
 			config,
 		),
@@ -104,9 +101,9 @@ func NewCommitGraphUpdater(
 
 func NewExpirationTasks(
 	observationCtx *observation.Context,
-	store store.Store,
+	store uploadsstore.Store,
 	policySvc expirer.PolicyService,
-	policyMatcher expirer.PolicyMatcher,
+	gitserverClient gitserver.Client,
 	repoStore database.RepoStore,
 	config *expirer.Config,
 ) []goroutine.BackgroundRoutine {
@@ -116,7 +113,7 @@ func NewExpirationTasks(
 			store,
 			repoStore,
 			policySvc,
-			policyMatcher,
+			gitserverClient,
 			config,
 		),
 	}

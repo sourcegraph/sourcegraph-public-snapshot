@@ -7,9 +7,7 @@ import { Interaction } from '../transcript/interaction'
 import { Recipe, RecipeContext } from './recipe'
 
 export class GitHistory implements Recipe {
-    public getID(): string {
-        return 'git-history'
-    }
+    public id = 'git-history'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const dirPath = context.editor.getWorkspaceRootPath()

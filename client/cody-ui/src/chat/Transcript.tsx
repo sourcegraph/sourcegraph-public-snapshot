@@ -4,6 +4,8 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps } from '../Chat'
+
 import { FileLinkProps } from './ContextFiles'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
 
@@ -13,12 +15,21 @@ export const Transcript: React.FunctionComponent<
     {
         transcript: ChatMessage[]
         messageInProgress: ChatMessage | null
+        messageBeingEdited: boolean
+        setMessageBeingEdited: (input: boolean) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
         className?: string
+        textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
+        EditButtonContainer?: React.FunctionComponent<EditButtonProps>
+        editButtonOnSubmit?: (text: string) => void
+        FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
+        feedbackButtonsOnSubmit?: (text: string) => void
     } & TranscriptItemClassNames
 > = ({
     transcript,
     messageInProgress,
+    messageBeingEdited,
+    setMessageBeingEdited,
     fileLinkComponent,
     className,
     codeBlocksCopyButtonClassName,
@@ -26,6 +37,11 @@ export const Transcript: React.FunctionComponent<
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
     transcriptActionClassName,
+    textAreaComponent,
+    EditButtonContainer,
+    editButtonOnSubmit,
+    FeedbackButtonsContainer,
+    feedbackButtonsOnSubmit,
 }) => {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
@@ -67,23 +83,36 @@ export const Transcript: React.FunctionComponent<
                     key={index}
                     message={message}
                     inProgress={false}
+                    beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
+                    setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
+                    textAreaComponent={textAreaComponent}
+                    EditButtonContainer={EditButtonContainer}
+                    editButtonOnSubmit={editButtonOnSubmit}
+                    showEditButton={index > 0 && transcript.length - index === 2}
+                    FeedbackButtonsContainer={FeedbackButtonsContainer}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    showFeedbackButtons={index > 0 && transcript.length - index === 1}
                 />
             ))}
             {messageInProgress && messageInProgress.speaker === 'assistant' && (
                 <TranscriptItem
                     message={messageInProgress}
                     inProgress={true}
+                    beingEdited={false}
+                    setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
+                    showEditButton={false}
+                    showFeedbackButtons={false}
                 />
             )}
         </div>

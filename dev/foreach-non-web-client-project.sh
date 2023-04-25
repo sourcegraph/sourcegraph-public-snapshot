@@ -18,6 +18,7 @@ DIRS=(
   client/client-api
   client/codeintellify
   client/cody
+  client/cody/integration-test
   client/cody-shared
   client/cody-ui
   client/cody-web

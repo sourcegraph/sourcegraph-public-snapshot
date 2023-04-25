@@ -1,11 +1,28 @@
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { Message } from '../../sourcegraph-api'
 
-import { Interaction } from './interaction'
+import { Interaction, InteractionJSON } from './interaction'
 import { ChatMessage } from './messages'
 
+export interface TranscriptJSON {
+    interactions: InteractionJSON[]
+}
+
 export class Transcript {
+    public static fromJSON(json: TranscriptJSON): Transcript {
+        return new Transcript(
+            json.interactions.map(
+                ({ humanMessage, assistantMessage, context }) =>
+                    new Interaction(humanMessage, assistantMessage, Promise.resolve(context))
+            )
+        )
+    }
+
     private interactions: Interaction[] = []
+
+    constructor(interactions: Interaction[] = []) {
+        this.interactions = interactions
+    }
 
     public addInteraction(interaction: Interaction | null): void {
         if (!interaction) {
@@ -16,6 +33,10 @@ export class Transcript {
 
     public getLastInteraction(): Interaction | null {
         return this.interactions.length > 0 ? this.interactions[this.interactions.length - 1] : null
+    }
+
+    public removeLastInteraction(): void {
+        this.interactions.pop()
     }
 
     public addAssistantResponse(text: string, displayText?: string): void {
@@ -54,6 +75,10 @@ export class Transcript {
 
     public toChat(): ChatMessage[] {
         return this.interactions.flatMap(interaction => interaction.toChat())
+    }
+
+    public async toJSON(): Promise<TranscriptJSON> {
+        return { interactions: await Promise.all(this.interactions.map(interaction => interaction.toJSON())) }
     }
 
     public reset(): void {

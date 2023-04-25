@@ -5,7 +5,7 @@ import * as vscode from 'vscode'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes'
+import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
@@ -25,7 +25,7 @@ import { logEvent } from '../event-logger'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
-import { ConfigurationSubsetForWebview, ExtensionMessage, WebviewMessage } from './protocol'
+import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, WebviewMessage } from './protocol'
 
 export async function isValidLogin(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
@@ -37,7 +37,7 @@ export async function isValidLogin(
 
 type Config = Pick<
     ConfigurationWithAccessToken,
-    'codebase' | 'serverEndpoint' | 'debug' | 'customHeaders' | 'accessToken'
+    'codebase' | 'serverEndpoint' | 'debug' | 'customHeaders' | 'accessToken' | 'useContext'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -84,6 +84,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.configurationChangeEvent.fire()
     }
 
+    public clearAndRestartSession(): void {
+        this.createNewChatID()
+        this.cancelCompletion()
+        this.isMessageInProgress = false
+        this.transcript.reset()
+        this.sendTranscript()
+        this.sendChatHistory()
+    }
+
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
@@ -92,11 +101,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendTranscript()
                 this.sendChatHistory()
                 break
-            case 'reset':
-                this.onResetChat()
-                this.sendChatHistory()
-                break
             case 'submit':
+                await this.onHumanMessageSubmitted(message.text)
+                break
+            case 'edit':
+                this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text)
                 break
             case 'executeRecipe':
@@ -113,14 +122,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 if (isValid) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
-                    logEvent('CodyVSCodeExtension:login:clicked')
+                    this.sendEvent('auth', 'login')
                 }
                 void this.webview?.postMessage({ type: 'login', isValid })
                 break
             }
+            case 'event':
+                this.sendEvent(message.event, message.value)
+                break
             case 'removeToken':
                 await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-                logEvent('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
+                this.sendEvent('token', 'Delete')
                 break
             case 'removeHistory':
                 await this.localStorage.removeChatHistory()
@@ -136,8 +148,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     try {
                         const doc = await vscode.workspace.openTextDocument(uri)
                         await vscode.window.showTextDocument(doc)
-                    } catch (error) {
-                        console.error(`Could not open file: ${error}`)
+                    } catch {
+                        // Try to open the file in the sourcegraph view
+                        const sourcegraphInstanceUrl = this.config.serverEndpoint
+                        const sourcegraphWebUrl = new URL(
+                            `/search?q=context:global+file:${message.filePath}`,
+                            sourcegraphInstanceUrl
+                        ).href
+
+                        try {
+                            await vscode.env.openExternal(vscode.Uri.parse(sourcegraphWebUrl))
+                        } catch (error) {
+                            console.error(`Could not open the file: ${error}`)
+                        }
                     }
                 } else {
                     console.error('Could not open file because rootPath is null')
@@ -200,14 +223,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.cancelCompletionCallback = null
     }
 
-    private onResetChat(): void {
-        this.createNewChatID()
-        this.cancelCompletion()
-        this.isMessageInProgress = false
-        this.transcript.reset()
-        this.sendTranscript()
-    }
-
     private async onHumanMessageSubmitted(text: string): Promise<void> {
         this.inputHistory.push(text)
         await this.executeRecipe('chat-question', text)
@@ -245,7 +260,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
 
-        logEvent(`CodyVSCodeExtension:recipe:${recipe.getID()}:executed`)
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
     }
 
     private showTab(tab: string): void {
@@ -307,8 +322,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             void this.webview?.postMessage({
                 type: 'contextStatus',
                 contextStatus: {
+                    mode: this.config.useContext,
+                    connection: this.codebaseContext.checkEmbeddingsConnection(),
                     codebase: this.config.codebase,
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
+                    supportsKeyword: true,
                 },
             })
         }
@@ -340,6 +358,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         this.disposables.push(this.configurationChangeEvent.event(() => send()))
         send().catch(error => console.error(error))
+    }
+
+    public sendEvent(event: string, value: string): void {
+        const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href
+        switch (event) {
+            case 'feedback':
+                // Only include context for dot com users with connected codebase
+                logEvent(
+                    `CodyVSCodeExtension:codyFeedback:${value}`,
+                    null,
+                    !isPrivateInstance && this.config.codebase ? this.transcript.toChat() : null
+                )
+                break
+            case 'token':
+                logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`)
+                break
+            case 'auth':
+                logEvent(`CodyVSCodeExtension:${value}:clicked`)
+                break
+        }
     }
 
     /**

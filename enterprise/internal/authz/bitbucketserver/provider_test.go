@@ -93,7 +93,6 @@ func testProviderFetchAccount(f *fixtures, cli *bitbucketserver.Client) func(*te
 				name: "user not found",
 				user: &types.User{Username: "john"},
 				acct: nil,
-				err:  `no results returned by the Bitbucket Server API`,
 			},
 			{
 				name: "user found by exact username match",

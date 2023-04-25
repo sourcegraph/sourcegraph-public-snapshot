@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
+import { DOTCOM_URL } from './chat/protocol'
 import { LocalStorage } from './command/LocalStorageProvider'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
@@ -53,8 +54,18 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
             }
         }),
         vscode.workspace.onDidChangeConfiguration(async event => {
-            if (event.affectsConfiguration('cody') || event.affectsConfiguration('sourcegraph')) {
+            if (event.affectsConfiguration('cody')) {
                 onConfigurationChange(await getFullConfig())
+            }
+            if (event.affectsConfiguration('cody.codebase')) {
+                const action = await vscode.window.showInformationMessage(
+                    'You must reload VS Code for Cody to pick up your new codebase.',
+                    'Reload VS Code',
+                    'Close'
+                )
+                if (action === 'Reload VS Code') {
+                    void vscode.commands.executeCommand('workbench.action.reloadWindow')
+                }
             }
         })
     )
@@ -119,16 +130,12 @@ const register = async (
         // Register URI Handler to resolve token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
-                await workspaceConfig.update(
-                    'cody.serverEndpoint',
-                    'https://sourcegraph.com',
-                    vscode.ConfigurationTarget.Global
-                )
+                await workspaceConfig.update('cody.serverEndpoint', DOTCOM_URL.href, vscode.ConfigurationTarget.Global)
                 const token = new URLSearchParams(uri.query).get('code')
                 if (token && token.length > 8) {
                     await context.secrets.store(CODY_ACCESS_TOKEN_SECRET, token)
                     const isAuthed = await isValidLogin({
-                        serverEndpoint: 'https://sourcegraph.com',
+                        serverEndpoint: DOTCOM_URL.href,
                         accessToken: token,
                         customHeaders: config.customHeaders,
                     })
@@ -164,16 +171,10 @@ const register = async (
             await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
             logEvent('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
         }),
-        // TOS
-        vscode.commands.registerCommand('cody.accept-tos', version =>
-            localStorage.set('cody.tos-version-accepted', version)
-        ),
-        vscode.commands.registerCommand('cody.get-accepted-tos-version', () =>
-            localStorage.get('cody.tos-version-accepted')
-        ),
         // Commands
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
+        vscode.commands.registerCommand('cody.interactive.clear', () => chatProvider.clearAndRestartSession()),
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
             executeRecipe('explain-code-high-level')
