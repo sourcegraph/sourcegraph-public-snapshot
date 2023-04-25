@@ -1,5 +1,6 @@
 import { FC, useEffect, useMemo } from 'react'
 
+import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
 import { basename } from '@sourcegraph/common'
@@ -89,6 +90,7 @@ const REPOSITORY_GIT_COMMITS_QUERY = gql`
     query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
         node(id: $repo) {
             ... on Repository {
+                isPerforceDepot
                 externalURLs {
                     url
                     serviceKind
@@ -121,6 +123,8 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     const location = useLocation()
     const { filePath = '' } = parseBrowserRepoURL(location.pathname)
 
+    var isPerforceDepot = false
+
     const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoryGitCommitsResult,
         RepositoryGitCommitsVariables,
@@ -145,6 +149,9 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
             if (!node.commit?.ancestors) {
                 return { nodes: [] }
             }
+
+            isPerforceDepot = node.isPerforceDepot
+
             return node?.commit?.ancestors
         },
         options: {
@@ -152,6 +159,22 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
             useAlternateAfterCursor: true,
         },
     })
+
+    const getRefType = (plural = false) => {
+        if (isPerforceDepot) {
+            return plural ? 'changelists' : 'changelist'
+        }
+        return plural ? 'commits' : 'commit'
+    }
+
+    const getPageTitle = (): string => {
+        const repoString = displayRepoName(repo.name)
+        const refType = capitalize(getRefType(true))
+        if (filePath) {
+            return `${refType} - ${basename(filePath)} - ${repoString}`
+        }
+        return `${refType} - ${repoString}`
+    }
 
     useEffect(() => {
         eventLogger.logPageView('RepositoryCommits')
@@ -186,17 +209,12 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
             if (!repo) {
                 return
             }
-            return { key: 'commits', element: <>Commits</> }
+
+            const refType = getRefType(true)
+
+            return { key: refType, element: <>{capitalize(refType)}</> }
         }, [repo])
     )
-
-    const getPageTitle = (): string => {
-        const repoString = displayRepoName(repo.name)
-        if (filePath) {
-            return `Commits - ${basename(filePath)} - ${repoString}`
-        }
-        return `Commits - ${repoString}`
-    }
 
     return (
         <div className={styles.repositoryCommitsPage} data-testid="commits-page">
@@ -210,7 +228,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                                 View commits inside <Code>{basename(filePath)}</Code>
                             </>
                         ) : (
-                            <>View commits from this repository</>
+                            <>View {getRefType(true)} from this repository</>
                         )}
                     </Heading>
 
@@ -231,8 +249,8 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                                 centered={true}
                                 first={REPOSITORY_GIT_COMMITS_PER_PAGE}
                                 connection={connection}
-                                noun="commit"
-                                pluralNoun="commits"
+                                noun={getRefType()}
+                                pluralNoun={getRefType(true)}
                                 hasNextPage={hasNextPage}
                                 emptyElement={null}
                             />
