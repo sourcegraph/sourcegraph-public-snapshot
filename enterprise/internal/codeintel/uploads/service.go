@@ -4,10 +4,7 @@ import (
 	"context"
 	"time"
 
-	"cloud.google.com/go/storage"
-	"github.com/derision-test/glock"
 	"github.com/opentracing/opentracing-go/log"
-	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
@@ -16,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,16 +20,9 @@ import (
 type Service struct {
 	store           store.Store
 	repoStore       RepoStore
-	workerutilStore dbworkerstore.Store[shared.Upload]
 	lsifstore       lsifstore.Store
 	gitserverClient gitserver.Client
-	rankingBucket   *storage.BucketHandle
-	policySvc       PolicyService
-	policyMatcher   PolicyMatcher
-	locker          Locker
-	logger          logger.Logger
 	operations      *operations
-	clock           glock.Clock
 }
 
 func newService(
@@ -42,26 +31,13 @@ func newService(
 	repoStore RepoStore,
 	lsifstore lsifstore.Store,
 	gsc gitserver.Client,
-	rankingBucket *storage.BucketHandle,
-	policySvc PolicyService,
-	policyMatcher PolicyMatcher,
-	locker Locker,
 ) *Service {
-	workerutilStore := store.WorkerutilStore(observationCtx)
-
 	return &Service{
 		store:           store,
 		repoStore:       repoStore,
-		workerutilStore: workerutilStore,
 		lsifstore:       lsifstore,
 		gitserverClient: gsc,
-		rankingBucket:   rankingBucket,
-		policySvc:       policySvc,
-		policyMatcher:   policyMatcher,
-		locker:          locker,
-		logger:          observationCtx.Logger,
 		operations:      newOperations(observationCtx),
-		clock:           glock.NewRealClock(),
 	}
 }
 

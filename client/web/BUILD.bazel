@@ -181,6 +181,7 @@ ts_project(
         "src/codeintel/useCodeIntel.ts",
         "src/codeintel/useRepoAndBlob.ts",
         "src/codeintel/util/helpers.ts",
+        "src/cody/ChatHistory.tsx",
         "src/cody/CodeMirrorEditor.ts",
         "src/cody/CodyChat.tsx",
         "src/cody/CodyIcon.tsx",
@@ -311,6 +312,7 @@ ts_project(
         "src/components/useUserHistory.ts",
         "src/contributions.ts",
         "src/enterprise/EnterpriseWebApp.tsx",
+        "src/enterprise/app-main.tsx",
         "src/enterprise/app/AppAuthCallbackPage.tsx",
         "src/enterprise/app/AppComingSoonPage.tsx",
         "src/enterprise/batches/BatchChangeTabs.tsx",
@@ -1490,6 +1492,7 @@ ts_project(
         "src/site/index.ts",
         "src/staticAppConfig.ts",
         "src/stores/codyChat.ts",
+        "src/stores/codySidebar.ts",
         "src/stores/editor.ts",
         "src/stores/index.ts",
         "src/stores/navbarSearchQueryState.ts",
@@ -1904,7 +1907,7 @@ jest_test(
         ":web_tests",
     ],
     patch_node_fs = False,
-    shard_count = 4,  # originally at 6, but tend to consume too much resource and crash.
+    shard_count = 3,  # originally at 6, but tend to consume too much resource and crash.
     tags = [
         "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],

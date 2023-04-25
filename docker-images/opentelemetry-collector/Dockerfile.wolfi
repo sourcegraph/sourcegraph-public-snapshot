@@ -1,0 +1,21 @@
+# hadolint ignore=DL3007
+FROM us.gcr.io/sourcegraph-dev/wolfi-opentelemetry-collector-base:latest
+
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+
+# Set up a home directory
+RUN mkdir -p /otel-collector
+WORKDIR /otel-collector
+
+# TODO: Alpine image runs as root - required?
+
+# Set up bundled configuration - see README
+COPY ./configs /etc/otel-collector/configs
+
+ENTRYPOINT [ "/usr/bin/otelcol-sourcegraph" ]

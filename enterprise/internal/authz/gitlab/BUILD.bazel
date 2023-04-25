@@ -39,6 +39,7 @@ go_test(
         "//cmd/frontend/auth/providers",
         "//internal/api",
         "//internal/authz",
+        "//internal/database",
         "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/extsvc/gitlab",

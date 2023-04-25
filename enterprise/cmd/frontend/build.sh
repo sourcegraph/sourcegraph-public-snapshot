@@ -10,9 +10,9 @@ cleanup() {
   rm -rf "$OUTPUT"
 }
 trap cleanup EXIT
+
 if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
   ./dev/ci/bazel.sh build //enterprise/cmd/frontend
-
   out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/frontend --output=files)
   cp "$out" "$OUTPUT"
 

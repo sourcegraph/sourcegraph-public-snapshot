@@ -794,16 +794,40 @@ type Mutation {
     Associate a new key-value pair with a repo.
     """
     addRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+        @deprecated(
+            reason: "Use addRepoMetadata instead. This field is a deprecated and will be removed in a future release."
+        )
+
+    """
+    Associate a new key-value pair metadata with a repo.
+    """
+    addRepoMetadata(repo: ID!, key: String!, value: String): EmptyResponse!
 
     """
     Update a key-value pair associated with a repo.
     """
     updateRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+        @deprecated(
+            reason: "Use updateRepoMetadata instead. This field is a deprecated and will be removed in a future release."
+        )
+
+    """
+    Update metadata value for a given metadata key for associated with a repo.
+    """
+    updateRepoMetadata(repo: ID!, key: String!, value: String): EmptyResponse!
 
     """
     Delete a key-value pair associated with a repo.
     """
     deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
+        @deprecated(
+            reason: "Use deleteRepoMetadata instead. This field is a deprecated and will be removed in a future release."
+        )
+
+    """
+    Delete a key-value pair metadata associated with a repo.
+    """
+    deleteRepoMetadata(repo: ID!, key: String!): EmptyResponse!
 
     """
     INTERNAL ONLY: Reclone a repository from the gitserver. This involves deleting
@@ -3650,6 +3674,14 @@ type Repository implements Node & GenericSearchResultInterface {
     A set of user-defined key-value pairs associated with the repo.
     """
     keyValuePairs: [KeyValuePair!]!
+        @deprecated(
+            reason: "Use repo.metadata instead. This field is a deprecated and will be removed in a future release."
+        )
+
+    """
+    A set of user-defined key-value pairs metadata associated with the repo.
+    """
+    metadata: [KeyValuePair!]!
 
     """
     The size of repo when cloned on disk

@@ -16,6 +16,8 @@ import styles from './Chat.module.css'
 interface ChatProps extends ChatClassNames {
     transcript: ChatMessage[]
     messageInProgress: ChatMessage | null
+    messageBeingEdited: boolean
+    setMessageBeingEdited: (input: boolean) => void
     contextStatus?: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
@@ -27,6 +29,8 @@ interface ChatProps extends ChatClassNames {
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     afterTips?: string
     className?: string
+    EditButtonContainer?: React.FunctionComponent<EditButtonProps>
+    editButtonOnSubmit?: (text: string) => void
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
 }
@@ -53,6 +57,13 @@ export interface ChatUISubmitButtonProps {
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
+export interface EditButtonProps {
+    className: string
+    disabled?: boolean
+    messageBeingEdited: boolean
+    setMessageBeingEdited: (input: boolean) => void
+}
+
 export interface FeedbackButtonsProps {
     className: string
     disabled?: boolean
@@ -63,6 +74,8 @@ export interface FeedbackButtonsProps {
  */
 export const Chat: React.FunctionComponent<ChatProps> = ({
     messageInProgress,
+    messageBeingEdited,
+    setMessageBeingEdited,
     transcript,
     contextStatus,
     formInput,
@@ -83,6 +96,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     inputRowClassName,
     chatInputContextClassName,
     chatInputClassName,
+    EditButtonContainer,
+    editButtonOnSubmit,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
 }) => {
@@ -106,15 +121,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 
     const onChatSubmit = useCallback((): void => {
-        // Submit chat only when input is not empty
-        if (formInput.trim()) {
+        // Submit chat only when input is not empty and not in progress
+        if (formInput.trim() && !messageInProgress) {
             onSubmit(formInput)
             setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, formInput])
             setInputRows(5)
             setFormInput('')
         }
-    }, [formInput, inputHistory, onSubmit, setFormInput, setInputHistory])
+    }, [formInput, inputHistory, messageInProgress, onSubmit, setFormInput, setInputHistory])
 
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLDivElement>): void => {
@@ -129,6 +144,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             ) {
                 event.preventDefault()
                 event.stopPropagation()
+                setMessageBeingEdited(false)
                 onChatSubmit()
             }
             // Loop through input history on up arrow press
@@ -140,7 +156,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
         },
-        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput]
+        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput, setMessageBeingEdited]
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
@@ -153,6 +169,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             <Transcript
                 transcript={transcriptWithWelcome}
                 messageInProgress={messageInProgress}
+                messageBeingEdited={messageBeingEdited}
+                setMessageBeingEdited={setMessageBeingEdited}
                 fileLinkComponent={fileLinkComponent}
                 codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
                 transcriptItemClassName={transcriptItemClassName}
@@ -160,6 +178,9 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                 transcriptActionClassName={transcriptActionClassName}
                 className={styles.transcriptContainer}
+                textAreaComponent={TextArea}
+                EditButtonContainer={EditButtonContainer}
+                editButtonOnSubmit={editButtonOnSubmit}
                 FeedbackButtonsContainer={FeedbackButtonsContainer}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
             />

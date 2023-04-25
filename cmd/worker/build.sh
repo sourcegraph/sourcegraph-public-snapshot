@@ -11,7 +11,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-
 if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
   ./dev/ci/bazel.sh build //cmd/worker \
     --stamp \
