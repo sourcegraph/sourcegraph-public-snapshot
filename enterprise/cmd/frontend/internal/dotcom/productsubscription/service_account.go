@@ -20,7 +20,7 @@ func serviceAccountOrOwnerOrSiteAdmin(ctx context.Context, db database.DB, owner
 	}
 
 	if ownerUserID != nil {
-		return auth.CheckSiteAdminOrSameUser(ctx, db, *ownerUserID)
+		return auth.CheckSameUser(ctx, *ownerUserID)
 	}
 
 	return auth.CheckCurrentUserIsSiteAdmin(ctx, db)
