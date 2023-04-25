@@ -934,7 +934,7 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "own_signal_recent_contribution_id_seq",
+      "Name": "own_background_jobs_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -943,7 +943,7 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "own_background_jobs_id_seq",
+      "Name": "own_signal_recent_contribution_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -18493,6 +18493,103 @@
       "Triggers": []
     },
     {
+      "Name": "own_aggregate_recent_contribution",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "changed_file_path_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "commit_author_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "contributions_count",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('own_aggregate_recent_contribution_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "own_aggregate_recent_contribution_file_author",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX own_aggregate_recent_contribution_file_author ON own_aggregate_recent_contribution USING btree (changed_file_path_id, commit_author_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "own_aggregate_recent_contribution_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX own_aggregate_recent_contribution_pkey ON own_aggregate_recent_contribution USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "own_aggregate_recent_contribution_changed_file_path_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo_paths",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)"
+        },
+        {
+          "Name": "own_aggregate_recent_contribution_commit_author_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "commit_authors",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "own_background_jobs",
       "Comment": "",
       "Columns": [
@@ -18725,103 +18822,6 @@
         }
       ],
       "Constraints": null,
-      "Triggers": []
-    },
-    {
-      "Name": "own_aggregate_recent_contribution",
-      "Comment": "",
-      "Columns": [
-        {
-          "Name": "changed_file_path_id",
-          "Index": 3,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "commit_author_id",
-          "Index": 2,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "contributions_count",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "0",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "id",
-          "Index": 1,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "nextval('own_aggregate_recent_contribution_id_seq'::regclass)",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        }
-      ],
-      "Indexes": [
-        {
-          "Name": "own_aggregate_recent_contribution_file_author",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX own_aggregate_recent_contribution_file_author ON own_aggregate_recent_contribution USING btree (changed_file_path_id, commit_author_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "own_aggregate_recent_contribution_pkey",
-          "IsPrimaryKey": true,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX own_aggregate_recent_contribution_pkey ON own_aggregate_recent_contribution USING btree (id)",
-          "ConstraintType": "p",
-          "ConstraintDefinition": "PRIMARY KEY (id)"
-        }
-      ],
-      "Constraints": [
-        {
-          "Name": "own_aggregate_recent_contribution_changed_file_path_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "repo_paths",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)"
-        },
-        {
-          "Name": "own_aggregate_recent_contribution_commit_author_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "commit_authors",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)"
-        }
-      ],
       "Triggers": []
     },
     {

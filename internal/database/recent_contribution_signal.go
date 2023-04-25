@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"hash/fnv"
 	"path"
 	"time"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -39,6 +41,15 @@ type RecentContributorSummary struct {
 
 type recentContributionSignalStore struct {
 	*basestore.Store
+}
+
+func (s *recentContributionSignalStore) With(other basestore.ShareableStore) *recentContributionSignalStore {
+	return &recentContributionSignalStore{Store: s.Store.With(other)}
+}
+
+func (s *recentContributionSignalStore) Transact(ctx context.Context) (*recentContributionSignalStore, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &recentContributionSignalStore{Store: txBase}, err
 }
 
 const commitAuthorInsertFmtstr = `
@@ -94,7 +105,8 @@ const pathInsertFmtstr = `
 	)
 	SELECT id FROM already_exists
 	UNION ALL
-	SELECT id FROM need_to_insert`
+	SELECT id FROM need_to_insert
+`
 
 // ensureRepoPaths takes paths of files changed in the given commit
 // and makes sure they all exist in the database (alongside with their ancestor paths)
@@ -157,7 +169,7 @@ func (s *recentContributionSignalStore) ensureRepoPaths(ctx context.Context, com
 		}
 		ids[p] = id
 	}
-	// return the IDs of inserted files changed, in order
+	// return the IDs of inserted files changed, in order of `commit.FilesChanged`
 	fIDs := make([]int, len(commit.FilesChanged))
 	for i, f := range commit.FilesChanged {
 		id, ok := ids[f]
@@ -185,18 +197,24 @@ const insertRecentContributorSignalFmtstr = `
 // The aggregate signals in `own_aggregate_recent_contribution` are updated atomically
 // for each new signal appearing in `own_signal_recent_contribution` by using
 // a trigger: `update_own_aggregate_recent_contribution`.
-func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Commit) error {
-	db := s.Store
+func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Commit) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
 	// Get or create commit author:
-	authorID, err := s.ensureAuthor(ctx, commit)
+	authorID, err := tx.ensureAuthor(ctx, commit)
 	if err != nil {
 		return errors.Wrap(err, "cannot insert commit author")
 	}
 	// Get or create necessary repo paths:
-	pathIDs, err := s.ensureRepoPaths(ctx, commit)
+	pathIDs, err := tx.ensureRepoPaths(ctx, commit)
 	if err != nil {
 		return errors.Wrap(err, "cannot insert repo paths")
 	}
+	fmt.Println(fmt.Sprintf("commit: %s", commit.CommitSHA))
 	// Insert individual signals into own_signal_recent_contribution:
 	for _, pathID := range pathIDs {
 		commitID := fnv.New32a()
@@ -207,7 +225,7 @@ func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Co
 			commit.Timestamp,
 			commitID.Sum32(),
 		)
-		err = db.Exec(ctx, q)
+		err = tx.Exec(ctx, q)
 		if err != nil {
 			return err
 		}
@@ -236,19 +254,19 @@ const findRecentContributorsFmtstr = `
 // - Empty string `path` designates repo root (so all contributions for the whole repo).
 // - TODO: Need to support limit & offset here.
 func (s *recentContributionSignalStore) FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentContributorSummary, error) {
-	var contributions []RecentContributorSummary
 	q := sqlf.Sprintf(findRecentContributorsFmtstr, repoID, path)
-	rows, err := s.Query(ctx, q)
+
+	contributionsScanner := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (RecentContributorSummary, error) {
+		var rcs RecentContributorSummary
+		if err := scanner.Scan(&rcs.AuthorName, &rcs.AuthorEmail, &rcs.ContributionCount); err != nil {
+			return RecentContributorSummary{}, err
+		}
+		return rcs, nil
+	})
+
+	contributions, err := contributionsScanner(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var rcs RecentContributorSummary
-		if err := rows.Scan(&rcs.AuthorName, &rcs.AuthorEmail, &rcs.ContributionCount); err != nil {
-			return nil, err
-		}
-		contributions = append(contributions, rcs)
 	}
 	return contributions, nil
 }

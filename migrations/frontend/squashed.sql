@@ -3538,26 +3538,6 @@ CREATE SEQUENCE own_aggregate_recent_contribution_id_seq
 
 ALTER SEQUENCE own_aggregate_recent_contribution_id_seq OWNED BY own_aggregate_recent_contribution.id;
 
-CREATE TABLE own_signal_recent_contribution (
-    id integer NOT NULL,
-    commit_author_id integer NOT NULL,
-    changed_file_path_id integer NOT NULL,
-    commit_timestamp timestamp without time zone NOT NULL,
-    commit_id_hash integer NOT NULL
-);
-
-COMMENT ON TABLE own_signal_recent_contribution IS 'One entry per file changed in every commit that classifies as a contribution signal.';
-
-CREATE SEQUENCE own_signal_recent_contribution_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE own_signal_recent_contribution_id_seq OWNED BY own_signal_recent_contribution.id;
-
 CREATE TABLE own_background_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
@@ -3585,6 +3565,26 @@ CREATE SEQUENCE own_background_jobs_id_seq
     CACHE 1;
 
 ALTER SEQUENCE own_background_jobs_id_seq OWNED BY own_background_jobs.id;
+
+CREATE TABLE own_signal_recent_contribution (
+    id integer NOT NULL,
+    commit_author_id integer NOT NULL,
+    changed_file_path_id integer NOT NULL,
+    commit_timestamp timestamp without time zone NOT NULL,
+    commit_id_hash integer NOT NULL
+);
+
+COMMENT ON TABLE own_signal_recent_contribution IS 'One entry per file changed in every commit that classifies as a contribution signal.';
+
+CREATE SEQUENCE own_signal_recent_contribution_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_signal_recent_contribution_id_seq OWNED BY own_signal_recent_contribution.id;
 
 CREATE TABLE package_repo_filters (
     id integer NOT NULL,
@@ -4680,9 +4680,9 @@ ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound
 
 ALTER TABLE ONLY own_aggregate_recent_contribution ALTER COLUMN id SET DEFAULT nextval('own_aggregate_recent_contribution_id_seq'::regclass);
 
-ALTER TABLE ONLY own_signal_recent_contribution ALTER COLUMN id SET DEFAULT nextval('own_signal_recent_contribution_id_seq'::regclass);
-
 ALTER TABLE ONLY own_background_jobs ALTER COLUMN id SET DEFAULT nextval('own_background_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY own_signal_recent_contribution ALTER COLUMN id SET DEFAULT nextval('own_signal_recent_contribution_id_seq'::regclass);
 
 ALTER TABLE ONLY package_repo_filters ALTER COLUMN id SET DEFAULT nextval('package_repo_filters_id_seq'::regclass);
 
@@ -5069,11 +5069,11 @@ ALTER TABLE ONLY outbound_webhooks
 ALTER TABLE ONLY own_aggregate_recent_contribution
     ADD CONSTRAINT own_aggregate_recent_contribution_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY own_signal_recent_contribution
-    ADD CONSTRAINT own_signal_recent_contribution_pkey PRIMARY KEY (id);
-
 ALTER TABLE ONLY own_background_jobs
     ADD CONSTRAINT own_background_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY own_signal_recent_contribution
+    ADD CONSTRAINT own_signal_recent_contribution_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY package_repo_filters
     ADD CONSTRAINT package_repo_filters_pkey PRIMARY KEY (id);

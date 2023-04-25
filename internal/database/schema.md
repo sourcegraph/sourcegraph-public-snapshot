@@ -2799,27 +2799,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.own_signal_recent_contribution"
-```
-        Column        |            Type             | Collation | Nullable |                          Default                           
-----------------------+-----------------------------+-----------+----------+------------------------------------------------------------
- id                   | integer                     |           | not null | nextval('own_signal_recent_contribution_id_seq'::regclass)
- commit_author_id     | integer                     |           | not null | 
- changed_file_path_id | integer                     |           | not null | 
- commit_timestamp     | timestamp without time zone |           | not null | 
- commit_id_hash       | integer                     |           | not null | 
-Indexes:
-    "own_signal_recent_contribution_pkey" PRIMARY KEY, btree (id)
-Foreign-key constraints:
-    "own_signal_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
-    "own_signal_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)
-Triggers:
-    update_own_aggregate_recent_contribution AFTER INSERT ON own_signal_recent_contribution FOR EACH ROW EXECUTE FUNCTION update_own_aggregate_recent_contribution()
-
-```
-
-One entry per file changed in every commit that classifies as a contribution signal.
-
 # Table "public.own_background_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                     Default                     
@@ -2845,6 +2824,27 @@ Indexes:
     "own_background_jobs_state_idx" btree (state)
 
 ```
+
+# Table "public.own_signal_recent_contribution"
+```
+        Column        |            Type             | Collation | Nullable |                          Default                           
+----------------------+-----------------------------+-----------+----------+------------------------------------------------------------
+ id                   | integer                     |           | not null | nextval('own_signal_recent_contribution_id_seq'::regclass)
+ commit_author_id     | integer                     |           | not null | 
+ changed_file_path_id | integer                     |           | not null | 
+ commit_timestamp     | timestamp without time zone |           | not null | 
+ commit_id_hash       | integer                     |           | not null | 
+Indexes:
+    "own_signal_recent_contribution_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "own_signal_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
+    "own_signal_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)
+Triggers:
+    update_own_aggregate_recent_contribution AFTER INSERT ON own_signal_recent_contribution FOR EACH ROW EXECUTE FUNCTION update_own_aggregate_recent_contribution()
+
+```
+
+One entry per file changed in every commit that classifies as a contribution signal.
 
 # Table "public.package_repo_filters"
 ```
