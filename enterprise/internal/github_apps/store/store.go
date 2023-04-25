@@ -33,7 +33,7 @@ type GitHubAppsStore interface {
 	// GetBySlug retrieves a GitHub App from the database by slug and base url
 	GetBySlug(ctx context.Context, slug string, baseURL string) (*types.GitHubApp, error)
 
-	// WithEncryptionKey sets encryption key on store. Returns a new GithubAppStore
+	// WithEncryptionKey sets encryption key on store. Returns a new GitHubAppsStore
 	WithEncryptionKey(key encryption.Key) GitHubAppsStore
 }
 
@@ -50,7 +50,7 @@ func GitHubAppsWith(other *basestore.Store) GitHubAppsStore {
 	}
 }
 
-// WithEncryptionKey sets encryption key on store. Returns a new GithubAppStore
+// WithEncryptionKey sets encryption key on store. Returns a new GitHubAppsStore
 func (s *gitHubAppsStore) WithEncryptionKey(key encryption.Key) GitHubAppsStore {
 	return &gitHubAppsStore{Store: s.Store, key: key}
 }
@@ -59,7 +59,7 @@ func (s *gitHubAppsStore) getEncryptionKey() encryption.Key {
 	if s.key != nil {
 		return s.key
 	}
-	return keyring.Default().GithubAppKey
+	return keyring.Default().GitHubAppKey
 }
 
 // Create inserts a new GitHub App into the database.
@@ -87,7 +87,7 @@ func (s *gitHubAppsStore) Delete(ctx context.Context, id int) error {
 	return s.Exec(ctx, query)
 }
 
-var scanGithubApp = basestore.NewFirstScanner(func(s dbutil.Scanner) (*types.GitHubApp, error) {
+var scanGitHubApp = basestore.NewFirstScanner(func(s dbutil.Scanner) (*types.GitHubApp, error) {
 	var app types.GitHubApp
 
 	err := s.Scan(
@@ -141,7 +141,7 @@ func (s *gitHubAppsStore) Update(ctx context.Context, id int, app *types.GitHubA
              WHERE id = %s
 			 RETURNING id, app_id, name, slug, base_url, client_id, client_secret, private_key, encryption_key_id, logo, created_at, updated_at`,
 		app.AppID, app.Name, app.Slug, app.BaseURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo, id)
-	app, ok, err := scanGithubApp(s.Query(ctx, query))
+	app, ok, err := scanGitHubApp(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +152,7 @@ func (s *gitHubAppsStore) Update(ctx context.Context, id int, app *types.GitHubA
 }
 
 func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*types.GitHubApp, error) {
-	var selectQuery = `SELECT
+	selectQuery := `SELECT
 		id,
 		app_id,
 		name,
@@ -169,7 +169,7 @@ func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*types.Gi
 	WHERE %s`
 
 	query := sqlf.Sprintf(selectQuery, where)
-	app, ok, err := scanGithubApp(s.Query(ctx, query))
+	app, ok, err := scanGitHubApp(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}

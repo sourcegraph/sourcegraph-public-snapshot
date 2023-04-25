@@ -42,5 +42,8 @@ export abstract class SourcegraphCompletionsClient {
     }
 
     public abstract stream(params: CompletionParameters, cb: CompletionCallbacks): () => void
-    public abstract complete(params: CodeCompletionParameters): Promise<CodeCompletionResponse>
+    public abstract complete(
+        params: CodeCompletionParameters,
+        abortSignal: AbortSignal
+    ): Promise<CodeCompletionResponse>
 }

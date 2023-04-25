@@ -26,7 +26,7 @@ func TestRoundTrip(t *testing.T) {
 				EnvVarName: "testroundtrip_testkey_env_var",
 			},
 			setup: func(t *testing.T) {
-				require.NoError(t, os.Setenv("testroundtrip_testkey_env_var", rand.String(32)))
+				t.Setenv("testroundtrip_testkey_env_var", rand.String(32))
 			},
 		},
 		{

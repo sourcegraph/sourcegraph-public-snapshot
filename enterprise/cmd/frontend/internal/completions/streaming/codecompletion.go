@@ -5,26 +5,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 // NewCodeCompletionsHandler is an http handler which sends back code completion results
-func NewCodeCompletionsHandler(logger log.Logger) http.Handler {
-	return &codeCompletionHandler{logger: logger}
+func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
+	rl := NewRateLimiter(db, redispool.Store)
+	return &codeCompletionHandler{logger: logger, rl: rl}
 }
 
 type codeCompletionHandler struct {
 	logger log.Logger
+	rl     RateLimiter
 }
 
 func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -53,22 +54,26 @@ func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if honey.Enabled() {
-		start := time.Now()
-		defer func() {
-			ev := honey.NewEvent("codeCompletions")
-			ev.AddField("model", completionsConfig.CompletionModel)
-			ev.AddField("actor", actor.FromContext(ctx).UIDString())
-			ev.AddField("duration_sec", time.Since(start).Seconds())
-			// This is the header which is useful for client IP on sourcegraph.com
-			ev.AddField("connecting_ip", r.Header.Get("Cf-Connecting-Ip"))
-			ev.AddField("ip_country", r.Header.Get("Cf-Ipcountry"))
-
-			_ = ev.Send()
-		}()
-	}
+	var err error
+	ctx, done := Trace(ctx, "codeCompletions", completionsConfig.CompletionModel).
+		WithErrorP(&err).
+		WithRequest(r).
+		Build()
+	defer done()
 
 	client := anthropic.NewAnthropicClient(httpcli.ExternalDoer, completionsConfig.AccessToken, completionsConfig.CompletionModel)
+
+	// Check rate limit.
+	err = h.rl.TryAcquire(ctx)
+	if err != nil {
+		if unwrap, ok := err.(RateLimitExceededError); ok {
+			respondRateLimited(w, unwrap)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	completion, err := client.Complete(ctx, p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

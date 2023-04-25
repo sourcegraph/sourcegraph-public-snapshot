@@ -9,6 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -16,13 +18,15 @@ var _ graphqlbackend.CompletionsResolver = &completionsResolver{}
 
 // completionsResolver provides chat completions
 type completionsResolver struct {
+	rl streaming.RateLimiter
 }
 
-func NewCompletionsResolver() graphqlbackend.CompletionsResolver {
-	return &completionsResolver{}
+func NewCompletionsResolver(db database.DB) graphqlbackend.CompletionsResolver {
+	rl := streaming.NewRateLimiter(db, redispool.Store)
+	return &completionsResolver{rl: rl}
 }
 
-func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (string, error) {
+func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (_ string, err error) {
 	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
 		return "", errors.New("cody experimental feature flag is not enabled for current user")
 	}
@@ -32,9 +36,19 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", errors.New("completions are not configured or disabled")
 	}
 
+	ctx, done := streaming.Trace(ctx, "resolver", completionsConfig.Model).
+		WithErrorP(&err).
+		Build()
+	defer done()
+
 	client, err := streaming.GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
 	if err != nil {
 		return "", errors.Wrap(err, "GetCompletionStreamClient")
+	}
+
+	// Check rate limit.
+	if err := c.rl.TryAcquire(ctx); err != nil {
+		return "", err
 	}
 
 	var last string

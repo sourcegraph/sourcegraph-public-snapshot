@@ -291,7 +291,7 @@ describe('RepositoryCommitPage', () => {
                     },
                 },
                 isFork: false,
-                keyValuePairs: [],
+                metadata: [],
             },
         }),
     }

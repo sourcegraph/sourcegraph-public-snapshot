@@ -2766,6 +2766,32 @@ Referenced by:
 
 ```
 
+# Table "public.own_background_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                     Default                     
+-------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                | integer                  |           | not null | nextval('own_background_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ repo_id           | integer                  |           | not null | 
+ job_type          | integer                  |           | not null | 
+Indexes:
+    "own_background_jobs_pkey" PRIMARY KEY, btree (id)
+    "own_background_jobs_repo_id_idx" btree (repo_id)
+    "own_background_jobs_state_idx" btree (state)
+
+```
+
 # Table "public.package_repo_filters"
 ```
    Column   |           Type           | Collation | Nullable |                     Default                      
@@ -3685,6 +3711,7 @@ Foreign-key constraints:
  invalidated_sessions_at | timestamp with time zone |           | not null | now()
  tos_accepted            | boolean                  |           | not null | false
  searchable              | boolean                  |           | not null | true
+ completions_quota       | integer                  |           |          | 
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
