@@ -15,7 +15,12 @@ export class Transcript {
         return new Transcript(
             json.interactions.map(
                 ({ humanMessage, assistantMessage, context, timestamp }) =>
-                    new Interaction(humanMessage, assistantMessage, Promise.resolve(context), timestamp)
+                    new Interaction(
+                        humanMessage,
+                        assistantMessage,
+                        Promise.resolve(context),
+                        timestamp || new Date().toISOString()
+                    )
             )
         )
     }
