@@ -17,7 +17,7 @@ export class CodebaseContext {
     constructor(
         private config: Pick<Configuration, 'useContext'>,
         private embeddings: EmbeddingsSearch | null,
-        private keywords: KeywordContextFetcher
+        private keywords: KeywordContextFetcher | null
     ) {}
 
     public onConfigurationChange(newConfig: typeof this.config): void {
@@ -81,6 +81,10 @@ export class CodebaseContext {
     }
 
     private async getKeywordContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+        if (!this.keywords) {
+            return []
+        }
+
         const results = await this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
         return results.flatMap(({ content, fileName }) => {
             const messageText = populateCodeContextTemplate(content, fileName)
