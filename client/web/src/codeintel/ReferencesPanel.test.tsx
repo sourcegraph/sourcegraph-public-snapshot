@@ -16,10 +16,12 @@ import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
 // CodeMirror editor relies on contenteditable property which is not supported by `jsdom`: https://github.com/jsdom/jsdom/issues/1670.
 // We need to mock `CodeMirrorBlob to avoid errors.
 // More details on CodeMirror react components testing: https://gearheart.io/articles/codemirror-unit-testing-codemirror-react-components/.
-jest.mock('../repo/blob/CodeMirrorBlob', () => ({
-    // eslint-disable-next-line react/forbid-elements - we don't use widcard <Code /> component to avoid Jest "The module factory of `jest.mock()` is not allowed to reference any out-of-scope variables." error
-    CodeMirrorBlob: (props: BlobProps) => <code data-testid="codeMirrorBlobMock">{props.blobInfo.content}</code>,
-}))
+jest.doMock('../repo/blob/CodeMirrorBlob', () => {
+    return {
+        // eslint-disable-next-line react/forbid-elements
+        CodeMirrorBlob: (props: BlobProps) => <code data-testid="codeMirrorBlobMock">{props.blobInfo.content}</code>,
+    }
+})
 
 describe('ReferencesPanel', () => {
     async function renderReferencesPanel() {
