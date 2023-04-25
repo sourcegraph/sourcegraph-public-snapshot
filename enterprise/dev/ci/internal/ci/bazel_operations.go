@@ -104,7 +104,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	cmds = append(cmds,
 		bazelAnnouncef("bazel run %s", strings.Join(runTargets, " ")),
 		bk.Cmd(bazelRunCmd),
-		bazelAnnouncef("done."),
+		bazelAnnouncef("✅"),
 	)
 
 	return func(pipeline *bk.Pipeline) {
