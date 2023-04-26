@@ -5,6 +5,7 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import webpack, { optimize } from 'webpack'
 
 import {
+    ROOT_PATH,
     getBazelCSSLoaders as getCSSLoaders,
     getProvidePlugin,
     getTerserPlugin,
@@ -12,7 +13,7 @@ import {
     getCSSModulesLoader,
 } from '@sourcegraph/build-config'
 
-export const browserWorkspacePath = process.cwd()
+export const browserWorkspacePath = path.resolve(process.cwd(), 'client/browser')
 const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
 const contentEntry = path.resolve(browserSourcePath, 'config/content.entry.js')
 const backgroundEntry = path.resolve(browserSourcePath, 'config/background.entry.js')

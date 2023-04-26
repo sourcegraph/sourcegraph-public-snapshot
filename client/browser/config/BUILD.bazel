@@ -1,7 +1,7 @@
 load("//dev:defs.bzl", "ts_project")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
-# dev/ does not contain a src/
+# config/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
 # gazelle:js_test_files there-are-no-tests
 # gazelle:js_ignore_imports ../../src/browser-extension/manifest.spec.json
@@ -16,9 +16,6 @@ ts_project(
         "webpack/production.config.bazel.ts",
         "webpack/production.config.ts",
         "webpack/utils.ts",
-    ],
-    data = [
-        "//:node_modules/terser-webpack-plugin",
     ],
     module = "commonjs",
     tsconfig = "//client/browser:tsconfig",
