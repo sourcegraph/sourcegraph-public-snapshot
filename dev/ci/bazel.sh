@@ -3,7 +3,9 @@
 set -x
 
 if [[ "${CI:-false}" == "true" ]]; then
-  echo "--- :bazel: bazel $@"
+  if [[ "$1"  == "build" || "$1" == "test" || "$1" == "run" ]]; then
+    echo "--- :bazel: bazel $@"
+  fi
   bazel \
     --bazelrc=.bazelrc \
     --bazelrc=.aspect/bazelrc/ci.bazelrc \
