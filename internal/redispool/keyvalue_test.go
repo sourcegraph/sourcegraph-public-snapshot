@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -55,8 +56,10 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 
 		// Incr
 		require.Works(kv.Set("incr-set", 5))
-		require.Works(kv.Incr("incr-set"))
-		require.Works(kv.Incr("incr-unset"))
+		_, err := kv.Incr("incr-set")
+		require.Works(err)
+		_, err = kv.Incr("incr-unset")
+		require.Works(err)
 		require.Equal(kv.Get("incr-set"), 6)
 		require.Equal(kv.Get("incr-unset"), 1)
 	})
@@ -301,7 +304,8 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 				require.Equal(kv.Get(k), errWrongType)
 				require.Equal(kv.GetSet(k, "2"), errWrongType)
 				require.Equal(kv.Get(k), errWrongType) // ensure GetSet didn't set
-				requireWrongType(kv.Incr(k))
+				_, err := kv.Incr(k)
+				requireWrongType(err)
 			}
 
 			// Ensure we fail hashes when used against non hashes.
