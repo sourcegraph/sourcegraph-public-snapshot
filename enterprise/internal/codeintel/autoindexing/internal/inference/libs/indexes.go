@@ -31,9 +31,9 @@ var defaultIndexerSHAs = map[string]string{
 	"sourcegraph/lsif-go":         "sha256:2194d2652862966f022b537ed81bccf5a9a535ab763534cb4e98a3083c8a1bc6",
 	"sourcegraph/lsif-rust":       "sha256:83cb769788987eb52f21a18b62d51ebb67c9436e1b0d2e99904c70fef424f9d1",
 	"sourcegraph/scip-rust":       "sha256:e9c400fd1d3146cd9a3d98f89c6d9a70e0a116618057e0dac452219b1c60b658",
-	"sourcegraph/scip-java":       "sha256:964a45ef06b7d914729b1c61b6907b662fc54545b188881c6d25e56fcc8dfb8c",
+	"sourcegraph/scip-java":       "sha256:4fee3d21692df0e3cd59245ee2adcf5a522d46e450fb9bc0561dc0907f50844b",
 	"sourcegraph/scip-python":     "sha256:4cb64c4f62cfa611fcb217581073c2831fb9350bbb1c8e855f152cc4b3428a00",
-	"sourcegraph/scip-typescript": "sha256:1851ad42b3b47c8fb240c5060b5757cf51ebeece5e360013e41ab8a1dd05d52c",
+	"sourcegraph/scip-typescript": "sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92",
 	"sourcegraph/scip-ruby":       "sha256:e553fee039973cda8726d4c8c13cdbb851f82a6fca5daa15798a595ee4042906",
 }
 
