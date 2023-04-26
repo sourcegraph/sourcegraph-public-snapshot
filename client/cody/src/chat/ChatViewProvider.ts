@@ -440,14 +440,25 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             localResourceRoots: [webviewPath],
         }
 
-        // Create Webview
+        // Create Webview using client/cody/index.html
         const root = vscode.Uri.joinPath(webviewPath, 'index.html')
         const bytes = await vscode.workspace.fs.readFile(root)
         const decoded = new TextDecoder('utf-8').decode(bytes)
         const resources = webviewView.webview.asWebviewUri(webviewPath)
         const nonce = this.getNonce()
 
-        webviewView.webview.html = decoded.replaceAll('./', `${resources.toString()}/`).replace('/nonce/', nonce)
+        // Set HTML for webview
+        // This replace variables from the client/cody/dist/index.html with webview info
+        // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
+        // 2. Add nonce to only allow specific scripts to be run
+        // 3. Update URIs for content security policy to only allow specific scripts to be run
+        webviewView.webview.html = decoded
+            .replaceAll('./', `${resources.toString()}/`)
+            .replace('<script', `<script nonce=${nonce}`)
+            .replaceAll('{nonce}', nonce)
+            .replaceAll('{cspSource}', webviewView.webview.cspSource)
+
+        // Register webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
     }
 
