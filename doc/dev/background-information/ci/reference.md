@@ -175,7 +175,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images
+- **Image builds**: Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary, Build docker registry mirror image
 - **Image security scans**: Scan symbols, Scan executor, Scan alpine-3.14, Scan postgres-12-alpine, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -192,7 +192,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images
+- **Image builds**: Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary, Build docker registry mirror image
 - **Image security scans**: Scan symbols, Scan executor, Scan alpine-3.14, Scan postgres-12-alpine, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -250,7 +250,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images
+- **Image builds**: Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary
 - **Image security scans**: Scan symbols, Scan executor, Scan alpine-3.14, Scan postgres-12-alpine, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -272,7 +272,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images
+- **Image builds**: Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary
 - **Image security scans**: Scan symbols, Scan executor, Scan alpine-3.14, Scan postgres-12-alpine, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
