@@ -10,7 +10,7 @@ const COMMENT_HEADING = '## Bundle size report 📦'
 const { BUILDKITE_COMMIT, BUILDKITE_BRANCH, BUILDKITE_PULL_REQUEST_REPO, BUILDKITE_PULL_REQUEST, GH_TOKEN } =
     process.env
 
-console.log('report-bundle-diff env: ', {
+console.log('report-bundle-diff env:', {
     BUILDKITE_COMMIT,
     BUILDKITE_BRANCH,
     BUILDKITE_PULL_REQUEST_REPO,
@@ -44,13 +44,13 @@ function getTarPath(): string | undefined {
 
             exec(`gsutil -q cp -r "gs://${bucket}/${file}" "${tarPath}"`)
 
-            console.log(`Found cached archive for ${revision}: `, tarPath)
+            console.log(`Found cached archive for ${revision}:`, tarPath)
             // TODO: remove mutable global variable
             COMPARE_REV = revision
 
             return tarPath
         } catch (error) {
-            console.log(`Cached archive for ${revision} not found: `, error)
+            console.log(`Cached archive for ${revision} not found:`, error)
             process.exit(0)
         }
     }

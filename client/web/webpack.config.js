@@ -213,7 +213,7 @@ const config = {
       }),
     WEBPACK_EXPORT_STATS &&
       new StatsWriterPlugin({
-        filename: `stats-${process.env.BUILDKITE_COMMIT}.json`,
+        filename: `stats-${process.env.BUILDKITE_COMMIT || 'unknown-commit'}.json`,
         stats: {
           all: false, // disable all the stats
           hash: true, // compilation hash
