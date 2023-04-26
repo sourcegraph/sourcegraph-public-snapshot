@@ -3571,7 +3571,7 @@ CREATE TABLE own_signal_recent_contribution (
     commit_author_id integer NOT NULL,
     changed_file_path_id integer NOT NULL,
     commit_timestamp timestamp without time zone NOT NULL,
-    commit_id_hash integer NOT NULL
+    commit_id bytea NOT NULL
 );
 
 COMMENT ON TABLE own_signal_recent_contribution IS 'One entry per file changed in every commit that classifies as a contribution signal.';

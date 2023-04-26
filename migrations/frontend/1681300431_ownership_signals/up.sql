@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS own_signal_recent_contribution (
     commit_author_id INTEGER NOT NULL REFERENCES commit_authors(id),
     changed_file_path_id INTEGER NOT NULL REFERENCES repo_paths(id),
     commit_timestamp TIMESTAMP NOT NULL,
-    commit_id_hash INTEGER NOT NULL
+    commit_id bytea NOT NULL
 );
 
 COMMENT ON TABLE own_signal_recent_contribution

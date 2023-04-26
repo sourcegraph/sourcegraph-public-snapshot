@@ -2,12 +2,15 @@ package database
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -53,7 +56,7 @@ func TestRecentContributionSignalStore(t *testing.T) {
 		},
 	} {
 		commit.Timestamp = time.Now()
-		commit.CommitSHA = fmt.Sprintf("sha%d", i)
+		commit.CommitSHA = gitSha(fmt.Sprintf("%d", i))
 		if err := store.AddCommit(ctx, commit); err != nil {
 			t.Fatal(err)
 		}
@@ -102,4 +105,10 @@ func TestRecentContributionSignalStore(t *testing.T) {
 			assert.Equal(t, want, got)
 		})
 	}
+}
+
+func gitSha(val string) string {
+	writer := sha1.New()
+	writer.Write([]byte(val))
+	return hex.EncodeToString(writer.Sum(nil))
 }

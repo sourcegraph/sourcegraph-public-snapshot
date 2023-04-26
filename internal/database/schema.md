@@ -2833,7 +2833,7 @@ Indexes:
  commit_author_id     | integer                     |           | not null | 
  changed_file_path_id | integer                     |           | not null | 
  commit_timestamp     | timestamp without time zone |           | not null | 
- commit_id_hash       | integer                     |           | not null | 
+ commit_id            | bytea                       |           | not null | 
 Indexes:
     "own_signal_recent_contribution_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
