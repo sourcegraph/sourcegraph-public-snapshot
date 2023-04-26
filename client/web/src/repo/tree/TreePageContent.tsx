@@ -183,7 +183,7 @@ const ExtraInfoSectionHeader: React.FunctionComponent<React.PropsWithChildren<{ 
                 {title}
             </Text>
             <Tooltip content={tooltip}>
-                <Icon svgPath={mdiInformationOutline} aria-label={title} />
+                <Icon svgPath={mdiInformationOutline} aria-label={title} className="text-muted" />
             </Tooltip>
         </div>
         {children}
@@ -221,7 +221,7 @@ const ExtraInfoSection: React.FC<{
                                     to={`/${encodeURIPathComponent(repo.name)}/-/settings/metadata`}
                                     className="p-0"
                                 >
-                                    <Icon svgPath={mdiCog} aria-label="Edit repository metadata" />
+                                    <Icon svgPath={mdiCog} aria-label="Edit repository metadata" className="text-muted" />
                                 </ButtonLink>
                             </Tooltip>
                         )}
