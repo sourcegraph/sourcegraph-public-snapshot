@@ -1,4 +1,4 @@
-/* eslint-disable no-sync */
+/* eslint-disable no-sync @typescript-eslint/restrict-template-expressions */
 const fs = require('fs')
 const path = require('path')
 
@@ -108,7 +108,7 @@ function buildCodeIntelExtensions({ pathToExtensionBundles, revision }) {
 module.exports = { buildCodeIntelExtensions }
 
 // Use this script in Bazel. Remove `module.exports` once the Bazel migration is completed.
-async function main(args) {
+function main(args) {
   if (args.length !== 2) {
     throw new Error('Usage: <revision> <outputPath>')
   }
@@ -116,12 +116,9 @@ async function main(args) {
   const [revision, outputPath] = args
   const output = path.join(process.cwd(), outputPath)
 
-  await buildCodeIntelExtensions({ pathToExtensionBundles: output, revision })
+  buildCodeIntelExtensions({ pathToExtensionBundles: output, revision })
 }
 
 if (require.main === module) {
-  main(process.argv.slice(2)).catch(error => {
-    console.error(error)
-    process.exit(1)
-  })
+  main(process.argv.slice(2))
 }

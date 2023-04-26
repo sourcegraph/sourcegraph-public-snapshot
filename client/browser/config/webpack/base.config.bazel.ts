@@ -5,7 +5,6 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import webpack, { optimize } from 'webpack'
 
 import {
-    ROOT_PATH,
     getBazelCSSLoaders as getCSSLoaders,
     getProvidePlugin,
     getTerserPlugin,
