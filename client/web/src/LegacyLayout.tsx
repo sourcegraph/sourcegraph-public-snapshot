@@ -234,11 +234,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                  */}
                 <div id="references-panel-react-portal" />
             </Suspense>
-            <GlobalContributions
-                key={3}
-                extensionsController={props.extensionsController}
-                platformContext={props.platformContext}
-            />
+            <GlobalContributions key={3} />
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
                 <NotepadContainer
                     userId={props.authenticatedUser?.id}

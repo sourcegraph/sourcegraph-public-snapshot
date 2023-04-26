@@ -42,7 +42,7 @@ export const FIXTURE_SEMANTIC_BADGE: AggregableBadge = {
 export const FIXTURE_ACTIONS: ActionItemAction[] = [
     {
         action: {
-            id: 'goToDefinition.preloaded',
+            id: 'goToDefinition',
             title: 'Go to definition',
             command: 'open',
             commandArguments: ['/github.com/sourcegraph/codeintellify/-/blob/src/hoverifier.ts#L57:1'],

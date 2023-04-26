@@ -69,8 +69,7 @@ export const getGoToURL = (
     actionType: 'definition' | 'reference'
 } | null => {
     const definitionAction =
-        Array.isArray(actionsOrError) &&
-        actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded' && !a.disabledWhen)
+        Array.isArray(actionsOrError) && actionsOrError.find(a => a.action.id === 'goToDefinition' && !a.disabledWhen)
 
     const referenceAction =
         Array.isArray(actionsOrError) && actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)

@@ -14,6 +14,7 @@ import {
     ReplaySubject,
     Subscription,
     Subject,
+    of,
 } from 'rxjs'
 import { concatMap, filter, first, map, mapTo, pairwise, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
@@ -42,7 +43,6 @@ import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext, PinOptions } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
@@ -129,15 +129,7 @@ const domFunctions = {
  * in this state, hovers can lead to errors like `DocumentNotFoundError`.
  */
 export const LegacyBlob: FC<BlobProps> = props => {
-    const {
-        extensionsController,
-        blobInfo,
-        platformContext,
-        settingsCascade,
-        role,
-        ariaLabel,
-        'data-testid': dataTestId,
-    } = props
+    const { extensionsController, blobInfo, settingsCascade, role, ariaLabel, 'data-testid': dataTestId } = props
 
     const navigate = useNavigate()
     const location = useLocation()
@@ -309,17 +301,9 @@ export const LegacyBlob: FC<BlobProps> = props => {
                         getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)),
                         { extensionsController }
                     ),
-                getActions: context => getHoverActions({ extensionsController, platformContext }, context),
+                getActions: () => of([]),
             }),
-        [
-            popoverParameter,
-            popoverCloses,
-            hoverOverlayElements,
-            rerenders,
-            blobElements,
-            extensionsController,
-            platformContext,
-        ]
+        [popoverParameter, popoverCloses, hoverOverlayElements, rerenders, blobElements, extensionsController]
     )
     useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 

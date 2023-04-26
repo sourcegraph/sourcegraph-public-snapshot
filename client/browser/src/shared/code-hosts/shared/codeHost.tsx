@@ -34,7 +34,6 @@ import {
     distinctUntilChanged,
     retryWhen,
     mapTo,
-    take,
 } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -64,7 +63,6 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
-import { getHoverActions, registerHoverContributions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
@@ -333,18 +331,6 @@ function initCodeIntelligence({
 
     const containerComponentUpdates = new Subject<void>()
 
-    const history = H.createBrowserHistory()
-
-    subscription.add(
-        registerHoverContributions({
-            extensionsController,
-            platformContext,
-            historyOrNavigate: history,
-            getLocation: () => history.location,
-            locationAssign: location.assign.bind(location),
-        })
-    )
-
     // Code views come and go, but there is always a single hoverifier on the page
     const hoverifier = createHoverifier<
         RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
@@ -397,14 +383,7 @@ function initCodeIntelligence({
                           )
                 )
             ),
-        getActions: context =>
-            // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
-            repoSyncErrors.pipe(
-                take(1),
-                switchMap(hasRepoSyncError =>
-                    hasRepoSyncError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
-                )
-            ),
+        getActions: () => of([]),
         tokenize: codeHost.codeViewsRequireTokenization,
     })
 
