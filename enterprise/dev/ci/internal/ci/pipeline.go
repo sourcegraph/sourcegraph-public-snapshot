@@ -312,7 +312,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
 			bazelBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
-			// trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
+			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
 			buildExecutorVM(c, true),
 			buildExecutorDockerMirror(c),
 			buildExecutorBinary(c),
@@ -356,6 +356,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.DeploySourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMisc, c.Version, c.candidateImageTag(), c.RunType))
 
+		}
+		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
+			imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
+			imageBuildOps.Append(buildExecutorBinary(c))
+			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+				imageBuildOps.Append(buildExecutorDockerMirror(c))
+			}
 		}
 		ops.Merge(imageBuildOps)
 
