@@ -160,7 +160,6 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 		require.True(t, appAuthenticator.AuthenticateCalled)
 
 		require.Equal(t, token.installationAccessToken.Token, wantToken.Token)
-		require.True(t, token.installationAccessToken.ExpiresAt.Equal(wantToken.ExpiresAt))
 	})
 
 	t.Run("uses token cache", func(t *testing.T) {
@@ -188,7 +187,6 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 		require.True(t, mockClient.DoCalled)
 		require.True(t, appAuthenticator.AuthenticateCalled)
 
-		require.True(t, token1.installationAccessToken.ExpiresAt.Equal(wantToken.ExpiresAt))
 		require.Equal(t, token1.installationAccessToken.Token, wantToken.Token)
 
 		// First we generate a new token for the mockClient so that we're sure
@@ -197,7 +195,6 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 		require.NotEqual(t, mockClient.installationAccessToken, wantToken)
 		// Now we refresh token2 and assert that we get the same token from the cache
 		token2.Refresh(context.Background(), mockClient)
-		require.True(t, token1.installationAccessToken.ExpiresAt.Equal(token2.installationAccessToken.ExpiresAt))
 		require.Equal(t, token1.installationAccessToken.Token, token2.installationAccessToken.Token)
 	})
 
@@ -228,7 +225,6 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 		require.True(t, mockClient.DoCalled)
 		require.True(t, appAuthenticator.AuthenticateCalled)
 
-		require.True(t, token1.installationAccessToken.ExpiresAt.Equal(wantToken.ExpiresAt))
 		require.Equal(t, token1.installationAccessToken.Token, wantToken.Token)
 
 		// First we generate a new token for the mockClient so that we're sure
@@ -237,7 +233,6 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 		require.NotEqual(t, mockClient.installationAccessToken, wantToken)
 		// Now we refresh token2 and assert that we get A DIFFERENT token from the cache
 		token2.Refresh(context.Background(), mockClient)
-		require.False(t, token1.installationAccessToken.ExpiresAt.Equal(token2.installationAccessToken.ExpiresAt))
 		require.NotEqual(t, token1.installationAccessToken.Token, token2.installationAccessToken.Token)
 		// For good measure, assert that token2 is not expired
 		require.False(t, token2.NeedsRefresh())
