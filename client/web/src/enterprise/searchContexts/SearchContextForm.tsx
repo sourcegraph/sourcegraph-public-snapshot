@@ -418,11 +418,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                     <div className="mb-1">Choose repositories and revisions</div>
                     <div className="text-muted mb-3">
                         For a dynamic set of repositories and revisions, such as for project or team repos, use a{' '}
-                        <Link
-                            target="_blank"
-                            rel="noopener"
-                            to="/help/code_search/how-to/search_contexts"
-                        >
+                        <Link target="_blank" rel="noopener" to="/help/code_search/how-to/search_contexts">
                             search query
                         </Link>
                         . For a static set, use the JSON configuration.
@@ -436,11 +432,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             checked={contextType === 'dynamic'}
                             required={true}
                             onChange={() => setContextType('dynamic')}
-                            label={
-                                <>
-                                    Search query
-                                </>
-                            }
+                            label={<>Search query</>}
                         />
                         <div className={styles.searchContextFormQuery} data-testid="search-context-dynamic-query">
                             <LazyQueryInput
