@@ -4,20 +4,11 @@
 )]
 
 #[cfg(not(dev))]
-use {
-    tauri::api::process::Command,
-    tauri::api::process::CommandEvent
-};
+use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
 use tauri::{
-    api::shell,
-    AppHandle,
-    SystemTray,
-    SystemTrayMenu,
+    api::shell, AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
     SystemTrayMenuItem,
-    SystemTrayEvent,
-    CustomMenuItem,
-    Manager,
 };
 
 fn main() {
@@ -36,8 +27,9 @@ fn main() {
         .on_system_tray_event(on_system_tray_event)
         .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
-              event.window().hide().unwrap();
-              api.prevent_close();
+                // Ensure the app stays open after the last window is closed.
+                event.window().hide().unwrap();
+                api.prevent_close();
             }
             _ => {}
         })
@@ -46,21 +38,21 @@ fn main() {
             start_embedded_services(window);
             Ok(())
         })
-        .run(tauri::generate_context!())
+        .run(tauri::generate_context())
         .expect("error while running tauri application");
 }
 
 #[cfg(dev)]
-fn start_embedded_services(_window:tauri::Window) {
+fn start_embedded_services(_window: tauri::Window) {
     println!("embedded Sourcegraph services disabled for local development");
 }
 
 #[cfg(not(dev))]
-fn start_embedded_services(window :tauri::Window) {
+fn start_embedded_services(window: tauri::Window) {
     let (mut rx, _child) = Command::new_sidecar("backend")
-                .expect("failed to create `backend` binary command")
-                .spawn()
-                .expect("Failed to spawn backend sidecar");
+        .expect("failed to create `backend` binary command")
+        .spawn()
+        .expect("Failed to spawn backend sidecar");
 
     tauri::async_runtime::spawn(async move {
         // read events such as stdout
@@ -94,15 +86,25 @@ fn start_embedded_services(window :tauri::Window) {
 
 fn create_tray_menu() -> SystemTrayMenu {
     SystemTrayMenu::new()
-        .add_item(CustomMenuItem::new("status".to_string(), "🟢 Sourcegraph App is running").disabled())
+        .add_item(
+            CustomMenuItem::new("status".to_string(), "🟢 Sourcegraph App is running").disabled(),
+        )
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(CustomMenuItem::new("open".to_string(), "Sourcegraph App"))
         .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(CustomMenuItem::new("settings".to_string(), "Settings").accelerator("CmdOrCtrl+,"))
+        .add_item(
+            CustomMenuItem::new("settings".to_string(), "Settings").accelerator("CmdOrCtrl+,"),
+        )
         .add_item(CustomMenuItem::new("log".to_string(), "Troubleshoot"))
         .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(CustomMenuItem::new("updates".to_string(), "Check for updates"))
-        .add_item(CustomMenuItem::new("about".to_string(), "About Sourcegraph"))
+        .add_item(CustomMenuItem::new(
+            "updates".to_string(),
+            "Check for updates",
+        ))
+        .add_item(CustomMenuItem::new(
+            "about".to_string(),
+            "About Sourcegraph",
+        ))
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(CustomMenuItem::new("toggle-status".to_string(), "Pause"))
         .add_item(CustomMenuItem::new("quit".to_string(), "Quit").accelerator("CmdOrCtrl+Q"))
@@ -123,6 +125,18 @@ fn open_window(app: &AppHandle) {
     }
 }
 
+fn get_status(app: &AppHandle) -> String {
+    let window = app.get_window("main").unwrap();
+    match window.is_visible() {
+        Ok(true) => "🟢 Sourcegraph App is running".to_string(),
+        Ok(false) => "🔴 Sourcegraph App is paused".to_string(),
+        Err(e) => {
+            println!("Error getting window visibility: {}", e);
+            "🔴 Sourcegraph App is paused".to_string()
+        }
+    }
+}
+
 fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
     if let SystemTrayEvent::MenuItemClick { id, .. } = event {
         let _item_handle = app.tray_handle().get_item(&id);
@@ -131,7 +145,9 @@ fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
             "open" => open_window(app),
             "settings" => {
                 let window = app.get_window("main").unwrap();
-                window.eval("window.location.href = '/setup-wizard'").unwrap();
+                window
+                    .eval("window.location.href = '/setup-wizard'")
+                    .unwrap();
                 open_window(app);
             }
             "log" => {
