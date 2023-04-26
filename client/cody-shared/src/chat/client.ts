@@ -10,6 +10,7 @@ import { isError } from '../utils'
 
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
+import { escapeCodyMarkdown } from './markdown'
 import { getPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
 import { Transcript, TranscriptJSON } from './transcript'
@@ -114,7 +115,7 @@ export async function createClient({
 
         chatClient.chat(prompt, {
             onChange(rawText) {
-                const text = reformatBotMessage(rawText, responsePrefix)
+                const text = reformatBotMessage(escapeCodyMarkdown(rawText), responsePrefix)
                 transcript.addAssistantResponse(text)
 
                 sendTranscript()
