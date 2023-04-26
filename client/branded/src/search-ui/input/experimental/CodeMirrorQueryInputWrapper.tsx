@@ -174,7 +174,7 @@ function configureQueryExtensions({
 
 // Creates extensions that don't depend on props
 const position0 = EditorSelection.single(0)
-const staticExtensions = (isLightTheme: boolean): Extension => [
+const staticExtensions: Extension = [
     EditorState.transactionFilter.of(transaction => {
         // This is a hacky way to "fix" the cursor position when the input receives
         // focus by clicking outside of it in Chrome.
@@ -239,6 +239,9 @@ const staticExtensions = (isLightTheme: boolean): Extension => [
         '.cm-line': {
             padding: 0,
         },
+        '.theme-dark & .cm-selectionLayer .cm-selectionBackground': {
+            backgroundColor: 'var(--gray-08)',
+        },
         '.sg-decorated-token-hover': {
             borderRadius: '3px',
         },
@@ -246,11 +249,6 @@ const staticExtensions = (isLightTheme: boolean): Extension => [
             color: 'var(--text-muted)',
             fontStyle: 'italic',
         },
-        '.cm-selectionLayer .cm-selectionBackground': !isLightTheme
-            ? {
-                  backgroundColor: 'var(--gray-08)',
-              }
-            : {},
     }),
 ]
 
@@ -390,14 +388,14 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                         'aria-haspopup': 'grid',
                         'aria-label': 'Search query',
                     }),
-                    staticExtensions(isLightTheme),
+                    staticExtensions,
                     extensionsCompartment.of(dynamicExtensions),
                     querySettingsCompartment.of(queryExtensions),
                 ],
                 // Only set extensions during initialization. dynamicExtensions and queryExtensions
                 // are updated separately.
                 // eslint-disable-next-line react-hooks/exhaustive-deps
-                [popoverID, isLightTheme]
+                [popoverID]
             )
         )
 
