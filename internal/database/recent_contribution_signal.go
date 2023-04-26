@@ -17,6 +17,9 @@ import (
 type RecentContributionSignalStore interface {
 	AddCommit(ctx context.Context, commit Commit) error
 	FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentContributorSummary, error)
+	ClearSignals(ctx context.Context, repoID api.RepoID) error
+	Transact(ctx context.Context) (RecentContributionSignalStore, error)
+	Done(err error) error
 }
 
 func RecentContributionSignalStoreWith(other basestore.ShareableStore) RecentContributionSignalStore {
@@ -46,7 +49,7 @@ func (s *recentContributionSignalStore) With(other basestore.ShareableStore) *re
 	return &recentContributionSignalStore{Store: s.Store.With(other)}
 }
 
-func (s *recentContributionSignalStore) Transact(ctx context.Context) (*recentContributionSignalStore, error) {
+func (s *recentContributionSignalStore) Transact(ctx context.Context) (RecentContributionSignalStore, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &recentContributionSignalStore{Store: txBase}, err
 }
@@ -188,6 +191,18 @@ const insertRecentContributorSignalFmtstr = `
 		commit_id
 	) VALUES (%s, %s, %s, %s)
 `
+
+func (s *recentContributionSignalStore) ClearSignals(ctx context.Context, repoID api.RepoID) error {
+	tables := []string{"own_signal_recent_contribution", "own_aggregate_recent_contribution"}
+	q := "WITH rps as (select id from repo_paths where repo_id = %s) delete from %s where changed_file_path_id in (select * from rps);"
+
+	for _, table := range tables {
+		if err := s.Exec(ctx, sqlf.Sprintf(q, repoID, sqlf.Sprintf(table))); err != nil {
+			return errors.Wrapf(err, "table: %s", table)
+		}
+	}
+	return nil
+}
 
 // AddCommit inserts a recent contribution signal for each file changed by given commit.
 //

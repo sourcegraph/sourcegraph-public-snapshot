@@ -213,6 +213,7 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 
 		count := 0
 		contribStore := database.RecentContributionSignalStoreWith(h.workerStore)
+		contribStore
 		for _, commit := range commitLog {
 
 			err := contribStore.AddCommit(ctx, database.Commit{
@@ -224,7 +225,7 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 				FilesChanged: commit.ChangedFiles,
 			})
 			if err != nil {
-				return errors.Wrap(err, "AddCommit")
+				return errors.Wrapf(err, "AddCommit %v", commit)
 			}
 			count++
 		}

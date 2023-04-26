@@ -325,7 +325,7 @@ func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, 
 }
 
 func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error) {
-	args := []string{"log", "--pretty=format:'%H<!>%ae<!>%an<!>%ad'", "--name-only", "--topo-order", "--no-merges"}
+	args := []string{"log", "--pretty=format:%H<!>%ae<!>%an<!>%ad", "--name-only", "--topo-order", "--no-merges"}
 	if !after.IsZero() {
 		args = append(args, fmt.Sprintf("--after=%s", after.Format(time.RFC3339)))
 	}
@@ -352,7 +352,6 @@ func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, af
 			continue
 		}
 		sha, authorEmail, authorName, timestamp := parts[0], parts[1], parts[2], parts[3]
-		// changedFiles := strings.Split(changed, "\n")
 		t, err := parseTimestamp(timestamp)
 		if err != nil {
 			fmt.Println(parts)
@@ -374,9 +373,6 @@ func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, af
 }
 
 func parseTimestamp(timestamp string) (time.Time, error) {
-	if strings.HasSuffix(timestamp, "'") {
-		timestamp = timestamp[:len(timestamp)-1]
-	}
 	layout := "Mon Jan 2 15:04:05 2006 -0700"
 	t, err := time.Parse(layout, timestamp)
 	if err != nil {
