@@ -374,6 +374,9 @@ func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, af
 }
 
 func parseTimestamp(timestamp string) (time.Time, error) {
+	if strings.HasSuffix(timestamp, "'") {
+		timestamp = timestamp[:len(timestamp)-1]
+	}
 	layout := "Mon Jan 2 15:04:05 2006 -0700"
 	t, err := time.Parse(layout, timestamp)
 	if err != nil {
