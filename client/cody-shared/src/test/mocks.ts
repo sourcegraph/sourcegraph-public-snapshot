@@ -93,7 +93,12 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
         intentDetector: args.intentDetector || defaultIntentDetector,
         codebaseContext:
             args.codebaseContext ||
-            new CodebaseContext({ useContext: 'none' }, defaultEmbeddingsClient, defaultKeywordContextFetcher),
+            new CodebaseContext(
+                { useContext: 'none' },
+                'dummy-codebase',
+                defaultEmbeddingsClient,
+                defaultKeywordContextFetcher
+            ),
         responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
     }
 }

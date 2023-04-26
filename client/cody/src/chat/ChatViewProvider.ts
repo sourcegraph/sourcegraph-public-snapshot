@@ -1,3 +1,4 @@
+import { spawnSync } from 'child_process'
 import path from 'path'
 
 import * as vscode from 'vscode'
@@ -13,6 +14,7 @@ import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelper
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -23,6 +25,7 @@ import { View } from '../../webviews/NavBar'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { updateConfiguration } from '../configuration'
 import { logEvent } from '../event-logger'
+import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
@@ -61,15 +64,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private disposables: vscode.Disposable[] = []
 
+    // Codebase-context-related state
+    private currentWorkspaceRoot: string
+
     constructor(
         private extensionPath: string,
-        private config: Config,
+        private config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
         private editor: Editor,
         private secretStorage: SecretStorage,
-        private localStorage: LocalStorage
+        private localStorage: LocalStorage,
+        private rgPath: string
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
@@ -78,6 +85,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.createNewChatID()
 
         this.disposables.push(this.configurationChangeEvent)
+
+        // listen for vscode active editor change event
+        this.currentWorkspaceRoot = ''
+        this.disposables.push(
+            vscode.window.onDidChangeActiveTextEditor(async () => {
+                await this.updateCodebaseContext()
+            })
+        )
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -237,6 +252,30 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         await this.executeRecipe('chat-question', text)
     }
 
+    private async updateCodebaseContext(): Promise<void> {
+        if (!this.editor.getActiveTextEditor() && vscode.window.visibleTextEditors.length !== 0) {
+            // these are ephemeral
+            return
+        }
+        const workspaceRoot = this.editor.getWorkspaceRootPath()
+        if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
+            return
+        }
+        this.currentWorkspaceRoot = workspaceRoot
+
+        const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor)
+        if (!codebaseContext) {
+            return
+        }
+        // after await, check we're still hitting the same workspace root
+        if (this.currentWorkspaceRoot !== workspaceRoot) {
+            return
+        }
+
+        this.codebaseContext = codebaseContext
+        this.publishContextStatus()
+    }
+
     public async executeRecipe(recipeId: string, humanChatInput: string = ''): Promise<void> {
         if (this.isMessageInProgress) {
             this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
@@ -265,7 +304,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.showTab('chat')
         this.sendTranscript()
 
-        const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
+        const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
 
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
@@ -338,7 +377,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 contextStatus: {
                     mode: this.config.useContext,
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
-                    codebase: this.config.codebase,
+                    codebase: this.codebaseContext.getCodebase(),
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
                     supportsKeyword: true,
                 },
@@ -385,7 +424,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 logEvent(
                     `CodyVSCodeExtension:codyFeedback:${value}`,
                     null,
-                    !isPrivateInstance && this.config.codebase ? this.transcript.toChat() : null
+                    !isPrivateInstance && this.codebaseContext.getCodebase() ? this.transcript.toChat() : null
                 )
                 break
             case 'token':
@@ -512,4 +551,76 @@ async function fileExists(filePath: string): Promise<boolean> {
         }
     }
     return false
+}
+
+// Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
+export function convertGitCloneURLToCodebaseName(cloneURL: string): string | null {
+    let parsed: URL | null = null
+    if (cloneURL.startsWith('git@')) {
+        // Handle Git SSH URL format
+        const match = cloneURL.match(/git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?/)
+        if (match) {
+            const host = match[1]
+            const owner = match[2]
+            const repo = match[3]
+            return `${host}/${owner}/${repo}`
+        }
+    } else {
+        // Handle HTTP/HTTPS URL format
+        try {
+            parsed = new URL(cloneURL)
+        } catch {
+            return null
+        }
+    }
+
+    if (!parsed) {
+        return null
+    }
+
+    const host = parsed.host
+    const path = parsed.pathname
+
+    // Handle GitHub/GitLab URL format
+    if (host.includes('gitlab.com') || host.includes('github.com')) {
+        const [owner, repo] = path.slice(1).split('/')
+        return `${host}/${owner}/${repo}`.replace(/.git$/, '')
+    }
+
+    // Generic fallback - assume URL path contains owner/repo
+    const [owner, repo] = path.slice(1).split('/')
+    return `${host}/${owner}/${repo}`
+}
+
+async function getCodebaseContext(config: Config, rgPath: string, editor: Editor): Promise<CodebaseContext | null> {
+    const client = new SourcegraphGraphQLAPIClient(config)
+    const workspaceRoot = editor.getWorkspaceRootPath()
+    if (!workspaceRoot) {
+        return null
+    }
+
+    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
+    const gitOutput = gitCommand.stdout.toString().trim()
+    if (!gitOutput) {
+        void vscode.window.showErrorMessage(
+            `Unable to determine the git clone URL for this workspace.\ngit output: ${gitOutput}`
+        )
+        return null
+    }
+
+    // Get repository name from git clone URL
+    const codebase = convertGitCloneURLToCodebaseName(gitOutput)
+    if (!codebase) {
+        void vscode.window.showErrorMessage(`could not extract repo name from clone URL ${gitOutput}`)
+        return null
+    }
+    const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
+    if (isError(repoId)) {
+        const errorMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
+        void vscode.window.showErrorMessage(errorMessage)
+        return null
+    }
+
+    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
+    return new CodebaseContext(config, codebase, embeddingsSearch, new LocalKeywordContextFetcher(rgPath, editor))
 }
