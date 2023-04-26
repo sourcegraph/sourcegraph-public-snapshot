@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "run",
+    srcs = [
+        "post.go",
+        "pre.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/run",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//enterprise/cmd/batcheshelper/log",
+        "//enterprise/cmd/batcheshelper/util",
+        "//lib/batches",
+        "//lib/batches/execution",
+        "//lib/batches/execution/cache",
+        "//lib/batches/git",
+        "//lib/batches/template",
+        "//lib/errors",
+        "@com_github_kballard_go_shellquote//:go-shellquote",
+    ],
+)
+
+go_test(
+    name = "run_test",
+    srcs = [
+        "post_test.go",
+        "pre_test.go",
+    ],
+    deps = [
+        ":run",
+        "//enterprise/cmd/batcheshelper/log",
+        "//enterprise/cmd/batcheshelper/util",
+        "//lib/batches",
+        "//lib/batches/env",
+        "//lib/batches/execution",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//mock",
+        "@com_github_stretchr_testify//require",
+    ],
+)

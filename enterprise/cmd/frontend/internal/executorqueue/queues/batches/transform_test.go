@@ -128,6 +128,7 @@ steps:
 			SearchResultPaths:     workspace.FileMatches,
 			CachedStepResultFound: cachedStepResultFound,
 			CachedStepResult:      cachedStepResult,
+			SkippedSteps:          make(map[int]struct{}),
 		}
 	}
 

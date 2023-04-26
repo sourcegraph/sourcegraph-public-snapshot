@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -467,7 +466,7 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 
 			tempDir := ""
 			if ws != nil {
-				tempDir = filepath.Join(mountPath, ws.Path())
+				tempDir = ws.Path()
 			}
 
 			if test.expectedErr != nil {
