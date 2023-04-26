@@ -12,13 +12,27 @@ cleanup() {
 trap cleanup EXIT
 
 echo "--- bazel build"
-./dev/ci/bazel.sh build //cmd/symbols \
+bazel build \
+  --bazelrc=.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  //cmd/symbols \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
   --platforms @zig_sdk//platform:linux_amd64 \
   --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
 
-out=$(./dev/ci/bazel.sh cquery //cmd/symbols --output=files)
+out=$(
+  bazel build \
+    --bazelrc=.bazelrc \
+    --bazelrc=.aspect/bazelrc/ci.bazelrc \
+    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \ cquery //cmd/symbols \
+    --stamp \
+    --workspace_status_command=./dev/bazel_stamp_vars.sh \
+    --platforms @zig_sdk//platform:linux_amd64 \
+    --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl \
+    --output=files
+)
 cp "$out" "$OUTPUT"
 cp cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 
