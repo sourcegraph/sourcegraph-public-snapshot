@@ -12,7 +12,7 @@ module.exports = {
       rules: { 'no-restricted-imports': 'off' },
     },
     {
-      files: '{dev,scripts}/**/*.ts',
+      files: 'dev/**/*.ts',
       rules: {
         'no-console': 'off',
         'no-sync': 'off',

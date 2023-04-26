@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { promises as fs } from 'fs'
 import path from 'path'
 
@@ -9,7 +10,7 @@ const COMMENT_HEADING = '## Bundle size report 📦'
 const { BUILDKITE_COMMIT, BUILDKITE_BRANCH, BUILDKITE_PULL_REQUEST_REPO, BUILDKITE_PULL_REQUEST, GH_TOKEN } =
     process.env
 
-console.log('ENV: ', {
+console.log('report-bundle-diff env: ', {
     BUILDKITE_COMMIT,
     BUILDKITE_BRANCH,
     BUILDKITE_PULL_REQUEST_REPO,
@@ -20,13 +21,6 @@ console.log('ENV: ', {
 const ROOT_PATH = path.join(__dirname, '../../../')
 const STATIC_ASSETS_PATH = path.join(ROOT_PATH, process.env.WEB_BUNDLE_PATH || 'ui/assets')
 const STATOSCOPE_BIN = path.join(ROOT_PATH, 'node_modules/@statoscope/cli/bin/cli.js')
-
-console.log({
-    ROOT_PATH,
-    STATIC_ASSETS_PATH,
-    STATOSCOPE_BIN,
-    KEK: true,
-})
 
 const MERGE_BASE = exec('git merge-base HEAD origin/main').toString().trim()
 let COMPARE_REV = ''

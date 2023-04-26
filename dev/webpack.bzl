@@ -1,13 +1,10 @@
 load("@aspect_rules_webpack//webpack:defs.bzl", _webpack_bundle = "webpack_bundle", _webpack_devserver = "webpack_devserver")
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 
-def webpack_bundle(name, env = {}, **kwargs):
+def webpack_bundle(name, **kwargs):
     _webpack_bundle(
         name = name,
         webpack = "//dev:webpack",
-        env = {
-            "BUILDKITE_COMMIT": "$$BUILDKITE_COMMIT",
-        },
         **kwargs
     )
 

@@ -1924,8 +1924,8 @@ WEBPACK_CONFIG_DEPS = [
     "//:node_modules/compression-webpack-plugin",
     "//:node_modules/webpack",
     "//:node_modules/react-refresh",
-    # "//client/web/dev",
-    # "//client/web/src/integration",
+    "//client/web/dev",
+    "//client/web/src/integration",
     "//:node_modules/react-visibility-sensor",  # required for https://github.com/joshwnj/react-visibility-sensor/issues/148 workaround
 
     # HACKS: bundle-time css import
@@ -1973,14 +1973,14 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
 
 webpack_bundle(
     name = "bundle-enterprise",
-    # srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
-    #     "//:babel_config",
-    #     "//:browserslist",
-    #     "//:package_json",
-    # ],
+    srcs = ENTERPRISE_BUNDLE_DATA_DEPS + [
+        "//:babel_config",
+        "//:browserslist",
+        "//:package_json",
+    ],
     entry_points = {
-        "src/enterprise/kek.js": "app",
-        # "src/enterprise/embed/main.js": "embed",
+        "src/enterprise/main.js": "app",
+        "src/enterprise/embed/main.js": "embed",
     },
     env = {
         "NODE_ENV": "production",
@@ -1988,7 +1988,7 @@ webpack_bundle(
         "INTEGRATION_TESTS": "false",
         "WEBPACK_BUNDLE_ANALYZER": "false",
         "WEBPACK_USE_NAMED_CHUNKS": "false",
-        "WEBPACK_EXPORT_STATS": "true",
+        "WEBPACK_EXPORT_STATS": "false",
     },
     output_dir = True,
     visibility = ["//client/web/scripts:__pkg__"],

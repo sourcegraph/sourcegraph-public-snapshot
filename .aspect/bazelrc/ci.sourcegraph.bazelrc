@@ -29,11 +29,5 @@ build --test_env=GH_TOKEN
 # Needed for integration tests
 build --test_env=PERCY_TOKEN
 
-# Needed for bundle size report script (HOW TO USE THEM WITHOUT BUSTING CACHE?)
-# build --test_env=BUILDKITE_PULL_REQUEST_REPO
-# build --test_env=BUILDKITE_PULL_REQUEST
-# build --test_env=BUILDKITE_COMMIT
-# build --test_env=BUILDKITE_BRANCH
-
 # temp
 build --test_env=INCLUDE_ADMIN_ONBOARDING=false
