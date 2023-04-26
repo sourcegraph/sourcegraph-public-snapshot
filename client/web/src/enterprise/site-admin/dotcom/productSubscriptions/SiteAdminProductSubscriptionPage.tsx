@@ -21,6 +21,7 @@ import {
     Icon,
     H2,
     ErrorAlert,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
@@ -198,6 +199,37 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             </tbody>
                         </table>
                     </Card>
+                    <Card className="mt-3">
+                        <CardHeader className="d-flex align-items-center justify-content-between">
+                            Access token
+                            <Button
+                                onClick={() =>
+                                    generateAccessTokenMutation({
+                                        variables: { productSubscriptionID: productSubscription.id },
+                                    })
+                                }
+                                variant="primary"
+                                size="sm"
+                                disabled={tokenLoading}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate access token
+                            </Button>
+                        </CardHeader>
+                        <CardBody>
+                            <Text>Access tokens can be used for LLM-proxy access - coming soon!</Text>
+                            {tokenLoading && <LoadingSpinner />}
+                            {tokenError && <ErrorAlert className="mt-2" error={tokenError.message} />}
+                            {generateTokenCalled && !tokenLoading && tokenData && (
+                                <CopyableText
+                                    label="Access token"
+                                    secret={true}
+                                    flex={true}
+                                    text={tokenData.dotcom.generateAccessTokenForSubscription.accessToken}
+                                    className="mt-2"
+                                />
+                            )}
+                        </CardBody>
+                    </Card>
                     <LicenseGenerationKeyWarning className="mt-3" />
                     <Card className="mt-1">
                         <CardHeader className="d-flex align-items-center justify-content-between">
@@ -236,36 +268,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             noSummaryIfAllNodesVisible={true}
                             updates={licenseUpdates}
                         />
-                    </Card>
-                    <Card className="mt-3">
-                        <CardHeader className="d-flex align-items-center justify-content-between">
-                            Access token
-                            <Button
-                                onClick={() =>
-                                    generateAccessTokenMutation({
-                                        variables: { productSubscriptionID: productSubscription.id },
-                                    })
-                                }
-                                variant="primary"
-                                size="sm"
-                                disabled={tokenLoading}
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate access token
-                            </Button>
-                        </CardHeader>
-                        <CardBody>
-                            {tokenLoading && <LoadingSpinner />}
-                            {tokenError && <ErrorAlert className="mt-2" error={tokenError.message} />}
-                            {generateTokenCalled && !tokenLoading && tokenData && (
-                                <CopyableText
-                                    label="Access token"
-                                    secret={true}
-                                    flex={true}
-                                    text={tokenData.dotcom.generateAccessTokenForSubscription.accessToken}
-                                    className="mt-2"
-                                />
-                            )}
-                        </CardBody>
                     </Card>
                 </>
             )}
