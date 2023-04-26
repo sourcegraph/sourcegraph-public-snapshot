@@ -5,7 +5,10 @@ go_library(
     srcs = [
         "init.go",
         "main.go",
+        "test1.go",
+        "test2.go",
         "testinfra.go",
+        "util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/integration/executors/tester",
     visibility = ["//visibility:private"],
