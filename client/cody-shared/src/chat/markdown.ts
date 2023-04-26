@@ -35,7 +35,7 @@ export function escapeCodyMarkdown(markdown: string): string {
             return line.line
         }
 
-        return line.line.replaceAll(/</g, '&lt;').replaceAll(/>/g, '&gt;')
+        return line.line.replaceAll(/&/g, '&amp;').replaceAll(/</g, '&lt;').replaceAll(/>/g, '&gt;')
     })
     return escapedMarkdownLines.join('\n')
 }
