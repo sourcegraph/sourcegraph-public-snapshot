@@ -179,7 +179,7 @@ const ExtraInfoSectionHeader: React.FunctionComponent<React.PropsWithChildren<{ 
 }) => (
     <div className="d-flex align-items-center justify-content-between mb-2">
         <div className="d-flex align-items-center">
-            <Text className="mr-2 mb-0" weight="bold">
+            <Text className="mr-1 mb-0" weight="bold">
                 {title}
             </Text>
             <Tooltip content={tooltip}>
