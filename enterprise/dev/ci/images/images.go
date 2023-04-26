@@ -72,7 +72,7 @@ var SourcegraphDockerImagesMisc = []string{
 
 // These are images that use the musl build chain for bazel, and break the cache if built
 // on a system with glibc. They are built on a separate pipeline.
-var SourcegraphDockerImagesMusl = []string{"server", "symbols"}
+var SourcegraphDockerImagesMusl = []string{"symbols", "server"}
 
 // DeploySourcegraphDockerImages denotes all Docker images that are included in a typical
 // deploy-sourcegraph installation.
