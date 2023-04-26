@@ -16,7 +16,6 @@ import (
 
 type RateLimiter interface {
 	TryAcquire(ctx context.Context) error
-	ReadQuota(ctx context.Context, userID int32) (count, limit int, _ error)
 }
 
 type RateLimitExceededError struct {
@@ -74,93 +73,61 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 		key = anonymousKey(ip)
 	}
 
-	// Check the current usage.
-	current, retryAfter, err := r.get(ctx, key)
-	if err != nil {
-		return errors.Wrap(err, "failed to read current rate limit usage")
-	}
-	// If the usage exceeds the maximum, we return an error. Consumers can check if
-	// the error is of type RateLimitExceededError and extract additional information
-	// like the limit and the time by when they should retry.
-	if current >= limit {
-		return RateLimitExceededError{
-			Limit:      limit,
-			Used:       current,
-			RetryAfter: retryAfter,
-		}
-	}
+	rstore := r.rstore.WithContext(ctx)
 
-	// Open a new connection to redis so we can run a MULTI command.
-	pool, ok := r.rstore.Pool()
-	if !ok {
-		return errors.New("redis pool is not available but rate limit has been configured")
-	}
-	conn, err := pool.Dial()
-	if err != nil {
-		return errors.Wrap(err, "failed to dial redis")
-	}
-	defer func() {
-		err = errors.Append(err, conn.Close())
-	}()
+	// Let's increment the rate limit counter for the user.
+	// Note that the rate limiter _may_ allow slightly less requests than the configured
+	// limit, incrementing the rate limit counter and expiry operations are currently not
+	// an atomic operation.
+	// We also don't use a transaction in here, because there is no good way to
+	// read the TTL without a lua script. This approach could slightly overcount the
+	// usage if redis requests after the INCR fail, but it will always recover safely.
+	// If Incr works but then everything else fails (eg ctx cancelled) the user spent
+	// a token without getting anything for it. This seems pretty rare and a fine trade-off
+	// since its just one token. The most likely reason this would happen is user cancelling
+	// the request and at that point its more likely to happen while the LLM is running than
+	// in this quick redis block.
+	// On the first request in the current time block, if the requests past Incr fail we don't
+	// yet have a deadline set. This means if the user comes back later we wouldn't of expired
+	// just one token. This seems fine. Note: this isn't an issue on subsequent requests in the
+	// same time block since the TTL would have been set.
 
-	// Now that we validated that we want to let the user pass, let's increment
-	// the rate limit counter for the user.
-	// Note that the rate limiter _may_ allow slightly more requests than the configured
-	// limit, reading the current value and incrementing the rate limit counter are
-	// currently not an atomic operation.
-	if _, err := conn.Do("MULTI"); err != nil {
-		return errors.Wrap(err, "failed to start redis transaction")
-	}
-	// Increment the counter for the current user. If no record exists, redis will
-	// initialize it with 1.
-	if _, err := conn.Do("INCR", key); err != nil {
+	// Check the current usage and increment the counter for the current user. If
+	// no record exists, redis will initialize it with 1.
+	currentUsage, err := rstore.Incr(key)
+	if err != nil {
 		return errors.Wrap(err, "failed to increase rate limit counter")
 	}
 
 	// Set expiry on the key. If the key didn't exist prior to the previous INCR,
 	// it will set the expiry of the key to one hour.
-	// If it did exist before, it should have an expiry set already, so the NX makes
-	// sure that we don't overwrite it.
-	if _, err := conn.Do("EXPIRE", key, int(time.Hour/time.Second), "NX"); err != nil {
-		return errors.Wrap(err, "failed to set expiry for rate limit counter")
+	// If it did exist before, it should have an expiry set already, so the TTL >= 0
+	// makes sure that we don't overwrite it and restart the 1h bucket.
+	ttl, err := rstore.TTL(key)
+	if err != nil {
+		return errors.Wrap(err, "failed to get TTL for rate limit counter")
+	}
+	if ttl < 0 {
+		if err := rstore.Expire(key, int(time.Hour/time.Second)); err != nil {
+			return errors.Wrap(err, "failed to set expiry for rate limit counter")
+		}
 	}
 
-	// Submit the calls.
-	if _, err := conn.Do("EXEC"); err != nil {
-		return errors.Wrap(err, "failed to flush multi operation")
+	// If the usage exceeds the maximum, we return an error. Consumers can check if
+	// the error is of type RateLimitExceededError and extract additional information
+	// like the limit and the time by when they should retry.
+	if currentUsage > limit {
+		return RateLimitExceededError{
+			Limit: limit,
+			// Return the minimum value of currentUsage and limit to not return
+			// confusing values when the limit was exceeded. This method increases
+			// on every check, even if the limit was reached.
+			Used:       min(currentUsage, limit),
+			RetryAfter: time.Now().Add(time.Duration(ttl) * time.Second),
+		}
 	}
 
 	return nil
-}
-
-func (r *rateLimiter) ReadQuota(ctx context.Context, userID int32) (count, limit int, _ error) {
-	limit, _, err := r.get(ctx, userKey(userID))
-	if err != nil {
-		return 0, 0, err
-	}
-	configuredLimit, err := getConfiguredLimit(actor.WithActor(context.Background(), actor.FromUser(userID)), r.db)
-	if err != nil {
-		return 0, 0, err
-	}
-	return limit, configuredLimit, nil
-}
-
-func (r *rateLimiter) get(ctx context.Context, key string) (int, time.Time, error) {
-	rstore := r.rstore.WithContext(ctx)
-
-	rv := rstore.Get(key)
-	if rv.IsNil() {
-		return 0, time.Time{}, nil
-	}
-	count, err := rv.Int()
-	if err != nil {
-		return 0, time.Time{}, errors.Wrap(err, "failed to get request counter")
-	}
-	ttl, err := rstore.TTL(key)
-	if err != nil {
-		return 0, time.Time{}, errors.Wrap(err, "failed to get ttl of key")
-	}
-	return count, time.Now().Add(time.Duration(ttl) * time.Second), nil
 }
 
 func userKey(userID int32) string {
@@ -191,4 +158,11 @@ func getConfiguredLimit(ctx context.Context, db database.DB) (int, error) {
 	}
 
 	return 0, nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
