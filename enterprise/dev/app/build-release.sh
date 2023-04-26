@@ -3,6 +3,7 @@
 set -eu
 
 GCLOUD_APP_CREDENTIALS_FILE=${GCLOUD_APP_CREDENTIALS_FILE-$HOME/.config/gcloud/application_default_credentials.json}
+cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
 if [ -z "${SKIP_BUILD_WEB-}" ]; then
   # esbuild is faster
@@ -22,8 +23,9 @@ ldflags="-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION
 ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)"
 ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app"
 
+NODE_ENV=production pnpm run build-app-shell
 go build \
-  -o .bin/backend-aarch64-apple-darwin \
+  -o .bin/sourcegraph-backend-aarch64-apple-darwin \
   -trimpath \
   -tags dist \
   -ldflags "$ldflags" \

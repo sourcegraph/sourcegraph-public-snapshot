@@ -19,6 +19,7 @@ export type WebviewMessage =
     | { command: 'removeHistory' }
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
+    | { command: 'edit'; text: string }
 
 /**
  * A message sent from the extension host to the webview.
@@ -32,6 +33,7 @@ export type ExtensionMessage =
     | { type: 'debug'; message: string }
     | { type: 'contextStatus'; contextStatus: ChatContextStatus }
     | { type: 'view'; messages: View }
+    | { type: 'errors'; errors: string }
 
 /**
  * The subset of configuration that is visible to the webview.

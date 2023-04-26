@@ -8,6 +8,7 @@ import {
     CodeCompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { CompletionsCache } from './cache'
 import { ReferenceSnippet, getContext } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
 import { History } from './history'
@@ -19,6 +20,7 @@ function lastNLines(text: string, n: number): string {
 }
 
 const estimatedLLMResponseLatencyMS = 700
+const inlineCompletionsCache = new CompletionsCache()
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptTokens: number
@@ -86,6 +88,12 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         const { prefix, prevLine: precedingLine } = docContext
+
+        const cachedCompletions = inlineCompletionsCache.get(prefix)
+        if (cachedCompletions) {
+            return cachedCompletions.map(r => new vscode.InlineCompletionItem(r.content))
+        }
+
         let waitMs: number
         const remainingChars = this.tokToChar(this.promptTokens)
         const completers: CompletionProvider[] = []
@@ -99,7 +107,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     this.responseTokens,
                     prefix,
                     '',
-                    2
+                    2 // tries
                 )
             )
         } else if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || precedingLine.endsWith('.')) {
@@ -115,28 +123,26 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     this.responseTokens,
                     prefix,
                     '',
-                    2 // 2 tries
+                    2 // tries
+                ),
+                // Create a completion request for the current prefix with a new line added. This
+                // will make for faster recommendations when the user presses enter.
+                new EndOfLineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    prefix,
+                    '\n', // force a new line in the case we are at end of line
+                    1 // tries
                 )
-                // TODO: Figure out if this is really useful. Right now it seems that this is not
-                // rendered and a subsequent completion is not properly using the cache yet.
-                //
-                // new EndOfLineCompletionProvider(
-                //     this.completionsClient,
-                //     remainingChars,
-                //     this.responseTokens,
-                //     prefix,
-                //     '\n', // force a new line in the case we are at end of line
-                //     2 // 2 tries
-                // )
             )
         }
 
         // TODO(beyang): trigger on context quality (better context means longer completion)
 
-        const waiter = new Promise<void>(resolve =>
+        await new Promise<void>(resolve =>
             setTimeout(() => resolve(), Math.max(0, waitMs - estimatedLLMResponseLatencyMS))
         )
-        await waiter
 
         // We don't need to make a request at all if the signal is already aborted after the
         // debounce
@@ -145,6 +151,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         const results = (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
+
+        inlineCompletionsCache.add(results)
 
         return results.map(r => new vscode.InlineCompletionItem(r.content))
     }
@@ -319,6 +327,7 @@ async function batchCompletions(
 }
 
 export interface Completion {
+    prefix: string
     prompt: string
     content: string
     stopReason?: string
@@ -414,6 +423,8 @@ export class MultilineCompletionProvider implements CompletionProvider {
     }
 
     public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {
+        const prefix = this.prefix.trim()
+
         // Create prompt
         const prompt = this.makePrompt()
         if (prompt.length > this.promptChars) {
@@ -437,6 +448,7 @@ export class MultilineCompletionProvider implements CompletionProvider {
         )
         // Post-process
         return responses.map(resp => ({
+            prefix,
             prompt,
             content: this.postProcess(resp.completion),
             stopReason: resp.stopReason,
@@ -521,6 +533,8 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
     }
 
     public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {
+        const prefix = this.prefix + this.injectPrefix
+
         // Create prompt
         const prompt = this.makePrompt()
         if (prompt.length > this.promptChars) {
@@ -544,6 +558,7 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
         )
         // Post-process
         return responses.map(resp => ({
+            prefix,
             prompt,
             content: this.postProcess(resp.completion),
             stopReason: resp.stopReason,
