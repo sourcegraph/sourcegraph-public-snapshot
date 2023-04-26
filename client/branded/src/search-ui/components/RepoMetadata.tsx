@@ -54,8 +54,10 @@ export const RepoMetadata: React.FC<RepoMetadataProps> = ({ items, className, on
                     {onDelete ? (
                         <Tooltip content="Delete metadata">
                             <Button
-                                className={classNames('px-1 py-0', styles.deleteButton)}
+                                className={styles.deleteButton}
                                 variant="secondary"
+                                outline={true}
+                                size="sm"
                                 aria-label="Delete metadata"
                                 onClick={() => onDelete(item)}
                             >
