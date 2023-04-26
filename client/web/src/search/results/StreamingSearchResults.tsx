@@ -8,7 +8,7 @@ import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@source
 import { asError } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
-import { HighlightResponseFormat, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
@@ -382,14 +382,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         })
     }, [caseSensitive, location, navigate, props, submittedURLQuery])
 
-    const prefetchFile: FilePrefetcher = useCallback(
-        params =>
-            fetchBlob({
-                ...params,
-                format: HighlightResponseFormat.JSON_SCIP,
-            }),
-        []
-    )
+    const prefetchFile: FilePrefetcher = useCallback(params => fetchBlob(params), [])
 
     return (
         <div className={classNames(styles.container, sidebarCollapsed && styles.containerWithSidebarHidden)}>

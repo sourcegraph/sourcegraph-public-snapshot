@@ -21,7 +21,6 @@ import {
 } from '@sourcegraph/observability-client'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
@@ -204,7 +203,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         repoName,
                         revision,
                         filePath,
-                        format: HighlightResponseFormat.HTML_PLAINTEXT,
                         scipSnapshot: indexIDsForSnapshotData[repoName] !== undefined,
                         visibleIndexID: indexIDsForSnapshotData[repoName],
                     }).pipe(
@@ -255,7 +253,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             revision,
                             filePath,
                             disableTimeout,
-                            format: HighlightResponseFormat.JSON_SCIP,
                             scipSnapshot: indexIDsForSnapshotData[repoName] !== undefined,
                             visibleIndexID: indexIDsForSnapshotData[repoName],
                         })
