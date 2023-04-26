@@ -3,6 +3,7 @@
 set -x
 
 if [[ "${CI:-false}" == "true" ]]; then
+  echo "--- :bazel: bazel $@"
   bazel \
     --bazelrc=.bazelrc \
     --bazelrc=.aspect/bazelrc/ci.bazelrc \
