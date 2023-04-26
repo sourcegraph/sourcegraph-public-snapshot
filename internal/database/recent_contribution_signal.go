@@ -18,8 +18,7 @@ type RecentContributionSignalStore interface {
 	AddCommit(ctx context.Context, commit Commit) error
 	FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentContributorSummary, error)
 	ClearSignals(ctx context.Context, repoID api.RepoID) error
-	Transact(ctx context.Context) (RecentContributionSignalStore, error)
-	Done(err error) error
+	WithTransact(context.Context, func(store RecentContributionSignalStore) error) error
 }
 
 func RecentContributionSignalStoreWith(other basestore.ShareableStore) RecentContributionSignalStore {
@@ -45,11 +44,17 @@ type recentContributionSignalStore struct {
 	*basestore.Store
 }
 
+func (s *recentContributionSignalStore) WithTransact(ctx context.Context, f func(store RecentContributionSignalStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(RecentContributionSignalStoreWith(tx))
+	})
+}
+
 func (s *recentContributionSignalStore) With(other basestore.ShareableStore) *recentContributionSignalStore {
 	return &recentContributionSignalStore{Store: s.Store.With(other)}
 }
 
-func (s *recentContributionSignalStore) Transact(ctx context.Context) (RecentContributionSignalStore, error) {
+func (s *recentContributionSignalStore) transact(ctx context.Context) (*recentContributionSignalStore, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &recentContributionSignalStore{Store: txBase}, err
 }
@@ -212,7 +217,7 @@ func (s *recentContributionSignalStore) ClearSignals(ctx context.Context, repoID
 // for each new signal appearing in `own_signal_recent_contribution` by using
 // a trigger: `update_own_aggregate_recent_contribution`.
 func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Commit) (err error) {
-	tx, err := s.Transact(ctx)
+	tx, err := s.transact(ctx)
 	if err != nil {
 		return err
 	}

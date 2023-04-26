@@ -166,6 +166,7 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 	task := handler{
 		workerStore: workerStore,
 		limiter:     limiter,
+		db:          db,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*Job](&task), workerutil.WorkerOptions{
@@ -187,6 +188,7 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 }
 
 type handler struct {
+	db          database.DB
 	workerStore dbworkerstore.Store[*Job]
 	limiter     *ratelimit.InstrumentedLimiter
 }
@@ -196,28 +198,41 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 	if err != nil {
 		return errors.Wrap(err, "limiter.Wait")
 	}
-	// jsonify, _ := json.Marshal(record)
 
+	var delegate signalIndexFunc
 	switch JobTypeId(record.JobType) {
 	case RecentContributors:
-		repoStore := database.ReposWith(lgr, h.workerStore)
-		repoID := api.RepoID(record.RepoId)
-		repo, err := repoStore.Get(ctx, repoID)
+		delegate = handleRecentContributors
+	default:
+		return errors.New("unsupported own index job type")
+	}
+
+	return delegate(ctx, lgr, api.RepoID(record.RepoId), h.db)
+}
+
+type signalIndexFunc func(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB) error
+
+func handleRecentContributors(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB) error {
+	repoStore := db.Repos()
+	repo, err := repoStore.Get(ctx, repoId)
+	if err != nil {
+		return errors.Wrap(err, "repoStore.Get")
+	}
+	commitLog, err := gitserver.NewClient().CommitLog(ctx, repo.Name, time.Now().AddDate(0, 0, -90))
+	if err != nil {
+		return errors.Wrap(err, "CommitLog")
+	}
+
+	count := 0
+	err = db.RecentContributionSignals().WithTransact(ctx, func(store database.RecentContributionSignalStore) error {
+		err := store.ClearSignals(ctx, repoId)
 		if err != nil {
-			return errors.Wrap(err, "repoStore.Get")
-		}
-		commitLog, err := gitserver.NewClient().CommitLog(ctx, repo.Name, time.Now().AddDate(0, 0, -90))
-		if err != nil {
-			return errors.Wrap(err, "CommitLog")
+			return err
 		}
 
-		count := 0
-		contribStore := database.RecentContributionSignalStoreWith(h.workerStore)
-		contribStore
 		for _, commit := range commitLog {
-
-			err := contribStore.AddCommit(ctx, database.Commit{
-				RepoID:       repoID,
+			err := store.AddCommit(ctx, database.Commit{
+				RepoID:       repoId,
 				AuthorName:   commit.AuthorName,
 				AuthorEmail:  commit.AuthorEmail,
 				Timestamp:    commit.Timestamp,
@@ -229,9 +244,12 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 			}
 			count++
 		}
-		lgr.Info("commits inserted", log.Int("count", count), log.Int("repo_id", record.RepoId))
+		lgr.Info("commits inserted", log.Int("count", count), log.Int("repo_id", int(repoId)))
+		return nil
+	})
+	if err != nil {
+		return err
 	}
-
 	return nil
 }
 
