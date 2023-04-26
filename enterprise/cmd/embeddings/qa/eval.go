@@ -26,7 +26,8 @@ func Run(url string) error {
 	}
 	c := newClient(url)
 
-	count, recall := 0.0, 0.0
+	count := 0.0
+	uniqueMatches := make(map[string]struct{})
 
 	file, err := fs.Open("context_data.tsv")
 	if err != nil {
@@ -62,10 +63,11 @@ func Run(url string) error {
 
 		for i, result := range merged {
 			if result.FileName == relevantFile {
-				recall++
-				fmt.Print(">> ")
+				// Don't count duplicates.
+				uniqueMatches[result.FileName] = struct{}{}
+				fmt.Printf(">> ")
 			} else {
-				fmt.Print("   ")
+				fmt.Printf("   ")
 			}
 			fmt.Printf("%d. %s", i+1, result.FileName)
 			if result.Debug != "" {
@@ -79,7 +81,7 @@ func Run(url string) error {
 	}
 
 	fmt.Println()
-	fmt.Printf("Recall: %f\n", recall/count)
+	fmt.Printf("Recall: %f\n", float64(len(uniqueMatches))/count)
 
 	return nil
 }
