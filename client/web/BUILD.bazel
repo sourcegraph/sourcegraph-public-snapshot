@@ -1612,6 +1612,7 @@ ts_project(
         ":module_style_typings",
         ":node_modules/@sourcegraph/branded",
         ":node_modules/@sourcegraph/client-api",  #keep
+        ":node_modules/@sourcegraph/codeintellify",  #keep
         ":node_modules/@sourcegraph/cody-shared",
         ":node_modules/@sourcegraph/cody-ui",
         ":node_modules/@sourcegraph/common",
