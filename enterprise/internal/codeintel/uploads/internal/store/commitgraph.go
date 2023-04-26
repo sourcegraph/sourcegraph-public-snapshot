@@ -367,15 +367,18 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 		return nil, nil
 	}
 
-	commits := make([]string, 0, len(commitGraph.Graph()))
+	commitQueries := make([]*sqlf.Query, 0, len(commitGraph.Graph()))
 	for commit := range commitGraph.Graph() {
-		commits = append(commits, commit)
+		commitQueries = append(commitQueries, sqlf.Sprintf("%s", dbutil.CommitBytea(commit)))
 	}
 
 	commitGraphView, err := scanCommitGraphView(s.db.Query(ctx, sqlf.Sprintf(
 		findClosestDumpsFromGraphFragmentCommitGraphQuery,
-		makeVisibleUploadCandidatesQuery(repositoryID, commits...)),
-	))
+		repositoryID,
+		sqlf.Join(commitQueries, ", "),
+		repositoryID,
+		sqlf.Join(commitQueries, ", "),
+	)))
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +408,27 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 
 const findClosestDumpsFromGraphFragmentCommitGraphQuery = `
 WITH
-visible_uploads AS (%s)
+visible_uploads AS (
+	SELECT
+		nu.repository_id,
+		upload_id::integer,
+		nu.commit_bytea,
+		u_distance::text::integer as distance
+	FROM lsif_nearest_uploads nu
+	CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
+	WHERE nu.repository_id = %s AND nu.commit_bytea IN (%s)
+	UNION (
+		SELECT
+			nu.repository_id,
+			upload_id::integer,
+			ul.commit_bytea,
+			u_distance::text::integer + ul.distance as distance
+		FROM lsif_nearest_uploads_links ul
+		JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
+		CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
+		WHERE nu.repository_id = %s AND ul.commit_bytea IN (%s)
+	)
+)
 SELECT
 	vu.upload_id,
 	encode(vu.commit_bytea, 'hex'),
