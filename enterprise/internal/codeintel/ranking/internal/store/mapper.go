@@ -216,6 +216,7 @@ unprocessed_path_counts AS (
 		)
 	ORDER BY ipr.id
 	LIMIT %s
+	FOR UPDATE SKIP LOCKED
 ),
 expanded_unprocessed_path_counts AS (
 	SELECT
