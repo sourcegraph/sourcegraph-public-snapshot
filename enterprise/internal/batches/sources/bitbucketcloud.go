@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -318,11 +319,21 @@ func (s BitbucketCloudSource) setChangesetMetadata(ctx context.Context, repo *bi
 
 func (s BitbucketCloudSource) changesetToPullRequestInput(cs *Changeset) bitbucketcloud.PullRequestInput {
 	destBranch := gitdomain.AbbreviateRef(cs.BaseRef)
+
+	var closeSourceBranch bool
+
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		closeSourceBranch = true
+	} else {
+		closeSourceBranch = false
+	}
+
 	opts := bitbucketcloud.PullRequestInput{
 		Title:             cs.Title,
 		Description:       cs.Body,
 		SourceBranch:      gitdomain.AbbreviateRef(cs.HeadRef),
 		DestinationBranch: &destBranch,
+		CloseSourceBranch: closeSourceBranch,
 	}
 
 	// If we're forking, then we need to set the source repository as well.
