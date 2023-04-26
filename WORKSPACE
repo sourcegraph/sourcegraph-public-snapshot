@@ -74,6 +74,22 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
 )
 
+http_archive(
+    name = "rules_oci",
+    sha256 = "78756ab9bdf21cec585b0c6edf4c4c0d7907a956aeae0450c4088b781cecfcb7",
+    strip_prefix = "rules_oci-770bedd27413eb093dd4123f1118876b61cb63da",
+    url = "https://github.com/bazel-contrib/rules_oci/archive/770bedd27413eb093dd4123f1118876b61cb63da.tar.gz",
+)
+
+http_archive(
+    name = "rules_pkg",
+    sha256 = "8c20f74bca25d2d442b327ae26768c02cf3c99e93fad0381f32be9aab1967675",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.8.1/rules_pkg-0.8.1.tar.gz",
+        "https://github.com/bazelbuild/rules_pkg/releases/download/0.8.1/rules_pkg-0.8.1.tar.gz",
+    ],
+)
+
 # rules_js setup ================================
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
@@ -255,3 +271,36 @@ crate_repositories()
 load("//dev/backcompat:defs.bzl", "back_compat_defs")
 
 back_compat_defs()
+
+## Containers stuff
+
+load("@rules_oci//oci:dependencies.bzl", "rules_oci_dependencies")
+
+rules_oci_dependencies()
+
+load("@rules_oci//oci:repositories.bzl", "LATEST_CRANE_VERSION", "LATEST_ZOT_VERSION", "oci_register_toolchains")
+
+oci_register_toolchains(
+    name = "oci",
+    crane_version = LATEST_CRANE_VERSION,
+    # Uncommenting the zot toolchain will cause it to be used instead of crane for some tasks.
+    # Note that it does not support docker-format images.
+    # zot_version = LATEST_ZOT_VERSION,
+)
+
+# Optional, for oci_tarball rule
+load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+
+rules_pkg_dependencies()
+
+load("@rules_oci//oci:pull.bzl", "oci_pull")
+
+oci_pull(
+    name = "wolfi_base",
+    digest = "sha256:bb939c611ced27e5e566ad2a402a9f030fca949bbd351a8f84fcb68f4e790e5d",
+    image = "europe-central2-docker.pkg.dev/sourcegraph-security-logging/public-wolfi-test/wolfi-sourcegraph-dev-base",
+    # platforms = [
+    #     "linux/amd64",
+    #     "linux/arm64",
+    # ],
+)

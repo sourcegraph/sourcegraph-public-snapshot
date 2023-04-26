@@ -1,4 +1,6 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_cross_binary")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 go_library(
     name = "worker_lib",
@@ -15,4 +17,30 @@ go_binary(
     name = "worker",
     embed = [":worker_lib"],
     visibility = ["//visibility:public"],
+)
+
+go_cross_binary(
+    name = "worker_linux_amd64",
+    platform = "@io_bazel_rules_go//go/toolchain:linux_amd64",
+    target = ":worker"
+)
+
+pkg_tar(
+    name = "tar",
+    srcs = [":worker_linux_amd64"],
+)
+
+oci_image(
+    name = "image",
+    architecture = "amd64",
+    base = "@wolfi_base",
+    tars = [":tar"],
+    entrypoint = ["/worker"],
+    os = "linux",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repotags = ["foo:latest"]
 )
