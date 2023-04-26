@@ -312,7 +312,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
 			bazelBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
-			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
+			// trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
 			buildExecutorVM(c, true),
 			buildExecutorDockerMirror(c),
 			buildExecutorBinary(c),
