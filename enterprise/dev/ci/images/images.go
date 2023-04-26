@@ -52,7 +52,7 @@ func maybeTaggedImage(rootImage, tag string) string {
 // This appends all images to a single array in the case where we want to build a single image and don't want to
 // introduce other logic upstream, as the contents of these arrays may change.
 
-var SourcegraphDockerImages = append(append(SourcegraphDockerImagesMusl, DeploySourcegraphDockerImages...), SourcegraphDockerImagesMisc...)
+var SourcegraphDockerImages = append(append(SourcegraphDockerImagesTestDeps, DeploySourcegraphDockerImages...), SourcegraphDockerImagesMisc...)
 
 // These images are miscellaneous and can be built out of sync with others. They're not part of the
 // base deployment, nor do they require a special bazel toolchain ie: musl
@@ -62,7 +62,6 @@ var SourcegraphDockerImagesMisc = []string{
 	"bundled-executor",
 	"dind",
 	"embeddings",
-	"executor",
 	"executor-kubernetes",
 	"executor-vm",
 	"jaeger-agent",
@@ -71,8 +70,9 @@ var SourcegraphDockerImagesMisc = []string{
 	"sg"}
 
 // These are images that use the musl build chain for bazel, and break the cache if built
-// on a system with glibc. They are built on a separate pipeline.
-var SourcegraphDockerImagesMusl = []string{"symbols", "server"}
+// on a system with glibc. They are built on a separate pipeline. They're also the images current e2e/integration
+// tests require so we want to build them as quickly as possible.
+var SourcegraphDockerImagesTestDeps = []string{"symbols", "server", "executor"}
 
 // DeploySourcegraphDockerImages denotes all Docker images that are included in a typical
 // deploy-sourcegraph installation.
@@ -81,6 +81,7 @@ var SourcegraphDockerImagesMusl = []string{"symbols", "server"}
 // it must also be added to this list.
 var DeploySourcegraphDockerImages = []string{
 	"alpine-3.14",
+	"postgres-12-alpine",
 	"blobstore",
 	"cadvisor",
 	"codeinsights-db",
@@ -93,7 +94,6 @@ var DeploySourcegraphDockerImages = []string{
 	"migrator",
 	"node-exporter",
 	"opentelemetry-collector",
-	"postgres-12-alpine",
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",

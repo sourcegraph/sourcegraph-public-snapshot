@@ -718,7 +718,6 @@ func executorsE2E(candidateTag string) operations.Operation {
 		p.AddStep(":docker::packer: Executors E2E",
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("symbols")),
-			bk.DependsOn(candidateImageStepKey("batcheshelper")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
@@ -1050,7 +1049,7 @@ func buildExecutorBinary(c Config) operations.Operation {
 
 func publishExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		candidateBuildStep := candidateImageStepKey("batcheshelper")
+		candidateBuildStep := candidateImageStepKey("symbols")
 		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
