@@ -28,3 +28,11 @@ go_binary(
     embed = [":sourcegraph_lib"],
     visibility = ["//visibility:public"],
 )
+
+go_binary(
+    name = "sourcegraph-linux",
+    goos = "linux",
+    goarch = "amd64",
+    embed = [":sourcegraph_lib"],
+    visibility = ["//visibility:public"],
+)
