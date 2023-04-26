@@ -122,7 +122,7 @@ func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 		installationID,
 		appAuthenticator,
 	)
-	token.token = "installation-token"
+	token.Token = "installation-token"
 
 	req, err := http.NewRequest("GET", "https://api.github.com", nil)
 	require.NoError(t, err)
@@ -149,10 +149,10 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 
 	require.True(t, appAuthenticator.AuthenticateCalled)
 
-	require.Equal(t, token.token, "new-token")
+	require.Equal(t, token.Token, "new-token")
 	wantTime, err := time.Parse(time.RFC3339, "2016-07-11T22:14:10Z")
 	require.NoError(t, err)
-	require.True(t, token.expiresAt.Equal(wantTime))
+	require.True(t, token.ExpiresAt.Equal(wantTime))
 }
 
 func TestInstallationAccessToken_NeedsRefresh(t *testing.T) {
@@ -161,10 +161,10 @@ func TestInstallationAccessToken_NeedsRefresh(t *testing.T) {
 		needsRefresh bool
 	}{
 		"empty token":   {installationAccessToken{}, true},
-		"valid token":   {installationAccessToken{token: "abc123"}, false},
-		"not expired":   {installationAccessToken{token: "abc123", expiresAt: time.Now().Add(10 * time.Minute)}, false},
-		"expired":       {installationAccessToken{token: "abc123", expiresAt: time.Now().Add(-10 * time.Minute)}, true},
-		"expiring soon": {installationAccessToken{token: "abc123", expiresAt: time.Now().Add(3 * time.Minute)}, true},
+		"valid token":   {installationAccessToken{Token: "abc123"}, false},
+		"not expired":   {installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(10 * time.Minute)}, false},
+		"expired":       {installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(-10 * time.Minute)}, true},
+		"expiring soon": {installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(3 * time.Minute)}, true},
 	}
 
 	for name, tc := range testCases {
@@ -181,7 +181,7 @@ func TestInstallationAccessToken_SetURLUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	it := installationAccessToken{token: token}
+	it := installationAccessToken{Token: token}
 	it.SetURLUser(u)
 
 	want := "x-access-token:abc123"

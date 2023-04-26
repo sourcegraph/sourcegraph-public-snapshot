@@ -120,11 +120,6 @@ func (a *gitHubAppAuthenticator) Hash() string {
 	return hex.EncodeToString(shaSum[:])
 }
 
-type jsonToken struct {
-	Token     string `json:"token"`
-	ExpiresAt string `json:"expires_at"`
-}
-
 type InstallationAccessToken struct {
 	Token     string
 	ExpiresAt time.Time
@@ -136,19 +131,11 @@ type InstallationAccessToken struct {
 // It implements the auth.Authenticator interface.
 type installationAccessToken struct {
 	installationID   int
-	token            string
-	expiresAt        time.Time
+	Token            string    `json:"token"`
+	ExpiresAt        time.Time `json:"expires_at"`
 	baseURL          *url.URL
 	appAuthenticator auth.Authenticator
 	cache            *rcache.Cache
-}
-
-func (t *installationAccessToken) updateFromJSON(jt *jsonToken) {
-	expiresAt, err := time.Parse(time.RFC3339, jt.ExpiresAt)
-	if err == nil {
-		t.expiresAt = expiresAt
-	}
-	t.token = jt.Token
 }
 
 // NewInstallationAccessToken implements the Authenticator interface
@@ -179,10 +166,11 @@ func NewInstallationAccessToken(
 func (t *installationAccessToken) Refresh(ctx context.Context, cli httpcli.Doer) error {
 	token, ok := t.cache.Get(t.baseURL.String() + strconv.Itoa(t.installationID))
 	if ok {
-		var storedTokenJSON jsonToken
-		if err := json.Unmarshal(token, &storedTokenJSON); err == nil {
-			if storedTokenJSON.Token != t.token {
-				t.updateFromJSON(&storedTokenJSON)
+		var storedToken installationAccessToken
+		if err := json.Unmarshal(token, &storedToken); err == nil {
+			if storedToken.Token != t.Token {
+				t.Token = storedToken.Token
+				t.ExpiresAt = storedToken.ExpiresAt
 				if !t.NeedsRefresh() {
 					return nil
 				}
@@ -215,11 +203,12 @@ func (t *installationAccessToken) Refresh(ctx context.Context, cli httpcli.Doer)
 	}
 	defer resp.Body.Close()
 
-	var jsonToken jsonToken
-	if err := json.Unmarshal(jsonBody, &jsonToken); err != nil {
+	var newToken installationAccessToken
+	if err := json.Unmarshal(jsonBody, &newToken); err != nil {
 		return err
 	}
-	t.updateFromJSON(&jsonToken)
+	t.Token = newToken.Token
+	t.ExpiresAt = newToken.ExpiresAt
 
 	t.cache.Set(t.baseURL.String()+strconv.Itoa(t.installationID), jsonBody)
 	return nil
@@ -228,7 +217,7 @@ func (t *installationAccessToken) Refresh(ctx context.Context, cli httpcli.Doer)
 // Authenticate adds an Authorization header to the request containing
 // the installation access token associated with the GitHub App installation.
 func (a *installationAccessToken) Authenticate(r *http.Request) error {
-	r.Header.Set("Authorization", "Bearer "+a.token)
+	r.Header.Set("Authorization", "Bearer "+a.Token)
 	return nil
 }
 
@@ -244,16 +233,16 @@ func (a *installationAccessToken) Hash() string {
 // needs to be refreshed. An access token needs to be refreshed if it has
 // expired or will expire within the next few seconds.
 func (t *installationAccessToken) NeedsRefresh() bool {
-	if t.token == "" {
+	if t.Token == "" {
 		return true
 	}
-	if t.expiresAt.IsZero() {
+	if t.ExpiresAt.IsZero() {
 		return false
 	}
-	return time.Until(t.expiresAt) < 5*time.Minute
+	return time.Until(t.ExpiresAt) < 5*time.Minute
 }
 
 // Sets the URL's User field to contain the installation access token.
 func (t *installationAccessToken) SetURLUser(u *url.URL) {
-	u.User = url.UserPassword("x-access-token", t.token)
+	u.User = url.UserPassword("x-access-token", t.Token)
 }
