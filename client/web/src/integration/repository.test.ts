@@ -527,6 +527,10 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
+            // await driver.page.waitForTimeout(60000)
+
+            // console.log('breadcrumbTexts', breadcrumbTexts)
+
             assert.deepStrictEqual(breadcrumbTexts, [
                 shortRepositoryName,
                 '@master',
@@ -552,7 +556,9 @@ describe('Repository', () => {
             const blobContent = await driver.page.evaluate(
                 () => document.querySelector('[data-testid="repo-blob"]')?.textContent
             )
-            assert.strictEqual(blobContent, `content for: ${filePath}\nsecond line\nthird line`)
+            // CodeMirror blob content has no newline characters
+            const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`.replace(/\n/g, '')
+            assert.strictEqual(blobContent, expectedBlobContent)
         })
 
         it('works with a plus sign in the repository name', async () => {
