@@ -252,9 +252,7 @@ const ExtraInfoSection: React.FC<{
     )
 }
 
-const getRefType = (isPerforceDepot: boolean) => {
-    return isPerforceDepot ? 'changelist' : 'commit'
-}
+const getRefType = (isPerforceDepot: boolean): string => (isPerforceDepot ? 'changelist' : 'commit')
 
 interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
     filePath: string
@@ -507,7 +505,7 @@ const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
                 <Tooltip
                     content={
                         revisionRange?.includes('..')
-                            ? 'All ${refType}s will be shown (revision end ranges are not yet supported)'
+                            ? `All ${refType}s will be shown (revision end ranges are not yet supported)`
                             : null
                     }
                     placement="left"

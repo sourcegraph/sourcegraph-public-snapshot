@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo } from 'react'
+import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
@@ -123,7 +123,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     const location = useLocation()
     const { filePath = '' } = parseBrowserRepoURL(location.pathname)
 
-    var isPerforceDepot = false
+    let isPerforceDepot = false
 
     const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoryGitCommitsResult,
@@ -160,12 +160,15 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
         },
     })
 
-    const getRefType = (plural = false) => {
-        if (isPerforceDepot) {
-            return plural ? 'changelists' : 'changelist'
-        }
-        return plural ? 'commits' : 'commit'
-    }
+    const getRefType = useCallback(
+        (plural = false): string => {
+            if (isPerforceDepot) {
+                return plural ? 'changelists' : 'changelist'
+            }
+            return plural ? 'commits' : 'commit'
+        },
+        [isPerforceDepot]
+    )
 
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)
@@ -213,7 +216,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
             const refType = getRefType(true)
 
             return { key: refType, element: <>{capitalize(refType)}</> }
-        }, [repo, isPerforceDepot])
+        }, [repo, getRefType])
     )
 
     return (
