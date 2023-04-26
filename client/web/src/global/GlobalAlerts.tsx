@@ -72,10 +72,6 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                             className={styles.alert}
                         />
                     )}
-                    {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
-                    {navigator.userAgent.includes('Mac OS X') && window.context.deployType === 'docker-container' && (
-                        <DockerForMacAlert className={styles.alert} />
-                    )}
                     {siteFlagsValue.alerts.map((alert, index) => (
                         <GlobalAlert key={index} alert={alert} className={styles.alert} />
                     ))}
