@@ -32,7 +32,6 @@ import (
 )
 
 func TestRedirects(t *testing.T) {
-	assets.UseDevAssetsProvider()
 	assets.MockLoadWebpackManifest = func() (*assets.WebpackManifest, error) {
 		return &assets.WebpackManifest{}, nil
 	}
@@ -122,7 +121,6 @@ func TestRepoShortName(t *testing.T) {
 }
 
 func TestNewCommon_repo_error(t *testing.T) {
-	assets.UseDevAssetsProvider()
 	assets.MockLoadWebpackManifest = func() (*assets.WebpackManifest, error) {
 		return &assets.WebpackManifest{}, nil
 	}
