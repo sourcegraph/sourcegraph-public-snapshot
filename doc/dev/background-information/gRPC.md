@@ -5,9 +5,11 @@ REST implementation should use
 the [canonical JSON representation of the generated protobuf structs](https://protobuf.dev/programming-guides/proto3/#json)
 in the HTTP body for arguments and responses.
 
-We expect to only have to maintain both implementations for the 5.1.X release in June. Afterwards, only the gRPC API will be used and we can delete the redundant REST implementations.
+> _Note: An "internal" API is one that's only used for intra-service communication/RPCs (think `searcher` fetching an archive from `gitserver`). This doesn't include things like the graphQL API that external people can use (including our web interface)._
 
-_Note: An "internal" API is one that's only used for intra-service communication/RPCs (think `searcher` fetching an archive from `gitserver`). This doesn't include things like the graphQL API that external people can use (including our web interface)._
+We expect to only have to maintain both implementations for the `5.1.X` release in June. Afterwards, only the gRPC API will be used and we can delete the redundant REST implementations.
+
+> _Note: Even after the `5.1.X` release, there are some endpoints that won't be translated into gRPC in the first place. Examples include endpoints used by the git protocol directly and services we have no control over that don't support gRPC (such as Postgres). See the [gRPC June 2023 milestone issue](https://github.com/sourcegraph/sourcegraph/issues/51069) for more details._
 
 ## simple example
 
@@ -234,6 +236,10 @@ func convertGRPCErrorToHTTPStatus(err error) (httpCode int, errorText string) {
 }
 ```
 
-As you can see this server re-uses the generated protobuf structs in both the gRPC and REST APIs. It also extracts the
-core implementation logic into a helper function `getReply` that can be reused in both APIs. This greatly standardizes
-the
+As you can see, this service re-uses the generated protobuf structs in both the gRPC and REST APIs.
+
+It also extracts the core implementation logic into a shared helper function, `getReply`, that can be reused in both interfaces. This:
+
+- reduces code duplication (reducing the chance of drift in either implementation)
+- makes testing easier (we only need to test `getReply` once)
+- limits the scope of what the gRPC and REST functions are actually doing (only deserializing the requests and serializing the responses)
