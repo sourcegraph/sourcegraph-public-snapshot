@@ -1,5 +1,3 @@
-import '../../shared/polyfills'
-
 import socketIoClient from 'socket.io-client'
 
 /**
