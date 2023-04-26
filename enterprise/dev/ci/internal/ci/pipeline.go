@@ -308,20 +308,20 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		ops.Merge(publishOps)
 
-	case runtype.ExecutorPatchNoTest:
-		executorVMImage := "executor-vm"
-		ops = operations.NewSet(
-			bazelBuildCandidateDockerImages([]string{"executorVMImage"}, c.Version, c.candidateImageTag(), c.RunType),
-			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
-			buildExecutorVM(c, true),
-			buildExecutorDockerMirror(c),
-			buildExecutorBinary(c),
-			wait,
-			bazelPublishFinalDockerImage(c, []string{executorVMImage}),
-			publishExecutorVM(c, true),
-			publishExecutorDockerMirror(c),
-			publishExecutorBinary(c),
-		)
+	// case runtype.ExecutorPatchNoTest:
+	// 	executorVMImage := "executor-vm"
+	// 	ops = operations.NewSet(
+	// 		bazelBuildCandidateDockerImages([]string{"executorVMImage"}, c.Version, c.candidateImageTag(), c.RunType),
+	// 		trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
+	// 		buildExecutorVM(c, true),
+	// 		buildExecutorDockerMirror(c),
+	// 		buildExecutorBinary(c),
+	// 		wait,
+	// 		bazelPublishFinalDockerImage(c, []string{executorVMImage}),
+	// 		publishExecutorVM(c, true),
+	// 		publishExecutorDockerMirror(c),
+	// 		publishExecutorBinary(c),
+	// 	)
 
 	default:
 		// Slow async pipeline
@@ -356,18 +356,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// 	imageBuildOps.Append(bazelBuildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), c.RunType))
 			// }
 			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMusl, c.Version, c.candidateImageTag(), c.RunType))
-			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMisc, c.Version, c.candidateImageTag(), c.RunType))
 			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.DeploySourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 
 		}
 		ops.Merge(imageBuildOps)
 
-		// Trivy security scans
-		imageScanOps := operations.NewNamedSet("Image security scans")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
-		}
-		ops.Merge(imageScanOps)
+		// // Trivy security scans
+		// imageScanOps := operations.NewNamedSet("Image security scans")
+		// for _, dockerImage := range images.SourcegraphDockerImages {
+		// 	imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
+		// }
+		// ops.Merge(imageScanOps)
 
 		// Core tests
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{

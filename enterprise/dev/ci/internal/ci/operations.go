@@ -718,7 +718,7 @@ func executorsE2E(candidateTag string) operations.Operation {
 		p.AddStep(":docker::packer: Executors E2E",
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
-			bk.DependsOn(candidateImageStepKey("executor")),
+			bk.DependsOn(candidateImageStepKey("batcheshelper")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
@@ -1013,7 +1013,7 @@ func buildExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
-			bk.Key(candidateImageStepKey("executor.vm-image")),
+			bk.Key(candidateImageStepKey("batcheshelper")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
@@ -1035,7 +1035,7 @@ func buildExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 func buildExecutorBinary(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
-			bk.Key(candidateImageStepKey("executor.binary")),
+			bk.Key(candidateImageStepKey("batcheshelper")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
@@ -1048,7 +1048,7 @@ func buildExecutorBinary(c Config) operations.Operation {
 
 func publishExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		candidateBuildStep := candidateImageStepKey("executor.vm-image")
+		candidateBuildStep := candidateImageStepKey("batcheshelper")
 		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
