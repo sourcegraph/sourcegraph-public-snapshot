@@ -23,4 +23,4 @@ command 'cody.set-access-token' not found
 4. Delete the `vscodesourcegraph.cody-ai` entry in the System keychain on the left. 
 5. Try opening VS Code again
 
-![](https://storage.googleapis.com/sourcegraph-assets/blog/cody-docs-troubleshooting-keychain-access.png)
+![Opening up Keychain Access](https://storage.googleapis.com/sourcegraph-assets/blog/cody-docs-troubleshooting-keychain-access.png)
