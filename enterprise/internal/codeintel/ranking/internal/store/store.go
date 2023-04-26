@@ -46,7 +46,7 @@ type Store interface {
 	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (inputRecordsDeleted int, _ error)
 
 	// Reducer behavior + cleanup
-	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted int, numInputsProcessed int, _ error)
+	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numInputsProcessed int, numPathRanksInserted int, _ error)
 	VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (rankRecordsScanned int, rankRecordsSDeleted int, _ error)
 }
 

@@ -75,6 +75,7 @@ refs AS (
 		)
 	ORDER BY rr.id
 	LIMIT %s
+	FOR UPDATE SKIP LOCKED
 ),
 locked_refs AS (
 	INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
@@ -198,13 +199,11 @@ unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
 		ipr.upload_id,
-		unnest(
-			CASE
-				WHEN ipr.document_path != '' THEN array_append('{}'::text[], ipr.document_path)
-				ELSE ipr.document_paths
-			END
-		) AS document_path,
-		ipr.graph_key
+		ipr.graph_key,
+		CASE
+			WHEN ipr.document_path != '' THEN array_append('{}'::text[], ipr.document_path)
+			ELSE ipr.document_paths
+		END AS document_paths
 	FROM codeintel_initial_path_ranks ipr
 	WHERE
 		ipr.graph_key = %s AND
@@ -217,13 +216,22 @@ unprocessed_path_counts AS (
 		)
 	ORDER BY ipr.id
 	LIMIT %s
+	FOR UPDATE SKIP LOCKED
+),
+expanded_unprocessed_path_counts AS (
+	SELECT
+		upc.id,
+		upc.upload_id,
+		upc.graph_key,
+		unnest(upc.document_paths) AS document_path
+	FROM unprocessed_path_counts upc
 ),
 locked_path_counts AS (
 	INSERT INTO codeintel_initial_path_ranks_processed (graph_key, codeintel_initial_path_ranks_id)
 	SELECT
 		%s,
-		upc.id
-	FROM unprocessed_path_counts upc
+		eupc.id
+	FROM expanded_unprocessed_path_counts eupc
 	ON CONFLICT DO NOTHING
 	RETURNING codeintel_initial_path_ranks_id
 ),
@@ -231,12 +239,12 @@ ins AS (
 	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
 	SELECT
 		u.repository_id,
-		upc.document_path,
+		eupc.document_path,
 		0,
 		%s
 	FROM locked_path_counts lpc
-	JOIN unprocessed_path_counts upc on upc.id = lpc.codeintel_initial_path_ranks_id
-	JOIN lsif_uploads u ON u.id = upc.upload_id
+	JOIN expanded_unprocessed_path_counts eupc on eupc.id = lpc.codeintel_initial_path_ranks_id
+	JOIN lsif_uploads u ON u.id = eupc.upload_id
 	RETURNING 1
 )
 SELECT
