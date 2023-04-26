@@ -19,9 +19,6 @@ export const Settings: React.FunctionComponent<React.PropsWithChildren<SettingsP
         <div className="non-transcript-container">
             <div className="settings">
                 {serverEndpoint && <p>🟢 Connected to {serverEndpoint}</p>}
-                <VSCodeButton className="logout-button" type="button" onClick={() => setView('history')}>
-                    Chat History
-                </VSCodeButton>
                 <VSCodeButton className="logout-button" type="button" onClick={onLogout}>
                     Logout
                 </VSCodeButton>

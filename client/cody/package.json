@@ -170,6 +170,13 @@
         "group": "Cody",
         "icon": "$(clear-all)",
         "when": "cody.activated"
+      },
+      {
+        "command": "cody.history",
+        "title": "Chat History",
+        "group": "Cody",
+        "icon": "$(history)",
+        "when": "cody.activated"
       }
     ],
     "keybindings": [
@@ -270,6 +277,11 @@
         },
         {
           "command": "cody.settings",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation"
+        },
+        {
+          "command": "cody.history",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation"
         }

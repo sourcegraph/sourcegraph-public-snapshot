@@ -5,7 +5,8 @@ import { Memento } from 'vscode'
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 export class LocalStorage {
-    private KEY_LOCAL_HISTORY = 'cody-local-chatHistory'
+    // Bump this on storage changes so we don't handle incorrectly formatted data
+    private KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
 
     constructor(private storage: Memento) {}
 

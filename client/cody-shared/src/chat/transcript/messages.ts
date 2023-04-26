@@ -1,5 +1,7 @@
 import { Message } from '../../sourcegraph-api'
 
+import { TranscriptJSON } from '.'
+
 export interface ChatMessage extends Message {
     displayText?: string
     contextFiles?: string[]
@@ -16,5 +18,5 @@ export interface UserLocalHistory {
 }
 
 export interface ChatHistory {
-    [chatID: string]: ChatMessage[]
+    [chatID: string]: TranscriptJSON
 }

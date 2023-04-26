@@ -118,6 +118,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     userHistory={userHistory}
                     setUserHistory={setUserHistory}
                     setInputHistory={setInputHistory}
+                    setTranscript={setTranscript}
+                    setView={setView}
                     vscodeAPI={vscodeAPI}
                 />
             )}

@@ -106,13 +106,36 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.configurationChangeEvent.fire()
     }
 
-    public clearAndRestartSession(): void {
+    public async clearAndRestartSession(): Promise<void> {
+        await this.saveChatHistory()
         this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
         this.transcript.reset()
         this.sendSuggestions([])
         this.sendTranscript()
+        this.sendChatHistory()
+    }
+
+    public async clearHistory(): Promise<void> {
+        this.chatHistory = {}
+        this.inputHistory = []
+        await this.localStorage.removeChatHistory()
+    }
+
+    public async restoreSession(chatID: string): Promise<void> {
+        this.saveChatHistory()
+        this.cancelCompletion()
+
+        this.currentChatID = chatID
+        this.transcript = Transcript.fromJSON(this.chatHistory[chatID])
+        delete this.chatHistory[chatID]
+
+        this.sendTranscript()
+        await this.localStorage.setChatHistory({
+            chat: this.chatHistory,
+            input: this.inputHistory,
+        })
         this.sendChatHistory()
     }
 
@@ -158,7 +181,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendEvent('token', 'Delete')
                 break
             case 'removeHistory':
-                await this.localStorage.removeChatHistory()
+                await this.clearHistory()
+                break
+            case 'restoreHistory':
+                await this.restoreSession(message.chatID)
                 break
             case 'links':
                 void this.openExternalLinks(message.value)
@@ -413,8 +439,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Save chat history
      */
     private async saveChatHistory(): Promise<void> {
-        if (this.transcript) {
-            this.chatHistory[this.currentChatID] = this.transcript.toChat()
+        if (this.transcript && !this.transcript.isEmpty) {
+            this.chatHistory[this.currentChatID] = await this.transcript.toJSON()
             const userHistory = {
                 chat: this.chatHistory,
                 input: this.inputHistory,
