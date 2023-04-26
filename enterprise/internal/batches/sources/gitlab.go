@@ -119,7 +119,7 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	}
 
 	var removeSource bool
-	if conf.Get().BatchChangesAutoDeleteBranch == true {
+	if conf.Get().BatchChangesAutoDeleteBranch {
 		removeSource = true
 	} else {
 		removeSource = false
