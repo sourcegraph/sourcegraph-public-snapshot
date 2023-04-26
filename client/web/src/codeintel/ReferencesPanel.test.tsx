@@ -6,6 +6,7 @@ import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shar
 
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
 
+import { Code } from '@sourcegraph/wildcard'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { BlobProps } from '../repo/blob/CodeMirrorBlob'
@@ -16,7 +17,10 @@ import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
 // CodeMirror editor relies on contenteditable property which is not supported by `jsdom`: https://github.com/jsdom/jsdom/issues/1670.
 // We need to mock `CodeMirrorBlob to avoid errors.
 // More details on CodeMirror react components testing: https://gearheart.io/articles/codemirror-unit-testing-codemirror-react-components/.
-jest.mock('../repo/blob/CodeMirrorBlob', () => ({ CodeMirrorBlob: (props: BlobProps) => props.blobInfo.content }))
+function mockCodeMirrorBlob(props: BlobProps) {
+    return <Code data-testid="codeMirrorBlobMock">{props.blobInfo.content}</Code>
+}
+jest.mock('../repo/blob/CodeMirrorBlob', () => ({ CodeMirrorBlob: mockCodeMirrorBlob }))
 
 describe('ReferencesPanel', () => {
     async function renderReferencesPanel() {
@@ -104,7 +108,8 @@ describe('ReferencesPanel', () => {
         expect(fileLink).toBeVisible()
 
         // Assert the code view is rendered, by doing a partial match against its content
-        expect(rightPane).toHaveTextContent('package diff import')
+        const codeView = within(rightPane).getByTestId('codeMirrorBlobMock')
+        expect(codeView).toHaveTextContent('package diff import')
 
         // Assert the current URL points at the reference panel
         expect(createPath(locationRef.current!)).toBe(
