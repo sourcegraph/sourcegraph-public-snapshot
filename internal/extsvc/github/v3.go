@@ -797,6 +797,14 @@ func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string, fo
 	return convertRestRepo(restRepo), nil
 }
 
+func (c *V3Client) DeleteRef(ctx context.Context, owner, repo string, ref string) error {
+	//
+	if _, err := c.delete(ctx, "repos/"+owner+"/"+repo+"/git/refs/"+ref); err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetAppInstallation gets information of a GitHub App installation.
 //
 // API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app

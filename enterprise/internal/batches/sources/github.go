@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -176,6 +177,13 @@ func (s GitHubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return err
 	}
 
+	deleteBranch := conf.Get().BatchChangesAutoDeleteBranch
+	if deleteBranch {
+		err := s.client.DeleteRef(ctx, pr.RepoWithOwner, pr.Title, pr.HeadRefName)
+		if err != nil {
+			return err
+		}
+	}
 	return c.Changeset.SetMetadata(pr)
 }
 
@@ -279,6 +287,14 @@ func (s GitHubSource) MergeChangeset(ctx context.Context, c *Changeset, squash b
 			return ChangesetNotMergeableError{ErrorMsg: err.Error()}
 		}
 		return err
+	}
+
+	deleteBranch := conf.Get().BatchChangesAutoDeleteBranch
+	if deleteBranch {
+		err := s.client.DeleteRef(ctx, pr.RepoWithOwner, pr.Title, pr.HeadRefName)
+		if err != nil {
+			return err
+		}
 	}
 
 	return c.Changeset.SetMetadata(pr)
