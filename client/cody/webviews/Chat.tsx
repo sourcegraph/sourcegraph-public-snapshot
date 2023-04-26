@@ -4,6 +4,7 @@ import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { escapeCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import {
     Chat as ChatUI,
@@ -46,7 +47,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 }) => {
     const onSubmit = useCallback(
         (text: string) => {
-            vscodeAPI.postMessage({ command: 'submit', text })
+            vscodeAPI.postMessage({ command: 'submit', text: escapeCodyMarkdown(text) })
         },
         [vscodeAPI]
     )
@@ -61,6 +62,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const onFeedbackBtnClick = useCallback(
         (text: string) => {
             vscodeAPI.postMessage({ command: 'event', event: 'feedback', value: text })
+        },
+        [vscodeAPI]
+    )
+
+    const onCopyBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'event', event: 'click', value: text })
         },
         [vscodeAPI]
     )
@@ -93,6 +101,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             editButtonOnSubmit={onEditBtnClick}
             FeedbackButtonsContainer={FeedbackButtons}
             feedbackButtonsOnSubmit={onFeedbackBtnClick}
+            copyButtonOnSubmit={onCopyBtnClick}
         />
     )
 }

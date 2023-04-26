@@ -10,6 +10,7 @@ import { isError } from '../utils'
 
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
+import { escapeCodyMarkdown } from './markdown'
 import { getPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
 import { Transcript, TranscriptJSON } from './transcript'
@@ -29,6 +30,7 @@ export interface ClientInit {
 
 export interface Client {
     readonly transcript: Transcript
+    readonly isMessageInProgress: boolean
     submitMessage: (text: string) => Promise<void>
     executeRecipe: (
         recipeId: string,
@@ -62,7 +64,7 @@ export async function createClient({
 
     const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
 
-    const codebaseContext = new CodebaseContext(config, embeddingsSearch, null)
+    const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null)
 
     const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
 
@@ -113,7 +115,7 @@ export async function createClient({
 
         chatClient.chat(prompt, {
             onChange(rawText) {
-                const text = reformatBotMessage(rawText, responsePrefix)
+                const text = reformatBotMessage(escapeCodyMarkdown(rawText), responsePrefix)
                 transcript.addAssistantResponse(text)
 
                 sendTranscript()
@@ -129,7 +131,12 @@ export async function createClient({
     }
 
     return {
-        transcript,
+        get transcript() {
+            return transcript
+        },
+        get isMessageInProgress() {
+            return isMessageInProgress
+        },
         submitMessage(text: string) {
             return executeRecipe('chat-question', { humanChatInput: text })
         },

@@ -33,6 +33,7 @@ export type ExtensionMessage =
     | { type: 'debug'; message: string }
     | { type: 'contextStatus'; contextStatus: ChatContextStatus }
     | { type: 'view'; messages: View }
+    | { type: 'errors'; errors: string }
 
 /**
  * The subset of configuration that is visible to the webview.

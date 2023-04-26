@@ -1,9 +1,11 @@
+import { spawnSync } from 'child_process'
 import path from 'path'
 
 import * as vscode from 'vscode'
 
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { escapeCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
@@ -12,6 +14,7 @@ import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelper
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -22,6 +25,7 @@ import { View } from '../../webviews/NavBar'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { updateConfiguration } from '../configuration'
 import { logEvent } from '../event-logger'
+import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
@@ -60,15 +64,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private disposables: vscode.Disposable[] = []
 
+    // Codebase-context-related state
+    private currentWorkspaceRoot: string
+
     constructor(
         private extensionPath: string,
-        private config: Config,
+        private config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
         private editor: Editor,
         private secretStorage: SecretStorage,
-        private localStorage: LocalStorage
+        private localStorage: LocalStorage,
+        private rgPath: string
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
@@ -77,6 +85,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.createNewChatID()
 
         this.disposables.push(this.configurationChangeEvent)
+
+        // listen for vscode active editor change event
+        this.currentWorkspaceRoot = ''
+        this.disposables.push(
+            vscode.window.onDidChangeActiveTextEditor(async () => {
+                await this.updateCodebaseContext()
+            })
+        )
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -138,37 +154,31 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.localStorage.removeChatHistory()
                 break
             case 'links':
-                await vscode.env.openExternal(vscode.Uri.parse(message.value))
+                void this.openExternalLinks(message.value)
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
-                if (rootPath !== null) {
-                    const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
+                if (!rootPath) {
+                    this.sendErrorToWebview('Failed to open file: missing rootPath')
+                    return
+                }
+                try {
                     // This opens the file in the active column.
-                    try {
-                        const doc = await vscode.workspace.openTextDocument(uri)
-                        await vscode.window.showTextDocument(doc)
-                    } catch {
-                        // Try to open the file in the sourcegraph view
-                        const sourcegraphInstanceUrl = this.config.serverEndpoint
-                        const sourcegraphWebUrl = new URL(
-                            `/search?q=context:global+file:${message.filePath}`,
-                            sourcegraphInstanceUrl
-                        ).href
-
-                        try {
-                            await vscode.env.openExternal(vscode.Uri.parse(sourcegraphWebUrl))
-                        } catch (error) {
-                            console.error(`Could not open the file: ${error}`)
-                        }
-                    }
-                } else {
-                    console.error('Could not open file because rootPath is null')
+                    const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
+                    const doc = await vscode.workspace.openTextDocument(uri)
+                    await vscode.window.showTextDocument(doc)
+                } catch {
+                    // Try to open the file in the sourcegraph view
+                    const sourcegraphSearchURL = new URL(
+                        `/search?q=context:global+file:${message.filePath}`,
+                        this.config.serverEndpoint
+                    ).href
+                    void this.openExternalLinks(sourcegraphSearchURL)
                 }
                 break
             }
             default:
-                console.error('Invalid request type from Webview')
+                this.sendErrorToWebview('Invalid request type from Webview')
         }
     }
 
@@ -184,7 +194,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
             onResponse: (content: string) => {
                 text += content
-                this.transcript.addAssistantResponse(reformatBotMessage(text, responsePrefix))
+                this.transcript.addAssistantResponse(reformatBotMessage(escapeCodyMarkdown(text), responsePrefix))
                 this.sendTranscript()
                 return Promise.resolve()
             },
@@ -195,10 +205,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     const { text: highlightedDisplayText } = await highlightTokens(displayText || '', fileExists)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                 }
-                this.isMessageInProgress = false
-                this.cancelCompletionCallback = null
-                this.sendTranscript()
-                await this.saveChatHistory()
+                void this.onCompletionEnd()
             },
         })
 
@@ -212,8 +219,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 return this.multiplexer.publish(text)
             },
             onComplete: () => this.multiplexer.notifyTurnComplete(),
-            onError: err => {
-                void vscode.window.showErrorMessage(err)
+            onError: (err, statusCode) => {
+                // Display error message as assistant response
+                this.transcript.addErrorAsAssistantResponse(
+                    `<div class="cody-chat-error"><span>Request failed: </span>${err}</div>`
+                )
+                // Log users out on unauth error
+                if (statusCode && statusCode >= 400 && statusCode <= 410) {
+                    void this.sendLogin(false)
+                    this.clearAndRestartSession()
+                }
+                this.onCompletionEnd()
+                console.error(`Completion request failed: ${err}`)
             },
         })
     }
@@ -223,17 +240,47 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.cancelCompletionCallback = null
     }
 
+    private onCompletionEnd(): void {
+        this.isMessageInProgress = false
+        this.cancelCompletionCallback = null
+        this.sendTranscript()
+        void this.saveChatHistory()
+    }
+
     private async onHumanMessageSubmitted(text: string): Promise<void> {
         this.inputHistory.push(text)
         await this.executeRecipe('chat-question', text)
     }
 
+    private async updateCodebaseContext(): Promise<void> {
+        if (!this.editor.getActiveTextEditor() && vscode.window.visibleTextEditors.length !== 0) {
+            // these are ephemeral
+            return
+        }
+        const workspaceRoot = this.editor.getWorkspaceRootPath()
+        if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
+            return
+        }
+        this.currentWorkspaceRoot = workspaceRoot
+
+        const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor)
+        if (!codebaseContext) {
+            return
+        }
+        // after await, check we're still hitting the same workspace root
+        if (this.currentWorkspaceRoot !== workspaceRoot) {
+            return
+        }
+
+        this.codebaseContext = codebaseContext
+        this.publishContextStatus()
+    }
+
     public async executeRecipe(recipeId: string, humanChatInput: string = ''): Promise<void> {
         if (this.isMessageInProgress) {
-            await vscode.window.showErrorMessage(
-                'Cannot execute multiple recipes. Please wait for the current recipe to finish.'
-            )
+            this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
         }
+
         const recipe = getRecipe(recipeId)
         if (!recipe) {
             return
@@ -257,7 +304,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.showTab('chat')
         this.sendTranscript()
 
-        const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
+        const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
 
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
@@ -268,6 +315,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         void this.webview?.postMessage({ type: 'showTab', tab })
     }
 
+    /**
+     * Send transcript to webview
+     */
     private sendTranscript(): void {
         void this.webview?.postMessage({
             type: 'transcript',
@@ -327,7 +377,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 contextStatus: {
                     mode: this.config.useContext,
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
-                    codebase: this.config.codebase,
+                    codebase: this.codebaseContext.getCodebase(),
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
                     supportsKeyword: true,
                 },
@@ -363,6 +413,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         send().catch(error => console.error(error))
     }
 
+    /**
+     * Log Events
+     */
     public sendEvent(event: string, value: string): void {
         const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href
         switch (event) {
@@ -371,7 +424,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 logEvent(
                     `CodyVSCodeExtension:codyFeedback:${value}`,
                     null,
-                    !isPrivateInstance && this.config.codebase ? this.transcript.toChat() : null
+                    !isPrivateInstance && this.codebaseContext.getCodebase() ? this.transcript.toChat() : null
                 )
                 break
             case 'token':
@@ -380,7 +433,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'auth':
                 logEvent(`CodyVSCodeExtension:${value}:clicked`)
                 break
+            // aditya combine this with above statemenet for auth or click
+            case 'click':
+                logEvent(`CodyVSCodeExtension:${value}:clicked`)
+                break
         }
+    }
+
+    /**
+     * Display error message in webview view as banner in chat view
+     * It does not display error message as assistant response
+     */
+    private sendErrorToWebview(errorMsg: string): void {
+        void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
+        console.error(errorMsg)
     }
 
     /**
@@ -414,15 +480,33 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             localResourceRoots: [webviewPath],
         }
 
-        // Create Webview
+        // Create Webview using client/cody/index.html
         const root = vscode.Uri.joinPath(webviewPath, 'index.html')
         const bytes = await vscode.workspace.fs.readFile(root)
         const decoded = new TextDecoder('utf-8').decode(bytes)
         const resources = webviewView.webview.asWebviewUri(webviewPath)
-        const nonce = this.getNonce()
 
-        webviewView.webview.html = decoded.replaceAll('./', `${resources.toString()}/`).replace('/nonce/', nonce)
+        // Set HTML for webview
+        // This replace variables from the client/cody/dist/index.html with webview info
+        // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
+        // 2. Update URIs for content security policy to only allow specific scripts to be run
+        webviewView.webview.html = decoded
+            .replaceAll('./', `${resources.toString()}/`)
+            .replaceAll('{cspSource}', webviewView.webview.cspSource)
+
+        // Register webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+    }
+
+    /**
+     * Open external links
+     */
+    private async openExternalLinks(uri: string): Promise<void> {
+        try {
+            await vscode.env.openExternal(vscode.Uri.parse(uri))
+        } catch (error) {
+            throw new Error(`Failed to open file: ${error}`)
+        }
     }
 
     public transcriptForTesting(testing: TestSupport): ChatMessage[] {
@@ -431,15 +515,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return []
         }
         return this.transcript.toChat()
-    }
-
-    private getNonce(): string {
-        let text = ''
-        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-        for (let i = 0; i < 32; i++) {
-            text += possible.charAt(Math.floor(Math.random() * possible.length))
-        }
-        return text
     }
 
     public dispose(): void {
@@ -476,4 +551,76 @@ async function fileExists(filePath: string): Promise<boolean> {
         }
     }
     return false
+}
+
+// Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
+export function convertGitCloneURLToCodebaseName(cloneURL: string): string | null {
+    let parsed: URL | null = null
+    if (cloneURL.startsWith('git@')) {
+        // Handle Git SSH URL format
+        const match = cloneURL.match(/git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?/)
+        if (match) {
+            const host = match[1]
+            const owner = match[2]
+            const repo = match[3]
+            return `${host}/${owner}/${repo}`
+        }
+    } else {
+        // Handle HTTP/HTTPS URL format
+        try {
+            parsed = new URL(cloneURL)
+        } catch {
+            return null
+        }
+    }
+
+    if (!parsed) {
+        return null
+    }
+
+    const host = parsed.host
+    const path = parsed.pathname
+
+    // Handle GitHub/GitLab URL format
+    if (host.includes('gitlab.com') || host.includes('github.com')) {
+        const [owner, repo] = path.slice(1).split('/')
+        return `${host}/${owner}/${repo}`.replace(/.git$/, '')
+    }
+
+    // Generic fallback - assume URL path contains owner/repo
+    const [owner, repo] = path.slice(1).split('/')
+    return `${host}/${owner}/${repo}`
+}
+
+async function getCodebaseContext(config: Config, rgPath: string, editor: Editor): Promise<CodebaseContext | null> {
+    const client = new SourcegraphGraphQLAPIClient(config)
+    const workspaceRoot = editor.getWorkspaceRootPath()
+    if (!workspaceRoot) {
+        return null
+    }
+
+    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
+    const gitOutput = gitCommand.stdout.toString().trim()
+    if (!gitOutput) {
+        void vscode.window.showErrorMessage(
+            `Unable to determine the git clone URL for this workspace.\ngit output: ${gitOutput}`
+        )
+        return null
+    }
+
+    // Get repository name from git clone URL
+    const codebase = convertGitCloneURLToCodebaseName(gitOutput)
+    if (!codebase) {
+        void vscode.window.showErrorMessage(`could not extract repo name from clone URL ${gitOutput}`)
+        return null
+    }
+    const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
+    if (isError(repoId)) {
+        const errorMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
+        void vscode.window.showErrorMessage(errorMessage)
+        return null
+    }
+
+    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
+    return new CodebaseContext(config, codebase, embeddingsSearch, new LocalKeywordContextFetcher(rgPath, editor))
 }

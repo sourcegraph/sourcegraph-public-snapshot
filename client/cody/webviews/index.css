@@ -36,3 +36,13 @@ a:hover {
 .w-100 {
     width: 100%;
 }
+
+.cody-chat-error {
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-inputValidation-errorBackground);
+    padding: 0.5rem;
+}
+
+.cody-chat-error > span {
+    font-weight: bold;
+}

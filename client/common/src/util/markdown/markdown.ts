@@ -73,7 +73,6 @@ export const renderMarkdown = (
     const rendered = marked(markdown, {
         gfm: true,
         breaks: options.breaks,
-        sanitize: false,
         highlight: (code, language) => highlightCodeSafe(code, language),
         renderer: options.renderer,
         headerPrefix: options.headerPrefix ?? '',
