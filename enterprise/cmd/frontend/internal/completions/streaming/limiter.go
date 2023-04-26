@@ -76,29 +76,38 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	rstore := r.rstore.WithContext(ctx)
 
 	// Let's increment the rate limit counter for the user.
-	// Note that the rate limiter _may_ allow slightly more requests than the configured
-	// limit, reading the current value and incrementing the rate limit counter are
-	// currently not an atomic operation.
+	// Note that the rate limiter _may_ allow slightly less requests than the configured
+	// limit, incrementing the rate limit counter and expiry operations are currently not
+	// an atomic operation.
 	// We also don't use a transaction in here, because there is no good way to
 	// read the TTL without a lua script. This approach could slightly overcount the
 	// usage if redis requests after the INCR fail, but it will always recover safely.
+	// If Incr works but then everything else fails (eg ctx cancelled) the user spent
+	// a token without getting anything for it. This seems pretty rare and a fine trade-off
+	// since its just one token. The most likely reason this would happen is user cancelling
+	// the request and at that point its more likely to happen while the LLM is running than
+	// in this quick redis block.
+	// On the first request in the current time block, if the requests past Incr fail we don't
+	// yet have a deadline set. This means if the user comes back later we wouldn't of expired
+	// just one token. This seems fine. Note: this isn't an issue on subsequent requests in the
+	// same time block since the TTL would have been set.
 
 	// Check the current usage and increment the counter for the current user. If
 	// no record exists, redis will initialize it with 1.
-	currentUsage, err := rstore.Incr(key).Int()
+	currentUsage, err := rstore.Incr(key)
 	if err != nil {
 		return errors.Wrap(err, "failed to increase rate limit counter")
 	}
 
 	// Set expiry on the key. If the key didn't exist prior to the previous INCR,
 	// it will set the expiry of the key to one hour.
-	// If it did exist before, it should have an expiry set already, so the TTL > 0
+	// If it did exist before, it should have an expiry set already, so the TTL >= 0
 	// makes sure that we don't overwrite it and restart the 1h bucket.
 	ttl, err := rstore.TTL(key)
 	if err != nil {
 		return errors.Wrap(err, "failed to get TTL for rate limit counter")
 	}
-	if ttl <= 0 {
+	if ttl < 0 {
 		if err := rstore.Expire(key, int(time.Hour/time.Second)); err != nil {
 			return errors.Wrap(err, "failed to set expiry for rate limit counter")
 		}

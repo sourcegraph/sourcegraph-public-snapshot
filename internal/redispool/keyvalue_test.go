@@ -56,9 +56,9 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 
 		// Incr
 		require.Works(kv.Set("incr-set", 5))
-		_, err := kv.Incr("incr-set").Int()
+		_, err := kv.Incr("incr-set")
 		require.Works(err)
-		_, err = kv.Incr("incr-unset").Int()
+		_, err = kv.Incr("incr-unset")
 		require.Works(err)
 		require.Equal(kv.Get("incr-set"), 6)
 		require.Equal(kv.Get("incr-unset"), 1)
@@ -304,7 +304,7 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 				require.Equal(kv.Get(k), errWrongType)
 				require.Equal(kv.GetSet(k, "2"), errWrongType)
 				require.Equal(kv.Get(k), errWrongType) // ensure GetSet didn't set
-				_, err := kv.Incr(k).Int()
+				_, err := kv.Incr(k)
 				requireWrongType(err)
 			}
 

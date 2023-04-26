@@ -95,7 +95,7 @@ func (kv *naiveKeyValue) SetEx(key string, ttlSeconds int, value any) error {
 	}).err
 }
 
-func (kv *naiveKeyValue) Incr(key string) Value {
+func (kv *naiveKeyValue) Incr(key string) (int, error) {
 	return kv.maybeUpdateGroup(redisGroupString, key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
 		if !found {
 			return redisValue{
@@ -111,7 +111,7 @@ func (kv *naiveKeyValue) Incr(key string) Value {
 
 		value.Reply = num + 1
 		return value, write, nil
-	})
+	}).Int()
 }
 
 func (kv *naiveKeyValue) Del(key string) error {
