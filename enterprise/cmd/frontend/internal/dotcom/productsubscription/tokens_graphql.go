@@ -58,7 +58,7 @@ func (r ProductSubscriptionLicensingResolver) GenerateAccessTokenForSubscription
 	}
 
 	// Otherwise, enable before returning
-	if err := (dbTokens{db: r.DB}).SetAccessTokenSHA256(ctx, active.ID, accessTokenRaw); err != nil {
+	if err := newDBTokens(r.DB).SetAccessTokenSHA256(ctx, active.ID, accessTokenRaw); err != nil {
 		return nil, err
 	}
 	return accessToken, nil
@@ -72,7 +72,7 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptionByAccessToken(c
 		return nil, err
 	}
 
-	subID, err := dbTokens{db: r.DB}.LookupAccessToken(ctx, args.AccessToken)
+	subID, err := newDBTokens(r.DB).LookupAccessToken(ctx, args.AccessToken)
 	if err != nil {
 		return nil, err
 	}

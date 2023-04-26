@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -18,7 +19,11 @@ func defaultRawAccessToken(licenseKey []byte) []byte {
 }
 
 type dbTokens struct {
-	db database.DB
+	store *basestore.Store
+}
+
+func newDBTokens(db database.DB) dbTokens {
+	return dbTokens{store: basestore.NewWithHandle(db.Handle())}
 }
 
 // SetAccessTokenSHA256 activates the value as a valid token for the license.
@@ -26,7 +31,7 @@ type dbTokens struct {
 func (t dbTokens) SetAccessTokenSHA256(ctx context.Context, licenseID string, value []byte) error {
 	query := sqlf.Sprintf("UPDATE product_licenses SET access_token_sha256=%s WHERE id=%s RETURNING id",
 		hashutil.ToSHA256Bytes(value), licenseID)
-	_, ok, err := basestore.ScanFirstInt(t.db.Query(ctx, query))
+	_, ok, err := basestore.ScanFirstInt(t.store.Query(ctx, query))
 	if err != nil {
 		return err
 	}
@@ -53,7 +58,7 @@ SELECT product_subscription_id
 FROM product_licenses
 WHERE access_token_sha256=%s`,
 		hashutil.ToSHA256Bytes(decoded))
-	subID, _, err := basestore.ScanFirstString(t.db.Query(ctx, query))
+	subID, _, err := basestore.ScanFirstString(t.store.Query(ctx, query))
 	if err != nil {
 		return "", errors.New("invalid token")
 	}

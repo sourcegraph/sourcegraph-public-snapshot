@@ -42,7 +42,7 @@ func TestProductLicensesSetAccessTokenSHA256(t *testing.T) {
 		rawToken := defaultRawAccessToken([]byte(license.LicenseKey))
 		accessToken := defaultAccessToken(rawToken)
 
-		gotPS, err := dbTokens{db: db}.LookupAccessToken(ctx, accessToken)
+		gotPS, err := newDBTokens(db).LookupAccessToken(ctx, accessToken)
 		require.NoError(t, err)
 		assert.Equal(t, gotPS, ps)
 	})
@@ -50,13 +50,13 @@ func TestProductLicensesSetAccessTokenSHA256(t *testing.T) {
 	customRawToken := []byte("foobar")
 
 	t.Run("set token", func(t *testing.T) {
-		err = dbTokens{db: db}.SetAccessTokenSHA256(ctx, pl, customRawToken)
+		err = newDBTokens(db).SetAccessTokenSHA256(ctx, pl, customRawToken)
 		require.NoError(t, err)
 	})
 
 	t.Run("lookup token", func(t *testing.T) {
 		prefixedToken := defaultAccessToken(customRawToken)
-		gotPS, err := dbTokens{db: db}.LookupAccessToken(ctx, prefixedToken)
+		gotPS, err := newDBTokens(db).LookupAccessToken(ctx, prefixedToken)
 		require.NoError(t, err)
 		assert.Equal(t, gotPS, ps)
 	})
