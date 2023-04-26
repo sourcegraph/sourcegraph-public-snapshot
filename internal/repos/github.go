@@ -680,8 +680,8 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 		repos, hasNextPage, err := s.v3Client.ListPublicRepositories(ctx, sinceRepoID)
 		if err != nil {
 			apiError := &github.APIError{}
-			// If the error is a http.StatusForbidden, we have paginated past the last page
-			if errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
+			// If the error is a http.StatusNotFound, we have paginated past the last page
+			if errors.As(err, &apiError) && apiError.Code == http.StatusNotFound {
 				return
 			}
 			results <- &githubResult{err: errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)}
