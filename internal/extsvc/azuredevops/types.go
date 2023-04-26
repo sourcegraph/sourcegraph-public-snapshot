@@ -90,6 +90,7 @@ type CreatePullRequestInput struct {
 	Reviewers     []Reviewer `json:"reviewers"`
 	ForkSource    *ForkRef   `json:"forkSource"`
 	IsDraft       bool       `json:"isDraft"`
+	AutoComplete  bool       `json:"autoComplete"`
 }
 
 type ForkRef struct {
