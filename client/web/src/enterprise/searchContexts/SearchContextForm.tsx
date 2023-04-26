@@ -421,7 +421,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         <Link
                             target="_blank"
                             rel="noopener"
-                            to="/help/code_search/how-to/search_contexts#beta-query-based-search-contexts"
+                            to="/help/code_search/how-to/search_contexts"
                         >
                             search query
                         </Link>
