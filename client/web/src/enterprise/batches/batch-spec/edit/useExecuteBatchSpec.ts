@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 
+import { logger } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -31,11 +32,11 @@ export const useExecuteBatchSpec = (
     const [submitBatchSpec, { loading }] = useMutation<ExecuteBatchSpecResult, ExecuteBatchSpecVariables>(
         EXECUTE_BATCH_SPEC
     )
-    const [useExperimentalExecution, _, featureFlagError] = useFeatureFlag('native-ssbc-execution', false)
+    const [useExperimentalExecution, , featureFlagError] = useFeatureFlag('native-ssbc-execution', false)
 
     useEffect(() => {
         if (featureFlagError) {
-            console.error('failed to get feature flag', featureFlagError)
+            logger.error('failed to get feature flag', featureFlagError)
         }
     }, [featureFlagError])
 
