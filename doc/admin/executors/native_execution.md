@@ -1,4 +1,4 @@
-# Native Server-Side Batch Changes
+# Native Execution
 
 <aside class="experimental">
 <p>
@@ -10,10 +10,10 @@
 
 > NOTE: This feature is available in Sourcegraph 5.1.0 and later.
 
-Native Server-Side Batch Changes is an image that runs Batch Changes without
+Native Execution is an image that runs Batch Changes without
 requiring [`src-cli`](https://github.com/sourcegraph/src-cli) to be installed on the Executor machine.
 
-Native Server-Side Batch Changes is required when running Batch Changes in Kubernetes. No docker-in-docker or privileged
+Native Execution is required when running Batch Changes in Kubernetes. No docker-in-docker or privileged
 containers are required.
 
 This is also useful for environments where it is difficult to install `src-cli` on the Executor machine, e.g. air-gapped
@@ -21,7 +21,7 @@ environments.
 
 ## Enable
 
-Native Server-Side Batch Changes is configured using a feature flag. To enable it,
+Native Execution is configured using a feature flag. To enable it,
 
 1. Go to **Site admin**
 2. Under **Configuration** select **Feature flags**
@@ -32,7 +32,7 @@ Native Server-Side Batch Changes is configured using a feature flag. To enable i
 
 ## Docker Image
 
-The Native Server-Side Batch Changes Docker image is available on Docker Hub
+The Native Execution Docker image is available on Docker Hub
 at [`sourcegraph/batcheshelper`](https://hub.docker.com/r/sourcegraph/batcheshelper/tags).
 
 ## Requirements
