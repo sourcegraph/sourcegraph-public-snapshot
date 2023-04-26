@@ -14,6 +14,7 @@ go_library(
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
         "//enterprise/internal/executor/types",
+        "//enterprise/internal/executor/util",
         "//internal/actor",
         "//internal/conf",
         "//internal/database",
