@@ -100,7 +100,7 @@ func (kv *naiveKeyValue) Incr(key string) (int, error) {
 		if !found {
 			return redisValue{
 				Group: redisGroupString,
-				Reply: 1,
+				Reply: int64(1),
 			}, write, nil
 		}
 
@@ -109,7 +109,7 @@ func (kv *naiveKeyValue) Incr(key string) (int, error) {
 			return value, readOnly, err
 		}
 
-		value.Reply = num + 1
+		value.Reply = int64(num + 1)
 		return value, write, nil
 	}).Int()
 }
