@@ -109,6 +109,7 @@ Clarification and discussion about key concepts, architecture, and development s
     - [Testing web code](background-information/testing_web_code.md)
 - [Building p4-fusion](background-information/build_p4_fusion.md)
 - [The `gitserver` API](background-information/gitserver-api.md)
+- [Using gRPC alongside REST for internal APIs](background-information/gRPC_internal_api.md)
 
 ## Git
 
