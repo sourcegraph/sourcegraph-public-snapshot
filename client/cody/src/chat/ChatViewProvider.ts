@@ -178,8 +178,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
             onResponse: (content: string) => {
-                text += escapeCodyMarkdown(content)
-                this.transcript.addAssistantResponse(reformatBotMessage(text, responsePrefix))
+                text += content
+                this.transcript.addAssistantResponse(reformatBotMessage(escapeCodyMarkdown(text), responsePrefix))
                 this.sendTranscript()
                 return Promise.resolve()
             },
