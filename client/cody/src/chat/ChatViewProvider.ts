@@ -124,7 +124,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     public async restoreSession(chatID: string): Promise<void> {
-        this.saveChatHistory()
+        await this.saveChatHistory()
         this.cancelCompletion()
 
         this.currentChatID = chatID
@@ -260,7 +260,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     void this.sendLogin(false)
-                    this.clearAndRestartSession()
+                    void this.clearAndRestartSession()
                 }
                 this.onCompletionEnd()
                 console.error(`Completion request failed: ${err}`)
@@ -439,7 +439,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Save chat history
      */
     private async saveChatHistory(): Promise<void> {
-        if (this.transcript && !this.transcript.isEmpty) {
+        if (!this.transcript.isEmpty) {
             this.chatHistory[this.currentChatID] = await this.transcript.toJSON()
             const userHistory = {
                 chat: this.chatHistory,

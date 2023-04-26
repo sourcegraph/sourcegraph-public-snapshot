@@ -37,6 +37,11 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
         }
     }, [setInputHistory, setUserHistory, userHistory, vscodeAPI])
 
+    function restoreMetadata(chatID: string): void {
+        vscodeAPI.postMessage({ command: 'restoreHistory', chatID })
+        setView('chat')
+    }
+
     return (
         <div className={styles.innerContainer}>
             <div className={styles.nonTranscriptContainer}>
@@ -71,10 +76,14 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                 <div
                                     key={chat[0]}
                                     className="history-item"
-                                    onClick={() => {
-                                        vscodeAPI.postMessage({ command: 'restoreHistory', chatID: chat[0] })
-                                        setView('chat')
+                                    onClick={() => restoreMetadata(chat[0])}
+                                    onKeyDown={event => {
+                                        if (event.key === 'Enter') {
+                                            restoreMetadata(chat[0])
+                                        }
                                     }}
+                                    role="button"
+                                    tabIndex={0}
                                 >
                                     <span className="history-item-date">
                                         <span>{new Date(chat[0]).toLocaleString()}</span>
