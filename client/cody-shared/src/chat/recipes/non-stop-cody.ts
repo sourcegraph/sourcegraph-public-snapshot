@@ -54,13 +54,17 @@ export class NonStopCody implements Recipe {
                     continue
                 }
                 // ...before
+                // TODO: Insertion *at* the start, including a newline, eats the line by change.range.start.character
                 else if (change.range.end.isBeforeOrEqual(decoration.range.start)) {
-                    console.log(change.range.start.character - change.range.end.character)
                     decoration.range = decoration.range.with(
                         decoration.range.start.translate(
                             change.range.start.line - change.range.end.line + insertedLines,
                             change.range.end.line === decoration.range.start.line
-                                ? change.range.start.character - change.range.end.character + insertedLastLine
+                                ? insertedLastLine +
+                                      -change.range.end.character +
+                                      (change.range.start.line === change.range.end.line
+                                          ? change.range.start.character
+                                          : 0)
                                 : 0
                         ),
                         decoration.range.end.translate(
