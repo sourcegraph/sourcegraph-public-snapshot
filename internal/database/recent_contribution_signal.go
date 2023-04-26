@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"fmt"
-	"hash/fnv"
 	"path"
 	"time"
 
@@ -186,13 +185,13 @@ const insertRecentContributorSignalFmtstr = `
 		commit_author_id,
 		changed_file_path_id,
 		commit_timestamp,
-		commit_id_hash
+		commit_id
 	) VALUES (%s, %s, %s, %s)
 `
 
 // AddCommit inserts a recent contribution signal for each file changed by given commit.
 //
-// As per schema, `commit_id_hash` is just a int hash of the git SHA.
+// As per schema, `commit_id` is the git sha stored as bytea.
 // This is used for the purpose of removing old recent contributor signals.
 // The aggregate signals in `own_aggregate_recent_contribution` are updated atomically
 // for each new signal appearing in `own_signal_recent_contribution` by using
@@ -217,13 +216,11 @@ func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Co
 	fmt.Println(fmt.Sprintf("commit: %s", commit.CommitSHA))
 	// Insert individual signals into own_signal_recent_contribution:
 	for _, pathID := range pathIDs {
-		commitID := fnv.New32a()
-		commitID.Write([]byte(commit.CommitSHA))
 		q := sqlf.Sprintf(insertRecentContributorSignalFmtstr,
 			authorID,
 			pathID,
 			commit.Timestamp,
-			commitID.Sum32(),
+			dbutil.CommitBytea(commit.CommitSHA),
 		)
 		err = tx.Exec(ctx, q)
 		if err != nil {

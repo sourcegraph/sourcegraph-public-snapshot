@@ -18855,9 +18855,9 @@
           "Comment": ""
         },
         {
-          "Name": "commit_id_hash",
+          "Name": "commit_id",
           "Index": 5,
-          "TypeName": "integer",
+          "TypeName": "bytea",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
