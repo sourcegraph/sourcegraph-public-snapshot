@@ -15,13 +15,16 @@ const featureFlagProductSubscriptionsServiceAccount = "product-subscriptions-ser
 // 🚨 SECURITY: Use this to check if access to a subscription query or mutation
 // is authorized for service accounts, the owning user, and site admins.
 func serviceAccountOrOwnerOrSiteAdmin(ctx context.Context, db database.DB, ownerUserID *int32) error {
+	// Check if the user is a service account.
 	if featureflag.FromContext(ctx).GetBoolOr(featureFlagProductSubscriptionsServiceAccount, false) {
 		return nil
 	}
 
+	// If ownerUserID is specified, the user must be the owner, or a site admin.
 	if ownerUserID != nil {
-		return auth.CheckSameUser(ctx, *ownerUserID)
+		return auth.CheckSiteAdminOrSameUser(ctx, db, *ownerUserID)
 	}
 
+	// Otherwise, the user must be a site admin.
 	return auth.CheckCurrentUserIsSiteAdmin(ctx, db)
 }
