@@ -10,6 +10,20 @@ cleanup() {
 }
 trap cleanup EXIT
 
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
+
+  ./dev/ci/bazel.sh build //enterprise/cmd/embeddings
+  out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/embeddings --output=files)
+  cp "$out" "$OUTPUT"
+
+  docker build -f enterprise/cmd/embeddings/Dockerfile -t "$IMAGE" "$OUTPUT" \
+    --progress=plain \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION
+  exit $?
+fi
+
 # Environment for building linux binaries
 export GO111MODULE=on
 export GOARCH=amd64
@@ -24,3 +38,4 @@ docker build -f enterprise/cmd/embeddings/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
   --build-arg VERSION
+∏

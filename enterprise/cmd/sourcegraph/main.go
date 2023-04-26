@@ -18,6 +18,9 @@ import (
 	repoupdater_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/shared"
 	symbols_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols/shared"
 	worker_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared"
+
+	"github.com/sourcegraph/sourcegraph/ui/assets"
+	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
 )
 
 // services is a list of services to run in the enterprise build.
@@ -37,5 +40,8 @@ var services = []service.Service{
 }
 
 func main() {
+	if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
+		assets.UseDevAssetsProvider()
+	}
 	enterprisecmd.MainEnterprise(services, os.Args)
 }

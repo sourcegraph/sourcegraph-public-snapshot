@@ -44,14 +44,7 @@ pushd "$BUILDDIR"
 # https://github.com/sourcegraph/sourcegraph/pull/11832#discussion_r451109637
 chmod -R 777 config
 
-# Enable image build caching via CACHE=true
-BUILD_CACHE="--no-cache"
-if [[ "$CACHE" == "true" ]]; then
-  BUILD_CACHE=""
-fi
-
-# shellcheck disable=SC2086
-docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/prometheus}" . \
+docker build -t "${IMAGE:-sourcegraph/prometheus}" . \
   --progress=plain \
   --build-arg BASE_IMAGE \
   --build-arg COMMIT_SHA \
