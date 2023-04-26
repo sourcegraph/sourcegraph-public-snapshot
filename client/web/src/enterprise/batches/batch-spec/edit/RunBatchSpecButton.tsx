@@ -4,6 +4,7 @@ import { mdiInformationOutline, mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import { animated } from 'react-spring'
 
+import { logger } from '@sourcegraph/common'
 import {
     Button,
     Checkbox,
@@ -44,11 +45,11 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
 }) => {
     const [isOpen, setIsOpen] = useState(false)
 
-    const [useExperimentalExecution, _, featureFlagError] = useFeatureFlag('native-ssbc-execution', false)
+    const [useExperimentalExecution, , featureFlagError] = useFeatureFlag('native-ssbc-execution', false)
 
     useEffect(() => {
         if (featureFlagError) {
-            console.error('failed to get feature flag', featureFlagError)
+            logger.error('failed to get feature flag', featureFlagError)
         }
     }, [featureFlagError])
 
