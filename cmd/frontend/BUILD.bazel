@@ -8,8 +8,6 @@ go_library(
     deps = [
         "//cmd/frontend/shared",
         "//cmd/sourcegraph-oss/osscmd",
-        "//ui/assets",
-        "//ui/assets/oss",
     ],
 )
 
@@ -17,8 +15,4 @@ go_binary(
     name = "frontend",
     embed = [":frontend_lib"],
     visibility = ["//visibility:public"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
 )

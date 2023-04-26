@@ -11,20 +11,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
-  ./dev/ci/bazel.sh build //enterprise/cmd/worker
-
-  out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/worker --output=files)
-  cp "$out" "$OUTPUT"
-
-  docker build -f enterprise/cmd/worker/Dockerfile -t "$IMAGE" "$OUTPUT" \
-    --progress=plain \
-    --build-arg COMMIT_SHA \
-    --build-arg DATE \
-    --build-arg VERSION
-  exit $?
-fi
-
 # Environment for building linux binaries
 export GO111MODULE=on
 export GOARCH=amd64

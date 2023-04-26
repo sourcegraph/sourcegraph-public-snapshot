@@ -11,12 +11,13 @@ cleanup() {
 trap cleanup EXIT
 
 if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
-  ./dev/ci/bazel.sh build //cmd/github-proxy \
+
+  bazel build //cmd/github-proxy \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
 
-  out=$(./dev/ci/bazel.sh cquery //cmd/github-proxy --output=files)
+  out=$(bazel cquery //cmd/github-proxy --output=files)
   cp "$out" "$OUTPUT"
 
   docker build -f cmd/github-proxy/Dockerfile -t "$IMAGE" "$OUTPUT" \

@@ -15,19 +15,6 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
-if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
-  ./dev/ci/bazel.sh build //enterprise/cmd/batcheshelper
-  out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/batcheshelper --output=files)
-  cp "$out" "$OUTPUT"
-
-  docker build -f enterprise/cmd/batcheshelper/Dockerfile -t "$IMAGE" "$OUTPUT" \
-    --progress=plain \
-    --build-arg COMMIT_SHA \
-    --build-arg DATE \
-    --build-arg VERSION
-  exit $?
-fi
-
 pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 

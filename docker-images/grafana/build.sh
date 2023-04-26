@@ -30,7 +30,14 @@ go build \
 # Final pre-build stage.
 pushd "$BUILDDIR"
 
-docker build -f Dockerfile -t "${IMAGE:-sourcegraph/grafana}" . \
+# Enable image build caching via CACHE=true
+BUILD_CACHE="--no-cache"
+if [[ "$CACHE" == "true" ]]; then
+  BUILD_CACHE=""
+fi
+
+# shellcheck disable=SC2086
+docker build ${BUILD_CACHE} -f Dockerfile -t "${IMAGE:-sourcegraph/grafana}" . \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \

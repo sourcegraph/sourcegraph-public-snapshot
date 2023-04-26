@@ -2,7 +2,7 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 set -ex
 
-docker build -t "${IMAGE:-"sourcegraph/cadvisor"}" . \
+docker build --no-cache -t "${IMAGE:-"sourcegraph/cadvisor"}" . \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
