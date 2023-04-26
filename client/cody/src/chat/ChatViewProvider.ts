@@ -455,7 +455,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         webviewView.webview.html = decoded
             .replaceAll('./', `${resources.toString()}/`)
             .replace('<script', `<script nonce=${nonce}`)
-            .replaceAll('{nonce}', nonce)
             .replaceAll('{cspSource}', webviewView.webview.cspSource)
 
         // Register webview

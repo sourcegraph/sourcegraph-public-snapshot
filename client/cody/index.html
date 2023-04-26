@@ -6,7 +6,7 @@
         <!-- This content security policy also implicitly disables inline scripts and styles. -->
         <meta
             http-equiv="Content-Security-Policy"
-            content="default-src 'none'; img-src {cspSource} https:; script-src {cspSource}; style-src {cspSource} 'nonce-{nonce}'; font-src {cspSource} 'nonce-{nonce}';"
+            content="default-src 'none'; img-src {cspSource} https:; script-src {cspSource}; style-src {cspSource}; font-src {cspSource};"
         />
         <!-- DO NOT REMOVE THIS FILE -->
         <!-- THIS IS THE ENTRY FILE FOR THE WEBVIEW -->
@@ -14,6 +14,6 @@
     </head>
     <body>
         <div id="root"></div>
-        <script nonce="{nonce}" type="module" src="webviews/index.tsx"></script>
+        <script type="module" src="webviews/index.tsx"></script>
     </body>
 </html>
