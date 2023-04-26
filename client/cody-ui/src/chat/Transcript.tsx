@@ -81,8 +81,7 @@ export const Transcript: React.FunctionComponent<
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             {transcript.map(
                 (message, index) =>
-                    message?.displayText &&
-                    (!messageInProgress || index !== transcript.length - 1) && (
+                    message?.displayText && (
                         <TranscriptItem
                             // eslint-disable-next-line react/no-array-index-key
                             key={index}

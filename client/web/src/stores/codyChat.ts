@@ -150,7 +150,17 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     }
 
     const setTranscript = async (transcript: Transcript): Promise<void> => {
-        set({ transcript: transcript.toChat() })
+        const { client } = get()
+        if (!client || isErrorLike(client)) {
+            return
+        }
+
+        const messages = transcript.toChat()
+        if (client.isMessageInProgress) {
+            messages.pop()
+        }
+
+        set({ transcript: messages })
 
         if (transcript.isEmpty) {
             return

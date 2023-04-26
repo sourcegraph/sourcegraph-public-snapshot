@@ -29,6 +29,7 @@ export interface ClientInit {
 
 export interface Client {
     readonly transcript: Transcript
+    readonly isMessageInProgress: boolean
     submitMessage: (text: string) => Promise<void>
     executeRecipe: (
         recipeId: string,
@@ -129,7 +130,12 @@ export async function createClient({
     }
 
     return {
-        transcript,
+        get transcript() {
+            return transcript
+        },
+        get isMessageInProgress() {
+            return isMessageInProgress
+        },
         submitMessage(text: string) {
             return executeRecipe('chat-question', { humanChatInput: text })
         },
