@@ -295,6 +295,11 @@ rules_pkg_dependencies()
 
 load("@rules_oci//oci:pull.bzl", "oci_pull")
 
+
+# @will:
+# - bazel build //cmd/worker:image_tarball
+# - docker load --input $(bazel cquery --output=files //cmd/worker:image_tarball)
+# - docker run -it --entrypoint /bin/sh foo:latest
 oci_pull(
     name = "wolfi_base",
     digest = "sha256:bb939c611ced27e5e566ad2a402a9f030fca949bbd351a8f84fcb68f4e790e5d",
