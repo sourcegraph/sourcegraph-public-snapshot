@@ -87,7 +87,7 @@ func TestUploadIndex(t *testing.T) {
 	type testCase struct {
 		numShards int
 	}
-	testCases := []testCase{testCase{0}, testCase{3}}
+	testCases := []testCase{{0}, {3}}
 
 	makePayloadFile := func(dir string, pattern string) string {
 		f, err := os.CreateTemp(dir, pattern)
