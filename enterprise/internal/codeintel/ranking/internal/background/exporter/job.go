@@ -55,73 +55,81 @@ func NewSymbolExporter(
 
 func exportRankingGraph(
 	ctx context.Context,
-	store store.Store,
-	lsifstore lsifstore.Store,
+	baseStore store.Store,
+	baseLsifStore lsifstore.Store,
 	logger log.Logger,
 	readBatchSize int,
 	writeBatchSize int,
-) (_, _, _ int, err error) {
+) (numUploads, numDefinitionsInserted, numReferencesInserted int, _ error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, 0, nil
 	}
 
-	graphKey := rankingshared.GraphKey()
+	err := baseStore.WithTransaction(ctx, func(tx store.Store) error {
+		return baseLsifStore.WithTransaction(ctx, func(lsifTx lsifstore.Store) error {
+			graphKey := rankingshared.GraphKey()
 
-	uploads, err := store.GetUploadsForRanking(ctx, graphKey, "ranking", readBatchSize)
-	if err != nil {
-		return 0, 0, 0, err
-	}
+			uploads, err := tx.GetUploadsForRanking(ctx, graphKey, "ranking", readBatchSize)
+			if err != nil {
+				return err
+			}
+			// assignment to outer scope
+			numUploads = len(uploads)
 
-	numDefinitionsInserted := 0
-	numReferencesInserted := 0
+			for _, upload := range uploads {
+				documentPaths := []string{}
+				if err := lsifTx.InsertDefinitionsAndReferencesForDocument(ctx, upload, graphKey, writeBatchSize, func(ctx context.Context, upload uploadsshared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error {
+					documentPaths = append(documentPaths, path)
+					numDefinitions, numReferences, err := setDefinitionsAndReferencesForUpload(ctx, tx, upload, rankingBatchSize, rankingGraphKey, path, document)
 
-	for _, upload := range uploads {
-		documentPaths := []string{}
-		if err := lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, graphKey, writeBatchSize, func(ctx context.Context, upload uploadsshared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error {
-			documentPaths = append(documentPaths, path)
-			numDefinitions, numReferences, err := setDefinitionsAndReferencesForUpload(ctx, store, upload, rankingBatchSize, rankingGraphKey, path, document)
-			numDefinitionsInserted += numDefinitions
-			numReferencesInserted += numReferences
-			return err
-		}); err != nil {
-			logger.Error(
-				"Failed to process upload for ranking graph",
-				log.Int("id", upload.ID),
-				log.String("repo", upload.Repo),
-				log.String("root", upload.Root),
-				log.Error(err),
-			)
+					// assignment to outer scope
+					numDefinitionsInserted += numDefinitions
+					numReferencesInserted += numReferences
+					return err
+				}); err != nil {
+					logger.Error(
+						"Failed to process upload for ranking graph",
+						log.Int("id", upload.ID),
+						log.String("repo", upload.Repo),
+						log.String("root", upload.Root),
+						log.Error(err),
+					)
 
-			return 0, 0, 0, err
-		}
+					return err
+				}
 
-		paths := make(chan string, len(documentPaths))
-		for _, path := range documentPaths {
-			paths <- path
-		}
-		close(paths)
+				paths := make(chan string, len(documentPaths))
+				for _, path := range documentPaths {
+					paths <- path
+				}
+				close(paths)
 
-		if err := store.InsertInitialPathRanks(ctx, upload.ID, paths, writeBatchSize, graphKey); err != nil {
-			logger.Error(
-				"Failed to insert initial path counts",
-				log.Int("id", upload.ID),
-				log.Int("repoID", upload.RepoID),
-				log.String("graphKey", graphKey),
-				log.Error(err),
-			)
+				if err := tx.InsertInitialPathRanks(ctx, upload.ID, paths, writeBatchSize, graphKey); err != nil {
+					logger.Error(
+						"Failed to insert initial path counts",
+						log.Int("id", upload.ID),
+						log.Int("repoID", upload.RepoID),
+						log.String("graphKey", graphKey),
+						log.Error(err),
+					)
 
-			return 0, 0, 0, err
-		}
+					return err
+				}
 
-		logger.Info(
-			"Processed upload for ranking graph",
-			log.Int("id", upload.ID),
-			log.String("repo", upload.Repo),
-			log.String("root", upload.Root),
-		)
-	}
+				logger.Info(
+					"Processed upload for ranking graph",
+					log.Int("id", upload.ID),
+					log.String("repo", upload.Repo),
+					log.String("root", upload.Root),
+				)
 
-	return len(uploads), numDefinitionsInserted, numReferencesInserted, nil
+			}
+
+			return nil
+		})
+	})
+
+	return numUploads, numDefinitionsInserted, numReferencesInserted, err
 }
 
 const skipPrefix = "lsif ."
