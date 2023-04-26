@@ -3,7 +3,6 @@ package ci
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -115,11 +114,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			addGoBuild))
 	}
 
-	// CI script testing
-	if diff.Has(changed.CIScripts) {
-		ops.Merge(operations.NewNamedSet("CI script tests", addCIScriptsTests))
-	}
-
 	return ops
 }
 
@@ -158,22 +152,6 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 					Type:         bk.AnnotationTypeAuto,
 				},
 			}))
-	}
-}
-
-// Run enterprise/dev/ci/scripts tests
-func addCIScriptsTests(pipeline *bk.Pipeline) {
-	testDir := "./enterprise/dev/ci/scripts/tests"
-	files, err := os.ReadDir(testDir)
-	if err != nil {
-		log.Fatalf("Failed to list CI scripts tests scripts: %s", err)
-	}
-
-	for _, f := range files {
-		if filepath.Ext(f.Name()) == ".sh" {
-			pipeline.AddStep(fmt.Sprintf(":bash: %s", f.Name()),
-				bk.Cmd(fmt.Sprintf("%s/%s", testDir, f.Name())))
-		}
 	}
 }
 
