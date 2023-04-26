@@ -445,7 +445,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const bytes = await vscode.workspace.fs.readFile(root)
         const decoded = new TextDecoder('utf-8').decode(bytes)
         const resources = webviewView.webview.asWebviewUri(webviewPath)
-        const nonce = this.getNonce()
 
         // Set HTML for webview
         // This replace variables from the client/cody/dist/index.html with webview info
@@ -454,7 +453,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         // 3. Update URIs for content security policy to only allow specific scripts to be run
         webviewView.webview.html = decoded
             .replaceAll('./', `${resources.toString()}/`)
-            .replace('<script', `<script nonce=${nonce}`)
             .replaceAll('{cspSource}', webviewView.webview.cspSource)
 
         // Register webview
@@ -478,15 +476,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return []
         }
         return this.transcript.toChat()
-    }
-
-    private getNonce(): string {
-        let text = ''
-        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-        for (let i = 0; i < 32; i++) {
-            text += possible.charAt(Math.floor(Math.random() * possible.length))
-        }
-        return text
     }
 
     public dispose(): void {
