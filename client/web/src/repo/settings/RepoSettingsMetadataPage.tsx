@@ -132,7 +132,7 @@ export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props
 
     const onDelete = useCallback(
         (meta: RepoMetadataItem): void => {
-            if (!window.confirm(`Are you sure to delete metadata ${meta.key}${meta.value && ':'}${meta.value}?`)) {
+            if (!window.confirm(`Delete metadata "${meta.key}${meta.value ? `:${meta.value}` : ''}"?`)) {
                 return
             }
             deleteRepoMetadata({
