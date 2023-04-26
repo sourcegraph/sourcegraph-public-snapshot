@@ -37,6 +37,7 @@ export const repositoryFragment = gql`
         id
         name
         url
+        isPerforceDepot
         externalURLs {
             url
             serviceKind
