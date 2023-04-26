@@ -41,7 +41,7 @@ func TestJavaGenerator(t *testing.T) {
 }
 
 func TestJavaHinter(t *testing.T) {
-	expectedIndexerImage := "sourcegraph/scip-java@sha256:964a45ef06b7d914729b1c61b6907b662fc54545b188881c6d25e56fcc8dfb8c"
+	expectedIndexerImage := "sourcegraph/scip-java@sha256:4fee3d21692df0e3cd59245ee2adcf5a522d46e450fb9bc0561dc0907f50844b"
 
 	testHinters(t,
 		hinterTestCase{
