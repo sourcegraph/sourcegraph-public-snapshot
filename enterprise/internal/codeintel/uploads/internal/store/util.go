@@ -85,6 +85,12 @@ FROM (
 		t.*,
 		row_number() OVER (PARTITION BY root, indexer ORDER BY distance) AS r
 	FROM (
+		-- Select the set of uploads visible from the given commit. This is done by looking
+		-- at each commit's row in the lsif_nearest_uploads table, and the (adjusted) set of
+		-- uploads from each commit's nearest ancestor according to the data compressed in
+		-- the links table.
+		--
+		-- NB: A commit should be present in at most one of these tables.
 		SELECT
 			nu.repository_id,
 			upload_id::integer,
@@ -107,6 +113,7 @@ FROM (
 	) t
 	JOIN lsif_uploads u ON u.id = upload_id
 ) t
+-- Remove ranks > 1, as they are shadowed by another upload in the same output set
 WHERE t.r <= 1
 `
 

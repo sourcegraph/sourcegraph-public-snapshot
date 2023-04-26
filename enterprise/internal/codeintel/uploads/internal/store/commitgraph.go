@@ -409,6 +409,12 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 const findClosestDumpsFromGraphFragmentCommitGraphQuery = `
 WITH
 visible_uploads AS (
+	-- Select the set of uploads visible from one of the given commits. This is done by
+	-- looking at each commit's row in the lsif_nearest_uploads table, and the (adjusted)
+	-- set of uploads from each commit's nearest ancestor according to the data compressed
+	-- in the links table.
+	--
+	-- NB: A commit should be present in at most one of these tables.
 	SELECT
 		nu.repository_id,
 		upload_id::integer,

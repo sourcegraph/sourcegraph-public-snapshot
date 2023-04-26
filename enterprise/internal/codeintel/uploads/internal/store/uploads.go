@@ -411,12 +411,8 @@ func (s *store) GetUploadIDsWithReferences(
 	return flattened, recordsScanned, totalCount, nil
 }
 
-// GetVisibleUploadsMatchingMonikers returns visible uploads that refer (via package information) to any of the
-// given monikers' packages.
-//
-// Visibility is determined in two parts: if the index belongs to the given repository, it is visible if
-// it can be seen from the given index; otherwise, an index is visible if it can be seen from the tip of
-// the default branch of its own repository.
+// GetVisibleUploadsMatchingMonikers returns visible uploads that refer (via package information) to any of
+// the given monikers' packages.
 func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ shared.PackageReferenceScanner, _ int, err error) {
 	ctx, trace, endObservation := s.operations.getVisibleUploadsMatchingMonikers.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
@@ -485,6 +481,13 @@ WITH
 visible_uploads AS (
 	SELECT t.upload_id
 	FROM (
+
+		-- Select the set of uploads visible from the given commit. This is done by looking
+		-- at each commit's row in the lsif_nearest_uploads table, and the (adjusted) set of
+		-- uploads from each commit's nearest ancestor according to the data compressed in
+		-- the links table.
+		--
+		-- NB: A commit should be present in at most one of these tables.
 		SELECT
 			t.upload_id,
 			row_number() OVER (PARTITION BY root, indexer ORDER BY distance) AS r
@@ -514,9 +517,18 @@ FROM lsif_references r
 LEFT JOIN lsif_dumps u ON u.id = r.dump_id
 JOIN repo ON repo.id = u.repository_id
 WHERE
+	-- Source moniker condition
 	(r.scheme, r.manager, r.name, r.version) IN (%s) AND
+
+	-- Visibility conditions
 	(
-		r.dump_id IN (SELECT * FROM visible_uploads) OR EXISTS (
+		-- Visibility (local case): if the index belongs to the given repository,
+		-- it is visible if it can be seen from the given index
+		r.dump_id IN (SELECT * FROM visible_uploads) OR
+
+		-- Visibility (remote case): An index is visible if it can be seen from the
+		-- tip of the default branch of its own repository.
+		EXISTS (
 			SELECT 1
 			FROM lsif_uploads_visible_at_tip uvt
 			WHERE
@@ -524,7 +536,9 @@ WHERE
 				uvt.is_default_branch
 		)
 	) AND
-	%s -- authz conds
+
+	-- Authz conditions
+	%s
 %s
 `
 
