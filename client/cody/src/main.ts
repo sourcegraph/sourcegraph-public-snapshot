@@ -107,7 +107,8 @@ const register = async (
         codebaseContext,
         editor,
         secretStorage,
-        localStorage
+        localStorage,
+        rgPath
     )
     disposables.push(chatProvider)
 

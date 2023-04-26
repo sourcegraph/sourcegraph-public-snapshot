@@ -33,6 +33,7 @@ export async function createCodebaseContext(
 
     const codebaseContext = new CodebaseContext(
         { useContext: contextType },
+        codebase,
         embeddingsSearch,
         new LocalKeywordContextFetcherMock()
     )

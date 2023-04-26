@@ -16,9 +16,14 @@ export interface ContextSearchOptions {
 export class CodebaseContext {
     constructor(
         private config: Pick<Configuration, 'useContext'>,
+        private codebase: string | undefined,
         private embeddings: EmbeddingsSearch | null,
         private keywords: KeywordContextFetcher | null
     ) {}
+
+    public getCodebase(): string | undefined {
+        return this.codebase
+    }
 
     public onConfigurationChange(newConfig: typeof this.config): void {
         this.config = newConfig

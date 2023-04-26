@@ -49,6 +49,7 @@ export async function configureExternalServices(
 
     const codebaseContext = new CodebaseContext(
         initialConfig,
+        initialConfig.codebase,
         embeddingsSearch,
         new LocalKeywordContextFetcher(rgPath, editor)
     )
