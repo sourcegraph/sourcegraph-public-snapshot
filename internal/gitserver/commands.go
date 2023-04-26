@@ -324,6 +324,64 @@ func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, 
 	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
 }
 
+func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error) {
+	args := []string{"log", "--pretty=format:'%H<!>%ae<!>%an<!>%ad'", "--name-only", "--topo-order", "--no-merges"}
+	if !after.IsZero() {
+		args = append(args, fmt.Sprintf("--after=%s", after.Format(time.RFC3339)))
+	}
+
+	cmd := c.gitCommand(repo, args...)
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var ls []CommitLog
+	lines := strings.Split(string(out), "\n\n")
+
+	for _, logOutput := range lines {
+		partitions := strings.Split(logOutput, "\n")
+		if len(partitions) < 2 {
+			continue
+		}
+		metaLine := partitions[0]
+		changedFiles := partitions[1:]
+
+		parts := strings.Split(metaLine, "<!>")
+		if len(parts) != 4 {
+			continue
+		}
+		sha, authorEmail, authorName, timestamp := parts[0], parts[1], parts[2], parts[3]
+		// changedFiles := strings.Split(changed, "\n")
+		t, err := parseTimestamp(timestamp)
+		if err != nil {
+			fmt.Println(parts)
+			command := strings.Join(args, " ")
+			fmt.Println(command)
+			fmt.Println(fmt.Sprintf("repo_name: %s", repo))
+
+			return nil, errors.Wrapf(err, "parseTimestamp %s", timestamp)
+		}
+		ls = append(ls, CommitLog{
+			SHA:          sha,
+			AuthorEmail:  authorEmail,
+			AuthorName:   authorName,
+			Timestamp:    t,
+			ChangedFiles: changedFiles,
+		})
+	}
+	return ls, nil
+}
+
+func parseTimestamp(timestamp string) (time.Time, error) {
+	layout := "Mon Jan 2 15:04:05 2006 -0700"
+	t, err := time.Parse(layout, timestamp)
+	if err != nil {
+		return time.Now(), err // Handle error and fallback to other timestamp format
+	}
+	return t, nil
+}
+
 // DevNullSHA 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t
 // tree /dev/null`, which is used as the base when computing the `git diff` of
 // the root commit.

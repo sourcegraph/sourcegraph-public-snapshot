@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -12,11 +11,13 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -28,17 +29,34 @@ import (
 
 type IndexJobType struct {
 	Name            string
-	Id              int
+	Id              JobTypeId
 	IndexInterval   time.Duration
 	RefreshInterval time.Duration
 }
 
 var IndexJobTypes = []IndexJobType{{
 	Name:            "recent-contributors",
-	Id:              1,
+	Id:              RecentContributors,
 	IndexInterval:   time.Hour * 24,
 	RefreshInterval: time.Minute * 5,
 }}
+
+var IndexJobById = mapIndexJobs(IndexJobTypes)
+
+func mapIndexJobs(types []IndexJobType) map[JobTypeId]IndexJobType {
+	mapped := make(map[JobTypeId]IndexJobType)
+	for _, jobType := range types {
+		mapped[jobType.Id] = jobType
+	}
+	return mapped
+}
+
+type JobTypeId int
+
+const (
+	_ JobTypeId = iota
+	RecentContributors
+)
 
 func featureFlagName(jobType IndexJobType) string {
 	return fmt.Sprintf("own-background-index-repo-%s", jobType.Name)
@@ -173,13 +191,46 @@ type handler struct {
 	limiter     *ratelimit.InstrumentedLimiter
 }
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record *Job) error {
+func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error {
 	err := h.limiter.Wait(ctx)
 	if err != nil {
 		return errors.Wrap(err, "limiter.Wait")
 	}
-	jsonify, _ := json.Marshal(record)
-	logger.Info(fmt.Sprintf("Hello from the own background processor: %v", string(jsonify)))
+	// jsonify, _ := json.Marshal(record)
+
+	switch JobTypeId(record.JobType) {
+	case RecentContributors:
+		repoStore := database.ReposWith(lgr, h.workerStore)
+		repoID := api.RepoID(record.RepoId)
+		repo, err := repoStore.Get(ctx, repoID)
+		if err != nil {
+			return errors.Wrap(err, "repoStore.Get")
+		}
+		commitLog, err := gitserver.NewClient().CommitLog(ctx, repo.Name, time.Now().AddDate(0, 0, -90))
+		if err != nil {
+			return errors.Wrap(err, "CommitLog")
+		}
+
+		count := 0
+		contribStore := database.RecentContributionSignalStoreWith(h.workerStore)
+		for _, commit := range commitLog {
+
+			err := contribStore.AddCommit(ctx, database.Commit{
+				RepoID:       repoID,
+				AuthorName:   commit.AuthorName,
+				AuthorEmail:  commit.AuthorEmail,
+				Timestamp:    commit.Timestamp,
+				CommitSHA:    commit.SHA,
+				FilesChanged: commit.ChangedFiles,
+			})
+			if err != nil {
+				return errors.Wrap(err, "AddCommit")
+			}
+			count++
+		}
+		lgr.Info("commits inserted", log.Int("count", count), log.Int("repo_id", record.RepoId))
+	}
+
 	return nil
 }
 
