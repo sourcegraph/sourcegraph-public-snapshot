@@ -181,6 +181,7 @@ ts_project(
         "src/codeintel/useCodeIntel.ts",
         "src/codeintel/useRepoAndBlob.ts",
         "src/codeintel/util/helpers.ts",
+        "src/cody/ChatHistory.tsx",
         "src/cody/CodeMirrorEditor.ts",
         "src/cody/CodyChat.tsx",
         "src/cody/CodyIcon.tsx",
@@ -1483,7 +1484,6 @@ ts_project(
         "src/site-admin/webhooks/backend.ts",
         "src/site-admin/webhooks/story/StyledPerformanceGauge.tsx",
         "src/site-admin/webhooks/story/fixtures.ts",
-        "src/site/DockerForMacAlert.tsx",
         "src/site/FreeUsersExceededAlert.tsx",
         "src/site/LicenseExpirationAlert.tsx",
         "src/site/NeedsRepositoryConfigurationAlert.tsx",
@@ -1906,8 +1906,9 @@ jest_test(
         ":web_tests",
     ],
     patch_node_fs = False,
-    shard_count = 3,  # originally at 6, but tend to consume too much resource and crash.
+    shard_count = 12,  # empirical
     tags = [
+        "manual",  # we manually run those tests after everything else, to ensure we have enough resources.
         "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],
 )
@@ -1973,6 +1974,7 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
             "NODE_ENV": "production" if prod else "development",
         },
         output_dir = True,
+        visibility = ["//ui/assets:__subpackages__"],
         webpack_config = "webpack.bazel.config.js",
         deps = WEBPACK_CONFIG_DEPS,
     )
@@ -2001,11 +2003,12 @@ webpack_bundle(
         "WEBPACK_USE_NAMED_CHUNKS": "false",
     },
     output_dir = True,
+    visibility = ["//ui/assets:__subpackages__"],
     webpack_config = "webpack.bazel.config.js",
     deps = WEBPACK_CONFIG_DEPS,
 )
 
-# Used for integartion tests and has bigger bundle size
+# Used for integration tests and has bigger bundle size
 # because of the inlined source-maps.
 webpack_web_app(
     name = "app-enterprise",
@@ -2023,7 +2026,7 @@ webpack_web_app(
         "INTEGRATION_TESTS": "true",
     },
     output_dir = True,
-    visibility = ["//client/web:__subpackages__"],
+    visibility = ["//visibility:public"],
     webpack_config = "webpack.bazel.config.js",
     deps = WEBPACK_CONFIG_DEPS,
 )

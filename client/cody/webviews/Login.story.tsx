@@ -10,7 +10,6 @@ const meta: ComponentMeta<typeof Login> = {
     parameters: {
         component: Login,
         chromatic: {
-            enableDarkMode: true,
             disableSnapshot: false,
         },
     },
@@ -19,9 +18,17 @@ const meta: ComponentMeta<typeof Login> = {
 export default meta
 
 export const Simple: ComponentStoryObj<typeof Login> = {
-    render: () => <Login onLogin={() => {}} isValidLogin={true} />,
+    render: () => (
+        <div style={{ background: 'rgb(28, 33, 40)' }}>
+            <Login onLogin={() => {}} isValidLogin={true} />
+        </div>
+    ),
 }
 
 export const InvalidLogin: ComponentStoryObj<typeof Login> = {
-    render: () => <Login onLogin={() => {}} isValidLogin={false} />,
+    render: () => (
+        <div style={{ background: 'rgb(28, 33, 40)' }}>
+            <Login onLogin={() => {}} isValidLogin={false} />
+        </div>
+    ),
 }

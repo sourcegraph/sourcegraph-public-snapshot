@@ -116,11 +116,7 @@ func (r *batchSpecWorkspaceStepV1Resolver) Environment() ([]graphqlbackend.Batch
 
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, 0, len(env))
 	for k, v := range env {
-		var val *string
-		if _, ok := outerMap[k]; !ok {
-			val = &v
-		}
-		resolvers = append(resolvers, &batchSpecWorkspaceEnvironmentVariableResolver{key: k, value: val})
+		resolvers = append(resolvers, newBatchSpecWorkspaceEnvironmentVariableResolver(k, v, outerMap))
 	}
 	return resolvers, nil
 }
@@ -181,8 +177,9 @@ type batchSpecWorkspaceStepV2Resolver struct {
 	logEntry      executor.ExecutionLogEntry
 	logEntryFound bool
 
-	cachedResult      *execution.AfterStepResult
-	cachedResultFound bool
+	stepInfo *btypes.StepInfo
+
+	cachedResult *execution.AfterStepResult
 }
 
 var _ graphqlbackend.BatchSpecWorkspaceStepResolver = &batchSpecWorkspaceStepV2Resolver{}
@@ -208,7 +205,7 @@ func (r *batchSpecWorkspaceStepV2Resolver) IfCondition() *string {
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) CachedResultFound() bool {
-	return r.cachedResultFound
+	return r.cachedResult != nil
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) Skipped() bool {
@@ -264,16 +261,26 @@ func (r *batchSpecWorkspaceStepV2Resolver) ExitCode() *int32 {
 
 func (r *batchSpecWorkspaceStepV2Resolver) Environment() ([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, error) {
 	// The environment is dependent on environment of the executor and template variables, that aren't
-	// known at the time when we resolve the workspace. If the step already started, src cli has logged
+	// known at the time when we resolve the workspace. If the step already started, batcheshelper has logged
 	// the final env. Otherwise, we fall back to the preliminary set of env vars as determined by the
 	// resolve workspaces step.
+	if r.skipped {
+		return nil, nil
+	}
 
-	// TODO: This is only a server-side pass of the environment variables. V2 execution does not yet
-	// support rendering the actual env var values used at runtime.
-	// See the V1 resolver for what happens there.
-	env, err := r.step.Env.Resolve([]string{})
-	if err != nil {
-		return nil, err
+	var env map[string]string
+
+	if r.stepInfo != nil {
+		env = r.stepInfo.Environment
+	}
+
+	// Not yet resolved, use the preliminary env vars.
+	if env == nil {
+		var err error
+		env, err = r.step.Env.Resolve([]string{})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	outer := r.step.Env.OuterVars()
@@ -284,13 +291,17 @@ func (r *batchSpecWorkspaceStepV2Resolver) Environment() ([]graphqlbackend.Batch
 
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, 0, len(env))
 	for k, v := range env {
-		var val *string
-		if _, ok := outerMap[k]; !ok {
-			val = &v
-		}
-		resolvers = append(resolvers, &batchSpecWorkspaceEnvironmentVariableResolver{key: k, value: val})
+		resolvers = append(resolvers, newBatchSpecWorkspaceEnvironmentVariableResolver(k, v, outerMap))
 	}
 	return resolvers, nil
+}
+
+func newBatchSpecWorkspaceEnvironmentVariableResolver(key, value string, outerMap map[string]struct{}) graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver {
+	var val *string
+	if _, ok := outerMap[key]; !ok {
+		val = &value
+	}
+	return &batchSpecWorkspaceEnvironmentVariableResolver{key: key, value: val}
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) OutputVariables() *[]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver {
@@ -298,14 +309,23 @@ func (r *batchSpecWorkspaceStepV2Resolver) OutputVariables() *[]graphqlbackend.B
 	// use it to read the rendered output variables.
 	// TODO: Should we return the underendered variables before the cached result is
 	// available like we do with env vars?
-	if r.cachedResult != nil {
+	if r.CachedResultFound() {
 		resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(r.cachedResult.Outputs))
 		for k, v := range r.cachedResult.Outputs {
 			resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
 		}
 		return &resolvers
 	}
-	return nil
+
+	if r.stepInfo == nil || r.stepInfo.OutputVariables == nil {
+		return nil
+	}
+
+	resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(r.stepInfo.OutputVariables))
+	for k, v := range r.stepInfo.OutputVariables {
+		resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
+	}
+	return &resolvers
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
@@ -329,6 +349,9 @@ func (r *batchSpecWorkspaceStepV2Resolver) Diff(ctx context.Context) (graphqlbac
 	// use it to return a comparison resolver.
 	if r.cachedResult != nil {
 		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.cachedResult.Diff)
+	}
+	if r.stepInfo != nil && r.stepInfo.DiffFound {
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.stepInfo.Diff)
 	}
 	return nil, nil
 }
