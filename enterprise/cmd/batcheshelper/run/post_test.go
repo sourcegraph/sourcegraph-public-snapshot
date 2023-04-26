@@ -54,15 +54,22 @@ func TestPost(t *testing.T) {
 			stdoutLogs:     "hello world",
 			stderrLogs:     "error",
 			assertFunc: func(t *testing.T, logEntries []batcheslib.LogEvent, dir string, runner *fakeCmdRunner) {
-				require.Len(t, logEntries, 1)
-				assert.Equal(t, batcheslib.LogEventOperationCacheAfterStepResult, logEntries[0].Operation)
+				require.Len(t, logEntries, 2)
+
+				assert.Equal(t, batcheslib.LogEventOperationTaskStep, logEntries[0].Operation)
 				assert.Regexp(t, `^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+ \+\d{4} UTC$`, logEntries[0].Timestamp)
 				assert.Equal(t, batcheslib.LogEventStatusSuccess, logEntries[0].Status)
-				assert.IsType(t, &batcheslib.CacheAfterStepResultMetadata{}, logEntries[0].Metadata)
-				assert.Equal(t, "deZzMP85HWs6lfhWRnMVBA-step-0", logEntries[0].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Key)
-				assert.Equal(t, "hello world", logEntries[0].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Value.Stdout)
-				assert.Equal(t, "error", logEntries[0].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Value.Stderr)
-				assert.Equal(t, []byte("git diff"), logEntries[0].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Value.Diff)
+				assert.IsType(t, &batcheslib.TaskStepMetadata{}, logEntries[0].Metadata)
+				assert.Equal(t, []byte("git diff"), logEntries[0].Metadata.(*batcheslib.TaskStepMetadata).Diff)
+
+				assert.Equal(t, batcheslib.LogEventOperationCacheAfterStepResult, logEntries[1].Operation)
+				assert.Regexp(t, `^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+ \+\d{4} UTC$`, logEntries[1].Timestamp)
+				assert.Equal(t, batcheslib.LogEventStatusSuccess, logEntries[1].Status)
+				assert.IsType(t, &batcheslib.CacheAfterStepResultMetadata{}, logEntries[1].Metadata)
+				assert.Equal(t, "deZzMP85HWs6lfhWRnMVBA-step-0", logEntries[1].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Key)
+				assert.Equal(t, "hello world", logEntries[1].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Value.Stdout)
+				assert.Equal(t, "error", logEntries[1].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Value.Stderr)
+				assert.Equal(t, []byte("git diff"), logEntries[1].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Value.Diff)
 
 				entries, err := os.ReadDir(dir)
 				require.NoError(t, err)
@@ -116,8 +123,8 @@ func TestPost(t *testing.T) {
 			stdoutLogs:     "hello world",
 			stderrLogs:     "error",
 			assertFunc: func(t *testing.T, logEntries []batcheslib.LogEvent, dir string, runner *fakeCmdRunner) {
-				require.Len(t, logEntries, 1)
-				assert.Equal(t, "4qXjs4-Arh1VpWWfWhqm3A-step-0", logEntries[0].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Key)
+				require.Len(t, logEntries, 2)
+				assert.Equal(t, "4qXjs4-Arh1VpWWfWhqm3A-step-0", logEntries[1].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Key)
 
 				entries, err := os.ReadDir(dir)
 				require.NoError(t, err)
@@ -175,8 +182,8 @@ func TestPost(t *testing.T) {
 			stdoutLogs:     "hello world",
 			stderrLogs:     "error",
 			assertFunc: func(t *testing.T, logEntries []batcheslib.LogEvent, dir string, runner *fakeCmdRunner) {
-				require.Len(t, logEntries, 1)
-				assert.Regexp(t, ".*-step-0$", logEntries[0].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Key)
+				require.Len(t, logEntries, 2)
+				assert.Regexp(t, ".*-step-0$", logEntries[1].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Key)
 
 				entries, err := os.ReadDir(dir)
 				require.NoError(t, err)

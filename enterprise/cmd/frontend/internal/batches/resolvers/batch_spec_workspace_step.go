@@ -309,14 +309,23 @@ func (r *batchSpecWorkspaceStepV2Resolver) OutputVariables() *[]graphqlbackend.B
 	// use it to read the rendered output variables.
 	// TODO: Should we return the underendered variables before the cached result is
 	// available like we do with env vars?
-	if r.cachedResult != nil {
+	if r.CachedResultFound() {
 		resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(r.cachedResult.Outputs))
 		for k, v := range r.cachedResult.Outputs {
 			resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
 		}
 		return &resolvers
 	}
-	return nil
+
+	if r.stepInfo == nil || r.stepInfo.OutputVariables == nil {
+		return nil
+	}
+
+	resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(r.stepInfo.OutputVariables))
+	for k, v := range r.stepInfo.OutputVariables {
+		resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
+	}
+	return &resolvers
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
@@ -340,6 +349,9 @@ func (r *batchSpecWorkspaceStepV2Resolver) Diff(ctx context.Context) (graphqlbac
 	// use it to return a comparison resolver.
 	if r.cachedResult != nil {
 		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.cachedResult.Diff)
+	}
+	if r.stepInfo != nil && r.stepInfo.DiffFound {
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.stepInfo.Diff)
 	}
 	return nil, nil
 }
