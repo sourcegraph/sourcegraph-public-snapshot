@@ -75,6 +75,7 @@ refs AS (
 		)
 	ORDER BY rr.id
 	LIMIT %s
+	FOR UPDATE SKIP LOCKED
 ),
 locked_refs AS (
 	INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
