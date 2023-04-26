@@ -172,7 +172,7 @@ export const fetchDiffStats = (args: {
         catchError(() => []) // ignore errors
     )
 
-const ExtraInfoSectionHeader: React.FunctionComponent<React.PropsWithChildren<{ title: string; tooltip?: string }>> = ({
+const ExtraInfoSectionHeader: React.FunctionComponent<React.PropsWithChildren<{ title: string; tooltip?: React.ReactNode }>> = ({
     title,
     tooltip,
     children,
@@ -207,7 +207,13 @@ const ExtraInfoSection: React.FC<{
                 <>
                     <ExtraInfoSectionHeader
                         title="Metadata"
-                        tooltip="Repository metadata allows you to search, filter and navigate between repositories. Administrators can add repository metadata via the web, cli or API. Learn more about Repository Metadata"
+                        tooltip={
+                            <>
+                                Repository metadata allows you to search, filter and navigate between repositories.
+                                Administrators can add repository metadata via the web, cli or API. Learn more about{' '}
+                                <Link to="/help/admin/repo/metadata">Repository Metadata</Link>.
+                            </>
+                        }
                     >
                         {viewerCanAdminister && (
                             <Tooltip content="Edit repository metadata">
