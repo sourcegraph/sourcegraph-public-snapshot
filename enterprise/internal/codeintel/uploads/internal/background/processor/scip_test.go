@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -17,22 +18,34 @@ import (
 func TestCorrelateSCIP(t *testing.T) {
 	ctx := context.Background()
 
-	gzipped, err := os.Open("./testdata/index1.scip.gz")
-	if err != nil {
-		t.Fatalf("unexpected error reading test file: %s", err)
-	}
-	r, err := gzip.NewReader(gzipped)
-	if err != nil {
-		t.Fatalf("unexpected error unzipping test file: %s", err)
+	testFiles := []string{
+		"./testdata/index1.scip.gz",
+		"./testdata/index1.scip-sharded.tar.gz",
 	}
 
-	// Correlate and consume channels from returned object
-	correlatedSCIPData, err := correlateSCIP(ctx, r, "", func(ctx context.Context, dirnames []string) (map[string][]string, error) {
-		return scipDirectoryChildren, nil
-	})
-	if err != nil {
-		t.Fatalf("unexpected error processing SCIP: %s", err)
+	for _, testFile := range testFiles {
+		gzipped, err := os.Open(testFile)
+		if err != nil {
+			t.Fatalf("unexpected error reading test file: %s", err)
+		}
+		r, err := gzip.NewReader(gzipped)
+		if err != nil {
+			t.Fatalf("unexpected error unzipping test file: %s", err)
+		}
+
+		// Correlate and consume channels from returned object
+		isSharded := strings.Contains(testFile, "-sharded")
+		correlatedSCIPData, err := correlateSCIP(ctx, r, isSharded, "", func(ctx context.Context, dirnames []string) (map[string][]string, error) {
+			return scipDirectoryChildren, nil
+		})
+		if err != nil {
+			t.Fatalf("unexpected error processing SCIP: %s", err)
+		}
+		checkCorrelatedData(t, ctx, correlatedSCIPData)
 	}
+}
+
+func checkCorrelatedData(t *testing.T, ctx context.Context, correlatedSCIPData lsifstore.ProcessedSCIPData) {
 	var documents []lsifstore.ProcessedSCIPDocument
 	for document := range correlatedSCIPData.Documents {
 		documents = append(documents, document)

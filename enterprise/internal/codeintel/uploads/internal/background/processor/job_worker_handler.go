@@ -245,12 +245,14 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 
 	return false, withUploadData(ctx, logger, uploadStore, upload.ID, trace, func(r io.Reader) (err error) {
 		const (
-			lsifContentType = "application/x-ndjson+lsif"
-			scipContentType = "application/x-protobuf+scip"
+			lsifContentType        = "application/x-ndjson+lsif"
+			scipContentType        = "application/x-protobuf+scip"
+			scipShardedContentType = "application/x-protobuf+scip-sharded"
 		)
+		isShardedScipIndex := upload.ContentType == scipShardedContentType
 		if upload.ContentType == lsifContentType {
 			return errors.New("LSIF support is deprecated")
-		} else if upload.ContentType != scipContentType {
+		} else if upload.ContentType != scipContentType && !isShardedScipIndex {
 			return errors.Newf("unsupported content type %q", upload.ContentType)
 		}
 
@@ -276,7 +278,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			return errors.Wrap(err, "store.CommitDate")
 		}
 
-		correlatedSCIPData, err := correlateSCIP(ctx, r, upload.Root, getChildren)
+		correlatedSCIPData, err := correlateSCIP(ctx, r, isShardedScipIndex, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
 		}

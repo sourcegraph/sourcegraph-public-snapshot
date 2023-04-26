@@ -1,9 +1,11 @@
 package processor
 
 import (
+	"archive/tar"
 	"context"
 	"io"
 	"sort"
+	"strings"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
@@ -14,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // correlateSCIP reads the content of the given reader as a SCIP index object. The index is processed in
@@ -29,15 +32,25 @@ import (
 func correlateSCIP(
 	ctx context.Context,
 	r io.Reader,
+	isShardedScipIndex bool,
 	root string,
 	getChildren pathexistence.GetChildrenFunc,
 ) (lsifstore.ProcessedSCIPData, error) {
-	index, err := readIndex(r)
+	var indexes []*scip.Index
+	var err error
+	if isShardedScipIndex {
+		indexes, err = readShardedIndex(r)
+	} else {
+		var index *scip.Index
+		index, err = readIndex(r)
+		indexes = append(indexes, index)
+	}
 	if err != nil {
 		return lsifstore.ProcessedSCIPData{}, err
 	}
+	scipMetadata, scipDocs, scipExtSyms := aggregateIndexes(indexes)
 
-	ignorePaths, err := ignorePaths(ctx, index.Documents, root, getChildren)
+	ignorePaths, err := ignorePaths(ctx, scipDocs, root, getChildren)
 	if err != nil {
 		return lsifstore.ProcessedSCIPData{}, err
 	}
@@ -46,14 +59,14 @@ func correlateSCIP(
 		documents             = make(chan lsifstore.ProcessedSCIPDocument)
 		packages              = make(chan precise.Package)
 		packageReferences     = make(chan precise.PackageReference)
-		externalSymbolsByName = readExternalSymbols(index)
+		externalSymbolsByName = readExternalSymbols(scipExtSyms)
 	)
 
 	go func() {
 		defer close(documents)
 
 		packageSet := map[precise.Package]bool{}
-		for _, document := range scip.SortDocuments(scip.FlattenDocuments(index.Documents)) {
+		for _, document := range scip.SortDocuments(scip.FlattenDocuments(scipDocs)) {
 			if _, ok := ignorePaths[document.RelativePath]; ok {
 				continue
 			}
@@ -119,11 +132,11 @@ func correlateSCIP(
 	}()
 
 	metadata := lsifstore.ProcessedMetadata{
-		TextDocumentEncoding: index.Metadata.TextDocumentEncoding.String(),
-		ToolName:             index.Metadata.ToolInfo.Name,
-		ToolVersion:          index.Metadata.ToolInfo.Version,
-		ToolArguments:        index.Metadata.ToolInfo.Arguments,
-		ProtocolVersion:      int(index.Metadata.Version),
+		TextDocumentEncoding: scipMetadata.TextDocumentEncoding.String(),
+		ToolName:             scipMetadata.ToolInfo.Name,
+		ToolVersion:          scipMetadata.ToolInfo.Version,
+		ToolArguments:        scipMetadata.ToolInfo.Arguments,
+		ProtocolVersion:      int(scipMetadata.Version),
 	}
 
 	return lsifstore.ProcessedSCIPData{
@@ -185,6 +198,56 @@ loop:
 	return packages, packageReferences, nil
 }
 
+// readShardedIndex unmarshals a tarball containing index shards.
+//
+// For context, see https://github.com/sourcegraph/scip/issues/143
+//
+// The returned slice is guaranteed to be non-empty.
+func readShardedIndex(r io.Reader) ([]*scip.Index, error) {
+	tarReader := tar.NewReader(r)
+	type shard struct {
+		name  string
+		index *scip.Index
+	}
+	var shards []shard
+	for {
+		header, err := tarReader.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, errors.Wrap(err, "failed to read tarball")
+		}
+		if header.Size < 0 || header.Typeflag != tar.TypeReg {
+			continue
+		}
+		if !strings.HasSuffix(header.Name, ".shard.scip") {
+			continue
+		}
+		buf := make([]byte, header.Size)
+		_, err = io.ReadFull(tarReader, buf)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read shard")
+		}
+		var index scip.Index
+		if err := proto.Unmarshal(buf, &index); err != nil {
+			return nil, err
+		}
+		shards = append(shards, shard{header.Name, &index})
+	}
+	if len(shards) == 0 {
+		return nil, errors.New("found zero shards in index")
+	}
+	sort.Slice(shards, func(i int, j int) bool {
+		return shards[i].name < shards[j].name
+	})
+	var indexes []*scip.Index
+	for _, shard := range shards {
+		indexes = append(indexes, shard.index)
+	}
+	return indexes, nil
+}
+
 // readIndex unmarshals a SCIP index from the given reader.
 func readIndex(r io.Reader) (*scip.Index, error) {
 	content, err := io.ReadAll(r)
@@ -198,6 +261,15 @@ func readIndex(r io.Reader) (*scip.Index, error) {
 	}
 
 	return &index, nil
+}
+
+func aggregateIndexes(indexes []*scip.Index) (metadata *scip.Metadata, docs []*scip.Document, extSyms []*scip.SymbolInformation) {
+	for _, index := range indexes {
+		metadata = index.Metadata
+		docs = append(docs, index.Documents...)
+		extSyms = append(extSyms, index.ExternalSymbols...)
+	}
+	return
 }
 
 // ignorePaths returns a set consisting of the relative paths of documents in the give
@@ -224,9 +296,9 @@ func ignorePaths(ctx context.Context, documents []*scip.Document, root string, g
 }
 
 // readExternalSymbols inverts the external symbols from the given index into a map keyed by name.
-func readExternalSymbols(index *scip.Index) map[string]*scip.SymbolInformation {
-	externalSymbolsByName := make(map[string]*scip.SymbolInformation, len(index.ExternalSymbols))
-	for _, symbol := range index.ExternalSymbols {
+func readExternalSymbols(extSyms []*scip.SymbolInformation) map[string]*scip.SymbolInformation {
+	externalSymbolsByName := make(map[string]*scip.SymbolInformation, len(extSyms))
+	for _, symbol := range extSyms {
 		externalSymbolsByName[symbol.Symbol] = symbol
 	}
 
