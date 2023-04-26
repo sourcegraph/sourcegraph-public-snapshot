@@ -149,7 +149,7 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 
 	results := make(chan *githubResult)
 	go func() {
-		githubSrc.listPublic(context.Background(), results)
+		githubSrc.listPublic(ctx, results)
 		close(results)
 	}()
 
@@ -173,6 +173,7 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 }
 
 func prepareGheToken(t *testing.T, fixtureName string) string {
+	t.Helper()
 	gheToken := os.Getenv("GHE_TOKEN")
 
 	if update(fixtureName) && gheToken == "" {
