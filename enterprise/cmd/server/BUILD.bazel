@@ -5,10 +5,7 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/server",
     visibility = ["//visibility:private"],
-    deps = [
-        "//cmd/server/shared",
-        "//ui/assets/enterprise",
-    ],
+    deps = ["//cmd/server/shared"],
 )
 
 go_binary(
