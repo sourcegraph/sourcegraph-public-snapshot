@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -125,17 +124,21 @@ type InstallationAccessToken struct {
 	ExpiresAt time.Time
 }
 
-// installationAccessToken is used to authenticate requests to the
+type installationAccessToken struct {
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+// installationAuthenticator is used to authenticate requests to the
 // GitHub API using an installation access token from a GitHub App.
 //
 // It implements the auth.Authenticator interface.
-type installationAccessToken struct {
-	installationID   int
-	Token            string    `json:"token"`
-	ExpiresAt        time.Time `json:"expires_at"`
-	baseURL          *url.URL
-	appAuthenticator auth.Authenticator
-	cache            *rcache.Cache
+type installationAuthenticator struct {
+	installationID          int
+	installationAccessToken installationAccessToken
+	baseURL                 *url.URL
+	appAuthenticator        auth.Authenticator
+	cache                   *rcache.Cache
 }
 
 // NewInstallationAccessToken implements the Authenticator interface
@@ -147,9 +150,9 @@ func NewInstallationAccessToken(
 	baseURL *url.URL,
 	installationID int,
 	appAuthenticator auth.Authenticator,
-) *installationAccessToken {
+) *installationAuthenticator {
 	cache := rcache.NewWithTTL("github_app_installation_token", 55*60)
-	auther := &installationAccessToken{
+	auther := &installationAuthenticator{
 		baseURL:          baseURL,
 		installationID:   installationID,
 		appAuthenticator: appAuthenticator,
@@ -158,22 +161,49 @@ func NewInstallationAccessToken(
 	return auther
 }
 
+func (t *installationAuthenticator) cacheKey() string {
+	return t.baseURL.String() + strconv.Itoa(t.installationID)
+}
+
+// getFromCache returns a new installationAccessToken from the cache, and a boolean
+// indicating whether or not the fetch from cache was successful.
+func (t *installationAuthenticator) getFromCache() (iat installationAccessToken, ok bool) {
+	token, ok := t.cache.Get(t.cacheKey())
+	if !ok {
+		return
+	}
+
+	if err := json.Unmarshal(token, &iat); err != nil {
+		return
+	}
+
+	return iat, true
+}
+
+// storeInCache updates the installationAccessToken in the cache.
+func (t *installationAuthenticator) storeInCache() error {
+	res, err := json.Marshal(t.installationAccessToken)
+	if err != nil {
+		return err
+	}
+
+	t.cache.Set(t.cacheKey(), res)
+	return nil
+}
+
 // Refresh generates a new installation access token for the GitHub App installation.
 //
 // It makes a request to the GitHub API to generate a new installation access token for the
 // installation associated with the Authenticator.
 // Returns an error if the request fails.
-func (t *installationAccessToken) Refresh(ctx context.Context, cli httpcli.Doer) error {
-	token, ok := t.cache.Get(t.baseURL.String() + strconv.Itoa(t.installationID))
+func (t *installationAuthenticator) Refresh(ctx context.Context, cli httpcli.Doer) error {
+	token, ok := t.getFromCache()
 	if ok {
-		var storedToken installationAccessToken
-		if err := json.Unmarshal(token, &storedToken); err == nil {
-			if storedToken.Token != t.Token {
-				t.Token = storedToken.Token
-				t.ExpiresAt = storedToken.ExpiresAt
-				if !t.NeedsRefresh() {
-					return nil
-				}
+		if t.installationAccessToken.Token != token.Token { // Confirm that we have a different token now
+			t.installationAccessToken = token
+			if !t.NeedsRefresh() {
+				// Return nil, indiciating the refresh was "successful"
+				return nil
 			}
 		}
 	}
@@ -191,40 +221,32 @@ func (t *installationAccessToken) Refresh(ctx context.Context, cli httpcli.Doer)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		return errors.Newf("failed to refresh: %d", resp.StatusCode)
 	}
-
-	jsonBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
 	defer resp.Body.Close()
 
-	var newToken installationAccessToken
-	if err := json.Unmarshal(jsonBody, &newToken); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&t.installationAccessToken); err != nil {
 		return err
 	}
-	t.Token = newToken.Token
-	t.ExpiresAt = newToken.ExpiresAt
+	// Ignore if storing in cache fails somehow, since the token should still be valid
+	_ = t.storeInCache()
 
-	t.cache.Set(t.baseURL.String()+strconv.Itoa(t.installationID), jsonBody)
 	return nil
 }
 
 // Authenticate adds an Authorization header to the request containing
 // the installation access token associated with the GitHub App installation.
-func (a *installationAccessToken) Authenticate(r *http.Request) error {
-	r.Header.Set("Authorization", "Bearer "+a.Token)
+func (a *installationAuthenticator) Authenticate(r *http.Request) error {
+	r.Header.Set("Authorization", "Bearer "+a.installationAccessToken.Token)
 	return nil
 }
 
 // Hash returns a hash of the GitHub App installation ID.
 // We use the installation ID instead of the installation access
 // token because installation access tokens are short lived.
-func (a *installationAccessToken) Hash() string {
+func (a *installationAuthenticator) Hash() string {
 	sum := sha256.Sum256([]byte(strconv.Itoa(a.installationID)))
 	return hex.EncodeToString(sum[:])
 }
@@ -232,17 +254,17 @@ func (a *installationAccessToken) Hash() string {
 // NeedsRefresh checks whether the GitHub App installation access token
 // needs to be refreshed. An access token needs to be refreshed if it has
 // expired or will expire within the next few seconds.
-func (t *installationAccessToken) NeedsRefresh() bool {
-	if t.Token == "" {
+func (a *installationAuthenticator) NeedsRefresh() bool {
+	if a.installationAccessToken.Token == "" {
 		return true
 	}
-	if t.ExpiresAt.IsZero() {
+	if a.installationAccessToken.ExpiresAt.IsZero() {
 		return false
 	}
-	return time.Until(t.ExpiresAt) < 5*time.Minute
+	return time.Until(a.installationAccessToken.ExpiresAt) < 5*time.Minute
 }
 
 // Sets the URL's User field to contain the installation access token.
-func (t *installationAccessToken) SetURLUser(u *url.URL) {
-	u.User = url.UserPassword("x-access-token", t.Token)
+func (t *installationAuthenticator) SetURLUser(u *url.URL) {
+	u.User = url.UserPassword("x-access-token", t.installationAccessToken.Token)
 }

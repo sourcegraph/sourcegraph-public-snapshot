@@ -81,9 +81,9 @@ func TestCreateEnterpriseFromConnection(t *testing.T) {
 
 		authenticator, err := fromConnection(context.Background(), conn)
 		require.NoError(t, err)
-		assert.IsType(t, &installationAccessToken{}, authenticator)
+		assert.IsType(t, &installationAuthenticator{}, authenticator)
 		assert.Equal(t, installationID,
-			authenticator.(*installationAccessToken).installationID)
+			authenticator.(*installationAuthenticator).installationID)
 	})
 }
 
@@ -122,7 +122,7 @@ func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 		installationID,
 		appAuthenticator,
 	)
-	token.Token = "installation-token"
+	token.installationAccessToken.Token = "installation-token"
 
 	req, err := http.NewRequest("GET", "https://api.github.com", nil)
 	require.NoError(t, err)
@@ -149,22 +149,22 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 
 	require.True(t, appAuthenticator.AuthenticateCalled)
 
-	require.Equal(t, token.Token, "new-token")
+	require.Equal(t, token.installationAccessToken.Token, "new-token")
 	wantTime, err := time.Parse(time.RFC3339, "2016-07-11T22:14:10Z")
 	require.NoError(t, err)
-	require.True(t, token.ExpiresAt.Equal(wantTime))
+	require.True(t, token.installationAccessToken.ExpiresAt.Equal(wantTime))
 }
 
 func TestInstallationAccessToken_NeedsRefresh(t *testing.T) {
 	testCases := map[string]struct {
-		token        installationAccessToken
+		token        installationAuthenticator
 		needsRefresh bool
 	}{
-		"empty token":   {installationAccessToken{}, true},
-		"valid token":   {installationAccessToken{Token: "abc123"}, false},
-		"not expired":   {installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(10 * time.Minute)}, false},
-		"expired":       {installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(-10 * time.Minute)}, true},
-		"expiring soon": {installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(3 * time.Minute)}, true},
+		"empty token":   {installationAuthenticator{}, true},
+		"valid token":   {installationAuthenticator{installationAccessToken: installationAccessToken{Token: "abc123"}}, false},
+		"not expired":   {installationAuthenticator{installationAccessToken: installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(10 * time.Minute)}}, false},
+		"expired":       {installationAuthenticator{installationAccessToken: installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(-10 * time.Minute)}}, true},
+		"expiring soon": {installationAuthenticator{installationAccessToken: installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(3 * time.Minute)}}, true},
 	}
 
 	for name, tc := range testCases {
@@ -181,7 +181,7 @@ func TestInstallationAccessToken_SetURLUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	it := installationAccessToken{Token: token}
+	it := installationAuthenticator{installationAccessToken: installationAccessToken{Token: token}}
 	it.SetURLUser(u)
 
 	want := "x-access-token:abc123"
