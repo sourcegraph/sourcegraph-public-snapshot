@@ -38,7 +38,7 @@ fn main() {
             start_embedded_services(window);
             Ok(())
         })
-        .run(tauri::generate_context())
+        .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
@@ -86,21 +86,11 @@ fn start_embedded_services(window: tauri::Window) {
 
 fn create_tray_menu() -> SystemTrayMenu {
     SystemTrayMenu::new()
-        .add_item(
-            CustomMenuItem::new("status".to_string(), "🟢 Sourcegraph App is running").disabled(),
-        )
-        .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(CustomMenuItem::new("open".to_string(), "Sourcegraph App"))
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(
             CustomMenuItem::new("settings".to_string(), "Settings").accelerator("CmdOrCtrl+,"),
         )
-        .add_item(CustomMenuItem::new("log".to_string(), "Troubleshoot"))
-        .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(CustomMenuItem::new(
-            "updates".to_string(),
-            "Check for updates",
-        ))
         .add_item(CustomMenuItem::new(
             "about".to_string(),
             "About Sourcegraph",
@@ -125,22 +115,9 @@ fn open_window(app: &AppHandle) {
     }
 }
 
-fn get_status(app: &AppHandle) -> String {
-    let window = app.get_window("main").unwrap();
-    match window.is_visible() {
-        Ok(true) => "🟢 Sourcegraph App is running".to_string(),
-        Ok(false) => "🔴 Sourcegraph App is paused".to_string(),
-        Err(e) => {
-            println!("Error getting window visibility: {}", e);
-            "🔴 Sourcegraph App is paused".to_string()
-        }
-    }
-}
-
 fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
     if let SystemTrayEvent::MenuItemClick { id, .. } = event {
         let _item_handle = app.tray_handle().get_item(&id);
-        dbg!(&id);
         match id.as_str() {
             "open" => open_window(app),
             "settings" => {
@@ -149,12 +126,6 @@ fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
                     .eval("window.location.href = '/setup-wizard'")
                     .unwrap();
                 open_window(app);
-            }
-            "log" => {
-                // TODO: Open log file
-            }
-            "updates" => {
-                // TODO: Check for updates
             }
             "about" => {
                 shell::open(&app.shell_scope(), "https://about.sourcegraph.com", None).unwrap()
