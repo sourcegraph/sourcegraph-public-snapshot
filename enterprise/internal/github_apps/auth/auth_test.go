@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -9,10 +11,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -138,24 +142,106 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 	appAuthenticator := &mockAuthenticator{}
 	u, err := url.Parse("https://github.com")
 	require.NoError(t, err)
-	token := NewInstallationAccessToken(
-		u,
-		1,
-		appAuthenticator,
-		keyring.Default().GitHubAppKey,
-	)
 
-	mockClient := &mockHTTPClient{}
-	require.NoError(t, token.Refresh(context.Background(), mockClient))
+	t.Run("token refreshes", func(t *testing.T) {
+		token := NewInstallationAccessToken(
+			u,
+			1,
+			appAuthenticator,
+			keyring.Default().GitHubAppKey,
+		)
 
-	require.True(t, mockClient.DoCalled)
+		mockClient := &mockHTTPClient{}
+		wantToken := mockClient.generateToken()
+		require.NoError(t, token.Refresh(context.Background(), mockClient))
 
-	require.True(t, appAuthenticator.AuthenticateCalled)
+		require.True(t, mockClient.DoCalled)
 
-	require.Equal(t, token.installationAccessToken.Token, "new-token")
-	wantTime, err := time.Parse(time.RFC3339, "2016-07-11T22:14:10Z")
-	require.NoError(t, err)
-	require.True(t, token.installationAccessToken.ExpiresAt.Equal(wantTime))
+		require.True(t, appAuthenticator.AuthenticateCalled)
+
+		require.Equal(t, token.installationAccessToken.Token, wantToken.Token)
+		require.True(t, token.installationAccessToken.ExpiresAt.Equal(wantToken.ExpiresAt))
+	})
+
+	t.Run("uses token cache", func(t *testing.T) {
+		rcache.SetupForTest(t)
+
+		// We create 2 tokens for the same installation ID
+		token1 := NewInstallationAccessToken(
+			u,
+			1,
+			appAuthenticator,
+			keyring.Default().GitHubAppKey,
+		)
+		token2 := NewInstallationAccessToken(
+			u,
+			1,
+			appAuthenticator,
+			keyring.Default().GitHubAppKey,
+		)
+
+		// We create a token for token1
+		mockClient := &mockHTTPClient{}
+		wantToken := mockClient.generateToken()
+		require.NoError(t, token1.Refresh(context.Background(), mockClient))
+
+		require.True(t, mockClient.DoCalled)
+		require.True(t, appAuthenticator.AuthenticateCalled)
+
+		require.True(t, token1.installationAccessToken.ExpiresAt.Equal(wantToken.ExpiresAt))
+		require.Equal(t, token1.installationAccessToken.Token, wantToken.Token)
+
+		// First we generate a new token for the mockClient so that we're sure
+		// we're not returning the same one.
+		mockClient.generateToken()
+		require.NotEqual(t, mockClient.installationAccessToken, wantToken)
+		// Now we refresh token2 and assert that we get the same token from the cache
+		token2.Refresh(context.Background(), mockClient)
+		require.True(t, token1.installationAccessToken.ExpiresAt.Equal(token2.installationAccessToken.ExpiresAt))
+		require.Equal(t, token1.installationAccessToken.Token, token2.installationAccessToken.Token)
+	})
+
+	t.Run("refreshes cache if stale", func(t *testing.T) {
+		rcache.SetupForTest(t)
+
+		// We create 2 tokens for the same installation ID
+		token1 := NewInstallationAccessToken(
+			u,
+			1,
+			appAuthenticator,
+			keyring.Default().GitHubAppKey,
+		)
+		token2 := NewInstallationAccessToken(
+			u,
+			1,
+			appAuthenticator,
+			keyring.Default().GitHubAppKey,
+		)
+
+		// We create a token for token1
+		mockClient := &mockHTTPClient{}
+		mockClient.generateToken()
+		mockClient.installationAccessToken.ExpiresAt = time.Now().Add(-1 * time.Hour)
+		wantToken := mockClient.installationAccessToken
+		require.NoError(t, token1.Refresh(context.Background(), mockClient))
+
+		require.True(t, mockClient.DoCalled)
+		require.True(t, appAuthenticator.AuthenticateCalled)
+
+		require.True(t, token1.installationAccessToken.ExpiresAt.Equal(wantToken.ExpiresAt))
+		require.Equal(t, token1.installationAccessToken.Token, wantToken.Token)
+
+		// First we generate a new token for the mockClient so that we're sure
+		// we're not returning the same one.
+		mockClient.generateToken()
+		require.NotEqual(t, mockClient.installationAccessToken, wantToken)
+		// Now we refresh token2 and assert that we get A DIFFERENT token from the cache
+		token2.Refresh(context.Background(), mockClient)
+		require.False(t, token1.installationAccessToken.ExpiresAt.Equal(token2.installationAccessToken.ExpiresAt))
+		require.NotEqual(t, token1.installationAccessToken.Token, token2.installationAccessToken.Token)
+		// For good measure, assert that token2 is not expired
+		require.False(t, token2.NeedsRefresh())
+	})
 }
 
 func TestInstallationAccessToken_NeedsRefresh(t *testing.T) {
@@ -207,14 +293,25 @@ func (m *mockAuthenticator) Hash() string {
 }
 
 type mockHTTPClient struct {
-	DoCalled bool
+	DoCalled                bool
+	installationAccessToken installationAccessToken
 }
 
 func (c *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	c.DoCalled = true
+	marshal, err := json.Marshal(c.installationAccessToken)
+	if err != nil {
+		return nil, err
+	}
 
 	return &http.Response{
 		StatusCode: http.StatusCreated,
-		Body:       io.NopCloser(strings.NewReader(`{"token": "new-token", "expires_at": "2016-07-11T22:14:10Z"}`)),
+		Body:       io.NopCloser(bytes.NewReader(marshal)),
 	}, nil
+}
+
+func (c *mockHTTPClient) generateToken() installationAccessToken {
+	c.installationAccessToken.Token = uuid.New().String()
+	c.installationAccessToken.ExpiresAt = time.Now().Add(1 * time.Hour)
+	return c.installationAccessToken
 }
