@@ -1,10 +1,14 @@
 package upload
 
 import (
+	"archive/tar"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"os"
+	"path"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -15,13 +19,13 @@ import (
 // instance. If the upload file is large, it may be split into multiple segments and
 // uploaded over multiple requests. The identifier of the upload is returned after a
 // successful upload.
-func UploadIndex(ctx context.Context, filename string, httpClient Client, opts UploadOptions) (int, error) {
-	originalReader, originalSize, err := openFileAndGetSize(filename)
+func UploadIndex(ctx context.Context, indexPath string, httpClient Client, opts UploadOptions) (int, error) {
+	uncompressedReader, originalSize, err := createReaderForIndex(indexPath)
 	if err != nil {
 		return 0, err
 	}
 	defer func() {
-		_ = originalReader.Close()
+		_ = uncompressedReader.Close()
 	}()
 
 	bars := []output.ProgressBar{{Label: "Compressing", Max: 1.0}}
@@ -32,7 +36,7 @@ func UploadIndex(ctx context.Context, filename string, httpClient Client, opts U
 		"Failed to compress index",
 	)
 
-	compressedFile, err := compressReaderToDisk(originalReader, originalSize, progress)
+	compressedFile, err := compressReaderToDisk(uncompressedReader, originalSize, progress)
 	if err != nil {
 		cleanup(err)
 		return 0, err
@@ -67,6 +71,64 @@ func UploadIndex(ctx context.Context, filename string, httpClient Client, opts U
 	}
 
 	return uploadMultipartIndex(ctx, httpClient, opts, compressedReader, compressedSize, originalSize)
+}
+
+func createReaderForIndex(indexPath string) (uncompressedReader io.ReadCloser, originalSize int64, err error) {
+	stat, err := os.Stat(indexPath)
+	if err != nil {
+		return nil, 0, err
+	}
+	if stat.IsDir() {
+		uncompressedReader, originalSize, err = createTarForShardedIndex(indexPath)
+	} else {
+		originalSize = stat.Size()
+		uncompressedReader, err = os.Open(indexPath)
+	}
+	if err != nil {
+		return
+	}
+	return
+}
+
+func createTarForShardedIndex(indexPath string) (tarFile io.ReadCloser, originalSize int64, err error) {
+	var dirEntries []os.DirEntry
+	dirEntries, err = os.ReadDir(indexPath)
+	if err != nil {
+		return
+	}
+	var shardSize int64
+	var shardFile *os.File
+	var buf bytes.Buffer
+	tarWriter := tar.NewWriter(&buf)
+	for _, dirEntry := range dirEntries {
+		if !strings.HasSuffix(dirEntry.Name(), ".shard.scip") {
+			continue
+		}
+		if shardFile, shardSize, err = openFileAndGetSize(path.Join(indexPath, dirEntry.Name())); err != nil {
+			err = errors.Wrapf(err, "failed to open index shard %s", dirEntry.Name())
+			return
+		}
+		originalSize += shardSize
+		header := tar.Header{Name: dirEntry.Name(), Typeflag: tar.TypeReg, Size: shardSize}
+		if err = tarWriter.WriteHeader(&header); err != nil {
+			err = errors.Wrapf(err, "failed to write tar header for %s", dirEntry.Name())
+			return
+		}
+		var shardContents []byte
+		if shardContents, err = io.ReadAll(shardFile); err != nil {
+			err = errors.Wrapf(err, "failed to read shard file %s", dirEntry.Name())
+			return
+		}
+		if _, err = tarWriter.Write(shardContents); err != nil {
+			err = errors.Wrapf(err, "failed to copy file %s to temporary tar archive", dirEntry.Name())
+			return
+		}
+	}
+	if err = tarWriter.Close(); err != nil {
+		return
+	}
+	tarFile = io.NopCloser(bytes.NewReader(buf.Bytes()))
+	return
 }
 
 // uploadIndex uploads the index file described by the given options to a Sourcegraph
