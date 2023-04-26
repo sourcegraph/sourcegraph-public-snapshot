@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +50,7 @@ jSzka5UER3Dj1lSLMk9DkU+jrBxUsFeeiQOYhzQBaZxguvwYRIYHpg==
 func TestCreateEnterpriseFromConnection(t *testing.T) {
 	t.Run("returns OAuthBearerToken when GitHubAppDetails is nil", func(t *testing.T) {
 		ghAppsStore := store.NewMockGitHubAppsStore()
-		fromConnection := CreateEnterpriseFromConnection(ghAppsStore)
+		fromConnection := CreateEnterpriseFromConnection(ghAppsStore, keyring.Default().GitHubAppKey)
 
 		conn := &schema.GitHubConnection{
 			Token: "abc123",
@@ -70,7 +71,7 @@ func TestCreateEnterpriseFromConnection(t *testing.T) {
 		}
 		ghAppsStore := store.NewMockGitHubAppsStore()
 		ghAppsStore.GetByAppIDFunc.SetDefaultReturn(ghApp, nil)
-		fromConnection := CreateEnterpriseFromConnection(ghAppsStore)
+		fromConnection := CreateEnterpriseFromConnection(ghAppsStore, keyring.Default().GitHubAppKey)
 
 		conn := &schema.GitHubConnection{
 			GitHubAppDetails: &schema.GitHubAppDetails{
@@ -121,6 +122,7 @@ func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 		u,
 		installationID,
 		appAuthenticator,
+		keyring.Default().GitHubAppKey,
 	)
 	token.installationAccessToken.Token = "installation-token"
 
@@ -140,6 +142,7 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 		u,
 		1,
 		appAuthenticator,
+		keyring.Default().GitHubAppKey,
 	)
 
 	mockClient := &mockHTTPClient{}

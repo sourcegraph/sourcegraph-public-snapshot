@@ -14,6 +14,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
@@ -26,7 +27,7 @@ import (
 // CreateEnterpriseFromConnection creates a FromConnectionFunc that has access to
 // the provided EnterpriseDB. This gives the function access to GitHub App details
 // in the database.
-func CreateEnterpriseFromConnection(ghApps store.GitHubAppsStore) ghauth.FromConnectionFunc {
+func CreateEnterpriseFromConnection(ghApps store.GitHubAppsStore, encryptionKey encryption.Key) ghauth.FromConnectionFunc {
 	return func(ctx context.Context, conn *schema.GitHubConnection) (ghauth.RefreshableURLRequestAuthenticator, error) {
 		if conn.GitHubAppDetails == nil {
 			return &auth.OAuthBearerToken{Token: conn.Token}, nil
@@ -47,7 +48,7 @@ func CreateEnterpriseFromConnection(ghApps store.GitHubAppsStore) ghauth.FromCon
 			return nil, err
 		}
 
-		return NewInstallationAccessToken(baseURL, conn.GitHubAppDetails.InstallationID, appAuther), nil
+		return NewInstallationAccessToken(baseURL, conn.GitHubAppDetails.InstallationID, appAuther, encryptionKey), nil
 	}
 }
 
@@ -139,6 +140,7 @@ type installationAuthenticator struct {
 	baseURL                 *url.URL
 	appAuthenticator        auth.Authenticator
 	cache                   *rcache.Cache
+	encryptionKey           encryption.Key
 }
 
 // NewInstallationAccessToken implements the Authenticator interface
@@ -150,6 +152,7 @@ func NewInstallationAccessToken(
 	baseURL *url.URL,
 	installationID int,
 	appAuthenticator auth.Authenticator,
+	encryptionKey encryption.Key, // Used to encrypt the token before caching it
 ) *installationAuthenticator {
 	cache := rcache.NewWithTTL("github_app_installation_token", 55*60)
 	auther := &installationAuthenticator{
@@ -167,10 +170,17 @@ func (t *installationAuthenticator) cacheKey() string {
 
 // getFromCache returns a new installationAccessToken from the cache, and a boolean
 // indicating whether or not the fetch from cache was successful.
-func (t *installationAuthenticator) getFromCache() (iat installationAccessToken, ok bool) {
+func (t *installationAuthenticator) getFromCache(ctx context.Context) (iat installationAccessToken, ok bool) {
 	token, ok := t.cache.Get(t.cacheKey())
 	if !ok {
 		return
+	}
+	if t.encryptionKey != nil {
+		encrypted, err := t.encryptionKey.Decrypt(ctx, token)
+		if err != nil {
+			return iat, false
+		}
+		token = []byte(encrypted.String())
 	}
 
 	if err := json.Unmarshal(token, &iat); err != nil {
@@ -181,10 +191,16 @@ func (t *installationAuthenticator) getFromCache() (iat installationAccessToken,
 }
 
 // storeInCache updates the installationAccessToken in the cache.
-func (t *installationAuthenticator) storeInCache() error {
+func (t *installationAuthenticator) storeInCache(ctx context.Context) error {
 	res, err := json.Marshal(t.installationAccessToken)
 	if err != nil {
 		return err
+	}
+	if t.encryptionKey != nil {
+		res, err = t.encryptionKey.Encrypt(ctx, res)
+		if err != nil {
+			return err
+		}
 	}
 
 	t.cache.Set(t.cacheKey(), res)
@@ -197,7 +213,7 @@ func (t *installationAuthenticator) storeInCache() error {
 // installation associated with the Authenticator.
 // Returns an error if the request fails.
 func (t *installationAuthenticator) Refresh(ctx context.Context, cli httpcli.Doer) error {
-	token, ok := t.getFromCache()
+	token, ok := t.getFromCache(ctx)
 	if ok {
 		if t.installationAccessToken.Token != token.Token { // Confirm that we have a different token now
 			t.installationAccessToken = token
@@ -231,7 +247,7 @@ func (t *installationAuthenticator) Refresh(ctx context.Context, cli httpcli.Doe
 		return err
 	}
 	// Ignore if storing in cache fails somehow, since the token should still be valid
-	_ = t.storeInCache()
+	_ = t.storeInCache(ctx)
 
 	return nil
 }
