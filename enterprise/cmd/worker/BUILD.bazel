@@ -5,10 +5,6 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker",
     visibility = ["//visibility:private"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
     deps = [
         "//enterprise/cmd/sourcegraph/enterprisecmd",
         "//enterprise/cmd/worker/shared",
