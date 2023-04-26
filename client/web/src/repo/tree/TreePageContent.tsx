@@ -183,7 +183,7 @@ const ExtraInfoSectionHeader: React.FunctionComponent<React.PropsWithChildren<{ 
                 {title}
             </Text>
             <Tooltip content={tooltip}>
-                <Icon svgPath={mdiInformationOutline} aria-label="Extra information icon" />
+                <Icon svgPath={mdiInformationOutline} aria-label={title} />
             </Tooltip>
         </div>
         {children}

@@ -85,7 +85,7 @@ const AddRepoMetadata: FC<{ onDidAdd: () => void; repoID: string }> = ({ onDidAd
                         autoComplete="off"
                         required={true}
                         disabled={loading}
-                        placeholder="e.g. 'status', 'license', 'language'"
+                        message="e.g. 'status', 'license', 'language'"
                     />
                 </div>
                 <div className="form-group">
@@ -96,7 +96,7 @@ const AddRepoMetadata: FC<{ onDidAdd: () => void; repoID: string }> = ({ onDidAd
                         autoComplete="off"
                         onChange={handleValueChange}
                         disabled={loading}
-                        placeholder="e.g. 'deprecated', 'MIT', 'Go'"
+                        message="e.g. 'deprecated', 'MIT', 'Go'"
                     />
                 </div>
                 <LoaderButton variant="primary" type="submit" loading={loading} label="Add" />
@@ -166,18 +166,18 @@ export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props
     return (
         <>
             <PageTitle title="Repo metadata settings" />
-            <PageHeader path={[{ text: 'Repo metadata' }]} headingElement="h2" className="mb-3" />
+            <PageHeader path={[{ text: 'Metadata' }]} headingElement="h2" className="mb-3" />
             <Text>
                 Repository metadata allows you to search, filter and navigate between repositories. Administrators can
                 add repository metadata via the web, cli or API. Learn more about{' '}
-                <Link to="/help/admin/repo/metadata">Repository Metadata</Link>
+                <Link to="/help/admin/repo/metadata">Repository Metadata</Link>.
             </Text>
             <Container className="repo-settings-metadata-page mb-2">
                 {fetchError && <ErrorAlert error={fetchError} />}
                 {deleteError && <ErrorAlert error={deleteError} />}
                 {fetchLoading && deleteLoading && <LoadingSpinner />}
                 <Input
-                    placeholder="Search repo metadata key or value"
+                    placeholder="Filter metadata by key or value…"
                     value={searchQuery}
                     onChange={handleSearchChange}
                     className="mb-3"
@@ -185,7 +185,7 @@ export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props
                 {filteredMetadata.length ? (
                     <RepoMetadata items={filteredMetadata} onDelete={onDelete} />
                 ) : (
-                    <Text className="text-muted">No metadata</Text>
+                    <Text className="text-muted">No metadata containing "{searchQuery}"</Text>
                 )}
             </Container>
             <Container className="repo-settings-metadata-page">

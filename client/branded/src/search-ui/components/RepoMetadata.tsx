@@ -52,11 +52,11 @@ export const RepoMetadata: React.FC<RepoMetadataProps> = ({ items, className, on
             {sortedItems.map(item => (
                 <li key={`${item.key}:${item.value}`}>
                     {onDelete ? (
-                        <Tooltip content="Delete repository metadata">
+                        <Tooltip content="Delete metadata">
                             <Button
                                 className={classNames('px-1 py-0', styles.deleteButton)}
                                 variant="secondary"
-                                aria-label="Delete repository metadata"
+                                aria-label="Delete metadata"
                                 onClick={() => onDelete(item)}
                             >
                                 <Icon svgPath={mdiDelete} aria-hidden={true} className="mr-1" />
