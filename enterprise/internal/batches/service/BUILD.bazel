@@ -25,6 +25,7 @@ go_library(
         "//internal/auth",
         "//internal/authz",
         "//internal/database",
+        "//internal/database/basestore",
         "//internal/database/locker",
         "//internal/errcode",
         "//internal/extsvc",
