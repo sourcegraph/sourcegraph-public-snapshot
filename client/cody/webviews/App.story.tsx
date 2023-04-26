@@ -13,16 +13,26 @@ const meta: ComponentMeta<typeof App> = {
     parameters: {
         component: App,
         chromatic: {
-            enableDarkMode: true,
             disableSnapshot: false,
         },
     },
 }
 
+// Attempt to fix the issue where this test does not render on Storybook
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const originalSetValidity = ElementInternals.prototype.setValidity
+ElementInternals.prototype.setValidity = function (...args) {
+    return originalSetValidity.call(this, {})
+}
+
 export default meta
 
 export const Simple: ComponentStoryObj<typeof App> = {
-    render: () => <App vscodeAPI={dummyVSCodeAPI} />,
+    render: () => (
+        <div style={{ background: 'rgb(28, 33, 40)' }}>
+            <App vscodeAPI={dummyVSCodeAPI} />
+        </div>
+    ),
 }
 
 const dummyVSCodeAPI: VSCodeWrapper = {
