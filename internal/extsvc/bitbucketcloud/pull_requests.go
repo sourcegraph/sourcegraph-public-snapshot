@@ -23,6 +23,7 @@ type PullRequestInput struct {
 	// If SourceRepo is provided, only FullName is actually used.
 	SourceRepo        *Repo
 	DestinationBranch *string
+	CloseSourceBranch bool
 }
 
 // CreatePullRequest opens a new pull request.
