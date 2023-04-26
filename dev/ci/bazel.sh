@@ -2,6 +2,7 @@
 
 if [[ "${CI:-false}" == "true" ]]; then
   if [[ "$1"  == "build" || "$1" == "test" || "$1" == "run" ]]; then
+    # shellcheck disable=SC2145
     echo "--- :bazel: bazel $@"
   fi
   bazel \
