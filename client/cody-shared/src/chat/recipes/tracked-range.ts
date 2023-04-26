@@ -34,10 +34,11 @@ export function updateRange<
     PositionType extends TrackedPosition<PositionType>
 >(range: RangeType, change: TextChange<RangeType, PositionType>): RangeType | null {
     const lines = change.text.split(/\r\n|\r|\n/m)
-    const insertedTextIsOneLine = lines.length === 0
-    const insertedFirstLine = lines[0].length
-    const insertedLastLine = lines.at(-1)!.length
-    const insertedLines = lines.length - 1
+    const insertedLastLine = lines.at(-1)?.length
+    if (typeof insertedLastLine === 'undefined') {
+        throw new TypeError('unreachable') // Any string .split produces a non-empty array.
+    }
+    const insertedLineBreaks = lines.length - 1
 
     // Handle character deletions
     // ...after
@@ -49,17 +50,19 @@ export function updateRange<
     if (change.range.end.isBeforeOrEqual(range.start)) {
         range = range.with(
             range.start.translate(
-                change.range.start.line - change.range.end.line + insertedLines,
+                change.range.start.line - change.range.end.line + insertedLineBreaks,
                 change.range.end.line === range.start.line
                     ? insertedLastLine +
                           -change.range.end.character +
-                          (change.range.start.line === change.range.end.line ? change.range.start.character : 0)
+                          (insertedLineBreaks === 0 ? change.range.start.character : 0)
                     : 0
             ),
             range.end.translate(
-                change.range.start.line - change.range.end.line + insertedLines,
+                change.range.start.line - change.range.end.line + insertedLineBreaks,
                 change.range.end.line === range.end.line
-                    ? change.range.start.character - change.range.end.character + insertedLastLine
+                    ? insertedLastLine -
+                          change.range.end.character +
+                          (insertedLineBreaks === 0 ? change.range.start.character : 0)
                     : 0
             )
         )
@@ -73,7 +76,7 @@ export function updateRange<
         range = range.with(
             range.start,
             range.end.translate(
-                change.range.start.line - change.range.end.line + insertedLines,
+                change.range.start.line - change.range.end.line + insertedLineBreaks,
                 change.range.end.line === range.end.line
                     ? change.range.start.character - change.range.end.character + insertedLastLine
                     : 0
@@ -86,12 +89,14 @@ export function updateRange<
             // Move the start of the decoration to the end of the change
             change.range.end.translate(
                 change.range.start.line - change.range.end.line,
-                change.range.start.character - change.range.end.character
+                change.range.start.character - change.range.end.character + insertedLastLine
             ),
             // Adjust the end of the decoration for the range deletion
             range.end.translate(
                 change.range.start.line - change.range.end.line,
-                change.range.end.line === range.end.line ? change.range.start.character - change.range.end.character : 0
+                change.range.end.line === range.end.line
+                    ? change.range.start.character - change.range.end.character + insertedLastLine
+                    : 0
             )
         )
     }
