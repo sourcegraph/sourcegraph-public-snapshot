@@ -1484,7 +1484,6 @@ ts_project(
         "src/site-admin/webhooks/backend.ts",
         "src/site-admin/webhooks/story/StyledPerformanceGauge.tsx",
         "src/site-admin/webhooks/story/fixtures.ts",
-        "src/site/DockerForMacAlert.tsx",
         "src/site/FreeUsersExceededAlert.tsx",
         "src/site/LicenseExpirationAlert.tsx",
         "src/site/NeedsRepositoryConfigurationAlert.tsx",

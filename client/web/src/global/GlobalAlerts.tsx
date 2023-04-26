@@ -12,7 +12,6 @@ import { Link, Markdown } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables } from '../graphql-operations'
-import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
@@ -71,10 +70,6 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                             noLicenseWarningUserCount={siteFlagsValue.productSubscription.noLicenseWarningUserCount}
                             className={styles.alert}
                         />
-                    )}
-                    {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
-                    {navigator.userAgent.includes('Mac OS X') && window.context.deployType === 'docker-container' && (
-                        <DockerForMacAlert className={styles.alert} />
                     )}
                     {siteFlagsValue.alerts.map((alert, index) => (
                         <GlobalAlert key={index} alert={alert} className={styles.alert} />
