@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 
 import { CopyButtonProps } from '../Chat'
 
@@ -74,5 +74,5 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
         }
     }, [copyButtonClassName, displayText, CopyButtonProps])
 
-    return <div dangerouslySetInnerHTML={{ __html: renderMarkdown(displayText) }} />
+    return useMemo(() => <div dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />, [displayText])
 }

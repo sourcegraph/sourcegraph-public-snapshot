@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react'
 import { TextFieldType } from '@vscode/webview-ui-toolkit/dist/text-field'
 import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 
 import styles from './Login.module.css'
@@ -90,7 +90,10 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                     </a>
                 </div>
             </section>
-            <div className={styles.terms} dangerouslySetInnerHTML={{ __html: renderMarkdown(CODY_TERMS_MARKDOWN) }} />
+            <div
+                className={styles.terms}
+                dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(CODY_TERMS_MARKDOWN) }}
+            />
         </div>
     )
 }

@@ -59,11 +59,6 @@ export const renderMarkdown = (
         headerPrefix?: string
         /** Strip off any HTML and return a plain text string, useful for previews */
         plainText?: boolean
-        /**
-         * Wether to sanitize the output HTML or not.
-         * 🚨 SECURITY: defaults to false
-         **/
-        sanitize?: boolean
     } = {}
 ): string => {
     const tokenizer = new marked.Tokenizer()
@@ -78,7 +73,6 @@ export const renderMarkdown = (
     const rendered = marked(markdown, {
         gfm: true,
         breaks: options.breaks,
-        sanitize: typeof options.sanitize === 'undefined' ? false : options.sanitize,
         highlight: (code, language) => highlightCodeSafe(code, language),
         renderer: options.renderer,
         headerPrefix: options.headerPrefix ?? '',
