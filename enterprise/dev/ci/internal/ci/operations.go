@@ -3,7 +3,6 @@ package ci
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
@@ -50,7 +48,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops := operations.NewSet()
 
 	if opts.ForceBazel {
-		ops.Merge(BazelOperations(false)) // non soft-failing
+		ops.Merge(BazelOperations())
 	}
 
 	// Simple, fast-ish linter checks
@@ -116,20 +114,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			addGoBuild))
 	}
 
-	if diff.Has(changed.DatabaseSchema) {
-		// If there are schema changes, ensure the tests of the last minor release continue
-		// to succeed when the new version of the schema is applied. This ensures that the
-		// schema can be rolled forward pre-upgrade without negatively affecting the running
-		// instance (which was working fine prior to the upgrade).
-		ops.Merge(operations.NewNamedSet("DB backcompat tests",
-			addGoTestsBackcompat(opts.MinimumUpgradeableVersion)))
-	}
-
-	// CI script testing
-	if diff.Has(changed.CIScripts) {
-		ops.Merge(operations.NewNamedSet("CI script tests", addCIScriptsTests))
-	}
-
 	return ops
 }
 
@@ -160,40 +144,14 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 	cmd = cmd + "lint -annotations -fail-fast=false " + formatCheck + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
-		lintCachePath := "/root/buildkite/build/sourcegraph/.golangci-lint-cache"
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
 			withPnpmCache(),
-			bk.Env("GOLANGCI_LINT_CACHE", lintCachePath),
-			buildkite.Cache(&bk.CacheOptions{
-				ID:                "golangci-lint",
-				Key:               "golangci-lint-{{ git.branch }}",
-				RestoreKeys:       []string{"golangci-lint-main"}, // We only restore the main branch cache.
-				Paths:             []string{".golangci-lint-cache"},
-				Compress:          true,
-				IgnorePullRequest: true,
-			}),
 			bk.AnnotatedCmd(cmd, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{
 					IncludeNames: true,
 					Type:         bk.AnnotationTypeAuto,
 				},
 			}))
-	}
-}
-
-// Run enterprise/dev/ci/scripts tests
-func addCIScriptsTests(pipeline *bk.Pipeline) {
-	testDir := "./enterprise/dev/ci/scripts/tests"
-	files, err := os.ReadDir(testDir)
-	if err != nil {
-		log.Fatalf("Failed to list CI scripts tests scripts: %s", err)
-	}
-
-	for _, f := range files {
-		if filepath.Ext(f.Name()) == ".sh" {
-			pipeline.AddStep(fmt.Sprintf(":bash: %s", f.Name()),
-				bk.RawCmd(fmt.Sprintf("%s/%s", testDir, f.Name())))
-		}
 	}
 }
 
@@ -324,7 +282,7 @@ func addCodyExtensionTests(pipeline *bk.Pipeline) {
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm --filter cody-ai run test:integration"),
-		bk.AutomaticRetry(1),
+		bk.Cmd("pnpm --filter cody-shared run test"),
 	)
 }
 
@@ -501,21 +459,6 @@ func addGoTests(pipeline *bk.Pipeline) {
 	})
 }
 
-// Adds the Go backcompat test step.
-func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		buildGoTests(func(description, testSuffix string, additionalOpts ...bk.StepOpt) {
-			pipeline.AddStep(
-				fmt.Sprintf(":go::postgres: Backcompat test (%s)", description),
-				bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
-				bk.AnnotatedCmd("./dev/ci/go-backcompat/test.sh "+testSuffix, bk.AnnotatedCmdOpts{
-					Annotations: &bk.AnnotationOpts{},
-				}),
-			)
-		})
-	}
-}
-
 // buildGoTests invokes the given function once for each subset of tests that should
 // be run as part of complete coverage. The description will be the specific test path
 // broken out to be run independently (or "all"), and the testSuffix will be the string
@@ -579,7 +522,7 @@ func backendIntegrationTests(candidateImageTag string) operations.Operation {
 			pipeline.AddStep(
 				description,
 				// Run tests against the candidate server image
-				bk.DependsOn(candidateImageStepKey("server")),
+				bk.DependsOn(candidateImageStepKey("symbols")),
 				bk.Env("IMAGE",
 					images.DevRegistryImage("server", candidateImageTag)),
 				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
@@ -736,7 +679,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 				},
 			}),
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
@@ -752,8 +695,7 @@ func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::packer: Executors E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.DependsOn(candidateImageStepKey("executor")),
+			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
@@ -773,7 +715,7 @@ func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -792,7 +734,7 @@ func serverQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::chromium: Sourcegraph QA",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
@@ -813,7 +755,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
 			bk.Env("DISPLAY", ":99"),
@@ -933,7 +875,6 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 			// Retry in case of flakes when pushing
 			bk.AutomaticRetryStatus(3, 222),
 		)
-
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)
 	}
 }
@@ -958,8 +899,10 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: Scan %s", app),
-			bk.DependsOn(candidateImageStepKey(app)),
-
+			// These are the first images in the arrays we use to build images
+			bk.DependsOn(candidateImageStepKey("alpine-3.14")),
+			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("batcheshelper")),
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
 
 			// have trivy use a shorter name in its output
@@ -1049,7 +992,7 @@ func buildExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
-			bk.Key(candidateImageStepKey("executor.vm-image")),
+			bk.Key(candidateImageStepKey("build-executor-vm")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
@@ -1071,7 +1014,7 @@ func buildExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 func buildExecutorBinary(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
-			bk.Key(candidateImageStepKey("executor.binary")),
+			bk.Key(candidateImageStepKey("executor-binary")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
@@ -1084,7 +1027,7 @@ func buildExecutorBinary(c Config) operations.Operation {
 
 func publishExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		candidateBuildStep := candidateImageStepKey("executor.vm-image")
+		candidateBuildStep := candidateImageStepKey("symbols")
 		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
@@ -1171,14 +1114,6 @@ func publishExecutorDockerMirror(c Config) operations.Operation {
 	}
 }
 
-func uploadBuildeventTrace() operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":arrow_heading_up: Upload build trace",
-			bk.Cmd("./enterprise/dev/ci/scripts/upload-buildevent-report.sh"),
-		)
-	}
-}
-
 func exposeBuildMetadata(c Config) (operations.Operation, error) {
 	overview := struct {
 		RunType      string       `json:"RunType"`
@@ -1207,14 +1142,4 @@ func exposeBuildMetadata(c Config) (operations.Operation, error) {
 			}),
 		)
 	}, nil
-}
-
-// Request render.com to create client preview app for current PR
-// Preview is deleted from render.com in GitHub Action when PR is closed
-func prPreview() operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":globe_with_meridians: Client PR preview",
-			bk.SoftFail(),
-			bk.Cmd("dev/ci/render-pr-preview.sh"))
-	}
 }

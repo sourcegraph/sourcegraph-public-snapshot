@@ -1,3 +1,4 @@
+import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
 import { RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
 import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
@@ -52,12 +53,20 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
+    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+        return this.mocks.getActiveTextEditorSelection?.() ?? null
+    }
+
     public getActiveTextEditor(): ActiveTextEditor | null {
         return this.mocks.getActiveTextEditor?.() ?? null
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
         return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
+    }
+
+    public replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
+        return this.mocks.replaceSelection?.(fileName, selectedText, replacement) ?? Promise.resolve()
     }
 
     public showQuickPick(labels: string[]): Promise<string | undefined> {
@@ -83,6 +92,13 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
         editor: args.editor || defaultEditor,
         intentDetector: args.intentDetector || defaultIntentDetector,
         codebaseContext:
-            args.codebaseContext || new CodebaseContext('none', defaultEmbeddingsClient, defaultKeywordContextFetcher),
+            args.codebaseContext ||
+            new CodebaseContext(
+                { useContext: 'none' },
+                'dummy-codebase',
+                defaultEmbeddingsClient,
+                defaultKeywordContextFetcher
+            ),
+        responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
     }
 }

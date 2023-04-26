@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
@@ -9,18 +8,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import {
-    Alert,
-    Form,
-    Input,
-    LoadingSpinner,
-    Text,
-    Badge,
-    Link,
-    Tooltip,
-    Icon,
-    useSessionStorage,
-} from '@sourcegraph/wildcard'
+import { Alert, Form, Input, LoadingSpinner, Text, Badge, useSessionStorage } from '@sourcegraph/wildcard'
 
 import { CodyIcon } from '../../../cody/CodyIcon'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
@@ -38,10 +26,7 @@ interface CodeSearchPageProps {
     telemetryService: TelemetryService
 }
 
-export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
-    authenticatedUser,
-    telemetryService,
-}) => {
+export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ authenticatedUser }) => {
     useEffect(() => {
         eventLogger.logPageView('CodySearch')
     }, [])
@@ -72,30 +57,46 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
             return
         }
 
-        eventLogger.log('web:codySearch:submit', { input: sanitizedInput })
+        eventLogger.log('web:codySearch:submit', { input: sanitizedInput }, { input: sanitizedInput })
         setLoading(true)
         translateToQuery(sanitizedInput, authenticatedUser).then(
             query => {
                 setLoading(false)
 
                 if (query) {
-                    eventLogger.log('web:codySearch:submitSucceeded', { input: sanitizedInput, translatedQuery: query })
+                    eventLogger.log(
+                        'web:codySearch:submitSucceeded',
+                        { input: sanitizedInput, translatedQuery: query },
+                        { input: sanitizedInput, translatedQuery: query }
+                    )
                     setCodySearchInput(JSON.stringify({ input: sanitizedInput, translatedQuery: query }))
                     navigate({
                         pathname: '/search',
                         search: buildSearchURLQuery(query, SearchPatternType.regexp, false) + '&ref=cody-search',
                     })
                 } else {
-                    eventLogger.log('web:codySearch:submitFailed', { input: sanitizedInput, reason: 'untranslatable' })
+                    eventLogger.log(
+                        'web:codySearch:submitFailed',
+                        { input: sanitizedInput, reason: 'untranslatable' },
+                        { input: sanitizedInput, reason: 'untranslatable' }
+                    )
                     setInputError('Cody does not understand this query. Try rephrasing it.')
                 }
             },
             error => {
-                eventLogger.log('web:codySearch:submitFailed', {
-                    input: sanitizedInput,
-                    reason: 'unreachable',
-                    error: error?.message,
-                })
+                eventLogger.log(
+                    'web:codySearch:submitFailed',
+                    {
+                        input: sanitizedInput,
+                        reason: 'unreachable',
+                        error: error?.message,
+                    },
+                    {
+                        input: sanitizedInput,
+                        reason: 'unreachable',
+                        error: error?.message,
+                    }
+                )
                 setLoading(false)
                 setInputError(`Unable to reach Cody. Error: ${error?.message}`)
             }
@@ -107,21 +108,7 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', searchPageStyles.searchPage)}>
             <BrandLogo className={searchPageStyles.logo} isLightTheme={isLightTheme} variant="logo" />
-            <div className="d-sm-flex flex-row text-center">
-                <div className={classNames(styles.slogan, 'text-muted mt-3 mr-sm-2 pr-2')}>
-                    Searching millions of public repositories
-                </div>
-                <div className="mt-3">
-                    <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
-                        <Link
-                            to="https://about.sourcegraph.com/app"
-                            onClick={() => telemetryService.log('ClickedOnAppCTA', { location: 'HomeAboveSearch' })}
-                        >
-                            Download Sourcegraph app <Icon svgPath={mdiArrowRight} aria-hidden={true} />
-                        </Link>
-                    </Tooltip>
-                </div>
-            </div>
+            <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">Searching millions of public repositories</div>
             {codyEnabled ? (
                 <SearchInput
                     value={input}

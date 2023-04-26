@@ -41,7 +41,6 @@ go_library(
         "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
-        "@org_golang_x_sync//errgroup",
     ],
 )
 

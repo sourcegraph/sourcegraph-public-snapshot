@@ -84,7 +84,7 @@ ts_project(
         "sign-in.test.ts",
     ],
     tsconfig = ":tsconfig",
-    usePresetEnv = False,
+    use_preset_env = False,
     deps = [
         ":integration",
         "//:node_modules/@types/lodash",
@@ -114,6 +114,7 @@ mocha_test(
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
     },
     flaky = True,
+    is_percy_enabled = True,
     tags = [
         "no-sandbox",
     ],

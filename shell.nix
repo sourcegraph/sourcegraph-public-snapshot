@@ -24,7 +24,7 @@ let
   #
   # Additionally bazel seems to break when CC and CXX is set to a nix managed
   # compiler on darwin. So the script unsets those.
-  bazelisk = pkgs.writeScriptBin "bazel" ''
+  bazel-wrapper = pkgs.writeScriptBin "bazel" ''
     #!${pkgs.stdenv.shell}
     unset CC CXX
     exec ${pkgs.bazelisk}/bin/bazelisk "$@"
@@ -59,7 +59,6 @@ pkgs.mkShell {
     # CI lint tools you need locally
     shfmt
     shellcheck
-    golangci-lint
 
     # Web tools. Need node 16.7 so we use unstable. Yarn should also be built
     # against it.
@@ -82,10 +81,13 @@ pkgs.mkShell {
     clippy
 
     bazelisk
+    bazel-wrapper
+    bazel-watcher
   ];
 
   # Startup postgres
   shellHook = ''
+    set -h # command hashmap is disabled by default
     . ./dev/nix/shell-hook.sh
   '';
 

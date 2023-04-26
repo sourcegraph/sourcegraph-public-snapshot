@@ -4,6 +4,8 @@ load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
 
 npm_link_all_packages(name = "node_modules")
 
+# gazelle:js_resolve vscode //:node_modules/@vscode
+
 ts_config(
     name = "tsconfig",
     src = "tsconfig.json",
@@ -11,29 +13,34 @@ ts_config(
     deps = [
         "//:tsconfig",
         "//client/common:tsconfig",
+        "//client/http-client:tsconfig",
     ],
 )
 
 ts_project(
     name = "cody-shared_lib",
     srcs = [
-        "package.json",
+        "src/chat/bot-response-multiplexer.ts",
         "src/chat/chat.ts",
         "src/chat/client.ts",
+        "src/chat/context.ts",
         "src/chat/markdown.ts",
         "src/chat/preamble.ts",
+        "src/chat/recipes/browser-recipes.ts",
         "src/chat/recipes/chat-question.ts",
         "src/chat/recipes/explain-code-detailed.ts",
         "src/chat/recipes/explain-code-high-level.ts",
+        "src/chat/recipes/find-code-smells.ts",
+        "src/chat/recipes/fixup.ts",
         "src/chat/recipes/generate-docstring.ts",
         "src/chat/recipes/generate-test.ts",
         "src/chat/recipes/git-log.ts",
         "src/chat/recipes/helpers.ts",
         "src/chat/recipes/improve-variable-names.ts",
-        "src/chat/recipes/index.ts",
         "src/chat/recipes/langs.ts",
         "src/chat/recipes/recipe.ts",
         "src/chat/recipes/translate.ts",
+        "src/chat/recipes/vscode-recipes.ts",
         "src/chat/transcript/index.ts",
         "src/chat/transcript/interaction.ts",
         "src/chat/transcript/messages.ts",
@@ -42,6 +49,7 @@ ts_project(
         "src/codebase-context/messages.ts",
         "src/configuration.ts",
         "src/editor/index.ts",
+        "src/editor/withPreselectedOptions.ts",
         "src/embeddings/client.ts",
         "src/embeddings/index.ts",
         "src/hallucinations-detector/index.ts",
@@ -61,18 +69,21 @@ ts_project(
         "src/sourcegraph-api/graphql/index.ts",
         "src/sourcegraph-api/graphql/queries.ts",
         "src/sourcegraph-api/index.ts",
+        "src/sourcegraph-api/utils.ts",
         "src/telemetry/EventLogger.ts",
-        "src/timestamp.ts",
         "src/utils.ts",
     ],
     tsconfig = ":tsconfig",
     # TODO(bazel): "#keep"s required for type-only imports
     deps = [
         ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/http-client",
         "//:node_modules/@microsoft/fetch-event-source",
         "//:node_modules/@types/isomorphic-fetch",
         "//:node_modules/@types/node",
         "//:node_modules/@types/uuid",
+        "//:node_modules/@types/vscode",  #keep
+        "//:node_modules/@vscode",
         "//:node_modules/isomorphic-fetch",
         "//:node_modules/uuid",
     ],
@@ -80,15 +91,20 @@ ts_project(
 
 npm_package(
     name = "cody-shared_pkg",
-    srcs = [":cody-shared_lib"],
+    srcs = [
+        "package.json",
+        ":cody-shared_lib",
+    ],
 )
 
 ts_project(
     name = "cody-shared_tests",
     testonly = True,
     srcs = [
+        "src/chat/bot-response-multiplexer.test.ts",
         "src/chat/transcript/transcript.test.ts",
         "src/hallucinations-detector/index.test.ts",
+        "src/sourcegraph-api/utils.test.ts",
         "src/test/mocks.ts",
     ],
     tsconfig = ":tsconfig",

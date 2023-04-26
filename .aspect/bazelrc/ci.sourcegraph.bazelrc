@@ -3,11 +3,6 @@
 # Docs: https://bazel.build/reference/command-line-reference#flag--repository_cache
 build --repository_cache=/home/buildkite/repocache-sourcegraph
 
-# Use Disk caching for building and testing.
-# Article: https://buildkite.com/blog/how-bazel-built-its-ci-system-on-top-of-buildkite
-# Docs: https://bazel.build/reference/command-line-reference#flag--disk_cache
-build --disk_cache=/home/buildkite/diskcache
-
 # We need /usr/local/bin
 # TODO(DevX) we should be narrower here.
 build --test_env=PATH
@@ -30,5 +25,9 @@ build --test_env=BUILDKITE
 build --test_env=E2E_HEADLESS=false
 build --test_env=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"
 build --test_env=GH_TOKEN
+
+# Needed for integration tests
+build --test_env=PERCY_TOKEN
+
 # temp
 build --test_env=INCLUDE_ADMIN_ONBOARDING=false

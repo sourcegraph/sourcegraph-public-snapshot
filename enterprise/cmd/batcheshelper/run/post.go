@@ -75,6 +75,9 @@ func Post(
 		return errors.Wrap(err, "failed to get changes in diff")
 	}
 	outputs := previousResult.Outputs
+	if outputs == nil {
+		outputs = make(map[string]interface{})
+	}
 	stepContext := template.StepContext{
 		BatchChange: executionInput.BatchChangeAttributes,
 		Repository: template.Repository{
@@ -98,6 +101,15 @@ func Post(
 	}
 	for k, v := range outputs {
 		stepResult.Outputs[k] = v
+	}
+
+	err = logger.WriteEvent(
+		batcheslib.LogEventOperationTaskStep,
+		batcheslib.LogEventStatusSuccess,
+		&batcheslib.TaskStepMetadata{Version: 2, Step: stepIdx, Diff: diff, Outputs: outputs},
+	)
+	if err != nil {
+		return err
 	}
 
 	// Serialize the step result to disk.

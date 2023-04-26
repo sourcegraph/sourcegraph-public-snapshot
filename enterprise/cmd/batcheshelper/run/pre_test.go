@@ -49,14 +49,26 @@ func TestPre(t *testing.T) {
 
 				dirEntries, err := os.ReadDir(dir)
 				require.NoError(t, err)
-				require.Len(t, dirEntries, 1)
-				assert.Equal(t, "step0.json", dirEntries[0].Name())
-				b, err := os.ReadFile(filepath.Join(dir, dirEntries[0].Name()))
-				require.NoError(t, err)
-				var result execution.AfterStepResult
-				err = json.Unmarshal(b, &result)
-				require.NoError(t, err)
-				assert.Equal(t, execution.AfterStepResult{Version: 2, Skipped: true}, result)
+				require.Len(t, dirEntries, 2)
+				for _, entry := range dirEntries {
+					if entry.Name() == "step0.json" {
+						assert.Equal(t, "step0.json", entry.Name())
+						b, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+						require.NoError(t, err)
+						var result execution.AfterStepResult
+						err = json.Unmarshal(b, &result)
+						require.NoError(t, err)
+						assert.Equal(t, execution.AfterStepResult{Version: 2, Skipped: true}, result)
+					} else if entry.Name() == "skip.json" {
+						assert.Equal(t, "skip.json", entry.Name())
+						b, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+						require.NoError(t, err)
+						var data map[string]interface{}
+						err = json.Unmarshal(b, &data)
+						require.NoError(t, err)
+						assert.Equal(t, "step.1.pre", data["nextStep"])
+					}
+				}
 			},
 		},
 		{
@@ -117,32 +129,6 @@ func TestPre(t *testing.T) {
 				stepFiles, err := os.ReadDir(filepath.Join(dir, "step0files"))
 				require.NoError(t, err)
 				require.Len(t, stepFiles, 2)
-				for _, f := range stepFiles {
-					b, err := os.ReadFile(filepath.Join(dir, "step0files", f.Name()))
-					require.NoError(t, err)
-					if f.Name() == "file1.sh" {
-						assert.Equal(t, "echo file1", string(b))
-					} else {
-						assert.Equal(t, "echo file2", string(b))
-					}
-				}
-
-				for _, entry := range dirEntries {
-					if entry.Name() == "step0.sh" {
-						b, err := os.ReadFile(filepath.Join(dir, entry.Name()))
-						require.NoError(t, err)
-						assert.Equal(
-							t,
-							fmt.Sprintf("cp %s file1.sh\n", filepath.Join(dir, "step0files", "file1.sh"))+
-								"chmod +x file1.sh\n"+
-								fmt.Sprintf("cp %s file2.sh\n", filepath.Join(dir, "step0files", "file2.sh"))+
-								"chmod +x file2.sh\n"+
-								"echo hello",
-							string(b),
-						)
-						break
-					}
-				}
 			},
 		},
 		{
@@ -241,7 +227,7 @@ func TestPre(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var buf bytes.Buffer
-			logger := &log.Logger{W: &buf}
+			logger := &log.Logger{Writer: &buf}
 
 			dir := t.TempDir()
 

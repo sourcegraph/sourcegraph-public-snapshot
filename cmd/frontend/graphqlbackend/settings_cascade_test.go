@@ -29,10 +29,10 @@ func TestMergeSettings(t *testing.T) {
 		name: "empty left",
 		left: &schema.Settings{},
 		right: &schema.Settings{
-			AlertsCodeHostIntegrationMessaging: "test",
+			SearchDefaultMode: "test",
 		},
 		expected: &schema.Settings{
-			AlertsCodeHostIntegrationMessaging: "test",
+			SearchDefaultMode: "test",
 		},
 	}, {
 		name: "merge bool ptr",
@@ -40,11 +40,11 @@ func TestMergeSettings(t *testing.T) {
 			AlertsHideObservabilitySiteAlerts: boolPtr(true),
 		},
 		right: &schema.Settings{
-			AlertsCodeHostIntegrationMessaging: "test",
+			SearchDefaultMode: "test",
 		},
 		expected: &schema.Settings{
-			AlertsCodeHostIntegrationMessaging: "test",
-			AlertsHideObservabilitySiteAlerts:  boolPtr(true),
+			SearchDefaultMode:                 "test",
+			AlertsHideObservabilitySiteAlerts: boolPtr(true),
 		},
 	}, {
 		name: "merge bool",

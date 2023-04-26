@@ -6,7 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/log"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -341,7 +341,17 @@ func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseRe
 }
 
 func (r *UserResolver) ViewerCanAdminister() (bool, error) {
-	// 🚨 SECURITY: Only the authenticated user can administrate themselves on
+	err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID)
+	if errcode.IsUnauthorized(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (r *UserResolver) viewerCanAdministerSettings() (bool, error) {
+	// 🚨 SECURITY: Only the authenticated user can administrate settings themselves on
 	// Sourcegraph.com.
 	var err error
 	if envvar.SourcegraphDotComMode() {
@@ -482,6 +492,25 @@ func (r *UserResolver) ViewerCanChangeUsername() bool {
 	return viewerCanChangeUsername(r.actor, r.db, r.user.ID)
 }
 
+func (r *UserResolver) CompletionsQuotaOverride(ctx context.Context) (*int32, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to see quotas.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		return nil, err
+	}
+
+	v, err := r.db.Users().GetCompletionsQuota(ctx, r.user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if v == nil {
+		return nil, nil
+	}
+
+	iv := int32(*v)
+	return &iv, nil
+}
+
 func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := r.ID()
 	args.Namespace = &id
@@ -553,4 +582,42 @@ func (r *UserResolver) ToUser() (*UserResolver, bool) {
 
 func (r *UserResolver) OwnerField() string {
 	return EnterpriseResolvers.ownResolver.UserOwnerField(r)
+}
+
+type SetUserCompletionsQuotaArgs struct {
+	User  graphql.ID
+	Quota *int32
+}
+
+func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUserCompletionsQuotaArgs) (*UserResolver, error) {
+	// 🚨 SECURITY: Only site admins are allowed to change a users quota.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if args.Quota != nil && *args.Quota <= 0 {
+		return nil, errors.New("quota must be 1 or greater")
+	}
+
+	id, err := UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify the ID is valid.
+	user, err := r.db.Users().GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	var quota *int
+	if args.Quota != nil {
+		i := int(*args.Quota)
+		quota = &i
+	}
+	if err := r.db.Users().SetCompletionsQuota(ctx, user.ID, quota); err != nil {
+		return nil, err
+	}
+
+	return UserByIDInt32(ctx, r.db, user.ID)
 }

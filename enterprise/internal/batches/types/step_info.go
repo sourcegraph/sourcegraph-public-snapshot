@@ -92,7 +92,7 @@ func ParseLogLines(entry executor.ExecutionLogEntry, lines []*batcheslib.LogEven
 }
 
 // ParseLines parses the given log lines and calls the given safeFunc for each.
-func ParseLines(lines []*batcheslib.LogEvent, safeFunc SetSafeFunc) {
+func ParseLines(lines []*batcheslib.LogEvent, safeFunc SetFunc) {
 	for _, l := range lines {
 		switch m := l.Metadata.(type) {
 		case *batcheslib.TaskSkippingStepsMetadata:
@@ -147,11 +147,11 @@ func ParseLines(lines []*batcheslib.LogEvent, safeFunc SetSafeFunc) {
 	}
 }
 
-// SetSafeFunc is a function that can be used to set a value on a StepInfo.
-type SetSafeFunc func(step int, cb func(*StepInfo))
+// SetFunc is a function that can be used to set a value on a StepInfo.
+type SetFunc func(step int, cb func(*StepInfo))
 
-// DefaultSetSafeFunc is the default SetSafeFunc that can be used with ParseLines.
-func DefaultSetSafeFunc(info *StepInfo) SetSafeFunc {
+// DefaultSetFunc is the default SetFunc that can be used with ParseLines.
+func DefaultSetFunc(info *StepInfo) SetFunc {
 	return func(step int, cb func(*StepInfo)) {
 		cb(info)
 	}

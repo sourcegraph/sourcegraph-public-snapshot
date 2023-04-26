@@ -1,3 +1,4 @@
+import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
 import { KeywordContextFetcher } from '../keyword-context'
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
@@ -14,24 +15,35 @@ export interface ContextSearchOptions {
 
 export class CodebaseContext {
     constructor(
-        private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
+        private config: Pick<Configuration, 'useContext'>,
+        private codebase: string | undefined,
         private embeddings: EmbeddingsSearch | null,
-        private keywords: KeywordContextFetcher
+        private keywords: KeywordContextFetcher | null
     ) {}
 
+    public getCodebase(): string | undefined {
+        return this.codebase
+    }
+
+    public onConfigurationChange(newConfig: typeof this.config): void {
+        this.config = newConfig
+    }
+
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        switch (this.contextType) {
-            case 'blended':
+        switch (this.config.useContext) {
+            case 'embeddings' || 'blended':
                 return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
                     : this.getKeywordContextMessages(query, options)
-            case 'embeddings':
-                return this.getEmbeddingsContextMessages(query, options)
             case 'keyword':
                 return this.getKeywordContextMessages(query, options)
             default:
-                return []
+                return this.getEmbeddingsContextMessages(query, options)
         }
+    }
+
+    public checkEmbeddingsConnection(): boolean {
+        return !!this.embeddings
     }
 
     // We split the context into multiple messages instead of joining them into a single giant message.
@@ -74,6 +86,10 @@ export class CodebaseContext {
     }
 
     private async getKeywordContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+        if (!this.keywords) {
+            return []
+        }
+
         const results = await this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
         return results.flatMap(({ content, fileName }) => {
             const messageText = populateCodeContextTemplate(content, fileName)

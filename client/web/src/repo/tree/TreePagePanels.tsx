@@ -3,6 +3,7 @@ import React, { FC, useCallback, useRef, useState, useMemo, useEffect } from 're
 import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
 
+import { basename, dirname } from '@sourcegraph/common'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Card,
@@ -19,7 +20,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { BlobFileFields } from '../../graphql-operations'
-import { basename, dirname } from '../../util/path'
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 

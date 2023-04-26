@@ -58,7 +58,6 @@ func Pre(
 		}); err != nil {
 			return err
 		}
-		fmt.Printf("batcheshelper pre %d skipped\n", stepIdx)
 
 		// Write the step result file with the skipped flag set.
 		stepResult := execution.AfterStepResult{
@@ -73,38 +72,48 @@ func Pre(
 			return errors.Wrap(err, "failed to write step result file")
 		}
 
+		// Determine the next step to run.
+		next := nextStep(stepIdx, executionInput.SkippedSteps)
+		// Write the skip file.
+		if err = util.WriteSkipFile(workingDirectory, next); err != nil {
+			return errors.Wrap(err, "failed to write skip file")
+		}
+
 		return nil
-	} else {
-		// Parse and render the step.Files.
-		filesToMount, err := createFilesToMount(workingDirectory, stepIdx, step, &stepContext)
+	}
+
+	// Parse and render the step.Files.
+	filesToMount, err := createFilesToMount(workingDirectory, stepIdx, step, &stepContext)
+	if err != nil {
+		return errors.Wrap(err, "failed to create files to mount")
+	}
+	if len(filesToMount) > 0 {
+		// Sort the keys for consistent unit testing.
+		keys := make([]string, len(filesToMount))
+		i := 0
+		for k := range filesToMount {
+			keys[i] = k
+			i++
+		}
+		sort.Strings(keys)
+
+		for _, path := range keys {
+			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", filesToMount[path], path))
+			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("chmod", "+x", path))
+		}
+	}
+
+	// Mount any paths on the local system to the docker container. The paths have already been validated during parsing.
+	for _, mount := range step.Mount {
+		fmt.Println("mount.Path", mount.Path, "mount.Mountpoint", mount.Mountpoint)
+		workspaceFilePath, err := getAbsoluteMountPath(workspaceFilesPath, mount.Path)
+		fmt.Println("workspaceFilePath", workspaceFilePath)
+
 		if err != nil {
-			return errors.Wrap(err, "failed to create files to mount")
+			return errors.Wrap(err, "getAbsoluteMountPath")
 		}
-		if len(filesToMount) > 0 {
-			// Sort the keys for consistent unit testing.
-			keys := make([]string, len(filesToMount))
-			i := 0
-			for k := range filesToMount {
-				keys[i] = k
-				i++
-			}
-			sort.Strings(keys)
-
-			for _, path := range keys {
-				fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", filesToMount[path], path))
-				fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("chmod", "+x", path))
-			}
-		}
-
-		// Mount any paths on the local system to the docker container. The paths have already been validated during parsing.
-		for _, mount := range step.Mount {
-			workspaceFilePath, err := getAbsoluteMountPath(workspaceFilesPath, mount.Path)
-			if err != nil {
-				return errors.Wrap(err, "getAbsoluteMountPath")
-			}
-			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", "-r", workspaceFilePath, mount.Mountpoint))
-			fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("chmod", "-R", "+x", mount.Mountpoint))
-		}
+		fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("cp", "-r", workspaceFilePath, mount.Mountpoint))
+		fileMountsPreamble += fmt.Sprintf("%s\n", shellquote.Join("chmod", "-R", "+x", mount.Mountpoint))
 	}
 
 	// Render the step.Env template.
@@ -234,4 +243,15 @@ func getAbsoluteMountPath(batchSpecDir string, mountPath string) (string, error)
 		p += string(filepath.Separator)
 	}
 	return p, nil
+}
+
+func nextStep(currentStep int, skippedSteps map[int]struct{}) int {
+	// TODO: this can eventually do dynamic checking instead of just checking the statically skipped steps.
+	next := currentStep + 1
+	for {
+		if _, ok := skippedSteps[next]; !ok {
+			return next
+		}
+		next++
+	}
 }

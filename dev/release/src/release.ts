@@ -726,6 +726,7 @@ cc @${release.captainGitHubUsername}
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
                             updateUpgradeGuides(release.previous.version, release.version.version),
+                            `comby -in-place 'git_versions=(:[1])' 'git_versions=(:[1] ${release.version.version})' cmd/migrator/build.sh`,
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -899,19 +900,28 @@ Batch change: ${batchChangeURL}`,
             const release = await getActiveRelease(config)
             let failed = false
 
+            const defaultBranchPattern = `${release.branch}`
+            const defaultTagPattern = `v${release.version.version}`
+            const defaults = { branchPattern: defaultBranchPattern, tagPattern: defaultTagPattern }
+            const repoConfigs = [
+                { repo: 'deploy-sourcegraph', ...defaults },
+                { repo: 'deploy-sourcegraph-docker', ...defaults },
+                { repo: 'deploy-sourcegraph-docker-customer-replica-1', ...defaults },
+                { repo: 'deploy-sourcegraph-k8s', ...defaults },
+                {
+                    repo: 'deploy-sourcegraph-helm',
+                    branchPattern: `release/${release.branch}`,
+                    tagPattern: `sourcegraph-${release.version.version}`,
+                },
+            ]
+
             const owner = 'sourcegraph'
             // Push final tags
-            const tag = `v${release.version.version}`
-            for (const repo of [
-                'deploy-sourcegraph',
-                'deploy-sourcegraph-docker',
-                'deploy-sourcegraph-docker-customer-replica-1',
-                'deploy-sourcegraph-k8s',
-            ]) {
+            for (const repoConfig of repoConfigs) {
                 try {
                     const client = await getAuthenticatedGitHubClient()
-                    const { workdir } = await cloneRepo(client, owner, repo, {
-                        revision: release.branch,
+                    const { workdir } = await cloneRepo(client, owner, repoConfig.repo, {
+                        revision: repoConfig.branchPattern,
                         revisionMustExist: true,
                     })
                     await createTag(
@@ -919,9 +929,9 @@ Batch change: ${batchChangeURL}`,
                         workdir,
                         {
                             owner,
-                            repo,
-                            branch: release.branch,
-                            tag,
+                            repo: repoConfig.repo,
+                            branch: repoConfig.branchPattern,
+                            tag: repoConfig.tagPattern,
                         },
                         config.dryRun.tags || false
                     )

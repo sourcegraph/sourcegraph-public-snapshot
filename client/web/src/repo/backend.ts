@@ -52,6 +52,10 @@ export const repositoryFragment = gql`
             abbrevName
         }
         isFork
+        metadata {
+            key
+            value
+        }
     }
 `
 

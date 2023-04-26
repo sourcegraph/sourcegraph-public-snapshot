@@ -2,6 +2,13 @@ import * as anthropic from '@anthropic-ai/sdk'
 import { ChatCompletionRequestMessage } from 'openai'
 import * as vscode from 'vscode'
 
+import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import {
+    CodeCompletionParameters,
+    CodeCompletionResponse,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+
+import { CompletionsCache } from './cache'
 import { ReferenceSnippet, getContext } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
 import { History } from './history'
@@ -13,13 +20,17 @@ function lastNLines(text: string, n: number): string {
 }
 
 const estimatedLLMResponseLatencyMS = 700
+const inlineCompletionsCache = new CompletionsCache()
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptTokens: number
     private maxPrefixTokens: number
     private maxSuffixTokens: number
+    private abortOpenInlineCompletions: () => void = () => {}
+    private abortOpenMultilineCompletion: () => void = () => {}
+
     constructor(
-        private claude: anthropic.Client | null,
+        private completionsClient: SourcegraphNodeCompletionsClient,
         private documentProvider: CompletionsDocumentProvider,
         private history: History,
         private contextWindowTokens = 2048, // 8001
@@ -42,6 +53,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
+            if (error.message === 'aborted') {
+                return []
+            }
+
             await vscode.window.showErrorMessage(`Error in provideInlineCompletionItems: ${error}`)
             return []
         }
@@ -57,10 +72,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         context: vscode.InlineCompletionContext,
         token: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
-        if (!this.claude) {
-            console.log('claude not activated')
-            return []
-        }
+        this.abortOpenInlineCompletions()
+        const abortController = new AbortController()
+        token.onCancellationRequested(() => abortController.abort())
+        this.abortOpenInlineCompletions = () => abortController.abort()
 
         const docContext = getCurrentDocContext(
             document,
@@ -73,45 +88,79 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         const { prefix, prevLine: precedingLine } = docContext
+
+        const cachedCompletions = inlineCompletionsCache.get(prefix)
+        if (cachedCompletions) {
+            return cachedCompletions.map(r => new vscode.InlineCompletionItem(r.content))
+        }
+
         let waitMs: number
         const remainingChars = this.tokToChar(this.promptTokens)
         const completers: CompletionProvider[] = []
         if (precedingLine.trim() === '') {
             // Start of line: medium debounce
-            waitMs = 1500
+            waitMs = 500
             completers.push(
-                new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '', 2)
+                new EndOfLineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    prefix,
+                    '',
+                    2 // tries
+                )
             )
         } else if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || precedingLine.endsWith('.')) {
             // Do nothing
             return []
         } else {
             // End of line: long debounce, complete until newline
-            waitMs = 3000
+            waitMs = 1000
             completers.push(
-                new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '', 2),
-                new EndOfLineCompletionProvider(this.claude, remainingChars, this.responseTokens, prefix, '\n', 2)
+                new EndOfLineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    prefix,
+                    '',
+                    2 // tries
+                ),
+                // Create a completion request for the current prefix with a new line added. This
+                // will make for faster recommendations when the user presses enter.
+                new EndOfLineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    prefix,
+                    '\n', // force a new line in the case we are at end of line
+                    1 // tries
+                )
             )
         }
 
-        const aborter = new AbortController()
-        token.onCancellationRequested(() => aborter.abort())
-
         // TODO(beyang): trigger on context quality (better context means longer completion)
 
-        const waiter = new Promise<void>(resolve =>
+        await new Promise<void>(resolve =>
             setTimeout(() => resolve(), Math.max(0, waitMs - estimatedLLMResponseLatencyMS))
         )
-        await waiter
-        const results = (await Promise.all(completers.map(c => c.generateCompletions()))).flat()
+
+        // We don't need to make a request at all if the signal is already aborted after the
+        // debounce
+        if (abortController.signal.aborted) {
+            return []
+        }
+
+        const results = (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
+
+        inlineCompletionsCache.add(results)
+
         return results.map(r => new vscode.InlineCompletionItem(r.content))
     }
 
     public async fetchAndShowCompletions(): Promise<void> {
-        if (!this.claude) {
-            console.log('claude not activated')
-            return
-        }
+        this.abortOpenMultilineCompletion()
+        const abortController = new AbortController()
+        this.abortOpenMultilineCompletion = () => abortController.abort()
 
         const currentEditor = vscode.window.activeTextEditor
         if (!currentEditor || currentEditor?.document.uri.scheme === 'cody') {
@@ -161,7 +210,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const remainingChars = this.tokToChar(this.promptTokens)
 
         const completer = new MultilineCompletionProvider(
-            this.claude,
+            this.completionsClient,
             remainingChars,
             this.responseTokens,
             similarCode,
@@ -169,14 +218,18 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         )
 
         try {
-            const completions = await completer.generateCompletions(3)
+            const completions = await completer.generateCompletions(abortController.signal, 3)
             this.documentProvider.addCompletions(completionsUri, ext, completions, {
                 suffix: '',
                 elapsedMillis: 0,
                 llmOptions: null,
             })
         } catch (error) {
-            await vscode.window.showErrorMessage(`Error in provideInlineCompletionItems: ${error}`)
+            if (error.message === 'aborted') {
+                return
+            }
+
+            await vscode.window.showErrorMessage(`Error in fetchAndShowCompletions: ${error}`)
         }
     }
 }
@@ -260,31 +313,33 @@ function getCurrentDocContext(
     }
 }
 
-async function batchClaude(
-    claude: anthropic.Client,
-    params: anthropic.SamplingParameters,
-    n: number
-): Promise<anthropic.CompletionResponse[]> {
-    const responses: Promise<anthropic.CompletionResponse>[] = []
+async function batchCompletions(
+    client: SourcegraphNodeCompletionsClient,
+    params: CodeCompletionParameters,
+    n: number,
+    abortSignal: AbortSignal
+): Promise<CodeCompletionResponse[]> {
+    const responses: Promise<CodeCompletionResponse>[] = []
     for (let i = 0; i < n; i++) {
-        responses.push(claude.complete(params))
+        responses.push(client.complete(params, abortSignal))
     }
     return Promise.all(responses)
 }
 
 export interface Completion {
+    prefix: string
     prompt: string
     content: string
     stopReason?: string
 }
 
 interface CompletionProvider {
-    generateCompletions(n?: number): Promise<Completion[]>
+    generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]>
 }
 
 export class MultilineCompletionProvider implements CompletionProvider {
     constructor(
-        private claude: anthropic.Client,
+        private completionsClient: SourcegraphNodeCompletionsClient,
         private promptChars: number,
         private responseTokens: number,
         private snippets: ReferenceSnippet[],
@@ -367,7 +422,9 @@ export class MultilineCompletionProvider implements CompletionProvider {
         return completion.trimEnd()
     }
 
-    public async generateCompletions(n?: number): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {
+        const prefix = this.prefix.trim()
+
         // Create prompt
         const prompt = this.makePrompt()
         if (prompt.length > this.promptChars) {
@@ -375,28 +432,33 @@ export class MultilineCompletionProvider implements CompletionProvider {
         }
 
         // Issue request
-        const responses = await batchClaude(
-            this.claude,
+        const responses = await batchCompletions(
+            this.completionsClient,
             {
                 prompt,
-                stop_sequences: [anthropic.HUMAN_PROMPT],
-                max_tokens_to_sample: this.responseTokens,
+                stopSequences: [anthropic.HUMAN_PROMPT],
+                maxTokensToSample: this.responseTokens,
                 model: 'claude-instant-v1.0',
+                temperature: 1, // default value (source: https://console.anthropic.com/docs/api/reference)
+                topK: -1, // default value
+                topP: -1, // default value
             },
-            n || this.defaultN
+            n || this.defaultN,
+            abortSignal
         )
         // Post-process
         return responses.map(resp => ({
+            prefix,
             prompt,
             content: this.postProcess(resp.completion),
-            stopReason: resp.stop_reason,
+            stopReason: resp.stopReason,
         }))
     }
 }
 
 export class EndOfLineCompletionProvider implements CompletionProvider {
     constructor(
-        private claude: anthropic.Client,
+        private completionsClient: SourcegraphNodeCompletionsClient,
         private promptChars: number,
         private responseTokens: number,
         private prefix: string,
@@ -449,7 +511,7 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
     }
 
     private postProcess(completion: string): string {
-        // Sometimes Claude omits an extra space
+        // Sometimes Claude emits an extra space
         if (
             completion.length > 0 &&
             completion.startsWith(' ') &&
@@ -470,7 +532,9 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
         return completion.trimEnd()
     }
 
-    public async generateCompletions(n?: number): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {
+        const prefix = this.prefix + this.injectPrefix
+
         // Create prompt
         const prompt = this.makePrompt()
         if (prompt.length > this.promptChars) {
@@ -478,21 +542,26 @@ export class EndOfLineCompletionProvider implements CompletionProvider {
         }
 
         // Issue request
-        const responses = await batchClaude(
-            this.claude,
+        const responses = await batchCompletions(
+            this.completionsClient,
             {
                 prompt,
-                stop_sequences: [anthropic.HUMAN_PROMPT, '\n'],
-                max_tokens_to_sample: this.responseTokens,
+                stopSequences: [anthropic.HUMAN_PROMPT, '\n'],
+                maxTokensToSample: this.responseTokens,
                 model: 'claude-instant-v1.0',
+                temperature: 1,
+                topK: -1,
+                topP: -1,
             },
-            n || this.defaultN
+            n || this.defaultN,
+            abortSignal
         )
         // Post-process
         return responses.map(resp => ({
+            prefix,
             prompt,
             content: this.postProcess(resp.completion),
-            stopReason: resp.stop_reason,
+            stopReason: resp.stopReason,
         }))
     }
 }

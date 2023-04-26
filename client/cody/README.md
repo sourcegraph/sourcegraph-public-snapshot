@@ -1,86 +1,74 @@
-<div align="center">
-    <p>Cody: An AI-Powered Programming Assistant</p>
-    <a href="https://docs.sourcegraph.com/cody">Docs</a> •
-    <a href="https://discord.gg/s2qDtYGnAE">Discord</a> •
-    <a href="https://twitter.com/sourcegraph">Twitter</a>
-    <br /><br />
-    <a href="https://srcgr.ph/discord">
-        <img src="https://img.shields.io/discord/969688426372825169?color=5765F2" alt="Discord" />
-    </a>
-    <a href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
-        <img src="https://img.shields.io/vscode-marketplace/v/sourcegraph.cody-ai.svg?label=vs%20marketplace" alt="VS Marketplace" />
-    </a>
-</div>
+# Cody: AI code assistant
 
-## Cody (experimental)
+Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
 
-Cody is a coding assistant that answers code questions and writes code for you by reading your entire codebase and the code graph.
+**Status:** experimental ([join the open beta](https://docs.sourcegraph.com/cody))
 
-**Status:** experimental ([request access](https://about.sourcegraph.com/cody))
+[**Full documentation**](https://docs.sourcegraph.com/cody)
 
-## Main features
+## Features
 
-- Answer questions about your codebase instantly
-- Generate documentation and unit tests on demand
-- Write code snippets and prototypes for you
-- Translate comments and functions in your code between languages
+<!-- NOTE: These should stay roughly in sync with doc/cody/index.md, although that page needs to be not specific to VS Code. -->
 
-## Installation
+- **🤖 Chatbot that knows _your_ code:** Writes code and answers questions with knowledge of your entire codebase, following your project's code conventions and architecture better than other AI code chatbots.
+- **✨ Fixup code:** Interactively writes and refactors code for you, based on quick natural-language instructions.
+- **🧪 Recipes:** Generates unit tests, documentation, and more, with full codebase awareness.
 
-Here are the ways to install Cody in Visual Studio Code:
+## Usage
 
-### In Visual Studio Code
+1. Install the [Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai).
+1. Open Cody (from the activity bar or by pressing <kbd>Alt+/</kbd>/<kbd>Opt+/</kbd>) and sign in.
+1. Start using it! Read on to learn about the chatbot, fixups, and recipes.
 
-1. Open the Extensions tab on the left side of VS Code (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).
-2. Search for `Sourcegraph Cody` and click Install.
-3. Once installed, **reload** VS Code.
-4. After reloading, click the Cody icon in the VS Code Activity Bar to open the extension.
-   - Alternatively, you can launch the extension by pressing <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> and searching for "Cody: Focus on chat view" and searching for "Cody: Focus on chat view".
+### 🤖 Chatbot that knows _your_ code
 
-### Through the Visual Studio Marketplace
+[**📽️ Demo**](https://twitter.com/beyang/status/1647744307045228544)
 
-1. Install Cody from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai).
-2. After installing the plugin, click the Cody icon in the VS Code Activity Bar to open the extension.
+To start chatting with Cody, click on the Cody icon in the activity bar (or press <kbd>Alt+/</kbd>/<kbd>Opt+/</kbd>, or run the `Cody: Focus on Chat View` command).
 
-## Setting up the Cody extension
+Examples of the kinds of questions Cody can handle:
 
-To set up the Cody extension, you will need to enter the URL of your Sourcegraph instance and an access token used for authentication.
+- How is our app's secret storage implemented on Linux?
+- Where is the CI config for the web integration tests?
+- Write a new GraphQL resolver for the AuditLog.
+- Why is the UserConnectionResolver giving an error `unknown user`, and how do I fix it?
 
-1. Open the Cody chat view by clicking on the Cody icon in the sidebar.
-2. If you are setting up Cody for the first time, you should see the terms of service.
-3. To proceed, read the terms and click "I accept", if you accept the terms of service.
-4. Aftewards, you should see the login screen, where you have to enter the URL of your Sourcegraph instance and an access token used for authentication.
-5. Once you have filled out the login form, click the Login button to login to Cody.
+Cody tells you which code files it read to generate its response. (If Cody gives a wrong answer, please share feedback so we can improve it.)
 
-### Generating a Sourcegraph access token
+**Note:** For full codebase awareness, you must set the `cody.codebase` setting to the name of the repository on the connected Sourcegraph instance.
 
-1. Go to your Sourcegraph instance.
-2. In your account settings, navigate to `Access tokens`.
-3. Click `Generate new token`.
-4. Copy the token.
+### ✨ Fixup code
 
-### Codebase
+[**📽️ Demo**](https://twitter.com/sqs/status/1647673013343780864)
 
-To enable codebase-aware answers, you have to set the codebase setting to let Cody know which repository you are working on in the current workspace. You can do that as follows:
+Just sprinkle your code with instructions in natural language, select the code, and run `Cody: Fixup` (<kbd>Ctrl+Alt+/</kbd>/<kbd>Ctrl+Opt+/</kbd>). Cody will figure out what edits to make.
 
-1. Open the VS Code workspace settings by pressing <kbd>Cmd</kbd>, (or File > Preferences (Settings) on Windows & Linux).
-2. Search for the "Cody: Codebase" setting.
-3. Enter the repository name as listed on your Sourcegraph instance.
-   1. For example: `github.com/sourcegraph/sourcegraph` without the `https` protocol
+Examples of the kinds of fixup instructions Cody can handle:
 
-Setting the codebase will edit the `.vscode/settings.json` file in your repository, which you can then commit and save for future usage.
+- "Factor out any common helper functions" (when multiple functions are selected)
+- "Use the imported CSS module's class names"
+- "Extract the list item to a separate React component"
+- "Handle errors better"
+- "Add helpful debug log statements"
+- "Make this work" (seriously, it often works--try it!)
 
-## Extension Settings
+### 🧪 Recipes
 
-This extension contributes the following settings:
+Right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
 
-| Setting             | Description                                                                                                                  | Example                              |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| cody.enabled        | Enable or disable Cody.                                                                                                      | true/false                           |
-| cody.serverEndpoint | URL of the Sourcegraph instance.                                                                                             | "https://example.sourcegraph.com"    |
-| cody.codebase       | Name of the repository opened in the current workspace. Use the same repository name as listed on your Sourcegraph instance. | "github.com/sourcegraph/sourcegraph" |
-| cody.useContext     | Context source for Cody. One of: "embeddings", "keyword", "blended", or "none".                                              | "embeddings"                         |
+- Explain Code
+- Generate Unit Test
+- Generate Docstring
+- Improve Variable Names
+
+We welcome PRs that contribute new, useful recipes.
+
+## Feedback
+
+- [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
+- [Discord chat](https://discord.gg/s2qDtYGnAE)
+- [@sourcegraph (Twitter)](https://twitter.com/sourcegraph)
 
 ## Development
 
-Please see the [CONTRIBUTING](./CONTRIBUTING.md) document if you are interested in contributing to our code base.
+[Cody's code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/cody) is open source (Apache 2). See [CONTRIBUTING.md](./CONTRIBUTING.md).

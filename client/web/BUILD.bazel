@@ -181,7 +181,14 @@ ts_project(
         "src/codeintel/useCodeIntel.ts",
         "src/codeintel/useRepoAndBlob.ts",
         "src/codeintel/util/helpers.ts",
+        "src/cody/ChatHistory.tsx",
+        "src/cody/CodeMirrorEditor.ts",
+        "src/cody/CodyChat.tsx",
         "src/cody/CodyIcon.tsx",
+        "src/cody/widgets/CodyRecipesWidget.tsx",
+        "src/cody/widgets/components/Recipe.tsx",
+        "src/cody/widgets/components/RecipeAction.tsx",
+        "src/cody/widgets/components/Recipes.tsx",
         "src/communitySearchContexts/Backstage.tsx",
         "src/communitySearchContexts/CommunitySearchContextPage.tsx",
         "src/communitySearchContexts/HomepageConfig.ts",
@@ -305,6 +312,7 @@ ts_project(
         "src/components/useUserHistory.ts",
         "src/contributions.ts",
         "src/enterprise/EnterpriseWebApp.tsx",
+        "src/enterprise/app-main.tsx",
         "src/enterprise/app/AppAuthCallbackPage.tsx",
         "src/enterprise/app/AppComingSoonPage.tsx",
         "src/enterprise/batches/BatchChangeTabs.tsx",
@@ -1010,7 +1018,6 @@ ts_project(
         "src/initBuildInfo.ts",
         "src/insights/Icons.tsx",
         "src/insights/types.ts",
-        "src/insights/utils/is-code-insights-enabled.ts",
         "src/insights/utils/use-series-toggle.ts",
         "src/jscontext.ts",
         "src/lsif/html.ts",
@@ -1210,6 +1217,7 @@ ts_project(
         "src/repo/blob/codemirror/token-selection/modifier-click.ts",
         "src/repo/blob/codemirror/token-selection/selections.ts",
         "src/repo/blob/codemirror/tooltips/CodeIntelTooltip.tsx",
+        "src/repo/blob/codemirror/tooltips/CodyTooltip.tsx",
         "src/repo/blob/codemirror/tooltips/LoadingTooltip.ts",
         "src/repo/blob/codemirror/tooltips/TemporaryTooltip.tsx",
         "src/repo/blob/codemirror/utils.ts",
@@ -1224,6 +1232,7 @@ ts_project(
         "src/repo/branches/RepositoryBranchesArea.tsx",
         "src/repo/branches/RepositoryBranchesNavbar.tsx",
         "src/repo/branches/RepositoryBranchesOverviewPage.tsx",
+        "src/repo/cody/AskCodyButton.tsx",
         "src/repo/commit/CommitMessageWithLinks.tsx",
         "src/repo/commit/DiffModeSelector.tsx",
         "src/repo/commit/RepositoryCommitPage.tsx",
@@ -1250,7 +1259,6 @@ ts_project(
         "src/repo/repoContainerRoutes.tsx",
         "src/repo/repoHeaderActionButtons.tsx",
         "src/repo/repoRevisionContainerRoutes.tsx",
-        "src/repo/repoRevisionSidebar/cody/RepoRevisionSidebarCody.tsx",
         "src/repo/repoRevisionSidebar/cody/backend.tsx",
         "src/repo/settings/RepoSettingsArea.tsx",
         "src/repo/settings/RepoSettingsIndexPage.tsx",
@@ -1476,13 +1484,15 @@ ts_project(
         "src/site-admin/webhooks/backend.ts",
         "src/site-admin/webhooks/story/StyledPerformanceGauge.tsx",
         "src/site-admin/webhooks/story/fixtures.ts",
-        "src/site/DockerForMacAlert.tsx",
         "src/site/FreeUsersExceededAlert.tsx",
         "src/site/LicenseExpirationAlert.tsx",
         "src/site/NeedsRepositoryConfigurationAlert.tsx",
         "src/site/backend.ts",
         "src/site/index.ts",
         "src/staticAppConfig.ts",
+        "src/stores/codyChat.ts",
+        "src/stores/codySidebar.ts",
+        "src/stores/editor.ts",
         "src/stores/index.ts",
         "src/stores/navbarSearchQueryState.ts",
         "src/stores/notepad.ts",
@@ -1576,6 +1586,8 @@ ts_project(
         "src/user/settings/profile/EditUserProfileForm.tsx",
         "src/user/settings/profile/UserProfileFormFields.tsx",
         "src/user/settings/profile/UserSettingsProfilePage.tsx",
+        "src/user/settings/quota/UserQuotaProfilePage.tsx",
+        "src/user/settings/quota/backend.ts",
         "src/user/settings/research/ProductResearch.tsx",
         "src/user/settings/routes.tsx",
         "src/user/settings/sidebaritems.ts",
@@ -1584,7 +1596,6 @@ ts_project(
         "src/util/dom.ts",
         "src/util/getReactElements.ts",
         "src/util/index.tsx",
-        "src/util/path.tsx",
         "src/util/prettyBytesBigint.ts",
         "src/util/security.ts",
         "src/util/settings.ts",
@@ -1895,8 +1906,9 @@ jest_test(
         ":web_tests",
     ],
     patch_node_fs = False,
-    shard_count = 6,  # this is has a large impact on the duration. We came to this number empirically.
+    shard_count = 12,  # empirical
     tags = [
+        "manual",  # we manually run those tests after everything else, to ensure we have enough resources.
         "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],
 )
@@ -1962,6 +1974,7 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
             "NODE_ENV": "production" if prod else "development",
         },
         output_dir = True,
+        visibility = ["//ui/assets:__subpackages__"],
         webpack_config = "webpack.bazel.config.js",
         deps = WEBPACK_CONFIG_DEPS,
     )
@@ -1990,11 +2003,12 @@ webpack_bundle(
         "WEBPACK_USE_NAMED_CHUNKS": "false",
     },
     output_dir = True,
+    visibility = ["//ui/assets:__subpackages__"],
     webpack_config = "webpack.bazel.config.js",
     deps = WEBPACK_CONFIG_DEPS,
 )
 
-# Used for integartion tests and has bigger bundle size
+# Used for integration tests and has bigger bundle size
 # because of the inlined source-maps.
 webpack_web_app(
     name = "app-enterprise",
@@ -2012,7 +2026,7 @@ webpack_web_app(
         "INTEGRATION_TESTS": "true",
     },
     output_dir = True,
-    visibility = ["//client/web:__subpackages__"],
+    visibility = ["//visibility:public"],
     webpack_config = "webpack.bazel.config.js",
     deps = WEBPACK_CONFIG_DEPS,
 )
@@ -2048,8 +2062,8 @@ build_test(
     ],
 )
 
-bundlesize_bin.bundlesize_test(
-    name = "bundlesize_test",
+bundlesize_bin.bundlesize_binary(
+    name = "bundlesize-report",
     args = [
         "--config",
         "$(location bundlesize.config.js)",

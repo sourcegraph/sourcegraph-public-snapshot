@@ -130,7 +130,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, errors.Wrapf(err, "failed to generate oauth context, this is likely a misconfiguration with the Azure OAuth provider (bad URL?), please check the auth.providers configuration in your site config")
 	}
 
-	oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, oauthContext)
+	oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternalAccounts(), account.ID, oauthContext)
 
 	var apiURL string
 	if mockServerURL != "" {
@@ -292,7 +292,6 @@ func (p *Provider) ValidateConnection(ctx context.Context) error {
 			},
 			nil,
 		)
-
 		if err != nil {
 			allErrors = append(allErrors, fmt.Sprintf("%s:%s", conn.URN, err.Error()))
 			continue

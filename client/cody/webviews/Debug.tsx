@@ -1,4 +1,4 @@
-import './Debug.css'
+import styles from './Debug.module.css'
 
 interface DebugProps {
     debugLog: string[]
@@ -7,9 +7,10 @@ interface DebugProps {
 export const Debug: React.FunctionComponent<React.PropsWithChildren<DebugProps>> = ({ debugLog }) => (
     <div className="inner-container">
         <div className="non-transcript-container">
-            <div className="debug-container" data-tab-target="debug">
+            <div className={styles.debugContainer} data-tab-target="debug">
                 {debugLog?.map((log, i) => (
-                    <div key={`log-${i}`} className="debug-message">
+                    // eslint-disable-next-line react/no-array-index-key
+                    <div key={i} className={styles.debugMessage}>
                         {log}
                     </div>
                 ))}
