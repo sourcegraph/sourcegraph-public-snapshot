@@ -245,7 +245,7 @@ func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *M
 		return MockUpdateMergeRequest(c, ctx, project, mr, opts)
 	}
 
-	if conf.Get().BatchChangesAutoDeleteBranch == true {
+	if conf.Get().BatchChangesAutoDeleteBranch {
 		opts.RemoveSourceBranch = true
 	} else {
 		opts.RemoveSourceBranch = false
