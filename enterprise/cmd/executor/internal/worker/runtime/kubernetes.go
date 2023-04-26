@@ -62,7 +62,6 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types
 				Env:       step.Env,
 				Operation: r.operations.Exec,
 			},
-			Index: index,
 			Image: step.Image,
 		}
 	}

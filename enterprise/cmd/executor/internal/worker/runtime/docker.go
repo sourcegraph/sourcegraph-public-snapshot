@@ -56,7 +56,6 @@ func (r *dockerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types.Doc
 				Env:       step.Env,
 				Operation: r.operations.Exec,
 			},
-			Index:      index,
 			Image:      step.Image,
 			ScriptPath: ws.ScriptFilenames()[i],
 		}

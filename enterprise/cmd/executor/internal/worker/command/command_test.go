@@ -76,26 +76,6 @@ func TestCommand_Run(t *testing.T) {
 			},
 			expectedErr: errors.New("command failed with exit code 1"),
 		},
-		{
-			name:         "Step skipped",
-			command:      []string{"git", "pull"},
-			mockExitCode: 0,
-			mockStdout:   "batcheshelper pre 1 skipped\n",
-			mockFunc: func(t *testing.T, cmdRunner *fakeCmdRunner, logger *mockLogger) {
-				logEntry := new(mockLogEntry)
-				logger.
-					On("LogEntry", "some-key", []string{"git", "pull"}).
-					Return(logEntry)
-				logEntry.On("Write", mock.Anything).Run(func(args mock.Arguments) {
-					// Use Run to see the actual output in the test output. Else we just get byte output.
-					actual := args.Get(0).([]byte)
-					assert.Equal(t, "stdout: batcheshelper pre 1 skipped\n", string(actual))
-				}).Return(0, nil)
-				logEntry.On("Finalize", 0).Return()
-				logEntry.On("Close").Return(nil)
-			},
-			expectedErr: errors.New("step skipped"),
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

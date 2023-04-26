@@ -144,4 +144,8 @@ func TestParsePreviousStepResult(t *testing.T) {
 				assert.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
+				assert.Equal(t, test.expected, result)
+			}
+		})
 	}
+}

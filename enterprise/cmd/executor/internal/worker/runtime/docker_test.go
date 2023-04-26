@@ -19,7 +19,6 @@ func TestDockerRuntime_Name(t *testing.T) {
 
 func TestDockerRuntime_NewRunnerSpecs(t *testing.T) {
 	operations := command.NewOperations(&observation.TestContext)
-	index := 1
 
 	tests := []struct {
 		name           string
@@ -59,37 +58,6 @@ func TestDockerRuntime_NewRunnerSpecs(t *testing.T) {
 					Env:       []string{"FOO=bar"},
 					Operation: operations.Exec,
 				},
-				Image:      "my-image",
-				ScriptPath: "script.sh",
-			}},
-			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
-				require.Len(t, ws.ScriptFilenamesFunc.History(), 1)
-			},
-		},
-		{
-			name: "Step with index",
-			steps: []types.DockerStep{
-				{
-					Index:    &index,
-					Key:      "key-1",
-					Image:    "my-image",
-					Commands: []string{"echo", "hello"},
-					Dir:      ".",
-					Env:      []string{"FOO=bar"},
-				},
-			},
-			mockFunc: func(ws *MockWorkspace) {
-				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
-			},
-			expected: []runner.Spec{{
-				CommandSpec: command.Spec{
-					Key:       "step.docker.key-1",
-					Command:   []string(nil),
-					Dir:       ".",
-					Env:       []string{"FOO=bar"},
-					Operation: operations.Exec,
-				},
-				Index:      1,
 				Image:      "my-image",
 				ScriptPath: "script.sh",
 			}},

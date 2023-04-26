@@ -123,11 +123,6 @@ Environment.
 To run [Batch Changes](../../batch_changes/index.md) on
 Kubernetes, [Native Server-Side Batch Changes](./native_server_side_batch_changes.md) must be enabled.
 
-### Batch Changes
-
-To run [Batch Changes](../../batch_changes/index.md) on
-Kubernetes, [Native Server-Side Batch Changes](./native_server_side_batch_changes.md) must be enabled.
-
 ### Example Configuration YAML
 
 See

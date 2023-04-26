@@ -67,7 +67,6 @@ func (r *firecrackerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []type
 				Env:       step.Env,
 				Operation: r.operations.Exec,
 			},
-			Index:      index,
 			Image:      step.Image,
 			ScriptPath: ws.ScriptFilenames()[i],
 		}
