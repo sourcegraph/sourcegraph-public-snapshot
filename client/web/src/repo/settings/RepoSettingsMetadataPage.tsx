@@ -180,6 +180,7 @@ export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props
                     placeholder="Filter metadata by key or value…"
                     value={searchQuery}
                     onChange={handleSearchChange}
+                    type="search"
                     className="mb-3"
                 />
                 {filteredMetadata.length ? (
