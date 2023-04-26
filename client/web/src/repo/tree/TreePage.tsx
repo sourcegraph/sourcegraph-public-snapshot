@@ -244,7 +244,7 @@ export const TreePage: FC<Props> = ({
             <div className={styles.menu}>
                 <ButtonGroup>
                     {!isPackage && (
-                        <Tooltip content="Branches">
+                        <Tooltip content="Git branches">
                             <Button
                                 className="flex-shrink-0"
                                 to={`/${encodeURIPathComponent(repoName)}/-/branches`}
@@ -257,7 +257,7 @@ export const TreePage: FC<Props> = ({
                             </Button>
                         </Tooltip>
                     )}
-                    <Tooltip content={isPackage ? 'Versions' : 'Tags'}>
+                    <Tooltip content={isPackage ? 'Package versions' : 'Git tags'}>
                         <Button
                             className="flex-shrink-0"
                             to={`/${encodeURIPathComponent(repoName)}/-${isPackage ? '/versions' : '/tags'}`}
@@ -269,7 +269,7 @@ export const TreePage: FC<Props> = ({
                             <span className={styles.text}>{isPackage ? 'Versions' : 'Tags'}</span>
                         </Button>
                     </Tooltip>
-                    <Tooltip content="Compare">
+                    <Tooltip content="Compare branches">
                         <Button
                             className="flex-shrink-0"
                             to={
@@ -311,7 +311,7 @@ export const TreePage: FC<Props> = ({
                         </Tooltip>
                     )}
                     {showOwnership && (
-                        <Tooltip content="Ownership">
+                        <Tooltip content="Repository ownership settings">
                             <Button
                                 className="flex-shrink-0"
                                 to={`/${encodeURIPathComponent(repoName)}/-/own`}
@@ -326,7 +326,7 @@ export const TreePage: FC<Props> = ({
                         </Tooltip>
                     )}
                     {repo?.viewerCanAdminister && (
-                        <Tooltip content="Settings">
+                        <Tooltip content="Repository settings">
                             <Button
                                 className="flex-shrink-0"
                                 to={`/${encodeURIPathComponent(repoName)}/-/settings`}
@@ -335,7 +335,7 @@ export const TreePage: FC<Props> = ({
                                 as={Link}
                                 aria-label="Repository settings"
                             >
-                                <Icon aria-hidden={true} svgPath={mdiCog} />
+                                <Icon aria-hidden={true} svgPath={mdiCog} />{' '}
                                 <span className={styles.text}>Settings</span>
                             </Button>
                         </Tooltip>
