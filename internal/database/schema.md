@@ -1002,6 +1002,22 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.commit_authors"
+```
+ Column |  Type   | Collation | Nullable |                  Default                   
+--------+---------+-----------+----------+--------------------------------------------
+ id     | integer |           | not null | nextval('commit_authors_id_seq'::regclass)
+ email  | text    |           | not null | 
+ name   | text    |           | not null | 
+Indexes:
+    "commit_authors_pkey" PRIMARY KEY, btree (id)
+    "commit_authors_email_name" UNIQUE, btree (email, name)
+Referenced by:
+    TABLE "own_aggregate_recent_contribution" CONSTRAINT "own_aggregate_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)
+    TABLE "own_signal_recent_contribution" CONSTRAINT "own_signal_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)
+
+```
+
 # Table "public.configuration_policies_audit_logs"
 ```
        Column       |           Type           | Collation | Nullable |                          Default                           
@@ -2766,6 +2782,23 @@ Referenced by:
 
 ```
 
+# Table "public.own_aggregate_recent_contribution"
+```
+        Column        |  Type   | Collation | Nullable |                            Default                            
+----------------------+---------+-----------+----------+---------------------------------------------------------------
+ id                   | integer |           | not null | nextval('own_aggregate_recent_contribution_id_seq'::regclass)
+ commit_author_id     | integer |           | not null | 
+ changed_file_path_id | integer |           | not null | 
+ contributions_count  | integer |           |          | 0
+Indexes:
+    "own_aggregate_recent_contribution_pkey" PRIMARY KEY, btree (id)
+    "own_aggregate_recent_contribution_file_author" UNIQUE, btree (changed_file_path_id, commit_author_id)
+Foreign-key constraints:
+    "own_aggregate_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
+    "own_aggregate_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)
+
+```
+
 # Table "public.own_background_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                     Default                     
@@ -2791,6 +2824,27 @@ Indexes:
     "own_background_jobs_state_idx" btree (state)
 
 ```
+
+# Table "public.own_signal_recent_contribution"
+```
+        Column        |            Type             | Collation | Nullable |                          Default                           
+----------------------+-----------------------------+-----------+----------+------------------------------------------------------------
+ id                   | integer                     |           | not null | nextval('own_signal_recent_contribution_id_seq'::regclass)
+ commit_author_id     | integer                     |           | not null | 
+ changed_file_path_id | integer                     |           | not null | 
+ commit_timestamp     | timestamp without time zone |           | not null | 
+ commit_id            | bytea                       |           | not null | 
+Indexes:
+    "own_signal_recent_contribution_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "own_signal_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
+    "own_signal_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)
+Triggers:
+    update_own_aggregate_recent_contribution AFTER INSERT ON own_signal_recent_contribution FOR EACH ROW EXECUTE FUNCTION update_own_aggregate_recent_contribution()
+
+```
+
+One entry per file changed in every commit that classifies as a contribution signal.
 
 # Table "public.package_repo_filters"
 ```
@@ -3097,6 +3151,7 @@ Referenced by:
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "repo_paths" CONSTRAINT "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -3150,6 +3205,29 @@ Foreign-key constraints:
     "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
+
+# Table "public.repo_paths"
+```
+    Column     |  Type   | Collation | Nullable |                Default                 
+---------------+---------+-----------+----------+----------------------------------------
+ id            | integer |           | not null | nextval('repo_paths_id_seq'::regclass)
+ repo_id       | integer |           | not null | 
+ absolute_path | text    |           | not null | 
+ parent_id     | integer |           |          | 
+Indexes:
+    "repo_paths_pkey" PRIMARY KEY, btree (id)
+    "repo_paths_index_absolute_path" UNIQUE, btree (repo_id, absolute_path)
+Foreign-key constraints:
+    "repo_paths_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES repo_paths(id)
+    "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "own_aggregate_recent_contribution" CONSTRAINT "own_aggregate_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
+    TABLE "own_signal_recent_contribution" CONSTRAINT "own_signal_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
+    TABLE "repo_paths" CONSTRAINT "repo_paths_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES repo_paths(id)
+
+```
+
+**absolute_path**: Absolute path does not start or end with forward slash. Example: &#34;a/b/c&#34;. Root directory is empty path &#34;&#34;.
 
 # Table "public.repo_pending_permissions"
 ```
