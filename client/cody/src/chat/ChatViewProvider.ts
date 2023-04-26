@@ -449,8 +449,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         // Set HTML for webview
         // This replace variables from the client/cody/dist/index.html with webview info
         // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
-        // 2. Add nonce to only allow specific scripts to be run
-        // 3. Update URIs for content security policy to only allow specific scripts to be run
+        // 2. Update URIs for content security policy to only allow specific scripts to be run
         webviewView.webview.html = decoded
             .replaceAll('./', `${resources.toString()}/`)
             .replaceAll('{cspSource}', webviewView.webview.cspSource)
