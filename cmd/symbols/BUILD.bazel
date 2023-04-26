@@ -1,4 +1,6 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 go_library(
     name = "symbols_lib",
@@ -15,4 +17,24 @@ go_binary(
     name = "symbols",
     embed = [":symbols_lib"],
     visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "tar",
+    srcs = [":symbols"],
+)
+
+oci_image(
+    name = "image",
+    architecture = "amd64",
+    base = "@wolfi_base",
+    tars = [":tar"],
+    entrypoint = ["/worker"],
+    os = "linux",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repotags = ["symbols-foo:latest"]
 )
