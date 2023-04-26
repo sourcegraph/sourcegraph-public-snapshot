@@ -49,7 +49,6 @@ ts_project(
     testonly = True,
     srcs = [
         "batches.test.ts",
-        "blob-viewer.test.ts",
         "code-monitoring.test.ts",
         "codemirror-blob-view.test.ts",
         "commit-page.test.ts",
