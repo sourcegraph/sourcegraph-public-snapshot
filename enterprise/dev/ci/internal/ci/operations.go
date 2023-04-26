@@ -922,8 +922,10 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: Scan %s", app),
-			bk.DependsOn(candidateImageStepKey(app)),
-
+			// These are the first images in the arrays we use to build images
+			bk.DependsOn(candidateImageStepKey("alpine-3.14")),
+			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("batcheshelper")),
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
 
 			// have trivy use a shorter name in its output
