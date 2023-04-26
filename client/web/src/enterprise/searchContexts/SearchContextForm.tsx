@@ -438,7 +438,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             onChange={() => setContextType('dynamic')}
                             label={
                                 <>
-                                    Search query <ProductStatusBadge status="beta" className="ml-1" />
+                                    Search query
                                 </>
                             }
                         />
