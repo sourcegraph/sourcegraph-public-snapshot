@@ -177,6 +177,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images, Build Docker images, Build Docker images
+- **Image security scans**: Scan symbols, Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
@@ -194,6 +195,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images, Build Docker images, Build Docker images
+- **Image security scans**: Scan symbols, Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
@@ -252,6 +254,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images, Build Docker images, Build Docker images
+- **Image security scans**: Scan symbols, Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
@@ -274,6 +277,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images, Build Docker images, Build Docker images
+- **Image security scans**: Scan symbols, Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
@@ -326,16 +330,15 @@ sg ci build executor-patch-notest
 
 Base pipeline (more steps might be included based on branch changes):
 
-- **Metadata**: Pipeline metadata
-- **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images
-- **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
-- **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
-- **CI script tests**: test-trace-command.sh
-- **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
-- **Publish images**: symbols, server, alpine-3.14, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg
+- Build executor-vm
+- Scan executor-vm
+- Build executor image
+- Build docker registry mirror image
+- Build executor binary
+- executor-vm
+- Publish executor image
+- Publish docker registry mirror image
+- Publish executor binary
 
 ### Backend integration tests
 
