@@ -65,43 +65,49 @@ const AddRepoMetadata: FC<{ onDidAdd: () => void; repoID: string }> = ({ onDidAd
     }
 
     return (
-        <section>
-            <H2>Add metadata</H2>
-            <Text>Add an additional key, or key-value pair, to this repository.</Text>
-            <Form onSubmit={onSubmit}>
-                {!loading && error && <ErrorAlert className="flex-grow-1 m-0 mb-3" error={error} />}
-                {!loading && !error && called && (
-                    <Alert className="flex-grow-1 m-0 mb-3" variant="success">
-                        Metadata added successfully
-                    </Alert>
-                )}
-                <div className="form-group">
-                    <Label htmlFor="metadata-key">Key</Label>
-                    <Input
-                        id="metadata-key"
-                        value={key}
-                        onChange={handleKeyChange}
-                        autoFocus={true}
-                        autoComplete="off"
-                        required={true}
-                        disabled={loading}
-                        message="e.g. 'status', 'license', 'language'"
-                    />
-                </div>
-                <div className="form-group">
-                    <Label htmlFor="metadata-value">Value (optional)</Label>
-                    <Input
-                        id="metadata-value"
-                        value={value}
-                        autoComplete="off"
-                        onChange={handleValueChange}
-                        disabled={loading}
-                        message="e.g. 'deprecated', 'MIT', 'Go'"
-                    />
-                </div>
-                <LoaderButton variant="primary" type="submit" loading={loading} label="Add" />
-            </Form>
-        </section>
+        <>
+            {!loading && !error && called && (
+                <Alert className="flex-grow-1 m-0 mb-3" variant="success">
+                    Metadata added
+                </Alert>
+            )}
+
+            <Container className="repo-settings-metadata-page">
+                <section>
+                    <H2>Add metadata</H2>
+                    <Text>Add an additional key, or key-value pair, to this repository.</Text>
+                    <Form onSubmit={onSubmit}>
+                        {!loading && error && <ErrorAlert className="flex-grow-1 m-0 mb-3" error={error} />}
+                        
+                        <div className="form-group">
+                            <Label htmlFor="metadata-key">Key</Label>
+                            <Input
+                                id="metadata-key"
+                                value={key}
+                                onChange={handleKeyChange}
+                                autoFocus={true}
+                                autoComplete="off"
+                                required={true}
+                                disabled={loading}
+                                message="e.g. 'status', 'license', 'language'"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <Label htmlFor="metadata-value">Value (optional)</Label>
+                            <Input
+                                id="metadata-value"
+                                value={value}
+                                autoComplete="off"
+                                onChange={handleValueChange}
+                                disabled={loading}
+                                message="e.g. 'deprecated', 'MIT', 'Go'"
+                            />
+                        </div>
+                        <LoaderButton variant="primary" type="submit" loading={loading} label="Add" />
+                    </Form>
+                </section>
+            </Container>
+        </>
     )
 }
 
@@ -189,9 +195,7 @@ export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props
                     <Text className="text-muted">No metadata containing "{searchQuery}"</Text>
                 )}
             </Container>
-            <Container className="repo-settings-metadata-page">
-                <AddRepoMetadata onDidAdd={refetch} repoID={repo.id} />
-            </Container>
+            <AddRepoMetadata onDidAdd={refetch} repoID={repo.id} />
         </>
     )
 }
