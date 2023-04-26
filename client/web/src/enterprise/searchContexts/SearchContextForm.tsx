@@ -26,7 +26,6 @@ import {
     TextArea,
     useEventObservable,
     Alert,
-    ProductStatusBadge,
     Link,
     Code,
     Input,
