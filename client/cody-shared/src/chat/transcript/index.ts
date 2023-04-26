@@ -75,6 +75,14 @@ export class Transcript {
         })
     }
 
+    public addErrorAsAssistantResponse(errorText: string): void {
+        this.getLastInteraction()?.setAssistantMessage({
+            speaker: 'assistant',
+            text: 'Failed to generate response due to server error.',
+            displayText: errorText,
+        })
+    }
+
     private async getLastInteractionWithContextIndex(): Promise<number> {
         for (let index = this.interactions.length - 1; index >= 0; index--) {
             const hasContext = await this.interactions[index].hasContext()

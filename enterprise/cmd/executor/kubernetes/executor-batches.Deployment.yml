@@ -19,8 +19,6 @@ spec:
         - name: sg-executor
           image: executor-kubernetes:latest
           imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8080
           env:
             - name: EXECUTOR_FRONTEND_URL
               # For development purposes. We usually run Sourcegraph in Docker.

@@ -23,8 +23,12 @@ const (
 	kubernetesVolumeName    = "sg-executor-job-volume"
 )
 
-// KubernetesMountPath is the path where the Kubernetes volume is mounted in the container.
-const KubernetesMountPath = "/data"
+const (
+	// KubernetesMountPath is the path where the Kubernetes volume is mounted in the container.
+	KubernetesMountPath = "/data"
+	// KubernetesVolumeMountSubPath is the path that is mounted in the Kubernetes pod container.
+	KubernetesVolumeMountSubPath = "/data/"
+)
 
 // KubernetesContainerOptions contains options for the Kubernetes Job containers.
 type KubernetesContainerOptions struct {
@@ -219,7 +223,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 								{
 									Name:      kubernetesVolumeName,
 									MountPath: KubernetesMountPath,
-									SubPath:   path,
+									SubPath:   strings.TrimPrefix(path, KubernetesVolumeMountSubPath),
 								},
 							},
 						},
