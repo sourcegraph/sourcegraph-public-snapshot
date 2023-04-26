@@ -493,7 +493,6 @@ go_test(
         "@com_github_sourcegraph_zoekt//web",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-        "@com_github_throttled_throttled_v2//:throttled",
         "@com_github_throttled_throttled_v2//store/memstore",
     ],
 )

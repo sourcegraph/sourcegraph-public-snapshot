@@ -15,7 +15,7 @@ fn main() {
     match fix_path_env::fix() {
         Ok(_) => {}
         Err(e) => {
-            println!("Error fixing path environment: {}", e);
+            println!("error fixing path environment: {}", e);
         }
     }
 
@@ -49,10 +49,11 @@ fn start_embedded_services(_window: tauri::Window) {
 
 #[cfg(not(dev))]
 fn start_embedded_services(window: tauri::Window) {
-    let (mut rx, _child) = Command::new_sidecar("backend")
-        .expect("failed to create `backend` binary command")
+    let sidecar = "sourcegraph-backend";
+    let (mut rx, _child) = Command::new_sidecar(sidecar)
+        .expect(format!("failed to create `{sidecar}` binary command").as_str())
         .spawn()
-        .expect("Failed to spawn backend sidecar");
+        .expect(format!("failed to spawn {sidecar} sidecar").as_str());
 
     tauri::async_runtime::spawn(async move {
         // read events such as stdout
@@ -60,7 +61,7 @@ fn start_embedded_services(window: tauri::Window) {
             match event {
                 CommandEvent::Stdout(line) => {
                     window
-                        .emit("backend-stdout", Some(line.clone()))
+                        .emit(format!("{sidecar}-stdout").as_str(), Some(line.clone()))
                         .expect("failed to emit event");
 
                     let _ = window.eval(&format!(
@@ -70,7 +71,7 @@ fn start_embedded_services(window: tauri::Window) {
                 }
                 CommandEvent::Stderr(line) => {
                     window
-                        .emit("backend-stderr", Some(line.clone()))
+                        .emit(format!("{sidecar}-stderr").as_str(), Some(line.clone()))
                         .expect("failed to emit event");
 
                     let _ = window.eval(&format!(

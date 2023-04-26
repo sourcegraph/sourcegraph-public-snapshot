@@ -106,8 +106,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         bufferBin = buf
                     })
 
-                    res.on('error', e => cb.onError(e.message))
-                    res.on('end', () => cb.onError(errorMessage))
+                    res.on('error', e => cb.onError(e.message, res.statusCode))
+                    res.on('end', () => cb.onError(errorMessage, res.statusCode))
                     return
                 }
 

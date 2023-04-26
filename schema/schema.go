@@ -54,18 +54,6 @@ type AWSKMSEncryptionKey struct {
 	Type            string `json:"type"`
 }
 
-// ApiRatelimit description: Configuration for API rate limiting
-type ApiRatelimit struct {
-	// Enabled description: Whether API rate limiting is enabled
-	Enabled bool `json:"enabled"`
-	// Overrides description: An array of rate limit overrides
-	Overrides []*Overrides `json:"overrides,omitempty"`
-	// PerIP description: Limit granted per IP per hour, only applied to anonymous users
-	PerIP int `json:"perIP"`
-	// PerUser description: Limit granted per user per hour
-	PerUser int `json:"perUser"`
-}
-
 // App description: Configuration options for App only.
 type App struct {
 	// DotcomAuthToken description: Authentication token for Sourcegraph.com. If present, indicates that the App account is connected to a Sourcegraph.com account.
@@ -1646,12 +1634,6 @@ type OutputVariable struct {
 	// Value description: The value of the output, which can be a template string.
 	Value string `json:"value"`
 }
-type Overrides struct {
-	// Key description: The key that we want to override for example a username
-	Key string `json:"key,omitempty"`
-	// Limit description: The limit per hour, 'unlimited' or 'blocked'
-	Limit any `json:"limit,omitempty"`
-}
 
 // PagureConnection description: Configuration for a connection to Pagure.
 type PagureConnection struct {
@@ -2290,8 +2272,6 @@ type SettingsOpenInEditor struct {
 type SiteConfiguration struct {
 	// RedirectUnsupportedBrowser description: Prompts user to install new browser for non es5
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
-	// ApiRatelimit description: Configuration for API rate limiting
-	ApiRatelimit *ApiRatelimit `json:"api.ratelimit,omitempty"`
 	// App description: Configuration options for App only.
 	App *App `json:"app,omitempty"`
 	// AuthAccessRequest description: The config options for access requests
@@ -2585,7 +2565,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "RedirectUnsupportedBrowser")
-	delete(m, "api.ratelimit")
 	delete(m, "app")
 	delete(m, "auth.accessRequest")
 	delete(m, "auth.accessTokens")

@@ -138,37 +138,31 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.localStorage.removeChatHistory()
                 break
             case 'links':
-                await vscode.env.openExternal(vscode.Uri.parse(message.value))
+                void this.openExternalLinks(message.value)
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
-                if (rootPath !== null) {
-                    const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
+                if (!rootPath) {
+                    this.sendErrorToWebview('Failed to open file: missing rootPath')
+                    return
+                }
+                try {
                     // This opens the file in the active column.
-                    try {
-                        const doc = await vscode.workspace.openTextDocument(uri)
-                        await vscode.window.showTextDocument(doc)
-                    } catch {
-                        // Try to open the file in the sourcegraph view
-                        const sourcegraphInstanceUrl = this.config.serverEndpoint
-                        const sourcegraphWebUrl = new URL(
-                            `/search?q=context:global+file:${message.filePath}`,
-                            sourcegraphInstanceUrl
-                        ).href
-
-                        try {
-                            await vscode.env.openExternal(vscode.Uri.parse(sourcegraphWebUrl))
-                        } catch (error) {
-                            console.error(`Could not open the file: ${error}`)
-                        }
-                    }
-                } else {
-                    console.error('Could not open file because rootPath is null')
+                    const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
+                    const doc = await vscode.workspace.openTextDocument(uri)
+                    await vscode.window.showTextDocument(doc)
+                } catch {
+                    // Try to open the file in the sourcegraph view
+                    const sourcegraphSearchURL = new URL(
+                        `/search?q=context:global+file:${message.filePath}`,
+                        this.config.serverEndpoint
+                    ).href
+                    void this.openExternalLinks(sourcegraphSearchURL)
                 }
                 break
             }
             default:
-                console.error('Invalid request type from Webview')
+                this.sendErrorToWebview('Invalid request type from Webview')
         }
     }
 
@@ -195,10 +189,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     const { text: highlightedDisplayText } = await highlightTokens(displayText || '', fileExists)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                 }
-                this.isMessageInProgress = false
-                this.cancelCompletionCallback = null
-                this.sendTranscript()
-                await this.saveChatHistory()
+                void this.onCompletionEnd()
             },
         })
 
@@ -212,8 +203,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 return this.multiplexer.publish(text)
             },
             onComplete: () => this.multiplexer.notifyTurnComplete(),
-            onError: err => {
-                void vscode.window.showErrorMessage(err)
+            onError: (err, statusCode) => {
+                // Display error message as assistant response
+                this.transcript.addErrorAsAssistantResponse(
+                    `<div class="cody-chat-error"><span>Request failed: </span>${err}</div>`
+                )
+                // Log users out on unauth error
+                if (statusCode && statusCode >= 400 && statusCode <= 410) {
+                    void this.sendLogin(false)
+                    this.clearAndRestartSession()
+                }
+                this.onCompletionEnd()
+                console.error(`Completion request failed: ${err}`)
             },
         })
     }
@@ -223,6 +224,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.cancelCompletionCallback = null
     }
 
+    private onCompletionEnd(): void {
+        this.isMessageInProgress = false
+        this.cancelCompletionCallback = null
+        this.sendTranscript()
+        void this.saveChatHistory()
+    }
+
     private async onHumanMessageSubmitted(text: string): Promise<void> {
         this.inputHistory.push(text)
         await this.executeRecipe('chat-question', text)
@@ -230,10 +238,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     public async executeRecipe(recipeId: string, humanChatInput: string = ''): Promise<void> {
         if (this.isMessageInProgress) {
-            await vscode.window.showErrorMessage(
-                'Cannot execute multiple recipes. Please wait for the current recipe to finish.'
-            )
+            this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
         }
+
         const recipe = getRecipe(recipeId)
         if (!recipe) {
             return
@@ -268,6 +275,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         void this.webview?.postMessage({ type: 'showTab', tab })
     }
 
+    /**
+     * Send transcript to webview
+     */
     private sendTranscript(): void {
         void this.webview?.postMessage({
             type: 'transcript',
@@ -295,6 +305,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public async sendLogin(isValid: boolean): Promise<void> {
         await vscode.commands.executeCommand('setContext', 'cody.activated', isValid)
+        if (isValid) {
+            this.sendEvent('auth', 'login')
+        }
         void this.webview?.postMessage({ type: 'login', isValid })
     }
 
@@ -326,6 +339,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
                     codebase: this.config.codebase,
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
+                    supportsKeyword: true,
                 },
             })
         }
@@ -359,6 +373,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         send().catch(error => console.error(error))
     }
 
+    /**
+     * Log Events
+     */
     public sendEvent(event: string, value: string): void {
         const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href
         switch (event) {
@@ -376,7 +393,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'auth':
                 logEvent(`CodyVSCodeExtension:${value}:clicked`)
                 break
+            // aditya combine this with above statemenet for auth or click
+            case 'click':
+                logEvent(`CodyVSCodeExtension:${value}:clicked`)
+                break
         }
+    }
+
+    /**
+     * Display error message in webview view as banner in chat view
+     * It does not display error message as assistant response
+     */
+    private sendErrorToWebview(errorMsg: string): void {
+        void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
+        console.error(errorMsg)
     }
 
     /**
@@ -419,6 +449,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         webviewView.webview.html = decoded.replaceAll('./', `${resources.toString()}/`).replace('/nonce/', nonce)
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+    }
+
+    /**
+     * Open external links
+     */
+    private async openExternalLinks(uri: string): Promise<void> {
+        try {
+            await vscode.env.openExternal(vscode.Uri.parse(uri))
+        } catch (error) {
+            throw new Error(`Failed to open file: ${error}`)
+        }
     }
 
     public transcriptForTesting(testing: TestSupport): ChatMessage[] {
