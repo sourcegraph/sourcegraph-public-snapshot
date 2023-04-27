@@ -311,6 +311,10 @@
           "type": "boolean",
           "default": false
         },
+        "cody.experimental.chatPredictions": {
+          "type": "boolean",
+          "default": false
+        },
         "cody.experimental.keys.anthropic": {
           "type": "string"
         },

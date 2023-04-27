@@ -41,7 +41,13 @@ export async function isValidLogin(
 
 type Config = Pick<
     ConfigurationWithAccessToken,
-    'codebase' | 'serverEndpoint' | 'debug' | 'customHeaders' | 'accessToken' | 'useContext'
+    | 'codebase'
+    | 'serverEndpoint'
+    | 'debug'
+    | 'customHeaders'
+    | 'accessToken'
+    | 'useContext'
+    | 'experimentalChatPredictions'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -251,7 +257,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async onHumanMessageSubmitted(text: string): Promise<void> {
         this.inputHistory.push(text)
 
-        void this.runRecipeForSuggestion('next-questions', text)
+        if (this.config.experimentalChatPredictions) {
+            void this.runRecipeForSuggestion('next-questions', text)
+        }
         await this.executeRecipe('chat-question', text)
     }
 
