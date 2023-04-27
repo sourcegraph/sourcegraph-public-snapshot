@@ -2171,7 +2171,7 @@ changesetTemplate:
 			jobs := []*btypes.BatchSpecWorkspaceExecutionJob{failedJob, completedJob}
 
 			// RETRY
-			if err := svc.RetryBatchSpecWorkspaces(ctx, workspaceIDs); err != nil {
+			if err := svc.RetryBatchSpecWorkspaces(ctx, RetryBatchSpecWorkspacesOpts{WorkspaceIDs: workspaceIDs}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2210,7 +2210,7 @@ changesetTemplate:
 			createJob(t, s, failedJob)
 
 			// RETRY
-			err := svc.RetryBatchSpecWorkspaces(ctx, []int64{ws.ID})
+			err := svc.RetryBatchSpecWorkspaces(ctx, RetryBatchSpecWorkspacesOpts{WorkspaceIDs: []int64{ws.ID}})
 			if err == nil {
 				t.Fatal("no error")
 			}
@@ -2250,7 +2250,7 @@ changesetTemplate:
 			createJob(t, s, failedJob)
 
 			// RETRY
-			err := svc.RetryBatchSpecWorkspaces(ctx, []int64{ws.ID})
+			err := svc.RetryBatchSpecWorkspaces(ctx, RetryBatchSpecWorkspacesOpts{WorkspaceIDs: []int64{ws.ID}})
 			if err != nil {
 				t.Fatal("unexpected error")
 			}
@@ -2281,7 +2281,7 @@ changesetTemplate:
 			createJob(t, s, queuedJob)
 
 			// RETRY
-			err := svc.RetryBatchSpecWorkspaces(ctx, []int64{ws.ID})
+			err := svc.RetryBatchSpecWorkspaces(ctx, RetryBatchSpecWorkspacesOpts{WorkspaceIDs: []int64{ws.ID}})
 			if err == nil {
 				t.Fatal("no error")
 			}
@@ -2309,7 +2309,7 @@ changesetTemplate:
 			createJob(t, s, queuedJob)
 
 			// userCtx uses user as actor
-			err := svc.RetryBatchSpecWorkspaces(userCtx, []int64{ws.ID})
+			err := svc.RetryBatchSpecWorkspaces(userCtx, RetryBatchSpecWorkspacesOpts{WorkspaceIDs: []int64{ws.ID}})
 			assertAuthError(t, err)
 		})
 	})
