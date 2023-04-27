@@ -175,7 +175,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary, Build docker registry mirror image
+- **Image builds**: Build syntax-highlighter, Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary, Build docker registry mirror image
 - **Image security scans**: Scan symbols, Scan executor, Scan alpine-3.14, Scan postgres-12-alpine, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -192,7 +192,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary, Build docker registry mirror image
+- **Image builds**: Build syntax-highlighter, Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary, Build docker registry mirror image
 - **Image security scans**: Scan symbols, Scan executor, Scan alpine-3.14, Scan postgres-12-alpine, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -250,7 +250,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary
+- **Image builds**: Build syntax-highlighter, Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary
 - **Image security scans**: Scan symbols, Scan executor, Scan alpine-3.14, Scan postgres-12-alpine, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -272,7 +272,7 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary
+- **Image builds**: Build syntax-highlighter, Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary
 - **Image security scans**: Scan symbols, Scan executor, Scan alpine-3.14, Scan postgres-12-alpine, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
 - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 - **Linters and static analysis**: Run sg lint
@@ -311,7 +311,7 @@ sg ci build docker-images-candidates-notest
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- **Image builds**: Build symbols, Build server, Build executor, Build alpine-3.14, Build postgres-12-alpine, Build blobstore, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build migrator, Build node-exporter, Build opentelemetry-collector, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build syntax-highlighter, Build worker, Build batcheshelper, Build blobstore2, Build bundled-executor, Build dind, Build embeddings, Build executor-kubernetes, Build executor-vm, Build jaeger-agent, Build jaeger-all-in-one, Build llm-proxy, Build sg
+- **Image builds**: Build syntax-highlighter, Build Docker images, Build Docker images, Build Docker images
 - **Publish images**: Publish images
 
 ### Build executor without testing
