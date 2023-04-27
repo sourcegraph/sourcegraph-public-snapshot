@@ -103,6 +103,7 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
             args.codebaseContext ||
             new CodebaseContext(
                 { useContext: 'none', serverEndpoint: 'https://example.com' },
+                'dummy-codebase',
                 defaultEmbeddingsClient,
                 defaultKeywordContextFetcher
             ),

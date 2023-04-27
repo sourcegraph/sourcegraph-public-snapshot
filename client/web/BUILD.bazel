@@ -138,6 +138,8 @@ ts_project(
         "src/api/ApiConsole.tsx",
         "src/api/ApiConsoleToolbar.tsx",
         "src/api/NoApiConsole.tsx",
+        "src/app/TauriTitleBar.tsx",
+        "src/app/useHistoryStack.tsx",
         "src/auth.ts",
         "src/auth/CloudSignUpPage.tsx",
         "src/auth/ExternalsAuth.tsx",
@@ -181,6 +183,7 @@ ts_project(
         "src/codeintel/useCodeIntel.ts",
         "src/codeintel/useRepoAndBlob.ts",
         "src/codeintel/util/helpers.ts",
+        "src/cody/ChatHistory.tsx",
         "src/cody/CodeMirrorEditor.ts",
         "src/cody/CodyChat.tsx",
         "src/cody/CodyIcon.tsx",
@@ -1261,6 +1264,7 @@ ts_project(
         "src/repo/repoRevisionSidebar/cody/backend.tsx",
         "src/repo/settings/RepoSettingsArea.tsx",
         "src/repo/settings/RepoSettingsIndexPage.tsx",
+        "src/repo/settings/RepoSettingsMetadataPage.tsx",
         "src/repo/settings/RepoSettingsMirrorPage.tsx",
         "src/repo/settings/RepoSettingsOptionsPage.tsx",
         "src/repo/settings/RepoSettingsSidebar.tsx",
@@ -1483,7 +1487,6 @@ ts_project(
         "src/site-admin/webhooks/backend.ts",
         "src/site-admin/webhooks/story/StyledPerformanceGauge.tsx",
         "src/site-admin/webhooks/story/fixtures.ts",
-        "src/site/DockerForMacAlert.tsx",
         "src/site/FreeUsersExceededAlert.tsx",
         "src/site/LicenseExpirationAlert.tsx",
         "src/site/NeedsRepositoryConfigurationAlert.tsx",
@@ -1906,8 +1909,9 @@ jest_test(
         ":web_tests",
     ],
     patch_node_fs = False,
-    shard_count = 3,  # originally at 6, but tend to consume too much resource and crash.
+    shard_count = 12,  # empirical
     tags = [
+        "manual",  # we manually run those tests after everything else, to ensure we have enough resources.
         "no-sandbox",  # we are disabling the patch_node_fs, so the sandbox isn't really useful anymore.
     ],
 )

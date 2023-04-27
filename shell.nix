@@ -24,7 +24,7 @@ let
   #
   # Additionally bazel seems to break when CC and CXX is set to a nix managed
   # compiler on darwin. So the script unsets those.
-  bazelisk = pkgs.writeScriptBin "bazel" ''
+  bazel-wrapper = pkgs.writeScriptBin "bazel" ''
     #!${pkgs.stdenv.shell}
     unset CC CXX
     exec ${pkgs.bazelisk}/bin/bazelisk "$@"
@@ -81,6 +81,7 @@ pkgs.mkShell {
     clippy
 
     bazelisk
+    bazel-wrapper
     bazel-watcher
   ];
 
