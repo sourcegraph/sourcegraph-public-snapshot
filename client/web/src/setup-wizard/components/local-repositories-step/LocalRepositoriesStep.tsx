@@ -173,8 +173,8 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
             </FooterWidget>
 
             <CustomNextButton
-                label={directoryPaths ? 'Next' : 'Skip'}
-                tooltip={!directoryPaths ? 'You can get back to this step later' : ''}
+                label={directoryPaths.length > 0 ? 'Next' : 'Skip'}
+                tooltip={directoryPaths.length === 0 ? 'You can get back to this step later' : ''}
                 onClick={handleNextButtonClick}
             />
         </div>
@@ -238,7 +238,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
         <>
             <header>
                 <Input
-                    as={InputWitActions}
+                    as={InputWithActions}
                     value={paths.join(', ')}
                     label="Directory path"
                     isFilePickerMode={isFilePickerAvailable}
@@ -302,7 +302,7 @@ interface InputWithActionsProps extends InputHTMLAttributes<HTMLInputElement> {
  * Renders either file picker input (non-editable but clickable and with "pick a path" action button or
  * simple input where user can input path manually.
  */
-const InputWitActions = forwardRef<HTMLInputElement, InputWithActionsProps>(function InputWitActions(props, ref) {
+const InputWithActions = forwardRef<HTMLInputElement, InputWithActionsProps>(function InputWithActions(props, ref) {
     const { isFilePickerMode, isProcessing, onPickPath, onPathReset, className, value, ...attributes } = props
 
     return (
