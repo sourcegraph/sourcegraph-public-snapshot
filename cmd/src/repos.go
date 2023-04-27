@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 )
 
@@ -124,4 +126,14 @@ func fetchRepositoryID(ctx context.Context, client api.Client, repoName string) 
 		return "", fmt.Errorf("repository not found: %s", repoName)
 	}
 	return result.Repository.ID, nil
+}
+
+func getRepoIdOrError(ctx context.Context, client api.Client, id *string, repoName *string) (*string, error) {
+	if *id != "" {
+		return id, nil
+	} else if *repoName != "" {
+		repoID, err := fetchRepositoryID(ctx, client, *repoName)
+		return &repoID, err
+	}
+	return nil, errors.New("error: repo or repoName is required")
 }

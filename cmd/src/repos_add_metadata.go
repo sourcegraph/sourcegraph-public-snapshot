@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 )
 
@@ -29,18 +30,16 @@ Examples:
 		fmt.Println(usage)
 	}
 	var (
-		repoFlag  = flagSet.String("repo", "", `The ID of the repo to add the key-value pair metadata to (required)`)
-		keyFlag   = flagSet.String("key", "", `The name of the  metadata key to add (required)`)
-		valueFlag = flagSet.String("value", "", `The  metadata value associated with the  metadata key. Defaults to null.`)
-		apiFlags  = api.NewFlags(flagSet)
+		repoFlag     = flagSet.String("repo", "", `The ID of the repo to add the key-value pair metadata to (required if -repo-name is not specified)`)
+		repoNameFlag = flagSet.String("repo-name", "", `The name of the repo to add the key-value pair metadata to (required if -repo is not specified)`)
+		keyFlag      = flagSet.String("key", "", `The name of the  metadata key to add (required)`)
+		valueFlag    = flagSet.String("value", "", `The  metadata value associated with the  metadata key. Defaults to null.`)
+		apiFlags     = api.NewFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
 		if err := flagSet.Parse(args); err != nil {
 			return err
-		}
-		if *repoFlag == "" {
-			return errors.New("error: repo is required")
 		}
 
 		keyFlag = nil
@@ -61,6 +60,11 @@ Examples:
 		}
 
 		client := cfg.apiClient(apiFlags, flagSet.Output())
+		ctx := context.Background()
+		repoID, err := getRepoIdOrError(ctx, client, repoFlag, repoNameFlag)
+		if err != nil {
+			return err
+		}
 
 		query := `mutation addRepoMetadata(
   $repo: ID!,
@@ -77,10 +81,10 @@ Examples:
 }`
 
 		if ok, err := client.NewRequest(query, map[string]interface{}{
-			"repo":  *repoFlag,
+			"repo":  *repoID,
 			"key":   *keyFlag,
 			"value": valueFlag,
-		}).Do(context.Background(), nil); err != nil || !ok {
+		}).Do(ctx, nil); err != nil || !ok {
 			return err
 		}
 

@@ -14,6 +14,7 @@ All notable changes to `src-cli` are documented in this file.
 ### Added
 - `src validate install` can check executor connections [#974](https://github.com/sourcegraph/src-cli/pull/974)
 - `src validate install` can send test SMTP message [#973](https://github.com/sourcegraph/src-cli/pull/973)
+- `src repos {add|update|delete}-metadata -repo-name` flag support [#977](https://github.com/sourcegraph/src-cli/pull/977)
 
 ### Changed
 - Renamed `src repo {add|update|delete}-kvp` to `repo {add|update|delete}-metadata` [#972](https://github.com/sourcegraph/src-cli/pull/972)
