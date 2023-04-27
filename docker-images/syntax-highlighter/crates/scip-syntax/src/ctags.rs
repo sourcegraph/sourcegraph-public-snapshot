@@ -1,10 +1,8 @@
 use std::{
     collections::HashMap,
-    env, fs,
-    io::{self, BufRead, BufReader, BufWriter, Read, Write},
+    io::{BufRead, BufReader, BufWriter, Read, Write},
     ops::Not,
     path,
-    process::{Command, Stdio},
 };
 
 use anyhow::{Context, Result};
@@ -233,58 +231,12 @@ pub fn ctags_runner<R: Read, W: Write>(
     input: &mut BufReader<R>,
     output: &mut std::io::BufWriter<W>,
 ) -> Result<()> {
-    match env::var("SITE_CONFIG_FILE") {
-        Ok(config_path) => {
-            let contents =
-                fs::read_to_string(config_path).expect("Cannot read site configuration!");
-            eprintln!("{}", contents)
-        }
-        Err(_) => eprintln!(
-            "No site configuration specified! (Missing environment variable SITE_CONFIG_FILE)"
-        ),
+    Reply::Program {
+        name: "SCIP Ctags".to_string(),
+        version: "5.9.0".to_string(),
     }
-
-    let mut passthrough_ctags = match env::var("CTAGS_COMMAND_PASSTHROUGH") {
-        Ok(path) => {
-            eprintln!("ctags passthrough is {}", path);
-            match Command::new(path)
-                .args(&env::args().collect::<Vec<String>>()[1..])
-                .stdin(Stdio::piped())
-                .stdout(Stdio::inherit())
-                .spawn()
-            {
-                Ok(proc) => {
-                    eprintln!("Running passthrough ctags instance!");
-                    Some(proc)
-                }
-                Err(err) => {
-                    eprintln!("Error starting passthrough ctags! {}", err);
-                    None
-                }
-            }
-        }
-        Err(_) => {
-            eprintln!("No ctags passthrough specified! (Missing environment variable CTAGS_COMMAND_PASSTHROUGH)");
-            None
-        }
-    };
-
-    let mut passthrough_stdin = match &mut passthrough_ctags {
-        Some(pt) => Some(
-            pt.stdin
-                .take()
-                .expect("Expected passthrough ctags to have stdin"),
-        ),
-        None => {
-            Reply::Program {
-                name: "SCIP Ctags".to_string(),
-                version: "5.9.0".to_string(),
-            }
-            .write(output);
-            output.flush().unwrap();
-            None
-        }
-    };
+    .write(output);
+    output.flush().unwrap();
 
     loop {
         let mut line = String::new();
@@ -310,23 +262,14 @@ pub fn ctags_runner<R: Read, W: Write>(
                     .read_exact(&mut file_data)
                     .expect("Could not fill file data exactly");
 
-                match generate_tags(output, filename, &file_data) {
-                    Some(_) => {
-                        Reply::Completed {
-                            command: "generate-tags".to_string(),
-                        }
-                        .write(output);
-                    }
-                    None => {
-                        if let Some(_) = &mut passthrough_ctags {
-                            let stdin = passthrough_stdin.as_mut().unwrap();
-                            stdin.write_all(line.as_bytes()).unwrap();
-                            stdin.write_all(&file_data).unwrap();
-                        }
-                    }
-                }
+                generate_tags(output, filename, &file_data);
             }
         }
+
+        Reply::Completed {
+            command: "generate-tags".to_string(),
+        }
+        .write(output);
 
         output.flush().unwrap();
     }
