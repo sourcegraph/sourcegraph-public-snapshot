@@ -56,12 +56,6 @@ It is OK to provide some commentary before you tell me the replacement <selectio
         )}\n\`\`\`\n\n${context.responseMultiplexer.prompt()}`
         // TODO: Move the prompt suffix from the recipe to the chat view. It may have other subscribers.
 
-        console.log(prompt)
-
-        if (prompt !== 're') {
-            return null
-        }
-
         return Promise.resolve(
             new Interaction(
                 {
