@@ -14,6 +14,23 @@ trap cleanup EXIT
 
 cp -a ./enterprise/cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
 
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
+  ./dev/ci/bazel.sh build //enterprise/cmd/gitserver \
+    --stamp \
+    --workspace_status_command=./dev/bazel_stamp_vars.sh \
+    --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
+
+  out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/gitserver --output=files)
+  cp "$out" "$OUTPUT"
+
+  docker build -f enterprise/cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
+    --progress=plain \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION
+  exit $?
+fi
+
 # Environment for building linux binaries
 export GO111MODULE=on
 export GOARCH=amd64

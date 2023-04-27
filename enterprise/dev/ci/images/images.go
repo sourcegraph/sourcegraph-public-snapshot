@@ -48,8 +48,23 @@ func maybeTaggedImage(rootImage, tag string) string {
 // - app must be a legal Docker image name (e.g. no `/`)
 //
 // The `addDockerImages` pipeline step determines what images are built and published.
-var SourcegraphDockerImages = append(DeploySourcegraphDockerImages,
-	"server", "sg", "llm-proxy")
+var SourcegraphDockerImages = []string{
+	"batcheshelper",
+	"blobstore2",
+	"bundled-executor",
+	"dind",
+	"embeddings",
+	"executor",
+	"executor-kubernetes",
+	"executor-vm",
+	"jaeger-agent",
+	"jaeger-all-in-one",
+	"llm-proxy",
+	"sg"}
+
+// These are images that use the musl build chain for bazel, and break the cache if built
+// on a system with glibc. They are built on a separate pipeline.
+var SourcegraphDockerImagesMusl = []string{"symbols", "server"}
 
 // DeploySourcegraphDockerImages denotes all Docker images that are included in a typical
 // deploy-sourcegraph installation.
@@ -58,6 +73,7 @@ var SourcegraphDockerImages = append(DeploySourcegraphDockerImages,
 // it must also be added to this list.
 var DeploySourcegraphDockerImages = []string{
 	"alpine-3.14",
+	"blobstore",
 	"cadvisor",
 	"codeinsights-db",
 	"codeintel-db",
@@ -66,11 +82,9 @@ var DeploySourcegraphDockerImages = []string{
 	"gitserver",
 	"grafana",
 	"indexed-searcher",
-	"jaeger-agent",
-	"jaeger-all-in-one",
-	"blobstore",
-	"blobstore2",
+	"migrator",
 	"node-exporter",
+	"opentelemetry-collector",
 	"postgres-12-alpine",
 	"postgres_exporter",
 	"precise-code-intel-worker",
@@ -82,18 +96,7 @@ var DeploySourcegraphDockerImages = []string{
 	"repo-updater",
 	"search-indexer",
 	"searcher",
-	"symbols",
-	"syntax-highlighter",
 	"worker",
-	"migrator",
-	"executor",
-	"executor-kubernetes",
-	"executor-vm",
-	"batcheshelper",
-	"opentelemetry-collector",
-	"embeddings",
-	"dind",
-	"bundled-executor",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.

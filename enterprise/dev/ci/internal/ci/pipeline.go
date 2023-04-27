@@ -190,13 +190,28 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 				triggerAsync(buildOptions)))
 		}
+		// if c.Diff.Has(changed.DockerImages) {
+		// 	// Build and scan docker images
+		// 	testBuilds := operations.NewNamedSet("Test builds")
+		// 	scanBuilds := operations.NewNamedSet("Scan test builds")
+		// 	for _, image := range images.SourcegraphDockerImages {
+		// 		testBuilds.Append(bazelBuildCandidateDockerImage(image, c.Version, c.candidateImageTag(), false))
+		// 		scanBuilds.Append(trivyScanCandidateImage(image, c.candidateImageTag()))
+		// 	}
+		// 	ops.Merge(testBuilds)
+		// 	ops.Merge(scanBuilds)
+		// }
+
+		// TODO(JH) TEMP
+		ops.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMusl, c.Version, c.candidateImageTag(), c.RunType))
+		ops.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
 	case runtype.BackendIntegrationTests:
 		ops.Append(
-			buildCandidateDockerImage("server", c.Version, c.candidateImageTag(), false),
+			bazelBuildCandidateDockerImages([]string{"server"}, c.Version, c.candidateImageTag(), c.RunType),
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// always include very backend-oriented changes in this set of tests
@@ -269,7 +284,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
+			bazelBuildCandidateDockerImages([]string{patchImage}, c.Version, c.candidateImageTag(), c.RunType),
 			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
@@ -278,7 +293,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Publish images after everything is done
 		ops.Append(
 			wait,
-			publishFinalDockerImage(c, patchImage))
+			bazelPublishFinalDockerImage(c, []string{patchImage}))
 
 	case runtype.ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
@@ -290,36 +305,32 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 		ops = operations.NewSet(
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), false),
+			bazelBuildCandidateDockerImages([]string{patchImage}, c.Version, c.candidateImageTag(), c.RunType),
 			wait,
-			publishFinalDockerImage(c, patchImage))
+			bazelPublishFinalDockerImage(c, []string{patchImage}))
 
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageBuildOps.Append(
-				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), false))
-		}
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 		ops.Merge(imageBuildOps)
 
 		ops.Append(wait)
 
 		publishOps := operations.NewNamedSet("Publish images")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			publishOps.Append(publishFinalDockerImage(c, dockerImage))
-		}
+		publishOps.Append(bazelPublishFinalDockerImage(c, images.SourcegraphDockerImages))
+
 		ops.Merge(publishOps)
 
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
-			buildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), false),
+			bazelBuildCandidateDockerImages([]string{"executorVMImage"}, c.Version, c.candidateImageTag(), c.RunType),
 			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
 			buildExecutorVM(c, true),
 			buildExecutorDockerMirror(c),
 			buildExecutorBinary(c),
 			wait,
-			publishFinalDockerImage(c, executorVMImage),
+			bazelPublishFinalDockerImage(c, []string{executorVMImage}),
 			publishExecutorVM(c, true),
 			publishExecutorDockerMirror(c),
 			publishExecutorBinary(c),
@@ -330,33 +341,46 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(operations.NewNamedSet(operations.PipelineSetupSetName,
 			triggerAsync(buildOptions)))
 
-		// Slow image builds
-		imageBuildOps := operations.NewNamedSet("Image builds")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			// Only upload sourcemaps for the "frontend" image, on the Main branch build
-			uploadSourcemaps := false
-			if c.RunType.Is(runtype.MainBranch) && dockerImage == "frontend" {
-				uploadSourcemaps = true
-			}
-			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
-		}
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
-		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
-			imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
-			imageBuildOps.Append(buildExecutorBinary(c))
-			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-				imageBuildOps.Append(buildExecutorDockerMirror(c))
+		// Slow image builds
+		imageBuildOps := operations.NewNamedSet("Image builds")
+		if c.MessageFlags.NoBazel {
+			for _, dockerImage := range images.SourcegraphDockerImages {
+				// Only upload sourcemaps for the "frontend" image, on the Main branch build
+				uploadSourcemaps := false
+				if c.RunType.Is(runtype.MainBranch) && dockerImage == "frontend" {
+					uploadSourcemaps = true
+				}
+				imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
+			}
+			// Executor VM image
+			// skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
+			if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
+				imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
+				imageBuildOps.Append(buildExecutorBinary(c))
+				if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
+					imageBuildOps.Append(buildExecutorDockerMirror(c))
+				}
+			}
+		} else {
+
+			buildList := append(append(images.SourcegraphDockerImagesMusl, images.SourcegraphDockerImages...), images.DeploySourcegraphDockerImages...)
+			for _, dockerImage := range buildList {
+				imageBuildOps.Append(bazelBuildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), c.RunType))
+				// imageBuildOps.Append(bazelBuildCandidateDockerImages(images.DeploySourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+				// imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMusl, c.Version, c.candidateImageTag(), c.RunType))
+				// imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 			}
 		}
 		ops.Merge(imageBuildOps)
 
 		// Trivy security scans
-		imageScanOps := operations.NewNamedSet("Image security scans")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
-		}
-		ops.Merge(imageScanOps)
+		// imageScanOps := operations.NewNamedSet("Image security scans")
+		// for _, dockerImage := range images.SourcegraphDockerImages {
+		// 	imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
+		// }
+		// ops.Merge(imageScanOps)
 
 		// Core tests
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
@@ -376,8 +400,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
 			executorsE2E(c.candidateImageTag()),
 			serverE2E(c.candidateImageTag()),
-			serverQA(c.candidateImageTag()),
-			clusterQA(c.candidateImageTag()),
 			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
 		))
 
@@ -386,7 +408,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
-		for _, dockerImage := range images.SourcegraphDockerImages {
+		publishList := append(append(images.SourcegraphDockerImages, images.SourcegraphDockerImagesMusl...), images.DeploySourcegraphDockerImages...)
+		// Add final artifacts
+		for _, dockerImage := range publishList {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image

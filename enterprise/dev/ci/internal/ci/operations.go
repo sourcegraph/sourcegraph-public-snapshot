@@ -898,7 +898,6 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 			// Retry in case of flakes when pushing
 			bk.AutomaticRetryStatus(3, 222),
 		)
-
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)
 	}
 }
@@ -923,7 +922,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: Scan %s", app),
-			bk.DependsOn(candidateImageStepKey(app)),
+			bk.DependsOn("bazel-docker"),
 
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
 

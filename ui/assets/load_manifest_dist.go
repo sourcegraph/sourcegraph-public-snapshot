@@ -6,6 +6,7 @@ package assets
 import (
 	_ "embed"
 	"encoding/json"
+	"io"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,7 +23,14 @@ var (
 // details.
 func LoadWebpackManifest() (*WebpackManifest, error) {
 	webpackManifestOnce.Do(func() {
-		manifestContent, err := assetsFS.ReadFile("webpack.manifest.json")
+		f, err := afs.Open("webpack.manifest.json")
+		if err != nil {
+			webpackManifestErr = errors.Wrap(err, "read manifest file")
+			return
+		}
+		defer f.Close()
+
+		manifestContent, err := io.ReadAll(f)
 		if err != nil {
 			webpackManifestErr = errors.Wrap(err, "read manifest file")
 			return
