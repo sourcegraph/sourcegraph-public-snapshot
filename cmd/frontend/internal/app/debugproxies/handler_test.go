@@ -33,9 +33,15 @@ func TestReverseProxyRequestPaths(t *testing.T) {
 		return
 	}
 
+	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+
+	db := database.NewStrictMockDB()
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
 	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
 	displayName := displayNameFromEndpoint(ep)
-	rph.Populate(database.NewMockDB(), []Endpoint{ep})
+	rph.Populate(db, []Endpoint{ep})
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -44,12 +50,6 @@ func TestReverseProxyRequestPaths(t *testing.T) {
 
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
-
-	featureFlags := database.NewMockFeatureFlagStore()
-	featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
-
-	db := database.NewStrictMockDB()
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	rtr := mux.NewRouter()
 	rtr.PathPrefix("/-/debug").Name(router.Debug)
