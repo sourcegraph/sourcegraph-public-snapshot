@@ -4969,6 +4969,10 @@ type MockDB struct {
 	// QueryRowContextFunc is an instance of a mock function object
 	// controlling the behavior of the method QueryRowContext.
 	QueryRowContextFunc *DBQueryRowContextFunc
+	// RecentContributionSignalsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// RecentContributionSignals.
+	RecentContributionSignalsFunc *DBRecentContributionSignalsFunc
 	// RedisKeyValueFunc is an instance of a mock function object
 	// controlling the behavior of the method RedisKeyValue.
 	RedisKeyValueFunc *DBRedisKeyValueFunc
@@ -5180,6 +5184,11 @@ func NewMockDB() *MockDB {
 		},
 		QueryRowContextFunc: &DBQueryRowContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (r0 *sql.Row) {
+				return
+			},
+		},
+		RecentContributionSignalsFunc: &DBRecentContributionSignalsFunc{
+			defaultHook: func() (r0 RecentContributionSignalStore) {
 				return
 			},
 		},
@@ -5440,6 +5449,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.QueryRowContext")
 			},
 		},
+		RecentContributionSignalsFunc: &DBRecentContributionSignalsFunc{
+			defaultHook: func() RecentContributionSignalStore {
+				panic("unexpected invocation of MockDB.RecentContributionSignals")
+			},
+		},
 		RedisKeyValueFunc: &DBRedisKeyValueFunc{
 			defaultHook: func() RedisKeyValueStore {
 				panic("unexpected invocation of MockDB.RedisKeyValue")
@@ -5638,6 +5652,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		QueryRowContextFunc: &DBQueryRowContextFunc{
 			defaultHook: i.QueryRowContext,
+		},
+		RecentContributionSignalsFunc: &DBRecentContributionSignalsFunc{
+			defaultHook: i.RecentContributionSignals,
 		},
 		RedisKeyValueFunc: &DBRedisKeyValueFunc{
 			defaultHook: i.RedisKeyValue,
@@ -8626,6 +8643,106 @@ func (c DBQueryRowContextFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBQueryRowContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBRecentContributionSignalsFunc describes the behavior when the
+// RecentContributionSignals method of the parent MockDB instance is
+// invoked.
+type DBRecentContributionSignalsFunc struct {
+	defaultHook func() RecentContributionSignalStore
+	hooks       []func() RecentContributionSignalStore
+	history     []DBRecentContributionSignalsFuncCall
+	mutex       sync.Mutex
+}
+
+// RecentContributionSignals delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDB) RecentContributionSignals() RecentContributionSignalStore {
+	r0 := m.RecentContributionSignalsFunc.nextHook()()
+	m.RecentContributionSignalsFunc.appendCall(DBRecentContributionSignalsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// RecentContributionSignals method of the parent MockDB instance is invoked
+// and the hook queue is empty.
+func (f *DBRecentContributionSignalsFunc) SetDefaultHook(hook func() RecentContributionSignalStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecentContributionSignals method of the parent MockDB instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBRecentContributionSignalsFunc) PushHook(hook func() RecentContributionSignalStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRecentContributionSignalsFunc) SetDefaultReturn(r0 RecentContributionSignalStore) {
+	f.SetDefaultHook(func() RecentContributionSignalStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRecentContributionSignalsFunc) PushReturn(r0 RecentContributionSignalStore) {
+	f.PushHook(func() RecentContributionSignalStore {
+		return r0
+	})
+}
+
+func (f *DBRecentContributionSignalsFunc) nextHook() func() RecentContributionSignalStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRecentContributionSignalsFunc) appendCall(r0 DBRecentContributionSignalsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRecentContributionSignalsFuncCall objects
+// describing the invocations of this function.
+func (f *DBRecentContributionSignalsFunc) History() []DBRecentContributionSignalsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRecentContributionSignalsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRecentContributionSignalsFuncCall is an object that describes an
+// invocation of method RecentContributionSignals on an instance of MockDB.
+type DBRecentContributionSignalsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RecentContributionSignalStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRecentContributionSignalsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRecentContributionSignalsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

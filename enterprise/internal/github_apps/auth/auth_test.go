@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -9,9 +11,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -49,7 +54,7 @@ jSzka5UER3Dj1lSLMk9DkU+jrBxUsFeeiQOYhzQBaZxguvwYRIYHpg==
 func TestCreateEnterpriseFromConnection(t *testing.T) {
 	t.Run("returns OAuthBearerToken when GitHubAppDetails is nil", func(t *testing.T) {
 		ghAppsStore := store.NewMockGitHubAppsStore()
-		fromConnection := CreateEnterpriseFromConnection(ghAppsStore)
+		fromConnection := CreateEnterpriseFromConnection(ghAppsStore, keyring.Default().GitHubAppKey)
 
 		conn := &schema.GitHubConnection{
 			Token: "abc123",
@@ -70,7 +75,7 @@ func TestCreateEnterpriseFromConnection(t *testing.T) {
 		}
 		ghAppsStore := store.NewMockGitHubAppsStore()
 		ghAppsStore.GetByAppIDFunc.SetDefaultReturn(ghApp, nil)
-		fromConnection := CreateEnterpriseFromConnection(ghAppsStore)
+		fromConnection := CreateEnterpriseFromConnection(ghAppsStore, keyring.Default().GitHubAppKey)
 
 		conn := &schema.GitHubConnection{
 			GitHubAppDetails: &schema.GitHubAppDetails{
@@ -81,9 +86,9 @@ func TestCreateEnterpriseFromConnection(t *testing.T) {
 
 		authenticator, err := fromConnection(context.Background(), conn)
 		require.NoError(t, err)
-		assert.IsType(t, &installationAccessToken{}, authenticator)
+		assert.IsType(t, &installationAuthenticator{}, authenticator)
 		assert.Equal(t, installationID,
-			authenticator.(*installationAccessToken).installationID)
+			authenticator.(*installationAuthenticator).installationID)
 	})
 }
 
@@ -121,8 +126,9 @@ func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
 		u,
 		installationID,
 		appAuthenticator,
+		keyring.Default().GitHubAppKey,
 	)
-	token.token = "installation-token"
+	token.installationAccessToken.Token = "installation-token"
 
 	req, err := http.NewRequest("GET", "https://api.github.com", nil)
 	require.NoError(t, err)
@@ -136,35 +142,113 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 	appAuthenticator := &mockAuthenticator{}
 	u, err := url.Parse("https://github.com")
 	require.NoError(t, err)
-	token := NewInstallationAccessToken(
-		u,
-		1,
-		appAuthenticator,
-	)
 
-	mockClient := &mockHTTPClient{}
-	require.NoError(t, token.Refresh(context.Background(), mockClient))
+	t.Run("token refreshes", func(t *testing.T) {
+		token := NewInstallationAccessToken(
+			u,
+			1,
+			appAuthenticator,
+			keyring.Default().GitHubAppKey,
+		)
 
-	require.True(t, mockClient.DoCalled)
+		mockClient := &mockHTTPClient{}
+		wantToken := mockClient.generateToken()
+		require.NoError(t, token.Refresh(context.Background(), mockClient))
 
-	require.True(t, appAuthenticator.AuthenticateCalled)
+		require.True(t, mockClient.DoCalled)
 
-	require.Equal(t, token.token, "new-token")
-	wantTime, err := time.Parse(time.RFC3339, "2016-07-11T22:14:10Z")
-	require.NoError(t, err)
-	require.True(t, token.expiresAt.Equal(wantTime))
+		require.True(t, appAuthenticator.AuthenticateCalled)
+
+		require.Equal(t, token.installationAccessToken.Token, wantToken.Token)
+	})
+
+	t.Run("uses token cache", func(t *testing.T) {
+		rcache.SetupForTest(t)
+
+		// We create 2 tokens for the same installation ID
+		token1 := NewInstallationAccessToken(
+			u,
+			1,
+			appAuthenticator,
+			keyring.Default().GitHubAppKey,
+		)
+		token2 := NewInstallationAccessToken(
+			u,
+			1,
+			appAuthenticator,
+			keyring.Default().GitHubAppKey,
+		)
+
+		// We create a token for token1
+		mockClient := &mockHTTPClient{}
+		wantToken := mockClient.generateToken()
+		require.NoError(t, token1.Refresh(context.Background(), mockClient))
+
+		require.True(t, mockClient.DoCalled)
+		require.True(t, appAuthenticator.AuthenticateCalled)
+
+		require.Equal(t, token1.installationAccessToken.Token, wantToken.Token)
+
+		// First we generate a new token for the mockClient so that we're sure
+		// we're not returning the same one.
+		mockClient.generateToken()
+		require.NotEqual(t, mockClient.installationAccessToken, wantToken)
+		// Now we refresh token2 and assert that we get the same token from the cache
+		token2.Refresh(context.Background(), mockClient)
+		require.Equal(t, token1.installationAccessToken.Token, token2.installationAccessToken.Token)
+	})
+
+	t.Run("refreshes cache if stale", func(t *testing.T) {
+		rcache.SetupForTest(t)
+
+		// We create 2 tokens for the same installation ID
+		token1 := NewInstallationAccessToken(
+			u,
+			1,
+			appAuthenticator,
+			keyring.Default().GitHubAppKey,
+		)
+		token2 := NewInstallationAccessToken(
+			u,
+			1,
+			appAuthenticator,
+			keyring.Default().GitHubAppKey,
+		)
+
+		// We create a token for token1
+		mockClient := &mockHTTPClient{}
+		mockClient.generateToken()
+		mockClient.installationAccessToken.ExpiresAt = time.Now().Add(-1 * time.Hour)
+		wantToken := mockClient.installationAccessToken
+		require.NoError(t, token1.Refresh(context.Background(), mockClient))
+
+		require.True(t, mockClient.DoCalled)
+		require.True(t, appAuthenticator.AuthenticateCalled)
+
+		require.Equal(t, token1.installationAccessToken.Token, wantToken.Token)
+
+		// First we generate a new token for the mockClient so that we're sure
+		// we're not returning the same one.
+		mockClient.generateToken()
+		require.NotEqual(t, mockClient.installationAccessToken, wantToken)
+		// Now we refresh token2 and assert that we get A DIFFERENT token from the cache
+		token2.Refresh(context.Background(), mockClient)
+		require.NotEqual(t, token1.installationAccessToken.Token, token2.installationAccessToken.Token)
+		// For good measure, assert that token2 is not expired
+		require.False(t, token2.NeedsRefresh())
+	})
 }
 
 func TestInstallationAccessToken_NeedsRefresh(t *testing.T) {
 	testCases := map[string]struct {
-		token        installationAccessToken
+		token        installationAuthenticator
 		needsRefresh bool
 	}{
-		"empty token":   {installationAccessToken{}, true},
-		"valid token":   {installationAccessToken{token: "abc123"}, false},
-		"not expired":   {installationAccessToken{token: "abc123", expiresAt: time.Now().Add(10 * time.Minute)}, false},
-		"expired":       {installationAccessToken{token: "abc123", expiresAt: time.Now().Add(-10 * time.Minute)}, true},
-		"expiring soon": {installationAccessToken{token: "abc123", expiresAt: time.Now().Add(3 * time.Minute)}, true},
+		"empty token":   {installationAuthenticator{}, true},
+		"valid token":   {installationAuthenticator{installationAccessToken: installationAccessToken{Token: "abc123"}}, false},
+		"not expired":   {installationAuthenticator{installationAccessToken: installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(10 * time.Minute)}}, false},
+		"expired":       {installationAuthenticator{installationAccessToken: installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(-10 * time.Minute)}}, true},
+		"expiring soon": {installationAuthenticator{installationAccessToken: installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(3 * time.Minute)}}, true},
 	}
 
 	for name, tc := range testCases {
@@ -181,7 +265,7 @@ func TestInstallationAccessToken_SetURLUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	it := installationAccessToken{token: token}
+	it := installationAuthenticator{installationAccessToken: installationAccessToken{Token: token}}
 	it.SetURLUser(u)
 
 	want := "x-access-token:abc123"
@@ -204,14 +288,25 @@ func (m *mockAuthenticator) Hash() string {
 }
 
 type mockHTTPClient struct {
-	DoCalled bool
+	DoCalled                bool
+	installationAccessToken installationAccessToken
 }
 
 func (c *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	c.DoCalled = true
+	marshal, err := json.Marshal(c.installationAccessToken)
+	if err != nil {
+		return nil, err
+	}
 
 	return &http.Response{
 		StatusCode: http.StatusCreated,
-		Body:       io.NopCloser(strings.NewReader(`{"token": "new-token", "expires_at": "2016-07-11T22:14:10Z"}`)),
+		Body:       io.NopCloser(bytes.NewReader(marshal)),
 	}, nil
+}
+
+func (c *mockHTTPClient) generateToken() installationAccessToken {
+	c.installationAccessToken.Token = uuid.New().String()
+	c.installationAccessToken.ExpiresAt = time.Now().Add(1 * time.Hour)
+	return c.installationAccessToken
 }
