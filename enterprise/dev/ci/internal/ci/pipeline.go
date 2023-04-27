@@ -296,10 +296,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageBuildOps.Append(
-				bazelBuildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), c.RunType))
-		}
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.DeploySourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMisc, c.Version, c.candidateImageTag(), c.RunType))
 		ops.Merge(imageBuildOps)
 		ops.Append(wait)
 
