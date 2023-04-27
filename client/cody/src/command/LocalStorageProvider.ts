@@ -38,7 +38,7 @@ export class LocalStorage {
                               // so we iterate through messages in two elements chunks to reverse this
                               interactions: chunks(messages, 2).map(
                                   ([humanMessage, assistantMessageAndContextFiles]) => ({
-                                      humanMessage: humanMessage,
+                                      humanMessage,
                                       assistantMessage: assistantMessageAndContextFiles,
                                       context: assistantMessageAndContextFiles.contextFiles
                                           ? assistantMessageAndContextFiles.contextFiles.map(fileName => ({
