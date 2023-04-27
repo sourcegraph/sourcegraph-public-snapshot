@@ -15,8 +15,8 @@ RUN cargo fetch
 ARG TARGETARCH
 
 # Because .cargo/config.toml doesnt support triplet-specific env
-RUN <<EOF \
-    if [ "${TARGETARCH}" = "arm64" ]; then
+RUN <<EOF
+if [ "${TARGETARCH}" = "arm64" ]; then
 	cat <<- FOE >> .cargo/config.toml
 	[env]
 	CFLAGS="-mno-outline-atomics"
