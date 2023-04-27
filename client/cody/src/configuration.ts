@@ -23,7 +23,8 @@ function sanitizeCodebase(codebase: string | undefined): string {
         return ''
     }
     const protocolRegexp = /^(https?):\/\//
-    return codebase.replace(protocolRegexp, '')
+    const trailingSlashRegexp = /\/$/
+    return codebase.replace(protocolRegexp, '').trim().replace(trailingSlashRegexp, '')
 }
 
 function sanitizeServerEndpoint(serverEndpoint: string): string {
