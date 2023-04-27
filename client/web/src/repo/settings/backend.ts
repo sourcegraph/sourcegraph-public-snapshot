@@ -78,7 +78,7 @@ export const ADD_REPO_METADATA_GQL = gql`
 `
 
 export const DELETE_REPO_METADATA_GQL = gql`
-    mutation AddRepoMetadata($repo: ID!, $key: String!) {
+    mutation DeleteRepoMetadata($repo: ID!, $key: String!) {
         deleteRepoKeyValuePair(repo: $repo, key: $key) {
             alwaysNil
         }
