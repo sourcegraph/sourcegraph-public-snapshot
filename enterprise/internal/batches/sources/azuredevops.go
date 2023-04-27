@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
@@ -411,20 +410,11 @@ func (s AzureDevOpsSource) setChangesetMetadata(ctx context.Context, repo *azure
 
 func (s AzureDevOpsSource) changesetToPullRequestInput(cs *Changeset) azuredevops.CreatePullRequestInput {
 
-	var closeSourceBranch bool
-
-	if conf.Get().BatchChangesAutoDeleteBranch {
-		closeSourceBranch = true
-	} else {
-		closeSourceBranch = false
-	}
-
 	input := azuredevops.CreatePullRequestInput{
 		Title:         cs.Title,
 		Description:   cs.Body,
 		SourceRefName: cs.HeadRef,
 		TargetRefName: cs.BaseRef,
-		AutoComplete:  closeSourceBranch,
 	}
 
 	// If we're forking, then we need to set the source repository as well.
