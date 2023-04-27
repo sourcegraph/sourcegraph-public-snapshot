@@ -33,3 +33,11 @@ export const UPDATE_CODE_HOST = gql`
 
     ${CODE_HOST_FRAGMENT}
 `
+
+export const DELETE_CODE_HOST = gql`
+    mutation DeleteRemoteCodeHost($id: ID!) {
+        deleteExternalService(externalService: $id) {
+            alwaysNil
+        }
+    }
+`

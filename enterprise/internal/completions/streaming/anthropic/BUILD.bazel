@@ -7,10 +7,10 @@ go_library(
         "decoder.go",
         "prompt.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/anthropic",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/anthropic",
+    visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/cmd/frontend/internal/completions/types",
+        "//enterprise/internal/completions/types",
         "//internal/httpcli",
         "//lib/errors",
     ],
@@ -27,7 +27,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":anthropic"],
     deps = [
-        "//enterprise/cmd/frontend/internal/completions/types",
+        "//enterprise/internal/completions/types",
         "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

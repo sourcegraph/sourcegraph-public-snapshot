@@ -125,7 +125,13 @@ export async function createClient({
                 sendTranscript()
             },
             onError(error) {
-                console.error(error)
+                // Display error message as assistant response
+                transcript.addErrorAsAssistantResponse(
+                    `<div class="cody-chat-error"><span>Request failed: </span>${error}</div>`
+                )
+                isMessageInProgress = false
+                sendTranscript()
+                console.error(`Completion request failed: ${error}`)
             },
         })
     }
