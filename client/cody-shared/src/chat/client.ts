@@ -1,5 +1,5 @@
 import { CodebaseContext } from '../codebase-context'
-import { ConfigurationUseContext, ConfigurationWithAccessToken } from '../configuration'
+import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
