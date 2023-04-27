@@ -889,10 +889,16 @@ type Mutation {
     deletePackageRepoFilter(id: ID!): EmptyResponse!
 
     """
-    Sets the completions requests quota for the user per hour. Quota: Null means
+    Sets the completions requests quota for the user per day. Quota: Null means
     use the default quota.
     """
     setUserCompletionsQuota(user: ID!, quota: Int): User!
+
+    """
+    Sets the code completions requests quota for the user per day. Quota: Null means
+    use the default quota.
+    """
+    setUserCodeCompletionsQuota(user: ID!, quota: Int): User!
 }
 
 """
@@ -6410,6 +6416,11 @@ type User implements Node & SettingsSubject & Namespace {
     """
     emails: [UserEmail!]!
     """
+    Whether the user has a verified email or not.
+    Only the user and site admins can access this field.
+    """
+    hasVerifiedEmail: Boolean!
+    """
     The user's verified primary email address (if any).
     On dotcom only the user and site admins can access this field.
     """
@@ -6503,10 +6514,16 @@ type User implements Node & SettingsSubject & Namespace {
     """
     permissions: PermissionConnection!
     """
-    The configured override for the user to the completions request quota per hour.
+    The configured override for the user to the completions request quota per day.
     Null, if not overwritten.
     """
     completionsQuotaOverride: Int
+    """
+    The configured override for the user to the code completions request quota
+    per day.
+    Null, if not overwritten.
+    """
+    codeCompletionsQuotaOverride: Int
 }
 
 """
@@ -7302,6 +7319,16 @@ type Site implements SettingsSubject {
     The quota of completions requests allowed per user in an hour. Null, if unlimited.
     """
     perUserCompletionsQuota: Int
+
+    """
+    The quota of code completions requests allowed per user in a day. Null, if unlimited.
+    """
+    perUserCodeCompletionsQuota: Int
+
+    """
+    Whether users are required to have a verified email in order to access Cody.
+    """
+    requiresVerifiedEmailForCody: Boolean!
 }
 
 """
@@ -10068,3 +10095,5 @@ type Permission implements Node {
     """
     createdAt: DateTime!
 }
+
+

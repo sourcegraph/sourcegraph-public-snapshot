@@ -82,7 +82,7 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
             />
             <Container className="mb-3">
                 <H3>Completions</H3>
-                <Text>Number of requests per hour allowed against the completions APIs.</Text>
+                <Text>Number of requests per day allowed against the completions APIs.</Text>
                 <div className="d-flex justify-content-between align-items-end">
                     <Input
                         id="completions-quota"
