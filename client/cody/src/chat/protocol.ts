@@ -17,6 +17,7 @@ export type WebviewMessage =
     | { command: 'settings'; serverEndpoint: string; accessToken: string }
     | { command: 'removeToken' }
     | { command: 'removeHistory' }
+    | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
