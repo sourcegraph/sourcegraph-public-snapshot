@@ -25,6 +25,7 @@
 
     &[aria-disabled='true'] {
         color: var(--text-disabled);
+        cursor: default; // Don't use the "disabled" cursor, it's too prominent.
     }
 
     &:hover:not([aria-disabled='true']) {
