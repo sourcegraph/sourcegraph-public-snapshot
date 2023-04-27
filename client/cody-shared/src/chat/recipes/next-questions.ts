@@ -13,11 +13,6 @@ export class NextQuestions implements Recipe {
     public id = 'next-questions'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
-        if (!selection) {
-            return Promise.resolve(null)
-        }
-
         const promptPrefix = 'Assume I have an answer to the following request:'
         const promptSuffix =
             'Generate one to three follow-up discussion topics that the human can ask you to uphold the conversation. Keep the topics very concise (try not to exceed 5 words per topic) and phrase them as questions.'
@@ -28,14 +23,16 @@ export class NextQuestions implements Recipe {
         const promptMessage = `${promptPrefix}\n\n\`\`\`\n${truncatedText}\n\`\`\`\n\n${promptSuffix}`
 
         const assistantResponsePrefix = 'Sure, here are great follow-up discussion topics and learning ideas:\n\n - '
-        return new Interaction(
-            { speaker: 'human', text: promptMessage },
-            {
-                speaker: 'assistant',
-                prefix: assistantResponsePrefix,
-                text: assistantResponsePrefix,
-            },
-            this.getContextMessages(promptMessage, context.editor, context.intentDetector, context.codebaseContext)
+        return Promise.resolve(
+            new Interaction(
+                { speaker: 'human', text: promptMessage },
+                {
+                    speaker: 'assistant',
+                    prefix: assistantResponsePrefix,
+                    text: assistantResponsePrefix,
+                },
+                this.getContextMessages(promptMessage, context.editor, context.intentDetector, context.codebaseContext)
+            )
         )
     }
 
