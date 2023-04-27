@@ -23,7 +23,6 @@ func CheckCurrentUserIsSiteAdmin(ctx context.Context, db database.DB) error {
 	if err != nil {
 		return err
 	}
-	println(user.ID, user.SiteAdmin)
 	if user == nil {
 		return ErrNotAuthenticated
 	}
