@@ -14,7 +14,7 @@ Your feedback is important to us and is greatly appreciated. Please do not hesit
 
 ## Issues / Bugs
 
-New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,jetbrains-ide&title=JetBrains:+&projects=Integrations%20Project%20Board) using the `jetbrains-ide` & `team/integrations` labels.
+New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,jetbrains-ide&title=JetBrains:+) using the `jetbrains-ide` & `team/integrations` labels.
 
 ## Development
 
