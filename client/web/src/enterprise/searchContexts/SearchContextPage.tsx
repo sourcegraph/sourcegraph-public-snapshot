@@ -203,7 +203,7 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
             )}
             {searchContext.viewerCanManage && (
                 <Button
-                    to={`/contexts/${searchContext.spec}/edit`}
+                    to={`/contexts/${encodeURIComponent(searchContext.spec)}/edit`}
                     data-testid="edit-search-context-link"
                     variant="secondary"
                     as={Link}
