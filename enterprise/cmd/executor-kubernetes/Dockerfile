@@ -22,6 +22,8 @@ RUN apk add --no-cache \
     'git>=2.38.0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main \
     ca-certificates
 
+RUN mkdir -p /data/executors && chown -R sourcegraph:sourcegraph /data/executors
 USER sourcegraph
+
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/executor"]
 COPY executor /usr/local/bin/

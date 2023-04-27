@@ -3,7 +3,6 @@ package runtime
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
@@ -56,7 +55,8 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types
 				Command: []string{
 					"/bin/sh",
 					"-c",
-					filepath.Join("/data/.sourcegraph-executor", ws.ScriptFilenames()[i]),
+					// filepath.Join(command.KubernetesVolumeMountSubPath, ".sourcegraph-executor", ws.ScriptFilenames()[i]),
+					"while true; do sleep 30; done;",
 				},
 				Dir:       step.Dir,
 				Env:       step.Env,

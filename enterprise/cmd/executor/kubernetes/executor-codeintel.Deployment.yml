@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sg-executor-codeintel
+  namespace: src-ed654e65e35cf36daa38
+spec:
+  selector:
+    matchLabels:
+      app: sg-executor-codeintel
+  template:
+    metadata:
+      namespace: src-ed654e65e35cf36daa38
+      labels:
+        app: sg-executor-codeintel
+    spec:
+      hostNetwork: true
+      serviceAccountName: sg-executor-codeintel-service-account
+      securityContext:
+        runAsUser: 0
+      containers:
+        - name: sg-executor-codeintel
+          image: us-central1-docker.pkg.dev/src-c54bde77ebd01257330e/cloud-internal-images-mirror/sourcegraph/executor-kubernetes:test5
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: EXECUTOR_FRONTEND_URL
+              # For development purposes. We usually run Sourcegraph in Docker.
+              value: http://192.168.96.124:30080
+            - name: EXECUTOR_FRONTEND_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: executor-frontend-password
+                  key: EXECUTOR_FRONTEND_PASSWORD
+            - name: EXECUTOR_QUEUE_NAME
+              value: codeintel
+            - name: EXECUTOR_MAXIMUM_NUM_JOBS
+              value: "10"
+            - name: SRC_LOG_LEVEL
+              value: info
+            - name: SRC_LOG_FORMAT
+              value: condensed
+            - name: SRC_TRACE_LOG
+              value: "false"
+            - name: EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY
+              value: 1Gi
+              # Since the host is 'host.docker.internal', this needs to be true.
+            - name: EXECUTOR_DOCKER_ADD_HOST_GATEWAY
+              value: "false"
+            - name: EXECUTOR_KUBERNETES_NAMESPACE
+              value: src-ed654e65e35cf36daa38
+            # Useful for debugging.
+            - name: KUBERNETES_KEEP_JOBS
+              value: "true"
+          volumeMounts:
+            - mountPath: /data/executors
+              name: sg-executor-codeintel-volume
+      volumes:
+        - name: sg-executor-codeintel-volume
+          persistentVolumeClaim:
+            claimName: sg-executor-codeintel-pvc

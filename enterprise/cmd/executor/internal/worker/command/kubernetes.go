@@ -25,7 +25,7 @@ const (
 
 const (
 	// KubernetesMountPath is the path where the Kubernetes volume is mounted in the container.
-	KubernetesMountPath = "/data"
+	KubernetesMountPath = "/data/executors"
 	// KubernetesVolumeMountSubPath is the path that is mounted in the Kubernetes pod container.
 	KubernetesVolumeMountSubPath = "/data/"
 )

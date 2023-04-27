@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type kubernetesWorkspace struct {
@@ -28,6 +29,13 @@ func NewKubernetesWorkspace(
 	operations *command.Operations,
 ) (Workspace, error) {
 	workspaceDir := filepath.Join(mountPath, fmt.Sprintf("job-%d", job.ID))
+
+	if _, err := os.Stat(workspaceDir); os.IsNotExist(err) {
+		err := os.Mkdir(workspaceDir, 0755)
+		if err != nil {
+			return nil, errors.Wrap(err, "error creating workspace directory")
+		}
+	}
 
 	if job.RepositoryName != "" {
 		if err := cloneRepo(ctx, workspaceDir, job, cmd, logger, cloneOpts, operations); err != nil {
