@@ -20,6 +20,11 @@ jobs:
       # Setup
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          set-safe-directory: false
+
+      # - name: Set directory to safe for git
+      #   run: git config --global --add safe.directory /__w/sourcegraph/sourcegraph
 
       - name: Get src-cli
         run: |
