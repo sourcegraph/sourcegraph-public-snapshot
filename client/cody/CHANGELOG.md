@@ -24,3 +24,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 - Escaped HTML issue [pull/51144](https://github.com/sourcegraph/sourcegraph/pull/51151)
 - Unauthorized sessions [pull/51005](https://github.com/sourcegraph/sourcegraph/pull/51005)
+
+### Changed
+
+- Various improvements to the experimental completions feature [pull/51161](https://github.com/sourcegraph/sourcegraph/pull/51161) [51046](https://github.com/sourcegraph/sourcegraph/pull/51046)
