@@ -387,8 +387,7 @@ function createBlobPageData<T extends BlobInfo>({
                 createFileExternalLinksResult(`https://${repoName}/blob/master/${filePath}`),
             TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, fileNames),
             FileTreeEntries: () => createFileTreeEntriesResult(repositorySourcegraphUrl, fileNames),
-            Blob: ({ filePath }) =>
-                createBlobContentResult(blobInfo[filePath].content, blobInfo[filePath].html, blobInfo[filePath].lsif),
+            Blob: ({ filePath }) => createBlobContentResult(blobInfo[filePath].content, blobInfo[filePath].lsif),
             FileNames: () => ({
                 repository: {
                     id: 'repo-123',
