@@ -11,10 +11,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/anthropic"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/openai"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/anthropic"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/openai"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -23,7 +23,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const maxRequestDuration = time.Minute
+// MaxRequestDuration is the maximum amount of time a request can take before
+// being cancelled.
+const MaxRequestDuration = time.Minute
 
 // NewCompletionsStreamHandler is an http handler which streams back completions results.
 func NewCompletionsStreamHandler(logger log.Logger, db database.DB) http.Handler {
@@ -48,7 +50,7 @@ func GetCompletionClient(provider string, accessToken string, model string) (typ
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
+	ctx, cancel := context.WithTimeout(r.Context(), MaxRequestDuration)
 	defer cancel()
 
 	completionsConfig := conf.Get().Completions
