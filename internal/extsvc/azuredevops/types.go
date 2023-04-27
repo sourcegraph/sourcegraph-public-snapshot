@@ -83,14 +83,14 @@ type Ref struct {
 }
 
 type CreatePullRequestInput struct {
-	SourceRefName string     `json:"sourceRefName"`
-	TargetRefName string     `json:"targetRefName"`
-	Title         string     `json:"title"`
-	Description   string     `json:"description"`
-	Reviewers     []Reviewer `json:"reviewers"`
-	ForkSource    *ForkRef   `json:"forkSource"`
-	IsDraft       bool       `json:"isDraft"`
-	AutoComplete  bool       `json:"autoComplete"`
+	SourceRefName     string                        `json:"sourceRefName"`
+	TargetRefName     string                        `json:"targetRefName"`
+	Title             string                        `json:"title"`
+	Description       string                        `json:"description"`
+	Reviewers         []Reviewer                    `json:"reviewers"`
+	ForkSource        *ForkRef                      `json:"forkSource"`
+	IsDraft           bool                          `json:"isDraft"`
+	CompletionOptions *PullRequestCompletionOptions `json:"completionOptions"`
 }
 
 type ForkRef struct {

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -37,6 +38,12 @@ func (c *client) AbandonPullRequest(ctx context.Context, args PullRequestCommonA
 // CreatePullRequest creates a new PR with the specified properties, returns the newly created PR.
 // NOTE: this API needs repository ID specified not repository Name in OrgProjectRepoArgs.
 func (c *client) CreatePullRequest(ctx context.Context, args OrgProjectRepoArgs, input CreatePullRequestInput) (PullRequest, error) {
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		input.CompletionOptions = &PullRequestCompletionOptions{
+			DeleteSourceBranch: true,
+		}
+	}
+
 	data, err := json.Marshal(&input)
 	if err != nil {
 		return PullRequest{}, errors.Wrap(err, "marshalling request")
@@ -95,6 +102,12 @@ func (c *client) GetPullRequestStatuses(ctx context.Context, args PullRequestCom
 //
 // Warning: If you are setting the TargetRefName in the PullRequestUpdateInput, it will be the only thing to get updated (bug in the ADO API).
 func (c *client) UpdatePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestUpdateInput) (PullRequest, error) {
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		input.CompletionOptions = &PullRequestCompletionOptions{
+			DeleteSourceBranch: true,
+		}
+	}
+
 	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
 
 	data, err := json.Marshal(input)
