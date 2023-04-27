@@ -136,7 +136,9 @@ const FILTERS: FilteredConnectionFilter[] = [
     },
 ]
 
-export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
+export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPoll?: boolean }> = ({
+    alwaysPoll = false,
+}) => {
     const {
         data,
         loading: repoStatsLoading,
@@ -149,12 +151,12 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
     const [displayCloneProgress] = useFeatureFlag('clone-progress-logging')
 
     useEffect(() => {
-        if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
+        if (alwaysPoll || data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
             startPolling(REPO_PAGE_POLL_INTERVAL)
         } else {
             stopPolling()
         }
-    }, [data, startPolling, stopPolling])
+    }, [alwaysPoll, data, startPolling, stopPolling])
 
     const {
         loading: extSvcLoading,

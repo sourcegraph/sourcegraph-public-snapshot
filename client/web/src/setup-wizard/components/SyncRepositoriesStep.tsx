@@ -25,7 +25,7 @@ export function SyncRepositoriesStep(props: SyncRepositoriesStep): ReactElement 
             <Text className="mb-2">
                 It may take a few moments to clone and index each repository. View statuses below.
             </Text>
-            <SiteAdminRepositoriesContainer />
+            <SiteAdminRepositoriesContainer alwaysPoll={true} />
 
             <CustomNextButton label="Start searching" disabled={false} onClick={handleFinishButtonClick} />
         </section>
