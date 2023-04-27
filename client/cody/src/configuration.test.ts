@@ -14,6 +14,7 @@ describe('getConfiguration', () => {
             debug: false,
             useContext: 'embeddings',
             experimentalSuggest: false,
+            experimentalChatPredictions: false,
             anthropicKey: null,
             customHeaders: {},
         })
@@ -35,6 +36,8 @@ describe('getConfiguration', () => {
                         return 'keyword'
                     case 'cody.experimental.suggestions':
                         return true
+                    case 'cody.experimental.chatPredictions':
+                        return true
                     case 'cody.experimental.keys.anthropic':
                         return 'sk-YYY'
                     case 'cody.customHeaders':
@@ -54,6 +57,7 @@ describe('getConfiguration', () => {
             debug: true,
             useContext: 'keyword',
             experimentalSuggest: true,
+            experimentalChatPredictions: true,
             anthropicKey: 'sk-YYY',
             customHeaders: {
                 'Cache-Control': 'no-cache',
