@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"

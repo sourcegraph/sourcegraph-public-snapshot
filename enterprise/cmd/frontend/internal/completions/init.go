@@ -6,11 +6,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/resolvers"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"

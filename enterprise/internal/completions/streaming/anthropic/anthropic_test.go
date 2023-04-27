@@ -11,7 +11,7 @@ import (
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 )
 
 type mockDoer struct {
