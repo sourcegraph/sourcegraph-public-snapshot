@@ -138,6 +138,7 @@ ts_project(
         "src/api/ApiConsole.tsx",
         "src/api/ApiConsoleToolbar.tsx",
         "src/api/NoApiConsole.tsx",
+        "src/app/TauriLink.tsx",
         "src/app/TauriTitleBar.tsx",
         "src/app/useHistoryStack.tsx",
         "src/auth.ts",
@@ -1653,6 +1654,7 @@ ts_project(
         "//:node_modules/@sentry/browser",  #keep
         "//:node_modules/@sourcegraph/extension-api-classes",
         "//:node_modules/@storybook/client-api",  #keep
+        "//:node_modules/@tauri-apps/api",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",
