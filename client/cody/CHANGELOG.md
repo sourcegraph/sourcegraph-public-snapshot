@@ -14,6 +14,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
+- Adds new experimental chat predictions feature to suggest follow-up conversations. Enable it with the new `cody.experimental.chatPredictions` feature flag. [pull/51201](https://github.com/sourcegraph/sourcegraph/pull/51201)
 - Auto update `cody.codebase` setting from current open file [pull/51045](https://github.com/sourcegraph/sourcegraph/pull/51045)
 - Properly render rate-limiting on requests [pull/51200](https://github.com/sourcegraph/sourcegraph/pull/51200)
 - Error display in UI [pull/51005](https://github.com/sourcegraph/sourcegraph/pull/51005)
