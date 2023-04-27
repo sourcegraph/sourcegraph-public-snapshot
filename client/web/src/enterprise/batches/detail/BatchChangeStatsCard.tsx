@@ -29,7 +29,7 @@ const ARCHIVED_TOOLTIP =
     'Changesets created by an earlier version of the batch change for repos that are not in scope anymore are archived in the batch change and closed on the code host. They do not count towards the completion percentage.'
 
 const OTHERS_TOOLTIP =
-    'Changesets that are in internal states (FAILED, RETRYING, SCHEDULED, PROCESSING). These changesets do not count towards the completion percentage.'
+    'Changesets in internal states (failed, retrying, scheduled, or processing) do not count towards the completion percentage.'
 
 interface BatchChangeStatsCardProps {
     batchChange: Pick<BatchChangeFields, 'diffStat' | 'changesetsStats' | 'state'>
