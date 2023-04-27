@@ -17,6 +17,9 @@ The following is a guide to setting up a local development environment for the e
 - Install [MiniKube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
 - Start MiniKube
   - `minikube start`
+- Load the images
+  - `minikube image load executor-kubernetes:latest`
+  - `minikube image load sourcegraph/batcheshelper:insiders`
 
 ## Build Image
 
