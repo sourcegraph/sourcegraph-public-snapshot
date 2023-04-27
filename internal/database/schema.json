@@ -19857,7 +19857,7 @@
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": ""
+          "Comment": "Whether this license key can be used as an access token to authenticate API requests"
         },
         {
           "Name": "created_at",

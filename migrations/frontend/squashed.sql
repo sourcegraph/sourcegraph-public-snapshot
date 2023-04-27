@@ -3723,6 +3723,8 @@ CREATE TABLE product_licenses (
     access_token_enabled boolean DEFAULT false NOT NULL
 );
 
+COMMENT ON COLUMN product_licenses.access_token_enabled IS 'Whether this license key can be used as an access token to authenticate API requests';
+
 CREATE TABLE product_subscriptions (
     id uuid NOT NULL,
     user_id integer NOT NULL,

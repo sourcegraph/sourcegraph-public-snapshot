@@ -2997,6 +2997,8 @@ Foreign-key constraints:
 
 ```
 
+**access_token_enabled**: Whether this license key can be used as an access token to authenticate API requests
+
 # Table "public.product_subscriptions"
 ```
          Column          |           Type           | Collation | Nullable | Default 
