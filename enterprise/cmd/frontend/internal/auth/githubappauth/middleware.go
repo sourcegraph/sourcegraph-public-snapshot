@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const authPrefix = auth.AuthURLPrefix + "/githubapp"
@@ -141,47 +142,22 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, "Bad request, state query param does not match", http.StatusBadRequest)
 			return
 		}
-
 		cache.Delete(state)
 
-		// TODO: construct API URL from referer req.Referer()
-		conversionURL, err := url.JoinPath("https://api.github.com", "/app-manifests", code, "conversions")
+		u, err := getAPIUrl(req, code)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unexpected error when creating github API url: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		app, err := createGitHubApp(u)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 
-		r, err := http.NewRequest("POST", conversionURL, http.NoBody)
+		id, err := db.GitHubApps().Create(context.Background(), app)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
-		resp, err := http.DefaultClient.Do(r)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
-		if resp.StatusCode != 201 {
-			http.Error(w, fmt.Sprintf("Unexpected error while converting github app; statusCode %d", resp.StatusCode), http.StatusInternalServerError)
-			return
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			http.Error(w, "Bad request, could not read body", http.StatusBadRequest)
-			return
-		}
-
-		var response GitHubAppResponse
-		err = json.Unmarshal(body, &response)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Bad request, could not read response body: %s", err.Error()), http.StatusBadRequest)
-			return
-		}
-
-		htmlURL, err := url.Parse(response.HtmlURL)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Bad request, could not read url: %s", err.Error()), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Unexpected error while storing github app in DB; %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 
@@ -190,35 +166,18 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, fmt.Sprintf("Unexpected error when creating state param: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
-		// TODO: set app.ID instead of AppID here
-		cache.Set(state, []byte(strconv.Itoa(response.AppID)))
+		cache.Set(state, []byte(strconv.Itoa(id)))
 
-		app := &types.GitHubApp{
-			AppID:        response.AppID,
-			Name:         response.Name,
-			Slug:         response.Slug,
-			ClientID:     response.ClientID,
-			ClientSecret: response.ClientSecret,
-			PrivateKey:   response.PEM,
-			BaseURL:      htmlURL.Scheme + "://" + htmlURL.Host,
-			// logo: https://github.com/identicons/app/app/milan-test-app-manifest
-		}
-
-		err = db.GitHubApps().Create(context.Background(), app)
+		redirectURL, err := url.JoinPath(app.AppURL, "installations/new")
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error while storing github app in DB; %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
-
-		redirectURL, err := url.JoinPath(response.HtmlURL, "/installations/new")
-		if err != nil {
-			redirectURL = response.HtmlURL
+			// if there is an error, try to redirect to app url, which should show Install button as well
+			redirectURL = app.AppURL
 		}
 		http.Redirect(w, req, redirectURL+fmt.Sprintf("?state=%s", state), http.StatusSeeOther)
 	}))
 
 	r.HandleFunc(prefix+"/setup", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		// 🚨 SECURITY: only site admins can create github apps
+		// 🚨 SECURITY: only site admins can setup github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
 			return
 		}
@@ -230,12 +189,12 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, "Bad request, installation_id and state query params must be present", http.StatusBadRequest)
 			return
 		}
-		appIDBytes, ok := cache.Get(state)
+		idBytes, ok := cache.Get(state)
 		if !ok {
 			http.Error(w, "Bad request, state query param does not match", http.StatusBadRequest)
 			return
 		}
-		appID, err := strconv.Atoi(string(appIDBytes))
+		id, err := strconv.Atoi(string(idBytes))
 		if err != nil {
 			http.Error(w, "Bad request, cannot parse appID", http.StatusBadRequest)
 		}
@@ -247,18 +206,16 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		baseURL := strings.TrimSuffix(req.Referer(), "/")
 		action := query.Get("setup_action")
-
 		if action == "install" {
-			app, err := db.GitHubApps().GetByAppID(req.Context(), appID, baseURL)
+			app, err := db.GitHubApps().GetByID(req.Context(), id)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Unexpected error while fetching github app data: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
 
 			// TODO: where do we redirect here?
-			http.Redirect(w, req, fmt.Sprintf("/site-admin/external-services/new?id=%d&installation_id=%d", app.ID, installationID), http.StatusFound)
+			http.Redirect(w, req, fmt.Sprintf("/site-admin/external-services/new_ghapp?id=%d&installation_id=%d", app.ID, installationID), http.StatusFound)
 			// return
 		} else {
 			http.Error(w, fmt.Sprintf("Bad request; unsupported setup action: %s", action), http.StatusBadRequest)
@@ -267,4 +224,60 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	}))
 
 	return r
+}
+
+func getAPIUrl(req *http.Request, code string) (string, error) {
+	referer, err := url.Parse(req.Referer())
+	if err != nil {
+		return "", err
+	}
+	api := referer.Scheme + "://api." + referer.Host
+	u, err := url.JoinPath(api, "/app-manifests", code, "conversions")
+	if err != nil {
+		return "", err
+	}
+	return u, nil
+}
+
+func createGitHubApp(conversionURL string) (*types.GitHubApp, error) {
+	r, err := http.NewRequest("POST", conversionURL, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.DefaultClient.Do(r)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != 201 {
+		return nil, errors.Newf("expected 201 statusCode, got: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	fmt.Printf("Body: %s", body)
+	if err != nil {
+		return nil, err
+	}
+
+	var response GitHubAppResponse
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	htmlURL, err := url.Parse(response.HtmlURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.GitHubApp{
+		AppID:        response.AppID,
+		Name:         response.Name,
+		Slug:         response.Slug,
+		ClientID:     response.ClientID,
+		ClientSecret: response.ClientSecret,
+		PrivateKey:   response.PEM,
+		BaseURL:      htmlURL.Scheme + "://" + htmlURL.Host,
+		AppURL:       htmlURL.String(),
+		// logo: https://github.com/identicons/app/app/milan-test-app-manifest
+	}, nil
 }

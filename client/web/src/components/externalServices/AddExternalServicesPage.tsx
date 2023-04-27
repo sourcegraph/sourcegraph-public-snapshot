@@ -79,57 +79,11 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         ]
     }
 
-    const manifest = JSON.stringify({
-        name: 'milan-test-app-manifest',
-        url: 'https://sourcegraph.test:3443',
-        hook_attributes: {
-            url: 'https://sourcegraph.test/.auth/github/events',
-        },
-        redirect_url: 'https://sourcegraph.test:3443/.auth/githubapp/redirect',
-        setup_url: 'https://sourcegraph.test:3443/.auth/githubapp/setup',
-        callback_urls: ['https://sourcegraph.test:3443/.auth/github/callback'],
-        public: true,
-        default_permissions: {
-            issues: 'write',
-            checks: 'write',
-        },
-        default_events: ['issues', 'issue_comment', 'check_suite', 'check_run'],
-    })
-
-    let error: any = null
-    const ref = useRef<HTMLFormElement>(null)
-    const [state, setState] = useState<string | null>(null)
-    const createState = useCallback(async () => {
-        error = null
-        try {
-            const response = await fetch('/.auth/githubapp/state')
-            const body = await response.text()
-            setState(body)
-        } catch (e) {
-            error = e
-        }
-    }, [setState])
-
-    useEffect(() => {
-        console.log('USE EFFECT', error, state, ref.current)
-        if (state != null && ref.current != null) {
-            ref.current.submit()
-        }
-    }, [error, state, ref])
-
-    const code = new URLSearchParams(search).get('code')
-
     return (
         <>
             <PageTitle title="Add repositories" />
             <H2>Add repositories</H2>
             <Container>
-                <form ref={ref} action={`https://github.com/settings/apps/new?state=${state}`} method="post">
-                    Create a GitHub App Manifest: <input type="text" name="manifest" value={manifest} hidden />
-                    <Button variant="primary" onClick={createState}>
-                        Create Github App
-                    </Button>
-                </form>
                 <Text>Add repositories from one of these code hosts.</Text>
                 {hasDismissedPrivacyWarning && (
                     <Alert variant="info">
