@@ -9,7 +9,7 @@ go_library(
         "stream.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/cody",
         "//enterprise/internal/completions/streaming/anthropic",

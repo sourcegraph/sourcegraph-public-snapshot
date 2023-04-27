@@ -7,7 +7,7 @@ go_library(
         "openai.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/openai",
-    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/completions/types",
         "//internal/httpcli",
