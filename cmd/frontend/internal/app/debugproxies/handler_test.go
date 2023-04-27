@@ -2,6 +2,7 @@ package debugproxies
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"net/http"
@@ -44,9 +45,15 @@ func TestReverseProxyRequestPaths(t *testing.T) {
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 
+	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+
+	db := database.NewStrictMockDB()
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
 	rtr := mux.NewRouter()
 	rtr.PathPrefix("/-/debug").Name(router.Debug)
-	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), database.NewMockDB())
+	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), db)
 
 	rtr.ServeHTTP(w, req)
 
@@ -84,9 +91,15 @@ func TestIndexLinks(t *testing.T) {
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 
+	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+
+	db := database.NewStrictMockDB()
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
 	rtr := mux.NewRouter()
 	rtr.PathPrefix("/-/debug").Name(router.Debug)
-	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), database.NewMockDB())
+	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), db)
 
 	rtr.ServeHTTP(w, req)
 
