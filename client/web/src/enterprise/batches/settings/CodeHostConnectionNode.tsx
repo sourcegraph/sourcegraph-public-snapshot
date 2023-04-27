@@ -130,8 +130,17 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                 Global token
                             </Badge>
                         )}
+                        {node.commitSigningOptedIn && (
+                            <Badge
+                                variant="secondary"
+                                tooltip="Commits created by Batch Changes will be signed with the SSH signing key generated for this credential."
+                                aria-label="Commits created by Batch Changes will be signed with the SSH signing key generated for this credential."
+                            >
+                                Signing enabled
+                            </Badge>
+                        )}
                     </H3>
-                    <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
+                    <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-center">
                         {isEnabled ? (
                             <>
                                 <CheckButton
@@ -150,7 +159,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                 >
                                     Remove
                                 </Button>
-                                {node.requiresSSH && (
+                                {(node.requiresSSH || node.commitSigningOptedIn) && (
                                     <Button onClick={onClickView} className="text-nowrap ml-2" variant="secondary">
                                         View public key
                                     </Button>

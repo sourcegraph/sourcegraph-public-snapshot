@@ -1,9 +1,23 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
-import { Button, Modal, Link, Code, Label, Text, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Checkbox,
+    Modal,
+    Link,
+    Code,
+    Label,
+    Icon,
+    Text,
+    Tooltip,
+    Input,
+    ErrorAlert,
+    Form,
+} from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -90,12 +104,20 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
     const labelId = 'addCredential'
     const [credential, setCredential] = useState<string>('')
     const [sshPublicKey, setSSHPublicKey] = useState<string>()
+    const [optInToCommitSigning, setOptInToCommitSigning] = useState<boolean>(false)
     const [username, setUsername] = useState<string>('')
     const [step, setStep] = useState<Step>(initialStep)
 
     const onChangeCredential = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setCredential(event.target.value)
     }, [])
+
+    const onChangeOptInToSigning = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        event => {
+            setOptInToCommitSigning(!optInToCommitSigning)
+        },
+        [optInToCommitSigning]
+    )
 
     const onChangeUsername = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setUsername(event.target.value)
@@ -112,13 +134,14 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                     variables: {
                         user: userID,
                         credential,
+                        // optInToCommitSigning,
                         username: requiresUsername ? username : null,
                         externalServiceKind,
                         externalServiceURL,
                     },
                 })
 
-                if (requiresSSH && data?.createBatchChangesCredential.sshPublicKey) {
+                if ((requiresSSH || optInToCommitSigning) && data?.createBatchChangesCredential.sshPublicKey) {
                     setSSHPublicKey(data?.createBatchChangesCredential.sshPublicKey)
                     setStep('get-ssh-key')
                 } else {
@@ -133,6 +156,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
             userID,
             credential,
             requiresUsername,
+            optInToCommitSigning,
             username,
             externalServiceKind,
             externalServiceURL,
@@ -140,6 +164,15 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
             afterCreate,
         ]
     )
+
+    const signCommitsAvailable =
+        externalServiceKind === ExternalServiceKind.GITHUB || externalServiceKind === ExternalServiceKind.GITLAB
+
+    const signCommitsTooltip = !signCommitsAvailable
+        ? 'Commit signing is not available on this code host type.'
+        : requiresSSH
+        ? 'Enable Batch Changes to sign commits with the same SSH key it generates to authenticate to your code host with.'
+        : 'Enable Batch Changes to generate an SSH key on your behalf to sign commits with.'
 
     const patLabel =
         externalServiceKind === ExternalServiceKind.BITBUCKETCLOUD ? 'App password' : 'Personal access token'
@@ -152,33 +185,32 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                     externalServiceKind={externalServiceKind}
                     externalServiceURL={externalServiceURL}
                 />
-                {requiresSSH && (
-                    <div className="d-flex w-100 justify-content-between mb-4">
-                        <div className="flex-grow-1 mr-2">
-                            <Text className={classNames('mb-0 py-2', step === 'get-ssh-key' && 'text-muted')}>
-                                1. Add token
-                            </Text>
-                            <div
-                                className={classNames(
-                                    styles.addCredentialModalModalStepRuler,
-                                    styles.addCredentialModalModalStepRulerPurple
-                                )}
-                            />
-                        </div>
-                        <div className="flex-grow-1 ml-2">
-                            <Text className={classNames('mb-0 py-2', step === 'add-token' && 'text-muted')}>
-                                2. Get SSH Key
-                            </Text>
-                            <div
-                                className={classNames(
-                                    styles.addCredentialModalModalStepRuler,
-                                    step === 'add-token' && styles.addCredentialModalModalStepRulerGray,
-                                    step === 'get-ssh-key' && styles.addCredentialModalModalStepRulerBlue
-                                )}
-                            />
-                        </div>
+                <div className="d-flex w-100 justify-content-between mb-4">
+                    <div className="flex-grow-1 mr-2">
+                        <Text className={classNames('mb-0 py-2', step === 'get-ssh-key' && 'text-muted')}>
+                            1. Add token
+                        </Text>
+                        <div
+                            className={classNames(
+                                styles.addCredentialModalModalStepRuler,
+                                styles.addCredentialModalModalStepRulerPurple
+                            )}
+                        />
                     </div>
-                )}
+                    <div className="flex-grow-1 ml-2">
+                        <Text className={classNames('mb-0 py-2', step === 'add-token' && 'text-muted')}>
+                            2. Get SSH Key
+                        </Text>
+                        <div
+                            className={classNames(
+                                styles.addCredentialModalModalStepRuler,
+                                step === 'add-token' && styles.addCredentialModalModalStepRulerGray,
+                                step === 'get-ssh-key' && styles.addCredentialModalModalStepRulerBlue
+                            )}
+                        />
+                    </div>
+                </div>
+
                 {step === 'add-token' && (
                     <>
                         {error && <ErrorAlert error={error} />}
@@ -225,6 +257,26 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                     </Link>{' '}
                                     {scopeRequirements[externalServiceKind]}
                                 </Text>
+
+                                <div className="d-flex align-items-center">
+                                    <Checkbox
+                                        name="enable-sign-commits"
+                                        id="enable-sign-commits"
+                                        checked={optInToCommitSigning}
+                                        onChange={onChangeOptInToSigning}
+                                        disabled={!signCommitsAvailable}
+                                        label="Sign commits on this code host"
+                                    />
+                                    <Tooltip content={signCommitsTooltip}>
+                                        <Icon
+                                            aria-label={signCommitsTooltip}
+                                            className="ml-2"
+                                            role="button"
+                                            tabIndex={0}
+                                            svgPath={mdiInformationOutline}
+                                        />
+                                    </Tooltip>
+                                </div>
                             </div>
                             <div className="d-flex justify-content-end">
                                 <Button
@@ -243,7 +295,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                     variant="primary"
                                     loading={loading}
                                     alwaysShowLabel={true}
-                                    label={requiresSSH ? 'Next' : 'Add credential'}
+                                    label={requiresSSH || optInToCommitSigning ? 'Next' : 'Add credential'}
                                 />
                             </div>
                         </Form>
@@ -252,8 +304,13 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                 {step === 'get-ssh-key' && (
                     <>
                         <Text>
-                            An SSH key has been generated for your batch changes code host connection. Copy the public
-                            key below and enter it on your code host.
+                            {requiresSSH && optInToCommitSigning
+                                ? 'An SSH key has been generated for your batch changes code host connection. It will also be used to sign any commits coming from Sourcegraph. Copy the public key below and enter it on your code host.'
+                                : requiresSSH
+                                ? 'An SSH key has been generated for your batch changes code host connection. Copy the public key below and enter it on your code host.'
+                                : optInToCommitSigning
+                                ? 'An SSH key has been generated to sign any commits coming from Sourcegraph. Copy the public key below and enter it on your code host.'
+                                : ''}
                         </Text>
                         <CodeHostSshPublicKey externalServiceKind={externalServiceKind} sshPublicKey={sshPublicKey!} />
                         <Button

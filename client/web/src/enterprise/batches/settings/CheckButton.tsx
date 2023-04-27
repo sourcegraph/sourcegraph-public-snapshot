@@ -35,14 +35,14 @@ export const CheckButton: React.FunctionComponent<React.PropsWithChildren<CheckB
     }
     if (successMessage && !failedMessage) {
         return (
-            <Alert className="text-success">
+            <Alert className="text-success mb-0">
                 <Icon svgPath={mdiCheck} inline={false} aria-hidden={true} /> {successMessage}
             </Alert>
         )
     }
     if (failedMessage) {
         return (
-            <Alert className="text-danger">
+            <Alert className="text-danger mb-0">
                 <Icon svgPath={mdiClose} inline={false} aria-hidden={true} /> {failedMessage}
             </Alert>
         )

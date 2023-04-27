@@ -31,6 +31,7 @@ export const CREATE_BATCH_CHANGES_CREDENTIAL = gql`
     mutation CreateBatchChangesCredential(
         $user: ID
         $credential: String!
+        # $optInToCommitSigning: Boolean
         $username: String
         $externalServiceKind: ExternalServiceKind!
         $externalServiceURL: String!
@@ -38,6 +39,7 @@ export const CREATE_BATCH_CHANGES_CREDENTIAL = gql`
         createBatchChangesCredential(
             user: $user
             credential: $credential
+            # optInToCommitSigning: $optInToCommitSigning
             username: $username
             externalServiceKind: $externalServiceKind
             externalServiceURL: $externalServiceURL
@@ -84,6 +86,7 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
         externalServiceURL
         requiresSSH
         requiresUsername
+        # optInToCommitSigning
         credential {
             ...BatchChangesCredentialFields
         }

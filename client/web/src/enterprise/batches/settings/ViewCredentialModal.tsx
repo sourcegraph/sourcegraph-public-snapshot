@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Modal, H4, Input } from '@sourcegraph/wildcard'
+import { Button, Checkbox, Modal, H4, Input } from '@sourcegraph/wildcard'
 
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
 
@@ -30,6 +30,17 @@ export const ViewCredentialModal: React.FunctionComponent<React.PropsWithChildre
 
             <H4>Personal access token</H4>
             <Input className="form-group" value="PATs cannot be viewed after entering." disabled={true} />
+
+            <Checkbox
+                name="enable-sign-commits"
+                id="enable-sign-commits"
+                checked={credential.commitSigningOptedIn}
+                disabled={true}
+                label="Sign commits on this code host"
+                message={`This property cannot be modified after creation. To ${
+                    credential.commitSigningOptedIn ? 'disable' : 'enable'
+                } commit signing, remove this credential and create a new one.`}
+            />
 
             <hr className="mb-3" />
 
