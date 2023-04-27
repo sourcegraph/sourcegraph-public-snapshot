@@ -142,6 +142,7 @@ func (s BitbucketCloudSource) CloseChangeset(ctx context.Context, cs *Changeset)
 
 // UpdateChangeset can update Changesets.
 func (s BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
+
 	opts := s.changesetToPullRequestInput(cs)
 	targetRepo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
 
@@ -150,6 +151,8 @@ func (s BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset
 	// it'll override it's value to it's empty value. We always want to retain the reviewers assigned to a pull
 	// request when updating a pull request.
 	opts.Reviewers = pr.Reviewers
+
+	opts.CloseSourceBranch = conf.Get().BatchChangesAutoDeleteBranch
 
 	updated, err := s.client.UpdatePullRequest(ctx, targetRepo, pr.ID, opts)
 	if err != nil {
@@ -321,7 +324,6 @@ func (s BitbucketCloudSource) changesetToPullRequestInput(cs *Changeset) bitbuck
 	destBranch := gitdomain.AbbreviateRef(cs.BaseRef)
 
 	var closeSourceBranch bool
-
 	if conf.Get().BatchChangesAutoDeleteBranch {
 		closeSourceBranch = true
 	} else {
