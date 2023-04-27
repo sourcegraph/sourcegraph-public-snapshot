@@ -29,10 +29,25 @@ const DEFAULT_VARIATION_COUNT = 1
 const DEFAULT_TEMPERATURE = 0.2
 const DEFAULT_MAX_TOKENS_TO_SAMPLE = 1000
 
+/**
+ * If the prompt is in the format "Human: <text>\n\nAssistant: <text>\n\nHuman: <text>\n\nAssistant: <text>\n\n...",
+ * then the returned array will have alternating human and assistant messages.
+ * Otherwise, the returned array will have a single human message.
+ */
+function buildMessages(prompt: string): { speaker: 'human' | 'assistant'; text: string }[] {
+    if (prompt.startsWith('\n\nHuman: ')) {
+        return prompt.split('\n\n').map(line => {
+            const [speaker, text] = line.split(': ')
+            return { speaker: speaker.toLowerCase() as 'human' | 'assistant', text }
+        })
+    }
+    return [{ speaker: 'human', text: prompt }, { speaker: 'assistant', text: '' }]
+}
+
 async function getResults(promptVersions: PromptVersion[], variationCount: number, abortSignal: AbortSignal): Promise<string[][]> {
     const resultPromises: Promise<string[]>[] = promptVersions.map(async promptVersion => {
         const params: CompletionRequest = {
-            messages: [{speaker: 'human', text: promptVersion.prompt}, {speaker: 'assistant', text: ''}],
+            messages: buildMessages(promptVersion.prompt),
             temperature: promptVersion.temperature,
             maxTokensToSample: promptVersion.maxTokensToSample,
             topK: -1, // default value (source: https://console.anthropic.com/docs/api/reference)
