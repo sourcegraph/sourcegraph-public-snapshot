@@ -71,7 +71,7 @@ export const FETCH_SETTINGS_AREA_REPOSITORY_GQL = gql`
 
 export const ADD_REPO_METADATA_GQL = gql`
     mutation AddRepoMetadata($repo: ID!, $key: String!, $value: String) {
-        addRepoKeyValuePair(repo: $repo, key: $key, value: $value) {
+        addRepoMetadata(repo: $repo, key: $key, value: $value) {
             alwaysNil
         }
     }
@@ -79,7 +79,7 @@ export const ADD_REPO_METADATA_GQL = gql`
 
 export const DELETE_REPO_METADATA_GQL = gql`
     mutation DeleteRepoMetadata($repo: ID!, $key: String!) {
-        deleteRepoKeyValuePair(repo: $repo, key: $key) {
+        deleteRepoMetadata(repo: $repo, key: $key) {
             alwaysNil
         }
     }
