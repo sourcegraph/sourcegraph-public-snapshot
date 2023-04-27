@@ -1,5 +1,5 @@
 import { CodebaseContext } from '../codebase-context'
-import { ConfigurationWithAccessToken } from '../configuration'
+import { ConfigurationUseContext, ConfigurationWithAccessToken } from '../configuration'
 import { Editor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
@@ -39,6 +39,7 @@ export interface Client {
         }
     ) => Promise<void>
     reset: () => void
+    codebaseContext: CodebaseContext
 }
 
 export async function createClient({
@@ -152,5 +153,6 @@ export async function createClient({
             transcript.reset()
             sendTranscript()
         },
+        codebaseContext,
     }
 }
