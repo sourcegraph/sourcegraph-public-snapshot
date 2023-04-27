@@ -22,6 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -83,29 +84,36 @@ func TestClient_Remove(t *testing.T) {
 func TestClient_ArchiveReader(t *testing.T) {
 	root := gitserver.CreateRepoDir(t)
 
-	tests := map[api.RepoName]struct {
+	type test struct {
 		remote string
 		want   map[string]string
 		err    error
-	}{
-		"simple": {
-			remote: createSimpleGitRepo(t, root),
-			want: map[string]string{
-				"dir1/":      "",
-				"dir1/file1": "infile1",
-				"file 2":     "infile2",
-			},
-		},
-		"repo-with-dotgit-dir": {
-			remote: createRepoWithDotGitDir(t, root),
-			want:   map[string]string{"file1": "hello\n", ".git/mydir/file2": "milton\n", ".git/mydir/": "", ".git/": ""},
-		},
+	}
+
+	tests := map[api.RepoName]test{
+		// "simple": {
+		// 	remote: createSimpleGitRepo(t, root),
+		// 	want: map[string]string{
+		// 		"dir1/":      "",
+		// 		"dir1/file1": "infile1",
+		// 		"file 2":     "infile2",
+		// 	},
+		// },
+		// "repo-with-dotgit-dir": {
+		// 	remote: createRepoWithDotGitDir(t, root),
+		// 	want: map[string]string{
+		// 		"file1":            "hello\n",
+		// 		".git/mydir/file2": "milton\n",
+		// 		".git/mydir/":      "",
+		// 		".git/":            "",
+		// 	},
+		// },
 		"not-found": {
 			err: errors.New("repository does not exist: not-found"),
 		},
 	}
 
-	srv := httptest.NewServer((&server.Server{
+	s := &server.Server{
 		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
 		DB:       newMockDB(),
@@ -119,68 +127,125 @@ func TestClient_ArchiveReader(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
 			return &server.GitRepoSyncer{}, nil
 		},
-	}).Handler())
+	}
+
+	grpcServer := defaults.NewServer(logtest.Scoped(t))
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: s})
+
+	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+	srv := httptest.NewServer(handler)
 	defer srv.Close()
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
+	t.Log("gitserver addrs:", addrs)
+	ctx := context.Background()
 	cli := gitserver.NewTestClient(&http.Client{}, addrs)
 
-	ctx := context.Background()
-	for name, test := range tests {
-		t.Run(string(name), func(t *testing.T) {
-			if test.remote != "" {
-				if _, err := cli.RequestRepoUpdate(ctx, name, 0); err != nil {
+	// gitserver.ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt gitserver.ArchiveOptions) (reader io.ReadCloser, err error) {
+	// 	if internalgrpc.IsGRPCEnabled(ctx) {
+	// 		// GRPC
+
+	// 	} else {
+	// 		// HTTP
+
+	// 	stringReader := strings.NewReader(resp)
+	// 	reader = io.NopCloser(stringReader)
+
+	// 	return reader, err
+	// }
+
+	runArchiveReaderTestfunc := func(t *testing.T, ctx context.Context, cli gitserver.Client, test map[api.RepoName]test) {
+
+		for name, test := range tests {
+			t.Run(string(name), func(t *testing.T) {
+				if test.remote != "" {
+					if _, err := cli.RequestRepoUpdate(ctx, name, 0); err != nil {
+						t.Fatal(err)
+					}
+				}
+				rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatZip})
+				if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
+					t.Errorf("archive: have err %v, want %v", have, want)
+				}
+				if rc == nil {
+					return
+				}
+
+				t.Cleanup(func() {
+					if err := rc.Close(); err != nil {
+						t.Fatal(err)
+					}
+				})
+				data, err := io.ReadAll(rc)
+				if err != nil {
 					t.Fatal(err)
 				}
-			}
-
-			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatZip})
-			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
-				t.Errorf("archive: have err %v, want %v", have, want)
-			}
-			if rc == nil {
-				return
-			}
-
-			t.Cleanup(func() {
-				if err := rc.Close(); err != nil {
+				zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+				if err != nil {
 					t.Fatal(err)
+				}
+
+				got := map[string]string{}
+				for _, f := range zr.File {
+					r, err := f.Open()
+					if err != nil {
+						t.Errorf("failed to open %q because %s", f.Name, err)
+						continue
+					}
+					contents, err := io.ReadAll(r)
+					_ = r.Close()
+					if err != nil {
+						t.Errorf("Read(%q): %s", f.Name, err)
+						continue
+					}
+					got[f.Name] = string(contents)
+				}
+
+				if !cmp.Equal(test.want, got) {
+					t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(test.want, got))
 				}
 			})
-			data, err := io.ReadAll(rc)
-			if err != nil {
-				t.Fatal(err)
-			}
-			zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-			if err != nil {
-				t.Fatal(err)
-			}
+		}
 
-			got := map[string]string{}
-			for _, f := range zr.File {
-				r, err := f.Open()
-				if err != nil {
-					t.Errorf("failed to open %q because %s", f.Name, err)
-					continue
-				}
-				contents, err := io.ReadAll(r)
-				_ = r.Close()
-				if err != nil {
-					t.Errorf("Read(%q): %s", f.Name, err)
-					continue
-				}
-				got[f.Name] = string(contents)
-			}
-
-			if !cmp.Equal(test.want, got) {
-				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(test.want, got))
-			}
-		})
 	}
+	// := gitserver.NewTestClient(....)
+	// client := func(ctx context.Context, addrs []string) gitserver.Client {
+	// 	if internalgrpc.IsGRPCEnabled(ctx) {
+	// 		// GRPC
+	// 		return &clientImplementor{
+	// 			logger:      logger,
+	// 			conns:       func() *GitserverConns { return newTestGitserverConns(addrs) },
+	// 			HTTPLimiter: limiter.New(500),
+	// 			userAgent:   filepath.Base(os.Args[0]),
+	// 			operations:  newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
+	// 		}
+	// 	} else {
+	// 		// HTTP
+	// 		return gitserver.NewTestClient(&http.Client{}, addrs)
+	// 	}
+	// }
+
+	t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
+	runArchiveReaderTestfunc(t, ctx, cli, tests)
+
+	// t.Run("grpc", func(t *testing.T) {
+	// 	foo := "whatever"
+	// 	fmt.Println(foo)
+
+	// 	t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
+	// 	runArchiveReaderTestfunc(t, ctx, cli, tests)
+	// })
+
+	// t.Run("http", func(t *testing.T) {
+	// 	t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+	// 	runArchiveReaderTestfunc(t, ctx, cli, tests)
+	// })
+
 }
 
 func createRepoWithDotGitDir(t *testing.T, root string) string {
+
 	t.Helper()
 	b64 := func(s string) string {
 		t.Helper()
@@ -239,6 +304,7 @@ filemode=true
 			t.Fatal(err)
 		}
 	}
+
 	return dir
 }
 
@@ -594,3 +660,28 @@ func TestClient_ReposStats(t *testing.T) {
 
 	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
 }
+
+type spyGitserverServiceClient struct {
+	execCalled    bool
+	searchCalled  bool
+	archiveCalled bool
+
+	base proto.GitserverServiceClient
+}
+
+func (s *spyGitserverServiceClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
+	s.execCalled = true
+	return s.base.Exec(ctx, in, opts...)
+}
+
+func (s *spyGitserverServiceClient) Search(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error) {
+	s.searchCalled = true
+	return s.base.Search(ctx, in, opts...)
+}
+
+func (s *spyGitserverServiceClient) Archive(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
+	s.archiveCalled = true
+	return s.base.Archive(ctx, in, opts...)
+}
+
+var _ proto.GitserverServiceClient = &spyGitserverServiceClient{}

@@ -146,7 +146,7 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 	execStatus, err := gs.Server.exec(ss.Context(), gs.Server.Logger, execReq, "unknown-grpc-client", w)
 	if err != nil {
 		if v := (&NotFoundError{}); errors.As(err, &v) {
-			s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.NotFoundPayload{
+			s, err := status.New(codes.NotFound, "not found").WithDetails(&proto.NotFoundPayload{
 				Repo:            req.GetRepo(),
 				CloneInProgress: v.Payload.CloneInProgress,
 				CloneProgress:   v.Payload.CloneProgress,

@@ -2412,6 +2412,11 @@ func (c *clientImplementor) ArchiveReader(
 		if err != nil {
 			return nil, err
 		}
+
+		// type clientForConn: (conn) -> gitserverserviceclient (interface)
+		//
+		// "normal usecase": we add actual proto.NewGitserverServiceClient to use with the connection
+		// "test usecase": we provide a mock client to use with the connection
 		client := proto.NewGitserverServiceClient(conn)
 
 		req := &proto.ArchiveRequest{
@@ -2445,7 +2450,11 @@ func (c *clientImplementor) ArchiveReader(
 			return msg.GetData(), nil
 		})
 
-		return &readCloseWrapper{r: r, closeFn: cancel}, err
+		return &archiveReader{
+			base: &readCloseWrapper{r: r, closeFn: cancel},
+			repo: repo,
+			spec: options.Treeish,
+		}, nil
 
 	} else {
 		// Fall back to http request
@@ -2454,6 +2463,7 @@ func (c *clientImplementor) ArchiveReader(
 		if err != nil {
 			return nil, err
 		}
+
 		switch resp.StatusCode {
 		case http.StatusOK:
 			return &archiveReader{
