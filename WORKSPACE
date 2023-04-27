@@ -284,6 +284,24 @@ load("@bazel-zig-cc//toolchain:defs.bzl", zig_toolchains = "toolchains")
 
 zig_toolchains()
 
+register_toolchains(
+    # if no `--platform` is specified, these toolchains will be used for
+    # (linux,darwin,windows)x(amd64,arm64)
+    "@zig_sdk//toolchain:linux_amd64_gnu.2.19",
+    "@zig_sdk//toolchain:linux_arm64_gnu.2.28",
+    "@zig_sdk//toolchain:darwin_amd64",
+    "@zig_sdk//toolchain:darwin_arm64",
+
+    # amd64 toolchains for libc-aware platforms:
+    "@zig_sdk//libc_aware/toolchain:linux_amd64_gnu.2.19",
+    "@zig_sdk//libc_aware/toolchain:linux_amd64_gnu.2.28",
+    "@zig_sdk//libc_aware/toolchain:linux_amd64_gnu.2.31",
+    "@zig_sdk//libc_aware/toolchain:linux_amd64_musl",
+    # arm64 toolchains for libc-aware platforms:
+    "@zig_sdk//libc_aware/toolchain:linux_arm64_gnu.2.28",
+    "@zig_sdk//libc_aware/toolchain:linux_arm64_musl",
+)
+
 load("//dev/backcompat:defs.bzl", "back_compat_defs")
 
 back_compat_defs()
@@ -309,19 +327,5 @@ load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
 
 rules_pkg_dependencies()
 
-load("@rules_oci//oci:pull.bzl", "oci_pull")
-
-
-# @will:
-# - bazel build //cmd/worker:image_tarball
-# - docker load --input $(bazel cquery --output=files //cmd/worker:image_tarball)
-# - docker run -it --entrypoint /bin/sh foo:latest
-oci_pull(
-    name = "wolfi_base",
-    digest = "sha256:bb939c611ced27e5e566ad2a402a9f030fca949bbd351a8f84fcb68f4e790e5d",
-    image = "europe-central2-docker.pkg.dev/sourcegraph-security-logging/public-wolfi-test/wolfi-sourcegraph-dev-base",
-    # platforms = [
-    #     "linux/amd64",
-    #     "linux/arm64",
-    # ],
-)
+load("//dev:oci_deps.bzl", "oci_deps")
+oci_deps()

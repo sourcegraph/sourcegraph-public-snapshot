@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_cross_binary")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
@@ -23,17 +23,23 @@ go_binary(
     },
 )
 
+go_cross_binary(
+  name = "symbols_docker",
+  platform = "@zig_sdk//platform:linux_amd64",
+  target = "symbols",
+)
+
 pkg_tar(
     name = "tar",
-    srcs = [":symbols"],
+    srcs = [":symbols_docker"],
 )
 
 oci_image(
     name = "image",
     architecture = "amd64",
-    base = "@wolfi_base",
+    base = "@wolfi_symbols_base",
     tars = [":tar"],
-    entrypoint = ["/worker"],
+    entrypoint = ["/symbols_docker"],
     os = "linux",
 )
 
