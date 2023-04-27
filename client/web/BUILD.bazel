@@ -1232,6 +1232,8 @@ ts_project(
         "src/repo/branches/RepositoryBranchesArea.tsx",
         "src/repo/branches/RepositoryBranchesNavbar.tsx",
         "src/repo/branches/RepositoryBranchesOverviewPage.tsx",
+        "src/repo/changelists/PerforceDepotChangelistNode.tsx",
+        "src/repo/changelists/PerforceDepotChangelistNodeByLine.tsx",
         "src/repo/cody/AskCodyButton.tsx",
         "src/repo/commit/CommitMessageWithLinks.tsx",
         "src/repo/commit/DiffModeSelector.tsx",
