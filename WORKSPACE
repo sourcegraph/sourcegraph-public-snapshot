@@ -80,23 +80,6 @@ http_archive(
     urls = ["https://github.com/tweag/rules_nixpkgs/archive/4dddbafba508cd2dffd95b8562cab91c9336fe36.tar.gz"],
 )
 
-load("@io_tweag_rules_nixpkgs//nixpkgs:repositories.bzl", "rules_nixpkgs_dependencies")
-
-rules_nixpkgs_dependencies(
-    # this complains, why
-    # toolchains = [
-    #     "nodejs",
-    #     "rust",
-    # ],
-)
-
-load("@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl", "nixpkgs_local_repository")
-
-nixpkgs_local_repository(
-    name = "nixpkgs",
-    nix_flake_lock_file = "//:flake.lock",
-)
-
 # rules_js setup ================================
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
@@ -104,18 +87,10 @@ rules_js_dependencies()
 
 # node toolchain setup ==========================
 load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
-load("@io_tweag_rules_nixpkgs//toolchains/nodejs:nodejs.bzl", "nixpkgs_nodejs_configure")
 
 nodejs_register_toolchains(
     name = "nodejs",
     node_version = "16.19.0",
-)
-
-nixpkgs_nodejs_configure(
-    name = "nixpkgs_nodejs",
-    attribute_path = "nodejs-16_x",
-    register = False,
-    repository = "@nixpkgs",
 )
 
 # rules_js npm setup ============================
@@ -246,7 +221,6 @@ protobuf_deps()
 
 # rust toolchain setup
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
-load("@io_tweag_rules_nixpkgs//nixpkgs:toolchains/rust.bzl", "nixpkgs_rust_configure")
 
 rules_rust_dependencies()
 
@@ -257,13 +231,6 @@ rust_register_toolchains(
     versions = [
         "1.68.0",
     ],
-)
-
-nixpkgs_rust_configure(
-    name = "nixpkgs_rust",
-    default_edition = "2021",
-    register = False,
-    repository = "@nixpkgs",
 )
 
 load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
@@ -310,3 +277,15 @@ zig_toolchains()
 load("//dev/backcompat:defs.bzl", "back_compat_defs")
 
 back_compat_defs()
+
+# nixos toolchains setup ===============================
+load("@io_tweag_rules_nixpkgs//nixpkgs:repositories.bzl", "rules_nixpkgs_dependencies")
+
+rules_nixpkgs_dependencies(toolchains = [
+    "nodejs",
+    "rust",
+])
+
+load("//dev:nix.bzl", "nix_deps")
+
+nix_deps()
