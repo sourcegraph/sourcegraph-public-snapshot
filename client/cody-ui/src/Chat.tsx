@@ -26,7 +26,7 @@ interface ChatProps extends ChatClassNames {
     onSubmit: (text: string) => void
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
-    suggestionButtonComponent: React.FunctionComponent<ChatUISuggestionButtonProps>
+    suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     afterTips?: string
     className?: string
