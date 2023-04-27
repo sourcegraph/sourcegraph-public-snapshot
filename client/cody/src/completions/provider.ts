@@ -6,6 +6,7 @@ import {
     CodeCompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { Completion } from '.'
 import { ReferenceSnippet } from './context'
 import { Message, messagesToText } from './prompts'
 
