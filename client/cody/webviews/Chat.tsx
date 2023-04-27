@@ -193,7 +193,8 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
 }) => (
     <div className={className}>
         <VSCodeButton
-            className={classNames(styles.submitButton)}
+            className={classNames(styles.editButton)}
+            appearance="secondary"
             type="button"
             onClick={() => setMessageBeingEdited(!messageBeingEdited)}
         >
@@ -224,7 +225,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
     }
 
     return (
-        <div className={className}>
+        <div className={classNames(styles.feedbackButtons, className)}>
             <VSCodeButton
                 className={classNames(styles.submitButton)}
                 appearance="icon"
