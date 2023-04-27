@@ -54,3 +54,8 @@ In the future, here are the steps that Sourcegraph will follow:
 #### What's the retention policy for Anthropic/OpenAI?
 
 See our [terms](https://about.sourcegraph.com/terms/cody-notice).
+
+#### Can I use my own API keys?
+
+Yes!
+
