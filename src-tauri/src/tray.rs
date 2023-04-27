@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use tauri::api::shell;
 use tauri::{
     AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
@@ -11,7 +10,10 @@ pub fn create_system_tray() -> SystemTray {
 
 fn create_system_tray_menu() -> SystemTrayMenu {
     SystemTrayMenu::new()
-        .add_item(CustomMenuItem::new("open".to_string(), "Sourcegraph App"))
+        .add_item(CustomMenuItem::new(
+            "open".to_string(),
+            "Open Sourcegraph App",
+        ))
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(
             CustomMenuItem::new("settings".to_string(), "Settings").accelerator("CmdOrCtrl+,"),
@@ -33,8 +35,9 @@ fn create_system_tray_menu() -> SystemTrayMenu {
 fn show_window(app: &AppHandle) {
     let window = app.get_window("main").unwrap();
     if !window.is_visible().unwrap() {
-        window.show().expect("failed to open window");
+        window.show().unwrap()
     }
+    window.set_focus().unwrap()
 }
 
 pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
@@ -47,9 +50,9 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
                 show_window(app);
             }
             "troubleshoot" => {
-                let log_dir_path: PathBuf = tauri::api::path::app_log_dir(&app.config()).unwrap();
+                let log_dir_path = app.path_resolver().app_log_dir().unwrap();
                 if let Some(log_path_str) = log_dir_path.to_str() {
-                    let name = app.config().package.product_name.as_ref().unwrap().clone();
+                    let name = &app.package_info().name;
                     let combined_path = format!("{}/{}.log", log_path_str, name);
                     shell::open(&app.shell_scope(), &combined_path, None).unwrap()
                 }
