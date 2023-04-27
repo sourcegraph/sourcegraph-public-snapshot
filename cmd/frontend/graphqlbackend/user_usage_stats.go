@@ -129,7 +129,10 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 	}
 
 	userID := actor.FromContext(ctx).UID
-	userPrimaryEmail, _, _ := r.db.UserEmails().GetPrimaryEmail(ctx, userID)
+    userPrimaryEmail := ""
+	if envvar.SourcegraphDotComMode() {
+	    userPrimaryEmail, _, _ = r.db.UserEmails().GetPrimaryEmail(ctx, userID)
+    }
 
 	events := make([]usagestats.Event, 0, len(*args.Events))
 	for _, args := range *args.Events {
