@@ -37,7 +37,6 @@ import {
     Link,
     LoadingSpinner,
     PageHeader,
-    Text,
     Tooltip,
     useObservable,
 } from '@sourcegraph/wildcard'

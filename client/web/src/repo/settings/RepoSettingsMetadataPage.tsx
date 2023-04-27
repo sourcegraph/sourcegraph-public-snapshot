@@ -61,6 +61,7 @@ const AddRepoMetadata: FC<{ onDidAdd: () => void; repoID: string }> = ({ onDidAd
                 setKey('')
                 setValue('')
             })
+            // eslint-disable-next-line no-console
             .catch(console.error)
     }
 
@@ -78,7 +79,7 @@ const AddRepoMetadata: FC<{ onDidAdd: () => void; repoID: string }> = ({ onDidAd
                     <Text>Add an additional key, or key-value pair, to this repository.</Text>
                     <Form onSubmit={onSubmit}>
                         {!loading && error && <ErrorAlert className="flex-grow-1 m-0 mb-3" error={error} />}
-                        
+
                         <div className="form-group">
                             <Label htmlFor="metadata-key">Key</Label>
                             <Input
@@ -148,6 +149,7 @@ export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props
                 },
             })
                 .then(() => refetch())
+                // eslint-disable-next-line no-console
                 .catch(console.error)
         },
         [deleteRepoMetadata, repo.id, refetch]
