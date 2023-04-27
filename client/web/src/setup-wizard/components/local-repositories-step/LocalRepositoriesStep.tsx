@@ -50,33 +50,27 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
 
     const [directoryPaths, setDirectoryPaths] = useState<string[]>([])
     const [error, setError] = useState<ErrorLike | undefined>()
-    const [localStateSynced, setLocalStateSynced] = useState(false)
 
     const apolloClient = useApolloClient()
 
-    // TODO: Trade out for getLocalServices() or extended externalServices(kind: "OTHER")
-    // if/when available to simplify this block
     const { data, loading } = useQuery<GetLocalCodeHostsResult>(GET_LOCAL_CODE_HOSTS, {
-        fetchPolicy: 'cache-first',
-        // Sync local state and local external service path
+        fetchPolicy: 'network-only',
+        // Sync local external service paths on first load
         onCompleted: data => {
             setDirectoryPaths(getLocalServicePaths(data))
-            setLocalStateSynced(true)
         },
         onError: setError,
     })
+
     const [addLocalCodeHost] = useMutation<AddRemoteCodeHostResult, AddRemoteCodeHostVariables>(ADD_CODE_HOST)
     const [deleteLocalCodeHost] = useMutation<DeleteRemoteCodeHostResult, DeleteRemoteCodeHostVariables>(
         DELETE_CODE_HOST
     )
 
-    // Automatically creates, updates, or deletes local external service as
-    // user chooses paths for local repositories.
+    // Automatically creates or deletes local external service to
+    // match user choosen paths for local repositories.
     useEffect(() => {
-        // If the setup wizard is launched multiple times in the same session, the Apollo cache will make it
-        // so `loading` is always false. This is a workaround to ensure we don't run this effect until the
-        // data is actually loaded and the `onCompleted` callback has been called.
-        if (loading || !localStateSynced) {
+        if (loading) {
             return
         }
 
@@ -131,7 +125,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
         }
 
         syncExternalServices().catch(setError)
-    }, [directoryPaths, data, loading, addLocalCodeHost, deleteLocalCodeHost, apolloClient, localStateSynced])
+    }, [directoryPaths, data, loading, addLocalCodeHost, deleteLocalCodeHost, apolloClient])
 
     useEffect(() => {
         telemetryService.log('SetupWizardLandedAddLocalCode')
