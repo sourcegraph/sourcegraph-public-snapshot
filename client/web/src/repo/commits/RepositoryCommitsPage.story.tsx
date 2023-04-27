@@ -52,9 +52,9 @@ const mockRepositoryGitCommitsQuery: MockedResponse<RepositoryGitCommitsResult, 
                                 oid: 'fab6d8344a28dee6ae09a8cb1ae49973f117054b',
                                 abbreviatedOID: 'fab6d83',
                                 message:
-                                    'batches: add changeset cell for displaying internal state (#50366)\n\nCo-authored-by: Kelli Rockwell \u003ckelli@sourcegraph.com\u003e\r',
+                                    'batches: add changeset cell for displaying internal state (#50366)\n\nCo-authored-by: Kelli Rockwell \u003Ckelli@sourcegraph.com\u003E\r',
                                 subject: 'batches: add changeset cell for displaying internal state (#50366)',
-                                body: 'Co-authored-by: Kelli Rockwell \u003ckelli@sourcegraph.com\u003e',
+                                body: 'Co-authored-by: Kelli Rockwell \u003Ckelli@sourcegraph.com\u003E',
                                 author: {
                                     person: {
                                         avatarURL: null,
@@ -109,9 +109,9 @@ const mockRepositoryGitCommitsQuery: MockedResponse<RepositoryGitCommitsResult, 
                                 oid: 'fb61a539c3a10075935ca78bf1334aa0260af040',
                                 abbreviatedOID: 'fb61a53',
                                 message:
-                                    'Cody: ✨ Suggest follow-up topics (#51201)\n\nThis adds a new recipe that is used to suggest up to three follow-up\r\ntopics for Cody. The recipe is executed with every user chat message but\r\nwill not wait for the answer so that the experience is better (this is\r\nin line with comparable chat bots).\r\n\r\n## ToDo\r\n\r\n- [x] Add behind a feature flag for now \r\n\r\n## Test plan\r\n\r\n\r\n\r\nhttps://user-images.githubusercontent.com/458591/234884949-cd71893a-ee12-408f-8d7f-b6ca76497b66.mov\r\n\r\n\r\n\r\n\u003c!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003e',
+                                    'Cody: ✨ Suggest follow-up topics (#51201)\n\nThis adds a new recipe that is used to suggest up to three follow-up\r\ntopics for Cody. The recipe is executed with every user chat message but\r\nwill not wait for the answer so that the experience is better (this is\r\nin line with comparable chat bots).\r\n\r\n## ToDo\r\n\r\n- [x] Add behind a feature flag for now \r\n\r\n## Test plan\r\n\r\n\r\n\r\nhttps://user-images.githubusercontent.com/458591/234884949-cd71893a-ee12-408f-8d7f-b6ca76497b66.mov\r\n\r\n\r\n\r\n\u003C!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003E',
                                 subject: 'Cody: ✨ Suggest follow-up topics (#51201)',
-                                body: 'This adds a new recipe that is used to suggest up to three follow-up\r\ntopics for Cody. The recipe is executed with every user chat message but\r\nwill not wait for the answer so that the experience is better (this is\r\nin line with comparable chat bots).\r\n\r\n## ToDo\r\n\r\n- [x] Add behind a feature flag for now \r\n\r\n## Test plan\r\n\r\n\r\n\r\nhttps://user-images.githubusercontent.com/458591/234884949-cd71893a-ee12-408f-8d7f-b6ca76497b66.mov\r\n\r\n\r\n\r\n\u003c!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003e',
+                                body: 'This adds a new recipe that is used to suggest up to three follow-up\r\ntopics for Cody. The recipe is executed with every user chat message but\r\nwill not wait for the answer so that the experience is better (this is\r\nin line with comparable chat bots).\r\n\r\n## ToDo\r\n\r\n- [x] Add behind a feature flag for now \r\n\r\n## Test plan\r\n\r\n\r\n\r\nhttps://user-images.githubusercontent.com/458591/234884949-cd71893a-ee12-408f-8d7f-b6ca76497b66.mov\r\n\r\n\r\n\r\n\u003C!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003E',
                                 author: {
                                     person: {
                                         avatarURL: null,
@@ -166,9 +166,9 @@ const mockRepositoryGitCommitsQuery: MockedResponse<RepositoryGitCommitsResult, 
                                 oid: '54605d8bd456670e0bd9d2b4295851c0240fcf9c',
                                 abbreviatedOID: '54605d8',
                                 message:
-                                    'Cody: Release 0.0.9 (#51206)\n\nPreparing for a new release by pushing the version number.\r\n\r\n## Test plan\r\n\r\nOnly a version number change.\r\n\r\n\u003c!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003e',
+                                    'Cody: Release 0.0.9 (#51206)\n\nPreparing for a new release by pushing the version number.\r\n\r\n## Test plan\r\n\r\nOnly a version number change.\r\n\r\n\u003C!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003E',
                                 subject: 'Cody: Release 0.0.9 (#51206)',
-                                body: 'Preparing for a new release by pushing the version number.\r\n\r\n## Test plan\r\n\r\nOnly a version number change.\r\n\r\n\u003c!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003e',
+                                body: 'Preparing for a new release by pushing the version number.\r\n\r\n## Test plan\r\n\r\nOnly a version number change.\r\n\r\n\u003C!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003E',
                                 author: {
                                     person: {
                                         avatarURL: null,
@@ -338,9 +338,9 @@ const mockRepositoryGitCommitsQuery: MockedResponse<RepositoryGitCommitsResult, 
                                 oid: '7933ebba5b1111a174e56100d81267aa8876a239',
                                 abbreviatedOID: '7933ebb',
                                 message:
-                                    'completions: move things out of internal (#51189)\n\nCo-authored-by: davejrt \u003cdavetry@gmail.com\u003e',
+                                    'completions: move things out of internal (#51189)\n\nCo-authored-by: davejrt \u003Cdavetry@gmail.com\u003E',
                                 subject: 'completions: move things out of internal (#51189)',
-                                body: 'Co-authored-by: davejrt \u003cdavetry@gmail.com\u003e',
+                                body: 'Co-authored-by: davejrt \u003Cdavetry@gmail.com\u003E',
                                 author: {
                                     person: {
                                         avatarURL: null,
@@ -395,9 +395,9 @@ const mockRepositoryGitCommitsQuery: MockedResponse<RepositoryGitCommitsResult, 
                                 oid: '006f18735fd2ccd2ce18e1c906baa6ed6866d22b',
                                 abbreviatedOID: '006f187',
                                 message:
-                                    'Cody: add changelog (#51212)\n\nTrying to document all the changes we have made since last Friday for\r\nv0.0.9.\r\nFeel free to make changes directly to this PR if i missed anything!\r\n\r\n## Test plan\r\n\r\n\u003c!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003e\r\n\r\ndocs change, test plan not required\r\n\r\n---------\r\n\r\nCo-authored-by: Erik Seliger \u003cerikseliger@me.com\u003e\r\nCo-authored-by: Philipp Spiess \u003chello@philippspiess.com\u003e',
+                                    'Cody: add changelog (#51212)\n\nTrying to document all the changes we have made since last Friday for\r\nv0.0.9.\r\nFeel free to make changes directly to this PR if i missed anything!\r\n\r\n## Test plan\r\n\r\n\u003C!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003E\r\n\r\ndocs change, test plan not required\r\n\r\n---------\r\n\r\nCo-authored-by: Erik Seliger \u003Cerikseliger@me.com\u003E\r\nCo-authored-by: Philipp Spiess \u003Chello@philippspiess.com\u003E',
                                 subject: 'Cody: add changelog (#51212)',
-                                body: 'Trying to document all the changes we have made since last Friday for\r\nv0.0.9.\r\nFeel free to make changes directly to this PR if i missed anything!\r\n\r\n## Test plan\r\n\r\n\u003c!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003e\r\n\r\ndocs change, test plan not required\r\n\r\n---------\r\n\r\nCo-authored-by: Erik Seliger \u003cerikseliger@me.com\u003e\r\nCo-authored-by: Philipp Spiess \u003chello@philippspiess.com\u003e',
+                                body: 'Trying to document all the changes we have made since last Friday for\r\nv0.0.9.\r\nFeel free to make changes directly to this PR if i missed anything!\r\n\r\n## Test plan\r\n\r\n\u003C!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003E\r\n\r\ndocs change, test plan not required\r\n\r\n---------\r\n\r\nCo-authored-by: Erik Seliger \u003Cerikseliger@me.com\u003E\r\nCo-authored-by: Philipp Spiess \u003Chello@philippspiess.com\u003E',
                                 author: {
                                     person: {
                                         avatarURL: null,
@@ -452,9 +452,9 @@ const mockRepositoryGitCommitsQuery: MockedResponse<RepositoryGitCommitsResult, 
                                 oid: '8c7bde37ee6d763d4d8947aa902caa560a0701c1',
                                 abbreviatedOID: '8c7bde3',
                                 message:
-                                    'autoindexing: move to scip-go from lsif-go (#50407)\n\n## Test plan\r\n\r\n- [ ] Test out that we still get precise code intel on several different\r\nrepos\r\n- [ ] Test out that this properly uploads to our different instances\r\n\r\n---------\r\n\r\nCo-authored-by: Jean-Hadrien Chabran \u003cjh@chabran.fr\u003e',
+                                    'autoindexing: move to scip-go from lsif-go (#50407)\n\n## Test plan\r\n\r\n- [ ] Test out that we still get precise code intel on several different\r\nrepos\r\n- [ ] Test out that this properly uploads to our different instances\r\n\r\n---------\r\n\r\nCo-authored-by: Jean-Hadrien Chabran \u003Cjh@chabran.fr\u003E',
                                 subject: 'autoindexing: move to scip-go from lsif-go (#50407)',
-                                body: '## Test plan\r\n\r\n- [ ] Test out that we still get precise code intel on several different\r\nrepos\r\n- [ ] Test out that this properly uploads to our different instances\r\n\r\n---------\r\n\r\nCo-authored-by: Jean-Hadrien Chabran \u003cjh@chabran.fr\u003e',
+                                body: '## Test plan\r\n\r\n- [ ] Test out that we still get precise code intel on several different\r\nrepos\r\n- [ ] Test out that this properly uploads to our different instances\r\n\r\n---------\r\n\r\nCo-authored-by: Jean-Hadrien Chabran \u003Cjh@chabran.fr\u003E',
                                 author: {
                                     person: {
                                         avatarURL: null,
@@ -509,9 +509,9 @@ const mockRepositoryGitCommitsQuery: MockedResponse<RepositoryGitCommitsResult, 
                                 oid: '4ef01c4730043a8764aee038de2fdcd0a52a6fac',
                                 abbreviatedOID: '4ef01c4',
                                 message:
-                                    '(feat) add repo metadata editing UI (#50821)\n\n* update repo metadata display UI on the search results and repo root pages according to new designs\r\n\r\nCo-authored-by: Tim Lucas \u003ct@toolmantim.com\u003e',
+                                    '(feat) add repo metadata editing UI (#50821)\n\n* update repo metadata display UI on the search results and repo root pages according to new designs\r\n\r\nCo-authored-by: Tim Lucas \u003Ct@toolmantim.com\u003E',
                                 subject: '(feat) add repo metadata editing UI (#50821)',
-                                body: '* update repo metadata display UI on the search results and repo root pages according to new designs\r\n\r\nCo-authored-by: Tim Lucas \u003ct@toolmantim.com\u003e',
+                                body: '* update repo metadata display UI on the search results and repo root pages according to new designs\r\n\r\nCo-authored-by: Tim Lucas \u003Ct@toolmantim.com\u003E',
                                 author: {
                                     person: {
                                         avatarURL: null,
@@ -623,9 +623,9 @@ const mockRepositoryGitCommitsQuery: MockedResponse<RepositoryGitCommitsResult, 
                                 oid: '3f068773e79e106de8cad881d86c732090f611bb',
                                 abbreviatedOID: '3f06877',
                                 message:
-                                    'Cody Web: Error handling, especially for rate limits (#51204)\n\nCloses #51090\r\n\r\n## Test plan\r\n\r\n\u003cimg width="586" alt="Screenshot 2023-04-27 at 13 16 20"\r\nsrc="https://user-images.githubusercontent.com/458591/234846786-330bfd10-1f53-435a-a97a-36327d7b78dd.png"\u003e\r\n\r\n\r\n\u003c!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003e',
+                                    'Cody Web: Error handling, especially for rate limits (#51204)\n\nCloses #51090\r\n\r\n## Test plan\r\n\r\n\u003Cimg width="586" alt="Screenshot 2023-04-27 at 13 16 20"\r\nsrc="https://user-images.githubusercontent.com/458591/234846786-330bfd10-1f53-435a-a97a-36327d7b78dd.png"\u003E\r\n\r\n\r\n\u003C!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003E',
                                 subject: 'Cody Web: Error handling, especially for rate limits (#51204)',
-                                body: 'Closes #51090\r\n\r\n## Test plan\r\n\r\n\u003cimg width="586" alt="Screenshot 2023-04-27 at 13 16 20"\r\nsrc="https://user-images.githubusercontent.com/458591/234846786-330bfd10-1f53-435a-a97a-36327d7b78dd.png"\u003e\r\n\r\n\r\n\u003c!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003e',
+                                body: 'Closes #51090\r\n\r\n## Test plan\r\n\r\n\u003Cimg width="586" alt="Screenshot 2023-04-27 at 13 16 20"\r\nsrc="https://user-images.githubusercontent.com/458591/234846786-330bfd10-1f53-435a-a97a-36327d7b78dd.png"\u003E\r\n\r\n\r\n\u003C!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003E',
                                 author: {
                                     person: {
                                         avatarURL: null,
@@ -851,9 +851,9 @@ const mockRepositoryGitCommitsQuery: MockedResponse<RepositoryGitCommitsResult, 
                                 oid: '31c9497b78a72552a0cf4633b22873f70a823b15',
                                 abbreviatedOID: '31c9497',
                                 message:
-                                    "Cody: Add jaccard-based context to inline completions (#51161)\n\nThis brings the inline completion suggestions quality up to parity with\r\nmultiline suggestions by adding the same jaccard-based context based on\r\nopen editor tabs and the editor history into the prompt.\r\n\r\nTo avoid the two implementation diverging again in the future, I've also\r\nput some of the logic into an `abstract class`. Unfortunately the diff\r\nis hard to read because I also moved out the completion providers into\r\ntheir own file now.\r\n\r\nBehavior for multiline completions should be unchanged.\r\n\r\nWhile working on this, I had a few really good inline completions from\r\nCody already 🎉 This is starting to get somewhere!\r\n\r\n## Test plan\r\n\r\nI added a bunch of `console.log`s to the prompt creation code to make\r\nsure the snippets that are added to the knowledge library are\r\nreasonable. This is getting really annoying to debug, so a better way to\r\nlog which prompts are created is starting to get more interesting IMO.\r\n\r\n\r\n\r\nhttps://user-images.githubusercontent.com/458591/234633770-7a703720-84a9-43f2-bea3-07c2715c07c0.mov\r\n\r\n\r\n\r\n\u003c!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003e",
+                                    "Cody: Add jaccard-based context to inline completions (#51161)\n\nThis brings the inline completion suggestions quality up to parity with\r\nmultiline suggestions by adding the same jaccard-based context based on\r\nopen editor tabs and the editor history into the prompt.\r\n\r\nTo avoid the two implementation diverging again in the future, I've also\r\nput some of the logic into an `abstract class`. Unfortunately the diff\r\nis hard to read because I also moved out the completion providers into\r\ntheir own file now.\r\n\r\nBehavior for multiline completions should be unchanged.\r\n\r\nWhile working on this, I had a few really good inline completions from\r\nCody already 🎉 This is starting to get somewhere!\r\n\r\n## Test plan\r\n\r\nI added a bunch of `console.log`s to the prompt creation code to make\r\nsure the snippets that are added to the knowledge library are\r\nreasonable. This is getting really annoying to debug, so a better way to\r\nlog which prompts are created is starting to get more interesting IMO.\r\n\r\n\r\n\r\nhttps://user-images.githubusercontent.com/458591/234633770-7a703720-84a9-43f2-bea3-07c2715c07c0.mov\r\n\r\n\r\n\r\n\u003C!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003E",
                                 subject: 'Cody: Add jaccard-based context to inline completions (#51161)',
-                                body: "This brings the inline completion suggestions quality up to parity with\r\nmultiline suggestions by adding the same jaccard-based context based on\r\nopen editor tabs and the editor history into the prompt.\r\n\r\nTo avoid the two implementation diverging again in the future, I've also\r\nput some of the logic into an `abstract class`. Unfortunately the diff\r\nis hard to read because I also moved out the completion providers into\r\ntheir own file now.\r\n\r\nBehavior for multiline completions should be unchanged.\r\n\r\nWhile working on this, I had a few really good inline completions from\r\nCody already 🎉 This is starting to get somewhere!\r\n\r\n## Test plan\r\n\r\nI added a bunch of `console.log`s to the prompt creation code to make\r\nsure the snippets that are added to the knowledge library are\r\nreasonable. This is getting really annoying to debug, so a better way to\r\nlog which prompts are created is starting to get more interesting IMO.\r\n\r\n\r\n\r\nhttps://user-images.githubusercontent.com/458591/234633770-7a703720-84a9-43f2-bea3-07c2715c07c0.mov\r\n\r\n\r\n\r\n\u003c!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003e",
+                                body: "This brings the inline completion suggestions quality up to parity with\r\nmultiline suggestions by adding the same jaccard-based context based on\r\nopen editor tabs and the editor history into the prompt.\r\n\r\nTo avoid the two implementation diverging again in the future, I've also\r\nput some of the logic into an `abstract class`. Unfortunately the diff\r\nis hard to read because I also moved out the completion providers into\r\ntheir own file now.\r\n\r\nBehavior for multiline completions should be unchanged.\r\n\r\nWhile working on this, I had a few really good inline completions from\r\nCody already 🎉 This is starting to get somewhere!\r\n\r\n## Test plan\r\n\r\nI added a bunch of `console.log`s to the prompt creation code to make\r\nsure the snippets that are added to the knowledge library are\r\nreasonable. This is getting really annoying to debug, so a better way to\r\nlog which prompts are created is starting to get more interesting IMO.\r\n\r\n\r\n\r\nhttps://user-images.githubusercontent.com/458591/234633770-7a703720-84a9-43f2-bea3-07c2715c07c0.mov\r\n\r\n\r\n\r\n\u003C!-- All pull requests REQUIRE a test plan:\r\nhttps://docs.sourcegraph.com/dev/background-information/testing_principles\r\n--\u003E",
                                 author: {
                                     person: {
                                         avatarURL: null,
@@ -965,9 +965,9 @@ const mockRepositoryGitCommitsQuery: MockedResponse<RepositoryGitCommitsResult, 
                                 oid: 'faf80a25683ad0db4c59caccbb68918602731852',
                                 abbreviatedOID: 'faf80a2',
                                 message:
-                                    'dev: add basic embeddings QA script (#51089)\n\nThis adds the "sg embeddings-qa" command. The command calculates\r\n_recall_ for a curated test set (prompts -\u003e relevant context files). The\r\ngoal is to use recall to assess changes to the embeddings service. The\r\nlist of prompts will grow over time.\r\n\r\nCo-authored-by: Julie Tibshirani \u003cjulie.tibshirani@sourcegraph.com\u003e',
+                                    'dev: add basic embeddings QA script (#51089)\n\nThis adds the "sg embeddings-qa" command. The command calculates\r\n_recall_ for a curated test set (prompts -\u003E relevant context files). The\r\ngoal is to use recall to assess changes to the embeddings service. The\r\nlist of prompts will grow over time.\r\n\r\nCo-authored-by: Julie Tibshirani \u003Cjulie.tibshirani@sourcegraph.com\u003E',
                                 subject: 'dev: add basic embeddings QA script (#51089)',
-                                body: 'This adds the "sg embeddings-qa" command. The command calculates\r\n_recall_ for a curated test set (prompts -\u003e relevant context files). The\r\ngoal is to use recall to assess changes to the embeddings service. The\r\nlist of prompts will grow over time.\r\n\r\nCo-authored-by: Julie Tibshirani \u003cjulie.tibshirani@sourcegraph.com\u003e',
+                                body: 'This adds the "sg embeddings-qa" command. The command calculates\r\n_recall_ for a curated test set (prompts -\u003E relevant context files). The\r\ngoal is to use recall to assess changes to the embeddings service. The\r\nlist of prompts will grow over time.\r\n\r\nCo-authored-by: Julie Tibshirani \u003Cjulie.tibshirani@sourcegraph.com\u003E',
                                 author: {
                                     person: {
                                         avatarURL: null,
