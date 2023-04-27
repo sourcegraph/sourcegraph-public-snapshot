@@ -17,7 +17,7 @@ export class LocalStorage {
             // We override history as these users will have never used the new history key, so there's
             // no need to append - we can just set it outright
             history = this.getMigratedHistory()
-            this.storage.update(this.KEY_LOCAL_HISTORY_MIGRATE, null)
+            void this.storage.update(this.KEY_LOCAL_HISTORY_MIGRATE, null)
         }
         return history
     }
@@ -26,7 +26,7 @@ export class LocalStorage {
         const chunks = <T>(a: T[], size: number): T[][] =>
             Array.from(new Array(Math.ceil(a.length / size)), (_, i) => a.slice(i * size, i * size + size))
 
-        let oldHistory = this.storage.get<OldUserLocalHistory | null>(this.KEY_LOCAL_HISTORY_MIGRATE, null)
+        const oldHistory = this.storage.get<OldUserLocalHistory | null>(this.KEY_LOCAL_HISTORY_MIGRATE, null)
         return oldHistory
             ? {
                   chat: Object.fromEntries(

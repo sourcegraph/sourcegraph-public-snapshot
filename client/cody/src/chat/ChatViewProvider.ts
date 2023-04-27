@@ -107,7 +107,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     public async clearAndRestartSession(): Promise<void> {
+        await this.saveTranscriptToChatHistory()
         await this.saveChatHistory()
+
         this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
@@ -123,8 +125,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         await this.localStorage.removeChatHistory()
     }
 
+    /**
+     * Restores a session from a chatID
+     * We delete the loaded session from our in-memory chatHistory (to hide it from the history view)
+     * but don't modify the localStorage as no data changes when a session is restored
+     */
     public async restoreSession(chatID: string): Promise<void> {
-        await this.saveChatHistory()
+        await this.saveTranscriptToChatHistory()
+
         this.cancelCompletion()
 
         this.currentChatID = chatID
@@ -132,16 +140,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         delete this.chatHistory[chatID]
 
         this.sendTranscript()
-        await this.localStorage.setChatHistory({
-            chat: this.chatHistory,
-            input: this.inputHistory,
-        })
         this.sendChatHistory()
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
+                this.loadChatHistory()
                 this.publishContextStatus()
                 this.publishConfig()
                 this.sendTranscript()
@@ -277,7 +282,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
         this.sendTranscript()
-        void this.saveChatHistory()
+        void (async () => {
+            await this.saveTranscriptToChatHistory()
+            await this.saveChatHistory()
+        })()
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
@@ -435,18 +443,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         })
     }
 
+    private async saveTranscriptToChatHistory(): Promise<void> {
+        if (!this.transcript.isEmpty) {
+            this.chatHistory[this.currentChatID] = await this.transcript.toJSON()
+        }
+    }
+
     /**
      * Save chat history
      */
     private async saveChatHistory(): Promise<void> {
-        if (!this.transcript.isEmpty) {
-            this.chatHistory[this.currentChatID] = await this.transcript.toJSON()
-            const userHistory = {
-                chat: this.chatHistory,
-                input: this.inputHistory,
-            }
-            await this.localStorage.setChatHistory(userHistory)
+        const userHistory = {
+            chat: this.chatHistory,
+            input: this.inputHistory,
         }
+        await this.localStorage.setChatHistory(userHistory)
     }
 
     /**
@@ -461,17 +472,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
+     * Loads chat history from local storage
+     */
+    private loadChatHistory(): void {
+        const localHistory = this.localStorage.getChatHistory()
+        if (localHistory) {
+            this.chatHistory = localHistory?.chat
+            this.inputHistory = localHistory.input
+        }
+    }
+
+    /**
      * Sends chat history to webview
      */
     private sendChatHistory(): void {
-        const localHistory = this.localStorage.getChatHistory()
-        if (localHistory) {
-            this.chatHistory = localHistory.chat
-            this.inputHistory = localHistory.input
-        }
         void this.webview?.postMessage({
             type: 'history',
-            messages: localHistory,
+            messages: {
+                chat: this.chatHistory,
+                input: this.inputHistory,
+            },
         })
     }
 
