@@ -10,6 +10,7 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/internal/app/errorutil",
+        "//internal/actor",
         "//internal/auth",
         "//internal/database",
         "//internal/env",
