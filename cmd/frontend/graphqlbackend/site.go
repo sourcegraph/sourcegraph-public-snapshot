@@ -398,8 +398,8 @@ func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Conte
 
 func (r *siteResolver) PerUserCompletionsQuota() *int32 {
 	c := conf.Get()
-	if c.Completions != nil && c.Completions.PerUserHourlyLimit > 0 {
-		i := int32(c.Completions.PerUserHourlyLimit)
+	if c.Completions != nil && c.Completions.PerUserDailyLimit > 0 {
+		i := int32(c.Completions.PerUserDailyLimit)
 		return &i
 	}
 	return nil
