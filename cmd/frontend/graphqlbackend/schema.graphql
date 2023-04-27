@@ -888,7 +888,7 @@ type Mutation {
     deletePackageRepoFilter(id: ID!): EmptyResponse!
 
     """
-    Sets the completions requests quota for the user per hour. Quota: Null means
+    Sets the completions requests quota for the user per day. Quota: Null means
     use the default quota.
     """
     setUserCompletionsQuota(user: ID!, quota: Int): User!
@@ -6163,7 +6163,7 @@ type User implements Node & SettingsSubject & Namespace {
     """
     permissions: PermissionConnection!
     """
-    The configured override for the user to the completions request quota per hour.
+    The configured override for the user to the completions request quota per day.
     Null, if not overwritten.
     """
     completionsQuotaOverride: Int
@@ -6969,7 +6969,7 @@ type Site implements SettingsSubject {
     appHasConnectedDotComAccount: Boolean!
 
     """
-    The quota of completions requests allowed per user in an hour. Null, if unlimited.
+    The quota of completions requests allowed per user in a day. Null, if unlimited.
     """
     perUserCompletionsQuota: Int
 }

@@ -25,7 +25,7 @@ type RateLimitExceededError struct {
 }
 
 func (e RateLimitExceededError) Error() string {
-	return fmt.Sprintf("you exceeded the rate limit for completions, only %d requests are allowed per hour at the moment to ensure the service stays functional. Current usage: %d. Retry after %s", e.Limit, e.Used, e.RetryAfter.Truncate(time.Second))
+	return fmt.Sprintf("you exceeded the rate limit for completions, only %d requests are allowed per day at the moment to ensure the service stays functional. Current usage: %d. Retry after %s", e.Limit, e.Used, e.RetryAfter.Truncate(time.Second))
 }
 
 func NewRateLimiter(db database.DB, rstore redispool.KeyValue) RateLimiter {
@@ -100,7 +100,7 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	}
 
 	// Set expiry on the key. If the key didn't exist prior to the previous INCR,
-	// it will set the expiry of the key to one hour.
+	// it will set the expiry of the key to one day.
 	// If it did exist before, it should have an expiry set already, so the TTL >= 0
 	// makes sure that we don't overwrite it and restart the 1h bucket.
 	ttl, err := rstore.TTL(key)
@@ -108,7 +108,7 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 		return errors.Wrap(err, "failed to get TTL for rate limit counter")
 	}
 	if ttl < 0 {
-		if err := rstore.Expire(key, int(time.Hour/time.Second)); err != nil {
+		if err := rstore.Expire(key, int(24*time.Hour/time.Second)); err != nil {
 			return errors.Wrap(err, "failed to set expiry for rate limit counter")
 		}
 	}
@@ -153,8 +153,8 @@ func getConfiguredLimit(ctx context.Context, db database.DB) (int, error) {
 
 	// Otherwise, fall back to the global limit.
 	cfg := conf.Get()
-	if cfg.Completions != nil && cfg.Completions.PerUserHourlyLimit > 0 {
-		return cfg.Completions.PerUserHourlyLimit, nil
+	if cfg.Completions != nil && cfg.Completions.PerUserDailyLimit > 0 {
+		return cfg.Completions.PerUserDailyLimit, nil
 	}
 
 	return 0, nil
