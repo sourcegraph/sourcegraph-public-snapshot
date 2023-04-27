@@ -31,7 +31,7 @@ func newDBTokens(db database.DB) dbTokens {
 func (t dbTokens) SetAccessTokenSHA256(ctx context.Context, licenseID string, value []byte) error {
 	query := sqlf.Sprintf("UPDATE product_licenses SET access_token_sha256=%s WHERE id=%s RETURNING id",
 		hashutil.ToSHA256Bytes(value), licenseID)
-	_, ok, err := basestore.ScanFirstInt(t.store.Query(ctx, query))
+	_, ok, err := basestore.ScanFirstString(t.store.Query(ctx, query))
 	if err != nil {
 		return err
 	}
