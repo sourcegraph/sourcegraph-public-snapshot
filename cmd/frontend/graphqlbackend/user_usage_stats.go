@@ -12,6 +12,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -126,6 +128,12 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		return payload, nil
 	}
 
+	userID := actor.FromContext(ctx).UID
+	userPrimaryEmail := ""
+	if envvar.SourcegraphDotComMode() {
+		userPrimaryEmail, _, _ = r.db.UserEmails().GetPrimaryEmail(ctx, userID)
+	}
+
 	events := make([]usagestats.Event, 0, len(*args.Events))
 	for _, args := range *args.Events {
 		if strings.HasPrefix(args.Event, "search.latencies.frontend.") {
@@ -153,6 +161,13 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			continue
 		}
 
+		// On Sourcegraph.com only, log a HubSpot event indicating when the user installed a Cody client.
+		if envvar.SourcegraphDotComMode() && args.Event == "CodyInstalled" && userID != 0 && userPrimaryEmail != "" {
+			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubspot.ContactProperties{
+				DatabaseID: userID,
+			})
+		}
+
 		argumentPayload, err := decode(args.Argument)
 		if err != nil {
 			return nil, err
@@ -171,7 +186,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		events = append(events, usagestats.Event{
 			EventName:        args.Event,
 			URL:              args.URL,
-			UserID:           actor.FromContext(ctx).UID,
+			UserID:           userID,
 			UserCookieID:     args.UserCookieID,
 			FirstSourceURL:   args.FirstSourceURL,
 			LastSourceURL:    args.LastSourceURL,
