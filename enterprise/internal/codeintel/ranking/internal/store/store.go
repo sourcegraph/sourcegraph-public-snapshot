@@ -15,6 +15,8 @@ import (
 )
 
 type Store interface {
+	WithTransaction(ctx context.Context, f func(tx Store) error) error
+
 	// Retrieval
 	GetStarRank(ctx context.Context, repoName api.RepoName) (float64, error)
 	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string]float64, bool, error)
@@ -46,7 +48,7 @@ type Store interface {
 	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (inputRecordsDeleted int, _ error)
 
 	// Reducer behavior + cleanup
-	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted int, numInputsProcessed int, _ error)
+	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numInputsProcessed int, numPathRanksInserted int, _ error)
 	VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (rankRecordsScanned int, rankRecordsSDeleted int, _ error)
 }
 

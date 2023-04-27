@@ -29,8 +29,14 @@ interface ReadmePreviewCardProps {
     entry: TreeFields['entries'][number]
     repoName: string
     revision: string
+    className?: string
 }
-export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> = ({ entry, repoName, revision }) => {
+export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> = ({
+    entry,
+    repoName,
+    revision,
+    className,
+}) => {
     const [readmeInfo, setReadmeInfo] = useState<null | BlobFileFields>(null)
 
     useEffect(() => {
@@ -50,7 +56,7 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
     }, [repoName, revision, entry.path])
 
     return (
-        <section className="mb-4">
+        <section className={classNames('mb-4', className)}>
             {readmeInfo ? (
                 <RenderedReadmeFile blob={readmeInfo} entryUrl={entry.url} />
             ) : (

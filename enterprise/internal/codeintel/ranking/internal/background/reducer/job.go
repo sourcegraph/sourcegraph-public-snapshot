@@ -42,14 +42,9 @@ func reduceRankingGraph(
 		return 0, 0, nil
 	}
 
-	numPathRanksInserted, numPathCountInputsProcessed, err = store.InsertPathRanks(
+	return store.InsertPathRanks(
 		ctx,
 		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
 		batchSize,
 	)
-	if err != nil {
-		return numPathCountInputsProcessed, numPathCountInputsProcessed, err
-	}
-
-	return numPathRanksInserted, numPathCountInputsProcessed, nil
 }

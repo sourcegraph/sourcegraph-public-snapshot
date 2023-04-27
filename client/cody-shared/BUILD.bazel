@@ -38,6 +38,7 @@ ts_project(
         "src/chat/recipes/helpers.ts",
         "src/chat/recipes/improve-variable-names.ts",
         "src/chat/recipes/langs.ts",
+        "src/chat/recipes/next-questions.ts",
         "src/chat/recipes/recipe.ts",
         "src/chat/recipes/translate.ts",
         "src/chat/recipes/vscode-recipes.ts",
