@@ -20,14 +20,26 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             headers: Object.fromEntries(headersInstance.entries()),
             body: JSON.stringify(params),
             signal: abort.signal,
+            async onopen(response) {
+                if (!response.ok && response.headers.get('content-type') !== 'text/event-stream') {
+                    const content = await response.text()
+                    cb.onError(content, response.status)
+                    abort.abort()
+                    return
+                }
+            },
             onmessage: message => {
                 const data: Event = { ...JSON.parse(message.data), type: message.event }
                 this.sendEvents([data], cb)
             },
             onerror(error) {
+                cb.onError(error.message)
+                abort.abort()
                 console.error(error)
             },
         }).catch(error => {
+            cb.onError(error.message)
+            abort.abort()
             console.error(error)
         })
         return () => abort.abort()
