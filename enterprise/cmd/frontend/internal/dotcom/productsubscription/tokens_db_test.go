@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func TestProductLicensesSetAccessTokenSHA256(t *testing.T) {
+func TestProductLicensesAccessToken(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
@@ -43,20 +43,6 @@ func TestProductLicensesSetAccessTokenSHA256(t *testing.T) {
 		accessToken := defaultAccessToken(rawToken)
 
 		gotPS, err := newDBTokens(db).LookupAccessToken(ctx, accessToken)
-		require.NoError(t, err)
-		assert.Equal(t, gotPS, ps)
-	})
-
-	customRawToken := []byte("foobar")
-
-	t.Run("set token", func(t *testing.T) {
-		err = newDBTokens(db).SetAccessTokenSHA256(ctx, pl, customRawToken)
-		require.NoError(t, err)
-	})
-
-	t.Run("lookup token", func(t *testing.T) {
-		prefixedToken := defaultAccessToken(customRawToken)
-		gotPS, err := newDBTokens(db).LookupAccessToken(ctx, prefixedToken)
 		require.NoError(t, err)
 		assert.Equal(t, gotPS, ps)
 	})

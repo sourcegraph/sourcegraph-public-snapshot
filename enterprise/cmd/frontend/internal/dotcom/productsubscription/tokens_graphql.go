@@ -44,21 +44,18 @@ func (r ProductSubscriptionLicensingResolver) GenerateAccessTokenForSubscription
 		return nil, errors.New("an active license is required")
 	}
 
-	// Access token is just a hash of the license key.
-	accessTokenRaw := defaultRawAccessToken([]byte(active.LicenseKey))
-
 	// The token comprises of a prefix and the above token.
 	accessToken := productSubscriptionAccessToken{
-		accessToken: defaultAccessToken(accessTokenRaw),
+		accessToken: defaultAccessToken(defaultRawAccessToken([]byte(active.LicenseKey))),
 	}
 
 	// Token already enabled, just return the generated token
-	if len(active.AccessTokenSHA256) > 0 {
+	if active.AccessTokenEnabled {
 		return accessToken, nil
 	}
 
 	// Otherwise, enable before returning
-	if err := newDBTokens(r.DB).SetAccessTokenSHA256(ctx, active.ID, accessTokenRaw); err != nil {
+	if err := newDBTokens(r.DB).EnableUseAsAccessToken(ctx, active.ID); err != nil {
 		return nil, err
 	}
 	return accessToken, nil

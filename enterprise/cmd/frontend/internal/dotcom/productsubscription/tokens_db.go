@@ -28,9 +28,9 @@ func newDBTokens(db database.DB) dbTokens {
 
 // SetAccessTokenSHA256 activates the value as a valid token for the license.
 // The value should not contain any token prefixes.
-func (t dbTokens) SetAccessTokenSHA256(ctx context.Context, licenseID string, value []byte) error {
-	query := sqlf.Sprintf("UPDATE product_licenses SET access_token_sha256=%s WHERE id=%s RETURNING id",
-		hashutil.ToSHA256Bytes(value), licenseID)
+func (t dbTokens) EnableUseAsAccessToken(ctx context.Context, licenseID string) error {
+	query := sqlf.Sprintf("UPDATE product_licenses SET access_token_enabled=true WHERE id=%s RETURNING id",
+		licenseID)
 	_, ok, err := basestore.ScanFirstString(t.store.Query(ctx, query))
 	if err != nil {
 		return err
@@ -56,8 +56,10 @@ func (t dbTokens) LookupAccessToken(ctx context.Context, token string) (string, 
 	query := sqlf.Sprintf(`
 SELECT product_subscription_id
 FROM product_licenses
-WHERE access_token_sha256=%s`,
-		hashutil.ToSHA256Bytes(decoded))
+WHERE
+	access_token_enabled=true
+	AND digest(license_key, 'sha256')=%s`,
+		decoded)
 	subID, _, err := basestore.ScanFirstString(t.store.Query(ctx, query))
 	if err != nil {
 		return "", errors.New("invalid token")

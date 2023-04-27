@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,7 +24,7 @@ type dbLicense struct {
 	LicenseTags           []string
 	LicenseUserCount      *int
 	LicenseExpiresAt      *time.Time
-	AccessTokenSHA256     []byte
+	AccessTokenEnabled    bool
 }
 
 // errLicenseNotFound occurs when a database operation expects a specific Sourcegraph
@@ -53,8 +52,8 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		expiresAt = &info.ExpiresAt
 	}
 	if err = s.db.QueryRowContext(ctx, `
-INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at, access_token_sha256)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id
+INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at, access_token_enabled)
+VALUES($1, $2, $3, $4, $5, $6, $7, true) RETURNING id
 `,
 		newUUID,
 		subscriptionID,
@@ -63,7 +62,6 @@ VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id
 		pq.Array(info.Tags),
 		dbutil.NewNullInt64(int64(info.UserCount)),
 		dbutil.NullTime{Time: expiresAt},
-		hashutil.ToSHA256Bytes(defaultRawAccessToken([]byte(licenseKey))),
 	).Scan(&id); err != nil {
 		return "", errors.Wrap(err, "insert")
 	}
@@ -156,7 +154,7 @@ SELECT
 	license_tags,
 	license_user_count,
 	license_expires_at,
-	access_token_sha256
+	access_token_enabled
 FROM product_licenses
 WHERE (%s)
 ORDER BY created_at DESC
@@ -183,7 +181,7 @@ ORDER BY created_at DESC
 			pq.Array(&v.LicenseTags),
 			&v.LicenseUserCount,
 			&v.LicenseExpiresAt,
-			&v.AccessTokenSHA256,
+			&v.AccessTokenEnabled,
 		); err != nil {
 			return nil, err
 		}
