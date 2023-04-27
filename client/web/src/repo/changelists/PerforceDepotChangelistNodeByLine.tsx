@@ -24,7 +24,7 @@ interface Props {
 /**
  * Displays a Perforce changelist's author and committer (with avatars if available) and the dates.
  */
-export const PerforceDepotChangeListNodeByLine: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const PerforceDepotChangelistNodeByLine: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     author,
     committer,
     className = '',
@@ -75,6 +75,8 @@ export const PerforceDepotChangeListNodeByLine: React.FunctionComponent<React.Pr
             </Wrapper>
         )
     }
+
+    console.log(author.person)
 
     return (
         <Wrapper data-testid="git-commit-node-byline" className={className}>

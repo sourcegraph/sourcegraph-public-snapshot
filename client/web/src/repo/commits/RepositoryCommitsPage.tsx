@@ -30,7 +30,7 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
 import { externalLinkFieldsFragment } from '../backend'
-import { PerforceDepotChangeListNode } from '../changelists/PerforceDepotChangelistNode'
+import { PerforceDepotChangelistNode } from '../changelists/PerforceDepotChangelistNode'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { GitCommitNode } from './GitCommitNode'
@@ -120,8 +120,9 @@ export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSett
 // A page that shows a repository's commits at the current revision.
 export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     const { useBreadcrumb, repo } = props
-
+    console.log(repo)
     const location = useLocation()
+    console.log(location)
     const { filePath = '' } = parseBrowserRepoURL(location.pathname)
 
     let isPerforceDepot = false
@@ -244,7 +245,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                     <ConnectionList className="list-group list-group-flush w-100">
                         {connection?.nodes.map(node =>
                             isPerforceDepot ? (
-                                <PerforceDepotChangeListNode
+                                <PerforceDepotChangelistNode
                                     key={node.id}
                                     className="list-group-item"
                                     wrapperElement="li"
