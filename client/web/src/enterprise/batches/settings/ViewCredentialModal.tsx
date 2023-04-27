@@ -2,7 +2,11 @@ import React from 'react'
 
 import { Button, Checkbox, Modal, H4, Input } from '@sourcegraph/wildcard'
 
-import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
+import {
+    BatchChangesCodeHostFields,
+    BatchChangesCredentialFields,
+    ExternalServiceKind,
+} from '../../../graphql-operations'
 
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'
@@ -31,18 +35,21 @@ export const ViewCredentialModal: React.FunctionComponent<React.PropsWithChildre
             <H4>Personal access token</H4>
             <Input className="form-group" value="PATs cannot be viewed after entering." disabled={true} />
 
-            <Checkbox
-                name="enable-sign-commits"
-                id="enable-sign-commits"
-                checked={credential.commitSigningOptedIn}
-                disabled={true}
-                label="Sign commits on this code host"
-                message={`This property cannot be modified after creation. To ${
-                    credential.commitSigningOptedIn ? 'disable' : 'enable'
-                } commit signing, remove this credential and create a new one.`}
-            />
+            {(codeHost.externalServiceKind === ExternalServiceKind.GITHUB ||
+                codeHost.externalServiceKind === ExternalServiceKind.GITLAB) && (
+                <Checkbox
+                    name="enable-sign-commits"
+                    id="enable-sign-commits"
+                    checked={credential.commitSigningOptedIn}
+                    disabled={true}
+                    label="Sign commits on this code host"
+                    message={`This property cannot be modified after creation. To ${
+                        credential.commitSigningOptedIn ? 'disable' : 'enable'
+                    } commit signing, remove this credential and create a new one.`}
+                />
+            )}
 
-            <hr className="mb-3" />
+            <hr className="my-3" />
 
             <CodeHostSshPublicKey
                 externalServiceKind={codeHost.externalServiceKind}
