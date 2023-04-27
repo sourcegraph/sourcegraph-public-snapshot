@@ -30,6 +30,7 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
 import { externalLinkFieldsFragment } from '../backend'
+import { PerforceDepotChangeListNode } from '../changelists/PerforceDepotChangelistNode'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { GitCommitNode } from './GitCommitNode'
@@ -241,9 +242,23 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
 
                     {error && <ErrorAlert error={error} className="w-100 mb-0" />}
                     <ConnectionList className="list-group list-group-flush w-100">
-                        {connection?.nodes.map(node => (
-                            <GitCommitNode key={node.id} className="list-group-item" wrapperElement="li" node={node} />
-                        ))}
+                        {connection?.nodes.map(node =>
+                            isPerforceDepot ? (
+                                <PerforceDepotChangeListNode
+                                    key={node.id}
+                                    className="list-group-item"
+                                    wrapperElement="li"
+                                    node={node}
+                                />
+                            ) : (
+                                <GitCommitNode
+                                    key={node.id}
+                                    className="list-group-item"
+                                    wrapperElement="li"
+                                    node={node}
+                                />
+                            )
+                        )}
                     </ConnectionList>
                     {loading && <ConnectionLoading />}
                     {connection && (
