@@ -17,6 +17,7 @@ describe('TreePage', () => {
         id: 'repo-id',
         name: 'repo name',
         url: 'http://repo.url.example.com',
+        isPerforceDepot: false,
         description: 'Awesome for testing',
         viewerCanAdminister: false,
         isFork: false,

@@ -86,6 +86,7 @@ export const createResolveRepoRevisionResult = (treeUrl: string, oid = '1'.repea
         id: `RepositoryID:${treeUrl}`,
         name: treeUrl,
         url: `/${encodeURIPathComponent(treeUrl)}`,
+        isPerforceDepot: false,
         externalURLs: [
             {
                 url: new URL(`https://${encodeURIPathComponent(treeUrl)}`).href,
@@ -114,6 +115,7 @@ export const createResolveCloningRepoRevisionResult = (
         id: `RepositoryID:${treeUrl}`,
         name: treeUrl,
         url: `/${encodeURIPathComponent(treeUrl)}`,
+        isPerforceDepot: false,
         externalURLs: [
             {
                 url: new URL(`https://${encodeURIPathComponent(treeUrl)}`).href,

@@ -263,6 +263,7 @@ describe('RepositoryCommitPage', () => {
                 id: 'UmVwb3NpdG9yeTozNjgwOTI1MA==',
                 name: 'github.com/sourcegraph/sourcegraph',
                 url: '/github.com/sourcegraph/sourcegraph',
+                isPerforceDepot: false,
                 externalURLs: [
                     {
                         url: 'https://github.com/sourcegraph/sourcegraph',

@@ -52,6 +52,7 @@ export const getCommonRepositoryGraphQlResults = (
     TreeCommits: () => ({
         node: {
             __typename: 'Repository',
+            isPerforceDepot: false,
             externalURLs: [
                 {
                     __typename: 'ExternalLink',
@@ -109,6 +110,7 @@ describe('Repository', () => {
                 TreeCommits: () => ({
                     node: {
                         __typename: 'Repository',
+                        isPerforceDepot: false,
                         externalURLs: [
                             {
                                 __typename: 'ExternalLink',
@@ -658,6 +660,7 @@ describe('Repository', () => {
                     __typename: 'Query',
                     node: {
                         __typename: 'Repository',
+                        isPerforceDepot: false,
                         externalURLs: [
                             {
                                 __typename: 'ExternalLink',
