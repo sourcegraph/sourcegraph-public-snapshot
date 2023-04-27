@@ -230,7 +230,7 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()
 
 # rust toolchain setup
-load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains", "rust_repository_set")
 
 rules_rust_dependencies()
 
@@ -241,6 +241,15 @@ rust_register_toolchains(
     versions = [
         "1.68.0",
     ],
+    register_toolchains = False,
+)
+
+rust_repository_set(
+    edition = "2021",
+    name = "macos_aarch64",
+    exec_triple = "aarch64-apple-darwin",
+    extra_target_triples = ["x86_64-unknown-linux-gnu"],
+    versions = ["1.68.0"],
 )
 
 load("@rules_rust//crate_universe:defs.bzl", "crates_repository")

@@ -1,5 +1,6 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 
 rust_binary(
     name = "syntect_server",
@@ -30,4 +31,18 @@ rust_test(
     deps = all_crate_deps(
         normal_dev = True,
     ),
+)
+
+platform(
+    name = "amd64_linux",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+platform_transition_filegroup(
+    name = "syntect_server_linux",
+    srcs = [":syntect_server"],
+    target_platform = "amd64_linux",
 )
