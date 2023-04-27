@@ -34,6 +34,7 @@ export type ExtensionMessage =
     | { type: 'contextStatus'; contextStatus: ChatContextStatus }
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
+    | { type: 'suggestions'; suggestions: string[] }
 
 /**
  * The subset of configuration that is visible to the webview.

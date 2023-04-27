@@ -72,3 +72,8 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     border-bottom: 2px solid var(--vscode-testing-iconPassed);
     word-break: break-all;
 }
+
+.suggestion-button {
+    border-radius: 1rem;
+    font-size: 0.7rem;
+}

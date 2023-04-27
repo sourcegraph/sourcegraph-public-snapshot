@@ -9,6 +9,7 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 import {
     Chat as ChatUI,
     ChatUISubmitButtonProps,
+    ChatUISuggestionButtonProps,
     ChatUITextAreaProps,
     EditButtonProps,
     FeedbackButtonsProps,
@@ -31,6 +32,8 @@ interface ChatboxProps {
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
     vscodeAPI: VSCodeWrapper
+    suggestions?: string[]
+    setSuggestions?: (suggestions: undefined | string[]) => void
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -44,6 +47,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     inputHistory,
     setInputHistory,
     vscodeAPI,
+    suggestions,
+    setSuggestions,
 }) => {
     const onSubmit = useCallback(
         (text: string) => {
@@ -87,6 +92,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             onSubmit={onSubmit}
             textAreaComponent={TextArea}
             submitButtonComponent={SubmitButton}
+            suggestionButtonComponent={SuggestionButton}
             fileLinkComponent={FileLink}
             className={styles.innerContainer}
             codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
@@ -102,6 +108,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             FeedbackButtonsContainer={FeedbackButtons}
             feedbackButtonsOnSubmit={onFeedbackBtnClick}
             copyButtonOnSubmit={onCopyBtnClick}
+            suggestions={suggestions}
+            setSuggestions={setSuggestions}
         />
     )
 }
@@ -169,6 +177,15 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
     </VSCodeButton>
 )
 
+const SuggestionButton: React.FunctionComponent<ChatUISuggestionButtonProps> = ({ suggestion, onClick }) => (
+    <VSCodeButton className={styles.suggestionButton} appearance="secondary" type="button" onClick={onClick}>
+        <i className="codicon codicon-sparkle" slot="start">
+            {/* Fallback emoji because this icon is a new addition and doesn't seem to work for me? */}✨
+        </i>{' '}
+        {suggestion}
+    </VSCodeButton>
+)
+
 const EditButton: React.FunctionComponent<EditButtonProps> = ({
     className,
     messageBeingEdited,
@@ -177,7 +194,6 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
     <div className={className}>
         <VSCodeButton
             className={classNames(styles.submitButton)}
-            appearance="icon"
             type="button"
             onClick={() => setMessageBeingEdited(!messageBeingEdited)}
         >
