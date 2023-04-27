@@ -91,23 +91,23 @@ func TestClient_ArchiveReader(t *testing.T) {
 	}
 
 	tests := map[api.RepoName]test{
-		// "simple": {
-		// 	remote: createSimpleGitRepo(t, root),
-		// 	want: map[string]string{
-		// 		"dir1/":      "",
-		// 		"dir1/file1": "infile1",
-		// 		"file 2":     "infile2",
-		// 	},
-		// },
-		// "repo-with-dotgit-dir": {
-		// 	remote: createRepoWithDotGitDir(t, root),
-		// 	want: map[string]string{
-		// 		"file1":            "hello\n",
-		// 		".git/mydir/file2": "milton\n",
-		// 		".git/mydir/":      "",
-		// 		".git/":            "",
-		// 	},
-		// },
+		"simple": {
+			remote: createSimpleGitRepo(t, root),
+			want: map[string]string{
+				"dir1/":      "",
+				"dir1/file1": "infile1",
+				"file 2":     "infile2",
+			},
+		},
+		"repo-with-dotgit-dir": {
+			remote: createRepoWithDotGitDir(t, root),
+			want: map[string]string{
+				"file1":            "hello\n",
+				".git/mydir/file2": "milton\n",
+				".git/mydir/":      "",
+				".git/":            "",
+			},
+		},
 		"not-found": {
 			err: errors.New("repository does not exist: not-found"),
 		},
@@ -155,7 +155,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 	// 	return reader, err
 	// }
 
-	runArchiveReaderTestfunc := func(t *testing.T, ctx context.Context, cli gitserver.Client, test map[api.RepoName]test) {
+	runArchiveReaderTestfunc := func(t *testing.T, ctx context.Context, cli gitserver.Client, tests map[api.RepoName]test) {
 
 		for name, test := range tests {
 			t.Run(string(name), func(t *testing.T) {
@@ -225,22 +225,20 @@ func TestClient_ArchiveReader(t *testing.T) {
 	// 		return gitserver.NewTestClient(&http.Client{}, addrs)
 	// 	}
 	// }
+	//
 
-	t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
-	runArchiveReaderTestfunc(t, ctx, cli, tests)
+	t.Run("grpc", func(t *testing.T) {
+		foo := "whatever"
+		fmt.Println(foo)
 
-	// t.Run("grpc", func(t *testing.T) {
-	// 	foo := "whatever"
-	// 	fmt.Println(foo)
+		t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
+		runArchiveReaderTestfunc(t, ctx, cli, tests)
+	})
 
-	// 	t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
-	// 	runArchiveReaderTestfunc(t, ctx, cli, tests)
-	// })
-
-	// t.Run("http", func(t *testing.T) {
-	// 	t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
-	// 	runArchiveReaderTestfunc(t, ctx, cli, tests)
-	// })
+	t.Run("http", func(t *testing.T) {
+		t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+		runArchiveReaderTestfunc(t, ctx, cli, tests)
+	})
 
 }
 

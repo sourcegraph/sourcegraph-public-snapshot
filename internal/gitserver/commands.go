@@ -2440,13 +2440,35 @@ func (c *clientImplementor) ArchiveReader(
 			cancel()
 			return nil, err
 		}
-		r := streamio.NewReader(func() ([]byte, error) {
-			msg, err := stream.Recv()
+
+		handleStreamErr := func(err error) error {
 			if status.Code(err) == codes.Canceled {
-				return nil, context.Canceled
+				return context.Canceled
 			} else if err != nil {
-				return nil, err
+				return convertGRPCErrorToGitDomainError(err)
 			}
+
+			return nil
+		}
+
+		firstMessage, err := stream.Recv()
+		if err != nil {
+			cancel()
+			return nil, handleStreamErr(err)
+		}
+
+		firstMessageRead := false
+		r := streamio.NewReader(func() ([]byte, error) {
+			if !firstMessageRead {
+				firstMessageRead = true
+				return firstMessage.GetData(), nil
+			}
+
+			msg, err := stream.Recv()
+			if err != nil {
+				return nil, handleStreamErr(err)
+			}
+
 			return msg.GetData(), nil
 		})
 

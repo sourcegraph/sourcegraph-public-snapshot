@@ -600,34 +600,45 @@ type readCloseWrapper struct {
 func (r *readCloseWrapper) Read(p []byte) (int, error) {
 	n, err := r.r.Read(p)
 	if err != nil {
-		st, ok := status.FromError(err)
-		if !ok {
-			return n, err
-		}
-
-		for _, detail := range st.Details() {
-			switch payload := detail.(type) {
-			case *proto.ExecStatusPayload:
-				return n, &CommandStatusError{
-					Message:    st.Message(),
-					Stderr:     payload.Stderr,
-					StatusCode: payload.StatusCode,
-				}
-			case *proto.NotFoundPayload:
-				return n, &gitdomain.RepoNotExistError{
-					Repo:            api.RepoName(payload.Repo),
-					CloneInProgress: payload.CloneInProgress,
-					CloneProgress:   payload.CloneProgress,
-				}
-			}
-		}
+		err = convertGRPCErrorToGitDomainError(err)
 	}
+
 	return n, err
 }
 
 func (r *readCloseWrapper) Close() error {
 	r.closeFn()
 	return nil
+}
+
+// convertGRPCErrorToGitDomainError translates a GRPC error to a gitdomain error.
+// If the error is not a GRPC error, it is returned as-is.
+func convertGRPCErrorToGitDomainError(err error) error {
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+
+	for _, detail := range st.Details() {
+		switch payload := detail.(type) {
+
+		case *proto.ExecStatusPayload:
+			return &CommandStatusError{
+				Message:    st.Message(),
+				Stderr:     payload.Stderr,
+				StatusCode: payload.StatusCode,
+			}
+
+		case *proto.NotFoundPayload:
+			return &gitdomain.RepoNotExistError{
+				Repo:            api.RepoName(payload.Repo),
+				CloneInProgress: payload.CloneInProgress,
+				CloneProgress:   payload.CloneProgress,
+			}
+		}
+	}
+
+	return err
 }
 
 type CommandStatusError struct {
