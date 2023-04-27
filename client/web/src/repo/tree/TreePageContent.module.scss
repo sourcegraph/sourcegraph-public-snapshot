@@ -53,3 +53,22 @@
 .table {
     table-layout: fixed;
 }
+
+.link-dark {
+    &,
+    &:hover,
+    &:focus {
+        color: var(--light-blue);
+    }
+}
+
+.extra-info-section-item {
+    &-header-icon {
+        opacity: 0;
+        transition: opacity 0.1s ease-in-out;
+    }
+
+    &:hover &-header-icon {
+        opacity: 1;
+    }
+}

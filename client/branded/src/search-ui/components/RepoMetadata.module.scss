@@ -1,14 +1,23 @@
-.repo-metadata {
+.container {
     gap: 0.5rem;
+}
+
+.meta {
+    color: var(--body-color);
+}
+
+.highlight {
+    color: var(--search-filter-keyword-color);
+}
+
+.delete-button,
+.meta {
     font-size: 0.75rem;
 }
 
-.rounded-left-none {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-}
-
-.rounded-right-none {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+.container.small {
+    .delete-button,
+    .meta {
+        font-size: 0.625rem;
+    }
 }
