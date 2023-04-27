@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - '**.go'
+      - '**/scip-go.yml'
 
 jobs:
   scip-go:
