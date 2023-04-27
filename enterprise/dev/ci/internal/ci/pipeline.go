@@ -296,8 +296,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
+		imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
 		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.DeploySourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+		var deployImages = []string{}
+		for _, image := range images.DeploySourcegraphDockerImages {
+			if image == "syntax-highlighter" {
+				continue
+			}
+			deployImages = append(deployImages, image)
+		}
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(deployImages, c.Version, c.candidateImageTag(), c.RunType))
 		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMisc, c.Version, c.candidateImageTag(), c.RunType))
 		ops.Merge(imageBuildOps)
 		ops.Append(wait)
@@ -350,9 +358,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				}
 			}
 		} else {
-
+			imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
 			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
-			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.DeploySourcegraphDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+			var deployImages = []string{}
+			for _, image := range images.DeploySourcegraphDockerImages {
+				if image == "syntax-highlighter" {
+					continue
+				}
+				deployImages = append(deployImages, image)
+			}
+			imageBuildOps.Append(bazelBuildCandidateDockerImages(deployImages, c.Version, c.candidateImageTag(), c.RunType))
 			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMisc, c.Version, c.candidateImageTag(), c.RunType))
 
 		}
