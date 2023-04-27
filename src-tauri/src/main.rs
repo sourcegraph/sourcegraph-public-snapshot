@@ -3,12 +3,15 @@
     windows_subsystem = "windows"
 )]
 
+use std::path::PathBuf;
+
 #[cfg(not(dev))]
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
-use tauri::{
-    api::shell, AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
-    SystemTrayMenuItem,
+use {
+    tauri::api::shell, tauri::AppHandle, tauri::CustomMenuItem, tauri::Manager, tauri::SystemTray,
+    tauri::SystemTrayEvent, tauri::SystemTrayMenu, tauri::SystemTrayMenuItem,
+    tauri_plugin_log::LogTarget,
 };
 
 fn main() {
@@ -33,9 +36,14 @@ fn main() {
             }
             _ => {}
         })
-        .setup(|app| {
-            let window = app.get_window("main").unwrap();
-            start_embedded_services(window);
+        .plugin(
+            tauri_plugin_log::Builder::default()
+                .targets([LogTarget::LogDir, LogTarget::Webview])
+                .level(log::LevelFilter::Info)
+                .build(),
+        )
+        .setup(|_app| {
+            start_embedded_services();
             Ok(())
         })
         .run(tauri::generate_context!())
@@ -43,12 +51,12 @@ fn main() {
 }
 
 #[cfg(dev)]
-fn start_embedded_services(_window: tauri::Window) {
+fn start_embedded_services() {
     println!("embedded Sourcegraph services disabled for local development");
 }
 
 #[cfg(not(dev))]
-fn start_embedded_services(window: tauri::Window) {
+fn start_embedded_services() {
     let sidecar = "sourcegraph-backend";
     let (mut rx, _child) = Command::new_sidecar(sidecar)
         .expect(format!("failed to create `{sidecar}` binary command").as_str())
@@ -59,26 +67,8 @@ fn start_embedded_services(window: tauri::Window) {
         // read events such as stdout
         while let Some(event) = rx.recv().await {
             match event {
-                CommandEvent::Stdout(line) => {
-                    window
-                        .emit(format!("{sidecar}-stdout").as_str(), Some(line.clone()))
-                        .expect("failed to emit event");
-
-                    let _ = window.eval(&format!(
-                        "console.log(\":: {}\")",
-                        line.replace("\"", "\\\"")
-                    ));
-                }
-                CommandEvent::Stderr(line) => {
-                    window
-                        .emit(format!("{sidecar}-stderr").as_str(), Some(line.clone()))
-                        .expect("failed to emit event");
-
-                    let _ = window.eval(&format!(
-                        "console.log(\":: {}\")",
-                        line.replace("\"", "\\\"")
-                    ));
-                }
+                CommandEvent::Stdout(line) => log::info!("{}", line),
+                CommandEvent::Stderr(line) => log::error!("{}", line),
                 _ => continue,
             };
         }
@@ -93,47 +83,47 @@ fn create_tray_menu() -> SystemTrayMenu {
             CustomMenuItem::new("settings".to_string(), "Settings").accelerator("CmdOrCtrl+,"),
         )
         .add_item(CustomMenuItem::new(
+            "troubleshoot".to_string(),
+            "Troubleshoot",
+        ))
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(CustomMenuItem::new(
             "about".to_string(),
             "About Sourcegraph",
         ))
         .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(CustomMenuItem::new("toggle-status".to_string(), "Pause"))
+        .add_item(CustomMenuItem::new("restart".to_string(), "Restart"))
         .add_item(CustomMenuItem::new("quit".to_string(), "Quit").accelerator("CmdOrCtrl+Q"))
 }
 
-fn open_window(app: &AppHandle) {
+fn show_window(app: &AppHandle) {
     let window = app.get_window("main").unwrap();
-    match window.is_visible() {
-        Ok(true) => {
-            // noop
-        }
-        Ok(false) => {
-            window.show();
-        }
-        Err(e) => {
-            println!("Error getting window visibility: {}", e);
-        }
+    if !window.is_visible().unwrap() {
+        window.show().expect("failed to open window");
     }
 }
 
 fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
     if let SystemTrayEvent::MenuItemClick { id, .. } = event {
-        let _item_handle = app.tray_handle().get_item(&id);
         match id.as_str() {
-            "open" => open_window(app),
+            "open" => show_window(app),
             "settings" => {
                 let window = app.get_window("main").unwrap();
-                window
-                    .eval("window.location.href = '/setup-wizard'")
-                    .unwrap();
-                open_window(app);
+                window.eval("window.location.href = '/settings'").unwrap();
+                show_window(app);
+            }
+            "troubleshoot" => {
+                let log_path: PathBuf = tauri::api::path::app_log_dir(&app.config()).unwrap();
+
+                if let Some(log_path_str) = log_path.to_str() {
+                    let combined_path = format!("{}/Sourcegraph App.log", log_path_str);
+                    shell::open(&app.shell_scope(), &combined_path, None).unwrap()
+                }
             }
             "about" => {
                 shell::open(&app.shell_scope(), "https://about.sourcegraph.com", None).unwrap()
             }
-            "toggle-status" => {
-                // Allow resuming/pausing depending on if the app is running
-            }
+            "restart" => app.restart(),
             "quit" => app.exit(0),
             _ => {}
         }

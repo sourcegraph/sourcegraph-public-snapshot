@@ -19,12 +19,12 @@
             "sidecar": true
           }
         ],
-        "open": true
+        "open": "^https?:|com.sourcegraph.app/.*.log$"
       }
     },
     "systemTray": {
       "iconPath": "icons/32x32.png",
-      "iconAsTemplate": true
+      "iconAsTemplate": false
     },
     "bundle": {
       "active": true,
