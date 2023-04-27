@@ -3,6 +3,7 @@ import {
     ActiveTextEditorSelection,
     ActiveTextEditorVisibleContent,
     Editor,
+    InputBoxOptions,
 } from '@sourcegraph/cody-shared/src/editor'
 
 import { EditorStore } from '../stores/editor'
@@ -11,6 +12,11 @@ export class CodeMirrorEditor implements Editor {
     private editorStoreRef: React.MutableRefObject<EditorStore>
     constructor(editorStoreRef: React.MutableRefObject<EditorStore>) {
         this.editorStoreRef = editorStoreRef
+    }
+
+    showInputBox(options?: InputBoxOptions | undefined): Promise<string | undefined> {
+        // TODO
+        throw new Error('Method not implemented.')
     }
 
     public getWorkspaceRootPath(): string | null {

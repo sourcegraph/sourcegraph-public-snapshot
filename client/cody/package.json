@@ -128,6 +128,11 @@
         "when": "cody.activated"
       },
       {
+        "command": "cody.recipe.summarize-changes",
+        "title": "Ask Cody: Summarize Changes (New)",
+        "when": "cody.activated"
+      },
+      {
         "command": "cody.recipe.improve-variable-names",
         "title": "Ask Cody: Improve Variable Names",
         "when": "cody.activated"
@@ -220,6 +225,10 @@
         },
         {
           "command": "cody.recipe.git-history",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.summarize-changes",
           "when": "cody.activated"
         },
         {

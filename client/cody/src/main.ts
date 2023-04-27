@@ -187,6 +187,9 @@ const register = async (
             executeRecipe('translate-to-language')
         ),
         vscode.commands.registerCommand('cody.recipe.git-history', () => executeRecipe('git-history')),
+        vscode.commands.registerCommand('cody.recipe.summarize-changes', async () =>
+            executeRecipe('summarize-changes')
+        ),
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
             executeRecipe('improve-variable-names')
         ),
