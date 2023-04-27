@@ -1,11 +1,10 @@
 /* eslint-disable react/no-array-index-key */
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 import './UserHistory.css'
 
 import { useCallback } from 'react'
 
-import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from './NavBar'
 import { VSCodeWrapper } from './utils/VSCodeApi'
@@ -16,7 +15,6 @@ interface HistoryProps {
     userHistory: ChatHistory | null
     setUserHistory: (history: ChatHistory | null) => void
     setInputHistory: (inputHistory: string[] | []) => void
-    setTranscript: (messages: ChatMessage[]) => void
     setView: (view: View | undefined) => void
     vscodeAPI: VSCodeWrapper
 }
@@ -25,7 +23,6 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
     userHistory,
     setUserHistory,
     setInputHistory,
-    setTranscript,
     setView,
     vscodeAPI,
 }) => {
@@ -47,17 +44,16 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
             <div className={styles.nonTranscriptContainer}>
                 <div className="history-item-container">
                     <h3>Remove Chat & Input History</h3>
-                    <VSCodeButton
+                    <button
                         className="history-remove-btn"
                         type="button"
-                        appearance="secondary"
                         onClick={onRemoveHistoryClick}
                         disabled={userHistory === null}
                     >
                         {userHistory === null || Object.keys(userHistory).length === 0
                             ? 'Chat history is empty'
                             : 'Remove all local history'}
-                    </VSCodeButton>
+                    </button>
                     <h3>Local Chat History</h3>
                 </div>
                 {userHistory &&

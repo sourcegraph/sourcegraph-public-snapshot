@@ -6,39 +6,30 @@
     margin-bottom: 1rem;
     width: 100%;
     justify-content: center;
-    padding: 0.5rem 0rem;
+    padding: 1rem 0rem;
     font-weight: bold;
-    color: var(--vscode-button-foreground);
+    color: var(--vscode-button-secondaryForeground);
+    background-color: var(--vscode-button-secondaryBackground);
     cursor: pointer;
+    border: none;
 }
 
 .history-item {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-
-    border-bottom: 1px solid var(--vscode-tab-border);
-
+    margin: 1rem;
     padding: var(--spacing);
-
-    color: var(--vscode-tab-inactiveForeground);
-
+    color: var(--vscode-button-foreground);
+    background-color: var(--vscode-button-background);
     cursor: pointer;
-    background: var(--vscode-tab-inactiveBackground);
-}
-
-.history-item:nth-child(2) {
-    border-top: 1px solid var(--vscode-tab-border);
 }
 
 .history-item:hover {
-    background: var(--vscode-tab-activeBackground);
-}
-
-.history-item:hover>.history-item-last-message {
-    color: var(--vscode-tab-activeForeground);
+    background-color: var(--vscode-button-hoverBackground);
 }
 
 .history-item-date {
-    font-size: 0.8em;
+    font-size: smaller;
+    margin-bottom: 0.3rem;
 }

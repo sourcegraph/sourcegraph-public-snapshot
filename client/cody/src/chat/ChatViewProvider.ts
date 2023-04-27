@@ -108,8 +108,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     public async clearAndRestartSession(): Promise<void> {
         await this.saveTranscriptToChatHistory()
-        await this.saveChatHistory()
-
         this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
@@ -132,13 +130,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public async restoreSession(chatID: string): Promise<void> {
         await this.saveTranscriptToChatHistory()
-
         this.cancelCompletion()
-
         this.currentChatID = chatID
         this.transcript = Transcript.fromJSON(this.chatHistory[chatID])
         delete this.chatHistory[chatID]
-
         this.sendTranscript()
         this.sendChatHistory()
     }
@@ -282,10 +277,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
         this.sendTranscript()
-        void (async () => {
-            await this.saveTranscriptToChatHistory()
-            await this.saveChatHistory()
-        })()
+        void this.saveTranscriptToChatHistory()
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
@@ -444,9 +436,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     private async saveTranscriptToChatHistory(): Promise<void> {
-        if (!this.transcript.isEmpty) {
-            this.chatHistory[this.currentChatID] = await this.transcript.toJSON()
+        if (this.transcript.isEmpty) {
+            return
         }
+        this.chatHistory[this.currentChatID] = await this.transcript.toJSON()
+        await this.saveChatHistory()
     }
 
     /**

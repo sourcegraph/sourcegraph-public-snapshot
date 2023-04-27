@@ -1,18 +1,14 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { View } from './NavBar'
-
 import './Settings.css'
 
 interface SettingsProps {
     onLogout: () => void
-    setView: (view: View) => void
     serverEndpoint?: string
 }
 
 export const Settings: React.FunctionComponent<React.PropsWithChildren<SettingsProps>> = ({
     onLogout,
-    setView,
     serverEndpoint,
 }) => (
     <div className="inner-container">
