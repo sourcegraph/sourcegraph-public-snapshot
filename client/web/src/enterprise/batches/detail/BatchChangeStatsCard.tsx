@@ -141,7 +141,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                             label={
                                 <H4 className="font-weight-normal text-muted m-0">
                                     {otherStats} <VisuallyHidden>{pluralize('changeset', otherStats)}</VisuallyHidden>
-                                    {pluralize('other', otherStats)}{' '}
+                                    {pluralize('other', otherStats)}
                                     <Tooltip content={OTHERS_TOOLTIP}>
                                         <Icon
                                             aria-label={OTHERS_TOOLTIP}
