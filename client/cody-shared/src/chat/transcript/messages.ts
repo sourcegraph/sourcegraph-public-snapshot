@@ -20,3 +20,14 @@ export interface UserLocalHistory {
 export interface ChatHistory {
     [chatID: string]: TranscriptJSON
 }
+
+// For migrations
+
+export interface OldUserLocalHistory {
+    chat: OldChatHistory
+    input: string[]
+}
+
+export interface OldChatHistory {
+    [chatID: string]: ChatMessage[]
+}
