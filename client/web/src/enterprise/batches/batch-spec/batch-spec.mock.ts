@@ -119,6 +119,7 @@ export const EXECUTING_BATCH_SPEC = mockFullBatchSpec({
                 queued: 14,
                 processing: 7,
                 completed: 21,
+                usingV2Execution: true,
             },
         },
     },
@@ -140,6 +141,7 @@ export const COMPLETED_BATCH_SPEC = mockFullBatchSpec({
                 queued: 0,
                 processing: 0,
                 completed: 42,
+                usingV2Execution: true,
             },
         },
     },
@@ -163,6 +165,7 @@ export const COMPLETED_WITH_ERRORS_BATCH_SPEC = mockFullBatchSpec({
                 queued: 0,
                 processing: 0,
                 completed: 22,
+                usingV2Execution: true,
             },
         },
     },
@@ -263,6 +266,7 @@ export const mockWorkspace = (
     ignored: false,
     unsupported: false,
     cachedResultFound: false,
+    isV2Execution: true,
     steps: new Array(numberOfSteps).fill(0).map((_item, index) => mockStep(index + 1)),
     changesetSpecs: [
         {
@@ -411,6 +415,7 @@ export const HIDDEN_WORKSPACE: HiddenBatchSpecWorkspaceFields = {
     ignored: false,
     unsupported: false,
     cachedResultFound: false,
+    isV2Execution: true,
 }
 
 export const FAILED_WORKSPACE = mockWorkspace(1, {
