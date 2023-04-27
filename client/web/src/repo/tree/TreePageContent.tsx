@@ -172,18 +172,24 @@ export const fetchDiffStats = (args: {
         catchError(() => []) // ignore errors
     )
 
-const ExtraInfoSectionHeader: React.FunctionComponent<React.PropsWithChildren<{ title: string; tooltip?: React.ReactNode }>> = ({
-    title,
-    tooltip,
-    children,
-}) => (
+const ExtraInfoSectionItem: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
+    <div className={styles.extraInfoSectionItem}>{children}</div>
+)
+
+const ExtraInfoSectionItemHeader: React.FunctionComponent<
+    React.PropsWithChildren<{ title: string; tooltip?: React.ReactNode }>
+> = ({ title, tooltip, children }) => (
     <div className="d-flex align-items-center justify-content-between mb-2">
         <div className="d-flex align-items-center">
             <Text className="mr-1 mb-0" weight="bold">
                 {title}
             </Text>
             <Tooltip content={tooltip}>
-                <Icon svgPath={mdiInformationOutline} aria-label={title} className="text-muted" />
+                <Icon
+                    svgPath={mdiInformationOutline}
+                    aria-label={title}
+                    className={classNames('text-muted', styles.extraInfoSectionItemHeaderIcon)}
+                />
             </Tooltip>
         </div>
         {children}
@@ -201,17 +207,22 @@ const ExtraInfoSection: React.FC<{
 
     return (
         <Card className={className}>
-            <ExtraInfoSectionHeader title="Description" tooltip="Repository description synced from the code host." />
-            {repo.description && <Text>{repo.description}</Text>}
+            <ExtraInfoSectionItem>
+                <ExtraInfoSectionItemHeader title="Description" tooltip="Synced from the code host." />
+                {repo.description && <Text>{repo.description}</Text>}
+            </ExtraInfoSectionItem>
             {enableRepositoryMetadata && (
-                <>
-                    <ExtraInfoSectionHeader
+                <ExtraInfoSectionItem>
+                    <ExtraInfoSectionItemHeader
                         title="Metadata"
                         tooltip={
                             <>
                                 Repository metadata allows you to search, filter and navigate between repositories.
                                 Administrators can add repository metadata via the web, cli or API. Learn more about{' '}
-                                <Link to="/help/admin/repo/metadata">Repository Metadata</Link>.
+                                <Link to="/help/admin/repo/metadata" className={styles.linkDark}>
+                                    Repository Metadata
+                                </Link>
+                                .
                             </>
                         }
                     >
@@ -219,19 +230,23 @@ const ExtraInfoSection: React.FC<{
                             <Tooltip content="Edit repository metadata">
                                 <ButtonLink
                                     to={`/${encodeURIPathComponent(repo.name)}/-/settings/metadata`}
-                                    className="p-0"
+                                    className={classNames('p-0', styles.extraInfoSectionItemHeaderIcon)}
                                 >
-                                    <Icon svgPath={mdiCog} aria-label="Edit repository metadata" className="text-muted" />
+                                    <Icon
+                                        svgPath={mdiCog}
+                                        aria-label="Edit repository metadata"
+                                        className="text-muted"
+                                    />
                                 </ButtonLink>
                             </Tooltip>
                         )}
-                    </ExtraInfoSectionHeader>
+                    </ExtraInfoSectionItemHeader>
                     {metadataItems.length ? (
                         <RepoMetadata items={metadataItems} />
                     ) : (
                         <Text className="text-muted">None</Text>
                     )}
-                </>
+                </ExtraInfoSectionItem>
             )}
         </Card>
     )
