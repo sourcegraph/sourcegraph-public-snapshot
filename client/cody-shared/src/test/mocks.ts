@@ -1,7 +1,13 @@
 import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
 import { RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
-import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
+import {
+    ActiveTextEditor,
+    ActiveTextEditorSelection,
+    ActiveTextEditorVisibleContent,
+    Editor,
+    InputBoxOptions,
+} from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentDetector } from '../intent-detector'
 import { KeywordContextFetcher, KeywordContextFetcherResult } from '../keyword-context'
@@ -71,6 +77,10 @@ export class MockEditor implements Editor {
 
     public showQuickPick(labels: string[]): Promise<string | undefined> {
         return this.mocks.showQuickPick?.(labels) ?? Promise.resolve(undefined)
+    }
+
+    public showInputBox(options?: InputBoxOptions): Promise<string | undefined> {
+        return this.mocks.showInputBox?.(options) ?? Promise.resolve(undefined)
     }
 
     public showWarningMessage(message: string): Promise<void> {

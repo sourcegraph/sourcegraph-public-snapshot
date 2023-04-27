@@ -1,4 +1,5 @@
 import { ChatQuestion } from './chat-question'
+import { CustomSelectionRecipe } from './custom-selection-recipe'
 import { ExplainCodeDetailed } from './explain-code-detailed'
 import { ExplainCodeHighLevel } from './explain-code-high-level'
 import { FindCodeSmells } from './find-code-smells'
@@ -36,6 +37,7 @@ function init(): void {
         new Fixup(),
         new TranslateToLanguage(),
         new FindCodeSmells(),
+        new CustomSelectionRecipe(),
     ]
 
     for (const recipe of recipes) {

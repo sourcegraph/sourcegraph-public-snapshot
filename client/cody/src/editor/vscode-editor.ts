@@ -5,6 +5,7 @@ import {
     ActiveTextEditorSelection,
     ActiveTextEditorVisibleContent,
     Editor,
+    InputBoxOptions,
 } from '@sourcegraph/cody-shared/src/editor'
 
 const SURROUNDING_LINES = 50
@@ -137,6 +138,10 @@ export class VSCodeEditor implements Editor {
     public async showQuickPick(labels: string[]): Promise<string | undefined> {
         const label = await vscode.window.showQuickPick(labels)
         return label
+    }
+
+    public async showInputBox(options?: InputBoxOptions | undefined): Promise<string | undefined> {
+        return await vscode.window.showInputBox(options)
     }
 
     public async showWarningMessage(message: string): Promise<void> {

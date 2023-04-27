@@ -165,6 +165,11 @@
         "when": "!cody.activated"
       },
       {
+        "command": "cody.recipe.custom",
+        "title": "Ask Cody: Custom user-specified recipe",
+        "when": "cody.activated"
+      },
+      {
         "command": "cody.interactive.clear",
         "title": "Clear & Restart Chat Session",
         "group": "Cody",

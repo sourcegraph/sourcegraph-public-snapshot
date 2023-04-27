@@ -190,7 +190,8 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
             executeRecipe('improve-variable-names')
         ),
-        vscode.commands.registerCommand('cody.recipe.find-code-smells', async () => executeRecipe('find-code-smells'))
+        vscode.commands.registerCommand('cody.recipe.find-code-smells', async () => executeRecipe('find-code-smells')),
+        vscode.commands.registerCommand('cody.recipe.custom', async () => executeRecipe('custom'))
     )
 
     if (initialConfig.experimentalSuggest) {
