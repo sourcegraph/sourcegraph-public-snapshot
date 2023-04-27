@@ -179,7 +179,7 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 	//
 	// For depots converted with git-p4, this special handling is not required.
 	if strings.HasPrefix(commit.Message.Body(), "[p4-fusion") {
-		subject, err := parseP4FusionCommitSubject(r.logger, commit.Message.Subject())
+		subject, err := parseP4FusionCommitSubject(commit.Message.Subject())
 		if err == nil {
 			return subject, nil
 		} else {
@@ -458,7 +458,7 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 
 var p4FusionCommitSubjectPattern = regexp.MustCompile(`^(\d+) - (.*)$`)
 
-func parseP4FusionCommitSubject(logger log.Logger, subject string) (string, error) {
+func parseP4FusionCommitSubject(subject string) (string, error) {
 	matches := p4FusionCommitSubjectPattern.FindStringSubmatch(subject)
 	if len(matches) != 3 {
 		return "", errors.Newf("failed to parse commit subject %q for commit that was converted by p4-fusion", subject)

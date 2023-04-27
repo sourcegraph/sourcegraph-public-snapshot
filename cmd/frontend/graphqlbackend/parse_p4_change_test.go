@@ -3,8 +3,6 @@ package graphqlbackend
 import (
 	"reflect"
 	"testing"
-
-	"github.com/sourcegraph/log/logtest"
 )
 
 func TestParseP4Change(t *testing.T) {
@@ -81,9 +79,8 @@ func TestParseP4FusionCommitSubject(t *testing.T) {
 		},
 	}
 
-	logger := logtest.Scoped(t)
 	for _, tc := range testCases {
-		subject, err := parseP4FusionCommitSubject(logger, tc.input)
+		subject, err := parseP4FusionCommitSubject(tc.input)
 		if subject != tc.expectedSubject {
 			t.Errorf("Expected subject %q, got %q", tc.expectedSubject, subject)
 		}
