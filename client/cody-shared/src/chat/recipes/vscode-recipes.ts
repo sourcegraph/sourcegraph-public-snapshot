@@ -7,7 +7,7 @@ import { GenerateDocstring } from './generate-docstring'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
 import { ImproveVariableNames } from './improve-variable-names'
-import { NextQuestion } from './next-question'
+import { NextQuestions } from './next-questions'
 import { Recipe } from './recipe'
 import { TranslateToLanguage } from './translate'
 
@@ -37,7 +37,7 @@ function init(): void {
         new Fixup(),
         new TranslateToLanguage(),
         new FindCodeSmells(),
-        new NextQuestion(),
+        new NextQuestions(),
     ]
 
     for (const recipe of recipes) {

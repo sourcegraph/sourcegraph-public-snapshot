@@ -105,6 +105,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.cancelCompletion()
         this.isMessageInProgress = false
         this.transcript.reset()
+        this.sendSuggestions([])
         this.sendTranscript()
         this.sendChatHistory()
     }
@@ -250,7 +251,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async onHumanMessageSubmitted(text: string): Promise<void> {
         this.inputHistory.push(text)
 
-        void this.runRecipeForSuggestion('next-question', text)
+        void this.runRecipeForSuggestion('next-questions', text)
         await this.executeRecipe('chat-question', text)
     }
 
@@ -334,8 +335,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         const prompt = await transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
 
-        console.log(prompt)
-
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
 
         let text = ''
@@ -345,8 +344,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 return Promise.resolve()
             },
             onTurnComplete: () => {
-                console.log(text)
-                this.sendSuggestion(text)
+                console.log({ text })
+                console.log(text.split('\n'))
+                console.log(text.split('\n').slice(0, 3))
+                console.log(
+                    text
+                        .split('\n')
+                        .slice(3)
+                        .map(line => line.trim().replace(/^-/, '').trim())
+                )
+                const suggestions = text
+                    .split('\n')
+                    .slice(0, 3)
+                    .map(line => line.trim().replace(/^-/, '').trim())
+                console.log({ suggestions })
+                this.sendSuggestions(suggestions)
                 return Promise.resolve()
             },
         })
@@ -382,10 +394,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         })
     }
 
-    private sendSuggestion(suggestion: string): void {
+    private sendSuggestions(suggestions: string[]): void {
         void this.webview?.postMessage({
-            type: 'suggestion',
-            suggestion,
+            type: 'suggestions',
+            suggestions,
         })
     }
 

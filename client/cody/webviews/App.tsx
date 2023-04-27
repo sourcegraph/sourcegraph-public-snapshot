@@ -30,7 +30,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
     const [errorMessage, setErrorMessage] = useState<string>('')
-    const [suggestion, setSuggestion] = useState<string | undefined>()
+    const [suggestions, setSuggestions] = useState<string[] | undefined>()
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -75,8 +75,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 case 'view':
                     setView(message.messages)
                     break
-                case 'suggestion':
-                    setSuggestion(message.suggestion)
+                case 'suggestions':
+                    setSuggestions(message.suggestions)
                     break
             }
         })
@@ -145,7 +145,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     inputHistory={inputHistory}
                     setInputHistory={setInputHistory}
                     vscodeAPI={vscodeAPI}
-                    suggestion={suggestion}
+                    suggestions={suggestions}
+                    setSuggestions={setSuggestions}
                 />
             )}
         </div>
