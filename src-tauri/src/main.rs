@@ -16,10 +16,22 @@ fn main() {
         }
     }
 
+    // Prepare handler for sourcegraph:// scheme urls.
+    tauri_plugin_deep_link::prepare("com.sourcegraph.app");
+
     tauri::Builder::default()
         .setup(|app| {
             let window = app.get_window("main").unwrap();
             start_embedded_services(window);
+
+            // Register handler for sourcegraph:// scheme urls.
+            let handle = app.handle();
+            tauri_plugin_deep_link::register(scheme, move |request| {
+                dbg!(&request);
+                handle.emit_all("scheme-request-received", request).unwrap();
+            })
+            .unwrap();
+
             Ok(())
         })
         .run(tauri::generate_context!())
