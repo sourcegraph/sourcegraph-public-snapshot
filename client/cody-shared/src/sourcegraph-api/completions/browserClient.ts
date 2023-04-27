@@ -22,8 +22,19 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             signal: abort.signal,
             async onopen(response) {
                 if (!response.ok && response.headers.get('content-type') !== 'text/event-stream') {
-                    const content = await response.text()
-                    cb.onError(content, response.status)
+                    let errorMessage: null | string = null
+                    try {
+                        errorMessage = await response.text()
+                    } catch (error) {
+                        // We show the generic error message in this case
+                        console.error(error)
+                    }
+                    cb.onError(
+                        errorMessage === null || errorMessage.length === 0
+                            ? `Request failed with status code ${response.status}`
+                            : errorMessage,
+                        response.status
+                    )
                     abort.abort()
                     return
                 }
