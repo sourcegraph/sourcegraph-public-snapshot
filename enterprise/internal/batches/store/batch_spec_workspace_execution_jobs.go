@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -132,7 +131,6 @@ func (s *Store) RetryWorkspaces(ctx context.Context, opts RetryWorkspacesOpts) (
 	}
 
 	q := getRetryWorkspacesQuery(opts)
-	fmt.Printf("RetryWorkspaces Q: %s\n\nArgs: %#+v\n", q.Query(sqlf.PostgresBindVar), q.Args())
 	return s.Exec(ctx, q)
 }
 

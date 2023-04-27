@@ -1514,6 +1514,7 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, opts RetryBatchS
 		o := store.RetryWorkspacesOpts{
 			BatchSpecWorkspaceIDs: opts.WorkspaceIDs,
 			KeepExecutionVersion:  opts.UseV2Execution == nil,
+			IncludeCompleted:      true,
 		}
 		if opts.UseV2Execution != nil {
 			o.UseV2Execution = *opts.UseV2Execution
