@@ -671,6 +671,10 @@ func (c *Client) DeclinePullRequest(ctx context.Context, pr *PullRequest) error 
 		return errors.New("project key empty")
 	}
 
+	type requestBody struct {
+		CloseSourceBranch bool `json:"closeSourceBranch"`
+	}
+
 	path := fmt.Sprintf(
 		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/decline",
 		pr.ToRef.Repository.Project.Key,
@@ -680,7 +684,19 @@ func (c *Client) DeclinePullRequest(ctx context.Context, pr *PullRequest) error 
 
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
-	_, err := c.send(ctx, "POST", path, qry, nil, pr)
+	var closeSourceBranch bool
+
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		closeSourceBranch = true
+	} else {
+		closeSourceBranch = false
+	}
+
+	payload := requestBody{
+		CloseSourceBranch: closeSourceBranch,
+	}
+
+	_, err := c.send(ctx, "POST", path, qry, payload, pr)
 	return err
 }
 
