@@ -87,7 +87,7 @@ export const gitCommitFragment = gql`
 
 const REPOSITORY_GIT_COMMITS_PER_PAGE = 20
 
-const REPOSITORY_GIT_COMMITS_QUERY = gql`
+export const REPOSITORY_GIT_COMMITS_QUERY = gql`
     query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
         node(id: $repo) {
             ... on Repository {
@@ -120,9 +120,7 @@ export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSett
 // A page that shows a repository's commits at the current revision.
 export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     const { useBreadcrumb, repo } = props
-    console.log(repo)
     const location = useLocation()
-    console.log(location)
     const { filePath = '' } = parseBrowserRepoURL(location.pathname)
 
     let isPerforceDepot = false

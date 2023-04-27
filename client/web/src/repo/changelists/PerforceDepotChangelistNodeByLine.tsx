@@ -76,8 +76,6 @@ export const PerforceDepotChangelistNodeByLine: React.FunctionComponent<React.Pr
         )
     }
 
-    console.log(author.person)
-
     return (
         <Wrapper data-testid="git-commit-node-byline" className={className}>
             <div>
