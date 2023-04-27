@@ -32,6 +32,10 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
         unpublished: 4,
         isCompleted: false,
         percentComplete: 25,
+        failed: 0,
+        retrying: 0,
+        scheduled: 0,
+        processing: 0,
     },
     createdAt: subDays(now, 5).toISOString(),
     creator: {
