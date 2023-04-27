@@ -17,6 +17,9 @@ FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff5
 
 COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
 RUN /p4-fusion-install-alpine.sh
+COPY p4-fusion-wrapper-detect-kill.sh /usr/local/bin/p4-fusion-wrapper-detect-kill.sh
+RUN chmod 555 /usr/local/bin/p4-fusion-wrapper-detect-kill.sh
+
 
 FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a AS coursier
 
@@ -37,6 +40,8 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 RUN apk add --no-cache \
+    # Minimal version requirement to address vulnerabilities
+    # https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/
     # Don't use alpine/edge, the git release on this segfaults
     'git>=2.38.0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main \
     git-lfs \
@@ -51,7 +56,12 @@ RUN apk add --no-cache \
 
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 
-COPY --from=p4-fusion /usr/local/bin/p4-fusion /usr/local/bin/p4-fusion
+# copy into place the p4-fusion binary and the wrapper shell script
+# that facilitates better handling of killing of the p4-fusion
+# (for example, either because it exceeded gitLongCommandTimeout, or the Docker host's OOM Reaper killed it)
+# actually, I'm not sure about gitLongCommandTimeout, because that may directly terminate the wrapper script.
+COPY --from=p4-fusion /usr/local/bin/p4-fusion /usr/local/bin/p4-fusion-binary
+COPY --from=p4-fusion /usr/local/bin/p4-fusion-wrapper-detect-kill.sh /usr/local/bin/p4-fusion
 
 COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
 
