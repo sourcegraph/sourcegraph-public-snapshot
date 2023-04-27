@@ -371,7 +371,6 @@ go_test(
         "orgs_test.go",
         "outbound_webhook_logs_test.go",
         "outbound_webhooks_test.go",
-        "parse_p4_change_test.go",
         "permission_test.go",
         "permissions_test.go",
         "preview_repository_comparison_test.go",

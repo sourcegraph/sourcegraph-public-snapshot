@@ -4905,6 +4905,7 @@ type GitCommit implements Node {
     repository: Repository!
     """
     This commit's Git object ID (OID), a 40-character SHA-1 hash.
+    For a perforce depot that was converted to git, this will be the changelist ID instead.
     """
     oid: GitObjectID!
     """

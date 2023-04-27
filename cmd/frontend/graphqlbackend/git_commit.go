@@ -64,6 +64,15 @@ type GitCommitResolver struct {
 	commit     *gitdomain.Commit
 	commitOnce sync.Once
 	commitErr  error
+
+	// parsePerforceMetadataOnce will ensure we use regexp matching **only once** to retrieve perforce
+	// related metadata from the corresponding git commit.
+	parsePerforceMetadataOnce sync.Once
+	perforceMetadata          *perforceMetadata
+}
+
+type perforceMetadata struct {
+	ChangelistID string
 }
 
 // NewGitCommitResolver returns a new CommitResolver. When commit is set to nil,
@@ -71,7 +80,7 @@ type GitCommitResolver struct {
 // you have batch-loaded a bunch of them and already have them at hand.
 func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	repoName := repo.RepoName()
-	return &GitCommitResolver{
+	r := &GitCommitResolver{
 		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").
 			With(log.String("repo", string(repoName)),
 				log.String("commitID", string(id))),
@@ -80,9 +89,24 @@ func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *Repos
 		repoResolver:    repo,
 		includeUserInfo: true,
 		gitRepo:         repoName,
-		oid:             GitObjectID(id),
 		commit:          commit,
 	}
+
+	// By default set the oid to the commit SHA.
+	r.oid = GitObjectID(id)
+	if repo.IsPerforceDepot() && r.commit != nil {
+		changeID := getP4ChangelistID(r.commit.Message.Body())
+		// Fallback to the git commit SHA if we fail to retrieve a changelist ID for any reason
+		// instead of erroring out.
+		//
+		// If a user sees this behaviour, the commit SHA will be helpful to debug why this fails for
+		// that commit.
+		if changeID != "" {
+			r.oid = GitObjectID(changeID)
+		}
+	}
+
+	return r
 }
 
 func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commit, error) {
@@ -121,21 +145,14 @@ func (r *GitCommitResolver) ID() graphql.ID {
 func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
 
 func (r *GitCommitResolver) OID() GitObjectID {
-	if r.repoResolver.IsPerforceDepot() && r.commit != nil {
-		p4change := ParseP4Change(r.commit.Message.Body())
-		if p4change == nil {
-			return "failed to parse"
-		}
-		return GitObjectID(p4change.Change)
-	}
-
 	return r.oid
 }
 
 func (r *GitCommitResolver) InputRev() *string { return r.inputRev }
 
 func (r *GitCommitResolver) AbbreviatedOID() string {
-	if r.repoResolver.IsPerforceDepot() && r.commit != nil {
+	// Do not abbreviate the OID since this is a changelist ID and not a commit SHA.
+	if r.repoResolver.IsPerforceDepot() {
 		return string(r.OID())
 	}
 
@@ -466,24 +483,16 @@ func parseP4FusionCommitSubject(subject string) (string, error) {
 	return matches[2], nil
 }
 
-type P4Change struct {
-	DepotPaths string
-	Change     string
-}
-
 // Either git-p4 or p4-fusion could be used to convert a perforce depot to a git repo. In which case the
 // [git-p4: depot-paths = "//test-perms/": change = 83725]
 // [p4-fusion: depot-paths = "//test-perms/": change = 80972]
 var gitP4Pattern = regexp.MustCompile(`\[(?:git-p4|p4-fusion): depot-paths = "(.*?)"\: change = (\d+)\]`)
 
-func ParseP4Change(input string) *P4Change {
+func getP4ChangelistID(input string) string {
 	matches := gitP4Pattern.FindStringSubmatch(input)
 	if len(matches) != 3 {
-		return nil
+		return ""
 	}
 
-	return &P4Change{
-		DepotPaths: matches[1],
-		Change:     matches[2],
-	}
+	return matches[2]
 }
