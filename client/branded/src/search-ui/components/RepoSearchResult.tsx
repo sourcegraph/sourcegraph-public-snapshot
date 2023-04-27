@@ -90,13 +90,13 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                 <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
                     {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                     <div className="d-flex align-items-center flex-row">
-                        <div className={classNames(styles.matchType, 'd-flex align-items-start')}>
+                        <div className={styles.matchType}>
                             <small>Repository match</small>
                             {enableRepositoryMetadata && !!result.metadata && (
                                 <RepoMetadata
-                                    metadata={Object.entries(result.metadata)}
-                                    className="justify-content-end ml-2 mr-4"
                                     small={true}
+                                    className="justify-content-end mt-1"
+                                    items={Object.entries(result.metadata).map(([key, value]) => ({ key, value }))}
                                 />
                             )}
                         </div>
