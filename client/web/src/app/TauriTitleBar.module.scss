@@ -1,0 +1,34 @@
+// We need to allow pixels for the height and padding to match the native titlebar
+/* stylelint-disable declaration-property-unit-allowed-list */
+
+.titlebar {
+    position: sticky;
+    top: 0;
+
+    height: 32px; // This size worked for me on MacOS
+    flex-shrink: 0;
+    width: 100%;
+    user-select: none;
+    cursor: default;
+    background-color: var(--color-bg-1); // Save as global navbar
+
+    padding-left: 72px; // Eyeball for MacOS native decorations
+    padding-bottom: 4px; // Eyeball align with MacOS native decorations
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.button {
+    color: var(--text-muted);
+    font-size: 1rem;
+
+    &[aria-disabled='true'] {
+        color: var(--text-disabled);
+        cursor: default; // Don't use the "disabled" cursor, it's too prominent.
+    }
+
+    &:hover:not([aria-disabled='true']) {
+        color: var(--body-color);
+    }
+}

@@ -19,6 +19,9 @@
             "sidecar": true
           }
         ]
+      },
+      "window": {
+        "startDragging": true
       }
     },
     "bundle": {
@@ -60,7 +63,8 @@
         "height": 768,
         "resizable": true,
         "title": "Sourcegraph",
-        "width": 1024
+        "width": 1024,
+        "titleBarStyle": "Overlay"
       }
     ]
   }
