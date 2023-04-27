@@ -159,7 +159,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		}
 
 		// On Sourcegraph.com only, log a HubSpot event indicating when the user installed a Cody client.
-		if args.Event == "CodyInstalled" && userID != 0 && userPrimaryEmail != "" && envvar.SourcegraphDotComMode() {
+		if envvar.SourcegraphDotComMode() && args.Event == "CodyInstalled" && userID != 0 && userPrimaryEmail != "" {
 			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubspot.ContactProperties{
 				DatabaseID: userID,
 			})
