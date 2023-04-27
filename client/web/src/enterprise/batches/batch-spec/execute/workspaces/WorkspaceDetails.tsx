@@ -246,8 +246,8 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
         setShowDiagnostics(false)
     }, [])
     const retry = useCallback(
-        (forceDisable: boolean = false) => {
-            void retryWorkspaceExecution({
+        async (forceDisable: boolean = false): Promise<void> => {
+            await retryWorkspaceExecution({
                 variables: { id: workspace.id, useExperimentalExecution: forceDisable ? false : null },
             })
         },
