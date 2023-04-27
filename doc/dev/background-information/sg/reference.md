@@ -1106,6 +1106,18 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--format, -f="<value>"`: Output format of list ('markdown', 'plain', 'regexp') (default: markdown)
 
+## sg embeddings-qa
+
+Calculate recall for embeddings.
+
+Requires a running embeddings service with embeddings of the Sourcegraph repository.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--url, -u="<value>"`: Run the evaluation against this endpoint (default: http://localhost:9991/search)
+
 ## sg secret
 
 Manipulate secrets stored in memory and in file.
