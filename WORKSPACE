@@ -246,9 +246,9 @@ rust_register_toolchains(
 
 rust_repository_set(
     edition = "2021",
-    name = "macos_aarch64",
-    exec_triple = "aarch64-apple-darwin",
-    extra_target_triples = ["x86_64-unknown-linux-gnu"],
+    name = "linux_amd64_musl",
+    exec_triple = "x86_64-unknown-linux-gnu",
+    extra_target_triples = ["x86_64-unknown-linux-musl"],
     versions = ["1.68.0"],
 )
 
@@ -277,19 +277,18 @@ load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
 
-BAZEL_ZIG_CC_VERSION = "v1.0.1"
+HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0-rc1"
 
 http_archive(
-    name = "bazel-zig-cc",
-    sha256 = "e9f82bfb74b3df5ca0e67f4d4989e7f1f7ce3386c295fd7fda881ab91f83e509",
-    strip_prefix = "bazel-zig-cc-{}".format(BAZEL_ZIG_CC_VERSION),
+    name = "hermetic_cc_toolchain",
+    sha256 = "43a1b398f08109c4f03b9ba2b3914bd43d1fec0425f71b71f802bf3f78cee0c2",
     urls = [
-        "https://mirror.bazel.build/github.com/uber/bazel-zig-cc/releases/download/{0}/{0}.tar.gz".format(BAZEL_ZIG_CC_VERSION),
-        "https://github.com/uber/bazel-zig-cc/releases/download/{0}/{0}.tar.gz".format(BAZEL_ZIG_CC_VERSION),
+        "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
+        "https://github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
     ],
 )
 
-load("@bazel-zig-cc//toolchain:defs.bzl", zig_toolchains = "toolchains")
+load("@hermetic_cc_toolchain//toolchain:defs.bzl", zig_toolchains = "toolchains")
 
 zig_toolchains()
 
