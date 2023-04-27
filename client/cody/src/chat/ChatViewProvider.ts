@@ -249,6 +249,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
         this.inputHistory.push(text)
+
+        void this.runRecipeForSuggestion('next-question', text)
         await this.executeRecipe('chat-question', text)
     }
 
@@ -310,6 +312,60 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
     }
 
+    private async runRecipeForSuggestion(recipeId: string, humanChatInput: string = ''): Promise<void> {
+        const recipe = getRecipe(recipeId)
+        if (!recipe) {
+            return
+        }
+
+        const multiplexer = new BotResponseMultiplexer()
+        const transcript = Transcript.fromJSON(await this.transcript.toJSON())
+
+        const interaction = await recipe.getInteraction(humanChatInput, {
+            editor: this.editor,
+            intentDetector: this.intentDetector,
+            codebaseContext: this.codebaseContext,
+            responseMultiplexer: multiplexer,
+        })
+        if (!interaction) {
+            return
+        }
+        transcript.addInteraction(interaction)
+
+        const prompt = await transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
+
+        console.log(prompt)
+
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+
+        let text = ''
+        multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
+            onResponse: (content: string) => {
+                text += content
+                return Promise.resolve()
+            },
+            onTurnComplete: () => {
+                console.log(text)
+                this.sendSuggestion(text)
+                return Promise.resolve()
+            },
+        })
+
+        let textConsumed = 0
+        this.chat.chat(prompt, {
+            onChange: text => {
+                // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
+                text = text.slice(textConsumed)
+                textConsumed += text.length
+                return multiplexer.publish(text)
+            },
+            onComplete: () => multiplexer.notifyTurnComplete(),
+            onError: (error, statusCode) => {
+                console.error(error, statusCode)
+            },
+        })
+    }
+
     private showTab(tab: string): void {
         void vscode.commands.executeCommand('cody.chat.focus')
         void this.webview?.postMessage({ type: 'showTab', tab })
@@ -323,6 +379,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             type: 'transcript',
             messages: this.transcript.toChat(),
             isMessageInProgress: this.isMessageInProgress,
+        })
+    }
+
+    private sendSuggestion(suggestion: string): void {
+        void this.webview?.postMessage({
+            type: 'suggestion',
+            suggestion,
         })
     }
 

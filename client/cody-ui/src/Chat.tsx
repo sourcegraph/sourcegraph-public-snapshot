@@ -34,6 +34,7 @@ interface ChatProps extends ChatClassNames {
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
     copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+    suggestion?: string
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -106,6 +107,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
+    suggestion,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -193,6 +195,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             />
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
+                {typeof suggestion === 'string' ? <div>✨ {suggestion}</div> : null}
                 <div className={styles.textAreaContainer}>
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}

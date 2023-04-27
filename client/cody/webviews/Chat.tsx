@@ -31,6 +31,7 @@ interface ChatboxProps {
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
     vscodeAPI: VSCodeWrapper
+    suggestion?: string
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -44,6 +45,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     inputHistory,
     setInputHistory,
     vscodeAPI,
+    suggestion,
 }) => {
     const onSubmit = useCallback(
         (text: string) => {
@@ -102,6 +104,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             FeedbackButtonsContainer={FeedbackButtons}
             feedbackButtonsOnSubmit={onFeedbackBtnClick}
             copyButtonOnSubmit={onCopyBtnClick}
+            suggestion={suggestion}
         />
     )
 }
