@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -135,6 +136,70 @@ func TestGitCommitResolver(t *testing.T) {
 				}
 			})
 		}
+	})
+
+	t.Run("perforce depot, git-p4 commit", func(t *testing.T) {
+		commit := &gitdomain.Commit{
+			ID: "c1",
+			Message: `subject: Changes things
+[git-p4: depot-paths = "//test-depot/": change = 123]"`,
+			Parents: []api.CommitID{"p1", "p2"},
+			Author: gitdomain.Signature{
+				Name:  "Bob",
+				Email: "bob@alice.com",
+				Date:  time.Now(),
+			},
+			Committer: &gitdomain.Signature{
+				Name:  "Alice",
+				Email: "alice@bob.com",
+				Date:  time.Now(),
+			},
+		}
+
+		repo := NewRepositoryResolver(db, gitserver.NewClient(), &types.Repo{
+			Name:         "perforce/test-depot",
+			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
+		})
+		commitResolver := NewGitCommitResolver(db, client, repo, "c1", commit)
+
+		require.True(t, commitResolver.repoResolver.IsPerforceDepot())
+		require.Equal(t, GitObjectID("123"), commitResolver.OID())
+		require.Equal(t, "123", commitResolver.AbbreviatedOID())
+		subject, err := commitResolver.Subject(context.Background())
+		require.NoError(t, err)
+		require.Equal(t, "subject: Changes things", subject)
+	})
+
+	t.Run("perforce depot, p4-fusion commit", func(t *testing.T) {
+		commit := &gitdomain.Commit{
+			ID: "c1",
+			Message: `123 - subject: Changes things
+[p4-fusion: depot-paths = "//test-perms/": change = 123]"`,
+			Parents: []api.CommitID{"p1", "p2"},
+			Author: gitdomain.Signature{
+				Name:  "Bob",
+				Email: "bob@alice.com",
+				Date:  time.Now(),
+			},
+			Committer: &gitdomain.Signature{
+				Name:  "Alice",
+				Email: "alice@bob.com",
+				Date:  time.Now(),
+			},
+		}
+
+		repo := NewRepositoryResolver(db, gitserver.NewClient(), &types.Repo{
+			Name:         "perforce/test-depot",
+			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
+		})
+		commitResolver := NewGitCommitResolver(db, client, repo, "c1", commit)
+
+		require.True(t, commitResolver.repoResolver.IsPerforceDepot())
+		require.Equal(t, GitObjectID("123"), commitResolver.OID())
+		require.Equal(t, "123", commitResolver.AbbreviatedOID())
+		subject, err := commitResolver.Subject(context.Background())
+		require.NoError(t, err)
+		require.Equal(t, "subject: Changes things", subject)
 	})
 }
 
