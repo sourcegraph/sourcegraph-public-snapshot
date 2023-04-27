@@ -139,6 +139,44 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       </table>
     </div>
     <div
+      class="card mt-3"
+    >
+      <div
+        class="cardHeader d-flex align-items-center justify-content-between"
+      >
+        Access token
+        <button
+          aria-disabled="false"
+          class="btn btnPrimary btnSm"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+            />
+          </svg>
+           Generate access token
+        </button>
+      </div>
+      <div
+        class="cardBody"
+      >
+        <p
+          class=""
+        >
+          Access tokens can be used for LLM-proxy access - coming soon!
+        </p>
+      </div>
+    </div>
+    <div
       class="card mt-1"
     >
       <div

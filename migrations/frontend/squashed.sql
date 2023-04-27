@@ -3719,8 +3719,11 @@ CREATE TABLE product_licenses (
     license_version integer,
     license_tags text[],
     license_user_count integer,
-    license_expires_at timestamp with time zone
+    license_expires_at timestamp with time zone,
+    access_token_enabled boolean DEFAULT false NOT NULL
 );
+
+COMMENT ON COLUMN product_licenses.access_token_enabled IS 'Whether this license key can be used as an access token to authenticate API requests';
 
 CREATE TABLE product_subscriptions (
     id uuid NOT NULL,
