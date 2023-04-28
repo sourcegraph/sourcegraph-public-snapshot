@@ -153,7 +153,7 @@ func AdminOnly(db database.DB, next http.Handler) http.Handler {
 			hide, _ := ff.EvaluateGlobal()
 			a := actor.FromContext(r.Context())
 			if hide && !a.SourcegraphOperator {
-				http.Error(w, "Only Sourcegraph operators is allowed", http.StatusForbidden)
+				http.Error(w, "Only Sourcegraph operators are allowed", http.StatusForbidden)
 				return
 			}
 		} else if err != nil && err != sql.ErrNoRows {
