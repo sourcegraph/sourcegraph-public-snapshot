@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo } from 'react'
+import { FC, useEffect, useMemo } from 'react'
 
 import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
