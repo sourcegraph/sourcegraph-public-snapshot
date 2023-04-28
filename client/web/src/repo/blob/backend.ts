@@ -13,6 +13,7 @@ import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } fr
  */
 const applyDefaultValuesToFetchBlobOptions = ({
     disableTimeout = false,
+    format = HighlightResponseFormat.JSON_SCIP,
     startLine = null,
     endLine = null,
     visibleIndexID = null,
@@ -21,6 +22,7 @@ const applyDefaultValuesToFetchBlobOptions = ({
 }: FetchBlobOptions): Required<FetchBlobOptions> => ({
     ...options,
     disableTimeout,
+    format,
     startLine,
     endLine,
     visibleIndexID,
@@ -28,9 +30,11 @@ const applyDefaultValuesToFetchBlobOptions = ({
 })
 
 function fetchBlobCacheKey(options: FetchBlobOptions): string {
-    const { disableTimeout, scipSnapshot, visibleIndexID } = applyDefaultValuesToFetchBlobOptions(options)
+    const { disableTimeout, format, scipSnapshot, visibleIndexID } = applyDefaultValuesToFetchBlobOptions(options)
 
-    return `${makeRepoURI(options)}?disableTimeout=${disableTimeout}&snap=${scipSnapshot}&visible=${visibleIndexID}`
+    return `${makeRepoURI(
+        options
+    )}?disableTimeout=${disableTimeout}&=${format}&snap=${scipSnapshot}&visible=${visibleIndexID}`
 }
 
 interface FetchBlobOptions {
@@ -38,6 +42,7 @@ interface FetchBlobOptions {
     revision: string
     filePath: string
     disableTimeout?: boolean
+    format?: HighlightResponseFormat
     startLine?: number | null
     endLine?: number | null
     scipSnapshot?: boolean
@@ -48,8 +53,17 @@ export const fetchBlob = memoizeObservable(
     (
         options: FetchBlobOptions
     ): Observable<(BlobFileFields & { snapshot?: { offset: number; data: string }[] | null }) | null> => {
-        const { repoName, revision, filePath, disableTimeout, startLine, endLine, scipSnapshot, visibleIndexID } =
-            applyDefaultValuesToFetchBlobOptions(options)
+        const {
+            repoName,
+            revision,
+            filePath,
+            disableTimeout,
+            format,
+            startLine,
+            endLine,
+            scipSnapshot,
+            visibleIndexID,
+        } = applyDefaultValuesToFetchBlobOptions(options)
 
         return requestGraphQL<BlobResult, BlobVariables>(
             gql`
@@ -111,7 +125,7 @@ export const fetchBlob = memoizeObservable(
                 revision,
                 filePath,
                 disableTimeout,
-                format: HighlightResponseFormat.JSON_SCIP,
+                format,
                 startLine,
                 endLine,
                 snapshot: scipSnapshot,
