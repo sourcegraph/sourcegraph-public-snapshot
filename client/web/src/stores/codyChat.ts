@@ -12,7 +12,6 @@ import { PrefilledOptions } from '@sourcegraph/cody-shared/src/editor/withPresel
 import { isErrorLike } from '@sourcegraph/common'
 
 import { CodeMirrorEditor } from '../cody/CodeMirrorEditor'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { EditorStore, useEditorStore } from './editor'
@@ -299,7 +298,6 @@ export const useChatStore = ({
     codebase: string
     setIsCodySidebarOpen: (state: boolean | undefined) => void
 }): CodyChatStore => {
-    const [isCodyEnabled] = useFeatureFlag('cody-experimental')
     const store = useChatStoreState()
 
     const onEvent = useCallback(
@@ -332,12 +330,12 @@ export const useChatStore = ({
 
     const { initializeClient, config: currentConfig } = store
     useEffect(() => {
-        if (!isCodyEnabled || isEqual(config, currentConfig)) {
+        if (!window.context.codyEnabled || isEqual(config, currentConfig)) {
             return
         }
 
         void initializeClient(config, editorStateRef, onEvent)
-    }, [config, initializeClient, currentConfig, isCodyEnabled, editorStateRef, onEvent])
+    }, [config, initializeClient, currentConfig, editorStateRef, onEvent])
 
     return store
 }
