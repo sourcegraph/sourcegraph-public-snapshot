@@ -74,6 +74,12 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
 )
 
+http_archive(
+    name = "io_tweag_rules_nixpkgs",
+    strip_prefix = "rules_nixpkgs-4dddbafba508cd2dffd95b8562cab91c9336fe36",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/4dddbafba508cd2dffd95b8562cab91c9336fe36.tar.gz"],
+)
+
 # rules_js setup ================================
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
@@ -271,3 +277,15 @@ zig_toolchains()
 load("//dev/backcompat:defs.bzl", "back_compat_defs")
 
 back_compat_defs()
+
+# nixos toolchains setup ===============================
+load("@io_tweag_rules_nixpkgs//nixpkgs:repositories.bzl", "rules_nixpkgs_dependencies")
+
+rules_nixpkgs_dependencies(toolchains = [
+    "nodejs",
+    "rust",
+])
+
+load("//dev:nix.bzl", "nix_deps")
+
+nix_deps()
