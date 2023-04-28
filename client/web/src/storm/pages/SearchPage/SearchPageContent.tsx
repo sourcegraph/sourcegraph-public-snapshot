@@ -86,7 +86,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                 ) : (
                     <>
                         <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
-                        {!window.context.codyEnabled && !authenticatedUser && isSourcegraphDotCom && (
+                        {!window.context?.codyEnabled && !authenticatedUser && isSourcegraphDotCom && (
                             <div className="d-flex justify-content-center mt-4">
                                 <Text className="text-muted">
                                     <Badge variant="merged">Experimental</Badge>{' '}
@@ -104,7 +104,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                                 </Text>
                             </div>
                         )}
-                        {window.context.codyEnabled && (
+                        {window.context?.codyEnabled && (
                             <div className="d-flex justify-content-center mt-4">
                                 <Text className="text-muted">
                                     <Badge variant="merged">Experimental</Badge>{' '}

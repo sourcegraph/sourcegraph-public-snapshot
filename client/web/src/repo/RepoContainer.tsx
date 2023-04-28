@@ -347,7 +347,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     return (
         <>
-            {window.context.codyEnabled &&
+            {window.context?.codyEnabled &&
                 focusCodyShortcut?.keybindings.map((keybinding, index) => (
                     <Shortcut
                         key={index}
@@ -371,7 +371,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         telemetryService={props.telemetryService}
                     />
 
-                    {window.context.codyEnabled ? (
+                    {window.context?.codyEnabled ? (
                         <RepoHeaderContributionPortal
                             position="right"
                             priority={1}
@@ -487,7 +487,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     </Suspense>
                 </div>
 
-                {window.context.codyEnabled && isCodySidebarOpen && (
+                {window.context?.codyEnabled && isCodySidebarOpen && (
                     <Panel
                         className="cody-sidebar-panel"
                         position="right"
