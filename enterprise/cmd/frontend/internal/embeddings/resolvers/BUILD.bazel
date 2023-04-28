@@ -11,12 +11,12 @@ go_library(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
-        "//enterprise/internal/cody",
         "//enterprise/internal/embeddings",
         "//enterprise/internal/embeddings/background/contextdetection",
         "//enterprise/internal/embeddings/background/repo",
         "//internal/api",
         "//internal/auth",
+        "//internal/cody",
         "//internal/conf",
         "//internal/database",
         "//internal/errcode",

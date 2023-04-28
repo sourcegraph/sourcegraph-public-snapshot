@@ -11,12 +11,12 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/cody",
         "//enterprise/internal/completions/streaming/anthropic",
         "//enterprise/internal/completions/streaming/openai",
         "//enterprise/internal/completions/types",
         "//internal/actor",
         "//internal/auth",
+        "//internal/cody",
         "//internal/conf",
         "//internal/database",
         "//internal/honey",
