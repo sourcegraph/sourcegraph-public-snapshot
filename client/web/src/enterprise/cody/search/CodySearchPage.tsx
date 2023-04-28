@@ -33,8 +33,6 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
 
     const navigate = useNavigate()
 
-    const [codyEnabled] = useFeatureFlag('cody-experimental', true)
-
     /** The value entered by the user in the query input */
     // const [input, setInput] = useState('')
     const [input, setInput] = useURLSyncedString('cody-search', '')
