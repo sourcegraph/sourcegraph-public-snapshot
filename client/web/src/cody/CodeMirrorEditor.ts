@@ -101,4 +101,9 @@ export class CodeMirrorEditor implements Editor {
         console.warn(message)
         return Promise.resolve()
     }
+
+    public showInputBox(): Promise<string | undefined> {
+        // TODO: Use a proper UI element
+        return Promise.resolve(window.prompt('Enter your answer: ') || undefined)
+    }
 }

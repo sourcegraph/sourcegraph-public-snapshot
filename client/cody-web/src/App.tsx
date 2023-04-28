@@ -40,6 +40,10 @@ const editor: Editor = {
     async showWarningMessage(message) {
         console.warn(message)
     },
+    async showInputBox() {
+        // TODO: Use a proper UI element
+        return window.prompt('Enter your answer: ') || undefined
+    },
 }
 /* eslint-enable @typescript-eslint/require-await */
 
