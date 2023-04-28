@@ -88,7 +88,10 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
-		bazelUploadFailedlogs(),
+		// bazelUploadFailedlogs(),
+		bk.Cmd("wget https://github.com/bazelbuild/continuous-integration/releases/download/agent-0.1.4/bazelci-agent-0.1.4-x86_64-unknown-linux-musl -O bazelci-agent"),
+		bk.Cmd("chmod +x bazelci-agent"),
+		bk.Cmd("./bazelci-agent artifact upload --build_event_json_file bep.json --delay 10 --mode buildkite &"),
 	}
 
 	// Test commands
