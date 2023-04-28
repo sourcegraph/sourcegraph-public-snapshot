@@ -35,7 +35,11 @@ go_build() {
 }
 
 bazel_build() {
-  bazel build //enterprise/cmd/sourcegraph:sourcegraph #--//:assets_bundle_type=enterprise
+  bazel build //enterprise/cmd/sourcegraph:sourcegraph \
+  --stamp \
+  --workspace_status_command=./dev/bazel_stamp_vars.sh \
+
+    #--//:assets_bundle_type=enterprise
   out=$(bazel cquery //enterprise/cmd/sourcegraph:sourcegraph --output=files)
   cp -vf $out .bin/sourcegraph-backend-aarch64-apple-darwin
 
