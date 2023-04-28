@@ -2392,22 +2392,8 @@
           "type": "string",
           "description": "The external completions provider.",
           "default": "anthropic",
-          "enum": ["anthropic", "openai", "llmproxy"]
+          "enum": ["anthropic", "openai"]
         },
-        "endpoint": {
-          "type": "string",
-          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"llmproxy\" and \"anthropic\". The default values are \"https://completions.sourcegraph.com\" and \"https://api.anthropic.com/v1/complete\" for LLM proxy and Anthropic, respectively."
-        },
-        "perUserDailyLimit": {
-          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
-          "type": "integer",
-          "default": 0
-        },
-        "perUserCodeCompletionsDailyLimit": {
-          "description": "If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
-          "type": "integer",
-          "default": 0
-        }
       },
       "examples": [
         {
@@ -2420,6 +2406,16 @@
           "perUserDailyLimit": 100
         }
       ]
+    },
+    "symbolsSource": {
+      "description": "What source to use for symbols per-language.",
+      "type": "object",
+      "additionalProperties": {
+        "enum": ["ctags", "tree-sitter", "off"]
+      },
+      "propertyNames": {
+        "$ref": "#/definitions/SymbolsLanguages"
+      }
     }
   },
   "definitions": {
@@ -3235,6 +3231,59 @@
           "type": "string"
         }
       }
+    },
+    "SymbolsLanguages": {
+      "$comment": "Language list obtained from https://github.com/sourcegraph/go-ctags/blob/main/language-mapping.go",
+      "type": "string",
+      "enum": [
+        "basic",
+        "c",
+        "csharp",
+        "cpp",
+        "clojure",
+        "cobol",
+        "css",
+        "cuda",
+        "d",
+        "elixir",
+        "elm",
+        "erlang",
+        "go",
+        "graphQL",
+        "groovy",
+        "haskell",
+        "java",
+        "javaScript",
+        "jsonnet",
+        "kotlin",
+        "lisp",
+        "lua",
+        "matLab",
+        "objectiveC",
+        "ocaml",
+        "pascal",
+        "perl",
+        "perl6",
+        "php",
+        "powershell",
+        "protobuf",
+        "python",
+        "r",
+        "ruby",
+        "rust",
+        "scala",
+        "scheme",
+        "sh",
+        "swift",
+        "systemVerilog",
+        "tcl",
+        "thrift",
+        "typescript",
+        "tsx",
+        "verilog",
+        "vhdl",
+        "vim"
+      ]
     }
   }
 }
