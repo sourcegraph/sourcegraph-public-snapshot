@@ -77,8 +77,8 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				// addBrowserExtensionsUnitTests is now covered by Bazel
 				// addBrowserExtensionUnitTests, // ~4.5m
 				addJetBrainsUnitTests, // ~2.5m
-				// addTypescriptCheck is now covered by Bazel
-				// addTypescriptCheck,    // ~4m
+				// addTypescriptCheck is now covered by Bazel, but some Cody stuff not being is Bazel still requires it.
+				addTypescriptCheck,    // ~4m
 				addVsceTests,          // ~3.0m
 				addCodyExtensionTests, // ~2.5m
 			)

@@ -937,7 +937,9 @@ Batch change: ${batchChangeURL}`,
                     )
                 } catch (error) {
                     console.error(error)
-                    console.error(`Failed to create tag ${tag} on ${repo}@${release.branch}`)
+                    console.error(
+                        `Failed to create tag ${repoConfig.tagPattern} on ${repoConfig.repo}@${release.branch}`
+                    )
                     failed = true
                 }
             }
