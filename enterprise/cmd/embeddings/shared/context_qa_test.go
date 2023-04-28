@@ -2,9 +2,6 @@
 // committed to the repository. The build tag makes sure the missing files don't
 // break the build. To run this test, use `go test -tags sourcegraphCI`.
 
-//go:build sourcegraphCI
-// +build sourcegraphCI
-
 package shared
 
 import (
@@ -25,8 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-//go:embed testdata/github_com_sourcegraph_sourcegraph_cf360e12ff91b2fc199e75aef4ff6744.embeddingindex
-//go:embed testdata/query_embeddings.gob
+// This embed is handled by Bazel, and using the traditional go test command will fail.
+// See //enterprise/cmd/embeddings/shared:assets.bzl
+//
+//go:embed testdata/*
 var fs embed.FS
 
 func TestRecall(t *testing.T) {
