@@ -13,6 +13,7 @@ spec:
       labels:
         app: sg-executor
     spec:
+      # For development purposes - lets the executor pod use the namespace of the host system instead of creating a new one.
       hostNetwork: true
       serviceAccountName: sg-executor-service-account
       containers:
