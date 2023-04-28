@@ -519,7 +519,8 @@ func backendIntegrationTests(candidateImageTag string) operations.Operation {
 					images.DevRegistryImage("server", candidateImageTag)),
 				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
 				bk.Cmd("dev/ci/integration/backend/run.sh"),
-				bk.ArtifactPaths("./*.log"))
+				bk.ArtifactPaths("./*.log"),
+				bk.Agent("queue", "bazel"))
 		}
 	}
 }
