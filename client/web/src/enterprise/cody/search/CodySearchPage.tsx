@@ -12,7 +12,6 @@ import { Alert, Form, Input, LoadingSpinner, Text, Badge, useSessionStorage } fr
 
 import { CodyIcon } from '../../../cody/CodyIcon'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
-import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useURLSyncedString } from '../../../hooks/useUrlSyncedString'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -32,8 +31,6 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
     }, [])
 
     const navigate = useNavigate()
-
-    const [codyEnabled] = useFeatureFlag('cody-experimental', true)
 
     /** The value entered by the user in the query input */
     // const [input, setInput] = useState('')
@@ -109,7 +106,7 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
         <div className={classNames('d-flex flex-column align-items-center px-3', searchPageStyles.searchPage)}>
             <BrandLogo className={searchPageStyles.logo} isLightTheme={isLightTheme} variant="logo" />
             <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">Searching millions of public repositories</div>
-            {codyEnabled ? (
+            {window.context.codyEnabled ? (
                 <SearchInput
                     value={input}
                     onChange={onInputChange}

@@ -169,16 +169,17 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     const codeInsights = codeInsightsEnabled
 
-    const [codyEnabled] = useFeatureFlag('cody-experimental')
-
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
-            codyEnabled && { path: EnterprisePageRoutes.CodySearch, content: 'Cody' },
+            (window.context?.codyEnabled || isSourcegraphDotCom) && {
+                path: EnterprisePageRoutes.CodySearch,
+                content: 'Cody',
+            },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [codyEnabled, ownEnabled, showSearchContext])
+    }, [ownEnabled, showSearchContext, isSourcegraphDotCom])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 

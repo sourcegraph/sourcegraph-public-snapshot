@@ -17,6 +17,7 @@ go_library(
         "//cmd/frontend/internal/siteid",
         "//cmd/frontend/webhooks",
         "//internal/actor",
+        "//internal/cody",
         "//internal/conf",
         "//internal/conf/deploy",
         "//internal/database",

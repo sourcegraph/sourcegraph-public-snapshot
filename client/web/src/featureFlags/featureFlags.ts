@@ -23,7 +23,6 @@ export type FeatureFlagName =
     | 'blob-page-switch-areas-shortcuts'
     | 'app-connect-dotcom'
     | 'sentinel'
-    | 'cody-experimental'
     | 'clone-progress-logging'
     | 'sourcegraph-operator-site-admin-hide-maintenance'
     | 'repository-metadata'

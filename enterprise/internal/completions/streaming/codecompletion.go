@@ -8,9 +8,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"

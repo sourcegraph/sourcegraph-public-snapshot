@@ -7,9 +7,9 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//enterprise/internal/cody",
         "//enterprise/internal/completions/streaming",
         "//enterprise/internal/completions/types",
+        "//internal/cody",
         "//internal/conf",
         "//internal/database",
         "//internal/redispool",

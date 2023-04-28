@@ -181,6 +181,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     batchChangesRolloutWindows: BatchChangeRolloutWindow[] | null
 
+    /** Whether cody is enabled for the user. */
+    codyEnabled: boolean
+
     /** Whether executors are enabled on the site. */
     executorsEnabled: boolean
 
