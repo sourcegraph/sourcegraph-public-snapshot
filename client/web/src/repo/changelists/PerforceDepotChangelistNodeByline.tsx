@@ -24,7 +24,7 @@ interface Props {
 /**
  * Displays a Perforce changelist's author and committer (with avatars if available) and the dates.
  */
-export const PerforceDepotChangelistNodeByLine: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const PerforceDepotChangelistNodeByline: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     author,
     committer,
     className = '',

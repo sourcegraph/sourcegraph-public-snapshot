@@ -14,7 +14,7 @@ import { DiffModeSelector } from '../commit/DiffModeSelector'
 import { GitCommitNodeProps } from '../commits/GitCommitNode'
 import { Linkified } from '../linkifiy/Linkified'
 
-import { PerforceDepotChangelistNodeByLine } from './PerforceDepotChangelistNodeByLine'
+import { PerforceDepotChangelistNodeByline } from './PerforceDepotChangelistNodeByline'
 
 import styles from './PerforceDepotChangelist.module.scss'
 
@@ -110,7 +110,7 @@ export const PerforceDepotChangelistNode: React.FunctionComponent<React.PropsWit
         ) : undefined
 
     const bylineElement = (
-        <PerforceDepotChangelistNodeByLine
+        <PerforceDepotChangelistNodeByline
             className={classNames(styles.byline, 'd-flex text-muted')}
             avatarClassName={compact ? undefined : styles.signatureUserAvatar}
             author={node.author}
