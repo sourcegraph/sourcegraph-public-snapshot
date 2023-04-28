@@ -190,7 +190,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const location = useLocation()
 
     const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
-    const [codyEnabled] = useFeatureFlag('cody-experimental')
     const focusCodeEditorShortcut = useKeyboardShortcut('focusCodeEditor')
 
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
@@ -289,7 +288,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }),
             scipSnapshot(blobInfo.snapshotData),
             codeFoldingExtension(),
-            codyEnabled ? codyWidgetExtension() : [],
+            window.context.codyEnabled ? codyWidgetExtension() : [],
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
@@ -319,7 +318,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, codyEnabled]
+        [onSelection, blobInfo, extensionsController]
     )
 
     const editorRef = useRef<EditorView | null>(null)
