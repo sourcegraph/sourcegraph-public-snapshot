@@ -88,7 +88,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
-		bazelUploadFailedlogs(),
+		// bazelUploadFailedlogs(),
 	}
 
 	// Test commands
@@ -98,6 +98,9 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bazelTestCmds = append(bazelTestCmds,
 			bazelAnnouncef("bazel test %s", target),
 			bk.Cmd(cmd),
+			bk.Cmd(`echo "--- debug"`),
+			bk.Cmd("ls -lah bep.json"),
+			bk.Cmd(`echo "--- end"`),
 			bazelUploadFailedlogs(),
 		)
 	}
