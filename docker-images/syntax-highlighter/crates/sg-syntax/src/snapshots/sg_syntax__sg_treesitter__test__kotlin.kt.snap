@@ -1,0 +1,270 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
+---
+  package foobar
+//^^^^^^^ Keyword
+//        ^^^^^^ Identifier
+  
+  import java.nio.channels.FileChannel
+//^^^^^^ Keyword
+//       ^^^^ Identifier
+//           ^ PunctuationDelimiter
+//            ^^^ Identifier
+//               ^ PunctuationDelimiter
+//                ^^^^^^^^ Identifier
+//                        ^ PunctuationDelimiter
+//                         ^^^^^^^^^^^ Identifier
+  
+  fun Mat.put(indices: IntArray, data: UShortArray)  = this.put(indices, data.asShortArray())
+//^^^ Keyword
+//    ^^^ IdentifierType
+//       ^ PunctuationDelimiter
+//        ^^^ IdentifierFunction
+//            ^^^^^^^ IdentifierParameter
+//                   ^ PunctuationDelimiter
+//                     ^^^^^^^^ IdentifierBuiltinType
+//                             ^ PunctuationDelimiter
+//                               ^^^^ IdentifierParameter
+//                                   ^ PunctuationDelimiter
+//                                     ^^^^^^^^^^^ IdentifierBuiltinType
+//                                                   ^ IdentifierOperator
+//                                                     ^^^^ IdentifierBuiltin
+//                                                         ^ PunctuationDelimiter
+//                                                          ^^^ IdentifierFunction
+//                                                              ^^^^^^^ Identifier
+//                                                                     ^ PunctuationDelimiter
+//                                                                       ^^^^ Identifier
+//                                                                           ^ PunctuationDelimiter
+//                                                                            ^^^^^^^^^^^^ IdentifierFunction
+  
+  /***
+//^^^^ Comment 6:0..12:3
+   *  Example use:
+   *
+   *  val (b, g, r) = mat.at<UByte>(50, 50).v3c
+   *  mat.at<UByte>(50, 50).val = T3(245u, 113u, 34u)
+   *
+   */
+  @Suppress("UNCHECKED_CAST")
+//^ IdentifierAttribute
+// ^^^^^^^^ IdentifierAttribute
+//          ^^^^^^^^^^^^^^^^ StringLiteral
+  inline fun <reified T> Mat.at(row: Int, col: Int) : Atable<T> =
+//^^^^^^ Keyword
+//       ^^^ Keyword
+//           ^ IdentifierOperator
+//            ^^^^^^^ Keyword
+//                    ^ IdentifierType
+//                     ^ IdentifierOperator
+//                       ^^^ IdentifierType
+//                          ^ PunctuationDelimiter
+//                           ^^ IdentifierFunction
+//                              ^^^ IdentifierParameter
+//                                 ^ PunctuationDelimiter
+//                                   ^^^ IdentifierBuiltinType
+//                                      ^ PunctuationDelimiter
+//                                        ^^^ IdentifierParameter
+//                                           ^ PunctuationDelimiter
+//                                             ^^^ IdentifierBuiltinType
+//                                                  ^ PunctuationDelimiter
+//                                                    ^^^^^^ IdentifierType
+//                                                          ^ IdentifierOperator
+//                                                           ^ IdentifierType
+//                                                            ^ IdentifierOperator
+//                                                              ^ IdentifierOperator
+      when (T::class) {
+//    ^^^^ Keyword
+//          ^ IdentifierType
+//           ^^ PunctuationDelimiter
+//             ^^^^^ Keyword
+          UShort::class -> AtableUShort(this, row, col) as Atable<T>
+//        ^^^^^^ IdentifierBuiltinType
+//              ^^ PunctuationDelimiter
+//                ^^^^^ Keyword
+//                      ^^ IdentifierOperator
+//                         ^^^^^^^^^^^^ IdentifierFunction
+//                                      ^^^^ IdentifierBuiltin
+//                                          ^ PunctuationDelimiter
+//                                            ^^^ Identifier
+//                                               ^ PunctuationDelimiter
+//                                                 ^^^ Identifier
+//                                                      ^^ IdentifierOperator
+//                                                         ^^^^^^ IdentifierType
+//                                                               ^ IdentifierOperator
+//                                                                ^ IdentifierType
+//                                                                 ^ IdentifierOperator
+          else -> throw RuntimeException("Unsupported class type")
+//        ^^^^ Keyword
+//             ^^ IdentifierOperator
+//                ^^^^^ Keyword
+//                      ^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                       ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
+      }
+  
+  
+  /**
+//^^^ Comment 21:0..24:3
+   * Implementation of [DataAccess] which handles access and interactions with file and data
+   * under scoped storage via the MediaStore API.
+   */
+  @RequiresApi(Build.VERSION_CODES.Q)
+//^ IdentifierAttribute
+// ^^^^^^^^^^^ IdentifierAttribute
+//             ^^^^^ Identifier
+//                  ^ PunctuationDelimiter
+//                   ^^^^^^^^^^^^^ IdentifierConstant
+//                                ^ PunctuationDelimiter
+//                                 ^ IdentifierConstant
+  internal class MediaStoreData(context: Context, filePath: String, accessFlag: FileAccessFlags) :
+//^^^^^^^^ Keyword
+//         ^^^^^ Keyword
+//               ^^^^^^^^^^^^^^ IdentifierType
+//                              ^^^^^^^ Identifier
+//                                     ^ PunctuationDelimiter
+//                                       ^^^^^^^ IdentifierType
+//                                              ^ PunctuationDelimiter
+//                                                ^^^^^^^^ Identifier
+//                                                        ^ PunctuationDelimiter
+//                                                          ^^^^^^ IdentifierBuiltinType
+//                                                                ^ PunctuationDelimiter
+//                                                                  ^^^^^^^^^^ Identifier
+//                                                                            ^ PunctuationDelimiter
+//                                                                              ^^^^^^^^^^^^^^^ IdentifierType
+//                                                                                               ^ PunctuationDelimiter
+   DataAccess(filePath) {
+// ^^^^^^^^^^ IdentifierType
+//            ^^^^^^^^ Identifier
+  
+   private data class DataItem(
+// ^^^^^^^ Keyword
+//         ^^^^ Keyword
+//              ^^^^^ Keyword
+//                    ^^^^^^^^ IdentifierType
+    val id: Long,
+//  ^^^ Keyword
+//      ^^ Identifier
+//        ^ PunctuationDelimiter
+//          ^^^^ IdentifierBuiltinType
+//              ^ PunctuationDelimiter
+    val mediaType: String
+//  ^^^ Keyword
+//      ^^^^^^^^^ Identifier
+//               ^ PunctuationDelimiter
+//                 ^^^^^^ IdentifierBuiltinType
+   )
+  
+   companion object {
+// ^^^^^^^^^ Keyword
+//           ^^^^^^ Keyword
+  
+    private val PROJECTION = arrayOf(
+//  ^^^^^^^ Keyword
+//          ^^^ Keyword
+//              ^^^^^^^^^^ IdentifierConstant
+//                         ^ IdentifierOperator
+//                           ^^^^^^^ IdentifierBuiltin
+     MediaStore.Files.FileColumns._ID
+//   ^^^^^^^^^^ Identifier
+//             ^ PunctuationDelimiter
+//              ^^^^^ Identifier
+//                   ^ PunctuationDelimiter
+//                    ^^^^^^^^^^^ Identifier
+//                               ^ PunctuationDelimiter
+//                                ^^^ Identifier
+    )
+  
+    private const val SELECTION_BY_PATH = "${MediaStore.Files.FileColumns.DISPLAY_NAME} = ? " +
+//  ^^^^^^^ Keyword
+//          ^^^^^ Keyword
+//                ^^^ Keyword
+//                    ^^^^^^^^^^^^^^^^^ IdentifierConstant
+//                                      ^ IdentifierOperator
+//                                        ^ StringLiteral
+//                                         ^^ StringLiteralEscape
+//                                           ^^^^^^^^^^ Identifier
+//                                                     ^ PunctuationDelimiter
+//                                                      ^^^^^ Identifier
+//                                                           ^ PunctuationDelimiter
+//                                                            ^^^^^^^^^^^ Identifier
+//                                                                       ^ PunctuationDelimiter
+//                                                                        ^^^^^^^^^^^^ IdentifierConstant
+//                                                                                    ^ StringLiteralEscape
+//                                                                                     ^^^^^^ StringLiteral
+//                                                                                            ^ IdentifierOperator
+     " AND ${MediaStore.Files.FileColumns.RELATIVE_PATH} = ?"
+//   ^^^^^^ StringLiteral
+//         ^^ StringLiteralEscape
+//           ^^^^^^^^^^ Identifier
+//                     ^ PunctuationDelimiter
+//                      ^^^^^ Identifier
+//                           ^ PunctuationDelimiter
+//                            ^^^^^^^^^^^ Identifier
+//                                       ^ PunctuationDelimiter
+//                                        ^^^^^^^^^^^^^ IdentifierConstant
+//                                                     ^ StringLiteralEscape
+//                                                      ^^^^^ StringLiteral
+  
+    private fun getSelectionByPathArguments(path: String): Array<String> {
+//  ^^^^^^^ Keyword
+//          ^^^ Keyword
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                          ^^^^ IdentifierParameter
+//                                              ^ PunctuationDelimiter
+//                                                ^^^^^^ IdentifierBuiltinType
+//                                                       ^ PunctuationDelimiter
+//                                                         ^^^^^ IdentifierBuiltinType
+//                                                              ^ IdentifierOperator
+//                                                               ^^^^^^ IdentifierBuiltinType
+//                                                                     ^ IdentifierOperator
+     return arrayOf(getMediaStoreDisplayName(path), getMediaStoreRelativePath(path))
+//   ^^^^^^ Keyword
+//          ^^^^^^^ IdentifierBuiltin
+//                  ^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                           ^^^^ Identifier
+//                                                ^ PunctuationDelimiter
+//                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
+//                                                                            ^^^^ Identifier
+    }
+   }
+   override val fileChannel: FileChannel
+// ^^^^^^^^ Keyword
+//          ^^^ Keyword
+//              ^^^^^^^^^^^ Identifier
+//                         ^ PunctuationDelimiter
+//                           ^^^^^^^^^^^ IdentifierType
+  
+   init {
+// ^^^^ IdentifierBuiltin
+    val contentResolver = context.contentResolver
+//  ^^^ Keyword
+//      ^^^^^^^^^^^^^^^ Identifier
+//                      ^ IdentifierOperator
+//                        ^^^^^^^ Identifier
+//                               ^ PunctuationDelimiter
+//                                ^^^^^^^^^^^^^^^ Identifier
+    val dataItems = queryByPath(context, filePath)
+//  ^^^ Keyword
+//      ^^^^^^^^^ Identifier
+//                ^ IdentifierOperator
+//                  ^^^^^^^^^^^ IdentifierFunction
+//                              ^^^^^^^ Identifier
+//                                     ^ PunctuationDelimiter
+//                                       ^^^^^^^^ Identifier
+  
+  
+    id = dataItem.id
+//  ^^ Identifier
+//     ^ IdentifierOperator
+//       ^^^^^^^^ Identifier
+//               ^ PunctuationDelimiter
+//                ^^ Identifier
+    uri = dataItem.uri
+//  ^^^ Identifier
+//      ^ IdentifierOperator
+//        ^^^^^^^^ Identifier
+//                ^ PunctuationDelimiter
+//                 ^^^ Identifier
+   }
+  }
+
