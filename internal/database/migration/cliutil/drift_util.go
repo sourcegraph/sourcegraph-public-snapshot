@@ -146,7 +146,6 @@ func compareTables(out *preambledOutput, schemaName, version string, actual, exp
 		outOfSync = compareConstraints(out, *table, expectedTable) || outOfSync
 		outOfSync = compareIndexes(out, *table, expectedTable) || outOfSync
 		outOfSync = compareTriggers(out, *table, expectedTable) || outOfSync
-		outOfSync = compareTableComments(out, *table, expectedTable) || outOfSync
 		return outOfSync
 	}, noopAdditionalCallback[schemas.TableDescription])
 }
@@ -188,11 +187,6 @@ func compareColumns(out *preambledOutput, schemaName, version string, actualTabl
 		if equivIf(func(s *schemas.ColumnDescription) { s.Default = expectedColumn.Default }) {
 			setDefaultStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s;", expectedTable.Name, expectedColumn.Name, expectedColumn.Default)
 			writeSQLSolution(out, "change the column default", setDefaultStmt)
-			return true
-		}
-		if equivIf(func(s *schemas.ColumnDescription) { s.Comment = expectedColumn.Comment }) {
-			setDefaultStmt := fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s';", expectedTable.Name, expectedColumn.Name, expectedColumn.Comment)
-			writeSQLSolution(out, "change the column comment", setDefaultStmt)
 			return true
 		}
 
@@ -295,19 +289,7 @@ func compareTriggers(out *preambledOutput, actualTable, expectedTable schemas.Ta
 		}
 
 		return true
-
 	})
-}
-
-func compareTableComments(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
-	if actualTable.Comment != expectedTable.Comment {
-		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected comment of table %q", expectedTable.Name)))
-		setDefaultStmt := fmt.Sprintf("COMMENT ON TABLE %s IS '%s';", expectedTable.Name, expectedTable.Comment)
-		writeSQLSolution(out, "change the table comment", setDefaultStmt)
-		return true
-	}
-
-	return false
 }
 
 func compareViews(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
@@ -485,10 +467,12 @@ func compareNamedLists[T schemas.Namer](
 	additional := make([]T, 0, len(am))
 
 	for _, k := range keys(am) {
-		av := am[k]
+		av := schemas.Normalize(am[k])
 
 		if bv, ok := bm[k]; ok {
-			if cmp.Diff(schemas.Normalize(av), schemas.Normalize(bv)) != "" {
+			bv = schemas.Normalize(bv)
+
+			if cmp.Diff(schemas.PreComparisonNormalize(av), schemas.PreComparisonNormalize(bv)) != "" {
 				if primaryCallback(&av, bv) {
 					outOfSync = true
 				}
@@ -498,7 +482,7 @@ func compareNamedLists[T schemas.Namer](
 		}
 	}
 	for _, k := range keys(bm) {
-		bv := bm[k]
+		bv := schemas.Normalize(bm[k])
 
 		if _, ok := am[k]; !ok {
 			if primaryCallback(nil, bv) {

@@ -115,10 +115,11 @@ func (d TriggerDescription) GetName() string    { return d.Name }
 func (d ViewDescription) GetName() string       { return d.Name }
 
 type Normalizer[T any] interface{ Normalize() T }
+type PreComparisonNormalizer[T any] interface{ PreComparisonNormalize() T }
 
 var whitespacePattern = lazyregexp.New(`\s+`)
 
-func (d FunctionDescription) Normalize() FunctionDescription {
+func (d FunctionDescription) PreComparisonNormalize() FunctionDescription {
 	d.Definition = strings.TrimSpace(whitespacePattern.ReplaceAllString(d.Definition, " "))
 	return d
 }
@@ -136,6 +137,14 @@ func (d ColumnDescription) Normalize() ColumnDescription {
 func Normalize[T any](v T) T {
 	if normalizer, ok := any(v).(Normalizer[T]); ok {
 		return normalizer.Normalize()
+	}
+
+	return v
+}
+
+func PreComparisonNormalize[T any](v T) T {
+	if normalizer, ok := any(v).(PreComparisonNormalizer[T]); ok {
+		return normalizer.PreComparisonNormalize()
 	}
 
 	return v
