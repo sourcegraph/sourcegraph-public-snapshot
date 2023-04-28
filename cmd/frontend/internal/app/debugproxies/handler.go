@@ -162,7 +162,7 @@ func AdminOnly(db database.DB, next http.Handler) http.Handler {
 		}
 
 		if err := auth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 
