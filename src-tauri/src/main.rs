@@ -7,8 +7,8 @@
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
 mod tray;
-
 use std::sync::RwLock;
+use tauri::Manager;
 
 // The URL to open the frontend on, if launched with a scheme url.
 static LAUNCH_PATH: RwLock<String> = RwLock::new(String::new());
@@ -75,8 +75,7 @@ fn main() {
                 .build(),
         )
         .setup(|app| {
-            let window = app.get_window("main").unwrap();
-            start_embedded_services(window);
+            start_embedded_services();
 
             // Register handler for sourcegraph:// scheme urls.
             let handle = app.handle();
@@ -89,10 +88,10 @@ fn main() {
                 set_launch_path(path.to_string());
 
                 // Case 2: the app was *already running* when the scheme url was
-                // opened. This currently doesn't collide with Case 1 because
-                // the following won't do anything if we're launching and the
-                // webview isn't ready yet. TODO(marek) add a guard for this
-                // condition.
+                // opened. This currently doesn't collide with Case 1 because it
+                // doesn't do anything while we're still launching, probably
+                // because the webview isn't ready yet.
+                // TODO(marek) add a guard to check whether we're still launching.
                 handle
                     .get_window("main")
                     .unwrap()
