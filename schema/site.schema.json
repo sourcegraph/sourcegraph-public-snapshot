@@ -1022,12 +1022,18 @@
     "permissions.syncOldestUsers": {
       "description": "Number of user permissions to schedule for syncing in single scheduler iteration.",
       "type": "integer",
-      "default": 10
+      "default": 10,
+      "!go": {
+        "pointer": true
+      }
     },
     "permissions.syncOldestRepos": {
       "description": "Number of repo permissions to schedule for syncing in single scheduler iteration.",
       "type": "integer",
-      "default": 10
+      "default": 10,
+      "!go": {
+        "pointer": true
+      }
     },
     "permissions.syncUsersBackoffSeconds": {
       "description": "Don't sync a user's permissions if they have synced within the last n seconds.",

@@ -16,7 +16,7 @@ import (
 // GitHubAppsStore handles storing and retrieving GitHub Apps from the database.
 type GitHubAppsStore interface {
 	// Create inserts a new GitHub App into the database.
-	Create(ctx context.Context, app *types.GitHubApp) error
+	Create(ctx context.Context, app *types.GitHubApp) (int, error)
 
 	// Delete removes a GitHub App from the database by ID.
 	Delete(ctx context.Context, id int) error
@@ -63,22 +63,24 @@ func (s *gitHubAppsStore) getEncryptionKey() encryption.Key {
 }
 
 // Create inserts a new GitHub App into the database.
-func (s *gitHubAppsStore) Create(ctx context.Context, app *types.GitHubApp) error {
+func (s *gitHubAppsStore) Create(ctx context.Context, app *types.GitHubApp) (int, error) {
 	key := s.getEncryptionKey()
 	clientSecret, _, err := encryption.MaybeEncrypt(ctx, key, app.ClientSecret)
 	if err != nil {
-		return err
+		return -1, err
 	}
 	privateKey, keyID, err := encryption.MaybeEncrypt(ctx, key, app.PrivateKey)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	query := sqlf.Sprintf(`INSERT INTO
 	    github_apps (app_id, name, slug, base_url, client_id, client_secret, private_key, encryption_key_id, logo)
-    	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)`,
+    	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+		RETURNING id`,
 		app.AppID, app.Name, app.Slug, app.BaseURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
-	return s.Exec(ctx, query)
+	id, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
+	return id, err
 }
 
 // Delete removes a GitHub App from the database by ID.
