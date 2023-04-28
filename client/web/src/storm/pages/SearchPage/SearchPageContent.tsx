@@ -87,35 +87,39 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                 ) : (
                     <>
                         <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
+                        {!codySearchEnabled && !authenticatedUser && isSourcegraphDotCom && (
+                            <div className="d-flex justify-content-center mt-4">
+                                <Text className="text-muted">
+                                    <Badge variant="merged">Experimental</Badge>{' '}
+                                    <Link
+                                        to="/sign-in?returnTo=/search"
+                                        onClick={() =>
+                                            telemetryService.log('ClickedOnSignupToTryCodySearchCTA', {
+                                                location: 'SearchPage',
+                                            })
+                                        }
+                                    >
+                                        Sign in to try our new AI coding assistant, Cody <CodyIcon />{' '}
+                                        <Icon svgPath={mdiArrowRight} aria-hidden={true} />
+                                    </Link>
+                                </Text>
+                            </div>
+                        )}
                         {codySearchEnabled && (
                             <div className="d-flex justify-content-center mt-4">
                                 <Text className="text-muted">
                                     <Badge variant="merged">Experimental</Badge>{' '}
-                                    {!authenticatedUser && isSourcegraphDotCom ? (
-                                        <Link
-                                            to="/sign-in?returnTo=/search"
-                                            onClick={() =>
-                                                telemetryService.log('ClickedOnTryCodySearchCTA', {
-                                                    location: 'SearchPage',
-                                                })
-                                            }
-                                        >
-                                            Sign in to try our new AI coding assistant, Cody <CodyIcon />{' '}
-                                            <Icon svgPath={mdiArrowRight} aria-hidden={true} />
-                                        </Link>
-                                    ) : (
-                                        <Link
-                                            to="/search/cody"
-                                            onClick={() =>
-                                                telemetryService.log('ClickedOnTryCodySearchCTA', {
-                                                    location: 'SearchPage',
-                                                })
-                                            }
-                                        >
-                                            Ask Cody to construct a query from natural language <CodyIcon />{' '}
-                                            <Icon svgPath={mdiArrowRight} aria-hidden={true} />
-                                        </Link>
-                                    )}
+                                    <Link
+                                        to="/search/cody"
+                                        onClick={() =>
+                                            telemetryService.log('ClickedOnTryCodySearchCTA', {
+                                                location: 'SearchPage',
+                                            })
+                                        }
+                                    >
+                                        Ask Cody to construct a query from natural language <CodyIcon />{' '}
+                                        <Icon svgPath={mdiArrowRight} aria-hidden={true} />
+                                    </Link>
                                 </Text>
                             </div>
                         )}
