@@ -119,7 +119,7 @@ func TestProductSubscriptions_Update(t *testing.T) {
 	require.NoError(t, err)
 	got, err := subscriptions.GetByID(ctx, sub0)
 	require.NoError(t, err)
-	require.NotNil(t, got.BillingSubscriptionID)
+	require.Nil(t, got.BillingSubscriptionID)
 
 	t.Run("billingSubscriptionID", func(t *testing.T) {
 		t.Run("set non-null value", func(t *testing.T) {
