@@ -170,7 +170,6 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
     fragment HighlightedGitBlobFields on GitBlob {
         highlight(disableTimeout: false, format: $format) {
             aborted
-            html @include(if: $html)
             lsif
         }
     }
@@ -180,7 +179,6 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
         $commit: String!
         $path: String!
         $format: HighlightResponseFormat!
-        $html: Boolean!
     ) {
         repository(name: $repository) {
             id

@@ -27,7 +27,7 @@ import {
     createResolveCloningRepoRevisionResult,
     createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
+import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants, removeContextFromQuery } from './utils'
 
 export const getCommonRepositoryGraphQlResults = (
@@ -36,13 +36,6 @@ export const getCommonRepositoryGraphQlResults = (
     fileEntries: string[] = []
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
-    ...createViewerSettingsGraphQLOverride({
-        user: {
-            experimentalFeatures: {
-                enableCodeMirrorFileView: false,
-            },
-        },
-    }),
     RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
     ResolveRepoRev: () => createResolveRepoRevisionResult(repositoryName),
     FileNames: () => createFileNamesResult(),
@@ -534,6 +527,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
+
             assert.deepStrictEqual(breadcrumbTexts, [
                 shortRepositoryName,
                 '@master',
@@ -557,9 +551,11 @@ describe('Repository', () => {
             )
 
             const blobContent = await driver.page.evaluate(
-                () => document.querySelector('[data-testid="repo-blob"]')?.textContent
+                () => document.querySelector('[data-testid="repo-blob"] .cm-content')?.textContent
             )
-            assert.strictEqual(blobContent, `content for: ${filePath}\nsecond line\nthird line`)
+            // CodeMirror blob content has no newline characters
+            const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`.replace(/\n/g, '')
+            assert.strictEqual(blobContent, expectedBlobContent)
         })
 
         it('works with a plus sign in the repository name', async () => {

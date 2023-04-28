@@ -2132,8 +2132,6 @@ type SettingsExperimentalFeatures struct {
 	CodeInsightsRepoUI *string `json:"codeInsightsRepoUI,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
 	CodeMonitoringWebHooks *bool `json:"codeMonitoringWebHooks,omitempty"`
-	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
-	EnableCodeMirrorFileView *bool `json:"enableCodeMirrorFileView,omitempty"`
 	// EnableLazyBlobSyntaxHighlighting description: Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
 	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
@@ -2211,7 +2209,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeInsightsCompute")
 	delete(m, "codeInsightsRepoUI")
 	delete(m, "codeMonitoringWebHooks")
-	delete(m, "enableCodeMirrorFileView")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
 	delete(m, "enableLazyFileResultSyntaxHighlighting")
 	delete(m, "enableSearchFilePrefetch")
