@@ -86,7 +86,25 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                 ) : (
                     <>
                         <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
-                        {window.context.codyEnabled && (
+                        {!window.context?.codyEnabled && !authenticatedUser && isSourcegraphDotCom && (
+                            <div className="d-flex justify-content-center mt-4">
+                                <Text className="text-muted">
+                                    <Badge variant="merged">Experimental</Badge>{' '}
+                                    <Link
+                                        to="/sign-in?returnTo=/search"
+                                        onClick={() =>
+                                            telemetryService.log('ClickedOnSignupToTryCodySearchCTA', {
+                                                location: 'SearchPage',
+                                            })
+                                        }
+                                    >
+                                        Sign in to try our new AI coding assistant, Cody <CodyIcon />{' '}
+                                        <Icon svgPath={mdiArrowRight} aria-hidden={true} />
+                                    </Link>
+                                </Text>
+                            </div>
+                        )}
+                        {window.context?.codyEnabled && (
                             <div className="d-flex justify-content-center mt-4">
                                 <Text className="text-muted">
                                     <Badge variant="merged">Experimental</Badge>{' '}
