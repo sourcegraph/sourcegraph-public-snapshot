@@ -172,17 +172,21 @@ func getSchedule(ctx context.Context, store edb.PermsStore) (*schedule, error) {
 
 	userLimit, repoLimit := oldestUserPermissionsBatchSize(), oldestRepoPermissionsBatchSize()
 
-	usersWithOldestPerms, err := scheduleUsersWithOldestPerms(ctx, store, userLimit, SyncUserBackoff())
-	if err != nil {
-		return nil, errors.Wrap(err, "load users with oldest permissions")
+	if userLimit > 0 {
+		usersWithOldestPerms, err := scheduleUsersWithOldestPerms(ctx, store, userLimit, SyncUserBackoff())
+		if err != nil {
+			return nil, errors.Wrap(err, "load users with oldest permissions")
+		}
+		schedule.Users = append(schedule.Users, usersWithOldestPerms...)
 	}
-	schedule.Users = append(schedule.Users, usersWithOldestPerms...)
 
-	reposWithOldestPerms, err := scheduleReposWithOldestPerms(ctx, store, repoLimit, SyncRepoBackoff())
-	if err != nil {
-		return nil, errors.Wrap(err, "scan repositories with oldest permissions")
+	if repoLimit > 0 {
+		reposWithOldestPerms, err := scheduleReposWithOldestPerms(ctx, store, repoLimit, SyncRepoBackoff())
+		if err != nil {
+			return nil, errors.Wrap(err, "scan repositories with oldest permissions")
+		}
+		schedule.Repos = append(schedule.Repos, reposWithOldestPerms...)
 	}
-	schedule.Repos = append(schedule.Repos, reposWithOldestPerms...)
 
 	return schedule, nil
 }
@@ -266,17 +270,19 @@ func scheduleReposWithOldestPerms(ctx context.Context, store edb.PermsStore, lim
 }
 
 func oldestUserPermissionsBatchSize() int {
-	batchSize := conf.Get().PermissionsSyncOldestUsers
-	if batchSize <= 0 {
-		return 10
+	batchSize := 10
+	c := conf.Get().PermissionsSyncOldestUsers
+	if c != nil && *c >= 0 {
+		batchSize = *c
 	}
 	return batchSize
 }
 
 func oldestRepoPermissionsBatchSize() int {
-	batchSize := conf.Get().PermissionsSyncOldestRepos
-	if batchSize <= 0 {
-		return 10
+	batchSize := 10
+	c := conf.Get().PermissionsSyncOldestRepos
+	if c != nil && *c >= 0 {
+		batchSize = *c
 	}
 	return batchSize
 }
