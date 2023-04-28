@@ -126,6 +126,23 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                     </Button>
                 </Tooltip>
             </div>
+            <div
+                onMouseEnter={() => handleModeEnter(SearchAggregationMode.REPO_METADATA)}
+                onMouseLeave={handleMouseLeave}
+            >
+                <Tooltip content={availabilityGroups[SearchAggregationMode.REPO_METADATA]?.reasonUnavailable}>
+                    <Button
+                        variant="secondary"
+                        size={size}
+                        outline={mode !== SearchAggregationMode.REPO_METADATA}
+                        disabled={!isModeAvailable(SearchAggregationMode.REPO_METADATA)}
+                        data-testid="repoMetadata-aggregation-mode"
+                        onClick={() => onModeChange(SearchAggregationMode.REPO_METADATA)}
+                    >
+                        Repo metadata
+                    </Button>
+                </Tooltip>
+            </div>
         </div>
     )
 }

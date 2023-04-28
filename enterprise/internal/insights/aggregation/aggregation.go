@@ -2,6 +2,7 @@ package aggregation
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -9,13 +10,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
+	sApi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	sTypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -148,11 +151,33 @@ func matchContent(event result.Match) []string {
 	}
 }
 
+func countRepoMetadata(r result.Match) (map[MatchKey]int, error) {
+	metadata := map[string]*string{types.NO_REPO_METADATA_KEY: nil}
+	switch match := r.(type) {
+	case *result.RepoMatch:
+		if match.Metadata != nil {
+			metadata = match.Metadata
+		}
+	default:
+	}
+	matches := map[MatchKey]int{}
+	for key := range metadata {
+		group := key
+		key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: group}
+		if len(key.Group) > 100 {
+			key.Group = key.Group[:100]
+		}
+		matches[key] = r.ResultCount()
+	}
+	return matches, nil
+}
+
 func GetCountFuncForMode(query, patternType string, mode types.SearchAggregationMode) (AggregationCountFunc, error) {
 	modeCountTypes := map[types.SearchAggregationMode]AggregationCountFunc{
-		types.REPO_AGGREGATION_MODE:   countRepo,
-		types.PATH_AGGREGATION_MODE:   countPath,
-		types.AUTHOR_AGGREGATION_MODE: countAuthor,
+		types.REPO_AGGREGATION_MODE:          countRepo,
+		types.PATH_AGGREGATION_MODE:          countPath,
+		types.AUTHOR_AGGREGATION_MODE:        countAuthor,
+		types.REPO_METADATA_AGGREGATION_MODE: countRepoMetadata,
 	}
 
 	if mode == types.CAPTURE_GROUP_AGGREGATION_MODE {
@@ -170,9 +195,11 @@ func GetCountFuncForMode(query, patternType string, mode types.SearchAggregation
 	return modeCountFunc, nil
 }
 
-func NewSearchResultsAggregatorWithContext(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc, db database.DB) SearchResultsAggregator {
+func NewSearchResultsAggregatorWithContext(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc, db database.DB, mode types.SearchAggregationMode) SearchResultsAggregator {
 	return &searchAggregationResults{
+		db:        db,
 		ctx:       ctx,
+		mode:      mode,
 		tabulator: tabulator,
 		countFunc: countFunc,
 		progress: client.ProgressAggregator{
@@ -184,7 +211,9 @@ func NewSearchResultsAggregatorWithContext(ctx context.Context, tabulator Aggreg
 }
 
 type searchAggregationResults struct {
+	db          database.DB
 	ctx         context.Context
+	mode        types.SearchAggregationMode
 	tabulator   AggregationTabulator
 	countFunc   AggregationCountFunc
 	progress    client.ProgressAggregator
@@ -195,7 +224,7 @@ type searchAggregationResults struct {
 
 func (r *searchAggregationResults) ShardTimeoutOccurred() bool {
 	for _, skip := range r.progress.Current().Skipped {
-		if skip.Reason == api.ShardTimeout {
+		if skip.Reason == sApi.ShardTimeout {
 			return true
 		}
 	}
@@ -208,14 +237,42 @@ func (r *searchAggregationResults) ResultLimitHit(limit int) bool {
 	return limit <= r.resultCount
 }
 
+func repoIDs(results []result.Match) []api.RepoID {
+	ids := make(map[api.RepoID]struct{}, 5)
+	for _, r := range results {
+		ids[r.RepoName().ID] = struct{}{}
+	}
+
+	res := make([]api.RepoID, 0, len(ids))
+	for id := range ids {
+		res = append(res, id)
+	}
+	return res
+}
+
 func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	r.progress.Update(event)
-	r.resultCount += event.Results.ResultCount()
+	matches := event.Results
+	r.resultCount += matches.ResultCount()
 	combined := map[MatchKey]int{}
-	for _, match := range event.Results {
+	fmt.Println("Send/mode", r.mode)
+	// todo: refactor to a more nicer way
+	repos := make(map[api.RepoID]*sTypes.Repo, 0)
+	if r.mode == types.REPO_METADATA_AGGREGATION_MODE {
+		repoList, err := r.db.Repos().List(r.ctx, database.ReposListOptions{IDs: repoIDs(matches)})
+		if err != nil {
+			r.tabulator(nil, err)
+			return
+		}
+		repos = make(map[api.RepoID]*sTypes.Repo, len(repoList))
+		for _, repo := range repoList {
+			repos[repo.ID] = repo
+		}
+	}
+	for _, match := range matches {
 		select {
 		case <-r.ctx.Done():
 			// let the tabulator an error occured.
@@ -223,7 +280,20 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 			r.tabulator(nil, err)
 			return
 		default:
-			groups, err := r.countFunc(match)
+			switch match := match.(type) {
+			case *result.RepoMatch:
+				if r.mode == types.REPO_METADATA_AGGREGATION_MODE {
+					// delegate error handling to the passed in tabulator
+					repo, ok := repos[match.RepoName().ID]
+					if !ok {
+						r.tabulator(nil, errors.Errorf("repo %s not found", match.RepoName().Name))
+						continue
+					}
+					match.Metadata = repo.KeyValuePairs
+				}
+			default:
+			}
+			groups, err := r.countFunc(match) // pass metadata or entire repo here?
 			for groupKey, count := range groups {
 				// delegate error handling to the passed in tabulator
 				if err != nil {

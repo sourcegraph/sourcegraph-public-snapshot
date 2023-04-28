@@ -36,6 +36,7 @@ const (
 const invalidQueryMsg = "Grouping is disabled because the search query is not valid."
 const fileUnsupportedFieldValueFmt = `Grouping by file is not available for searches with "%s:%s".`
 const authNotCommitDiffMsg = "Grouping by author is only available for diff and commit searches."
+const repoMetadataNotRepoSelectMsg = "Grouping by repo metadata is only available for repository match searches."
 const cgInvalidQueryMsg = "Grouping by capture group is only available for regexp searches that contain a capturing group."
 const cgMultipleQueryPatternMsg = "Grouping by capture group does not support search patterns with the following: and, or, negation."
 const cgUnsupportedSelectFmt = `Grouping by capture group is not available for searches with "%s:%s".`
@@ -153,7 +154,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 	requestContext, cancelReqContext := context.WithTimeout(ctx, time.Second*time.Duration(searchTimelimit))
 	defer cancelReqContext()
 	searchClient := streaming.NewInsightsSearchClient(r.postgresDB, r.enterpriseJobs)
-	searchResultsAggregator := aggregation.NewSearchResultsAggregatorWithContext(requestContext, tabulationFunc, countingFunc, r.postgresDB)
+	searchResultsAggregator := aggregation.NewSearchResultsAggregatorWithContext(requestContext, tabulationFunc, countingFunc, r.postgresDB, aggregationMode)
 
 	_, err = searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, searchResultsAggregator)
 	if err != nil || requestContext.Err() != nil {
@@ -231,6 +232,7 @@ func getDefaultAggregationMode(searchQuery, patternType string) types.SearchAggr
 	if file && targetsSingleRepo {
 		return types.PATH_AGGREGATION_MODE
 	}
+	// todo: shall we add check for repo metadata aggregation mode?
 	return types.REPO_AGGREGATION_MODE
 }
 
@@ -370,6 +372,7 @@ func getAggregateBy(mode types.SearchAggregationMode) canAggregateBy {
 		types.PATH_AGGREGATION_MODE:          canAggregateByPath,
 		types.AUTHOR_AGGREGATION_MODE:        canAggregateByAuthor,
 		types.CAPTURE_GROUP_AGGREGATION_MODE: canAggregateByCaptureGroup,
+		types.REPO_METADATA_AGGREGATION_MODE: canAggregateByRepoMetadata,
 	}
 	canAggregateByFunc, ok := checkByMode[mode]
 	if !ok {
@@ -384,6 +387,23 @@ type notAvailableReason struct {
 }
 
 type canAggregateBy func(searchQuery, patternType string) (bool, *notAvailableReason, error)
+
+func canAggregateByRepoMetadata(searchQuery, patternType string) (bool, *notAvailableReason, error) {
+	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
+	if err != nil {
+		return false, &notAvailableReason{reason: invalidQueryMsg, reasonType: types.INVALID_QUERY}, errors.Wrapf(err, "ParseQuery")
+	}
+	parameters := querybuilder.ParametersFromQueryPlan(plan)
+	// can only aggregate over select:repo searches.
+	for _, parameter := range parameters {
+		if parameter.Field == query.FieldSelect {
+			if parameter.Value == "repo" {
+				return true, nil, nil
+			}
+		}
+	}
+	return false, &notAvailableReason{reason: repoMetadataNotRepoSelectMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+}
 
 func canAggregateByRepo(searchQuery, patternType string) (bool, *notAvailableReason, error) {
 	_, err := querybuilder.ParseQuery(searchQuery, patternType)
@@ -583,6 +603,8 @@ func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string,
 	switch mode {
 	case types.REPO_AGGREGATION_MODE:
 		modifierFunc = querybuilder.AddRepoFilter
+	case types.REPO_METADATA_AGGREGATION_MODE:
+		modifierFunc = querybuilder.AddRepoMetadataFilter
 	case types.PATH_AGGREGATION_MODE:
 		modifierFunc = querybuilder.AddFileFilter
 	case types.AUTHOR_AGGREGATION_MODE:
