@@ -13,7 +13,7 @@ import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } fr
  */
 const applyDefaultValuesToFetchBlobOptions = ({
     disableTimeout = false,
-    format = HighlightResponseFormat.JSON_SCIP,
+    format = HighlightResponseFormat.HTML_HIGHLIGHT,
     startLine = null,
     endLine = null,
     visibleIndexID = null,
@@ -65,6 +65,11 @@ export const fetchBlob = memoizeObservable(
             visibleIndexID,
         } = applyDefaultValuesToFetchBlobOptions(options)
 
+        // We only want to include HTML data if explicitly requested. We always
+        // include LSIF because this is used for languages that are configured
+        // to be processed with tree sitter (and is used when explicitly
+        // requested via JSON_SCIP).
+        const html = [HighlightResponseFormat.HTML_PLAINTEXT, HighlightResponseFormat.HTML_HIGHLIGHT].includes(format)
         return requestGraphQL<BlobResult, BlobVariables>(
             gql`
                 query Blob(
@@ -73,6 +78,7 @@ export const fetchBlob = memoizeObservable(
                     $filePath: String!
                     $disableTimeout: Boolean!
                     $format: HighlightResponseFormat!
+                    $html: Boolean!
                     $startLine: Int
                     $endLine: Int
                     $snapshot: Boolean!
@@ -106,6 +112,7 @@ export const fetchBlob = memoizeObservable(
                         endLine: $endLine
                     ) {
                         aborted
+                        html @include(if: $html)
                         lsif
                     }
                     totalLines
@@ -126,6 +133,7 @@ export const fetchBlob = memoizeObservable(
                 filePath,
                 disableTimeout,
                 format,
+                html,
                 startLine,
                 endLine,
                 snapshot: scipSnapshot,
