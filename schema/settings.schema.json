@@ -508,6 +508,14 @@
         "type": "string"
       },
       "default": {}
+    },
+    "orgs.allMembersBatchChangesAdmin": {
+      "description": "Enables/Disables org-level admin access for Batch Changes to all members of an org",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      }
     }
   },
   "definitions": {
