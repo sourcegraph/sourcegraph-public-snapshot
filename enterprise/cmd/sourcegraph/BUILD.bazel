@@ -20,6 +20,8 @@ go_library(
         "//enterprise/cmd/worker/shared",
         "//internal/service",
         "//internal/service/servegit",
+        "//ui/assets",
+        "//ui/assets/enterprise",
     ],
 )
 

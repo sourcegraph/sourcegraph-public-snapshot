@@ -6177,6 +6177,11 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
+        patches = ["//third_party/com_github_sourcegraph_zoekt:zoekt_archive_index.patch",
+        "//third_party/com_github_sourcegraph_zoekt:zoekt_git_index.patch",
+        "//third_party/com_github_sourcegraph_zoekt:zoekt_webserver.patch",
+        "//third_party/com_github_sourcegraph_zoekt:zoekt_indexserver.patch"],
+        patch_args = ["-p1"],
         sum = "h1:moc3LRc+FZ6RmjMjpsuJy8siNO2gWJxzD1p5eYr4SE8=",
         version = "v0.0.0-20230405161007-b247fb51dece",
     )

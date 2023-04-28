@@ -6,6 +6,6 @@ RUN go mod init tracking-issue
 RUN go get ./...
 RUN CGO_ENABLED=0 go install .
 
-FROM sourcegraph/alpine-3.14:211375_2023-04-02_5.0-05ccd1762636@sha256:cd5089e0b0f7e5a5cd18996f5acd23cfa2bde33f6b7ffb9ace47f552941f0be2
+FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a
 COPY --from=builder /go/bin/* /usr/local/bin/
 ENTRYPOINT ["tracking-issue"]

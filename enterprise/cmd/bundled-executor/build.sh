@@ -18,6 +18,27 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
+
+  TARGETS=(
+    //enterprise/cmd/batcheshelper
+    //enterprise/cmd/executor
+  )
+  ./dev/ci/bazel.sh build "${TARGETS[@]}"
+  for TARGET in "${TARGETS[@]}"; do
+    out=$(./dev/ci/bazel.sh cquery "$TARGET" --output=files)
+    cp "$out" "$OUTPUT"
+    echo "copying $TARGET"
+  done
+
+  docker build -f enterprise/cmd/batcheshelper/Dockerfile -t "$IMAGE" "$OUTPUT" \
+    --progress=plain \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION
+  exit $?
+fi
+
 pushd ./enterprise/cmd/executor 1>/dev/null
 pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/executor"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist,shell -o "$OUTPUT/$(basename $pkg)" "$pkg"

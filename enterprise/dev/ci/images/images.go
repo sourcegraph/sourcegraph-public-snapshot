@@ -48,8 +48,31 @@ func maybeTaggedImage(rootImage, tag string) string {
 // - app must be a legal Docker image name (e.g. no `/`)
 //
 // The `addDockerImages` pipeline step determines what images are built and published.
-var SourcegraphDockerImages = append(DeploySourcegraphDockerImages,
-	"server", "sg", "llm-proxy")
+//
+// This appends all images to a single array in the case where we want to build a single image and don't want to
+// introduce other logic upstream, as the contents of these arrays may change.
+
+var SourcegraphDockerImages = append(append(SourcegraphDockerImagesTestDeps, DeploySourcegraphDockerImages...), SourcegraphDockerImagesMisc...)
+
+// These images are miscellaneous and can be built out of sync with others. They're not part of the
+// base deployment, nor do they require a special bazel toolchain ie: musl
+var SourcegraphDockerImagesMisc = []string{
+	"batcheshelper",
+	"blobstore2",
+	"bundled-executor",
+	"dind",
+	"embeddings",
+	"executor-kubernetes",
+	"executor-vm",
+	"jaeger-agent",
+	"jaeger-all-in-one",
+	"llm-proxy",
+	"sg"}
+
+// These are images that use the musl build chain for bazel, and break the cache if built
+// on a system with glibc. They are built on a separate pipeline. They're also the images current e2e/integration
+// tests require so we want to build them as quickly as possible.
+var SourcegraphDockerImagesTestDeps = []string{"symbols", "server", "executor"}
 
 // DeploySourcegraphDockerImages denotes all Docker images that are included in a typical
 // deploy-sourcegraph installation.
@@ -58,6 +81,8 @@ var SourcegraphDockerImages = append(DeploySourcegraphDockerImages,
 // it must also be added to this list.
 var DeploySourcegraphDockerImages = []string{
 	"alpine-3.14",
+	"postgres-12-alpine",
+	"blobstore",
 	"cadvisor",
 	"codeinsights-db",
 	"codeintel-db",
@@ -66,12 +91,9 @@ var DeploySourcegraphDockerImages = []string{
 	"gitserver",
 	"grafana",
 	"indexed-searcher",
-	"jaeger-agent",
-	"jaeger-all-in-one",
-	"blobstore",
-	"blobstore2",
+	"migrator",
 	"node-exporter",
-	"postgres-12-alpine",
+	"opentelemetry-collector",
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",
@@ -82,18 +104,8 @@ var DeploySourcegraphDockerImages = []string{
 	"repo-updater",
 	"search-indexer",
 	"searcher",
-	"symbols",
 	"syntax-highlighter",
 	"worker",
-	"migrator",
-	"executor",
-	"executor-kubernetes",
-	"executor-vm",
-	"batcheshelper",
-	"opentelemetry-collector",
-	"embeddings",
-	"dind",
-	"bundled-executor",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.

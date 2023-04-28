@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -eu
+set -e
 
 # Create the folder for annotations
 mkdir -p ./annotations/
@@ -15,11 +15,13 @@ if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" ]]; then
     asdf install golang
   elif [[ "$BUILDKITE_STEP_KEY" == "pipeline-upload" ]]; then
     echo "pipeline-upload step: skipping asdf install"
+  elif [[ "${BUILDKITE_GROUP_KEY:=\"\"}" == "Publishimages" ]]; then
+    echo "publish image step: skipping asdf install"
   else
     echo "running normal install"
     ./dev/ci/asdf-install.sh
   fi
-#else
+  #else
   # Only enable when you're debugging, this produces about 300 log files
   # export BUILDKITE_ARTIFACT_PATHS="$(bazel info bazel-testlogs)/**/*.log"
 fi
