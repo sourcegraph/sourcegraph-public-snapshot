@@ -8,6 +8,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
+- Fixes an issue where code blocks were unexpectedly escaped []()
+
 ### Changed
 
 ## [0.0.9]
