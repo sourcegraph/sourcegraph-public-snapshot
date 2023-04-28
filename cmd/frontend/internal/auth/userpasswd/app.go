@@ -109,7 +109,7 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 			return errors.Wrap(err, "Could not create new user session")
 		}
 
-		// Success. Redirect to search or to returnTo if present.
+		// Success. Redirect to search or to "redirect" param if present.
 		redirect := r.URL.Query().Get("redirect")
 		u := r.URL
 		u.RawQuery = ""

@@ -83,7 +83,7 @@ fn main() {
                 let path: &str = extract_path_from_scheme_url(&request);
 
                 // Case 1: the app has been *launched* with the scheme
-                // url. In the frontend, app-main.tsx will read it with
+                // url. In the frontend, app-shell.tsx will read it with
                 // getLaunchPath().
                 set_launch_path(path.to_string());
 
