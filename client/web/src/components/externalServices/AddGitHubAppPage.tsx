@@ -3,7 +3,7 @@ import { FC, useState, useCallback, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Input, Label, Alert, H2, Text, Container } from '@sourcegraph/wildcard'
+import { Alert, Container, Button, H2, Input, Label, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../PageTitle'
 
@@ -51,7 +51,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
         (state: string): string => {
             let prefix = 'settings/apps/new'
             const trimmedOrg = org.trim()
-            if (trimmedOrg != '') {
+            if (trimmedOrg !== '') {
                 prefix = `organizations/${encodeURIComponent(trimmedOrg)}/settings/apps/new`
             }
 
@@ -67,7 +67,6 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
             if (state && ref.current) {
                 const actionUrl = createActionUrl(state)
                 ref.current.action = actionUrl
-                console.log('SUBMIT', actionUrl)
                 ref.current.submit()
             }
         },
@@ -80,8 +79,8 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
             const response = await fetch('/.auth/githubapp/state')
             const state = await response.text()
             submitForm(state)
-        } catch (e) {
-            setError(e)
+        } catch (_error) {
+            setError(_error)
         }
     }, [submitForm])
 
@@ -142,8 +141,10 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                         Create Github App
                     </Button>
                 </div>
+                {/* eslint-disable-next-line react/forbid-elements */}
                 <form ref={ref} method="post">
-                    <input type="text" name="manifest" value={manifest} onChange={() => {}} hidden />
+                    {/* eslint-disable-next-line react/forbid-elements */}
+                    <input name="manifest" value={manifest} onChange={() => {}} hidden={true} />
                 </form>
             </Container>
         </>
