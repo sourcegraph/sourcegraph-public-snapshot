@@ -48,8 +48,9 @@ export interface MarkdownLine {
 export function parseMarkdown(text: string): MarkdownLine[] {
     const markdownLines: MarkdownLine[] = []
     let isCodeBlock = false
+
     for (const line of text.split('\n')) {
-        if (line.trim().startsWith('```')) {
+        if (line.trim().startsWith('```') || line.trim().startsWith('~~~')) {
             markdownLines.push({ line, isCodeBlock: true })
             isCodeBlock = !isCodeBlock
         } else {

@@ -103,6 +103,7 @@ ts_project(
     testonly = True,
     srcs = [
         "src/chat/bot-response-multiplexer.test.ts",
+        "src/chat/markdown.test.ts",
         "src/chat/transcript/transcript.test.ts",
         "src/hallucinations-detector/index.test.ts",
         "src/sourcegraph-api/utils.test.ts",
