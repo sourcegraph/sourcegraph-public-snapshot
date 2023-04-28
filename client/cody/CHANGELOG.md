@@ -8,6 +8,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
+- Fixes an issue where code blocks were unexpectedly escaped [pull/51247](https://github.com/sourcegraph/sourcegraph/pull/51247)
+
 ### Changed
 
 ## [0.0.9]
@@ -29,3 +31,4 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 ### Changed
 
 - Various improvements to the experimental completions feature [pull/51161](https://github.com/sourcegraph/sourcegraph/pull/51161) [51046](https://github.com/sourcegraph/sourcegraph/pull/51046)
+- Visual improvements to the history page, ability to resume past conversations [pull/51159](https://github.com/sourcegraph/sourcegraph/pull/51159)

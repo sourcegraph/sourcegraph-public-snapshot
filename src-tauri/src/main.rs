@@ -6,7 +6,7 @@
 #[cfg(not(dev))]
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
-use tauri::Manager;
+mod tray;
 
 fn main() {
     match fix_path_env::fix() {
@@ -16,10 +16,30 @@ fn main() {
         }
     }
 
+    let tray = tray::create_system_tray();
+
     tauri::Builder::default()
-        .setup(|app| {
-            let window = app.get_window("main").unwrap();
-            start_embedded_services(window);
+        .system_tray(tray)
+        .on_system_tray_event(tray::on_system_tray_event)
+        .on_window_event(|event| match event.event() {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                // Ensure the app stays open after the last window is closed.
+                event.window().hide().unwrap();
+                api.prevent_close();
+            }
+            _ => {}
+        })
+        .plugin(
+            tauri_plugin_log::Builder::default()
+                .targets([
+                    tauri_plugin_log::LogTarget::LogDir,
+                    tauri_plugin_log::LogTarget::Webview,
+                ])
+                .level(log::LevelFilter::Info)
+                .build(),
+        )
+        .setup(|_app| {
+            start_embedded_services();
             Ok(())
         })
         .run(tauri::generate_context!())
@@ -27,12 +47,12 @@ fn main() {
 }
 
 #[cfg(dev)]
-fn start_embedded_services(_window: tauri::Window) {
+fn start_embedded_services() {
     println!("embedded Sourcegraph services disabled for local development");
 }
 
 #[cfg(not(dev))]
-fn start_embedded_services(window: tauri::Window) {
+fn start_embedded_services() {
     let sidecar = "sourcegraph-backend";
     let (mut rx, _child) = Command::new_sidecar(sidecar)
         .expect(format!("failed to create `{sidecar}` binary command").as_str())
@@ -40,29 +60,10 @@ fn start_embedded_services(window: tauri::Window) {
         .expect(format!("failed to spawn {sidecar} sidecar").as_str());
 
     tauri::async_runtime::spawn(async move {
-        // read events such as stdout
         while let Some(event) = rx.recv().await {
             match event {
-                CommandEvent::Stdout(line) => {
-                    window
-                        .emit(format!("{sidecar}-stdout").as_str(), Some(line.clone()))
-                        .expect("failed to emit event");
-
-                    let _ = window.eval(&format!(
-                        "console.log(\":: {}\")",
-                        line.replace("\"", "\\\"")
-                    ));
-                }
-                CommandEvent::Stderr(line) => {
-                    window
-                        .emit(format!("{sidecar}-stderr").as_str(), Some(line.clone()))
-                        .expect("failed to emit event");
-
-                    let _ = window.eval(&format!(
-                        "console.log(\":: {}\")",
-                        line.replace("\"", "\\\"")
-                    ));
-                }
+                CommandEvent::Stdout(line) => log::info!("{}", line),
+                CommandEvent::Stderr(line) => log::error!("{}", line),
                 _ => continue,
             };
         }

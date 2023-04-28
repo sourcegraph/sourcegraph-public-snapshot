@@ -154,7 +154,7 @@
       },
       {
         "command": "cody.settings",
-        "title": "Settings",
+        "title": "Cody: Settings",
         "group": "Cody",
         "icon": "$(gear)",
         "when": "cody.activated"
@@ -166,9 +166,16 @@
       },
       {
         "command": "cody.interactive.clear",
-        "title": "Clear & Restart Chat Session",
+        "title": "Cody: Clear & Restart Chat Session",
         "group": "Cody",
         "icon": "$(clear-all)",
+        "when": "cody.activated"
+      },
+      {
+        "command": "cody.history",
+        "title": "Cody: Chat History",
+        "group": "Cody",
+        "icon": "$(history)",
         "when": "cody.activated"
       }
     ],
@@ -270,6 +277,11 @@
         },
         {
           "command": "cody.settings",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation"
+        },
+        {
+          "command": "cody.history",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation"
         }
