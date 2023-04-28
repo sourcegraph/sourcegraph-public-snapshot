@@ -41,6 +41,7 @@ pipeline:
       --config opentelemetry-collector/builder.yaml \
       --output-path=/tmp/otelcol-sourcegraph
   - name: Package collector
+    # TODO: Change directory, but /bin is hardcoded into k8s manifests
     runs: |
-      mkdir -p ${{targets.destdir}}/usr/bin/
-      cp /tmp/otelcol-sourcegraph/otelcol-sourcegraph ${{targets.destdir}}/usr/bin/otelcol-sourcegraph
+      mkdir -p ${{targets.destdir}}/bin/
+      cp /tmp/otelcol-sourcegraph/otelcol-sourcegraph ${{targets.destdir}}/bin/otelcol-sourcegraph
