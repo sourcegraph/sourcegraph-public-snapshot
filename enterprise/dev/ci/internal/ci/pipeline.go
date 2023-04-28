@@ -145,8 +145,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"codeinsights-db",
 				"codeintel-db",
 				"indexed-searcher",
+				"opentelemetry-collector",
 			}, c.Version,
-				c.candidateImageTag(),
+				// c.candidateImageTag(),
+				"latest", // TODO: Do not merge; used to simplify dev
 				(numUpdatedBaseImages > 0),
 			),
 		)
