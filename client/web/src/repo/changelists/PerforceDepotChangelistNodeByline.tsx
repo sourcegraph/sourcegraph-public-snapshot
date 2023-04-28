@@ -18,7 +18,6 @@ interface Props {
     preferAbsoluteTimestamps?: boolean
     messageElement?: JSX.Element
     commitMessageBody?: JSX.Element
-    as?: 'div' | 'td'
 }
 
 /**
@@ -33,10 +32,7 @@ export const PerforceDepotChangelistNodeByline: React.FunctionComponent<React.Pr
     preferAbsoluteTimestamps,
     messageElement,
     commitMessageBody,
-    as = 'div',
 }) => {
-    const Wrapper = as
-
     if (
         committer &&
         committer.person.email !== author.person.email &&
@@ -44,7 +40,7 @@ export const PerforceDepotChangelistNodeByline: React.FunctionComponent<React.Pr
     ) {
         // The author and committer both exist and are different people.
         return (
-            <Wrapper data-testid="git-commit-node-byline" className={className}>
+            <div data-testid="git-commit-node-byline" className={className}>
                 <div className="flex-shrink-0">
                     <Tooltip content={`${formatPersonName(author.person)} (author)`}>
                         <UserAvatar inline={true} className={avatarClassName} user={author.person} />
@@ -72,12 +68,12 @@ export const PerforceDepotChangelistNodeByline: React.FunctionComponent<React.Pr
                         </>
                     )}
                 </div>
-            </Wrapper>
+            </div>
         )
     }
 
     return (
-        <Wrapper data-testid="git-commit-node-byline" className={className}>
+        <div data-testid="git-commit-node-byline" className={className}>
             <div>
                 <Tooltip content={formatPersonName(author.person)}>
                     <UserAvatar
@@ -98,6 +94,6 @@ export const PerforceDepotChangelistNodeByline: React.FunctionComponent<React.Pr
                 )}
                 {compact && <PersonLink person={author.person} />}
             </div>
-        </Wrapper>
+        </div>
     )
 }
