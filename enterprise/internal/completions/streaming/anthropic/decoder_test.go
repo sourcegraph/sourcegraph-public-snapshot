@@ -41,4 +41,10 @@ func TestDecoder(t *testing.T) {
 		_, err := decodeAll("datas:b\r\n\r\n")
 		require.Contains(t, err.Error(), "malformed data, expected data")
 	})
+
+	t.Run("InterleavedPing", func(t *testing.T) {
+		events, err := decodeAll("data:a\r\n\r\nevent: ping\r\ndata: 2023-04-28 21:18:31.866238\r\n\r\ndata:b\r\n\r\ndata: [DONE]\r\n\r\n")
+		require.NoError(t, err)
+		require.Equal(t, events, []event{{data: "a"}, {data: "b"}, {data: "[DONE]"}})
+	})
 }
