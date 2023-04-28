@@ -15,7 +15,12 @@ export interface ActiveTextEditorVisibleContent {
     fileName: string
 }
 
+export interface FileChatProvider {
+    selection: ActiveTextEditorSelection | null
+}
+
 export interface Editor {
+    fileChatProvider?: FileChatProvider
     getWorkspaceRootPath(): string | null
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null

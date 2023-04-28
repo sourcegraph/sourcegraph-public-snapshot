@@ -1,6 +1,6 @@
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
-import { MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
+import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
@@ -13,12 +13,15 @@ export class Fixup implements Recipe {
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // TODO: Prompt the user for additional direction.
 
+        // Check if request comes from file chat
+        const isFromFileChat = humanChatInput.startsWith('/fix')
+
         const selection = context.editor.getActiveTextEditorSelection()
         if (!selection) {
             await context.editor.showWarningMessage('Select some code to fixup.')
             return null
         }
-
+        const truncatedText = truncateText(humanChatInput.replace('/fix', ''), MAX_HUMAN_INPUT_TOKENS)
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(selection.selectedText, quarterFileContext * 2) !== selection.selectedText) {
             await context.editor.showWarningMessage("The amount of text selected exceeds Cody's current capacity.")
@@ -38,11 +41,16 @@ export class Fixup implements Recipe {
             })
         )
 
+        const instructionsInFile =
+            'Follow the instructions in the selected part and produce a rewritten replacement for only that part.'
+        const instructionsFromChat = 'Follow my instructions and produce a rewritten replacement for only that part.'
         const prompt = `This is part of the file ${
             selection.fileName
         }. The part of the file I have selected is highlighted with <selection> tags. You are helping me to work on that part.
 
-Follow the instructions in the selected part and produce a rewritten replacement for only that part. Put the rewritten replacement inside <selection> tags.
+${isFromFileChat ? instructionsFromChat : instructionsInFile} Put the rewritten replacement inside <selection> tags.
+
+${isFromFileChat ? 'Here is my instructions:' + truncatedText : '\n'}
 
 I only want to see the code within <selection>. Do not move code from outside the selection into the selection in your reply.
 
@@ -61,7 +69,7 @@ It is OK to provide some commentary before you tell me the replacement <selectio
                 {
                     speaker: 'human',
                     text: prompt,
-                    displayText: 'Replace the instructions in the selection.',
+                    displayText: humanChatInput || 'Replace the instructions in the selection.',
                 },
                 { speaker: 'assistant' },
                 this.getContextMessages(selection.selectedText, context.codebaseContext)

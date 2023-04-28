@@ -1,7 +1,13 @@
 import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
 import { RecipeContext } from '../chat/recipes/recipe'
 import { CodebaseContext } from '../codebase-context'
-import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
+import {
+    ActiveTextEditor,
+    ActiveTextEditorSelection,
+    ActiveTextEditorVisibleContent,
+    Editor,
+    FileChatProvider,
+} from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentDetector } from '../intent-detector'
 import { KeywordContextFetcher, KeywordContextFetcherResult } from '../keyword-context'
@@ -43,7 +49,7 @@ export class MockKeywordContextFetcher implements KeywordContextFetcher {
 }
 
 export class MockEditor implements Editor {
-    constructor(private mocks: Partial<Editor> = {}) {}
+    constructor(private mocks: Partial<Editor> = {}, public fileChatProvider?: FileChatProvider) {}
 
     public getWorkspaceRootPath(): string | null {
         return this.mocks.getWorkspaceRootPath?.() ?? null

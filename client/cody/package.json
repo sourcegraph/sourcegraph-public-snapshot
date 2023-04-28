@@ -177,6 +177,16 @@
         "group": "Cody",
         "icon": "$(history)",
         "when": "cody.activated"
+      },
+      {
+        "command": "cody.file.chat",
+        "title": "Ask Cody",
+        "enablement": "!commentIsEmpty"
+      },
+      {
+        "command": "cody.file.fix",
+        "title": "Ask Cody: Fixup",
+        "enablement": "!commentIsEmpty"
       }
     ],
     "keybindings": [
@@ -285,7 +295,26 @@
           "when": "view == cody.chat && cody.activated",
           "group": "navigation"
         }
-      ]
+      ],
+      "comments/commentThread/context": [
+				{
+					"command": "cody.file.chat",
+					"group": "inline",
+          "when": "cody.activated"
+				},
+        {
+					"command": "cody.file.fix",
+					"group": "inline@1",
+          "when": "cody.activated"
+				}
+			],
+      "comments/comment/context": [
+				{
+					"command": "cody.file.fix",
+					"group": "inline@3",
+					"when": "commentController == code-file-chat"
+				}
+			]
     },
     "configuration": {
       "type": "object",

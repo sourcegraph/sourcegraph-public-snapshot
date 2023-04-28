@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
+import { FileChatProvider } from './chat/FileChatProvider'
 import { DOTCOM_URL } from './chat/protocol'
 import { LocalStorage } from './command/LocalStorageProvider'
 import { CodyCompletionItemProvider } from './completions'
@@ -88,7 +89,10 @@ const register = async (
 
     await updateEventLogger(initialConfig, localStorage)
 
-    const editor = new VSCodeEditor()
+    const fileChatProvider = new FileChatProvider(context.extensionPath)
+    disposables.push(fileChatProvider.get())
+
+    const editor = new VSCodeEditor(fileChatProvider)
 
     const {
         intentDetector,
@@ -150,6 +154,17 @@ const register = async (
                 }
             },
         }),
+        // File Chat Provider
+        vscode.commands.registerCommand(
+            'cody.file.chat',
+            (reply: vscode.CommentReply) => chatProvider.fileChatAdd(reply),
+            { hidden: true }
+        ),
+        vscode.commands.registerCommand(
+            'cody.file.fix',
+            (reply: vscode.CommentReply) => chatProvider.fileChatFix(reply),
+            { hidden: true }
+        ),
         // Toggle Chat
         vscode.commands.registerCommand('cody.toggle-enabled', async () => {
             await workspaceConfig.update(

@@ -7,9 +7,13 @@ import {
     Editor,
 } from '@sourcegraph/cody-shared/src/editor'
 
+import { FileChatProvider } from '../chat/FileChatProvider'
+
 const SURROUNDING_LINES = 50
 
 export class VSCodeEditor implements Editor {
+    constructor(public fileChatProvider: FileChatProvider) {}
+
     public getWorkspaceRootPath(): string | null {
         const uri = vscode.window.activeTextEditor?.document?.uri
         if (uri) {
@@ -38,6 +42,10 @@ export class VSCodeEditor implements Editor {
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
         const activeEditor = this.getActiveTextEditorInstance()
+        if (!activeEditor && this.fileChatProvider.selection) {
+            return this.fileChatProvider.selection
+        }
+
         if (!activeEditor) {
             return null
         }
@@ -110,12 +118,19 @@ export class VSCodeEditor implements Editor {
     }
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
-        const activeEditor = this.getActiveTextEditorInstance()
+        const activeEditor = this.getActiveTextEditorInstance() || (await this.fileChatProvider.getEditor())
         if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {
             // TODO: should return something indicating success or failure
             return
         }
-        const selection = activeEditor.selection
+        let selection = activeEditor.selection
+        if (this.fileChatProvider.selectionRange) {
+            selection = new vscode.Selection(
+                this.fileChatProvider.selectionRange.start,
+                this.fileChatProvider.selectionRange.end
+            )
+            console.log(selection, this.fileChatProvider.selectionRange)
+        }
         if (!selection) {
             return
         }
@@ -129,7 +144,7 @@ export class VSCodeEditor implements Editor {
         }
 
         await activeEditor.edit(edit => {
-            edit.replace(selection, replacement)
+            edit.replace(this.fileChatProvider.selectionRange || selection, replacement)
         })
         return
     }

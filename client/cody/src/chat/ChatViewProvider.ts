@@ -24,6 +24,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { View } from '../../webviews/NavBar'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { updateConfiguration } from '../configuration'
+import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
@@ -79,7 +80,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
-        private editor: Editor,
+        private editor: VSCodeEditor,
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
         private rgPath: string
@@ -237,6 +238,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     const { text, displayText } = lastInteraction.getAssistantMessage()
                     const { text: highlightedDisplayText } = await highlightTokens(displayText || '', fileExists)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
+                    this.editor.fileChatProvider.reply(highlightedDisplayText)
                 }
                 void this.onCompletionEnd()
             },
@@ -313,7 +315,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.publishContextStatus()
     }
 
-    public async executeRecipe(recipeId: string, humanChatInput: string = ''): Promise<void> {
+    public async executeRecipe(recipeId: string, humanChatInput = '', showTab = true): Promise<void> {
         if (this.isMessageInProgress) {
             this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
         }
@@ -337,9 +339,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
-
-        this.showTab('chat')
         this.sendTranscript()
+
+        if (showTab) {
+            this.showTab('chat')
+        }
 
         const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
@@ -619,6 +623,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         // Register webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+    }
+
+    /**
+     * Handles in-file chat threads from editor
+     */
+    public async fileChatAdd(threads: vscode.CommentReply): Promise<void> {
+        await this.editor.fileChatProvider.chat(threads)
+        console.log(threads.text)
+        void this.executeRecipe('file-chat', threads.text, false)
+    }
+
+    public async fileChatFix(threads: vscode.CommentReply): Promise<void> {
+        await this.editor.fileChatProvider.chat(threads, true)
+        await this.executeRecipe('fixup', `/fix ${threads.text}`, false)
     }
 
     /**
