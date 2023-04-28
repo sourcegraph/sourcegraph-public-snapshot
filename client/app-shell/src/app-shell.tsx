@@ -1,4 +1,24 @@
 import { listen, Event } from '@tauri-apps/api/event'
+import { invoke } from '@tauri-apps/api/tauri'
+
+function addRedirectParamToSignInUrl(url: string, returnTo: string) {
+    const urlObject = new URL(url)
+    urlObject.searchParams.append('redirect', returnTo)
+    return urlObject.toString()
+}
+
+async function getLaunchPathFromTauri(): Promise<string> {
+    return (await invoke('get_launch_path')) as string
+}
+
+async function launchWithSignInUrl(url: string) {
+    const launchPath = await getLaunchPathFromTauri()
+    if (launchPath) {
+        console.log('Using launch path:', launchPath)
+        url = addRedirectParamToSignInUrl(url, launchPath)
+    }
+    window.location.href = url
+}
 
 // Sourcegraph desktop app entrypoint. There are two:
 //
@@ -8,10 +28,10 @@ import { listen, Event } from '@tauri-apps/api/event'
 // * app-main.tsx: served by the Go backend, renders the Sourcegraph web UI that you see everywhere else.
 
 // TODO(burmudar): use logging service to log that this has been loaded
-const outputHandler = (event: Event<string>): void => {
+const outputHandler = async (event: Event<string>): Promise<void> => {
     if (event.payload.startsWith('tauri:sign-in-url: ')) {
-        const url = event.payload.slice('tauri:sign-in-url: '.length).trim()
-        window.location.href = url
+        let url = event.payload.slice('tauri:sign-in-url: '.length).trim()
+        launchWithSignInUrl(url)
     }
 }
 

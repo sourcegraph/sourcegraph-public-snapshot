@@ -109,10 +109,15 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 			return errors.Wrap(err, "Could not create new user session")
 		}
 
-		// Success. Redirect to search
+		// Success. Redirect to search or to returnTo if present.
+		redirect := r.URL.Query().Get("redirect")
 		url := r.URL
 		url.RawQuery = ""
-		url.Path = "/search"
+		if redirect != "" {
+			url.Path = redirect
+		} else {
+			url.Path = "/search"
+		}
 		http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
 		return nil
 	}
