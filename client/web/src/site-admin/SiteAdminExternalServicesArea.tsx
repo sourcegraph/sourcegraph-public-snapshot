@@ -85,7 +85,7 @@ export const SiteAdminExternalServicesArea: FC<Props> = props => {
                     />
                 }
             />
-            <Route path="new_ghapp" element={<AddGitHubAppPage {...props} />} />
+            <Route path="new-gh-app" element={<AddGitHubAppPage {...props} />} />
             <Route
                 path=":externalServiceID"
                 element={

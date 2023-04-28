@@ -1,7 +1,6 @@
 package githubapp
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
@@ -39,9 +38,11 @@ func Middleware(db database.DB) *auth.Middleware {
 	}
 }
 
+const cacheTTLSeconds = 60 * 60 // 1 hour
+
 func newMiddleware(ossDB database.DB, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
 	db := edb.NewEnterpriseDB(ossDB)
-	ghAppState := rcache.NewWithTTL("github_app_state", 60*60)
+	ghAppState := rcache.NewWithTTL("github_app_state", cacheTTLSeconds)
 	handler := newServeMux(db, authPrefix, ghAppState)
 	traceFamily := "githubapp"
 
@@ -102,7 +103,7 @@ type GitHubAppResponse struct {
 func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.Handler {
 	r := mux.NewRouter()
 
-	r.HandleFunc(prefix+"/state", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc(prefix+"/state", func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != "GET" {
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
@@ -121,9 +122,9 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		cache.Set(s, []byte{1})
 
 		_, _ = w.Write([]byte(s))
-	}))
+	})
 
-	r.HandleFunc(prefix+"/redirect", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc(prefix+"/redirect", func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != "GET" {
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
@@ -155,7 +156,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		id, err := db.GitHubApps().Create(context.Background(), app)
+		id, err := db.GitHubApps().Create(req.Context(), app)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error while storing github app in DB; %s", err.Error()), http.StatusInternalServerError)
 			return
@@ -174,9 +175,9 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			redirectURL = app.AppURL
 		}
 		http.Redirect(w, req, redirectURL+fmt.Sprintf("?state=%s", state), http.StatusSeeOther)
-	}))
+	})
 
-	r.HandleFunc(prefix+"/setup", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc(prefix+"/setup", func(w http.ResponseWriter, req *http.Request) {
 		// 🚨 SECURITY: only site admins can setup github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
 			return
@@ -194,11 +195,12 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, "Bad request, state query param does not match", http.StatusBadRequest)
 			return
 		}
+		cache.Delete(state)
+
 		id, err := strconv.Atoi(string(idBytes))
 		if err != nil {
 			http.Error(w, "Bad request, cannot parse appID", http.StatusBadRequest)
 		}
-		cache.Delete(state)
 
 		installationID, err := strconv.ParseInt(instID, 10, 64)
 		if err != nil {
@@ -214,14 +216,14 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 				return
 			}
 
-			// TODO: where do we redirect here?
-			http.Redirect(w, req, fmt.Sprintf("/site-admin/external-services/new_ghapp?id=%d&installation_id=%d", app.ID, installationID), http.StatusFound)
+			// TODO: redirect to github app configuration page once it's ready
+			http.Redirect(w, req, fmt.Sprintf("/site-admin/external-services/new-gh-app?id=%d&installation_id=%d", app.ID, installationID), http.StatusFound)
 			// return
 		} else {
 			http.Error(w, fmt.Sprintf("Bad request; unsupported setup action: %s", action), http.StatusBadRequest)
 			// return
 		}
-	}))
+	})
 
 	return r
 }
