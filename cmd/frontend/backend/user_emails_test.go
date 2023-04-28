@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -213,6 +214,75 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 
 	mockrequire.Called(t, userEmails.GetPrimaryEmailFunc)
 	mockrequire.Called(t, users.GetByIDFunc)
+}
+
+func TestSendUserEmailOnTokenChange(t *testing.T) {
+	var sent *txemail.Message
+	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+		sent = &message
+		return nil
+	}
+	defer func() { txemail.MockSend = nil }()
+
+	userEmails := database.NewMockUserEmailsStore()
+	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
+
+	users := database.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "Foo"}, nil)
+
+	db := database.NewMockDB()
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	db.UsersFunc.SetDefaultReturn(users)
+	logger := logtest.Scoped(t)
+
+	svc := NewUserEmailsService(db, logger)
+	tt := []struct {
+		name      string
+		tokenName string
+		delete    bool
+		template  txtypes.Templates
+	}{
+		{
+			"Access Token deleted",
+			"my-long-last-token",
+			true,
+			accessTokenDeletedEmailTemplate,
+		},
+		{
+			"Access Token created",
+			"heyo-new-token",
+			false,
+			accessTokenCreatedEmailTemplate,
+		},
+	}
+	for _, item := range tt {
+		t.Run(item.name, func(t *testing.T) {
+			if err := svc.SendUserEmailOnAccessTokenChange(context.Background(), 123, item.tokenName, item.delete); err != nil {
+				t.Fatal(err)
+			}
+			if sent == nil {
+				t.Fatal("want sent != nil")
+			}
+
+			if want := (txemail.Message{
+				To:       []string{"a@example.com"},
+				Template: item.template,
+				Data: struct {
+					Email     string
+					TokenName string
+					Username  string
+					Host      string
+				}{
+					Email:     "a@example.com",
+					TokenName: item.tokenName,
+					Username:  "Foo",
+					Host:      "example.com",
+				},
+			}); !reflect.DeepEqual(*sent, want) {
+				t.Errorf("got %+v, want %+v", *sent, want)
+			}
+		})
+	}
 }
 
 func TestUserEmailsAddRemove(t *testing.T) {

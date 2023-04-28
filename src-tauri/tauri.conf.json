@@ -2,12 +2,11 @@
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
     "beforeBuildCommand": "./src-tauri/compose-assets.sh",
-    "beforeDevCommand": "",
     "devPath": "http://localhost:3080/sign-in?nonce=foobar&returnTo=/",
     "distDir": "./assets"
   },
   "package": {
-    "productName": "sourcegraph",
+    "productName": "Sourcegraph App",
     "version": "1.0.0"
   },
   "tauri": {
@@ -16,11 +15,19 @@
         "sidecar": true,
         "scope": [
           {
-            "name": "../.bin/backend",
+            "name": "../.bin/sourcegraph-backend",
             "sidecar": true
           }
-        ]
+        ],
+        "open": "^https?:|com.sourcegraph.app/.*.log$"
+      },
+      "window": {
+        "startDragging": true
       }
+    },
+    "systemTray": {
+      "iconPath": "icons/32x32.png",
+      "iconAsTemplate": false
     },
     "bundle": {
       "active": true,
@@ -29,7 +36,7 @@
       "deb": {
         "depends": []
       },
-      "externalBin": ["../.bin/backend"],
+      "externalBin": ["../.bin/sourcegraph-backend"],
       "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
       "identifier": "com.sourcegraph.app",
       "longDescription": "",
@@ -61,7 +68,8 @@
         "height": 768,
         "resizable": true,
         "title": "Sourcegraph",
-        "width": 1024
+        "width": 1024,
+        "titleBarStyle": "Overlay"
       }
     ]
   }

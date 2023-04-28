@@ -13,13 +13,13 @@ ts_config(
     deps = [
         "//:tsconfig",
         "//client/common:tsconfig",
+        "//client/http-client:tsconfig",
     ],
 )
 
 ts_project(
     name = "cody-shared_lib",
     srcs = [
-        "package.json",
         "src/chat/bot-response-multiplexer.ts",
         "src/chat/chat.ts",
         "src/chat/client.ts",
@@ -38,6 +38,7 @@ ts_project(
         "src/chat/recipes/helpers.ts",
         "src/chat/recipes/improve-variable-names.ts",
         "src/chat/recipes/langs.ts",
+        "src/chat/recipes/next-questions.ts",
         "src/chat/recipes/recipe.ts",
         "src/chat/recipes/translate.ts",
         "src/chat/recipes/vscode-recipes.ts",
@@ -77,6 +78,7 @@ ts_project(
     # TODO(bazel): "#keep"s required for type-only imports
     deps = [
         ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/http-client",
         "//:node_modules/@microsoft/fetch-event-source",
         "//:node_modules/@types/isomorphic-fetch",
         "//:node_modules/@types/node",
@@ -90,7 +92,10 @@ ts_project(
 
 npm_package(
     name = "cody-shared_pkg",
-    srcs = [":cody-shared_lib"],
+    srcs = [
+        "package.json",
+        ":cody-shared_lib",
+    ],
 )
 
 ts_project(
@@ -98,6 +103,7 @@ ts_project(
     testonly = True,
     srcs = [
         "src/chat/bot-response-multiplexer.test.ts",
+        "src/chat/markdown.test.ts",
         "src/chat/transcript/transcript.test.ts",
         "src/hallucinations-detector/index.test.ts",
         "src/sourcegraph-api/utils.test.ts",

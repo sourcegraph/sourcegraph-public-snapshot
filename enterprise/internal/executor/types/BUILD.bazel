@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "http.go",
         "job.go",
+        "skip.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types",
     visibility = ["//enterprise:__subpackages__"],

@@ -6177,6 +6177,11 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
+        patches = ["//third_party/com_github_sourcegraph_zoekt:zoekt_archive_index.patch",
+        "//third_party/com_github_sourcegraph_zoekt:zoekt_git_index.patch",
+        "//third_party/com_github_sourcegraph_zoekt:zoekt_webserver.patch",
+        "//third_party/com_github_sourcegraph_zoekt:zoekt_indexserver.patch"],
+        patch_args = ["-p1"],
         sum = "h1:moc3LRc+FZ6RmjMjpsuJy8siNO2gWJxzD1p5eYr4SE8=",
         version = "v0.0.0-20230405161007-b247fb51dece",
     )
@@ -8459,6 +8464,7 @@ def go_dependencies():
         sum = "h1:MUes2rbdXa1ce9mwKYzTyBG0CtqpLT0NgKTFAz8FIDs=",
         version = "v0.39.0",
     )
+
     # See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/872
     go_repository(
         name = "io_opentelemetry_go_contrib_instrumentation_net_http_httptrace_otelhttptrace",
@@ -8549,6 +8555,7 @@ def go_dependencies():
         sum = "h1:pa05sNT/P8OsIQ8mPZKTIyiBuzS/xDGLVx+DCt0y6Vs=",
         version = "v1.13.0",
     )
+
     # See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/872
     go_repository(
         name = "io_opentelemetry_go_otel_exporters_otlp_otlptrace",
@@ -8561,6 +8568,7 @@ def go_dependencies():
         sum = "h1:Any/nVxaoMq1T2w0W85d6w5COlLuCCgOYKQhJJWEMwQ=",
         version = "v1.13.0",
     )
+
     # See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/872
     go_repository(
         name = "io_opentelemetry_go_otel_exporters_otlp_otlptrace_otlptracegrpc",
@@ -8573,6 +8581,7 @@ def go_dependencies():
         sum = "h1:Wz7UQn7/eIqZVDJbuNEM6PmqeA71cWXrWcXekP5HZgU=",
         version = "v1.13.0",
     )
+
     # See https://github.com/open-telemetry/opentelemetry-go-contrib/issues/872
     go_repository(
         name = "io_opentelemetry_go_otel_exporters_otlp_otlptrace_otlptracehttp",

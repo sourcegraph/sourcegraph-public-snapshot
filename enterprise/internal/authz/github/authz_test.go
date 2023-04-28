@@ -8,14 +8,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestNewAuthzProviders(t *testing.T) {
+	db := database.NewMockDB()
 	t.Run("no authorization", func(t *testing.T) {
 		initResults := NewAuthzProviders(
+			db,
 			[]*ExternalConnection{
 				{
 					GitHubConnection: &types.GitHubConnection{
@@ -42,6 +45,7 @@ func TestNewAuthzProviders(t *testing.T) {
 	t.Run("no matching auth provider", func(t *testing.T) {
 		t.Cleanup(licensing.TestingSkipFeatureChecks())
 		initResults := NewAuthzProviders(
+			db,
 			[]*ExternalConnection{
 				{
 					GitHubConnection: &types.GitHubConnection{
@@ -75,6 +79,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("default case", func(t *testing.T) {
 			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			initResults := NewAuthzProviders(
+				db,
 				[]*ExternalConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
@@ -104,6 +109,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("license does not have ACLs feature", func(t *testing.T) {
 			t.Cleanup(licensing.MockCheckFeatureError("failed"))
 			initResults := NewAuthzProviders(
+				db,
 				[]*ExternalConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
@@ -132,6 +138,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
 			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			initResults := NewAuthzProviders(
+				db,
 				[]*ExternalConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
@@ -171,6 +178,7 @@ func TestNewAuthzProviders(t *testing.T) {
 				return []string{"read:org"}, nil
 			}
 			initResults := NewAuthzProviders(
+				db,
 				[]*ExternalConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
