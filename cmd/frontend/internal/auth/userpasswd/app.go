@@ -111,14 +111,17 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 
 		// Success. Redirect to search or to returnTo if present.
 		redirect := r.URL.Query().Get("redirect")
-		url := r.URL
-		url.RawQuery = ""
+		u := r.URL
+		u.RawQuery = ""
 		if redirect != "" {
-			url.Path = redirect
+			path, err := url.QueryUnescape(redirect)
+			if err == nil {
+				u.Path = path
+			}
 		} else {
-			url.Path = "/search"
+			u.Path = "/search"
 		}
-		http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
 		return nil
 	}
 }
