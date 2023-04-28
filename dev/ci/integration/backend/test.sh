@@ -14,4 +14,4 @@ echo '--- sleep 5s to wait for site configuration to be restored from gqltest'
 sleep 5
 
 echo '--- integration test ./dev/authtest -long'
-bazel run //dev/authtest:authtest_test -long -base-url "$URL" -email "gqltest@sourcegraph.com" -username "gqltest-admin"
+bazel run //dev/authtest:authtest_test -- -long -base-url "$URL" -email "gqltest@sourcegraph.com" -username "gqltest-admin"
