@@ -552,8 +552,8 @@ type Completions struct {
 	Enabled bool `json:"enabled"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model"`
-	// PerUserHourlyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in an hour. On instances that allow anonymous requests, the rate limit is enforced by IP.
-	PerUserHourlyLimit int `json:"perUserHourlyLimit,omitempty"`
+	// PerUserDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
+	PerUserDailyLimit int `json:"perUserDailyLimit,omitempty"`
 	// Provider description: The external completions provider.
 	Provider string `json:"provider"`
 }

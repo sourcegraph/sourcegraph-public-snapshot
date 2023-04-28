@@ -47,23 +47,26 @@ export class GitHistory implements Recipe {
         const gitLogOutput = gitLogCommand.stdout.toString().trim()
 
         if (!gitLogOutput) {
-            // TODO: Show the warning within the Chat UI.
-            console.error(
-                'No git history found for the selected option.',
-                gitLogCommand.stderr.toString(),
-                gitLogCommand.error?.message
+            const emptyGitLogMessage = 'No recent changes found'
+            return new Interaction(
+                { speaker: 'human', displayText: rawDisplayText },
+                {
+                    speaker: 'assistant',
+                    prefix: emptyGitLogMessage,
+                    text: emptyGitLogMessage,
+                },
+                Promise.resolve([])
             )
-            return null
         }
 
         const truncatedGitLogOutput = truncateText(gitLogOutput, MAX_RECIPE_INPUT_TOKENS)
+        let truncatedLogMessage = ''
         if (truncatedGitLogOutput.length < gitLogOutput.length) {
-            // TODO: Show the warning within the Chat UI.
-            console.warn('Truncated extra long git log output, so summary may be incomplete.')
+            truncatedLogMessage = 'Truncated extra long git log output, so summary may be incomplete.'
         }
 
         const promptMessage = `Summarize these commits:\n${truncatedGitLogOutput}\n\nProvide your response in the form of a bulleted list. Do not mention the commit hashes.`
-        const assistantResponsePrefix = 'Here is a summary of recent changes:\n- '
+        const assistantResponsePrefix = `Here is a summary of recent changes:\n${truncatedLogMessage}`
         return new Interaction(
             { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
             {
