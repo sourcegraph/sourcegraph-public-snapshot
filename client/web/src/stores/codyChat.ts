@@ -12,7 +12,6 @@ import { PrefilledOptions } from '@sourcegraph/cody-shared/src/editor/withPresel
 import { isErrorLike } from '@sourcegraph/common'
 
 import { CodeMirrorEditor } from '../cody/CodeMirrorEditor'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { EditorStore, useEditorStore } from './editor'

@@ -2,8 +2,6 @@ import create from 'zustand'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-
 interface CodySidebarSizeStore {
     size: number
     onResize: (size: number) => void
