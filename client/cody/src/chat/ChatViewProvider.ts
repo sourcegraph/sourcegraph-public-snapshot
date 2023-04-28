@@ -268,7 +268,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.clearAndRestartSession()
                 break
             case text.startsWith('/search ') || text.startsWith('/s '):
-                await this.executeRecipe('fuzzy-search', text, false)
+                await this.executeRecipe('fuzzy-search', text)
                 break
             default:
                 return this.executeRecipe('chat-question', text)
@@ -299,11 +299,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.publishContextStatus()
     }
 
-    public async executeRecipe(
-        recipeId: string,
-        humanChatInput: string = '',
-        connectToLLM: boolean = true
-    ): Promise<void> {
+    public async executeRecipe(recipeId: string, humanChatInput: string = ''): Promise<void> {
         if (this.isMessageInProgress) {
             this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
         }
@@ -333,14 +329,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy search does not require responses from LLM backend
-        if (connectToLLM) {
-            const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
-            this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
-        } else {
-            this.isMessageInProgress = false
-            this.cancelCompletion()
-            this.sendTranscript()
-            await this.saveChatHistory()
+        const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
+        switch (recipeId) {
+            case 'fuzzy-search':
+                this.isMessageInProgress = false
+                this.cancelCompletion()
+                this.sendTranscript()
+                await this.saveChatHistory()
+                break
+            default:
+                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
         }
 
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)

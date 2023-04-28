@@ -99,7 +99,8 @@
       },
       {
         "command": "cody.fuzzy-search",
-        "title": "Ask Cody: Quick Search"
+        "title": "Perform a fuzzy search of the codebase context",
+        "shortTitle": "Ask Cody: Codebase Context Search"
       },
       {
         "command": "cody.recipe.explain-code",

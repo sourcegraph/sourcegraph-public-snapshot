@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
+- New recipe: `Codebase Context Search`, which allows users to performs an approximate search across the codebase context. It searches within the embeddings when available to provide relevant code context. [pull/51077](https://github.com/sourcegraph/sourcegraph/pull/51077)
+
 ### Fixed
 
 ### Changed
