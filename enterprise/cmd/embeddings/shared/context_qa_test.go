@@ -10,6 +10,7 @@ import (
 	"embed"
 	"encoding/gob"
 	"io"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -29,6 +30,10 @@ import (
 var fs embed.FS
 
 func TestRecall(t *testing.T) {
+	if os.Getenv("BAZEL_TEST") != "1" {
+		t.Skip("Cannot run this test outside of Bazel")
+	}
+
 	ctx := context.Background()
 	logger := log.NoOp()
 
