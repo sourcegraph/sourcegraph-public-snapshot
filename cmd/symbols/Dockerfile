@@ -6,6 +6,25 @@ USER root
 COPY cmd/symbols/ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
+FROM rust:1.68.0-alpine3.17@sha256:d119a621ae12f84ec0c5fed77c24795120ed1c7874b2428b5a6ccc0f294dbe18 as scip-ctags
+# hadolint ignore=DL3002
+USER root
+RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base
+COPY docker-images/syntax-highlighter /repo
+WORKDIR /repo
+RUN cargo fetch
+
+ARG TARGETARCH
+
+# Because .cargo/config.toml doesnt support triplet-specific env
+COPY cmd/symbols/cargo-config.sh /cargo-config.sh
+RUN /cargo-config.sh
+
+RUN cargo rustc --release --bin scip-ctags
+RUN ls ./target
+
+RUN cp ./target/release/scip-ctags /usr/local/bin/scip-ctags
+
 FROM golang:1.19.8-alpine@sha256:841c160ed35923d96c95c52403c4e6db5decd9cbce034aa851e412ade5d4b74f AS symbols-build
 # hadolint ignore=DL3002
 USER root
@@ -60,6 +79,7 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 RUN apk add --no-cache bind-tools ca-certificates mailcap tini jansson libstdc++ libgcc
 
 COPY --from=ctags /usr/local/bin/universal-ctags /usr/local/bin/universal-ctags
+COPY --from=scip-ctags /usr/local/bin/scip-ctags /usr/local/bin/scip-ctags
 
 COPY --from=symbols-build /symbols /usr/local/bin/symbols
 
