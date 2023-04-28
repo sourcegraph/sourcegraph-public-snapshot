@@ -21,7 +21,6 @@ ts_project(
     name = "cody-shared_lib",
     srcs = [
         "src/chat/bot-response-multiplexer.ts",
-        "src/chat/markdown.test.ts",
         "src/chat/chat.ts",
         "src/chat/client.ts",
         "src/chat/context.ts",
@@ -104,6 +103,7 @@ ts_project(
     testonly = True,
     srcs = [
         "src/chat/bot-response-multiplexer.test.ts",
+        "src/chat/markdown.test.ts",
         "src/chat/transcript/transcript.test.ts",
         "src/hallucinations-detector/index.test.ts",
         "src/sourcegraph-api/utils.test.ts",
