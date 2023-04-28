@@ -8,7 +8,7 @@
 
   outputs = { self, nixpkgs, utils }:
     with nixpkgs.lib; with utils.lib; {
-      devShells = eachDefaultSystem (system:
+      devShells = genAttrs defaultSystems (system:
         let
           pkgs = import nixpkgs { inherit system; overlays = [ self.overlays.ctags ]; };
         in
@@ -18,7 +18,7 @@
       );
 
       # Pin a specific version of universal-ctags to the same version as in cmd/symbols/ctags-install-alpine.sh.
-      overlays.ctags = (import ./dev/nix/ctags.nix { inherit nixpkgs utils; }).overlay;
+      overlays.ctags = (import ./dev/nix/ctags.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; }).overlay;
 
       packages = fold recursiveUpdate { } [
         ((import ./dev/nix/ctags.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; }).packages)
