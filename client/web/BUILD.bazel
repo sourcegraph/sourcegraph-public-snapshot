@@ -275,6 +275,7 @@ ts_project(
         "src/components/externalAccounts/externalAccounts.ts",
         "src/components/externalServices/AddExternalServicePage.tsx",
         "src/components/externalServices/AddExternalServicesPage.tsx",
+        "src/components/externalServices/AddGitHubAppPage.tsx",
         "src/components/externalServices/ExternalServiceCard.tsx",
         "src/components/externalServices/ExternalServiceEditPage.tsx",
         "src/components/externalServices/ExternalServiceEditingDisabledAlert.tsx",

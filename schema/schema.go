@@ -2022,6 +2022,8 @@ type Settings struct {
 	Notices []*Notice `json:"notices,omitempty"`
 	// OpenInEditor description: Group of settings related to opening files in an editor.
 	OpenInEditor *SettingsOpenInEditor `json:"openInEditor,omitempty"`
+	// OrgsAllMembersBatchChangesAdmin description: Enables/Disables org-level admin access for Batch Changes to all members of an org
+	OrgsAllMembersBatchChangesAdmin *bool `json:"orgs.allMembersBatchChangesAdmin,omitempty"`
 	// PerforceCodeHostToSwarmMap description: Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like "perforce.company.com:1666". Values should look like "https://swarm.company.com/", with a slash at the end.
 	PerforceCodeHostToSwarmMap map[string]string `json:"perforce.codeHostToSwarmMap,omitempty"`
 	// Quicklinks description: DEPRECATED: This setting will be removed in a future version of Sourcegraph.
@@ -2098,6 +2100,7 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "motd")
 	delete(m, "notices")
 	delete(m, "openInEditor")
+	delete(m, "orgs.allMembersBatchChangesAdmin")
 	delete(m, "perforce.codeHostToSwarmMap")
 	delete(m, "quicklinks")
 	delete(m, "search.contextLines")
@@ -2489,9 +2492,9 @@ type SiteConfiguration struct {
 	// PermissionsSyncJobsHistorySize description: The number of last repo/user permission jobs to keep for history.
 	PermissionsSyncJobsHistorySize *int `json:"permissions.syncJobsHistorySize,omitempty"`
 	// PermissionsSyncOldestRepos description: Number of repo permissions to schedule for syncing in single scheduler iteration.
-	PermissionsSyncOldestRepos int `json:"permissions.syncOldestRepos,omitempty"`
+	PermissionsSyncOldestRepos *int `json:"permissions.syncOldestRepos,omitempty"`
 	// PermissionsSyncOldestUsers description: Number of user permissions to schedule for syncing in single scheduler iteration.
-	PermissionsSyncOldestUsers int `json:"permissions.syncOldestUsers,omitempty"`
+	PermissionsSyncOldestUsers *int `json:"permissions.syncOldestUsers,omitempty"`
 	// PermissionsSyncReposBackoffSeconds description: Don't sync a repo's permissions if it has synced within the last n seconds.
 	PermissionsSyncReposBackoffSeconds int `json:"permissions.syncReposBackoffSeconds,omitempty"`
 	// PermissionsSyncScheduleInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
