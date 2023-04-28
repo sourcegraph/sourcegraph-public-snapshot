@@ -160,7 +160,7 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
     }
 
-    private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
+    public fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {

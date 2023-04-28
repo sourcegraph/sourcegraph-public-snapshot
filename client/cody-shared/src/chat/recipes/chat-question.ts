@@ -7,6 +7,8 @@ import { IntentDetector } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
+import { SourcegraphGraphQLAPIClient } from '../../sourcegraph-api/graphql/client'
+import { SEARCH_SYMBOL } from '../../sourcegraph-api/graphql/queries'
 import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext } from './recipe'
@@ -34,8 +36,24 @@ export class ChatQuestion implements Recipe {
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
 
+        const fullConfig = {
+            serverEndpoint: 'https://sourcegraph.test:3443',
+            accessToken: '<ADD ACCESS TOKEN>',
+            debug: false,
+            customHeaders: {},
+        }
+        const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)
+
         const symbolNames = text.split(' ').map(this.looksLikeSymbol).filter(isDefined)
         console.log({ symbolNames })
+
+        // TODO: Add repo
+        const query = `context:global repo:^github\.com/hashicorp/go-multierror$ type:symbol count:50 ${symbolNames.join(
+            ' '
+        )}`
+        const test = await graphqlClient.fetchSourcegraphAPI(SEARCH_SYMBOL, { query })
+        console.log('🚀 ~ file: chat-question.ts:55 ~ ChatQuestion ~ query:', query)
+        console.log('🚀 ~ file: chat-question.ts:56 ~ ChatQuestion ~ test:', test)
 
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
         if (isCodebaseContextRequired) {
@@ -47,17 +65,19 @@ export class ChatQuestion implements Recipe {
 
             contextMessages.push({
                 speaker: 'human',
+                fileName: test.data.search.results.results[0].file.path,
                 text: `
-                    Here is the definition of myStruct:
+                    Here is the path to the file ${test.data.search.results.results[0].file.path}.
 
-                    \`\`\`
-                    type myStruct type {
-                        Foo int
-                        Bar int
-                        Baz int
-                    }
-                    \`\`\`
+                    The kind of the symbol is a ${test.data.search.results.results[0].symbols.kind}.
+                    The name of the symbol is a ${test.data.search.results.results[0].symbols.name}.
+                    It is located in ${test.data.search.results.results[0].symbols.url}
+                    This is the content of the file ${test.data.search.results.results[0].file.content}.
                 `,
+            })
+            contextMessages.push({
+                speaker: 'assistant',
+                text: 'okay',
             })
         }
 
@@ -91,13 +111,13 @@ export class ChatQuestion implements Recipe {
         let numDigit = 0
         let numUnder = 0
         for (let i = 0; i < text.length; i++) {
-            if ('a' <= text.charAt(i) && text.charAt(i) <= 'z') {
+            if (text.charAt(i) >= 'a' && text.charAt(i) <= 'z') {
                 numLower++
             }
-            if ('A' <= text.charAt(i) && text.charAt(i) <= 'Z') {
+            if (text.charAt(i) >= 'A' && text.charAt(i) <= 'Z') {
                 numUpper++
             }
-            if ('0' <= text.charAt(i) && text.charAt(i) <= '9') {
+            if (text.charAt(i) >= '0' && text.charAt(i) <= '9') {
                 numDigit++
             }
             if (text.charAt(i) === '_') {
@@ -107,8 +127,8 @@ export class ChatQuestion implements Recipe {
 
         const hasDigits = numDigit > 0
         const isSnakeCase = numUnder > 0
-        const startsWithUpper = 'A' <= text.charAt(0) && text.charAt(0) <= 'Z'
-        const isCamelCase = numLower != 0 && numUpper != 0 && (numUpper != 1 || !startsWithUpper)
+        const startsWithUpper = text.charAt(0) >= 'A' && text.charAt(0) <= 'Z'
+        const isCamelCase = numLower !== 0 && numUpper !== 0 && (numUpper !== 1 || !startsWithUpper)
         if (hasDigits || isSnakeCase || isCamelCase) {
             return text
         }

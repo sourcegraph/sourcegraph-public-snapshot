@@ -56,3 +56,26 @@ mutation LogEventMutation($event: String!, $userCookieID: String!, $url: String!
 		alwaysNil
 	}
 }`
+
+export const SEARCH_SYMBOL = `
+query SuggestionsSymbol($query: String!) {
+    search(patternType: regexp, query: $query) {
+        results {
+            results {
+                ... on FileMatch {
+                    __typename
+                    file {
+                        path
+                        content
+                    }
+                    symbols {
+                        kind
+                        url
+                        name
+                    }
+                }
+            }
+        }
+    }
+}
+`
