@@ -18,11 +18,16 @@
             "name": "../.bin/sourcegraph-backend",
             "sidecar": true
           }
-        ]
+        ],
+        "open": "^https?:|com.sourcegraph.app/.*.log$"
       },
       "window": {
         "startDragging": true
       }
+    },
+    "systemTray": {
+      "iconPath": "icons/32x32.png",
+      "iconAsTemplate": false
     },
     "bundle": {
       "active": true,

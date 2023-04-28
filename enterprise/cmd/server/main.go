@@ -6,6 +6,8 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared"
+
+	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
 )
 
 func main() {

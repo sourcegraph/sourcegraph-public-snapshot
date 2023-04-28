@@ -98,9 +98,6 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** The raw content of the blob. */
     content: string
 
-    /** The trusted syntax-highlighted code as HTML */
-    html: string
-
     /** LSIF syntax-highlighting data */
     lsif?: string
 
