@@ -2,7 +2,9 @@
 .tmp/
 
 # Bazel
-bazel-*
+bazel-*   # bazel local folders
+bep.json  # bazel build events raw output (used for uploading logs, formatting errors, etc ...)
+/dev/backcompat/back_compat_migrations.patch  # Backward compatibility database tests patch, generated on the fly in CI for `bazel test @sourcegraph_back_compat//...` targets.
 
 # Vim
 *.swp
@@ -190,6 +192,3 @@ index.scip
 /tr
 /cache-*.tar
 
-# Backward compatibility database tests patch, generated on the fly in CI
-# for `bazel test @sourcegraph_back_compat//...` targets.
-/dev/backcompat/back_compat_migrations.patch
