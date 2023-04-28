@@ -37,7 +37,6 @@ import {
     Panel,
     Text,
     useEventObservable,
-    useObservable,
     useSessionStorage,
 } from '@sourcegraph/wildcard'
 
@@ -189,105 +188,61 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         {}
     )
 
-    /**
-     * Fetches formatted, but un-highlighted, blob content.
-     * Intention is to use this whilst we wait for syntax highlighting,
-     * so the user has useful content rather than a loading spinner
-     */
-
-    const formattedBlobInfoOrError = useObservable(
-        useMemo(
-            () =>
-                createActiveSpan(reactManualTracer, { name: 'formattedBlobInfoOrError', parentSpan: span }, fetchSpan =>
-                    fetchBlob({
-                        repoName,
-                        revision,
-                        filePath,
-                        scipSnapshot: indexIDsForSnapshotData[repoName] !== undefined,
-                        visibleIndexID: indexIDsForSnapshotData[repoName],
-                    }).pipe(
-                        map(blob => {
-                            if (blob === null) {
-                                return blob
-                            }
-
-                            const blobInfo: BlobPageInfo = {
-                                content: blob.content,
-                                repoName,
-                                revision,
-                                filePath,
-                                mode,
-                                // Properties used in `BlobPage` but not `Blob`
-                                richHTML: blob.richHTML,
-                                aborted: false,
-                                lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
-                                externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
-                            }
-
-                            fetchSpan.end()
-
-                            return blobInfo
-                        })
-                    )
-                ),
-            [filePath, mode, repoName, revision, span, indexIDsForSnapshotData]
-        )
-    )
-
     // Bundle latest blob with all other file info to pass to `Blob`
     // Prevents https://github.com/sourcegraph/sourcegraph/issues/14965 by not allowing
     // components to use current file props while blob hasn't updated, since all information
     // is bundled in one object whose creation is blocked by `fetchBlob` emission.
-    const [nextFetchWithDisabledTimeout, highlightedBlobInfoOrError] = useEventObservable<
-        void,
-        BlobPageInfo | null | ErrorLike
-    >(
+    const [nextFetchWithDisabledTimeout, blobInfoOrError] = useEventObservable<void, BlobPageInfo | null | ErrorLike>(
         useCallback(
             (clicks: Observable<void>) =>
                 clicks.pipe(
                     mapTo(true),
                     startWith(false),
                     switchMap(disableTimeout =>
-                        fetchBlob({
-                            repoName,
-                            revision,
-                            filePath,
-                            disableTimeout,
-                            scipSnapshot: indexIDsForSnapshotData[repoName] !== undefined,
-                            visibleIndexID: indexIDsForSnapshotData[repoName],
-                        })
-                    ),
-                    map(blob => {
-                        if (blob === null) {
-                            return blob
-                        }
+                        createActiveSpan(
+                            reactManualTracer,
+                            { name: 'formattedBlobInfoOrError', parentSpan: span },
+                            fetchSpan =>
+                                fetchBlob({
+                                    repoName,
+                                    revision,
+                                    filePath,
+                                    disableTimeout,
+                                    scipSnapshot: indexIDsForSnapshotData[repoName] !== undefined,
+                                    visibleIndexID: indexIDsForSnapshotData[repoName],
+                                }).pipe(
+                                    map(blob => {
+                                        if (blob === null) {
+                                            return blob
+                                        }
 
-                        const blobInfo: BlobPageInfo = {
-                            content: blob.content,
-                            lsif: blob.highlight.lsif ?? '',
-                            repoName,
-                            revision,
-                            filePath,
-                            mode,
-                            // Properties used in `BlobPage` but not `Blob`
-                            richHTML: blob.richHTML,
-                            aborted: blob.highlight.aborted,
-                            lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
-                            externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
-                            snapshotData: blob.snapshot,
-                        }
-                        return blobInfo
-                    }),
+                                        const blobInfo: BlobPageInfo = {
+                                            content: blob.content,
+                                            lsif: blob.highlight.lsif ?? '',
+                                            repoName,
+                                            revision,
+                                            filePath,
+                                            mode,
+                                            // Properties used in `BlobPage` but not `Blob`
+                                            richHTML: blob.richHTML,
+                                            aborted: blob.highlight.aborted,
+                                            lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
+                                            externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
+                                            snapshotData: blob.snapshot,
+                                        }
+
+                                        fetchSpan.end()
+
+                                        return blobInfo
+                                    })
+                                )
+                        )
+                    ),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, mode, indexIDsForSnapshotData]
+            [span, repoName, revision, filePath, mode, indexIDsForSnapshotData]
         )
     )
-
-    const blobInfoOrError = enableLazyBlobSyntaxHighlighting
-        ? // Fallback to formatted blob whilst we do not have the highlighted blob
-          highlightedBlobInfoOrError || formattedBlobInfoOrError
-        : highlightedBlobInfoOrError
 
     const onExtendTimeoutClick = useCallback(
         (event: React.MouseEvent): void => {
