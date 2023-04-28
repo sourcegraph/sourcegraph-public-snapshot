@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cody",
+    srcs = ["feature_flag.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/cody",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/featureflag",
+    ],
+)
+
+go_test(
+    name = "cody_test",
+    srcs = ["feature_flag_test.go"],
+    embed = [":cody"],
+    deps = [
+        "//internal/actor",
+        "//internal/conf",
+        "//internal/featureflag",
+        "//schema",
+    ],
+)
