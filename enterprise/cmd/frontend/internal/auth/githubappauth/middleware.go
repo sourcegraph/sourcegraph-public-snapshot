@@ -202,7 +202,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, "Bad request, cannot parse appID", http.StatusBadRequest)
 		}
 
-		installationID, err := strconv.ParseInt(instID, 10, 64)
+		installationID, err := strconv.Atoi(instID)
 		if err != nil {
 			http.Error(w, "Bad request, cannot parse installation_id", http.StatusBadRequest)
 			return
@@ -210,9 +210,16 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 		action := query.Get("setup_action")
 		if action == "install" {
-			app, err := db.GitHubApps().GetByID(req.Context(), id)
+			ctx := req.Context()
+			app, err := db.GitHubApps().GetByID(ctx, id)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Unexpected error while fetching github app data: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+
+			err = db.GitHubApps().Install(ctx, id, installationID)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Unexpected error while installing github app: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
 
