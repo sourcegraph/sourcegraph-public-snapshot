@@ -13,6 +13,7 @@ cleanup() {
 trap cleanup EXIT
 
 cp -a ./enterprise/cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"
+cp -a ./enterprise/cmd/gitserver/p4-fusion-wrapper-detect-kill.sh "$OUTPUT"
 
 if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
   ./dev/ci/bazel.sh build //enterprise/cmd/gitserver

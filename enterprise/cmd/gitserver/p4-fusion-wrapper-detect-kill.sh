@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2064,SC2207
 
 # create a file to hold the output of `wait`
 waitout=$(mktemp || mktemp -t waitout_XXXXXXXX)
@@ -7,6 +8,7 @@ waitout=$(mktemp || mktemp -t waitout_XXXXXXXX)
 resource=$(mktemp || mktemp -t resource_XXXXXXXX)
 
 # make sure to cleanup on exit
+#
 trap "[ -f \"${waitout}\" ] && rm -f \"${waitout}\";[ -f \"${resource}\" ] && rm -f \"${resource}\"" EXIT
 
 # launch p4-fusion in the background
@@ -42,7 +44,7 @@ kill ${spid}
     rusage=""
     [ -s "${resource}" ] && {
       # expect the last line will be two fields:
-      # the percent memory and percent cup usage
+      # the percent memory and percent cpu usage
       x=($(tail -1 "${resource}"))
       # NOTE: bash indexes from 0; zsh indexes from 1
       [ ${#x[@]} -eq 2 ] && rusage=" At the time of its demise, it was using ${x[0]}% RAM and ${x[1]}% CPU"
