@@ -4,11 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
+	"github.com/hexops/autogold/v2"
+	"github.com/hexops/valast"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -142,40 +146,79 @@ func TestProductSubscriptions_Update(t *testing.T) {
 		t.Errorf("got %q, want nil", *got.BillingSubscriptionID)
 	}
 
-	// Set non-null value.
-	if err := (dbSubscriptions{db: db}).Update(ctx, sub0, dbSubscriptionUpdate{
-		billingSubscriptionID: &sql.NullString{
-			String: "x",
-			Valid:  true,
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if got, err := (dbSubscriptions{db: db}).GetByID(ctx, sub0); err != nil {
-		t.Fatal(err)
-	} else if want := "x"; got.BillingSubscriptionID == nil || *got.BillingSubscriptionID != want {
-		t.Errorf("got %v, want %q", got.BillingSubscriptionID, want)
-	}
+	t.Run("billingSubscriptionID", func(t *testing.T) {
+		// Set non-null value.
+		if err := (dbSubscriptions{db: db}).Update(ctx, sub0, dbSubscriptionUpdate{
+			billingSubscriptionID: &sql.NullString{
+				String: "x",
+				Valid:  true,
+			},
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if got, err := (dbSubscriptions{db: db}).GetByID(ctx, sub0); err != nil {
+			t.Fatal(err)
+		} else {
+			autogold.Expect(valast.Addr("x").(*string)).Equal(t, got.BillingSubscriptionID)
+		}
 
-	// Update no fields.
-	if err := (dbSubscriptions{db: db}).Update(ctx, sub0, dbSubscriptionUpdate{billingSubscriptionID: nil}); err != nil {
-		t.Fatal(err)
-	}
-	if got, err := (dbSubscriptions{db: db}).GetByID(ctx, sub0); err != nil {
-		t.Fatal(err)
-	} else if want := "x"; got.BillingSubscriptionID == nil || *got.BillingSubscriptionID != want {
-		t.Errorf("got %v, want %q", got.BillingSubscriptionID, want)
-	}
+		// Update no fields.
+		if err := (dbSubscriptions{db: db}).Update(ctx, sub0, dbSubscriptionUpdate{billingSubscriptionID: nil}); err != nil {
+			t.Fatal(err)
+		}
+		if got, err := (dbSubscriptions{db: db}).GetByID(ctx, sub0); err != nil {
+			t.Fatal(err)
+		} else {
+			autogold.Expect(valast.Addr("x").(*string)).Equal(t, got.BillingSubscriptionID)
+		}
 
-	// Set null value.
-	if err := (dbSubscriptions{db: db}).Update(ctx, sub0, dbSubscriptionUpdate{
-		billingSubscriptionID: &sql.NullString{Valid: false},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if got, err := (dbSubscriptions{db: db}).GetByID(ctx, sub0); err != nil {
-		t.Fatal(err)
-	} else if got.BillingSubscriptionID != nil {
-		t.Errorf("got %q, want nil", *got.BillingSubscriptionID)
-	}
+		// Set null value.
+		if err := (dbSubscriptions{db: db}).Update(ctx, sub0, dbSubscriptionUpdate{
+			billingSubscriptionID: &sql.NullString{Valid: false},
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if got, err := (dbSubscriptions{db: db}).GetByID(ctx, sub0); err != nil {
+			t.Fatal(err)
+		} else {
+			autogold.Expect((*string)(nil)).Equal(t, got.BillingSubscriptionID)
+		}
+	})
+
+	t.Run("llmProxyAccess", func(t *testing.T) {
+		// Set non-null values.
+		if err := (dbSubscriptions{db: db}).Update(ctx, sub0, dbSubscriptionUpdate{
+			llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{
+				Enabled:                  pointify(true),
+				RateLimit:                pointify[int32](12),
+				RateLimitIntervalSeconds: pointify(int32(time.Hour.Seconds())),
+			},
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if got, err := (dbSubscriptions{db: db}).GetByID(ctx, sub0); err != nil {
+			t.Fatal(err)
+		} else {
+			autogold.Expect(dbLLMProxyAccess{
+				Enabled: true, RateLimit: valast.Addr(12).(*int32),
+				RateIntervalSeconds: valast.Addr(3600).(*int32),
+			}).Equal(t, got.LLMProxyAccess)
+		}
+
+		// Set to zero/null value.
+		if err := (dbSubscriptions{db: db}).Update(ctx, sub0, dbSubscriptionUpdate{
+			llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{
+				Enabled:                  pointify(false),
+				RateLimit:                pointify[int32](0),
+				RateLimitIntervalSeconds: pointify[int32](0),
+			},
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if got, err := (dbSubscriptions{db: db}).GetByID(ctx, sub0); err != nil {
+			t.Fatal(err)
+		} else {
+			autogold.Expect(dbLLMProxyAccess{}).Equal(t, got.LLMProxyAccess)
+		}
+	})
 }

@@ -27,6 +27,7 @@ export type FeatureFlagName =
     | 'clone-progress-logging'
     | 'sourcegraph-operator-site-admin-hide-maintenance'
     | 'repository-metadata'
+    | 'llm-proxy-management-ui'
 
 interface OrgFlagOverride {
     orgID: string
