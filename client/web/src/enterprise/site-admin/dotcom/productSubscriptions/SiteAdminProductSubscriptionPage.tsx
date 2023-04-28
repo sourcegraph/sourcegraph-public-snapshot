@@ -241,7 +241,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                         <CardBody hidden={!productSubscription.llmProxyAccess.enabled}>
                             <H3>Completions</H3>
                             <Checkbox
-                                id={'llm-proxy-enabled'}
+                                id="llm-proxy-enabled"
                                 checked={productSubscription.llmProxyAccess.enabled}
                                 disabled={true}
                                 label="Enable access to hosted completions (LLM-proxy)"
