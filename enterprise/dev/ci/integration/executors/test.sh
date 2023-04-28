@@ -11,4 +11,4 @@ export SRC_LOG_LEVEL=dbug
 # go run ./tester
 # popd 1>/dev/null
 
-bazel run //enterprise/dev/ci/integration/executors:tester
+bazel run //enterprise/dev/ci/integration/executors/tester:tester
