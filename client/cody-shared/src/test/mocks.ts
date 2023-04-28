@@ -10,11 +10,7 @@ import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 export class MockEmbeddingsClient implements EmbeddingsSearch {
     constructor(private mocks: Partial<EmbeddingsSearch> = {}) {}
 
-    public search(
-        query: string,
-        codeResultsCount: number,
-        textResultsCount: number
-    ): Promise<EmbeddingsSearchResults | Error> {
+    public search(query: string, codeResultsCount: number, textResultsCount: number): Promise<EmbeddingsSearchResults> {
         return (
             this.mocks.search?.(query, codeResultsCount, textResultsCount) ??
             Promise.resolve({ codeResults: [], textResults: [] })

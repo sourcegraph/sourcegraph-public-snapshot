@@ -14,6 +14,7 @@ import { ChatClient } from './chat'
 import { getPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
 import { Transcript, TranscriptJSON } from './transcript'
+import { Interaction } from './transcript/interaction'
 import { ChatMessage } from './transcript/messages'
 import { reformatBotMessage } from './viewHelpers'
 
@@ -95,15 +96,29 @@ export async function createClient({
             return
         }
 
-        const interaction = await recipe.getInteraction(humanChatInput, {
-            editor: options?.prefilledOptions ? withPreselectedOptions(editor, options.prefilledOptions) : editor,
-            intentDetector,
-            codebaseContext,
-            responseMultiplexer: new BotResponseMultiplexer(),
-        })
+        let interaction: Interaction | null
+        try {
+            interaction = await recipe.getInteraction(humanChatInput, {
+                editor: options?.prefilledOptions ? withPreselectedOptions(editor, options.prefilledOptions) : editor,
+                intentDetector,
+                codebaseContext,
+                responseMultiplexer: new BotResponseMultiplexer(),
+            })
+        } catch {
+            transcript.addInteraction(
+                new Interaction(
+                    { speaker: 'human' },
+                    { speaker: 'assistant', displayText: 'ERROR' },
+                    Promise.resolve([])
+                )
+            )
+            return
+        }
+
         if (!interaction) {
             return
         }
+
         isMessageInProgress = true
         transcript.addInteraction(interaction)
 

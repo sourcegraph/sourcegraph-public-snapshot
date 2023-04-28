@@ -53,15 +53,15 @@ interface IsContextRequiredForChatQueryResponse {
     isContextRequiredForChatQuery: boolean
 }
 
-function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R | Error {
+function extractDataOrThrowError<T, R>(response: APIResponse<T> | Error, extract: (data: T) => R): R {
     if (isError(response)) {
-        return response
+        throw response
     }
     if (response.errors && response.errors.length > 0) {
-        return new Error(response.errors.map(({ message }) => message).join(', '))
+        throw new Error(response.errors.map(({ message }) => message).join(', '))
     }
     if (!response.data) {
-        return new Error('response is missing data')
+        throw new Error('response is missing data')
     }
     return extract(response.data)
 }
@@ -79,7 +79,7 @@ export class SourcegraphGraphQLAPIClient {
 
     public async getCurrentUserId(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
-            extractDataOrError(response, data =>
+            extractDataOrThrowError(response, data =>
                 data.currentUser ? data.currentUser.id : new Error('current user not found')
             )
         )
@@ -89,7 +89,7 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
         }).then(response =>
-            extractDataOrError(response, data =>
+            extractDataOrThrowError(response, data =>
                 data.repository ? data.repository.id : new RepoNotFoundError(`repository ${repoName} not found`)
             )
         )
@@ -102,7 +102,7 @@ export class SourcegraphGraphQLAPIClient {
                 name: repoName,
             }
         ).then(response =>
-            extractDataOrError(response, data => (data.repository?.embeddingExists ? data.repository.id : null))
+            extractDataOrThrowError(response, data => (data.repository?.embeddingExists ? data.repository.id : null))
         )
     }
 
@@ -118,19 +118,19 @@ export class SourcegraphGraphQLAPIClient {
             if (this.config.serverEndpoint === this.dotcomUrl) {
                 await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
                     response => {
-                        extractDataOrError(response, data => {})
+                        extractDataOrThrowError(response, data => {})
                     }
                 )
             } else {
                 await Promise.all([
                     this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
                         response => {
-                            extractDataOrError(response, data => {})
+                            extractDataOrThrowError(response, data => {})
                         }
                     ),
                     this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
                         response => {
-                            extractDataOrError(response, data => {})
+                            extractDataOrThrowError(response, data => {})
                         }
                     ),
                 ])
@@ -145,19 +145,19 @@ export class SourcegraphGraphQLAPIClient {
         query: string,
         codeResultsCount: number,
         textResultsCount: number
-    ): Promise<EmbeddingsSearchResults | Error> {
+    ): Promise<EmbeddingsSearchResults> {
         return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(SEARCH_EMBEDDINGS_QUERY, {
             repo,
             query,
             codeResultsCount,
             textResultsCount,
-        }).then(response => extractDataOrError(response, data => data.embeddingsSearch))
+        }).then(response => extractDataOrThrowError(response, data => data.embeddingsSearch))
     }
 
-    public async isContextRequiredForQuery(query: string): Promise<boolean | Error> {
+    public async isContextRequiredForQuery(query: string): Promise<boolean> {
         return this.fetchSourcegraphAPI<APIResponse<IsContextRequiredForChatQueryResponse>>(IS_CONTEXT_REQUIRED_QUERY, {
             query,
-        }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
+        }).then(response => extractDataOrThrowError(response, data => data.isContextRequiredForChatQuery))
     }
 
     private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {

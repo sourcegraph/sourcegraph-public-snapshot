@@ -9,7 +9,15 @@ export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
         query: string,
         codeResultsCount: number,
         textResultsCount: number
-    ): Promise<EmbeddingsSearchResults | Error> {
-        return this.client.searchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount)
+    ): Promise<EmbeddingsSearchResults> {
+        try {
+            if (3 + 3 === 6) {
+                throw new Error('xxxxxxxxx')
+            }
+            return await this.client.searchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount)
+        } catch (error) {
+            console.error('Error searching embeddings:', error)
+            throw error
+        }
     }
 }

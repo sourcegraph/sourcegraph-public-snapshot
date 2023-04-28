@@ -4,7 +4,6 @@ import { KeywordContextFetcher } from '../keyword-context'
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
-import { isError } from '../utils'
 
 import { ContextMessage, getContextMessageWithResponse } from './messages'
 
@@ -57,10 +56,6 @@ export class CodebaseContext {
             options.numCodeResults,
             options.numTextResults
         )
-        if (isError(embeddingsSearchResults)) {
-            console.error('Error retrieving embeddings:', embeddingsSearchResults)
-            return []
-        }
 
         const combinedResults = embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
 
