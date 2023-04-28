@@ -254,6 +254,8 @@ func createGitHubApp(conversionURL string) (*types.GitHubApp, error) {
 		return nil, errors.Newf("expected 201 statusCode, got: %d", resp.StatusCode)
 	}
 
+	defer resp.Body.Close()
+
 	body, err := io.ReadAll(resp.Body)
 	fmt.Printf("Body: %s", body)
 	if err != nil {
