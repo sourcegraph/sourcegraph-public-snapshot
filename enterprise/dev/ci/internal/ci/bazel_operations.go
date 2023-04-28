@@ -81,7 +81,7 @@ func bazelAnnouncef(format string, args ...any) bk.StepOpt {
 }
 
 func bazelUploadFailedlogs() bk.StepOpt {
-	return bk.Cmd("bazelci-agent artifact upload --build_event_json_file bep.json --delay 10 --mode buildkite &")
+	return bk.Cmd("bazelci-agent artifact upload --build_event_json_file bep.json --delay 20 --mode buildkite &")
 }
 
 func bazelTest(targets ...string) func(*bk.Pipeline) {
