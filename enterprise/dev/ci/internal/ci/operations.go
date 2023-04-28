@@ -225,7 +225,6 @@ func addWebAppTests(opts CoreTestOperationsOptions) operations.Operation {
 func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		commit := os.Getenv("BUILDKITE_COMMIT")
-		branch := os.Getenv("BUILDKITE_BRANCH")
 
 		cmds := []bk.StepOpt{
 			withPnpmCache(),
@@ -233,23 +232,16 @@ func addWebAppEnterpriseBuild(opts CoreTestOperationsOptions) operations.Operati
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", "1"),
 			bk.Env("CHECK_BUNDLESIZE", "1"),
+			// Emit a stats.json file for bundle size diffs
+			bk.Env("WEBPACK_EXPORT_STATS", "true"),
 		}
 
 		if opts.CacheBundleSize {
-			cmds = append(cmds,
-				// Emit a stats.json file for bundle size diffs
-				bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
-				withBundleSizeCache(commit))
+			cmds = append(cmds, withBundleSizeCache(commit))
 		}
 
 		if opts.CreateBundleSizeDiff {
-			cmds = append(cmds,
-				// Emit a stats.json file for bundle size diffs
-				bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
-				bk.Env("BRANCH", branch),
-				bk.Env("COMMIT", commit),
-				bk.Cmd("dev/ci/report-bundle-diff.sh"),
-			)
+			cmds = append(cmds, bk.Cmd("pnpm --filter @sourcegraph/web run report-bundle-diff"))
 		}
 
 		pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
