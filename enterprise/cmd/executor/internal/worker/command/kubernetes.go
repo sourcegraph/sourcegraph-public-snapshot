@@ -24,9 +24,12 @@ const (
 )
 
 const (
-	// KubernetesMountPath is the path where the Kubernetes volume is mounted in the container.
-	KubernetesMountPath = "/data"
+	// KubernetesExecutorMountPath is the path where the Kubernetes volume is mounted in the container.
+	KubernetesExecutorMountPath = "/data"
+	// KubernetesJobMountPath is the path where the Kubernetes volume is mounted in the container.
+	KubernetesJobMountPath = "/job"
 	// KubernetesVolumeMountSubPath is the path that is mounted in the Kubernetes pod container.
+	// The path is removed from the path that the job data is writt
 	KubernetesVolumeMountSubPath = "/data/"
 )
 
@@ -121,10 +124,6 @@ func (c *KubernetesCommand) FindPod(ctx context.Context, namespace string, name 
 	return &list.Items[0], nil
 }
 
-func (c *KubernetesCommand) getPod(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
-	return c.Clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
-}
-
 // WaitForJobToComplete waits for the job with the given name to complete.
 func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string, retry KubernetesRetry) error {
 	attempts := 0
@@ -155,6 +154,10 @@ type KubernetesRetry struct {
 
 func (c *KubernetesCommand) getJob(ctx context.Context, namespace string, name string) (*batchv1.Job, error) {
 	return c.Clientset.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+func (c *KubernetesCommand) getPod(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
+	return c.Clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
 // NewKubernetesJob creates a Kubernetes job with the given name, image, volume path, and spec.
@@ -213,7 +216,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 							Name:       kubernetesContainerName,
 							Image:      image,
 							Command:    spec.Command,
-							WorkingDir: filepath.Join(KubernetesMountPath, spec.Dir),
+							WorkingDir: filepath.Join(KubernetesJobMountPath, spec.Dir),
 							Env:        jobEnvs,
 							Resources: corev1.ResourceRequirements{
 								Limits:   resourceLimit,
@@ -222,7 +225,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      kubernetesVolumeName,
-									MountPath: KubernetesMountPath,
+									MountPath: KubernetesJobMountPath,
 									SubPath:   strings.TrimPrefix(path, KubernetesVolumeMountSubPath),
 								},
 							},

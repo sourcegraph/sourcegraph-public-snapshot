@@ -28,7 +28,7 @@ func main() {
 func doMain() error {
 	inputPath := flag.String("input", "input.json", "The input JSON file for the workspace execution. Defaults to \"input.json\".")
 	previousPath := flag.String("previousStepPath", "", "The path to the previous step's result file. Defaults to current working directory.")
-	workspaceFilesPath := flag.String("workspaceFiles", "/data/workspace-files", "The path to the workspace files. Defaults to \"/data/workspace-files\".")
+	workspaceFilesPath := flag.String("workspaceFiles", "/job/workspace-files", "The path to the workspace files. Defaults to \"/job/workspace-files\".")
 	flag.Usage = usage
 	flag.Parse()
 
