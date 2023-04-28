@@ -2,6 +2,8 @@ import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
+import { SURROUNDING_LINES } from '../editor/vscode-editor'
+
 export class FileChatMessage implements vscode.Comment {
     public id = 0
     public label: string | undefined
@@ -27,6 +29,8 @@ export class FileChatProvider {
 
     private readonly id = 'cody-file-chat'
     private readonly label = 'Cody: In-File Chat'
+    private readonly threadLabel = 'Ask Cody anything about this file 😉'
+
     private codyIcon: vscode.Uri
     private userIcon: vscode.Uri
     public threads: vscode.CommentReply | null = null
@@ -57,23 +61,21 @@ export class FileChatProvider {
     public async chat(threads: vscode.CommentReply, isFixMode: boolean = false): Promise<void> {
         const humanInput = threads.text
         const thread = threads.thread
-        thread.label = 'Ask Cody anything about this file 😉'
+        thread.label = this.threadLabel
         const newComment = new FileChatMessage(
             this.markdown(humanInput),
             vscode.CommentMode.Preview,
             { name: 'Me', iconPath: this.userIcon },
             thread,
-            thread.comments.length ? 'canDelete' : undefined
+            thread.comments.length ? 'threadInProgress' : undefined
         )
 
         thread.comments = [...thread.comments, newComment]
 
         this.threads = threads
         this.thread = thread
-        console.log('get selection')
         this.selection = await this.getSelection(isFixMode)
 
-        console.log('got selection', this.selection)
         // Add loading message
         if (isFixMode) {
             this.reply('Got it! Working on it!')
@@ -91,7 +93,7 @@ export class FileChatProvider {
             vscode.CommentMode.Preview,
             { name: 'Cody', iconPath: this.codyIcon },
             this.thread,
-            this.thread.comments.length ? 'canDelete' : undefined
+            undefined
         )
         this.thread.comments = [...this.thread.comments, codyReply]
     }
@@ -116,14 +118,11 @@ export class FileChatProvider {
         if (!this.thread) {
             return null
         }
-        const SURROUNDING_LINES = 50
 
         const activeDocument = await vscode.workspace.openTextDocument(this.thread.uri)
 
         const lineLength = activeDocument.lineAt(this.thread.range.end.line).text.length
-
         const endPostFix = new vscode.Position(this.thread.range.end.line, lineLength)
-
         const endPostAsk = new vscode.Position(this.thread.range.end.line + 1, 0)
 
         const selectionRange = new vscode.Range(this.thread.range.start, isFixMode ? endPostFix : endPostAsk)

@@ -9,7 +9,7 @@ import {
 
 import { FileChatProvider } from '../chat/FileChatProvider'
 
-const SURROUNDING_LINES = 50
+export const SURROUNDING_LINES = 50
 
 export class VSCodeEditor implements Editor {
     constructor(public fileChatProvider: FileChatProvider) {}
