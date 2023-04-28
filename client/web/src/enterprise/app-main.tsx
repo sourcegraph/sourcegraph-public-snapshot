@@ -15,7 +15,6 @@ import '@sourcegraph/shared/src/polyfills'
 import '../initBuildInfo'
 import '../monitoring/initMonitoring'
 
-import { listen } from '@tauri-apps/api/event'
 import { createRoot } from 'react-dom/client'
 
 import { logger } from '@sourcegraph/common'
@@ -40,14 +39,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         logger.error('Failed to initialize the app shell', error)
     }
-
-    console.log('Setting up scheme handler')
-    listen('scheme-request-received', event => {
-        console.log('Received URL scheme request', event)
-        console.log('Payload', event.payload)
-        const url = event.payload as string
-        window.location.pathname = url
-    })
 })
 
 if (process.env.DEV_WEB_BUILDER === 'esbuild' && process.env.NODE_ENV === 'development') {
