@@ -80,10 +80,15 @@ func bazelAnnouncef(format string, args ...any) bk.StepOpt {
 	return bk.Cmd(fmt.Sprintf(`echo "--- :bazel: %s"`, msg))
 }
 
+func bazelUploadFailedlogs() bk.StepOpt {
+	return bk.Cmd("bazelci-agent artifact upload --build_event_json_file bep.json --delay 10 --mode buildkite &")
+}
+
 func bazelTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
+		bazelUploadFailedlogs(),
 	}
 
 	// Test commands
@@ -118,6 +123,7 @@ func bazelBackCompatTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
+		bazelUploadFailedlogs(),
 
 		// Generate a patch that backports the migration from the new code into the old one.
 		bk.Cmd("git diff origin/ci/backcompat-v5.0.0..HEAD -- migrations/ > dev/backcompat/patches/back_compat_migrations.patch"),
