@@ -200,8 +200,8 @@ func TestProductSubscriptions_Update(t *testing.T) {
 			t.Fatal(err)
 		} else {
 			autogold.Expect(dbLLMProxyAccess{
-				Enabled: true, RateLimit: valast.Addr(12).(*int32),
-				RateIntervalSeconds: valast.Addr(3600).(*int32),
+				Enabled: true, RateLimit: valast.Addr(int32(12)).(*int32),
+				RateIntervalSeconds: valast.Addr(int32(3600)).(*int32),
 			}).Equal(t, got.LLMProxyAccess)
 		}
 
@@ -209,7 +209,7 @@ func TestProductSubscriptions_Update(t *testing.T) {
 		if err := (dbSubscriptions{db: db}).Update(ctx, sub0, dbSubscriptionUpdate{
 			llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{
 				Enabled:                  pointify(false),
-				RateLimit:                pointify[int32](0),
+				RateLimit:                pointify(int32(0)),
 				RateLimitIntervalSeconds: pointify[int32](0),
 			},
 		}); err != nil {
