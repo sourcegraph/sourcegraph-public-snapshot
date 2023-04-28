@@ -58,18 +58,18 @@ go_library(
 # The filename specified by the out field needs to include the sha for the test to find it.
 # See //enterprise/cmd/embeddings/shared:assets.bzl for the macro fetching those external dependencies.
 copy_file(
-  name = "ln_test_data_embeddings_index",
-  src = "@github_com_sourcegraph_sourcegraph_embeddingindex//file:downloaded",
-  out = "testdata/github_com_sourcegraph_sourcegraph_cf360e12ff91b2fc199e75aef4ff6744.embeddingindex",
-  allow_symlink = True,
+    name = "ln_test_data_embeddings_index",
+    src = "@github_com_sourcegraph_sourcegraph_embeddingindex//file:downloaded",
+    out = "testdata/github_com_sourcegraph_sourcegraph_cf360e12ff91b2fc199e75aef4ff6744.embeddingindex",
+    allow_symlink = True,
 )
 
 # See //enterprise/cmd/embeddings/shared:assets.bzl for the macro fetching those external dependencies.
 copy_file(
-  name = "ln_test_data_query_embeddings_gob",
-  src = "@query_embeddings_gob//file:downloaded",
-  out = "testdata/query_embeddings.gob",
-  allow_symlink = True,
+    name = "ln_test_data_query_embeddings_gob",
+    src = "@query_embeddings_gob//file:downloaded",
+    out = "testdata/query_embeddings.gob",
+    allow_symlink = True,
 )
 
 go_test(
@@ -86,7 +86,7 @@ go_test(
     embedsrcs = [
         ":ln_test_data_embeddings_index",
         ":ln_test_data_query_embeddings_gob",
-    ],
+    ],  # keep
     deps = [
         "//enterprise/cmd/embeddings/qa",
         "//enterprise/internal/embeddings",
