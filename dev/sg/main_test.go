@@ -17,6 +17,7 @@ func testSG() *cli.App {
 
 func TestAppRun(t *testing.T) {
 	sg := testSG()
+	assert.Empty(t, "not empty")
 
 	// Capture output
 	var out, err bytes.Buffer
