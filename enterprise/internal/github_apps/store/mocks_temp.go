@@ -48,7 +48,7 @@ type MockGitHubAppsStore struct {
 func NewMockGitHubAppsStore() *MockGitHubAppsStore {
 	return &MockGitHubAppsStore{
 		CreateFunc: &GitHubAppsStoreCreateFunc{
-			defaultHook: func(context.Context, *types.GitHubApp) (r0 error) {
+			defaultHook: func(context.Context, *types.GitHubApp) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -90,7 +90,7 @@ func NewMockGitHubAppsStore() *MockGitHubAppsStore {
 func NewStrictMockGitHubAppsStore() *MockGitHubAppsStore {
 	return &MockGitHubAppsStore{
 		CreateFunc: &GitHubAppsStoreCreateFunc{
-			defaultHook: func(context.Context, *types.GitHubApp) error {
+			defaultHook: func(context.Context, *types.GitHubApp) (int, error) {
 				panic("unexpected invocation of MockGitHubAppsStore.Create")
 			},
 		},
@@ -159,24 +159,24 @@ func NewMockGitHubAppsStoreFrom(i GitHubAppsStore) *MockGitHubAppsStore {
 // GitHubAppsStoreCreateFunc describes the behavior when the Create method
 // of the parent MockGitHubAppsStore instance is invoked.
 type GitHubAppsStoreCreateFunc struct {
-	defaultHook func(context.Context, *types.GitHubApp) error
-	hooks       []func(context.Context, *types.GitHubApp) error
+	defaultHook func(context.Context, *types.GitHubApp) (int, error)
+	hooks       []func(context.Context, *types.GitHubApp) (int, error)
 	history     []GitHubAppsStoreCreateFuncCall
 	mutex       sync.Mutex
 }
 
 // Create delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitHubAppsStore) Create(v0 context.Context, v1 *types.GitHubApp) error {
-	r0 := m.CreateFunc.nextHook()(v0, v1)
-	m.CreateFunc.appendCall(GitHubAppsStoreCreateFuncCall{v0, v1, r0})
-	return r0
+func (m *MockGitHubAppsStore) Create(v0 context.Context, v1 *types.GitHubApp) (int, error) {
+	r0, r1 := m.CreateFunc.nextHook()(v0, v1)
+	m.CreateFunc.appendCall(GitHubAppsStoreCreateFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Create method of the
 // parent MockGitHubAppsStore instance is invoked and the hook queue is
 // empty.
-func (f *GitHubAppsStoreCreateFunc) SetDefaultHook(hook func(context.Context, *types.GitHubApp) error) {
+func (f *GitHubAppsStoreCreateFunc) SetDefaultHook(hook func(context.Context, *types.GitHubApp) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -184,7 +184,7 @@ func (f *GitHubAppsStoreCreateFunc) SetDefaultHook(hook func(context.Context, *t
 // Create method of the parent MockGitHubAppsStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GitHubAppsStoreCreateFunc) PushHook(hook func(context.Context, *types.GitHubApp) error) {
+func (f *GitHubAppsStoreCreateFunc) PushHook(hook func(context.Context, *types.GitHubApp) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -192,20 +192,20 @@ func (f *GitHubAppsStoreCreateFunc) PushHook(hook func(context.Context, *types.G
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitHubAppsStoreCreateFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *types.GitHubApp) error {
-		return r0
+func (f *GitHubAppsStoreCreateFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.GitHubApp) (int, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitHubAppsStoreCreateFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *types.GitHubApp) error {
-		return r0
+func (f *GitHubAppsStoreCreateFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, *types.GitHubApp) (int, error) {
+		return r0, r1
 	})
 }
 
-func (f *GitHubAppsStoreCreateFunc) nextHook() func(context.Context, *types.GitHubApp) error {
+func (f *GitHubAppsStoreCreateFunc) nextHook() func(context.Context, *types.GitHubApp) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -246,7 +246,10 @@ type GitHubAppsStoreCreateFuncCall struct {
 	Arg1 *types.GitHubApp
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -258,7 +261,7 @@ func (c GitHubAppsStoreCreateFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitHubAppsStoreCreateFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitHubAppsStoreDeleteFunc describes the behavior when the Delete method

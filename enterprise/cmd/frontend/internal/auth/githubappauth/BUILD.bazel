@@ -8,9 +8,12 @@ go_library(
     deps = [
         "//cmd/frontend/auth",
         "//enterprise/internal/database",
+        "//enterprise/internal/github_apps/types",
         "//internal/auth",
         "//internal/database",
+        "//internal/rcache",
         "//internal/trace",
+        "//lib/errors",
         "@com_github_gorilla_mux//:mux",
         "@io_opentelemetry_go_otel//attribute",
     ],
