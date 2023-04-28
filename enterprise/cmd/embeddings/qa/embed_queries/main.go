@@ -29,6 +29,9 @@ import (
 
 func loadSiteConfig(siteConfigPath string) (*schema.SiteConfiguration, error) {
 	b, err := os.ReadFile(siteConfigPath)
+	if err != nil {
+		return nil, err
+	}
 	siteConfig := schema.SiteConfiguration{}
 	err = jsonc.Unmarshal(string(b), &siteConfig)
 	if err != nil {
