@@ -72,6 +72,7 @@ copy_file(
     allow_symlink = True,
 )
 
+# gazelle:exclude testdata
 go_test(
     name = "shared_test",
     timeout = "short",
@@ -81,7 +82,6 @@ go_test(
         "repo_embedding_index_cache_test.go",
         "search_test.go",
     ],
-    data = glob(["testdata/**"]),
     embed = [":shared"],
     embedsrcs = [
         ":ln_test_data_embeddings_index",
