@@ -106,7 +106,7 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
         <div className={classNames('d-flex flex-column align-items-center px-3', searchPageStyles.searchPage)}>
             <BrandLogo className={searchPageStyles.logo} isLightTheme={isLightTheme} variant="logo" />
             <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">Searching millions of public repositories</div>
-            {window.context.codyEnabled ? (
+            {window.context?.codyEnabled ? (
                 <SearchInput
                     value={input}
                     onChange={onInputChange}

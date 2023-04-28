@@ -37,5 +37,5 @@ export function useCodySidebarStore(): Omit<CodySidebarSizeStore, 'size'> & Cody
 export function useCodySidebarSize(): number {
     const size = useCodySidebarSizeStore(store => store.size)
     const { isOpen } = useCodySidebarStore()
-    return isOpen && window.context.codyEnabled ? size : 0
+    return isOpen && window.context?.codyEnabled ? size : 0
 }

@@ -288,7 +288,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }),
             scipSnapshot(blobInfo.snapshotData),
             codeFoldingExtension(),
-            window.context.codyEnabled ? codyWidgetExtension() : [],
+            window.context?.codyEnabled ? codyWidgetExtension() : [],
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),

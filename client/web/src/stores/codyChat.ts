@@ -330,7 +330,7 @@ export const useChatStore = ({
 
     const { initializeClient, config: currentConfig } = store
     useEffect(() => {
-        if (!window.context.codyEnabled || isEqual(config, currentConfig)) {
+        if (!window.context?.codyEnabled || isEqual(config, currentConfig)) {
             return
         }
 

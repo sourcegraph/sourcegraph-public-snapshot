@@ -173,13 +173,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
-            (window.context?.codyEnabled || isSourcegraphDotCom) && {
+            window.context?.codyEnabled && {
                 path: EnterprisePageRoutes.CodySearch,
                 content: 'Cody',
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext, isSourcegraphDotCom])
+    }, [ownEnabled, showSearchContext])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
