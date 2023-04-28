@@ -3,7 +3,7 @@ import { FC, useCallback, useEffect, useMemo } from 'react'
 import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
-import { basename } from '@sourcegraph/common'
+import { basename, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -32,6 +32,7 @@ import { parseBrowserRepoURL } from '../../util/url'
 import { externalLinkFieldsFragment } from '../backend'
 import { PerforceDepotChangelistNode } from '../changelists/PerforceDepotChangelistNode'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { getRefType } from '../utils'
 
 import { GitCommitNode } from './GitCommitNode'
 
@@ -160,19 +161,9 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
         },
     })
 
-    const getRefType = useCallback(
-        (plural = false): string => {
-            if (isPerforceDepot) {
-                return plural ? 'changelists' : 'changelist'
-            }
-            return plural ? 'commits' : 'commit'
-        },
-        [isPerforceDepot]
-    )
-
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)
-        const refType = capitalize(getRefType(true))
+        const refType = capitalize(pluralize(getRefType(isPerforceDepot), 0))
         if (filePath) {
             return `${refType} - ${basename(filePath)} - ${repoString}`
         }
@@ -213,10 +204,13 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                 return
             }
 
-            const refType = getRefType(true)
+            const refType = getRefType(isPerforceDepot)
 
-            return { key: refType, element: <>{capitalize(refType)}</> }
-        }, [repo, getRefType])
+            return {
+                key: refType,
+                element: <>{capitalize(pluralize(refType, 0))}</>,
+            }
+        }, [repo, isPerforceDepot])
     )
 
     return (
@@ -266,8 +260,8 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                                 centered={true}
                                 first={REPOSITORY_GIT_COMMITS_PER_PAGE}
                                 connection={connection}
-                                noun={getRefType()}
-                                pluralNoun={getRefType(true)}
+                                noun={getRefType(isPerforceDepot)}
+                                pluralNoun={pluralize(getRefType(isPerforceDepot), 0)}
                                 hasNextPage={hasNextPage}
                                 emptyElement={null}
                             />

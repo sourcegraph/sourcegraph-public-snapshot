@@ -46,6 +46,7 @@ import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
+import { getRefType } from '../utils'
 
 import { DiffStat, FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
@@ -251,8 +252,6 @@ const ExtraInfoSection: React.FC<{
         </Card>
     )
 }
-
-const getRefType = (isPerforceDepot: boolean): string => (isPerforceDepot ? 'changelist' : 'commit')
 
 interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
     filePath: string
