@@ -4,14 +4,9 @@ Cody uses Sourcegraph to fetch relevant context to generate answers and code. Th
 
 ## Initial setup
 
-1. Sign into [Sourcegraph.com](https://sourcegraph.com). {You can create an account for free](https://sourcegraph.com/sign-up) if you don't already have one.
-2. Share your Sourcegraph username with us in [Discord](https://discord.gg/sourcegraph-969688426372825169) and we'll get you set up to use Cody on open source code.
-3. [Create a Sourcegraph access token](https://sourcegraph.com/user/settings/tokens)
-4. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-5. Set the Sourcegraph URL to be `https://sourcegraph.com`
-6. Set the access token to be the token you just created
-
-  <img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
+1. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+2. Open Cody in your editor and sign in. 
+3. Set the Sourcegraph URL to be `https://sourcegraph.com`
 
 You're now ready to use Cody!
 
