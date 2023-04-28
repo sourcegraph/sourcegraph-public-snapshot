@@ -6,6 +6,7 @@ import create from 'zustand'
 
 import { Client, createClient, ClientInit, Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/client'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { escapeCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { PrefilledOptions } from '@sourcegraph/cody-shared/src/editor/withPreselectedOptions'
 import { isErrorLike } from '@sourcegraph/common'
@@ -86,6 +87,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         saveTranscriptHistory([])
     }
     const submitMessage = (text: string): void => {
+        text = escapeCodyMarkdown(text)
         const { client, onEvent, getChatContext } = get()
         if (client && !isErrorLike(client)) {
             const { codebase, filePath } = getChatContext()
@@ -223,14 +225,14 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     }
 
     const getChatContext = (): ChatContextStatus => {
-        const { config, editor } = get()
+        const { config, editor, client } = get()
 
         return {
             codebase: config?.codebase,
             filePath: editor?.getActiveTextEditorSelectionOrEntireFile()?.fileName,
             supportsKeyword: false,
             mode: config?.useContext,
-            connection: true,
+            connection: client?.codebaseContext.checkEmbeddingsConnection(),
         }
     }
 

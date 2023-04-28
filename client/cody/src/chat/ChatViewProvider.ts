@@ -1,9 +1,11 @@
+import { spawnSync } from 'child_process'
 import path from 'path'
 
 import * as vscode from 'vscode'
 
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
+import { escapeCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
@@ -12,6 +14,7 @@ import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelper
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -22,6 +25,7 @@ import { View } from '../../webviews/NavBar'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { updateConfiguration } from '../configuration'
 import { logEvent } from '../event-logger'
+import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
@@ -37,7 +41,13 @@ export async function isValidLogin(
 
 type Config = Pick<
     ConfigurationWithAccessToken,
-    'codebase' | 'serverEndpoint' | 'debug' | 'customHeaders' | 'accessToken' | 'useContext'
+    | 'codebase'
+    | 'serverEndpoint'
+    | 'debug'
+    | 'customHeaders'
+    | 'accessToken'
+    | 'useContext'
+    | 'experimentalChatPredictions'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -60,15 +70,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private disposables: vscode.Disposable[] = []
 
+    // Codebase-context-related state
+    private currentWorkspaceRoot: string
+
     constructor(
         private extensionPath: string,
-        private config: Config,
+        private config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
         private editor: Editor,
         private secretStorage: SecretStorage,
-        private localStorage: LocalStorage
+        private localStorage: LocalStorage,
+        private rgPath: string
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
@@ -77,6 +91,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.createNewChatID()
 
         this.disposables.push(this.configurationChangeEvent)
+
+        // listen for vscode active editor change event
+        this.currentWorkspaceRoot = ''
+        this.disposables.push(
+            vscode.window.onDidChangeActiveTextEditor(async () => {
+                await this.updateCodebaseContext()
+            })
+        )
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -84,11 +106,34 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.configurationChangeEvent.fire()
     }
 
-    public clearAndRestartSession(): void {
+    public async clearAndRestartSession(): Promise<void> {
+        await this.saveTranscriptToChatHistory()
         this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
         this.transcript.reset()
+        this.sendSuggestions([])
+        this.sendTranscript()
+        this.sendChatHistory()
+    }
+
+    public async clearHistory(): Promise<void> {
+        this.chatHistory = {}
+        this.inputHistory = []
+        await this.localStorage.removeChatHistory()
+    }
+
+    /**
+     * Restores a session from a chatID
+     * We delete the loaded session from our in-memory chatHistory (to hide it from the history view)
+     * but don't modify the localStorage as no data changes when a session is restored
+     */
+    public async restoreSession(chatID: string): Promise<void> {
+        await this.saveTranscriptToChatHistory()
+        this.cancelCompletion()
+        this.currentChatID = chatID
+        this.transcript = Transcript.fromJSON(this.chatHistory[chatID])
+        delete this.chatHistory[chatID]
         this.sendTranscript()
         this.sendChatHistory()
     }
@@ -96,6 +141,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
+                this.loadChatHistory()
                 this.publishContextStatus()
                 this.publishConfig()
                 this.sendTranscript()
@@ -135,7 +181,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendEvent('token', 'Delete')
                 break
             case 'removeHistory':
-                await this.localStorage.removeChatHistory()
+                await this.clearHistory()
+                break
+            case 'restoreHistory':
+                await this.restoreSession(message.chatID)
                 break
             case 'links':
                 void this.openExternalLinks(message.value)
@@ -178,7 +227,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
             onResponse: (content: string) => {
                 text += content
-                this.transcript.addAssistantResponse(reformatBotMessage(text, responsePrefix))
+                this.transcript.addAssistantResponse(reformatBotMessage(escapeCodyMarkdown(text), responsePrefix))
                 this.sendTranscript()
                 return Promise.resolve()
             },
@@ -211,7 +260,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     void this.sendLogin(false)
-                    this.clearAndRestartSession()
+                    void this.clearAndRestartSession()
                 }
                 this.onCompletionEnd()
                 console.error(`Completion request failed: ${err}`)
@@ -228,12 +277,40 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
         this.sendTranscript()
-        void this.saveChatHistory()
+        void this.saveTranscriptToChatHistory()
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
         this.inputHistory.push(text)
+
+        if (this.config.experimentalChatPredictions) {
+            void this.runRecipeForSuggestion('next-questions', text)
+        }
         await this.executeRecipe('chat-question', text)
+    }
+
+    private async updateCodebaseContext(): Promise<void> {
+        if (!this.editor.getActiveTextEditor() && vscode.window.visibleTextEditors.length !== 0) {
+            // these are ephemeral
+            return
+        }
+        const workspaceRoot = this.editor.getWorkspaceRootPath()
+        if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
+            return
+        }
+        this.currentWorkspaceRoot = workspaceRoot
+
+        const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor)
+        if (!codebaseContext) {
+            return
+        }
+        // after await, check we're still hitting the same workspace root
+        if (this.currentWorkspaceRoot !== workspaceRoot) {
+            return
+        }
+
+        this.codebaseContext = codebaseContext
+        this.publishContextStatus()
     }
 
     public async executeRecipe(recipeId: string, humanChatInput: string = ''): Promise<void> {
@@ -264,10 +341,75 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.showTab('chat')
         this.sendTranscript()
 
-        const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
+        const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
         this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
 
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+    }
+
+    private async runRecipeForSuggestion(recipeId: string, humanChatInput: string = ''): Promise<void> {
+        const recipe = getRecipe(recipeId)
+        if (!recipe) {
+            return
+        }
+
+        const multiplexer = new BotResponseMultiplexer()
+        const transcript = Transcript.fromJSON(await this.transcript.toJSON())
+
+        const interaction = await recipe.getInteraction(humanChatInput, {
+            editor: this.editor,
+            intentDetector: this.intentDetector,
+            codebaseContext: this.codebaseContext,
+            responseMultiplexer: multiplexer,
+        })
+        if (!interaction) {
+            return
+        }
+        transcript.addInteraction(interaction)
+
+        const prompt = await transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
+
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+
+        let text = ''
+        multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
+            onResponse: (content: string) => {
+                text += content
+                return Promise.resolve()
+            },
+            onTurnComplete: () => {
+                console.log({ text })
+                console.log(text.split('\n'))
+                console.log(text.split('\n').slice(0, 3))
+                console.log(
+                    text
+                        .split('\n')
+                        .slice(3)
+                        .map(line => line.trim().replace(/^-/, '').trim())
+                )
+                const suggestions = text
+                    .split('\n')
+                    .slice(0, 3)
+                    .map(line => line.trim().replace(/^-/, '').trim())
+                console.log({ suggestions })
+                this.sendSuggestions(suggestions)
+                return Promise.resolve()
+            },
+        })
+
+        let textConsumed = 0
+        this.chat.chat(prompt, {
+            onChange: text => {
+                // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
+                text = text.slice(textConsumed)
+                textConsumed += text.length
+                return multiplexer.publish(text)
+            },
+            onComplete: () => multiplexer.notifyTurnComplete(),
+            onError: (error, statusCode) => {
+                console.error(error, statusCode)
+            },
+        })
     }
 
     private showTab(tab: string): void {
@@ -286,18 +428,30 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         })
     }
 
+    private sendSuggestions(suggestions: string[]): void {
+        void this.webview?.postMessage({
+            type: 'suggestions',
+            suggestions,
+        })
+    }
+
+    private async saveTranscriptToChatHistory(): Promise<void> {
+        if (this.transcript.isEmpty) {
+            return
+        }
+        this.chatHistory[this.currentChatID] = await this.transcript.toJSON()
+        await this.saveChatHistory()
+    }
+
     /**
      * Save chat history
      */
     private async saveChatHistory(): Promise<void> {
-        if (this.transcript) {
-            this.chatHistory[this.currentChatID] = this.transcript.toChat()
-            const userHistory = {
-                chat: this.chatHistory,
-                input: this.inputHistory,
-            }
-            await this.localStorage.setChatHistory(userHistory)
+        const userHistory = {
+            chat: this.chatHistory,
+            input: this.inputHistory,
         }
+        await this.localStorage.setChatHistory(userHistory)
     }
 
     /**
@@ -312,17 +466,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
+     * Loads chat history from local storage
+     */
+    private loadChatHistory(): void {
+        const localHistory = this.localStorage.getChatHistory()
+        if (localHistory) {
+            this.chatHistory = localHistory?.chat
+            this.inputHistory = localHistory.input
+        }
+    }
+
+    /**
      * Sends chat history to webview
      */
     private sendChatHistory(): void {
-        const localHistory = this.localStorage.getChatHistory()
-        if (localHistory) {
-            this.chatHistory = localHistory.chat
-            this.inputHistory = localHistory.input
-        }
         void this.webview?.postMessage({
             type: 'history',
-            messages: localHistory,
+            messages: {
+                chat: this.chatHistory,
+                input: this.inputHistory,
+            },
         })
     }
 
@@ -337,7 +500,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 contextStatus: {
                     mode: this.config.useContext,
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
-                    codebase: this.config.codebase,
+                    codebase: this.codebaseContext.getCodebase(),
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
                     supportsKeyword: true,
                 },
@@ -384,7 +547,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 logEvent(
                     `CodyVSCodeExtension:codyFeedback:${value}`,
                     null,
-                    !isPrivateInstance && this.config.codebase ? this.transcript.toChat() : null
+                    !isPrivateInstance && this.codebaseContext.getCodebase() ? this.transcript.toChat() : null
                 )
                 break
             case 'token':
@@ -440,14 +603,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             localResourceRoots: [webviewPath],
         }
 
-        // Create Webview
+        // Create Webview using client/cody/index.html
         const root = vscode.Uri.joinPath(webviewPath, 'index.html')
         const bytes = await vscode.workspace.fs.readFile(root)
         const decoded = new TextDecoder('utf-8').decode(bytes)
         const resources = webviewView.webview.asWebviewUri(webviewPath)
-        const nonce = this.getNonce()
 
-        webviewView.webview.html = decoded.replaceAll('./', `${resources.toString()}/`).replace('/nonce/', nonce)
+        // Set HTML for webview
+        // This replace variables from the client/cody/dist/index.html with webview info
+        // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
+        // 2. Update URIs for content security policy to only allow specific scripts to be run
+        webviewView.webview.html = decoded
+            .replaceAll('./', `${resources.toString()}/`)
+            .replaceAll('{cspSource}', webviewView.webview.cspSource)
+
+        // Register webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
     }
 
@@ -468,15 +638,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return []
         }
         return this.transcript.toChat()
-    }
-
-    private getNonce(): string {
-        let text = ''
-        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-        for (let i = 0; i < 32; i++) {
-            text += possible.charAt(Math.floor(Math.random() * possible.length))
-        }
-        return text
     }
 
     public dispose(): void {
@@ -513,4 +674,76 @@ async function fileExists(filePath: string): Promise<boolean> {
         }
     }
     return false
+}
+
+// Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
+export function convertGitCloneURLToCodebaseName(cloneURL: string): string | null {
+    let parsed: URL | null = null
+    if (cloneURL.startsWith('git@')) {
+        // Handle Git SSH URL format
+        const match = cloneURL.match(/git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?/)
+        if (match) {
+            const host = match[1]
+            const owner = match[2]
+            const repo = match[3]
+            return `${host}/${owner}/${repo}`
+        }
+    } else {
+        // Handle HTTP/HTTPS URL format
+        try {
+            parsed = new URL(cloneURL)
+        } catch {
+            return null
+        }
+    }
+
+    if (!parsed) {
+        return null
+    }
+
+    const host = parsed.host
+    const path = parsed.pathname
+
+    // Handle GitHub/GitLab URL format
+    if (host.includes('gitlab.com') || host.includes('github.com')) {
+        const [owner, repo] = path.slice(1).split('/')
+        return `${host}/${owner}/${repo}`.replace(/.git$/, '')
+    }
+
+    // Generic fallback - assume URL path contains owner/repo
+    const [owner, repo] = path.slice(1).split('/')
+    return `${host}/${owner}/${repo}`
+}
+
+async function getCodebaseContext(config: Config, rgPath: string, editor: Editor): Promise<CodebaseContext | null> {
+    const client = new SourcegraphGraphQLAPIClient(config)
+    const workspaceRoot = editor.getWorkspaceRootPath()
+    if (!workspaceRoot) {
+        return null
+    }
+
+    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
+    const gitOutput = gitCommand.stdout.toString().trim()
+    if (!gitOutput) {
+        void vscode.window.showErrorMessage(
+            `Unable to determine the git clone URL for this workspace.\ngit output: ${gitOutput}`
+        )
+        return null
+    }
+
+    // Get repository name from git clone URL
+    const codebase = convertGitCloneURLToCodebaseName(gitOutput)
+    if (!codebase) {
+        void vscode.window.showErrorMessage(`could not extract repo name from clone URL ${gitOutput}`)
+        return null
+    }
+    const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
+    if (isError(repoId)) {
+        const errorMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
+        void vscode.window.showErrorMessage(errorMessage)
+        return null
+    }
+
+    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
+    return new CodebaseContext(config, codebase, embeddingsSearch, new LocalKeywordContextFetcher(rgPath, editor))
 }
