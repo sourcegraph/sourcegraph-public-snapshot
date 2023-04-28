@@ -81,7 +81,7 @@ func bazelAnnouncef(format string, args ...any) bk.StepOpt {
 }
 
 func bazelUploadFailedlogs() bk.StepOpt {
-	return bk.Cmd("bazelci-agent artifact upload --build_event_json_file bep.json --delay 5 --debug --mode buildkite &")
+	return bk.Cmd("bazelci-agent artifact upload --build_event_json_file bep.json --delay 5 --debug --mode buildkite")
 }
 
 func bazelTest(targets ...string) func(*bk.Pipeline) {
@@ -97,7 +97,9 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		cmd := bazelCmd(fmt.Sprintf("test %s", target))
 		bazelTestCmds = append(bazelTestCmds,
 			bazelAnnouncef("bazel test %s", target),
-			bk.Cmd(cmd))
+			bk.Cmd(cmd),
+			bazelUploadFailedlogs(),
+		)
 	}
 	cmds = append(cmds, bazelTestCmds...)
 
