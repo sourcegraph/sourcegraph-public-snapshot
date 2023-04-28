@@ -65,10 +65,9 @@ type GitCommitResolver struct {
 	commitOnce sync.Once
 	commitErr  error
 
-	// perforceChangelistID is generated as a side effect of a git-repo being converted from a
-	// perforce depot.
-	perforceChangelistID     string
-	perforceChangeListIDOnce sync.Once
+	// perforceChangelistID is generated during initalisation of the GitCommitResolver a side effect
+	// of a git-repo being converted from a perforce depot.
+	perforceChangelistID string
 }
 
 type perforceMetadata struct {
@@ -80,10 +79,11 @@ type perforceMetadata struct {
 // you have batch-loaded a bunch of them and already have them at hand.
 func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	repoName := repo.RepoName()
-	return &GitCommitResolver{
-		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").
-			With(log.String("repo", string(repoName)),
-				log.String("commitID", string(id))),
+	r := &GitCommitResolver{
+		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").With(
+			log.String("repo", string(repoName)),
+			log.String("commitID", string(id)),
+		),
 		db:              db,
 		gitserverClient: gsClient,
 		repoResolver:    repo,
@@ -92,6 +92,32 @@ func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *Repos
 		oid:             GitObjectID(id),
 		commit:          commit,
 	}
+
+	if repo.IsPerforceDepot() {
+		// Load the commit because we need it.
+		if _, err := r.resolveCommit(context.Background()); err != nil {
+			r.logger.Error("failed to resolveCommit", log.Error(err))
+			return r
+		}
+
+		changelistID, err := getP4ChangelistID(r.commit.Message.Body())
+		if err != nil {
+			r.logger.Error(
+				"failed to generate perforceChangelistID (the commit SHA will be used instead as the value of OID)",
+				log.Error(err),
+			)
+		}
+		// Fallback to the git commit SHA if we fail to retrieve a changelist ID for any reason
+		// instead of erroring out.
+		//
+		// If a user sees this behaviour, the commit SHA will be helpful to debug why this fails
+		// for that commit.
+		if changelistID != "" {
+			r.perforceChangelistID = changelistID
+		}
+	}
+
+	return r
 }
 
 func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commit, error) {
@@ -130,21 +156,7 @@ func (r *GitCommitResolver) ID() graphql.ID {
 func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
 
 func (r *GitCommitResolver) OID() GitObjectID {
-	r.perforceChangeListIDOnce.Do(func() {
-		if r.repoResolver.IsPerforceDepot() && r.commit != nil {
-			changelistID := getP4ChangelistID(r.commit.Message.Body())
-			// Fallback to the git commit SHA if we fail to retrieve a changelist ID for any reason
-			// instead of erroring out.
-			//
-			// If a user sees this behaviour, the commit SHA will be helpful to debug why this fails
-			// for that commit.
-			if changelistID != "" {
-				r.perforceChangelistID = changelistID
-			}
-		}
-	})
-
-	if r.repoResolver.IsPerforceDepot() && r.commit != nil && r.perforceChangelistID != "" {
+	if r.perforceChangelistID != "" {
 		return GitObjectID(r.perforceChangelistID)
 	}
 
@@ -155,7 +167,7 @@ func (r *GitCommitResolver) InputRev() *string { return r.inputRev }
 
 func (r *GitCommitResolver) AbbreviatedOID() string {
 	// Do not abbreviate the OID since this is a changelist ID and not a commit SHA.
-	if r.repoResolver.IsPerforceDepot() && r.commit != nil {
+	if r.perforceChangelistID != "" {
 		return string(r.OID())
 	}
 
@@ -197,8 +209,8 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 	// subject from the original changelist and not the subject that is generated during the
 	// conversion.
 	//
-	// For depots converted with git-p4, this special handling is not required.
-	if strings.HasPrefix(commit.Message.Body(), "[p4-fusion") {
+	// For depots converted with git-p4, this special handling is NOT required.
+	if r.repoResolver.IsPerforceDepot() && strings.HasPrefix(commit.Message.Body(), "[p4-fusion") {
 		subject, err := parseP4FusionCommitSubject(commit.Message.Subject())
 		if err == nil {
 			return subject, nil
@@ -481,7 +493,7 @@ var p4FusionCommitSubjectPattern = regexp.MustCompile(`^(\d+) - (.*)$`)
 func parseP4FusionCommitSubject(subject string) (string, error) {
 	matches := p4FusionCommitSubjectPattern.FindStringSubmatch(subject)
 	if len(matches) != 3 {
-		return "", errors.Newf("failed to parse commit subject %q for commit that was converted by p4-fusion", subject)
+		return "", errors.Newf("failed to parse commit subject %q for commit converted by p4-fusion", subject)
 	}
 	return matches[2], nil
 }
@@ -491,11 +503,11 @@ func parseP4FusionCommitSubject(subject string) (string, error) {
 // [p4-fusion: depot-paths = "//test-perms/": change = 80972]
 var gitP4Pattern = regexp.MustCompile(`\[(?:git-p4|p4-fusion): depot-paths = "(.*?)"\: change = (\d+)\]`)
 
-func getP4ChangelistID(input string) string {
-	matches := gitP4Pattern.FindStringSubmatch(input)
+func getP4ChangelistID(body string) (string, error) {
+	matches := gitP4Pattern.FindStringSubmatch(body)
 	if len(matches) != 3 {
-		return ""
+		return "", errors.Newf("failed to retrieve changelist ID from commit body: %q", body)
 	}
 
-	return matches[2]
+	return matches[2], nil
 }

@@ -147,12 +147,10 @@ func TestGitCommitResolver(t *testing.T) {
 			Author: gitdomain.Signature{
 				Name:  "Bob",
 				Email: "bob@alice.com",
-				Date:  time.Now(),
 			},
 			Committer: &gitdomain.Signature{
 				Name:  "Alice",
 				Email: "alice@bob.com",
-				Date:  time.Now(),
 			},
 		}
 
@@ -179,12 +177,10 @@ func TestGitCommitResolver(t *testing.T) {
 			Author: gitdomain.Signature{
 				Name:  "Bob",
 				Email: "bob@alice.com",
-				Date:  time.Now(),
 			},
 			Committer: &gitdomain.Signature{
 				Name:  "Alice",
 				Email: "alice@bob.com",
-				Date:  time.Now(),
 			},
 		}
 
@@ -604,7 +600,13 @@ func TestGetP4ChangelistID(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		result := getP4ChangelistID(tc.input)
+		result, err := getP4ChangelistID(tc.input)
+		if tc.expectedChangeListID != "" {
+			require.NoError(t, err)
+		} else {
+			require.Error(t, err)
+		}
+
 		if !reflect.DeepEqual(result, tc.expectedChangeListID) {
 			t.Errorf("getP4ChangelistID failed (%q) => got %q, want %q", tc.input, result, tc.expectedChangeListID)
 		}
