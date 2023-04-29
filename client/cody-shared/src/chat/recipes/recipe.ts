@@ -2,6 +2,7 @@ import { CodebaseContext } from '../../codebase-context'
 import { Editor } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
 import { BotResponseMultiplexer } from '../bot-response-multiplexer'
+import { ChatClient } from '../chat'
 import { Interaction } from '../transcript/interaction'
 
 /** Tools and context recipes can use at the point they are invoked. */
@@ -10,6 +11,7 @@ export interface RecipeContext {
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     responseMultiplexer: BotResponseMultiplexer
+    chatClient: ChatClient
 }
 
 export interface Recipe {
