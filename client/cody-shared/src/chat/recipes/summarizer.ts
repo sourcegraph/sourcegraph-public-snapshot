@@ -9,6 +9,13 @@ interface Commit {
     authorEmail: string
     hash: string
     rawDiff: string
+    diff: FileDiff[]
+}
+
+interface FileDiff {
+    oldFilename: string
+    newFilename: string
+    diff: string
 }
 
 export class CommitNode implements SummaryNode {
@@ -83,6 +90,24 @@ function textBetween(text: string, startTag: string, endTag: string): string {
     }
     return text.slice(start, end)
 }
+
+// Parse a raw diff like this:
+// diff --git a/client/cody-shared/src/chat/recipes/summarizer.test.ts b/client/cody-shared/src/chat/recipes/summarizer.test.ts
+// index a5aa8fd8d7..6d0fcc83fe 100644
+// --- a/client/cody-shared/src/chat/recipes/summarizer.test.ts
+// +++ b/client/cody-shared/src/chat/recipes/summarizer.test.ts
+// @@ -1,17 +1,58 @@
+// -import { spawnSync } from 'child_process'
+// +import { spawn } from 'child_process'
+// +
+// +import { CommitNode } from './summarizer'
+
+//  describe('summarizer', () => {
+// -    it('summarizes text', () => {
+// -        const proc = spawnSync(
+// +    it('summarizes text', async () => {
+
+function parseFileDiff(rawDiff: string): FileDiff {}
 
 export class Summarizer {
     constructor(private nodes: SummaryNode[], private summarize: (text: string) => string) {}
