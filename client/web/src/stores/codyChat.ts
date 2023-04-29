@@ -42,6 +42,7 @@ interface CodyChatStore {
     getChatContext: () => ChatContextStatus
     loadTranscriptFromHistory: (id: string) => Promise<void>
     clearHistory: () => void
+    selectedTranscriptId: string | null
 }
 
 const CODY_TRANSCRIPT_HISTORY_KEY = 'cody:transcript-history'
@@ -75,6 +76,10 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
 
         window.localStorage.setItem(CODY_TRANSCRIPT_HISTORY_KEY, JSON.stringify(sorted))
         set({ transcriptHistory: sorted })
+    }
+
+    const setSelectedTranscriptId = (id: string | null): void => {
+        set({ selectedTranscriptId: id })
     }
 
     const clearHistory = (): void => {
@@ -162,6 +167,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         }
 
         set({ transcript: messages })
+        setSelectedTranscriptId(transcript.isEmpty ? null : transcript.id)
 
         if (transcript.isEmpty) {
             return
@@ -280,6 +286,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         transcript: [],
         transcriptHistory: fetchTranscriptHistory(),
         onEvent: null,
+        selectedTranscriptId: null,
         initializeClient,
         submitMessage,
         editMessage,
