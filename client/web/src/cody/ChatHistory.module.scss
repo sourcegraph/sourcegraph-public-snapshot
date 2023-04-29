@@ -2,7 +2,6 @@
     display: flex;
     flex-direction: column;
     background: var(--body-bg);
-    border-bottom: 1px solid var(--border-color-2);
     gap: var(--spacing);
     cursor: pointer;
 }
@@ -11,8 +10,9 @@
     padding: var(--spacing);
     margin-bottom: 0;
     cursor: pointer;
+    border-radius: 0.25rem;
 
     &:hover {
-        background: var(--input-bg);
+        background: var(--color-bg-1);
     }
 }
