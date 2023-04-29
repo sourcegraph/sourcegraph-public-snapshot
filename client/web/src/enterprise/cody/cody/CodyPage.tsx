@@ -46,13 +46,13 @@ export const CodyPage: React.FunctionComponent<CodePageProps> = ({ authenticated
             <PageTitle title="Cody AI" />
             <PageHeader
                 actions={
-                    <div style={{ display: 'flex' }}>
+                    <div className="d-flex">
                         <Button variant="primary" onClick={reset}>
                             <Icon aria-hidden={true} svgPath={mdiPlus} />
                             New chat
                         </Button>
                         <Menu>
-                            <MenuButton variant="icon" outline={false} style={{ paddingRight: 10, paddingLeft: 10 }}>
+                            <MenuButton variant="icon" outline={false} className={styles.dotsIconPaddings}>
                                 <Icon aria-hidden={true} svgPath={mdiDotsVertical} size="md" />
                             </MenuButton>
 
