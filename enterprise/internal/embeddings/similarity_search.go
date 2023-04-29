@@ -169,7 +169,7 @@ const (
 )
 
 func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) (score int32, debugInfo searchDebugInfo) {
-	similarityScore := scoreSimilarityWeight * CosineSimilarity(index.Row(i), query)
+	similarityScore := scoreSimilarityWeight * Dot(index.Row(i), query)
 
 	// handle missing ranks
 	rankScore := int32(0)
