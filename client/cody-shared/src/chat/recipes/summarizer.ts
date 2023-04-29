@@ -1,20 +1,109 @@
 interface SummaryNode {
-    getText(): string
-    getReferences(): SummaryNode[]
+    getSourceIdentifier(): string
+    getText(): Promise<string>
+    getReferences(): { name: string; node: SummaryNode }[]
 }
 
-// class CommitNode implements SummaryNode {
-//     public static fromText(text: string): {
-//         return new CommitNode()
-//     }
-//     constructor() {
+interface Commit {
+    authorName: string
+    authorEmail: string
+    hash: string
+    rawDiff: string
+}
 
-//     }
-//     getReferences(): SummaryNode[] {
-//         throw new Error('Method not implemented.')
-//     }
-// }
+export class CommitNode implements SummaryNode {
+    constructor(private commit: Commit) {}
 
-// class Summarizer {
-//     constructor(private nodes: SummaryNode[]) {}
-// }
+    public static fromText(text: string): CommitNode[] {
+        const commits: Commit[] = []
+        const lines = text.split('\n')
+        let commit: Commit | undefined
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i]
+            console.log(`<line>${line}</line>`)
+            if (line.startsWith('<commit>')) {
+                if (commit) {
+                    commits.push(commit)
+                }
+                commit = {
+                    authorEmail: textBetween(line, '<authorEmail>', '</authorEmail>'),
+                    authorName: textBetween(line, 'authorName>', '</authorName>'),
+                    hash: textBetween(line, '<commit>', '</commit>'),
+                    rawDiff: '',
+                }
+                continue
+            }
+            if (!commit) {
+                continue
+            }
+            commit.rawDiff += line + '\n'
+        }
+        if (commit) {
+            commits.push(commit)
+        }
+        return commits.map(commit => new CommitNode(commit))
+    }
+
+    // public static fromText(text: string): CommitNode[] {
+    //     const commitNodes: CommitNode[] = []
+    //     const lines = text.split('\n')
+    //     for (const line of lines) {
+    //         const fields = line.split('\t')
+    //         if (fields.length !== 3) {
+    //             console.error(`ignoring line because did not find 3 fields: ${line}`)
+    //             continue
+    //         }
+    //         const [authorName, authorEmail, commitHash] = fields
+    //         commitNodes.push(new CommitNode(authorName, authorEmail, commitHash))
+    //     }
+    //     return commitNodes
+    // }
+
+    getSourceIdentifier(): string {
+        return this.commit.hash
+    }
+    getText(): Promise<string> {
+        throw new Error('Method not implemented.')
+    }
+    getReferences(): { name: string; node: SummaryNode }[] {
+        throw new Error('Method not implemented.')
+    }
+
+    private fetchCommitInfo() {
+        // commit message
+        // file diffs
+    }
+}
+
+function textBetween(text: string, startTag: string, endTag: string): string {
+    const start = text.indexOf(startTag) + startTag.length
+    const end = text.indexOf(endTag, start)
+    if (start === -1 || end === -1) {
+        return ''
+    }
+    return text.slice(start, end)
+}
+
+export class Summarizer {
+    constructor(private nodes: SummaryNode[], private summarize: (text: string) => string) {}
+    getSummary(): string {
+        return ''
+    }
+
+    private async getSummaryHelper(node: SummaryNode): Promise<string> {
+        const refs = node.getReferences()
+        if (refs.length === 0) {
+            return node.getText()
+        }
+        const summaries = await Promise.all(
+            refs.map(async ref => ({
+                summary: await this.getSummaryHelper(ref.node),
+                name: ref.name,
+            }))
+        )
+        const summariesText = summaries.map(({ summary, name }) => `${name}: ${summary}`)
+        const nodeText = await node.getText()
+        const fullText = `${nodeText}\n\n${summariesText.join('\n\n')}`
+        return this.summarize(fullText)
+    }
+}
