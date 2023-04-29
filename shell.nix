@@ -149,4 +149,9 @@ pkgs.mkShell {
 
   # Tell rules_rust to use our custom cargo-bazel.
   CARGO_BAZEL_GENERATOR_URL = "file://${cargo-bazel}/bin/cargo-bazel";
+
+  # bazel complains when the bazel version differs even by a patch version to whats defined in .bazelversion,
+  # so we tell it to h*ck off here.
+  # https://sourcegraph.com/github.com/bazelbuild/bazel@1a4da7f331c753c92e2c91efcad434dc29d10d43/-/blob/scripts/packages/bazel.sh?L23-28
+  USE_BAZEL_VERSION = pkgs.bazel_6.version;
 }
