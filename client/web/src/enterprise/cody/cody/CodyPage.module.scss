@@ -3,3 +3,18 @@
     border: 1px solid var(--border-color-2);
     border-radius: 6px;
 }
+
+.history-item-body {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.page-wrapper {
+    padding-top: 0.625rem;
+    height: 93%;
+}
+
+.sidebar {
+    overflow: scroll;
+    padding-bottom: 0.625rem;
+}
