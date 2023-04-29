@@ -13,6 +13,7 @@ interface ChatHistoryProps {
     clearHistory: () => void
     showHeader?: boolean
     itemBodyClass?: string
+    trucateMessageLenght?: number
 }
 
 export const ChatHistory: React.FunctionComponent<ChatHistoryProps> = ({
@@ -22,6 +23,7 @@ export const ChatHistory: React.FunctionComponent<ChatHistoryProps> = ({
     clearHistory,
     showHeader = true,
     itemBodyClass,
+    trucateMessageLenght = 80,
 }) => (
     <>
         {showHeader && (
@@ -63,8 +65,8 @@ export const ChatHistory: React.FunctionComponent<ChatHistoryProps> = ({
                                 <Timestamp date={safeTimestampToDate(lastInteractionTimestamp)} />
                             </Text>
                             <Text className="mb-0 truncate text-body">
-                                {lastMessage.displayText.slice(0, 80)}
-                                {lastMessage.displayText.length > 80 ? '...' : ''}
+                                {lastMessage.displayText.slice(0, trucateMessageLenght)}
+                                {lastMessage.displayText.length > trucateMessageLenght ? '...' : ''}
                             </Text>
                         </div>
                     </li>

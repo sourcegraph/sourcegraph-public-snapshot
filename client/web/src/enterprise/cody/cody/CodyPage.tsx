@@ -64,6 +64,7 @@ export const CodyPage: React.FunctionComponent<CodePageProps> = ({ authenticated
                         clearHistory={clearHistory}
                         showHeader={false}
                         itemBodyClass={styles.historyItemBody}
+                        trucateMessageLenght={60}
                     />
                 </div>
 
