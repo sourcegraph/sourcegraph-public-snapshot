@@ -11,6 +11,8 @@ interface ChatHistoryProps {
     loadTranscript: (id: string) => void
     closeHistory: () => void
     clearHistory: () => void
+    showHeader?: boolean
+    itemBodyClass?: string
 }
 
 export const ChatHistory: React.FunctionComponent<ChatHistoryProps> = ({
@@ -18,11 +20,15 @@ export const ChatHistory: React.FunctionComponent<ChatHistoryProps> = ({
     loadTranscript,
     closeHistory,
     clearHistory,
+    showHeader = true,
+    itemBodyClass,
 }) => (
     <>
-        <Text className="p-2 pb-0" as="h3">
-            Chat History
-        </Text>
+        {showHeader && (
+            <Text className="p-2 pb-0" as="h3">
+                Chat History
+            </Text>
+        )}
         {transcriptHistory.length === 0 && <Text className="p-2 pb-0 text-muted text-center">No chats yet</Text>}
         <ul className="p-0 d-flex flex-column">
             {transcriptHistory.reverse().map(({ id, interactions, lastInteractionTimestamp }) => {
@@ -52,7 +58,7 @@ export const ChatHistory: React.FunctionComponent<ChatHistoryProps> = ({
                             loadTranscript(id)
                         }}
                     >
-                        <div className={styles.itemBody}>
+                        <div className={`${styles.itemBody} ${itemBodyClass}`}>
                             <Text className="mb-1 text-muted" size="small">
                                 <Timestamp date={safeTimestampToDate(lastInteractionTimestamp)} />
                             </Text>
@@ -66,7 +72,7 @@ export const ChatHistory: React.FunctionComponent<ChatHistoryProps> = ({
                 /* eslint-enable jsx-a11y/no-noninteractive-element-interactions */
             })}
         </ul>
-        {transcriptHistory.length > 0 && (
+        {showHeader && transcriptHistory.length > 0 && (
             <div className="text-center">
                 <Button
                     variant="secondary"
