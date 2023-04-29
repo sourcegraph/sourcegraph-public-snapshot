@@ -30,6 +30,7 @@ export class CommitNode implements SummaryNode {
             console.log(`<line>${line}</line>`)
             if (line.startsWith('<commit>')) {
                 if (commit) {
+                    commit.diff = parseFileDiffs(commit.rawDiff)
                     commits.push(commit)
                 }
                 commit = {
@@ -37,6 +38,7 @@ export class CommitNode implements SummaryNode {
                     authorName: textBetween(line, 'authorName>', '</authorName>'),
                     hash: textBetween(line, '<commit>', '</commit>'),
                     rawDiff: '',
+                    diff: [],
                 }
                 continue
             }
@@ -46,6 +48,7 @@ export class CommitNode implements SummaryNode {
             commit.rawDiff += line + '\n'
         }
         if (commit) {
+            commit.diff = parseFileDiffs(commit.rawDiff)
             commits.push(commit)
         }
         return commits.map(commit => new CommitNode(commit))
@@ -106,11 +109,47 @@ function textBetween(text: string, startTag: string, endTag: string): string {
 // -    it('summarizes text', () => {
 // -        const proc = spawnSync(
 // +    it('summarizes text', async () => {
+export function parseFileDiffs(rawDiff: string): FileDiff[] {
+    const lines = rawDiff.split('\n')
+    const fileDiffs: FileDiff[] = []
+    let fileDiff: FileDiff | undefined
+    for (const line of lines) {
+        if (line.startsWith('diff --git a/')) {
+            if (fileDiff) {
+                fileDiffs.push(fileDiff)
+            }
+            fileDiff = {
+                oldFilename: '',
+                newFilename: '',
+                diff: '',
+            }
+            continue
+        }
+        if (!fileDiff) {
+            continue
+        }
 
-function parseFileDiff(rawDiff: string): FileDiff {}
+        if (line.startsWith('index ')) {
+            // skip
+        } else if (line.startsWith('--- a/')) {
+            fileDiff.oldFilename = line.slice('--- a/'.length)
+        } else if (line.startsWith('+++ b/')) {
+            fileDiff.newFilename = line.slice('+++ b/'.length)
+        } else {
+            if (fileDiff.diff.length > 0) {
+                fileDiff.diff += '\n'
+            }
+            fileDiff.diff += line
+        }
+    }
+    if (fileDiff) {
+        fileDiffs.push(fileDiff)
+    }
+    return fileDiffs
+}
 
 export class Summarizer {
-    constructor(private nodes: SummaryNode[], private summarize: (text: string) => string) {}
+    constructor(private nodes: SummaryNode[], private summarize: (text: string) => Promise<string>) {}
     getSummary(): string {
         return ''
     }

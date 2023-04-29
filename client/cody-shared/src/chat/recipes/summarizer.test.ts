@@ -1,6 +1,6 @@
 import { spawn } from 'child_process'
 
-import { CommitNode } from './summarizer'
+import { CommitNode, Summarizer, parseFileDiffs } from './summarizer'
 
 describe('summarizer', () => {
     it('summarizes text', async () => {
@@ -33,26 +33,45 @@ describe('summarizer', () => {
         const nodes = CommitNode.fromText(out)
         console.log('# nodes', nodes)
 
-        // if (proc.status !== 0) {
-        //     console.error(proc.stdout.toString())
-        //     throw new Error(`error running git (status ${proc.status}): ${proc.stderr.toString()}`)
-        // }
-        // console.log('# output', proc.stdout.toString().trim())
+        const summarizer = new Summarizer(nodes)
 
-        // const proc = spawnSync(
-        //     'git',
-        //     ['log', '--after="1 day ago"', '--format="%an%x09%ae%x09%H"', 'origin/main', '--', ':/'],
-        //     { cwd: '/home/beyang/src/github.com/sourcegraph/sourcegraph' }
-        // )
-        // if (proc.status !== 0) {
-        //     throw new Error(`error running git: ${proc.stderr.toString()}`)
-        // }
+        // NEXT: write a LLM summarize function, pass it to Summarizer constructor
+    })
+    it('parses file diffs', () => {
+        const rawDiff = `diff --git a/client/cody-shared/src/chat/recipes/summarizer.test.ts b/client/cody-shared/src/chat/recipes/summarizer.test.ts
+index a5aa8fd8d7..6d0fcc83fe 100644
+--- a/client/cody-shared/src/chat/recipes/summarizer.test.ts
++++ b/client/cody-shared/src/chat/recipes/summarizer.test.ts
+@@ -1,17 +1,58 @@
+-import { spawnSync } from 'child_process'
++import { spawn } from 'child_process'
++
++import { CommitNode } from './summarizer'
 
-        // console.log('# output', proc.stdout.toString().trim())
+ describe('summarizer', () => {
+-    it('summarizes text', () => {
+-        const proc = spawnSync(
++    it('summarizes text', async () => {
+`
+        const fileDiffs = parseFileDiffs(rawDiff)
+        expect(JSON.stringify(fileDiffs)).toEqual(
+            JSON.stringify([
+                {
+                    oldFilename: 'client/cody-shared/src/chat/recipes/summarizer.test.ts',
+                    newFilename: 'client/cody-shared/src/chat/recipes/summarizer.test.ts',
+                    diff: `@@ -1,17 +1,58 @@
+-import { spawnSync } from 'child_process'
++import { spawn } from 'child_process'
++
++import { CommitNode } from './summarizer'
 
-        // const nodes = CommitNode.fromText(proc.stdout.toString().trim())
-        // console.log('# nodes', nodes)
-
-        // const summarizer = new Summarizer(nodes)
+ describe('summarizer', () => {
+-    it('summarizes text', () => {
+-        const proc = spawnSync(
++    it('summarizes text', async () => {
+`,
+                },
+            ])
+        )
     })
 })
