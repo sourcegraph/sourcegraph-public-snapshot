@@ -1,11 +1,22 @@
 import React from 'react'
 
-import { mdiPlus } from '@mdi/js'
+import { mdiCogOutline, mdiDelete, mdiDotsVertical, mdiOpenInNew, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon, PageHeader } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Icon,
+    Menu,
+    MenuButton,
+    MenuList,
+    MenuDivider,
+    MenuItem,
+    MenuLink,
+    PageHeader,
+    Link,
+} from '@sourcegraph/wildcard'
 
 import { ChatHistory } from '../../../cody/ChatHistory'
 import { CodyChat } from '../../../cody/CodyChat'
@@ -35,9 +46,31 @@ export const CodyPage: React.FunctionComponent<CodePageProps> = ({ authenticated
             <PageTitle title="Cody AI" />
             <PageHeader
                 actions={
-                    <Button variant="primary" onClick={reset}>
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> New chat
-                    </Button>
+                    <div style={{ display: 'flex' }}>
+                        <Button variant="primary" onClick={reset}>
+                            <Icon aria-hidden={true} svgPath={mdiPlus} />
+                            New chat
+                        </Button>
+                        <Menu>
+                            <MenuButton variant="icon" outline={false} style={{ paddingRight: 10, paddingLeft: 10 }}>
+                                <Icon aria-hidden={true} svgPath={mdiDotsVertical} size="md" />
+                            </MenuButton>
+
+                            <MenuList>
+                                <MenuItem onSelect={clearHistory}>
+                                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Clear conversations
+                                </MenuItem>
+                                <MenuDivider />
+                                <MenuLink as={Link} to="/help/cody" target="_blank" rel="noopener">
+                                    <Icon aria-hidden={true} svgPath={mdiOpenInNew} /> Cody Docs & FAQ
+                                </MenuLink>
+                                {/* TODO: Only show this item if the user is admin. */}
+                                <MenuLink as={Link} to="/site-admin/cody">
+                                    <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Cody Settings
+                                </MenuLink>
+                            </MenuList>
+                        </Menu>
+                    </div>
                 }
                 description={
                     <>
