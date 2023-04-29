@@ -19,10 +19,12 @@ import styles from './CodyChat.module.scss'
 export const SCROLL_THRESHOLD = 100
 
 interface CodyChatProps {
-    onClose: () => void
+    onClose?: () => void
+    showHeader?: boolean
+    chatWrapperClass?: string
 }
 
-export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
+export const CodyChat = ({ onClose, showHeader = true, chatWrapperClass }: CodyChatProps): JSX.Element => {
     const {
         reset,
         submitMessage,
@@ -75,36 +77,39 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
     }, [transcript, shouldScrollToBottom, messageInProgress])
 
     return (
-        <div className={styles.mainWrapper}>
+        <div className={`${styles.mainWrapper} ${chatWrapperClass}`}>
             <div className={styles.codySidebar} ref={codySidebarRef} onScroll={handleScroll}>
-                <div className={styles.codySidebarHeader}>
-                    <div>
-                        <Tooltip content="Start a new conversation">
-                            <Button variant="icon" aria-label="Start a new conversation" onClick={onReset}>
-                                <Icon aria-hidden={true} svgPath={mdiReload} />
+                {showHeader && (
+                    <div className={styles.codySidebarHeader}>
+                        <div>
+                            <Tooltip content="Start a new conversation">
+                                <Button variant="icon" aria-label="Start a new conversation" onClick={onReset}>
+                                    <Icon aria-hidden={true} svgPath={mdiReload} />
+                                </Button>
+                            </Tooltip>
+                        </div>
+                        <div>
+                            <CodyLogo />
+                            Ask Cody
+                        </div>
+                        <div className="d-flex">
+                            <Tooltip content="Chat history">
+                                <Button
+                                    variant="icon"
+                                    className="mr-2"
+                                    aria-label="Chat history"
+                                    onClick={() => setShowHistory(showing => !showing)}
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiHistory} />
+                                </Button>
+                            </Tooltip>
+                            <Button variant="icon" aria-label="Close" onClick={onClose}>
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
                             </Button>
-                        </Tooltip>
+                        </div>
                     </div>
-                    <div>
-                        <CodyLogo />
-                        Ask Cody
-                    </div>
-                    <div className="d-flex">
-                        <Tooltip content="Chat history">
-                            <Button
-                                variant="icon"
-                                className="mr-2"
-                                aria-label="Chat history"
-                                onClick={() => setShowHistory(showing => !showing)}
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiHistory} />
-                            </Button>
-                        </Tooltip>
-                        <Button variant="icon" aria-label="Close" onClick={onClose}>
-                            <Icon aria-hidden={true} svgPath={mdiClose} />
-                        </Button>
-                    </div>
-                </div>
+                )}
+
                 {showHistory ? (
                     <ChatHistory
                         transcriptHistory={transcriptHistory}
