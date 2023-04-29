@@ -27,7 +27,8 @@ export const CodyPage: React.FunctionComponent<CodePageProps> = ({ authenticated
     const { setIsOpen: setIsCodySidebarOpen } = useCodySidebarStore()
     // TODO: This hook call is used to initialize the chat store with the right repo name.
     useChatStore({ codebase: '', setIsCodySidebarOpen })
-    const { reset, clearHistory, loadTranscriptFromHistory, transcriptHistory } = useChatStoreState()
+    const { reset, clearHistory, loadTranscriptFromHistory, transcriptHistory, selectedTranscriptId } =
+        useChatStoreState()
 
     return (
         <Page className="overflow-hidden">
@@ -64,7 +65,9 @@ export const CodyPage: React.FunctionComponent<CodePageProps> = ({ authenticated
                         clearHistory={clearHistory}
                         showHeader={false}
                         itemBodyClass={styles.historyItemBody}
+                        itemSelectedClass={styles.historyItemSelected}
                         trucateMessageLenght={60}
+                        selectedId={selectedTranscriptId}
                     />
                 </div>
 

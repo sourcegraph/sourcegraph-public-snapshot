@@ -1,12 +1,21 @@
 .chat-main-wrapper {
     filter: none;
     border: 1px solid var(--border-color-2);
-    border-radius: 6px;
+    border-radius: 0.375rem;
 }
 
 .history-item-body {
-    padding-left: 0;
-    padding-right: 0;
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+}
+
+.history-item-selected {
+    background-color: #DBE2F0;
+    border-radius: 0.25rem;
+}
+
+.history-item-selected:hover {
+    background-color: #DBE2F0;
 }
 
 .page-wrapper {
