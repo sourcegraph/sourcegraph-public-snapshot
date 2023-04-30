@@ -82,7 +82,7 @@ export const CodyPage: React.FunctionComponent<CodePageProps> = ({ authenticated
                 className="mb-3"
             >
                 <PageHeader.Heading as="h2" styleAs="h1">
-                    <PageHeader.Breadcrumb icon={CodyPageIcon}>Cody AI</PageHeader.Breadcrumb>
+                    <PageHeader.Breadcrumb icon={CodyPageIcon}> Cody AI</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
 
