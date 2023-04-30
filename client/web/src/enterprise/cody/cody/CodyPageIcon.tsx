@@ -4,7 +4,7 @@ export const CodyPageIcon: React.FunctionComponent<React.PropsWithChildren<SVGPr
     props: SVGProps<SVGSVGElement>
 ) => (
     <div style={{ paddingRight: 8 }}>
-        <svg width="38" height="38" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="30" height="30" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
                 d="M13.9088 4C14.756 4 15.4429 4.69836 15.4429 5.55983V8.33286C15.4429 9.19433 14.756 9.89269 13.9088 9.89269C13.0615 9.89269 12.3747 9.19433 12.3747 8.33286V5.55983C12.3747 4.69836 13.0615 4 13.9088 4Z"
                 fill="currentColor"
