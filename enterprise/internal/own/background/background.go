@@ -10,6 +10,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -224,29 +225,26 @@ func handleRecentContributors(ctx context.Context, lgr log.Logger, repoId api.Re
 	}
 
 	count := 0
-	err = db.RecentContributionSignals().WithTransact(ctx, func(store database.RecentContributionSignalStore) error {
-		err := store.ClearSignals(ctx, repoId)
-		if err != nil {
-			return err
-		}
+	err = db.RecentContributionSignals().ClearSignals(ctx, repoId)
+	if err != nil {
+		return err
+	}
 
-		for _, commit := range commitLog {
-			err := store.AddCommit(ctx, database.Commit{
-				RepoID:       repoId,
-				AuthorName:   commit.AuthorName,
-				AuthorEmail:  commit.AuthorEmail,
-				Timestamp:    commit.Timestamp,
-				CommitSHA:    commit.SHA,
-				FilesChanged: commit.ChangedFiles,
-			})
-			if err != nil {
-				return errors.Wrapf(err, "AddCommit %v", commit)
-			}
-			count++
+	for _, commit := range commitLog {
+		err := db.RecentContributionSignals().AddCommit(ctx, database.Commit{
+			RepoID:       repoId,
+			AuthorName:   commit.AuthorName,
+			AuthorEmail:  commit.AuthorEmail,
+			Timestamp:    commit.Timestamp,
+			CommitSHA:    commit.SHA,
+			FilesChanged: commit.ChangedFiles,
+		})
+		if err != nil {
+			return errors.Wrapf(err, "AddCommit %v", commit)
 		}
-		lgr.Info("commits inserted", log.Int("count", count), log.Int("repo_id", int(repoId)))
-		return nil
-	})
+		count++
+	}
+	lgr.Info("commits inserted", log.Int("count", count), log.Int("repo_id", int(repoId)))
 	if err != nil {
 		return err
 	}

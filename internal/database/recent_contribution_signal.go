@@ -217,11 +217,12 @@ func (s *recentContributionSignalStore) ClearSignals(ctx context.Context, repoID
 // for each new signal appearing in `own_signal_recent_contribution` by using
 // a trigger: `update_own_aggregate_recent_contribution`.
 func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Commit) (err error) {
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+	//tx, err := s.transact(ctx)
+	//if err != nil {
+	//	return err
+	//}
+	//defer func() { err = tx.Done(err) }()
+	tx := s
 
 	// Get or create commit author:
 	authorID, err := tx.ensureAuthor(ctx, commit)
