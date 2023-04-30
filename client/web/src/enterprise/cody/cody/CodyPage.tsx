@@ -16,6 +16,7 @@ import {
     MenuLink,
     PageHeader,
     Link,
+    H4,
 } from '@sourcegraph/wildcard'
 
 import { ChatHistory } from '../../../cody/ChatHistory'
@@ -88,9 +89,9 @@ export const CodyPage: React.FunctionComponent<CodePageProps> = ({ authenticated
             {/* Page content */}
             <div className={classNames('row mb-5', styles.pageWrapper)}>
                 <div className={classNames('d-flex flex-column col-sm-3 h-100', styles.sidebar)}>
-                    <h4>
+                    <H4>
                         <b>Conversations</b>
-                    </h4>
+                    </H4>
                     <ChatHistory
                         transcriptHistory={transcriptHistory}
                         loadTranscript={loadTranscriptFromHistory}

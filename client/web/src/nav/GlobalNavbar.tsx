@@ -24,7 +24,6 @@ import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
-import { CodyIcon } from '../cody/CodyIcon'
 import { CodyLogo } from '../cody/CodyLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
@@ -182,7 +181,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext])
+    }, [ownEnabled, showSearchContext, showCody])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
