@@ -2447,6 +2447,9 @@ func (c *clientImplementor) ArchiveReader(
 			return nil
 		}
 
+		// This Reads the first message to check for errors before contining reading the rest of the stream.
+		// if the first message is an error, the stream is closed and the error is returned.
+		// This is necessary because the first message may contain an error (e.g repo not found error), but the stream may not be closed so the error is not returned.
 		firstMessage, err := stream.Recv()
 		if err != nil {
 			cancel()
