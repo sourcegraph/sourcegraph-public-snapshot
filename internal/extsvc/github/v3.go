@@ -799,7 +799,7 @@ func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string, fo
 
 func (c *V3Client) DeleteRef(ctx context.Context, owner, repo string, ref string) error {
 	//
-	if _, err := c.delete(ctx, "repos/"+owner+"/"+repo+"/git/refs/"+ref); err != nil {
+	if _, err := c.delete(ctx, "repos/"+owner+"/"+repo+"/git/refs/heads/"+ref); err != nil {
 		return err
 	}
 	return nil
