@@ -13,7 +13,7 @@ importers:
 
   .:
     specifiers:
-      '@apollo/client': ^3.8.0-alpha.7
+      '@apollo/client': ^3.8.0-alpha.12
       '@atlassian/aui': ^7.10.3
       '@axe-core/puppeteer': ^4.4.2
       '@babel/cli': ^7.20.7
@@ -208,7 +208,7 @@ importers:
       agent-base: 6.0.2
       ajv: ^8.6.3
       ajv-formats: ^2.1.1
-      apollo3-cache-persist: ^0.12.1
+      apollo3-cache-persist: ^0.14.1
       autoprefixer: ^10.2.1
       axe-core: ^4.4.1
       babel-jest: ^28.1.0
@@ -414,7 +414,7 @@ importers:
       yauzl: ^2.10.0
       zustand: ^3.6.9
     dependencies:
-      '@apollo/client': 3.8.0-alpha.7_5tbbnxkk6lozdg365l3mqvd64e
+      '@apollo/client': 3.8.0-alpha.12_5tbbnxkk6lozdg365l3mqvd64e
       '@codemirror/autocomplete': 6.1.0_42luzusa22g3gmuqmbrrjz6ypm
       '@codemirror/commands': 6.0.1
       '@codemirror/lang-json': 6.0.0
@@ -471,7 +471,7 @@ importers:
       agent-base: 6.0.2
       ajv: 8.11.2
       ajv-formats: 2.1.1_ajv@8.11.2
-      apollo3-cache-persist: 0.12.1_644btsh2xtpu4bkvh35a7fqf6e
+      apollo3-cache-persist: 0.14.1_rltrxpegrprmwpokfez3ymhtei
       bloomfilter: 0.0.18
       buffer: 6.0.3
       case-sensitive-paths-webpack-plugin: 2.4.0
@@ -811,7 +811,7 @@ importers:
       webpack-dev-server: 4.11.1_rjsyjcrmk25kqsjzwkvj3a2evq
       webpack-manifest-plugin: 5.0.0_webpack@5.75.0
       webpack-stats-plugin: 1.1.1
-      wildcard-mock-link: 2.0.1_o5lzffothtsynmyk2hdsl4g6qu
+      wildcard-mock-link: 2.0.1_5j6kkanuhdj4dkqn4ogticzdfy
       worker-loader: 3.0.8_webpack@5.75.0
       yaml: 2.2.1
       yauzl: 2.10.0
@@ -1280,8 +1280,8 @@ packages:
       js-yaml: 3.14.1
     dev: true
 
-  /@apollo/client/3.8.0-alpha.7_5tbbnxkk6lozdg365l3mqvd64e:
-    resolution: {integrity: sha512-pwyACANhC4R0VnEXn4Uv7DEIOr3V6kmKC+Eh3wlspuhP7RLHsU31oFYXmNs2THHAMDdXAK96axutd6qP86eZ+Q==}
+  /@apollo/client/3.8.0-alpha.12_5tbbnxkk6lozdg365l3mqvd64e:
+    resolution: {integrity: sha512-+xLaYKQbCBuYSpEq4S+VDP39gW0Rxj0EbImVfyInHAPjbHH22mQ05yRIRO5346uD6SVf9mOBQaJdDMZl0M5jOQ==}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
       graphql-ws: ^5.5.5
@@ -1306,7 +1306,7 @@ packages:
       graphql-tag: 2.12.6_graphql@15.4.0
       graphql-ws: 5.12.1_graphql@15.4.0
       hoist-non-react-statics: 3.3.2
-      optimism: 0.16.1
+      optimism: 0.17.1
       prop-types: 15.8.1
       react: 18.1.0
       react-dom: 18.1.0_react@18.1.0
@@ -10232,12 +10232,6 @@ packages:
     resolution: {integrity: sha512-1VPkkTBk07gMR1fjpBtse4G+oJqpmE+0gUFB0dg3VIL7qJmUVaBoD/vlzMm/jNeOPfvlmerl1lpnsZyBUFIRuw==}
     dev: false
 
-  /@wry/context/0.6.0:
-    resolution: {integrity: sha512-sAgendOXR8dM7stJw3FusRxFHF/ZinU0lffsA2YTyyIOfic86JX02qlPqPVqJNZJPAxFt+2EE8bvq6ZlS0Kf+Q==}
-    engines: {node: '>=8'}
-    dependencies:
-      tslib: 2.1.0
-
   /@wry/context/0.7.0:
     resolution: {integrity: sha512-LcDAiYWRtwAoSOArfk7cuYvFXytxfVrdX7yxoUmK7pPITLk5jYh2F8knCwS7LjgYL8u1eidPlKKV6Ikqq0ODqQ==}
     engines: {node: '>=8'}
@@ -10652,12 +10646,12 @@ packages:
       normalize-path: 3.0.0
       picomatch: 2.3.1
 
-  /apollo3-cache-persist/0.12.1_644btsh2xtpu4bkvh35a7fqf6e:
-    resolution: {integrity: sha512-bYh/OzhzR70URRRf0OkzkpTLB7+fwx1Ftiw8/MWW8NhEgF+K9u3FO786DSUcE6X2NqSObYKF0+CpM9K8vrJNxw==}
+  /apollo3-cache-persist/0.14.1_rltrxpegrprmwpokfez3ymhtei:
+    resolution: {integrity: sha512-p/jNzN/MmSd0TmY7/ts0B3qi0SdQ3w9yNLQdKqB3GGb9xATUlAum2v4hSrTeWd/DZKK2Z7Xg5kFXTH6nNVnKSQ==}
     peerDependencies:
       '@apollo/client': ^3.2.5
     dependencies:
-      '@apollo/client': 3.8.0-alpha.7_5tbbnxkk6lozdg365l3mqvd64e
+      '@apollo/client': 3.8.0-alpha.12_5tbbnxkk6lozdg365l3mqvd64e
     dev: false
 
   /app-root-dir/1.0.2:
@@ -13031,7 +13025,7 @@ packages:
       postcss-modules-values: 4.0.0_postcss@8.4.21
       postcss-value-parser: 4.2.0
       semver: 7.3.8
-      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
+      webpack: 5.75.0_esbuild@0.17.14
 
   /css-minimizer-webpack-plugin/4.2.2_zj7shrtzhjuywytipisjis56au:
     resolution: {integrity: sha512-s3Of/4jKfw1Hj9CxEO1E5oXhQAxlayuHO2y/ML+C6I9sQ7FdzfEV6QgMLN3vI+qFsjJGIAFLKtQK7t8BOXAIyA==}
@@ -21856,11 +21850,12 @@ packages:
     resolution: {integrity: sha512-ur5UIdyw5Y7yEj9wLzhqXiy6GZ3Mwx0yGI+5sMn2r0N0v3cKJvUmFH5yPP+WXh9e0xfyzyJX95D8l088DNFj7A==}
     hasBin: true
 
-  /optimism/0.16.1:
-    resolution: {integrity: sha512-64i+Uw3otrndfq5kaoGNoY7pvOhSsjFEN4bdEFh80MWVk/dbgJfMv7VFDeCT8LxNAlEVhQmdVEbfE7X2nWNIIg==}
+  /optimism/0.17.1:
+    resolution: {integrity: sha512-1q978py9I7e6dYTAqF37TtZ2Ftr8ooL9m6mNkpdlte0F6rA6MrkpESCC52uiaF5jw4rdknWNyuSiN7lGlbj4Cg==}
     dependencies:
-      '@wry/context': 0.6.0
+      '@wry/context': 0.7.0
       '@wry/trie': 0.3.0
+      tslib: 2.1.0
 
   /optionator/0.8.3:
     resolution: {integrity: sha512-+IW9pACdk3XWmmTXG8m3upGUJst5XRGzxMRjXzAuJ1XnIFNvfhjjIuYkDvysnPQ7qzqVzLt78BCruntqRhWQbA==}
@@ -24975,7 +24970,7 @@ packages:
       klona: 2.0.5
       neo-async: 2.6.2
       sass: 1.32.4
-      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
+      webpack: 5.75.0_esbuild@0.17.14
 
   /sass/1.32.4:
     resolution: {integrity: sha512-N0BT0PI/t3+gD8jKa83zJJUb7ssfQnRRfqN+GIErokW6U4guBpfYl8qYB+OFLEho+QvnV5ZH1R9qhUC/Z2Ch9w==}
@@ -26164,7 +26159,7 @@ packages:
     peerDependencies:
       webpack: ^5.0.0
     dependencies:
-      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
+      webpack: 5.75.0_esbuild@0.17.14
 
   /style-mod/4.0.0:
     resolution: {integrity: sha512-OPhtyEjyyN9x3nhPsu76f52yUGXiZcgvsrFVtvTkyGRQJ0XK+GPc6ov1z+lRpbeabka+MYEQxOYRnt5nF30aMw==}
@@ -26708,7 +26703,7 @@ packages:
       schema-utils: 3.1.1
       serialize-javascript: 6.0.0
       terser: 5.16.8
-      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
+      webpack: 5.75.0_esbuild@0.17.14
 
   /terser/4.8.1:
     resolution: {integrity: sha512-4GnLC0x667eJG0ewJTa6z/yXrbLGv80D9Ru6HIpCQmO+Q4PfEtBFi0ObSckqwL6VyQv/7ENJieXHo2ANmdQwgw==}
@@ -28507,7 +28502,6 @@ packages:
       - '@swc/core'
       - esbuild
       - uglify-js
-    dev: false
 
   /webpack/5.75.0_pdcrf7mb3dfag2zju4x4octu4a:
     resolution: {integrity: sha512-piaIaoVJlqMsPtX/+3KTTO6jfvrSYgauFVdt8cr9LTHKmcq/AMd4mhzsiP7ZF/PGRNPGA8336jldh9l2Kt2ogQ==}
@@ -28682,13 +28676,13 @@ packages:
       string-width: 4.2.3
     dev: true
 
-  /wildcard-mock-link/2.0.1_o5lzffothtsynmyk2hdsl4g6qu:
+  /wildcard-mock-link/2.0.1_5j6kkanuhdj4dkqn4ogticzdfy:
     resolution: {integrity: sha512-pEYG7q9cHLc6lQVvYtj6CeoI9nIjZN59jiJ+jbwT+Oki8RyV+2BCNoRNRIamkh6r43ByseKIKcNJMbudt0e4aQ==}
     peerDependencies:
       '@apollo/client': ^3.3.15
       graphql: ^14.5.8 || ^15.0.0
     dependencies:
-      '@apollo/client': 3.8.0-alpha.7_5tbbnxkk6lozdg365l3mqvd64e
+      '@apollo/client': 3.8.0-alpha.12_5tbbnxkk6lozdg365l3mqvd64e
       delay: 5.0.0
       fast-json-stable-stringify: 2.1.0
       graphql: 15.4.0
