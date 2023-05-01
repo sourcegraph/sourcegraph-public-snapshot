@@ -236,6 +236,21 @@ func TestEmbedRepo(t *testing.T) {
 		stats.TextIndexStats.Duration = 0
 		require.Equal(t, expectedStats, stats)
 	})
+
+	t.Run("embeddings limited", func(t *testing.T) {
+		optsCopy := opts
+		optsCopy.MaxCodeEmbeddings = 3
+		optsCopy.MaxTextEmbeddings = 1
+
+		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
+		index, _, err := EmbedRepo(ctx, client, rl, getDocumentRanks, optsCopy)
+		require.NoError(t, err)
+
+		// a.md has 2 chunks, c.java has 3 chunks
+		require.Len(t, index.CodeIndex.Embeddings, index.CodeIndex.ColumnDimension*5)
+		// b.md has 2 chunks
+		require.Len(t, index.TextIndex.Embeddings, index.CodeIndex.ColumnDimension*2)
+	})
 }
 
 func NewMockEmbeddingsClient() EmbeddingsClient {

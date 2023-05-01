@@ -162,7 +162,7 @@ func embedFiles(
 	)
 	for _, file := range files {
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
-		if len(index.RowMetadata) >= maxEmbeddingVectors {
+		if statsEmbeddedChunkCount >= maxEmbeddingVectors {
 			statsSkipped.Add(SkipReasonMaxEmbeddings, int(file.Size))
 			continue
 		}
