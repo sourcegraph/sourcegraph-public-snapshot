@@ -86,7 +86,7 @@ func NewClient() Client {
 	}
 }
 
-func getGRPCClient(cc grpc.ClientConnInterface) proto.GitserverServiceClient {
+func defaultGRPCClientSource(cc grpc.ClientConnInterface) proto.GitserverServiceClient {
 	return proto.NewGitserverServiceClient(cc)
 }
 
