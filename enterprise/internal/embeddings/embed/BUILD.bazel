@@ -30,6 +30,7 @@ go_test(
     ],
     embed = [":embed"],
     deps = [
+        "//enterprise/internal/embeddings",
         "//enterprise/internal/embeddings/split",
         "//internal/api",
         "//lib/errors",
