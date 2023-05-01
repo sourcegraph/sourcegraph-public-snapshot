@@ -15,7 +15,7 @@ In order to run executors on your machine, a few things need to be set up correc
 - Executors only support linux-based machine with amd64 processors
 - Docker has to be installed on the machine (`curl -fsSL https://get.docker.com | sh`)
 - Git has to be installed at a version `>= v2.26`
-- The ability to run commands as `root` on the host machine
+- The ability to run commands as `root` on the host machine and configure networking routes
 
 If [Firecracker isolation will be used](executors.md#how-it-works): _(recommended)_
 
