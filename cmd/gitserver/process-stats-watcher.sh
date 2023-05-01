@@ -19,8 +19,8 @@ while true; do
   # Alpine has a very limited `ps`
   # it does not limit output to just one process, even when specifying a pid
   # so we need to filter the output by pid
-  # and it does not record the whole command in the "comm" field - just the first ten characters
   a=($(ps -o pid -o rss -o vsz -o etime -o time -o comm "${pid}" | grep "^ *${pid} " | tail -1))
+  # if there is no output, the process is no longer running, so stop monitoring
   [ ${#a[@]} -eq 0 ] && break
   # double-check the process for the given command to make sure it's not another process that's been given the same pid
   # unlikely, but let's put in the effort
