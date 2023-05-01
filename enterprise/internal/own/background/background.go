@@ -40,16 +40,6 @@ var IndexJobTypes = []IndexJobType{{
 	RefreshInterval: time.Minute * 5,
 }}
 
-var IndexJobById = mapIndexJobs(IndexJobTypes)
-
-func mapIndexJobs(types []IndexJobType) map[JobTypeId]IndexJobType {
-	mapped := make(map[JobTypeId]IndexJobType)
-	for _, jobType := range types {
-		mapped[jobType.Id] = jobType
-	}
-	return mapped
-}
-
 type JobTypeId int
 
 const (
@@ -190,6 +180,7 @@ type handler struct {
 	db          database.DB
 	workerStore dbworkerstore.Store[*Job]
 	limiter     *ratelimit.InstrumentedLimiter
+	op          *observation.Operation
 }
 
 func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error {
