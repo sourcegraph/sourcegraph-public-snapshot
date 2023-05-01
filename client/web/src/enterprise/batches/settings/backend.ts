@@ -23,6 +23,7 @@ export const CREDENTIAL_FIELDS_FRAGMENT = gql`
     fragment BatchChangesCredentialFields on BatchChangesCredential {
         id
         sshPublicKey
+        # commmitSigningOptedIn
         isSiteCredential
     }
 `

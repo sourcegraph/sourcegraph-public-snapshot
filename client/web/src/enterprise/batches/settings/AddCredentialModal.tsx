@@ -185,31 +185,33 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                     externalServiceKind={externalServiceKind}
                     externalServiceURL={externalServiceURL}
                 />
-                <div className="d-flex w-100 justify-content-between mb-4">
-                    <div className="flex-grow-1 mr-2">
-                        <Text className={classNames('mb-0 py-2', step === 'get-ssh-key' && 'text-muted')}>
-                            1. Add token
-                        </Text>
-                        <div
-                            className={classNames(
-                                styles.addCredentialModalModalStepRuler,
-                                styles.addCredentialModalModalStepRulerPurple
-                            )}
-                        />
+                {(signCommitsAvailable || requiresSSH) && (
+                    <div className="d-flex w-100 justify-content-between mb-4">
+                        <div className="flex-grow-1 mr-2">
+                            <Text className={classNames('mb-0 py-2', step === 'get-ssh-key' && 'text-muted')}>
+                                1. Add token
+                            </Text>
+                            <div
+                                className={classNames(
+                                    styles.addCredentialModalModalStepRuler,
+                                    styles.addCredentialModalModalStepRulerPurple
+                                )}
+                            />
+                        </div>
+                        <div className="flex-grow-1 ml-2">
+                            <Text className={classNames('mb-0 py-2', step === 'add-token' && 'text-muted')}>
+                                2. Get SSH Key
+                            </Text>
+                            <div
+                                className={classNames(
+                                    styles.addCredentialModalModalStepRuler,
+                                    step === 'add-token' && styles.addCredentialModalModalStepRulerGray,
+                                    step === 'get-ssh-key' && styles.addCredentialModalModalStepRulerBlue
+                                )}
+                            />
+                        </div>
                     </div>
-                    <div className="flex-grow-1 ml-2">
-                        <Text className={classNames('mb-0 py-2', step === 'add-token' && 'text-muted')}>
-                            2. Get SSH Key
-                        </Text>
-                        <div
-                            className={classNames(
-                                styles.addCredentialModalModalStepRuler,
-                                step === 'add-token' && styles.addCredentialModalModalStepRulerGray,
-                                step === 'get-ssh-key' && styles.addCredentialModalModalStepRulerBlue
-                            )}
-                        />
-                    </div>
-                </div>
+                )}
 
                 {step === 'add-token' && (
                     <>
