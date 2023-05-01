@@ -116,7 +116,7 @@ func mustParseDate(s string, t *testing.T) *time.Time {
 
 func TestHead(t *testing.T) {
 	inttests.InitGitserver()
-	client := gitserver.NewTestClient(http.DefaultClient, inttests.GitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, inttests.GitserverAddresses, nil)
 
 	t.Run("with sub-repo permissions", func(t *testing.T) {
 		gitCommands := []string{
