@@ -216,10 +216,10 @@ func TestClient_ArchiveReader(t *testing.T) {
 		runArchiveReaderTestfunc(t, ctx, cli, tests)
 	})
 
-	// t.Run("http", func(t *testing.T) {
-	// 	t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
-	// 	runArchiveReaderTestfunc(t, ctx, cli, tests)
-	// })
+	t.Run("http", func(t *testing.T) {
+		t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+		runArchiveReaderTestfunc(t, ctx, cli, tests)
+	})
 
 }
 
