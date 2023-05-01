@@ -26,6 +26,7 @@ If [Firecracker isolation will be used](executors.md#how-it-works): _(recommende
   - `mkfs.ext4`
   - `iptables`
   - `strings` (part of binutils)
+  - `systemd` (optional)
 
 ## Installation
 
