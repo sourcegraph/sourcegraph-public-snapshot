@@ -195,12 +195,12 @@ message CommitMatch {
 }
 
 message ArchiveRequest {
-    string repo = 1;
-    string treeish = 2;
-    string format = 3;
-    repeated string pathspecs = 4;
+  string repo = 1;
+  string treeish = 2;
+  string format = 3;
+  repeated string pathspecs = 4;
 }
 
 message ArchiveResponse {
-    bytes data = 1;
+  bytes data = 1;
 }
