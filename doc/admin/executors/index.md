@@ -19,6 +19,8 @@
 
 Executors are Sourcegraph's solution for running untrusted code in a secure and controllable way.
 
+[What the heck is firecracker??](./firecracker.md)
+
 ## Installation
 
 To deploy executors to target your Sourcegraph instance, [follow our deployment guide](deploy_executors.md).
