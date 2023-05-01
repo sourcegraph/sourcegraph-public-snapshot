@@ -80,9 +80,9 @@ func NewClient() Client {
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		userAgent:  filepath.Base(os.Args[0]),
-		operations: getOperations(),
-		grpcClient: DefaultGRPCSource,
+		userAgent:        filepath.Base(os.Args[0]),
+		operations:       getOperations(),
+		gRPCClientSource: DefaultGRPCSource,
 	}
 }
 
@@ -102,9 +102,9 @@ func NewTestClient(cli httpcli.Doer, grpcClientFunc func(cc grpc.ClientConnInter
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		userAgent:  filepath.Base(os.Args[0]),
-		operations: newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
-		grpcClient: grpcClientFunc,
+		userAgent:        filepath.Base(os.Args[0]),
+		operations:       newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
+		gRPCClientSource: grpcClientFunc,
 	}
 }
 
@@ -201,7 +201,7 @@ type clientImplementor struct {
 	operations *operations
 
 	// grpcClient is a function that returns a gRPC client to use for the given connection
-	grpcClient func(cc grpc.ClientConnInterface) proto.GitserverServiceClient
+	gRPCClientSource func(cc grpc.ClientConnInterface) proto.GitserverServiceClient
 }
 
 type RawBatchLogResult struct {

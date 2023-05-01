@@ -2413,7 +2413,7 @@ func (c *clientImplementor) ArchiveReader(
 			return nil, err
 		}
 
-		client := c.grpcClient(conn)
+		client := c.gRPCClientSource(conn)
 
 		req := &proto.ArchiveRequest{
 			Repo:    string(repo),
