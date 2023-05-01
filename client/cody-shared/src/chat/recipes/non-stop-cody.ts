@@ -183,7 +183,7 @@ export class NonStopCody implements Recipe {
         }
 
         // TODO: This hardcodes the Anthropic "Assistant:", "Human:" prompts. Need to generalize this.
-        const prompt = `I need your help to improve some code. The area I need help with is highlighted with <cody-help> tags. You are helping me work on that part. Follow the instructions in the prompt attribute and produce a rewritten replacement. You should remove the <cody-help> tags from your replacement. Put the replacement in <cody-replace> tags. I only need the replacement, no other commentary about it. Do not write anything after the closing </cody-replace> tag.
+        const prompt = `I need your help to improve some code. The area I need help with is highlighted with <cody-help> tags. You are helping me work on that part. Follow the instructions in the prompt attribute and produce a rewritten replacement. You should remove the <cody-help> tags from your replacement. Put the replacement in <cody-replace> tags. I need only the replacement, no other commentary about it. Do not write anything after the closing </cody-replace> tag.
 
 Assistant: OK, I understand. I will follow the prompts to improve the code, and only reply with code in <cody-replace> tags. The last thing I write will be the closing </cody-replace> tag.
 
@@ -255,7 +255,7 @@ ${truncateTextStart(
                     displayText: 'Replace the instructions in the selection.',
                 },
                 { speaker: 'assistant' },
-                this.getContextMessages(selectedText, context.codebaseContext)
+                this.getContextMessages(selectedText || precedingText + followingText, context.codebaseContext)
             )
         )
     }
