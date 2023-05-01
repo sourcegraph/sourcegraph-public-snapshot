@@ -59,7 +59,7 @@ export const CodyPage: React.FunctionComponent<CodePageProps> = ({ authenticated
 
                             <MenuList>
                                 <MenuItem onSelect={clearHistory}>
-                                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Clear conversations
+                                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Clear all chats
                                 </MenuItem>
                                 <MenuDivider />
                                 <MenuLink as={Link} to="/help/cody" target="_blank" rel="noopener">
@@ -90,7 +90,7 @@ export const CodyPage: React.FunctionComponent<CodePageProps> = ({ authenticated
             <div className={classNames('row mb-5', styles.pageWrapper)}>
                 <div className={classNames('d-flex flex-column col-sm-3 h-100', styles.sidebar)}>
                     <H4>
-                        <b>Conversations</b>
+                        <b>Chats</b>
                     </H4>
                     <ChatHistory
                         transcriptHistory={transcriptHistory}
