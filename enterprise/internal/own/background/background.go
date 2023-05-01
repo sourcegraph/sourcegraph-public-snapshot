@@ -10,7 +10,6 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -18,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -212,44 +210,6 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 }
 
 type signalIndexFunc func(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB) error
-
-func handleRecentContributors(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB) error {
-	repoStore := db.Repos()
-	repo, err := repoStore.Get(ctx, repoId)
-	if err != nil {
-		return errors.Wrap(err, "repoStore.Get")
-	}
-	commitLog, err := gitserver.NewClient().CommitLog(ctx, repo.Name, time.Now().AddDate(0, 0, -90))
-	if err != nil {
-		return errors.Wrap(err, "CommitLog")
-	}
-
-	count := 0
-	err = db.RecentContributionSignals().ClearSignals(ctx, repoId)
-	if err != nil {
-		return err
-	}
-
-	for _, commit := range commitLog {
-		err := db.RecentContributionSignals().AddCommit(ctx, database.Commit{
-			RepoID:       repoId,
-			AuthorName:   commit.AuthorName,
-			AuthorEmail:  commit.AuthorEmail,
-			Timestamp:    commit.Timestamp,
-			CommitSHA:    commit.SHA,
-			FilesChanged: commit.ChangedFiles,
-		})
-		if err != nil {
-			return errors.Wrapf(err, "AddCommit %v", commit)
-		}
-		count++
-	}
-	lgr.Info("commits inserted", log.Int("count", count), log.Int("repo_id", int(repoId)))
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func janitorFunc(db database.DB, retention time.Duration) func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error) {
 	return func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error) {
