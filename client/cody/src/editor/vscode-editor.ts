@@ -160,19 +160,6 @@ export class VSCodeEditor implements Editor {
         await vscode.commands.executeCommand('vscode.diff', oldDoc.uri, updated, 'Diff by Cody')
     }
 
-    public async showDiff1(original: string, filePath: vscode.Uri): Promise<void> {
-        const edit = new vscode.WorkspaceEdit()
-        const newFilePath = vscode.Uri.file(filePath.fsPath + '.cody')
-        edit.createFile(filePath, { ignoreIfExists: true })
-        await vscode.workspace.applyEdit(edit)
-        await vscode.workspace.openTextDocument(filePath)
-        await vscode.workspace.openTextDocument({ content: original }).then(doc => doc.save())
-
-        // Open the document in a new editor group/tab.
-        await vscode.window.showTextDocument(newFilePath, { viewColumn: vscode.ViewColumn.Beside })
-        await vscode.commands.executeCommand('vscode.diff', newFilePath, filePath, 'Diff by Cody')
-    }
-
     public async showQuickPick(labels: string[]): Promise<string | undefined> {
         const label = await vscode.window.showQuickPick(labels)
         return label
