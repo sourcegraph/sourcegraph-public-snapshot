@@ -123,6 +123,8 @@ Comment out until ready to advertise this
 
 ### Native Kubernetes
 
+<span class="badge badge-experimental">Experimental</span>
+
 <a href='kubernetes_native_arch.png' target='_blank'><img src="kubernetes_native_arch.png" alt="Executors architecture - native kubernetes"></a>
 
 1.  The executor image is started as a pod in a Kubernetes node
@@ -140,6 +142,8 @@ Comment out until ready to advertise this
 10.  The executor calls a Sourcegraph API to that "complete" the Job.
 
 ### Docker-in-Docker Kubernetes
+
+<span class="badge badge-experimental">Experimental</span>
 
 <a href='kubernetes_dind_arch.png' target='_blank'><img src="kubernetes_dind_arch.png" alt="Executors architecture - docker in docker kubernetes"></a>
 
