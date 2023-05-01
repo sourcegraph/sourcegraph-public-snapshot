@@ -169,6 +169,7 @@ func TestGRPCMethodFilter(t *testing.T) {
 
 func TestAccessLogGRPC(t *testing.T) {
 	t.Run("unary", func(t *testing.T) {
+
 		logger, exportLogs := logtest.Captured(t)
 
 		watcher := &accessLogConf{}
@@ -203,6 +204,9 @@ func TestAccessLogGRPC(t *testing.T) {
 		}
 
 		logs := exportLogs()
+
+		t.Log(logs)
+		t.Fatalf("lol")
 
 		require.Len(t, logs, 2)
 		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
