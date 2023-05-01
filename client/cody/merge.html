@@ -32,21 +32,32 @@
     background: orangered;
 }
 </style>
+<input type="checkbox" checked id="linealgo"><label for="linealgo">Line algorithm</label>
 <div id="layout">
 
 <p>
 <label for="original">Original:</label><br>
-<textarea id="original" rows="20" cols="60"></textarea>
+<textarea id="original" rows="20" cols="60">S
+f = (x) => {
+...2 * x;
+}</textarea>
 </p>
 
 <p>
 <label for="robot">Robot:</label><br>
-<textarea id="robot" rows="20" cols="60"></textarea>
+<textarea id="robot" rows="20" cols="60">S
+// Does stuff
+f = (x) => {
+...2 * x;
+}</textarea>
 </p>
 
 <p>
 <label for="human">Human:</label><br>
-<textarea id="human" rows="20" cols="60"></textarea>
+<textarea id="human" rows="20" cols="60">S
+f = (x) => {
+...2 * x;
+}</textarea>
 </p>
 
 <pre id="merged">
@@ -71,16 +82,45 @@ function time(label, f) {
 // It may be necessary to understand some structural edits like
 // "indent".
 
+const BIG = 1 << 10
+
 // Computes the longest common subsequence of strings a and b.
 // Returns a boolean program of |b|+1 rows and |a|+1 columns in
 // row-major format. The 0th row and column can be ignored. If
 // the program[i, j] is true then the longest common subsequence
-// of a and b uses b[i-1] and a[j-1]. 
+// of a and b uses b[i-1] and a[j-1].
 function longestCommonSubsequence(a, b) {
+    // TODO: Diff should be higher quality in cases like this:
+    //
+    // I(// This )S(f)I(u)S(n)I(ction)S( frozzle)I(s widgets)
+    // I(fn frozzle)...
+    //
+    // Here we have eaten into the subsequent line. It would be
+    // better to do:
+    //
+    // I(// This function frozzles widgets)
+    // S(fn frozzle)
+    //
+    // The former is prone to conflicts where one agent is editing the
+    // comment and the other is editing the function signature.
+    //
+    // Line-based diff does not have this problem.
+    //
+    // Character-based diff could do a clean up pass, trying to swap
+    // substrings of S(...) by peeling off I(...) which appear later.
+    //
+    // Or, more simply, could we add a penalty for switching from
+    // insertion to skipping? Not magic. May help locally.
+    //
+    // Or, can we compute in *two planes!* where one delays until a
+    // newline.
+
     // Construct a dynamic program of edits.
     const lenA = a.length;
     const lenB = b.length;
     const program = new Uint16Array((lenA + 1) * (lenB + 1));
+    // The cost of amortizing inserting whole line preferences.
+    const amortize = new Uint16Array((lenA + 1) * (lenB + 1));
     // TODO: Use a cheaper representation than strings for the operations.
     const ops = new Array((lenA + 1) * (lenB + 1));
     ops[0] = '*';
@@ -94,24 +134,80 @@ function longestCommonSubsequence(a, b) {
         program[i * (lenA + 1)] = i;
         ops[i * (lenA + 1)] = 'I';
     }
+    let lineBreaksInB = [0];
     for (let iB = 1; iB <= lenB; iB++) {
         const chB = b[iB - 1];
+        if ((chB === '\r' && (iB === lenB || b[iB] !== '\n')) || chB === '\n') {
+            // We are at a newline.
+            lineBreaksInB.push(iB)
+        }
         for (let iA = 1; iA <= lenA; iA++) {
             const chA = a[iA - 1];
-            const costDeleteA = program[iB * (lenA + 1) + iA - 1] + 1;
-            const costInsertB = program[(iB - 1) * (lenA + 1) + iA] + 1;
-            const costSkipReplace = program[(iB - 1) * (lenA + 1) + iA - 1] + (chA == chB ? 0 : 1);
+            const costDeleteA = (amortize[(iB - 1) * (lenA + 1) + iA - 1] || amortize[(iB - 1) * (lenA + 1) + iA]) ? BIG : (program[iB * (lenA + 1) + iA - 1] + 1);
+            const costInsertB = (amortize[(iB - 1) * (lenA + 1) + iA - 1] || amortize[iB * (lenA + 1) + iA - 1]) ? BIG : (program[(iB - 1) * (lenA + 1) + iA] + 1);
+            const costSkipReplace = program[(iB - 1) * (lenA + 1) + iA - 1] + (chA == chB ? 0 : 1) + (amortize[(iB - 1) * (lenA + 1) + iA - 1] ? 1 : 0);
             const cost = Math.min(costDeleteA, costInsertB, costSkipReplace);
             program[iB * (lenA + 1) + iA] = cost;
-            ops[iB * (lenA + 1) + iA] = cost === costDeleteA ? 'X' : (cost === costInsertB ? 'I' : (chA === chB ? '-' : 'R'));
+            ops[iB * (lenA + 1) + iA] = cost === costSkipReplace ? (chA === chB ? '-' : 'R') : (cost === costDeleteA ? 'X' : 'I');
+            amortize[iB * (lenA + 1) + iA] = Math.max(0, amortize[(iB - 1) * (lenA + 1) + iA - 1] - 1)
+
+            // Edits which insert a complete line like:
+            //
+            // > // This function recomputes bounds...
+            // function recompute(x) { return 2*x; }
+            //
+            // Produce unfortunate character-level diffs which eagerly consume
+            // part of the declaration:
+            //
+            // (insert: // This )(skip: function recompute)(insert: s bounds...
+            // function recompute)(skip: (x) { ...})
+            //
+            // If a concurrent editor renames the function then there's a
+            // conflict. Simply inserting the comment line is a better diff.
+            // To improve these diffs we treat newlines specially and if it is
+            // the same cost to insert whole lines, we prefer that.
+            //
+            // Worst case this is n^3 (n=number of lines) as the n*n pairs of
+            // newlines evaluate the n-1 previous newlines.
+            let bestLineInsertionCount = 0
+            let bestLineInsertionCost = cost
+            if (linealgo.checked && lineBreaksInB.at(-1) === iB && ((chA === '\r' && (iA === lenA || a[iA] !== '\n')) || chA === '\n')) {
+                // We are at a line break in A *and* a line break in B. Re-evaluate simply inserting the last 1..N lines of B.
+                let prefixLength = 0;
+                while (iA + prefixLength <= lenA && iB + prefixLength <= lenB && a[iA + prefixLength] === b[iB + prefixLength]) {
+                    // TODO: Does this need to stop at the next line break?
+                    prefixLength++
+                }
+                if (prefixLength) {
+                    let breakI
+                    let cumulativeCost
+                    // TODO: Consider limiting this to the previous N lines to stop going cubic.
+                    for (breakI = 2; breakI <= lineBreaksInB.length; breakI++) {
+                        // Cost of inserting those lines, discounting the saving we will make by inserting the prefix of the next line
+                        const lineInsertionCost = lineBreaksInB.at(-1) - lineBreaksInB.at(-breakI) - prefixLength
+                        cumulativeCost = program[lineBreaksInB.at(-breakI) * (lenA + 1) + iA] + lineInsertionCost
+                        if (cumulativeCost < bestLineInsertionCost) {
+                            bestLineInsertionCount = breakI - 1
+                            bestLineInsertionCost = cumulativeCost
+                        }
+                    }
+                    if (bestLineInsertionCount && cumulativeCost < program[iB * (lenA + 1) + iA]) {
+                        // Adjust the program to simply insert N lines.
+                        program[iB * (lenA + 1) + iA] = cumulativeCost
+                        amortize[iB * (lenA + 1) + iA] = prefixLength
+                        ops[iB * (lenA + 1) + iA] = {wormhole: true, insertLines: bestLineInsertionCount, offset: iB - lineBreaksInB.at(-bestLineInsertionCount-1)}
+                    }
+                }
+            }
         }
     }
-    // dumpProgram(program, ops, a, b);
+    dumpProgram(program, ops, amortize, a, b);
     const use = new Uint8Array((lenA + 1) * (lenB + 1));
     let i = lenA;
     let j = lenB;
     while (i != 0 || j != 0) {
-        switch (ops[j * (lenA + 1) + i]) {
+        const op = ops[j * (lenA + 1) + i];
+        switch (op) {
         case '-':
             use[j * (lenA + 1) + i] = 1;
             i--;
@@ -128,7 +224,12 @@ function longestCommonSubsequence(a, b) {
             j--;
             break;
         default:
-            throw new Error('unreachable');
+            if (!op.wormhole) debugger;
+            // Use this newline.
+            use[j * (lenA + 1) + i] = 1;
+            // Skip forward N lines.
+            j -= op.offset
+            break;
         }
     }
     // The total cost
@@ -136,21 +237,33 @@ function longestCommonSubsequence(a, b) {
     return use;
 }
 
-function dumpProgram(program, ops, a, b) {
+function render(ch) {
+    return ch == '\n' ? '@' : ch
+}
+
+function dumpProgram(program, ops, amortize, a, b) {
     const buffer = [];
-    buffer.push(`  ^${a}\n`);
+    buffer.push(`  ^${Array.prototype.map.call(a, render).join('')}\n`);
     for (let iB = 0; iB <= b.length; iB++) {
-        buffer.push(`${iB == 0 ? '^' : b[iB-1]}|`)
+        buffer.push(`${iB == 0 ? '^' : render(b[iB-1])}|`)
         for (let iA = 0; iA <= a.length; iA++) {
             buffer.push(program[iB * (a.length + 1) + iA].toString(26).slice(0, 1))
         }
         buffer.push('\n')
     }
-    buffer.push(`  ^${a}\n`);
+    buffer.push(`  ^${Array.prototype.map.call(a, render).join('')}\n`);
     for (let iB = 0; iB <= b.length; iB++) {
-        buffer.push(`${iB == 0 ? '^' : b[iB-1]}|`)
+        buffer.push(`${iB == 0 ? '^' : render(b[iB-1])}|`)
         for (let iA = 0; iA <= a.length; iA++) {
             buffer.push(ops[iB * (a.length + 1) + iA])
+        }
+        buffer.push('\n')
+    }
+    buffer.push(`  ^${Array.prototype.map.call(a, render).join('')}\n`);
+    for (let iB = 0; iB <= b.length; iB++) {
+        buffer.push(`${iB == 0 ? '^' : render(b[iB-1])}|`)
+        for (let iA = 0; iA <= a.length; iA++) {
+            buffer.push(amortize[iB * (a.length + 1) + iA].toString(26).slice(0, 1))
         }
         buffer.push('\n')
     }
@@ -159,9 +272,9 @@ function dumpProgram(program, ops, a, b) {
 
 function dumpUse(use, a, b) {
     const buffer = [];
-    buffer.push(`  ^${a}\n`);
+    buffer.push(`  ^${Array.prototype.map.call(a, render).join('')}\n`);
     for (let iB = 0; iB <= b.length; iB++) {
-        buffer.push(`${iB == 0 ? '^' : b[iB-1]}|`)
+        buffer.push(`${iB == 0 ? '^' : render(b[iB-1])}|`)
         for (let iA = 0; iA <= a.length; iA++) {
             buffer.push(use[iB * (a.length + 1) + iA].toString())
         }
@@ -206,10 +319,12 @@ function stateChanged() {
 }
 
 function computeChunks(original, a, b) {
+    console.log('Original/Robot')
     const useA = longestCommonSubsequence(original, a);
-    // dumpUse(useA, original, a);
+    dumpUse(useA, original, a);
+    console.log('Original/Human')
     const useB = longestCommonSubsequence(original, b);
-    // dumpUse(useB, original, b);
+    dumpUse(useB, original, b);
     let chunks = [];
     let lO = 0;
     let lA = 0;
@@ -271,5 +386,7 @@ function computeChunks(original, a, b) {
 original.addEventListener('change', stateChanged);
 robot.addEventListener('change', stateChanged);
 human.addEventListener('change', stateChanged);
+linealgo.addEventListener('change', stateChanged);
 
+stateChanged();
 </script>

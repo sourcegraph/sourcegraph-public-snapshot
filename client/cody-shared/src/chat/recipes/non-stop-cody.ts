@@ -19,12 +19,14 @@ export class NonStopCody implements Recipe {
     private decoCodyContributionFade: vscode.TextEditorDecorationType
     private tick = 0
     private decorations: Map<vscode.Uri, TrackedDecoration[]> = new Map()
+    private comments: vscode.CommentController
+    private thread?: vscode.CommentThread
 
     constructor() {
         // TODO: Dispose the subscription. Array of disposables?
         const subscription = vscode.workspace.onDidChangeTextDocument(this.textDocumentChanged.bind(this))
         this.decoCodyContribution = vscode.window.createTextEditorDecorationType({
-            backgroundColor: '#0ca67888', // oc-teal-7; TODO(dpc): Account for themes. See: light, dark.
+            backgroundColor: '#0ca67888', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
             rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
             // TODO: Gutter icon w/ Cody branding could be cool
         })
@@ -33,6 +35,12 @@ export class NonStopCody implements Recipe {
             rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
             // TODO: Gutter icon w/ Cody branding could be cool
         })
+
+        this.comments = vscode.comments.createCommentController('cody', 'Cody')
+        this.comments.options = {
+            prompt: 'Hello, world',
+            placeHolder: 'Replace me',
+        }
     }
 
     private textDocumentChanged(event: vscode.TextDocumentChangeEvent): void {
@@ -43,7 +51,7 @@ export class NonStopCody implements Recipe {
         const decorationsToDelete: TrackedDecoration[] = []
         for (const decoration of decorations) {
             for (const change of event.contentChanges) {
-                const updatedRange = updateRange(decoration.range, change)
+                const updatedRange = updateRange<vscode.Range, vscode.Position>(decoration.range, change)
                 if (updatedRange) {
                     decoration.range = updatedRange
                 } else {
@@ -88,6 +96,23 @@ export class NonStopCody implements Recipe {
             await context.editor.showWarningMessage('NON STOP!!!')
             return null
         }
+
+        const thread = this.comments.createCommentThread(
+            vscode.window.activeTextEditor!.document.uri,
+            vscode.window.activeTextEditor!.selection,
+            [
+                {
+                    body: new vscode.MarkdownString('*Hello*, world'),
+                    mode: vscode.CommentMode.Preview,
+                    author: { name: 'Cody' },
+                },
+            ]
+        )
+        this.thread = thread
+        thread.collapsibleState = vscode.CommentThreadCollapsibleState.Expanded
+        setTimeout(() => {
+            thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
+        }, 1000)
 
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(selection.selectedText, quarterFileContext * 2) !== selection.selectedText) {
