@@ -39,6 +39,7 @@ export interface Client {
         }
     ) => Promise<void>
     reset: () => void
+    codebaseContext: CodebaseContext
 }
 
 export async function createClient({
@@ -125,7 +126,13 @@ export async function createClient({
                 sendTranscript()
             },
             onError(error) {
-                console.error(error)
+                // Display error message as assistant response
+                transcript.addErrorAsAssistantResponse(
+                    `<div class="cody-chat-error"><span>Request failed: </span>${error}</div>`
+                )
+                isMessageInProgress = false
+                sendTranscript()
+                console.error(`Completion request failed: ${error}`)
             },
         })
     }
@@ -146,5 +153,6 @@ export async function createClient({
             transcript.reset()
             sendTranscript()
         },
+        codebaseContext,
     }
 }

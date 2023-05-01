@@ -41,7 +41,13 @@ export async function isValidLogin(
 
 type Config = Pick<
     ConfigurationWithAccessToken,
-    'codebase' | 'serverEndpoint' | 'debug' | 'customHeaders' | 'accessToken' | 'useContext'
+    | 'codebase'
+    | 'serverEndpoint'
+    | 'debug'
+    | 'customHeaders'
+    | 'accessToken'
+    | 'useContext'
+    | 'experimentalChatPredictions'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -100,11 +106,34 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.configurationChangeEvent.fire()
     }
 
-    public clearAndRestartSession(): void {
+    public async clearAndRestartSession(): Promise<void> {
+        await this.saveTranscriptToChatHistory()
         this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
         this.transcript.reset()
+        this.sendSuggestions([])
+        this.sendTranscript()
+        this.sendChatHistory()
+    }
+
+    public async clearHistory(): Promise<void> {
+        this.chatHistory = {}
+        this.inputHistory = []
+        await this.localStorage.removeChatHistory()
+    }
+
+    /**
+     * Restores a session from a chatID
+     * We delete the loaded session from our in-memory chatHistory (to hide it from the history view)
+     * but don't modify the localStorage as no data changes when a session is restored
+     */
+    public async restoreSession(chatID: string): Promise<void> {
+        await this.saveTranscriptToChatHistory()
+        this.cancelCompletion()
+        this.currentChatID = chatID
+        this.transcript = Transcript.fromJSON(this.chatHistory[chatID])
+        delete this.chatHistory[chatID]
         this.sendTranscript()
         this.sendChatHistory()
     }
@@ -112,6 +141,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
+                this.loadChatHistory()
                 this.publishContextStatus()
                 this.publishConfig()
                 this.sendTranscript()
@@ -151,7 +181,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendEvent('token', 'Delete')
                 break
             case 'removeHistory':
-                await this.localStorage.removeChatHistory()
+                await this.clearHistory()
+                break
+            case 'restoreHistory':
+                await this.restoreSession(message.chatID)
                 break
             case 'links':
                 void this.openExternalLinks(message.value)
@@ -227,7 +260,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     void this.sendLogin(false)
-                    this.clearAndRestartSession()
+                    void this.clearAndRestartSession()
                 }
                 this.onCompletionEnd()
                 console.error(`Completion request failed: ${err}`)
@@ -244,11 +277,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
         this.sendTranscript()
-        void this.saveChatHistory()
+        void this.saveTranscriptToChatHistory()
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
         this.inputHistory.push(text)
+
+        if (this.config.experimentalChatPredictions) {
+            void this.runRecipeForSuggestion('next-questions', text)
+        }
         await this.executeRecipe('chat-question', text)
     }
 
@@ -310,6 +347,71 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
     }
 
+    private async runRecipeForSuggestion(recipeId: string, humanChatInput: string = ''): Promise<void> {
+        const recipe = getRecipe(recipeId)
+        if (!recipe) {
+            return
+        }
+
+        const multiplexer = new BotResponseMultiplexer()
+        const transcript = Transcript.fromJSON(await this.transcript.toJSON())
+
+        const interaction = await recipe.getInteraction(humanChatInput, {
+            editor: this.editor,
+            intentDetector: this.intentDetector,
+            codebaseContext: this.codebaseContext,
+            responseMultiplexer: multiplexer,
+        })
+        if (!interaction) {
+            return
+        }
+        transcript.addInteraction(interaction)
+
+        const prompt = await transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
+
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+
+        let text = ''
+        multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
+            onResponse: (content: string) => {
+                text += content
+                return Promise.resolve()
+            },
+            onTurnComplete: () => {
+                console.log({ text })
+                console.log(text.split('\n'))
+                console.log(text.split('\n').slice(0, 3))
+                console.log(
+                    text
+                        .split('\n')
+                        .slice(3)
+                        .map(line => line.trim().replace(/^-/, '').trim())
+                )
+                const suggestions = text
+                    .split('\n')
+                    .slice(0, 3)
+                    .map(line => line.trim().replace(/^-/, '').trim())
+                console.log({ suggestions })
+                this.sendSuggestions(suggestions)
+                return Promise.resolve()
+            },
+        })
+
+        let textConsumed = 0
+        this.chat.chat(prompt, {
+            onChange: text => {
+                // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
+                text = text.slice(textConsumed)
+                textConsumed += text.length
+                return multiplexer.publish(text)
+            },
+            onComplete: () => multiplexer.notifyTurnComplete(),
+            onError: (error, statusCode) => {
+                console.error(error, statusCode)
+            },
+        })
+    }
+
     private showTab(tab: string): void {
         void vscode.commands.executeCommand('cody.chat.focus')
         void this.webview?.postMessage({ type: 'showTab', tab })
@@ -326,18 +428,30 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         })
     }
 
+    private sendSuggestions(suggestions: string[]): void {
+        void this.webview?.postMessage({
+            type: 'suggestions',
+            suggestions,
+        })
+    }
+
+    private async saveTranscriptToChatHistory(): Promise<void> {
+        if (this.transcript.isEmpty) {
+            return
+        }
+        this.chatHistory[this.currentChatID] = await this.transcript.toJSON()
+        await this.saveChatHistory()
+    }
+
     /**
      * Save chat history
      */
     private async saveChatHistory(): Promise<void> {
-        if (this.transcript) {
-            this.chatHistory[this.currentChatID] = this.transcript.toChat()
-            const userHistory = {
-                chat: this.chatHistory,
-                input: this.inputHistory,
-            }
-            await this.localStorage.setChatHistory(userHistory)
+        const userHistory = {
+            chat: this.chatHistory,
+            input: this.inputHistory,
         }
+        await this.localStorage.setChatHistory(userHistory)
     }
 
     /**
@@ -352,17 +466,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
+     * Loads chat history from local storage
+     */
+    private loadChatHistory(): void {
+        const localHistory = this.localStorage.getChatHistory()
+        if (localHistory) {
+            this.chatHistory = localHistory?.chat
+            this.inputHistory = localHistory.input
+        }
+    }
+
+    /**
      * Sends chat history to webview
      */
     private sendChatHistory(): void {
-        const localHistory = this.localStorage.getChatHistory()
-        if (localHistory) {
-            this.chatHistory = localHistory.chat
-            this.inputHistory = localHistory.input
-        }
         void this.webview?.postMessage({
             type: 'history',
-            messages: localHistory,
+            messages: {
+                chat: this.chatHistory,
+                input: this.inputHistory,
+            },
         })
     }
 

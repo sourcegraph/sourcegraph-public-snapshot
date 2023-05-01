@@ -13,6 +13,7 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         debug: config.get('cody.debug', false),
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
         experimentalSuggest: config.get('cody.experimental.suggestions', false),
+        experimentalChatPredictions: config.get('cody.experimental.chatPredictions', false),
         anthropicKey: config.get('cody.experimental.keys.anthropic', null),
         customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
     }
@@ -23,7 +24,8 @@ function sanitizeCodebase(codebase: string | undefined): string {
         return ''
     }
     const protocolRegexp = /^(https?):\/\//
-    return codebase.replace(protocolRegexp, '')
+    const trailingSlashRegexp = /\/$/
+    return codebase.replace(protocolRegexp, '').trim().replace(trailingSlashRegexp, '')
 }
 
 function sanitizeServerEndpoint(serverEndpoint: string): string {

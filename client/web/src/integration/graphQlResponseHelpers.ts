@@ -35,11 +35,7 @@ export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): T
 export const createFileTreeEntriesResult = (url: string, toplevelFiles: string[]): FileTreeEntriesResult =>
     createTreeEntriesResult(url, toplevelFiles)
 
-export const createBlobContentResult = (
-    content: string,
-    html: string = `<div style="color:red">${content}<div>`,
-    lsif?: JsonDocument
-): BlobResult => ({
+export const createBlobContentResult = (content: string, lsif?: JsonDocument): BlobResult => ({
     repository: {
         commit: {
             file: {
@@ -49,7 +45,6 @@ export const createBlobContentResult = (
                 totalLines: content.split('\n').length,
                 highlight: {
                     aborted: false,
-                    html,
                     lsif: lsif ? JSON.stringify(lsif) : '',
                 },
             },

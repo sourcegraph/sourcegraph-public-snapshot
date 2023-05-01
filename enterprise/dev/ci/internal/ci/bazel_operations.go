@@ -186,6 +186,7 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 		cmds = append(cmds,
 			bk.Key(candidateImageStepKey(apps[0])),
 			bk.Env("DOCKER_BAZEL", "true"),
+			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("VERSION", version),
 			bk.Agent("queue", "bazel"),
 		)

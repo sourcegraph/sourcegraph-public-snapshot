@@ -3719,8 +3719,11 @@ CREATE TABLE product_licenses (
     license_version integer,
     license_tags text[],
     license_user_count integer,
-    license_expires_at timestamp with time zone
+    license_expires_at timestamp with time zone,
+    access_token_enabled boolean DEFAULT false NOT NULL
 );
+
+COMMENT ON COLUMN product_licenses.access_token_enabled IS 'Whether this license key can be used as an access token to authenticate API requests';
 
 CREATE TABLE product_subscriptions (
     id uuid NOT NULL,
@@ -3729,8 +3732,17 @@ CREATE TABLE product_subscriptions (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     archived_at timestamp with time zone,
-    account_number text
+    account_number text,
+    llm_proxy_enabled boolean DEFAULT true NOT NULL,
+    llm_proxy_rate_limit integer,
+    llm_proxy_rate_interval_seconds integer
 );
+
+COMMENT ON COLUMN product_subscriptions.llm_proxy_enabled IS 'Whether or not this subscription has access to LLM-proxy';
+
+COMMENT ON COLUMN product_subscriptions.llm_proxy_rate_limit IS 'Custom requests per time interval allowed for LLM-proxy';
+
+COMMENT ON COLUMN product_subscriptions.llm_proxy_rate_interval_seconds IS 'Custom time interval over which the for LLM-proxy rate limit is applied';
 
 CREATE TABLE query_runner_state (
     query text,

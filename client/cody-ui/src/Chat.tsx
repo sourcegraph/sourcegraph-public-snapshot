@@ -26,6 +26,7 @@ interface ChatProps extends ChatClassNames {
     onSubmit: (text: string) => void
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
+    suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     afterTips?: string
     className?: string
@@ -34,6 +35,8 @@ interface ChatProps extends ChatClassNames {
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
     copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+    suggestions?: string[]
+    setSuggestions?: (suggestions: undefined | []) => void
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -55,6 +58,11 @@ export interface ChatUITextAreaProps {
 export interface ChatUISubmitButtonProps {
     className: string
     disabled: boolean
+    onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+}
+
+export interface ChatUISuggestionButtonProps {
+    suggestion: string
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
@@ -90,6 +98,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     onSubmit,
     textAreaComponent: TextArea,
     submitButtonComponent: SubmitButton,
+    suggestionButtonComponent: SuggestionButton,
     fileLinkComponent,
     afterTips,
     className,
@@ -106,6 +115,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
+    suggestions,
+    setSuggestions,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -126,16 +137,28 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [historyIndex, inputHistory, setFormInput]
     )
 
+    const submitInput = useCallback(
+        (input: string): void => {
+            if (messageInProgress) {
+                return
+            }
+
+            onSubmit(input)
+            setSuggestions?.(undefined)
+            setHistoryIndex(input.length + 1)
+            setInputHistory([...inputHistory, input])
+        },
+        [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
+    )
+
     const onChatSubmit = useCallback((): void => {
         // Submit chat only when input is not empty and not in progress
         if (formInput.trim() && !messageInProgress) {
-            onSubmit(formInput)
-            setHistoryIndex(inputHistory.length + 1)
-            setInputHistory([...inputHistory, formInput])
             setInputRows(5)
             setFormInput('')
+            submitInput(formInput)
         }
-    }, [formInput, inputHistory, messageInProgress, onSubmit, setFormInput, setInputHistory])
+    }, [formInput, messageInProgress, setFormInput, submitInput])
 
     const onChatKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLDivElement>): void => {
@@ -193,6 +216,19 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             />
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
+                {suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
+                    <div className={styles.suggestions}>
+                        {suggestions.map((suggestion: string) =>
+                            suggestion.trim().length > 0 ? (
+                                <SuggestionButton
+                                    key={suggestion}
+                                    suggestion={suggestion}
+                                    onClick={() => submitInput(suggestion)}
+                                />
+                            ) : null
+                        )}
+                    </div>
+                ) : null}
                 <div className={styles.textAreaContainer}>
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}
