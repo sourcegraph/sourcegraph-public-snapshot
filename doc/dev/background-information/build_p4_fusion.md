@@ -85,20 +85,20 @@ You will need `cmake` to build `p4-fusion`. The compiler it uses
   - [Linux Intel 64-bit](https://filehost.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz)
   - If you need a different one, browse the parent directory of one of the above to see if it's available.
 
-###### Source code
+## Source code
 
 `git clone` the [p4-fusion repository](https://github/salesforce/p4-fusion) or download a zip archive of the source. Or do the same on your chosen fork/branch.
 
-###### Setup
+## Setup
 
 1. Set the `OPENSSL_ROOT_DIR` environment variable to point to the OpenSSL install location - the directory that contains OpenSSL's `bin`, `include`, and `lib` directories.
 
-Note that we're building with dynamic linking, so the OpenSSL libraries need to stay there for `p4-fusion` to be able to run.
+    Note that we're building with dynamic linking, so the OpenSSL libraries need to stay there for `p4-fusion` to be able to run.
 You might be able to fiddle with that using `LD_LIBRARY_PATH`, but it's safest to leave them there.
 
-1. Unpack the P4 API archives into the `p4-fusion` source directory tree, into the `vendor/helix-core-api/{OS}` directory, where `{OS}` is either `mac` or `linux`, depending on your OS. You'll need the `include` and `lib` dirs from the P4 API archive.
+2. Unpack the P4 API archives into the `p4-fusion` source directory tree, into the `vendor/helix-core-api/{OS}` directory, where `{OS}` is either `mac` or `linux`, depending on your OS. You'll need the `include` and `lib` dirs from the P4 API archive.
 
-###### Build
+## Build
 
 Now that everything is in place, from within the `p4-fusion` source directory, run the following:
 
@@ -107,11 +107,13 @@ Now that everything is in place, from within the `p4-fusion` source directory, r
 ./build.sh
 ```
 
-###### Use
+## Use
 
-If it all worked out as planned, the executable will be in `build/p4-fusion/p4-fusion`. Use it there, or copy it to somewhere in your `PATH`.
+If it all worked out as planned, the executable will be `${PWD}/build/p4-fusion/p4-fusion`. Use it there, or copy it to somewhere in your `PATH`.
 
-###### Examples
+## Examples
+
+### macOS
 
 Here's a sample shell script for macOS that follows all of the steps outlined above to build a Debug binary of the `p4-fusion` `1.12` release using OpenSSL 3.0.8 and the `22.2` P4 API.
 
@@ -140,6 +142,7 @@ rm -rf p4api-2022.2.2407422
 ls -l "${PWD}/build/p4-fusion/p4-fusion"
 ```
 
+### Linux
 
 Here's a sample shell script for Debian with OpenSSL 3.0.8.
 Debian 11 installs with OpenSSL 1.1, so make OpenSSL 3.0.8 from source (which takes awhile).
