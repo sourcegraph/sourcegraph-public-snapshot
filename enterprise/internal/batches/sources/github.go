@@ -177,9 +177,14 @@ func (s GitHubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return err
 	}
 
+	owner, repo, err := github.SplitRepositoryNameWithOwner(pr.RepoWithOwner)
+	if err != nil {
+		return err
+	}
+
 	deleteBranch := conf.Get().BatchChangesAutoDeleteBranch
 	if deleteBranch {
-		err := s.client.DeleteRef(ctx, pr.RepoWithOwner, pr.Title, pr.HeadRefName)
+		err := s.client.DeleteRef(ctx, owner, repo, pr.HeadRefName)
 		if err != nil {
 			return err
 		}

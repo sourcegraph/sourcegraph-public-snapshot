@@ -724,6 +724,16 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	return err
 }
 
+func (c *Client) DeleteSourceBranch(ctx context.Context, pr *PullRequest) error {
+	path := fmt.Sprintf(
+		"rest/branch-utils/latest/projects/%s/repos/%s/branches",
+		pr.ToRef.Repository.Project.Key,
+		pr.ToRef.Repository.Slug,
+	)
+	_, err := c.send(ctx, "DELETE", path, nil, nil, pr)
+	return err
+}
+
 // LoadPullRequestActivities loads the given PullRequest's timeline of activities,
 // returning an error in case of failure.
 func (c *Client) LoadPullRequestActivities(ctx context.Context, pr *PullRequest) (err error) {
