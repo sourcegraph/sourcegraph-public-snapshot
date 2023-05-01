@@ -820,7 +820,6 @@ def go_dependencies():
         sum = "h1:DDGfHa7BWjL4YnC6+E63dPcxHo2sUxDIu8g3QgEJdRY=",
         version = "v0.0.0-20160611221934-b7ed37b82869",
     )
-
     go_repository(
         name = "com_github_boj_redistore",
         build_file_proto_mode = "disable_global",
@@ -1476,17 +1475,10 @@ def go_dependencies():
         name = "com_github_crewjam_saml",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/crewjam/saml",
-        replace = "github.com/sourcegraph/saml",
-        sum = "h1:S9aS/W4oJ5gSUJuTv94Gurm/3vh/qJATjfkEUrrnszU=",
-        version = "v0.0.0-20220728002234-ab6b53f6f94d",
+        sum = "h1:TYHggH/hwP7eArqiXSJUvtOPNzQDyQ7vwmwEqlFWhMc=",
+        version = "v0.4.13",
     )
-    go_repository(
-        name = "com_github_crewjam_saml_samlidp",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/crewjam/saml/samlidp",
-        sum = "h1:13Ix7LoUJ0Yu5F+s6Aw8Afc8x+n98RSJNGHpxEbcYus=",
-        version = "v0.0.0-20221211125903-d951aa2d145a",
-    )
+
     go_repository(
         name = "com_github_cyphar_filepath_securejoin",
         build_file_proto_mode = "disable_global",
@@ -1614,6 +1606,13 @@ def go_dependencies():
         importpath = "github.com/daviddengcn/go-colortext",
         sum = "h1:ANqDyC0ys6qCSvuEK7l3g5RaehL/Xck9EX8ATG8oKsE=",
         version = "v1.0.0",
+    )
+    go_repository(
+        name = "com_github_dchest_uniuri",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/dchest/uniuri",
+        sum = "h1:koIcOUdrTIivZgSLhHQvKgqdWZq5d7KdMEWF1Ud6+5g=",
+        version = "v1.2.0",
     )
 
     go_repository(
@@ -3012,8 +3011,9 @@ def go_dependencies():
         name = "com_github_gomodule_redigo",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/gomodule/redigo",
-        sum = "h1:K/R+8tc58AaqLkqG2Ol3Qk+DR/TlNuhuh457pBFPtt0=",
-        version = "v2.0.0+incompatible",
+        replace = "github.com/gomodule/redigo",
+        sum = "h1:Sl3u+2BI/kk+VEatbj0scLdrFhjPmbxOc1myhDP41ws=",
+        version = "v1.8.9",
     )
     go_repository(
         name = "com_github_google_btree",
@@ -5661,11 +5661,11 @@ def go_dependencies():
         version = "v2.1.0",
     )
     go_repository(
-        name = "com_github_rafaeljusto_redigomock",
+        name = "com_github_rafaeljusto_redigomock_v3",
         build_file_proto_mode = "disable_global",
-        importpath = "github.com/rafaeljusto/redigomock",
-        sum = "h1:d7uo5MVINMxnRr20MxbgDkmZ8QRfevjOVgEa4n0OZyY=",
-        version = "v2.4.0+incompatible",
+        importpath = "github.com/rafaeljusto/redigomock/v3",
+        sum = "h1:B4Y0XJQiPjpwYmkH55aratKX1VfR+JRqzmDKyZbC99o=",
+        version = "v3.1.2",
     )
 
     go_repository(
@@ -6177,11 +6177,13 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        patches = ["//third_party/com_github_sourcegraph_zoekt:zoekt_archive_index.patch",
-        "//third_party/com_github_sourcegraph_zoekt:zoekt_git_index.patch",
-        "//third_party/com_github_sourcegraph_zoekt:zoekt_webserver.patch",
-        "//third_party/com_github_sourcegraph_zoekt:zoekt_indexserver.patch"],
         patch_args = ["-p1"],
+        patches = [
+            "//third_party/com_github_sourcegraph_zoekt:zoekt_archive_index.patch",
+            "//third_party/com_github_sourcegraph_zoekt:zoekt_git_index.patch",
+            "//third_party/com_github_sourcegraph_zoekt:zoekt_webserver.patch",
+            "//third_party/com_github_sourcegraph_zoekt:zoekt_indexserver.patch",
+        ],
         sum = "h1:moc3LRc+FZ6RmjMjpsuJy8siNO2gWJxzD1p5eYr4SE8=",
         version = "v0.0.0-20230405161007-b247fb51dece",
     )
