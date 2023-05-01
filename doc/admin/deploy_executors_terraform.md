@@ -65,7 +65,7 @@ tfenv use 1.1.5
 3. Run `gcloud auth application-default login`
 4. Open your Sourcegraph instance in your browser, click your profile in the top right, click **Site admin**, expand **Configuration**, click **Site configuration**, and set:
   - `"externalURL": "<URL>"` to a URL that is accessible from the GCP VM that will be created later (e.g. a public URL such as `https://sourcegraph.example.com`)
-  - `"executors.accessToken": "<new long secret>"` to a new long secret (e.g. `cat /dev/random | base64 | head -c 20`)
+  - `"executors.accessToken": "<new long secret>"` to a new long secret (e.g. `cat /dev/random | base64 | head -c 20`). The secret will be as displayed `REDACTED` once it's saved. 
   - `"codeIntelAutoIndexing.enabled": true`
 5. Download the [example files directory](https://github.com/sourcegraph/terraform-google-executors/blob/master/examples/single-executor) and change these terraform variables:
   - `project`: your GCP project name and change `region` and `zone` if needed
@@ -73,7 +73,7 @@ tfenv use 1.1.5
   - `executor_sourcegraph_executor_proxy_password`: this must match `executors.accessToken` you set in your site config
 6. Run `terraform init` to download the Sourcegraph executor modules
 7. Run `terraform apply` and enter "yes" after reviewing the proposed changes to create the executor VM
-8. Go back to the site admin page, expand **Maintenance**, click **Executors**, and check to see if your executor shows up in the list with a green dot 🟢. If it's not there:
+8. Go back to the site admin page, expand **Executors**, click **Instances** and check to see if your executor shows up in the list with a green dot 🟢. If it's not there:
   - Make sure `terraform apply` exited with code 0 and did not print any errors
   - Make sure a GCP VM was created:
 
@@ -85,6 +85,10 @@ sourcegraph-executors-docker-registry-mirror  us-central1-c  n1-standard-2      
 ```
 
   - Make sure the `executor` service is running:
+
+```
+gcloud compute ssh sourcegraph-executor-h0rv --zone=us-central1-c
+```
 
 ```
 you@sourcegraph-executor-h0rv:~$ systemctl status executor
@@ -104,6 +108,10 @@ Nov 18 02:31:02 sourcegraph-executor-h0rv executor[2465]: t=2021-11-18T02:31:02+
 ```
 
   - Make sure the `EXECUTOR_FRONTEND_URL` and `EXECUTOR_FRONTEND_PASSWORD` in `/etc/systemd/system/executor.env` are correct
+
+```
+cat /etc/systemd/system/executor.env
+```
   - Make sure the VM can hit your `externalURL`:
 
 ```
@@ -111,18 +119,18 @@ you@sourcegraph-executor-h0rv:~$ curl <your externalURL here>
 <a href="/sign-in?returnTo=%2F">Found</a>
 ```
 
-9. Go back to the site admin page, expand **Code graph**, click **Configuration**, click **Create new policy**, and fill in:
+1. Go back to the site admin page, expand **Code graph**, click **Configuration**, click **Create new policy**, and fill in:
   - Name: `TEST`
   - Click **add a repository pattern**
   - Repository pattern #1: set this to an existing repository on your Sourcegraph instance (e.g. `github.com/gorilla/mux`)
   - Type: `HEAD`
   - Auto-indexing: Enabled
-10. Go to that repository's page, click **Code graph**, click **Auto-indexing**, and check to see if an indexing job has appeared. If nothing is there:
+2.  Go to that repository's page, click **Code graph**, click **Auto-indexing**, and check to see if an indexing job has appeared. If nothing is there:
   - Try clicking **Enqueue**
   - Try setting a higher update frequency: `PRECISE_CODE_INTEL_AUTO_INDEXING_TASK_INTERVAL=10s`
   - Try setting a lower delay: `PRECISE_CODE_INTEL_AUTO_INDEXING_REPOSITORY_PROCESS_DELAY=10s`
-11. Once you have a completed indexing job, click **Uploads** and check to see that an index has been uploaded.
-12. Once the index has been uploaded, you should see the **`PRECISE`** badge in the hover popover! 🎉 
+3.  Once you have a completed indexing job, click **Uploads** and check to see that an index has been uploaded.
+4.  Once the index has been uploaded, you should see the **`PRECISE`** badge in the hover popover! 🎉 
 
 ## Configuring auto scaling
 
@@ -225,7 +233,7 @@ Next, you can test whether the number of executors rises and shrinks as load spi
 ## Upgrading executors
 
 Upgrading executors is relatively uninvolved. Simply follow the instructions below.
-Also, check the [executors changelog](TODO: Link) for any breaking changes or new features or flags that you might want to configure.
+Also, check the [changelog](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) for any Executors related breaking changes or new features or flags that you might want to configure. See [Executors maintenance](deploy_executors.md#Maintaining-and-upgrading-executors) for version compatability.
 
 ### **Step 1:** Update the source version of the terraform modules
 
