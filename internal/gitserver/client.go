@@ -82,12 +82,17 @@ func NewClient() Client {
 		// frontend internal API)
 		userAgent:  filepath.Base(os.Args[0]),
 		operations: getOperations(),
+		grpcClient: getGRPCClient,
 	}
+}
+
+func getGRPCClient(cc grpc.ClientConnInterface) proto.GitserverServiceClient {
+	return proto.NewGitserverServiceClient(cc)
 }
 
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
-func NewTestClient(cli httpcli.Doer, addrs []string) Client {
+func NewTestClient(cli httpcli.Doer, addrs []string, grpcClientFunc func(cc grpc.ClientConnInterface) proto.GitserverServiceClient) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger:      logger,
@@ -99,6 +104,7 @@ func NewTestClient(cli httpcli.Doer, addrs []string) Client {
 		// frontend internal API)
 		userAgent:  filepath.Base(os.Args[0]),
 		operations: newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
+		grpcClient: grpcClientFunc,
 	}
 }
 
@@ -193,6 +199,9 @@ type clientImplementor struct {
 
 	// operations are used for internal observability
 	operations *operations
+
+	// grpcClient is a function that returns the current grpc client
+	grpcClient func(cc grpc.ClientConnInterface) proto.GitserverServiceClient
 }
 
 type RawBatchLogResult struct {

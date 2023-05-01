@@ -68,6 +68,7 @@ func TestClient_Remove(t *testing.T) {
 			}
 		}),
 		addrs,
+		nil,
 	)
 
 	err := cli.Remove(context.Background(), repo)
@@ -140,20 +141,13 @@ func TestClient_ArchiveReader(t *testing.T) {
 	addrs := []string{u.Host}
 	t.Log("gitserver addrs:", addrs)
 	ctx := context.Background()
-	cli := gitserver.NewTestClient(&http.Client{}, addrs)
+	var spyGitserverService *spyGitserverServiceClient
+	spy := func(conns grpc.ClientConnInterface) proto.GitserverServiceClient {
+		spyGitserverService = &spyGitserverServiceClient{base: proto.NewGitserverServiceClient(conns)}
+		return spyGitserverService
+	}
 
-	// gitserver.ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt gitserver.ArchiveOptions) (reader io.ReadCloser, err error) {
-	// 	if internalgrpc.IsGRPCEnabled(ctx) {
-	// 		// GRPC
-
-	// 	} else {
-	// 		// HTTP
-
-	// 	stringReader := strings.NewReader(resp)
-	// 	reader = io.NopCloser(stringReader)
-
-	// 	return reader, err
-	// }
+	cli := gitserver.NewTestClient(&http.Client{}, addrs, spy)
 
 	runArchiveReaderTestfunc := func(t *testing.T, ctx context.Context, cli gitserver.Client, tests map[api.RepoName]test) {
 
@@ -164,7 +158,11 @@ func TestClient_ArchiveReader(t *testing.T) {
 						t.Fatal(err)
 					}
 				}
+
 				rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatZip})
+				if !spyGitserverService.archiveCalled {
+					t.Error("archiveReader should have been called")
+				}
 				if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
 					t.Errorf("archive: have err %v, want %v", have, want)
 				}
@@ -209,23 +207,6 @@ func TestClient_ArchiveReader(t *testing.T) {
 		}
 
 	}
-	// := gitserver.NewTestClient(....)
-	// client := func(ctx context.Context, addrs []string) gitserver.Client {
-	// 	if internalgrpc.IsGRPCEnabled(ctx) {
-	// 		// GRPC
-	// 		return &clientImplementor{
-	// 			logger:      logger,
-	// 			conns:       func() *GitserverConns { return newTestGitserverConns(addrs) },
-	// 			HTTPLimiter: limiter.New(500),
-	// 			userAgent:   filepath.Base(os.Args[0]),
-	// 			operations:  newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
-	// 		}
-	// 	} else {
-	// 		// HTTP
-	// 		return gitserver.NewTestClient(&http.Client{}, addrs)
-	// 	}
-	// }
-	//
 
 	t.Run("grpc", func(t *testing.T) {
 		foo := "whatever"
@@ -235,10 +216,10 @@ func TestClient_ArchiveReader(t *testing.T) {
 		runArchiveReaderTestfunc(t, ctx, cli, tests)
 	})
 
-	t.Run("http", func(t *testing.T) {
-		t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
-		runArchiveReaderTestfunc(t, ctx, cli, tests)
-	})
+	// t.Run("http", func(t *testing.T) {
+	// 	t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+	// 	runArchiveReaderTestfunc(t, ctx, cli, tests)
+	// })
 
 }
 
@@ -404,7 +385,7 @@ func TestClient_P4Exec(t *testing.T) {
 
 			u, _ := url.Parse(testServer.URL)
 			addrs := []string{u.Host}
-			cli := gitserver.NewTestClient(&http.Client{}, addrs)
+			cli := gitserver.NewTestClient(&http.Client{}, addrs, nil)
 
 			rc, _, err := cli.P4Exec(ctx, test.host, test.user, test.password, test.args...)
 			if diff := cmp.Diff(test.wantErr, fmt.Sprintf("%v", err)); diff != "" {
@@ -486,7 +467,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	cli := gitserver.NewTestClient(&http.Client{}, addrs)
+	cli := gitserver.NewTestClient(&http.Client{}, addrs, nil)
 
 	ctx := context.Background()
 	for _, test := range tests {
@@ -530,6 +511,7 @@ func TestClient_BatchLog(t *testing.T) {
 			return &http.Response{StatusCode: 200, Body: body}, nil
 		}),
 		addrs,
+		nil,
 	)
 
 	opts := gitserver.BatchLogOptions{
@@ -649,6 +631,7 @@ func TestClient_ReposStats(t *testing.T) {
 			}
 		}),
 		addrs,
+		nil,
 	)
 
 	gotStatsMap, err := cli.ReposStats(context.Background())

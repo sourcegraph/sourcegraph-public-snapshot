@@ -7,18 +7,19 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 )
 
 func TestClient_AddrMatchesTarget(t *testing.T) {
-	client := NewTestClient(nil, []string{"localhost:1234", "localhost:4321"}).(*clientImplementor)
+	client := NewTestClient(nil, []string{"localhost:1234", "localhost:4321"}, nil).(*clientImplementor)
 
 	for _, repo := range []api.RepoName{"a", "b", "c", "d"} {
 		addr := client.AddrForRepo(repo)

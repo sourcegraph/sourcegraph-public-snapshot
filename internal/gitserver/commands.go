@@ -2413,11 +2413,7 @@ func (c *clientImplementor) ArchiveReader(
 			return nil, err
 		}
 
-		// type clientForConn: (conn) -> gitserverserviceclient (interface)
-		//
-		// "normal usecase": we add actual proto.NewGitserverServiceClient to use with the connection
-		// "test usecase": we provide a mock client to use with the connection
-		client := proto.NewGitserverServiceClient(conn)
+		client := c.grpcClient(conn)
 
 		req := &proto.ArchiveRequest{
 			Repo:    string(repo),
