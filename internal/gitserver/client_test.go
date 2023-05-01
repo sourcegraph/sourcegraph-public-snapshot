@@ -140,90 +140,97 @@ func TestClient_ArchiveReader(t *testing.T) {
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
 	ctx := context.Background()
+
 	var spyGitserverService *spyGitserverServiceClient
-	spy := func(conns grpc.ClientConnInterface) proto.GitserverServiceClient {
-		spyGitserverService = &spyGitserverServiceClient{base: proto.NewGitserverServiceClient(conns)}
-		return spyGitserverService
-	}
 
-	cli := gitserver.NewTestClient(&http.Client{}, spy, addrs)
-
-	runArchiveReaderTestfunc := func(t *testing.T, ctx context.Context, cli gitserver.Client, tests map[api.RepoName]test) {
-
-		for name, test := range tests {
-			t.Run(string(name), func(t *testing.T) {
-				if test.remote != "" {
-					if _, err := cli.RequestRepoUpdate(ctx, name, 0); err != nil {
-						t.Fatal(err)
-					}
-				}
-
-				rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatZip})
-				if !spyGitserverService.archiveCalled {
-					t.Error("archiveReader should have been called")
-				}
-				if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
-					t.Errorf("archive: have err %v, want %v", have, want)
-				}
-				if rc == nil {
-					return
-				}
-
-				t.Cleanup(func() {
-					if err := rc.Close(); err != nil {
-						t.Fatal(err)
-					}
-				})
-				data, err := io.ReadAll(rc)
-				if err != nil {
+	runArchiveReaderTestfunc := func(t *testing.T, ctx context.Context, cli gitserver.Client, name api.RepoName, test test) {
+		t.Run(string(name), func(t *testing.T) {
+			if test.remote != "" {
+				if _, err := cli.RequestRepoUpdate(ctx, name, 0); err != nil {
 					t.Fatal(err)
 				}
-				zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-				if err != nil {
+			}
+
+			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatZip})
+			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
+				t.Errorf("archive: have err %v, want %v", have, want)
+			}
+			if rc == nil {
+				return
+			}
+
+			t.Cleanup(func() {
+				if err := rc.Close(); err != nil {
 					t.Fatal(err)
-				}
-
-				got := map[string]string{}
-				for _, f := range zr.File {
-					r, err := f.Open()
-					if err != nil {
-						t.Errorf("failed to open %q because %s", f.Name, err)
-						continue
-					}
-					contents, err := io.ReadAll(r)
-					_ = r.Close()
-					if err != nil {
-						t.Errorf("Read(%q): %s", f.Name, err)
-						continue
-					}
-					got[f.Name] = string(contents)
-				}
-
-				if !cmp.Equal(test.want, got) {
-					t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(test.want, got))
 				}
 			})
-		}
+			data, err := io.ReadAll(rc)
+			if err != nil {
+				t.Fatal(err)
+			}
+			zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+			if err != nil {
+				t.Fatal(err)
+			}
 
+			got := map[string]string{}
+			for _, f := range zr.File {
+				r, err := f.Open()
+				if err != nil {
+					t.Errorf("failed to open %q because %s", f.Name, err)
+					continue
+				}
+				contents, err := io.ReadAll(r)
+				_ = r.Close()
+				if err != nil {
+					t.Errorf("Read(%q): %s", f.Name, err)
+					continue
+				}
+				got[f.Name] = string(contents)
+			}
+
+			if !cmp.Equal(test.want, got) {
+				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(test.want, got))
+			}
+		})
 	}
 
 	t.Run("grpc", func(t *testing.T) {
-		foo := "whatever"
-		fmt.Println(foo)
-
 		t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
-		runArchiveReaderTestfunc(t, ctx, cli, tests)
+		for name, test := range tests {
+			spy := func(conns grpc.ClientConnInterface) proto.GitserverServiceClient {
+				spyGitserverService = &spyGitserverServiceClient{base: proto.NewGitserverServiceClient(conns)}
+				return spyGitserverService
+			}
+
+			cli := gitserver.NewTestClient(&http.Client{}, spy, addrs)
+			runArchiveReaderTestfunc(t, ctx, cli, name, test)
+			if !spyGitserverService.archiveCalled {
+				t.Error("archiveReader: GitserverServiceClient should have been called")
+			}
+		}
 	})
 
 	t.Run("http", func(t *testing.T) {
 		t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
-		runArchiveReaderTestfunc(t, ctx, cli, tests)
+		for name, test := range tests {
+			var spyGitserverService *spyGitserverServiceClient
+			spy := func(conns grpc.ClientConnInterface) proto.GitserverServiceClient {
+				spyGitserverService = &spyGitserverServiceClient{base: proto.NewGitserverServiceClient(conns)}
+				return spyGitserverService
+			}
+
+			cli := gitserver.NewTestClient(&http.Client{}, spy, addrs)
+			runArchiveReaderTestfunc(t, ctx, cli, name, test)
+			if spyGitserverService != nil {
+				t.Error("archiveReader: GitserverServiceClient should have not been initialized")
+			}
+		}
 	})
 
 }
 
 func createRepoWithDotGitDir(t *testing.T, root string) string {
-
 	t.Helper()
 	b64 := func(s string) string {
 		t.Helper()
