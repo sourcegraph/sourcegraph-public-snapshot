@@ -208,17 +208,20 @@ interface Position {
     character: number
 }
 
+interface Range {
+    start: Position
+    end: Position
+}
+
 interface Edit {
     text: string
-    range: {
-        start: Position
-        end: Position
-    }
+    range: Range
 }
 
 interface Diff {
     clean: boolean
     edits: Edit[]
+    highlights: Range[]
 }
 
 // Rolls over characters in text and computes the updated position to the end
@@ -240,13 +243,16 @@ function updatedPosition(position: Position, text: string): Position {
 // Given a source text, and two evolutions a and b, computes:
 // - Whether the diff can be applied without conflicts.
 // - A set of insertions and deletions to apply in b.
+// - A set of ranges to highlight in the merged text, explaining edits in a.
 export function computeDiff(original: string, a: string, b: string, bStart: Position): Diff {
     const chunks = computeChunks(original, a, b)
     const edits = []
+    const highlights = []
     let clean = true
-    let pos = bStart
+    let originalPos = bStart
+    let mergedPos = bStart
     for (const chunk of chunks) {
-        const end = updatedPosition(pos, chunk[2])
+        const originalEnd = updatedPosition(originalPos, chunk[2])
         if (chunk[1] === chunk[2] && chunk[0] !== chunk[1]) {
             // Changed by robot
             // TODO, do we need to treat deletions differently to replacements to insertions?
@@ -254,23 +260,29 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
                 kind: 'insert',
                 text: chunk[0],
                 range: {
-                    start: pos,
-                    end,
+                    start: originalPos,
+                    end: originalEnd,
                 },
             })
-            pos = end
+            const mergedEnd = updatedPosition(mergedPos, chunk[0])
+            highlights.push({ start: mergedPos, end: mergedEnd })
+            mergedPos = mergedEnd
         } else if (chunk[1] === chunk[0] && chunk[1] !== chunk[2]) {
             // Changed by human
+            mergedPos = updatedPosition(mergedPos, chunk[2])
         } else if (chunk[0] === chunk[2]) {
             // Changed by both, to the same thing
+            mergedPos = updatedPosition(mergedPos, chunk[2])
         } else {
             // Conflict! chunk[0]/chunk[2]`
             clean = false
+            // We give up on tracking positions.
         }
-        pos = end
+        originalPos = originalEnd
     }
     return {
         clean,
         edits,
+        highlights,
     }
 }
