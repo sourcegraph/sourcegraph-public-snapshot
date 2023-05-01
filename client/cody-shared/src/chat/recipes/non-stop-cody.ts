@@ -74,82 +74,177 @@ export class NonStopCody implements Recipe {
     }
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        // TODO: Prompt the user for additional direction.
+        const editor = vscode.window.activeTextEditor
 
-        const deco = {
-            hoverMessage: 'Edited by Cody', // TODO: Put the prompt in here
-            range: vscode.window.activeTextEditor!.selection,
-            // TODO: Render options
-        }
-        let decorations: TrackedDecoration[]
-        if (this.decorations.has(vscode.window.activeTextEditor!.document.uri)) {
-            decorations = this.decorations.get(vscode.window.activeTextEditor!.document.uri)!
-        } else {
-            decorations = []
-            this.decorations.set(vscode.window.activeTextEditor!.document.uri, decorations)
-        }
-        decorations!.push(deco)
-        vscode.window.activeTextEditor?.setDecorations(this.decoCodyContribution, decorations)
-
-        const selection = context.editor.getActiveTextEditorSelection()
-        if (!selection) {
-            await context.editor.showWarningMessage('NON STOP!!!')
+        if (!editor) {
+            await vscode.window.showErrorMessage('Open a text editor to use Cody: Fixup')
+            await vscode.commands.executeCommand('cody.focus')
             return null
         }
 
-        const thread = this.comments.createCommentThread(
-            vscode.window.activeTextEditor!.document.uri,
-            vscode.window.activeTextEditor!.selection,
-            [
-                {
-                    body: new vscode.MarkdownString('*Hello*, world'),
-                    mode: vscode.CommentMode.Preview,
-                    author: { name: 'Cody' },
-                },
-            ]
-        )
+        let resolvePrompt: (prompt: string) => void
+        const promptPromise: Promise<string> = new Promise(resolve => {
+            resolvePrompt = resolve
+        })
+
+        // TODO: Re-use a single QuickPick instead of creating one each time
+        const quickPick = vscode.window.createQuickPick()
+        quickPick.title = 'Cody: Fixup'
+        quickPick.placeholder = 'Cody, you should...'
+        // TODO: When Cody has diffs ready, include an item to commit the diffs first.
+        quickPick.onDidAccept(() => {
+            resolvePrompt(quickPick.value)
+            quickPick.dispose()
+        })
+        quickPick.onDidHide(() => {
+            // Note, this event happens after onDidAccept. In that case the
+            // Promise is already resolved and we do nothing.
+            resolvePrompt('')
+            quickPick.dispose()
+        })
+        quickPick.show()
+
+        const userPrompt = await promptPromise
+        if (!userPrompt) {
+            return null
+        }
+
+        // const deco = {
+        //     hoverMessage: 'Edited by Cody', // TODO: Put the prompt in here
+        //     range: vscode.window.activeTextEditor!.selection,
+        //     // TODO: Render options
+        // }
+        // let decorations: TrackedDecoration[]
+        // if (this.decorations.has(vscode.window.activeTextEditor!.document.uri)) {
+        //     decorations = this.decorations.get(vscode.window.activeTextEditor!.document.uri)!
+        // } else {
+        //     decorations = []
+        //     this.decorations.set(vscode.window.activeTextEditor!.document.uri, decorations)
+        // }
+        // decorations!.push(deco)
+        // vscode.window.activeTextEditor?.setDecorations(this.decoCodyContribution, decorations)
+
+        const selection = editor.selection
+
+        // Drop a comment in the document.
+        // TODO: Elaborate the comment UI to let people interact with queued tasks.
+        const thread = this.comments.createCommentThread(editor.document.uri, selection, [
+            {
+                body: userPrompt,
+                mode: vscode.CommentMode.Preview,
+                author: { name: 'You' },
+            },
+        ])
         this.thread = thread
-        thread.collapsibleState = vscode.CommentThreadCollapsibleState.Expanded
-        setTimeout(() => {
-            thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
-        }, 1000)
+        thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
 
-        const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
-        if (truncateText(selection.selectedText, quarterFileContext * 2) !== selection.selectedText) {
-            await context.editor.showWarningMessage("The amount of text selected exceeds Cody's current capacity.")
-            return null
-        }
+        const precedingText = editor.document.getText(
+            new vscode.Range(
+                selection.start.translate({ lineDelta: Math.max(-50, -selection.start.line) }),
+                editor.selection.start
+            )
+        )
+        const selectedText = editor.document.getText(selection)
+        const followingText = editor.document.getText(
+            new vscode.Range(selection.end, selection.end.translate({ lineDelta: 50 }))
+        )
 
         context.responseMultiplexer.sub(
-            'selection',
+            'cody-replace',
             new BufferedBotResponseSubscriber(async content => {
                 if (!content) {
-                    await context.editor.showWarningMessage(
+                    // TODO: Put a button here to restart the conversation.
+                    await vscode.window.showWarningMessage(
                         'Cody did not suggest any replacement.\nTry starting a new conversation with Cody.'
                     )
                     return
                 }
-                // TODO: Reinstate this
+                // TODO: Animate diff availability
                 // await context.editor.replaceSelection(selection.fileName, selection.selectedText, content)
+                const success = await editor.edit(
+                    edit => {
+                        edit.insert(new vscode.Position(0, 0), content + '\n<FIN>\n')
+                    },
+                    { undoStopAfter: true, undoStopBefore: true }
+                )
+                await vscode.window.showInformationMessage(
+                    `done, generated ${content.length} characters; edit: ${success}`
+                )
             })
         )
 
-        const prompt = `This is part of the file ${
-            selection.fileName
-        }. The part of the file I have selected is highlighted with <selection> tags. You are helping me to work on that part.
+        // TODO: Move this LLM interaction outside of the recipe, so we can queue multiple changes at once.
+        // TODO: Bring back prompting which limits changes to the selection.
 
-Follow the instructions in the selected part and produce a rewritten replacement for only that part. Put the rewritten replacement inside <selection> tags.
+        const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
+        if (truncateText(selectedText, quarterFileContext * 2) !== selectedText) {
+            await context.editor.showWarningMessage("The amount of text selected exceeds Cody's current capacity.")
+            return null
+        }
 
-I only want to see the code within <selection>. Do not move code from outside the selection into the selection in your reply.
+        // TODO: This hardcodes the Anthropic "Assistant:", "Human:" prompts. Need to generalize this.
+        const prompt = `I need your help to improve some code. The area I need help with is highlighted with <cody-help> tags. You are helping me work on that part. Follow the instructions in the prompt attribute and produce a rewritten replacement. You should remove the <cody-help> tags from your replacement. Put the replacement in <cody-replace> tags. I only need the replacement, no other commentary about it. Do not write anything after the closing </cody-replace> tag.
 
-It is OK to provide some commentary before you tell me the replacement <selection>. If it doesn't make sense, you do not need to provide <selection>.
+Assistant: OK, I understand. I will follow the prompts to improve the code, and only reply with code in <cody-replace> tags. The last thing I write will be the closing </cody-replace> tag.
 
-\`\`\`\n${truncateTextStart(selection.precedingText, quarterFileContext)}<selection>${
-            selection.selectedText
-        }</selection>${truncateText(
-            selection.followingText,
+Human: Wonderful. This is part of the file warmup.js:
+
+function greet() {
+    console.log('hello, world');
+}
+
+<cody-help prompt="Document this function.">
+function clipRange(start, end) {
+    return (x) => {
+        if (x < start) {
+            return start;
+        } else if (x > end) {
+            return end;
+        }
+    }
+}
+<cody-help prompt="Add error checking for the parameters."></cody-help>
+</cody-help>
+
+function back() {
+    window.history.go(-1);
+}
+
+Assistant: <cody-replace>
+function greet() {
+    console.log('hello, world');
+}
+
+// Creates a function which clips a value to a range.
+function clipRange(start, end) {
+    if (end < start) {
+        throw new Error('invalid range: start must be at or before end');
+    }
+    return (x) => {
+        if (x < start) {
+            return start;
+        } else if (x > end) {
+            return end;
+        }
+    }
+}
+
+function back() {
+    window.history.go(-1);
+}
+</cody-replace>
+
+Human: Great! That is perfect. Now, this is part of the file ${
+            editor.document.fileName
+        }. The area I need help with is highlighted with <cody-help> tags. Again, I only need the replacement in <cody-replace> tags.
+
+${truncateTextStart(
+    precedingText,
+    quarterFileContext
+)}<cody-help prompt="${userPrompt}">${selectedText}</cody-help>${truncateText(
+            followingText,
             quarterFileContext
-        )}\n\`\`\`\n\n${context.responseMultiplexer.prompt()}`
+        )}\n\n${context.responseMultiplexer.prompt()}`
         // TODO: Move the prompt suffix from the recipe to the chat view. It may have other subscribers.
 
         return Promise.resolve(
@@ -160,7 +255,7 @@ It is OK to provide some commentary before you tell me the replacement <selectio
                     displayText: 'Replace the instructions in the selection.',
                 },
                 { speaker: 'assistant' },
-                this.getContextMessages(selection.selectedText, context.codebaseContext)
+                this.getContextMessages(selectedText, context.codebaseContext)
             )
         )
     }
