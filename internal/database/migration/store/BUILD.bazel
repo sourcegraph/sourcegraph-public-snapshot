@@ -35,6 +35,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":store"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database/basestore",
         "//internal/database/dbtest",

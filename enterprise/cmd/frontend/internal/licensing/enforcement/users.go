@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -102,8 +103,17 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 
 // NewBeforeSetUserIsSiteAdmin returns a BeforeSetUserIsSiteAdmin closure that determines whether
 // the creation or removal of site admins are allowed.
-func NewBeforeSetUserIsSiteAdmin() func(isSiteAdmin bool) error {
-	return func(isSiteAdmin bool) error {
+func NewBeforeSetUserIsSiteAdmin() func(ctx context.Context, isSiteAdmin bool) error {
+	return func(ctx context.Context, isSiteAdmin bool) error {
+		// Exempt user accounts that are created by the Sourcegraph Operator
+		// authentication provider.
+		//
+		// NOTE: It is important to make sure the Sourcegraph Operator authentication
+		// provider is actually enabled.
+		if cloud.SiteConfig().SourcegraphOperatorAuthProviderEnabled() && actor.FromContext(ctx).SourcegraphOperator {
+			return nil
+		}
+
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
 			return err

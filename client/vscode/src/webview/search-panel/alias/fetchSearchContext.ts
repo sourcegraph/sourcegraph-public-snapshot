@@ -3,6 +3,7 @@ import { map } from 'rxjs/operators'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] }
 export type Maybe<T> = T | null
 

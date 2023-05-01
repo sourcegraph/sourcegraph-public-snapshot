@@ -1,7 +1,0 @@
-[
-  {
-    "path": "internal/codeintel/dependencies/internal/store",
-    "prefix": "TestListPackageRepoRefs",
-    "reason": "References a column directly in the test that is being dropped post 4.5. No application code references the column"
-  }
-]

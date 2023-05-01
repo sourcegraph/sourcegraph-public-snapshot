@@ -1,0 +1,90 @@
+.inner-container {
+    height: 100%;
+    overflow: auto;
+}
+
+.transcript-item {
+    font-size: var(--vscode-editor-font-size);
+    font-family: var(--vscode-font-family);
+    font-weight: var(--vscode-font-weight);
+    color: var(--vscode-input-foreground);
+    border-color: var(--vscode-sideBarSectionHeader-border);
+}
+
+/* Apply a slight tint to the human transcript item. */
+body[data-vscode-theme-kind='vscode-light'] .human-transcript-item,
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .human-transcript-item {
+    background-color: rgba(0, 0, 0, 0.07); /* slight dark tint */
+}
+
+body[data-vscode-theme-kind='vscode-dark'] .human-transcript-item,
+body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
+    background-color: rgba(255, 255, 255, 0.07); /* slight light tint */
+}
+
+.transcript-item-participant {
+    font-size: var(--vscode-editor-font-size);
+    color: var(--vscode-descriptionForeground);
+}
+
+.transcript-item pre,
+.transcript-item span > code,
+.transcript-item p > code,
+.transcript-item pre > code {
+    /* Our syntax highlighter emits colors intended for dark backgrounds only. */
+    background-color: var(--code-background);
+    color: var(--code-foreground);
+}
+
+.transcript-action {
+    background: var(--button-secondary-background);
+    color: var(--button-secondary-foreground);
+    font-size: var(--vscode-editor-font-size);
+}
+
+.transcript-action > button {
+    font-size: var(--vscode-editor-font-size);
+}
+
+.code-blocks-copy-button {
+    color: var(--vscode-button-secondaryForeground);
+    background-color: var(--vscode-button-secondaryBackground);
+    border: none;
+}
+
+.input-row {
+    border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
+}
+
+.chat-input-context {
+    color: var(--vscode-input-foreground);
+}
+
+.chat-input {
+    outline: none;
+}
+
+:global(.token-hallucinated) {
+    border-bottom: 2px solid var(--vscode-testing-iconQueued);
+    word-break: break-all;
+}
+
+:global(.token-not-hallucinated) {
+    border-bottom: 2px solid var(--vscode-testing-iconPassed);
+    word-break: break-all;
+}
+
+.feedback-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 0.15rem;
+}
+
+.edit-button {
+    border-radius: 1rem;
+}
+
+.suggestion-button {
+    border-radius: 1rem;
+    font-size: 0.7rem;
+}

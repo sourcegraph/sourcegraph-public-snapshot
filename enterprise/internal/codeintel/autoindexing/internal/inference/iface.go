@@ -4,11 +4,10 @@ import (
 	"context"
 	"io"
 
-	"github.com/grafana/regexp"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 )
 
@@ -17,7 +16,7 @@ type SandboxService interface {
 }
 
 type GitService interface {
-	ListFiles(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) ([]string, error)
+	LsFiles(ctx context.Context, repo api.RepoName, commit string, pathspecs ...gitdomain.Pathspec) ([]string, error)
 	Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error)
 }
 
@@ -37,8 +36,8 @@ func NewDefaultGitService(checker authz.SubRepoPermissionChecker) GitService {
 	}
 }
 
-func (s *gitService) ListFiles(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) ([]string, error) {
-	return s.client.ListFiles(ctx, s.checker, repo, api.CommitID(commit), pattern)
+func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commit string, pathspecs ...gitdomain.Pathspec) ([]string, error) {
+	return s.client.LsFiles(ctx, s.checker, repo, api.CommitID(commit), pathspecs...)
 }
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {

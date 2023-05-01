@@ -42,15 +42,29 @@ For the Bitbucket Server plugin to then communicate with the Sourcegraph instanc
 }
 ```
 
-The site admin should also set `alerts.codeHostIntegrationMessaging` in [global settings](../admin/config/settings.md#editing-global-settings-for-site-admins) to ensure informational content for users in the Sourcegraph webapp references the native integration and not the browser extension.
+#### I am seeing Content Security Policy violations, what should I do?
 
-```json
-{
-  // ...
-  "alerts.codeHostIntegrationMessaging": "native-integration"
-  // ...
-}
+If you have a Content Security Policy (CSP) setup in place and have encountered issues, you may need to adjust the CSP for our Bitbucket Server plugin.
+
+To ensure the proper functioning of our Bitbucket Server plugin, add your Sourcegraph instance URL to the following CSP directives:
+
+- `script-src`
+- `style-src`
+- `connect-src`
+- `frame-src`
+
+Here's an example of how to add your Sourcegraph instance URL to the required CSP directives. In this case, the instance URL is `example.com`. Make sure not to remove any existing values in the directives; just append the Sourcegraph URL.
+
 ```
+script-src 'self' 'unsafe-inline' example.com;
+style-src 'self' 'unsafe-inline' example.com;
+connect-src 'self' example.com;
+frame-src 'self' example.com;
+```
+
+It is not ideal to include `unsafe-inline` here for `script-src`, but it is the recommended approach from Bitbucket. This is a [known issue](https://community.developer.atlassian.com/t/bitbucket-connect-library-uses-eval-preveting-to-use-csp-without-unsafe-inline-as-required/60522) with Bitbucket that is unrelated to our plugin.
+
+By following these steps, you should be able to resolve the CSP violations for our Bitbucket Server plugin. If you have any questions or need further assistance, please feel free to reach out to our support team.
 
 ### Updating
 
@@ -82,7 +96,7 @@ You can enable this feature when [configuring the connection to your Bitbucket S
 
 The speed improvements are most important on larger Bitbucket Server / Bitbucket Data Center instances with thousands of repositories. When connected to these instances, Sourcegraph would have to make many wasteful requests to fetch permission data if the plugin is not installed.
 
-To learn how and why this works, read the [through technical details of fast permission syncing](#fast-permissions-syncing) below.
+To learn how and why this works, read the [through technical details of fast permission syncing](#technical-details) below.
 
 ### Technical Details
 

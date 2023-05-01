@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-const uploadsQuery = `
-	query Uploads {
-		lsifUploads(state: COMPLETED) {
+const preciseIndexesQuery = `
+	query PreciseIndexes {
+		preciseIndexes(states: [COMPLETED]) {
 			nodes {
 				projectRoot {
 					repository {
@@ -23,10 +23,10 @@ const uploadsQuery = `
 	}
 `
 
-func queryUploads(ctx context.Context) (_ map[string][]string, err error) {
+func queryPreciseIndexes(ctx context.Context) (_ map[string][]string, err error) {
 	var payload struct {
 		Data struct {
-			LSIFUploads struct {
+			PreciseIndexes struct {
 				Nodes []struct {
 					ProjectRoot struct {
 						Repository struct {
@@ -37,15 +37,15 @@ func queryUploads(ctx context.Context) (_ map[string][]string, err error) {
 						} `json:"commit"`
 					} `json:"projectRoot"`
 				} `json:"nodes"`
-			} `json:"lsifUploads"`
+			} `json:"preciseIndexes"`
 		} `json:"data"`
 	}
-	if err := queryGraphQL(ctx, "CodeIntelQA_Query_Uploads", uploadsQuery, map[string]any{}, &payload); err != nil {
+	if err := queryGraphQL(ctx, "CodeIntelQA_Query_PreciseIndexes", preciseIndexesQuery, map[string]any{}, &payload); err != nil {
 		return nil, err
 	}
 
 	commitsByRepo := map[string][]string{}
-	for _, node := range payload.Data.LSIFUploads.Nodes {
+	for _, node := range payload.Data.PreciseIndexes.Nodes {
 		projectRoot := node.ProjectRoot
 		name := projectRoot.Repository.Name
 		commit := projectRoot.Commit.OID

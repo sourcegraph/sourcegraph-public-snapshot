@@ -18,6 +18,7 @@ import { REPOSITORY_GIT_COMMIT } from './RevisionsPopoverCommits'
 export const MOCK_PROPS: RevisionsPopoverProps = {
     repoId: 'some-repo-id',
     repoName: 'testorg/testrepo',
+    repoServiceType: 'github',
     defaultBranch: 'main',
     currentRev: 'main',
     togglePopover: () => null,

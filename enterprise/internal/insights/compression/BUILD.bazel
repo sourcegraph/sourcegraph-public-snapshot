@@ -16,6 +16,7 @@ go_library(
 
 go_test(
     name = "compression_test",
+    timeout = "short",
     srcs = ["compression_test.go"],
     data = glob(["testdata/**"]),
     embed = [":compression"],

@@ -1,33 +1,29 @@
-import React, { useCallback } from 'react'
+import React from 'react'
 
 import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiChevronDown, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import {
-    Position,
-    Menu,
-    MenuButton,
-    MenuList,
-    MenuLink,
     Icon,
     Link,
+    Menu,
+    MenuButton,
     MenuHeader,
     MenuItem,
+    MenuLink,
+    MenuList,
+    Position,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
 import { CreateAction } from './createActions'
-import { downloadSearchResults } from './searchResultsExport'
 
 import navStyles from './SearchResultsInfoBar.module.scss'
 
-interface SearchActionsMenuProps extends SearchPatternTypeProps, Pick<PlatformContext, 'sourcegraphURL'> {
-    query?: string
+interface SearchActionsMenuProps {
     results?: AggregateStreamingSearchResults
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
     createActions: CreateAction[]
@@ -36,12 +32,11 @@ interface SearchActionsMenuProps extends SearchPatternTypeProps, Pick<PlatformCo
     allExpanded: boolean
     onExpandAllResultsToggle: () => void
     onSaveQueryClick: () => void
+    onExportCsvClick: () => void
 }
 
 export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> = ({
-    query = '',
     results,
-    sourcegraphURL,
     authenticatedUser,
     createActions,
     createCodeMonitorAction,
@@ -49,12 +44,9 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
     allExpanded,
     onExpandAllResultsToggle,
     onSaveQueryClick,
+    onExportCsvClick,
 }) => {
     const resultsFound = results ? results.results.length > 0 : false
-    const downloadResults = useCallback(
-        () => (results ? downloadSearchResults(results, sourcegraphURL, query) : undefined),
-        [results, sourcegraphURL, query]
-    )
 
     return (
         <Menu>
@@ -82,7 +74,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                     />
                                     {allExpanded ? 'Collapse all' : 'Expand all'}
                                 </MenuItem>
-                                <MenuItem onSelect={downloadResults}>
+                                <MenuItem onSelect={onExportCsvClick}>
                                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
                                     Export results
                                 </MenuItem>
@@ -90,16 +82,18 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                         )}
                         <MenuHeader>Search query</MenuHeader>
                         {createActions.map(createAction => (
-                            <MenuLink key={createAction.label} as={Link} to={createAction.url}>
-                                <Icon
-                                    aria-hidden="true"
-                                    className="mr-1"
-                                    {...(typeof createAction.icon === 'string'
-                                        ? { svgPath: createAction.icon }
-                                        : { as: createAction.icon })}
-                                />
-                                {createAction.label}
-                            </MenuLink>
+                            <Tooltip content={createAction.tooltip} key={createAction.label} placement="left">
+                                <MenuLink as={Link} to={createAction.url} disabled={createAction.disabled}>
+                                    <Icon
+                                        aria-hidden="true"
+                                        className="mr-1"
+                                        {...(typeof createAction.icon === 'string'
+                                            ? { svgPath: createAction.icon }
+                                            : { as: createAction.icon })}
+                                    />
+                                    {createAction.label}
+                                </MenuLink>
+                            </Tooltip>
                         ))}
                         {createCodeMonitorAction && (
                             <Tooltip
@@ -108,6 +102,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                         ? 'Code monitors only support type:diff or type:commit searches.'
                                         : undefined
                                 }
+                                placement="left"
                             >
                                 <MenuLink
                                     as={Link}

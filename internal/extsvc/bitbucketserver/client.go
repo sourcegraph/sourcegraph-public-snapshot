@@ -474,9 +474,10 @@ type UpdatePullRequestInput struct {
 	PullRequestID string `json:"-"`
 	Version       int    `json:"version"`
 
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	ToRef       Ref    `json:"toRef"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	ToRef       Ref        `json:"toRef"`
+	Reviewers   []Reviewer `json:"reviewers"`
 }
 
 func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
@@ -579,8 +580,13 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		pr.ToRef.Repository.Slug,
 	)
 
-	_, err = c.send(ctx, "POST", path, nil, payload, pr)
+	resp, err := c.send(ctx, "POST", path, nil, payload, pr)
+
 	if err != nil {
+		var code int
+		if resp != nil {
+			code = resp.StatusCode
+		}
 		if IsDuplicatePullRequest(err) {
 			pr, extractErr := ExtractExistingPullRequest(err)
 			if extractErr != nil {
@@ -590,7 +596,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 				Existing: pr,
 			}
 		}
-		return err
+		return errcode.MaybeMakeNonRetryable(code, err)
 	}
 	return nil
 }
@@ -943,7 +949,13 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
+	var err error
+	req.URL.Path, err = url.JoinPath(c.URL.Path, req.URL.Path) // First join paths so that base path is kept
+	if err != nil {
+		return nil, err
+	}
 	req.URL = c.URL.ResolveReference(req.URL)
+
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	}
@@ -964,18 +976,18 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, errors.WithStack(&httpError{
+		return resp, errors.WithStack(&httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
@@ -986,7 +998,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	if s, ok := result.(*[]byte); ok {
 		*s = bs
 	} else if result != nil {
-		return resp, json.Unmarshal(bs, result)
+		return resp, errors.Wrap(json.Unmarshal(bs, result), "failed to unmarshal response to JSON")
 	}
 
 	return resp, nil

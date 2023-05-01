@@ -18,7 +18,6 @@ import {
 } from '@sourcegraph/shared/src/search'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 
 import { isBatchChangesExecutionEnabled } from './batches'
 import { useBreadcrumbs, BreadcrumbSetters, BreadcrumbsProps } from './components/Breadcrumbs'
@@ -39,7 +38,6 @@ export interface LegacyRouteComputedContext {
     /**
      * TODO: expose these fields in the new `useSettings()` hook, calculate next to source.
      */
-    globbing: boolean
     batchChangesExecutionEnabled: boolean
 
     /**
@@ -153,7 +151,6 @@ export const LegacyRouteContextProvider: FC<PropsWithChildren<LegacyRouteContext
     } satisfies LegacyRouteStaticInjections
 
     const computedContextFields = {
-        globbing: globbingEnabledFromSettings(settingsCascade),
         batchChangesExecutionEnabled: isBatchChangesExecutionEnabled(settingsCascade),
         isMacPlatform: isMacPlatform(),
     } satisfies LegacyRouteComputedContext

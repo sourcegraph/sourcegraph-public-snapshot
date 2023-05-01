@@ -4,12 +4,12 @@ package jscontext
 
 import (
 	"context"
-	"net"
 	"net/http"
+	"runtime"
 	"strings"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -22,11 +22,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -36,11 +38,12 @@ import (
 var BillingPublishableKey string
 
 type authProviderInfo struct {
-	IsBuiltin         bool   `json:"isBuiltin"`
-	DisplayName       string `json:"displayName"`
-	ServiceType       string `json:"serviceType"`
-	AuthenticationURL string `json:"authenticationURL"`
-	ServiceID         string `json:"serviceID"`
+	IsBuiltin         bool    `json:"isBuiltin"`
+	DisplayName       string  `json:"displayName"`
+	DisplayPrefix     *string `json:"displayPrefix"`
+	ServiceType       string  `json:"serviceType"`
+	AuthenticationURL string  `json:"authenticationURL"`
+	ServiceID         string  `json:"serviceID"`
 }
 
 // GenericPasswordPolicy a generic password policy that holds password requirements
@@ -75,6 +78,21 @@ type UserSession struct {
 	CanSignOut bool `json:"canSignOut"`
 }
 
+type TemporarySettings struct {
+	GraphQLTypename string `json:"__typename"`
+	Contents        string `json:"contents"`
+}
+
+type Permission struct {
+	GraphQLTypename string     `json:"__typename"`
+	ID              graphql.ID `json:"id"`
+	DisplayName     string     `json:"displayName"`
+}
+
+type PermissionsConnection struct {
+	GraphQLTypename string       `json:"__typename"`
+	Nodes           []Permission `json:"nodes"`
+}
 type CurrentUser struct {
 	GraphQLTypename     string     `json:"__typename"`
 	ID                  graphql.ID `json:"id"`
@@ -86,7 +104,6 @@ type CurrentUser struct {
 	URL                 string     `json:"url"`
 	SettingsURL         string     `json:"settingsURL"`
 	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
-	Tags                []string   `json:"tags"`
 	TosAccepted         bool       `json:"tosAccepted"`
 	Searchable          bool       `json:"searchable"`
 
@@ -94,6 +111,7 @@ type CurrentUser struct {
 	Session        *UserSession                 `json:"session"`
 	Emails         []UserEmail                  `json:"emails"`
 	LatestSettings *UserLatestSettings          `json:"latestSettings"`
+	Permissions    PermissionsConnection        `json:"permissions"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -112,8 +130,9 @@ type JSContext struct {
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
 
-	IsAuthenticatedUser bool         `json:"isAuthenticatedUser"`
-	CurrentUser         *CurrentUser `json:"currentUser"`
+	IsAuthenticatedUser bool               `json:"isAuthenticatedUser"`
+	CurrentUser         *CurrentUser       `json:"currentUser"`
+	TemporarySettings   *TemporarySettings `json:"temporarySettings"`
 
 	SentryDSN     *string               `json:"sentryDSN"`
 	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
@@ -125,7 +144,6 @@ type JSContext struct {
 	EmailEnabled  bool   `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
-	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
 	NeedServerRestart bool                     `json:"needServerRestart"`
 	DeployType        string                   `json:"deployType"`
 
@@ -145,19 +163,27 @@ type JSContext struct {
 	AuthMinPasswordLength int                `json:"authMinPasswordLength"`
 	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
 
-	AuthProviders []authProviderInfo `json:"authProviders"`
+	AuthProviders                  []authProviderInfo `json:"authProviders"`
+	AuthPrimaryLoginProvidersCount int                `json:"primaryLoginProvidersCount"`
+
+	AuthAccessRequest *schema.AuthAccessRequest `json:"authAccessRequest"`
 
 	Branding *schema.Branding `json:"branding"`
 
-	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
-	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
-	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
+	BatchChangesEnabled                bool                                `json:"batchChangesEnabled"`
+	BatchChangesDisableWebhooksWarning bool                                `json:"batchChangesDisableWebhooksWarning"`
+	BatchChangesWebhookLogsEnabled     bool                                `json:"batchChangesWebhookLogsEnabled"`
+	BatchChangesRolloutWindows         *[]*schema.BatchChangeRolloutWindow `json:"batchChangesRolloutWindows"`
+
+	CodyEnabled bool `json:"codyEnabled"`
 
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 
 	CodeInsightsEnabled bool `json:"codeInsightsEnabled"`
+
+	EmbeddingsEnabled bool `json:"embeddingsEnabled"`
 
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
@@ -170,6 +196,18 @@ type JSContext struct {
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
 
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey"`
+
+	NeedsRepositoryConfiguration bool `json:"needsRepositoryConfiguration"`
+
+	ExtsvcConfigFileExists bool `json:"extsvcConfigFileExists"`
+
+	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
+
+	RunningOnMacOS bool `json:"runningOnMacOS"`
+
+	LocalFilePickerAvailable bool `json:"localFilePickerAvailable"`
+
+	SrcServeGitUrl string `json:"srcServeGitUrl"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -192,20 +230,22 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	siteID := siteid.Get()
 
 	// Show the site init screen?
-	globalState, err := db.GlobalState().Get(ctx)
-	needsSiteInit := err == nil && !globalState.Initialized
+	siteInitialized, err := db.GlobalState().SiteInitialized(ctx)
+	needsSiteInit := err == nil && !siteInitialized
 
 	// Auth providers
 	var authProviders []authProviderInfo
-	for _, p := range providers.Providers() {
-		if p.Config().Github != nil && p.Config().Github.Hidden {
+	for _, p := range providers.SortedProviders() {
+		commonConfig := providers.GetAuthProviderCommon(p)
+		if commonConfig.Hidden {
 			continue
 		}
 		info := p.CachedInfo()
 		if info != nil {
 			authProviders = append(authProviders, authProviderInfo{
 				IsBuiltin:         p.Config().Builtin != nil,
-				DisplayName:       info.DisplayName,
+				DisplayName:       commonConfig.DisplayName,
+				DisplayPrefix:     commonConfig.DisplayPrefix,
 				ServiceType:       p.ConfigID().Type,
 				AuthenticationURL: info.AuthenticationURL,
 				ServiceID:         info.ServiceID,
@@ -235,13 +275,29 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	var licenseInfo *hooks.LicenseInfo
 	var user *types.User
+	temporarySettings := "{}"
 	if !a.IsAuthenticated() {
 		licenseInfo = hooks.GetLicenseInfo(false)
 	} else {
 		// Ignore err as we don't care if user does not exist
 		user, _ = a.User(ctx, db.Users())
 		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
+		if user != nil {
+			if settings, err := db.TemporarySettings().GetTemporarySettings(ctx, user.ID); err == nil {
+				temporarySettings = settings.Contents
+			}
+		}
 	}
+
+	siteResolver := graphqlbackend.NewSiteResolver(logger.Scoped("jscontext", "constructing jscontext"), db)
+	needsRepositoryConfiguration, err := siteResolver.NeedsRepositoryConfiguration(ctx)
+	if err != nil {
+		needsRepositoryConfiguration = false
+	}
+
+	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
+	runningOnMacOS := runtime.GOOS == "darwin"
+	srcServeGitUrl := envvar.SrcServeGitUrl()
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
@@ -256,6 +312,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		Version:             version.Version(),
 		IsAuthenticatedUser: a.IsAuthenticated(),
 		CurrentUser:         createCurrentUser(ctx, user, db),
+		TemporarySettings:   &TemporarySettings{GraphQLTypename: "TemporarySettings", Contents: temporarySettings},
 
 		SentryDSN:                  sentryDSN,
 		OpenTelemetry:              openTelemetry,
@@ -268,12 +325,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedsSiteInit:     needsSiteInit,
 		EmailEnabled:      conf.CanSendEmail(),
 		Site:              publicSiteConfiguration(),
-		LikelyDockerOnMac: likelyDockerOnMac(),
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		SourcegraphAppMode:    deploy.IsDeployTypeSingleProgram(deploy.Type()),
+		SourcegraphAppMode:    deploy.IsApp(),
 
 		BillingPublishableKey: BillingPublishableKey,
 
@@ -290,19 +346,27 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AuthMinPasswordLength: conf.AuthMinPasswordLength(),
 		AuthPasswordPolicy:    authPasswordPolicy,
 
-		AuthProviders: authProviders,
+		AuthProviders:                  authProviders,
+		AuthPrimaryLoginProvidersCount: conf.AuthPrimaryLoginProvidersCount(),
+
+		AuthAccessRequest: conf.Get().AuthAccessRequest,
 
 		Branding: globals.Branding(),
 
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
+		BatchChangesRolloutWindows:         conf.Get().BatchChangesRolloutWindows,
+
+		CodyEnabled: cody.IsCodyEnabled(ctx),
 
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
-		CodeInsightsEnabled: enterprise.IsCodeInsightsEnabled(),
+		CodeInsightsEnabled: graphqlbackend.IsCodeInsightsEnabled(),
+
+		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
@@ -313,6 +377,18 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 
 		DisableFeedbackSurvey: conf.Get().DisableFeedbackSurvey,
+
+		NeedsRepositoryConfiguration: needsRepositoryConfiguration,
+
+		ExtsvcConfigFileExists: extsvcConfigFileExists,
+
+		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
+
+		RunningOnMacOS: runningOnMacOS,
+
+		LocalFilePickerAvailable: deploy.IsApp() && filepicker.Available(),
+
+		SrcServeGitUrl: srcServeGitUrl,
 	}
 }
 
@@ -326,17 +402,13 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		return nil
 	}
 
-	userResolver := graphqlbackend.NewUserResolver(db, user)
+	userResolver := graphqlbackend.NewUserResolver(ctx, db, user)
 
-	siteAdmin, err := userResolver.SiteAdmin(ctx)
+	siteAdmin, err := userResolver.SiteAdmin()
 	if err != nil {
 		return nil
 	}
-	canAdminister, err := userResolver.ViewerCanAdminister(ctx)
-	if err != nil {
-		return nil
-	}
-	tags, err := userResolver.Tags(ctx)
+	canAdminister, err := userResolver.ViewerCanAdminister()
 	if err != nil {
 		return nil
 	}
@@ -359,11 +431,11 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		Searchable:          userResolver.Searchable(ctx),
 		SettingsURL:         derefString(userResolver.SettingsURL()),
 		SiteAdmin:           siteAdmin,
-		Tags:                tags,
 		TosAccepted:         userResolver.TosAccepted(ctx),
 		URL:                 userResolver.URL(),
 		Username:            userResolver.Username(),
 		ViewerCanAdminister: canAdminister,
+		Permissions:         resolveUserPermissions(ctx, userResolver),
 	}
 }
 
@@ -372,6 +444,33 @@ func derefString(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.UserResolver) PermissionsConnection {
+	connection := PermissionsConnection{
+		GraphQLTypename: "PermissionConnection",
+		Nodes:           []Permission{},
+	}
+
+	permissionResolver, err := userResolver.Permissions()
+	if err != nil {
+		return connection
+	}
+
+	nodes, err := permissionResolver.Nodes(ctx)
+	if err != nil {
+		return connection
+	}
+
+	for _, node := range nodes {
+		connection.Nodes = append(connection.Nodes, Permission{
+			GraphQLTypename: "Permission",
+			ID:              node.ID(),
+			DisplayName:     node.DisplayName(),
+		})
+	}
+
+	return connection
 }
 
 func resolveUserOrganizations(ctx context.Context, user *graphqlbackend.UserResolver) *UserOrganizationsConnection {
@@ -450,15 +549,4 @@ var isBotPat = lazyregexp.New(`(?i:googlecloudmonitoring|pingdom.com|go .* packa
 
 func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)
-}
-
-func likelyDockerOnMac() bool {
-	r := net.DefaultResolver
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	addrs, err := r.LookupHost(ctx, "host.docker.internal")
-	if err != nil || len(addrs) == 0 {
-		return false //  Assume we're not docker for mac.
-	}
-	return true
 }

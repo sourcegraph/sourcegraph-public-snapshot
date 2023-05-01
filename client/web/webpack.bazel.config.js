@@ -15,21 +15,19 @@ const { StatsWriterPlugin } = require('webpack-stats-plugin')
 const {
   ROOT_PATH,
   STATIC_ASSETS_PATH,
-  getBabelLoader,
   getCacheConfig,
   getMonacoWebpackPlugin,
   getBazelCSSLoaders: getCSSLoaders,
   getTerserPlugin,
   getProvidePlugin,
   getCSSModulesLoader,
-  getMonacoCSSRule,
   getMonacoTTFRule,
   getBasicCSSLoader,
   getStatoscopePlugin,
 } = require('@sourcegraph/build-config')
 
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG, writeIndexHTMLPlugin } = require('./dev/utils')
-// const { isHotReloadEnabled } = require('./src/integration/environment')
+const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const {
   NODE_ENV,
@@ -41,7 +39,7 @@ const {
   ENABLE_OPEN_TELEMETRY,
   SOURCEGRAPH_API_URL,
   WEBPACK_BUNDLE_ANALYZER,
-  WEBPACK_EXPORT_STATS_FILENAME,
+  WEBPACK_EXPORT_STATS,
   WEBPACK_SERVE_INDEX,
   WEBPACK_STATS_NAME,
   WEBPACK_USE_NAMED_CHUNKS,
@@ -54,7 +52,7 @@ const {
   SENTRY_PROJECT,
 } = ENVIRONMENT_CONFIG
 
-const IS_PERSISTENT_CACHE_ENABLED = IS_DEVELOPMENT && !IS_CI
+const IS_PERSISTENT_CACHE_ENABLED = false // Disabled in Bazel
 const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOPMENT && EMBED_DEVELOPMENT))
 
 const RUNTIME_ENV_VARIABLES = {
@@ -89,7 +87,7 @@ const config = {
   stats: {
     // Minimize logging in case if Webpack is used along with multiple other services.
     // Use `normal` output preset in case of running standalone web server.
-    preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors-warnings',
+    preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors',
     errorDetails: true,
     timings: true,
   },
@@ -100,35 +98,38 @@ const config = {
   target: 'browserslist',
   // Use cache only in `development` mode to speed up production build.
   cache: IS_PERSISTENT_CACHE_ENABLED && getCacheConfig({ invalidateCacheFiles: [] }),
+  performance: {
+    hints: false,
+  },
   optimization: {
     minimize: IS_PRODUCTION,
     minimizer: [getTerserPlugin(), new CssMinimizerWebpackPlugin()],
     splitChunks: {
       cacheGroups: {
         [initialChunkNames.react]: {
-          test: /[/\\]node_modules.*[/\\](react|react-dom)[/\\]/,
+          test: /[/\\]node_modules[/\\](react|react-dom)[/\\]/,
           name: initialChunkNames.react,
           chunks: 'all',
         },
         [initialChunkNames.opentelemetry]: {
-          test: /[/\\]node_modules.*[/\\](@opentelemetry)[/\\]/,
+          test: /[/\\]node_modules[/\\](@opentelemetry|zone.js)[/\\]/,
           name: initialChunkNames.opentelemetry,
           chunks: 'all',
         },
       },
     },
     ...(IS_DEVELOPMENT && {
+      // Running multiple entries on a single page that do not share a runtime chunk from the same compilation is not supported.
+      // https://github.com/webpack/webpack-dev-server/issues/2792#issuecomment-808328432
+      runtimeChunk: isHotReloadEnabled ? 'single' : false,
       removeAvailableModules: false,
       removeEmptyChunks: false,
       splitChunks: false,
     }),
   },
   // entry: { ... SET BY BAZEL RULE ... }
-  devServer: {
-    port: 8080,
-  },
   output: {
-    // path: STATIC_ASSETS_PATH,
+    path: STATIC_ASSETS_PATH,
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
     // Note: [name] will vary depending on the Webpack chunk. If specified, it will use a provided chunk name, otherwise it will fallback to a deterministic id.
     filename:
@@ -153,18 +154,18 @@ const config = {
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),
     }),
-    // TODO(bazel): why does the provide plugin crash?
-    // getProvidePlugin(),
+    getProvidePlugin(),
     new MiniCssExtractPlugin({
+      ignoreOrder: true,
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename:
         IS_PRODUCTION && !WEBPACK_USE_NAMED_CHUNKS
           ? 'styles/[name].[contenthash].bundle.css'
           : 'styles/[name].bundle.css',
     }),
-    // getMonacoWebpackPlugin(),
+    getMonacoWebpackPlugin(),
     new WebpackManifestPlugin({
-      writeToFileEmit: false,
+      writeToFileEmit: true,
       fileName: 'webpack.manifest.json',
       seed: {
         environment: NODE_ENV,
@@ -175,7 +176,7 @@ const config = {
     }),
     ...(WEBPACK_SERVE_INDEX && IS_PRODUCTION ? [writeIndexHTMLPlugin] : []),
     WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
-    // isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
+    isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     IS_PRODUCTION &&
       new CompressionPlugin({
         filename: '[path][base].gz',
@@ -211,9 +212,9 @@ const config = {
         release: `frontend@${VERSION}`,
         include: path.join(STATIC_ASSETS_PATH, 'scripts', '*.map'),
       }),
-    WEBPACK_EXPORT_STATS_FILENAME &&
+    WEBPACK_EXPORT_STATS &&
       new StatsWriterPlugin({
-        filename: WEBPACK_EXPORT_STATS_FILENAME,
+        filename: `stats-${process.env.BUILDKITE_COMMIT || 'unknown-commit'}.json`,
         stats: {
           all: false, // disable all the stats
           hash: true, // compilation hash
@@ -238,6 +239,7 @@ const config = {
       path: require.resolve('path-browserify'),
       punycode: require.resolve('punycode'),
       util: require.resolve('util'),
+      events: require.resolve('events'),
     },
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM

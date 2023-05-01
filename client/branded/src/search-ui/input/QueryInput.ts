@@ -25,8 +25,6 @@ export interface QueryInputProps
     onEditorCreated?: (editor: IEditor) => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     autoFocus?: boolean
-    // Whether globbing is enabled for filters.
-    globbing: boolean
 
     // Whether comments are parsed and highlighted
     interpretComments?: boolean

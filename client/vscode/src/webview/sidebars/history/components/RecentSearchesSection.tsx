@@ -37,11 +37,11 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
         return null
     }
 
-    const onSavedSearchClick = (query: string): void => {
+    const onSearchClick = (query: string): void => {
         platformContext.telemetryService.log('VSCERecentSearchClick')
         extensionCoreAPI
             .streamSearch(query, {
-                // Debt: using defaults here. The saved search should override these, though.
+                // Debt: using defaults here. The recent search should override these, though.
                 caseSensitive: false,
                 patternType: SearchPatternType.standard,
                 version: LATEST_VERSION,
@@ -76,7 +76,7 @@ export const RecentSearchesSection: React.FunctionComponent<React.PropsWithChild
                                     <Button
                                         variant="link"
                                         className="p-0 text-left text-decoration-none"
-                                        onClick={() => onSavedSearchClick(search.searchText)}
+                                        onClick={() => onSearchClick(search.searchText)}
                                     >
                                         <SyntaxHighlightedSearchQuery query={search.searchText} />
                                     </Button>

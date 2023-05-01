@@ -1,0 +1,1 @@
+-- Up migration only changes data, no down migration necessary.

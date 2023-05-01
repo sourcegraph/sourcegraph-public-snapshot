@@ -1,7 +1,3 @@
-jest.mock('../../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
-    DynamicallyImportedMonacoSettingsEditor: () => 'DynamicallyImportedMonacoSettingsEditor',
-}))
-
 import * as H from 'history'
 import { noop } from 'rxjs'
 
@@ -11,6 +7,10 @@ import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 import { ExternalServiceKind } from '../../graphql-operations'
 
 import { ExternalServiceForm } from './ExternalServiceForm'
+
+jest.mock('../../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
+    DynamicallyImportedMonacoSettingsEditor: () => 'DynamicallyImportedMonacoSettingsEditor',
+}))
 
 describe('ExternalServiceForm', () => {
     const baseProps = {

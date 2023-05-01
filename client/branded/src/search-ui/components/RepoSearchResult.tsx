@@ -9,6 +9,7 @@ import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegrap
 import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
+import { RepoMetadata } from './RepoMetadata'
 import { ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
@@ -21,6 +22,7 @@ export interface RepoSearchResultProps {
     containerClassName?: string
     as?: React.ElementType
     index: number
+    enableRepositoryMetadata?: boolean
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
@@ -29,6 +31,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     containerClassName,
     as,
     index,
+    enableRepositoryMetadata,
 }) => {
     const repoDescriptionElement = useRef<HTMLDivElement>(null)
     const repoNameElement = useRef<HTMLAnchorElement>(null)
@@ -89,6 +92,13 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                     <div className="d-flex align-items-center flex-row">
                         <div className={styles.matchType}>
                             <small>Repository match</small>
+                            {enableRepositoryMetadata && !!result.metadata && (
+                                <RepoMetadata
+                                    small={true}
+                                    className="justify-content-end mt-1"
+                                    items={Object.entries(result.metadata).map(([key, value]) => ({ key, value }))}
+                                />
+                            )}
                         </div>
                         {result.fork && (
                             <>

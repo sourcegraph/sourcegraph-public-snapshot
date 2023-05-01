@@ -87,11 +87,14 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		return nil, errors.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
 	}
 
-	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
+	uid := actor.FromContext(ctx).UID
+	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, uid)
+	logger := r.logger.Scoped("CreateAccessToken", "access token creation").
+		With(log.Int32("userID", uid))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, r.logger).SendUserEmailOnFieldUpdate(ctx, userID, "created an access token"); err != nil {
-			r.logger.Warn("Failed to send email to inform user of access token creation", log.Error(err))
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(ctx, userID, args.Note, false); err != nil {
+			logger.Warn("Failed to send email to inform user of access token creation", log.Error(err))
 		}
 	}
 
@@ -119,17 +122,18 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		return nil, errors.New("exactly one of byID or byToken must be specified")
 	}
 
-	var subjectUserID int32
+	var token *database.AccessToken
 	switch {
 	case args.ByID != nil:
 		accessTokenID, err := unmarshalAccessTokenID(*args.ByID)
 		if err != nil {
 			return nil, err
 		}
-		token, err := r.db.AccessTokens().GetByID(ctx, accessTokenID)
+		t, err := r.db.AccessTokens().GetByID(ctx, accessTokenID)
 		if err != nil {
 			return nil, err
 		}
+		token = t
 
 		// 🚨 SECURITY: Only site admins and the user can delete a user's access token.
 		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
@@ -140,11 +144,11 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		}
 
 	case args.ByToken != nil:
-		token, err := r.db.AccessTokens().GetByToken(ctx, *args.ByToken)
+		t, err := r.db.AccessTokens().GetByToken(ctx, *args.ByToken)
 		if err != nil {
 			return nil, err
 		}
-		subjectUserID = token.SubjectUserID
+		token = t
 
 		// 🚨 SECURITY: This is easier than the ByID case because anyone holding the access token's
 		// secret value is assumed to be allowed to delete it.
@@ -154,9 +158,12 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 
 	}
 
+	logger := r.logger.Scoped("DeleteAccessToken", "access token deletion").
+		With(log.Int32("userID", token.SubjectUserID))
+
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, r.logger).SendUserEmailOnFieldUpdate(ctx, subjectUserID, "deleted an access token"); err != nil {
-			r.logger.Warn("Failed to send email to inform user of access token deletion", log.Error(err))
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(ctx, token.SubjectUserID, token.Note, true); err != nil {
+			logger.Warn("Failed to send email to inform user of access token deletion", log.Error(err))
 		}
 	}
 

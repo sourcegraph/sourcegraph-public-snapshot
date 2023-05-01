@@ -145,12 +145,21 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		})
 	}
 
+	topicFilters := make([]database.RepoTopicFilter, 0, len(op.HasTopics))
+	for _, filter := range op.HasTopics {
+		topicFilters = append(topicFilters, database.RepoTopicFilter{
+			Topic:   filter.Topic,
+			Negated: filter.Negated,
+		})
+	}
+
 	options := database.ReposListOptions{
 		IncludePatterns:       includePatterns,
 		ExcludePattern:        query.UnionRegExps(excludePatterns),
 		DescriptionPatterns:   op.DescriptionPatterns,
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 		KVPFilters:            kvpFilters,
+		TopicFilters:          topicFilters,
 		Cursors:               op.Cursors,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset:  &database.LimitOffset{Limit: limit + 1},

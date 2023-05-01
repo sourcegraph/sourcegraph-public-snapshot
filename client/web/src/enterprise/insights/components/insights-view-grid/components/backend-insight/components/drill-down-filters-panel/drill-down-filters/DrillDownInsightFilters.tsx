@@ -149,7 +149,14 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         contexts.input.onChange('')
         includeRegex.input.onChange('')
         excludeRegex.input.onChange('')
-        seriesDisplayOptionsField.input.onChange(originalValues.seriesDisplayOptions)
+        seriesDisplayOptionsField.input.onChange({
+            limit: null,
+            numSamples: null,
+            sortOptions: {
+                mode: SeriesSortMode.RESULT_COUNT,
+                direction: SeriesSortDirection.DESC,
+            },
+        })
     }
 
     const isHorizontalMode = visualMode === FilterSectionVisualMode.HorizontalSections

@@ -2,6 +2,8 @@ package sentinel
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/background/downloader"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/background/matcher"
 	sentinelstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -12,23 +14,26 @@ func NewService(
 	observationCtx *observation.Context,
 	db database.DB,
 ) *Service {
-	store := sentinelstore.New(scopedContext("store", observationCtx), db)
-
 	return newService(
-		observationCtx,
-		store,
+		scopedContext("service", observationCtx),
+		sentinelstore.New(scopedContext("store", observationCtx), db),
+	)
+}
+
+var (
+	DownloaderConfigInst = &downloader.Config{}
+	MatcherConfigInst    = &matcher.Config{}
+)
+
+func CVEScannerJob(observationCtx *observation.Context, service *Service) []goroutine.BackgroundRoutine {
+	return background.CVEScannerJob(
+		scopedContext("cvescanner", observationCtx),
+		service.store,
+		DownloaderConfigInst,
+		MatcherConfigInst,
 	)
 }
 
 func scopedContext(component string, parent *observation.Context) *observation.Context {
 	return observation.ScopedContext("codeintel", "sentinel", component, parent)
-}
-
-func CVEScannerJob(observationCtx *observation.Context, service *Service) []goroutine.BackgroundRoutine {
-	metrics := background.NewMetrics(observationCtx)
-
-	return []goroutine.BackgroundRoutine{
-		background.NewCVEDownloader(service.store, metrics, ConfigInst.Interval),
-		background.NewCVEMatcher(service.store, metrics, ConfigInst.Interval),
-	}
 }

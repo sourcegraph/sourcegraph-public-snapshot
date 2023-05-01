@@ -13,8 +13,8 @@ import { RepositoryFields } from '../../../graphql-operations'
 import { RouteV6Descriptor } from '../../../util/contributions'
 import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'
 import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
-import { CodeIntelInferenceConfigurationPageProps } from '../configuration/pages/CodeIntelInferenceConfigurationPage'
 import { CodeIntelRepositoryIndexConfigurationPageProps } from '../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'
+import { RepoDashboardPageProps } from '../dashboard/pages/RepoDashboardPage'
 import { CodeIntelPreciseIndexesPageProps } from '../indexes/pages/CodeIntelPreciseIndexesPage'
 import { CodeIntelPreciseIndexPageProps } from '../indexes/pages/CodeIntelPreciseIndexPage'
 
@@ -26,6 +26,11 @@ export interface CodeIntelAreaRouteContext extends TelemetryProps {
 }
 
 export interface CodeIntelAreaRoute extends RouteV6Descriptor<CodeIntelAreaRouteContext> {}
+
+const RepoDashboardPage = lazyComponent<RepoDashboardPageProps, 'RepoDashboardPage'>(
+    () => import('../dashboard/pages/RepoDashboardPage'),
+    'RepoDashboardPage'
+)
 
 const CodeIntelPreciseIndexesPage = lazyComponent<CodeIntelPreciseIndexesPageProps, 'CodeIntelPreciseIndexesPage'>(
     () => import('../indexes/pages/CodeIntelPreciseIndexesPage'),
@@ -41,11 +46,6 @@ const CodeIntelConfigurationPage = lazyComponent<CodeIntelConfigurationPageProps
     'CodeIntelConfigurationPage'
 )
 
-const CodeIntelInferenceConfigurationPage = lazyComponent<
-    CodeIntelInferenceConfigurationPageProps,
-    'CodeIntelInferenceConfigurationPage'
->(() => import('../configuration/pages/CodeIntelInferenceConfigurationPage'), 'CodeIntelInferenceConfigurationPage')
-
 const RepositoryIndexConfigurationPage = lazyComponent<
     CodeIntelRepositoryIndexConfigurationPageProps,
     'CodeIntelRepositoryIndexConfigurationPage'
@@ -60,10 +60,17 @@ const CodeIntelConfigurationPolicyPage = lazyComponent<
 >(() => import('../configuration/pages/CodeIntelConfigurationPolicyPage'), 'CodeIntelConfigurationPolicyPage')
 
 export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
+    // Code intelligence dashboard routes
     {
         path: '/',
-        render: () => <Navigate to="./indexes" replace={true} />,
+        render: () => <Navigate to="./dashboard" replace={true} />,
     },
+    {
+        path: '/dashboard',
+        render: props => <RepoDashboardPage {...props} />,
+    },
+
+    // Precise index routes
     {
         path: '/indexes',
         render: props => <CodeIntelPreciseIndexesPage {...props} />,
@@ -72,6 +79,23 @@ export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
         path: '/indexes/:id',
         render: props => <CodeIntelPreciseIndexPage {...props} />,
     },
+
+    // Code graph configuration
+    {
+        path: '/configuration',
+        render: props => <CodeIntelConfigurationPage {...props} />,
+    },
+    {
+        path: '/configuration/:id',
+        render: props => <CodeIntelConfigurationPolicyPage {...props} />,
+    },
+    {
+        path: '/index-configuration',
+        render: props => <RepositoryIndexConfigurationPage {...props} />,
+        condition: () => window.context?.codeIntelAutoIndexingEnabled,
+    },
+
+    // Legacy routes
     {
         path: '/uploads/:id',
         render: () => (
@@ -81,22 +105,6 @@ export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
                 }
             />
         ),
-    },
-    {
-        path: '/configuration',
-        render: props => <CodeIntelConfigurationPage {...props} />,
-    },
-    {
-        path: '/index-configuration',
-        render: props => <RepositoryIndexConfigurationPage {...props} />,
-    },
-    {
-        path: '/inference-configuration',
-        render: props => <CodeIntelInferenceConfigurationPage {...props} />,
-    },
-    {
-        path: '/configuration/:id',
-        render: props => <CodeIntelConfigurationPolicyPage {...props} />,
     },
 ]
 
@@ -114,6 +122,10 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
         header: { label: 'Code graph data' },
         items: [
             {
+                to: '/dashboard',
+                label: 'Dashboard',
+            },
+            {
                 to: '/indexes',
                 label: 'Precise indexes',
             },
@@ -121,11 +133,15 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
                 to: '/configuration',
                 label: 'Configuration policies',
             },
-            {
-                to: '/index-configuration',
-                label: 'Auto-index configuration',
-                condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
-            },
+
+            ...(window.context?.codeIntelAutoIndexingEnabled
+                ? [
+                      {
+                          to: '/index-configuration',
+                          label: 'Auto-index configuration',
+                      },
+                  ]
+                : []),
         ],
     },
 ]
@@ -157,7 +173,7 @@ export const RepositoryCodeIntelArea: FC<RepositoryCodeIntelAreaPageProps> = pro
                             )
                     )}
 
-                    <Route element={<NotFoundPage pageType="repository" />} />
+                    <Route path="*" element={<NotFoundPage pageType="repository" />} />
                 </Routes>
             </div>
         </div>

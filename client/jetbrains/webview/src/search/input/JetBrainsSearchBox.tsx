@@ -41,9 +41,6 @@ export interface JetBrainsSearchBoxProps
     className?: string
     containerClassName?: string
 
-    /** Whether globbing is enabled for filters. */
-    globbing: boolean
-
     /** Whether comments are parsed and highlighted */
     interpretComments?: boolean
 
@@ -89,7 +86,8 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                     <>
                         <SearchContextDropdown
                             authenticatedUser={props.authenticatedUser}
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            // This is only used to render the CTA which we do not want on JetBrains
+                            isSourcegraphDotCom={false}
                             searchContextsEnabled={props.searchContextsEnabled}
                             showSearchContextManagement={props.showSearchContextManagement}
                             setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
@@ -103,6 +101,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                             className={classNames(styles.searchBoxContextDropdown, 'jb-search-context-dropdown')}
                             menuClassName={styles.searchBoxContextMenu}
                             onEscapeMenuClose={focusEditor}
+                            ignoreDefaultContextDoesNotExistError={true}
                         />
                         <div className={styles.searchBoxSeparator} />
                     </>
@@ -120,7 +119,6 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         autoFocus={props.autoFocus}
                         caseSensitive={props.caseSensitive}
                         fetchStreamSuggestions={props.fetchStreamSuggestions}
-                        globbing={props.globbing}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         onChange={props.onChange}
                         onSubmit={props.onSubmit}

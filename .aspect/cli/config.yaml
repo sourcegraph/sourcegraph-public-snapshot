@@ -1,0 +1,9 @@
+configure:
+  languages:
+    javascript: true
+    go: true
+    protobuf: true
+plugins:
+  - name: fix-visibility
+    from: github.com/aspect-build/plugin-fix-visibility
+    version: v0.1.0

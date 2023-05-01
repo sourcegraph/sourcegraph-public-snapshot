@@ -7,9 +7,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../../../components/WebStory'
 import { UsersStatisticsResult } from '../../../graphql-operations'
 
-import { USERS_STATISTICS } from './queries'
-
 import { AnalyticsUsersPage } from './index'
+import { USERS_STATISTICS } from './queries'
 
 const decorator: DecoratorFn = story => <WebStory>{() => <div className="p-3 container">{story()}</div>}</WebStory>
 

@@ -25,6 +25,10 @@ go_test(
     name = "live_test",
     srcs = ["migration_test.go"],
     embed = [":live"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database/dbtest",
         "//internal/database/migration/runner",

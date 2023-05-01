@@ -158,6 +158,9 @@ class ServersideSettingsBackend implements SettingsBackend {
         const temporarySettingsQuery = this.apolloClient.watchQuery<GetTemporarySettingsResult>({
             query: this.GetTemporarySettingsQuery,
             pollInterval: this.PollInterval,
+            // We can use the `cache-first` policy here because we preload temporary settings on the server,
+            // and polling bypasses cache and issues network requests despite having a cached result.
+            fetchPolicy: 'cache-first',
         })
 
         return fromObservableQuery(temporarySettingsQuery).pipe(

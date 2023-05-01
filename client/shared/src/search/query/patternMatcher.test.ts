@@ -110,8 +110,6 @@ describe('matchValue', () => {
 
             expect(TestEnum.A as TestEnum).toBeMatchedBy(TestEnum.A)
             expect(TestEnum.A as TestEnum).not.toBeMatchedBy(TestEnum.B)
-            // Shouldn't this throw a type error?
-            expect(TestEnum.A as TestEnum).not.toBeMatchedBy(10)
         })
 
         it('allows using a property in a pattern that does not exist in all union members', () => {

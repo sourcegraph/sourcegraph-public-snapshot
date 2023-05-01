@@ -44,12 +44,17 @@ go_test(
         "reconciler_test.go",
     ],
     embed = [":reconciler"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/batches/sources",
         "//enterprise/internal/batches/sources/testing",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/testing",
         "//enterprise/internal/batches/types",
+        "//enterprise/internal/batches/webhooks",
         "//internal/actor",
         "//internal/database",
         "//internal/database/dbtest",
@@ -61,6 +66,7 @@ go_test(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
+        "//internal/httpcli",
         "//internal/observation",
         "//internal/repos",
         "//internal/repoupdater/protocol",

@@ -10,11 +10,14 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -23,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
@@ -54,6 +58,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 					URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
 					IsPrivate:        true,
 					ViewerPermission: "ADMIN",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				}, {
 					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
 					DatabaseID:       263034073,
@@ -61,18 +66,21 @@ func TestListAffiliatedRepositories(t *testing.T) {
 					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
 					IsPrivate:        true,
 					ViewerPermission: "ADMIN",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				}, {
 					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
 					DatabaseID:       263033949,
 					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
 					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
 					ViewerPermission: "ADMIN",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				}, {
 					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
 					DatabaseID:       263033761,
 					NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
 					URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
 					ViewerPermission: "ADMIN",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				},
 			},
 		},
@@ -86,12 +94,14 @@ func TestListAffiliatedRepositories(t *testing.T) {
 					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
 					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
 					ViewerPermission: "ADMIN",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				}, {
 					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
 					DatabaseID:       263033761,
 					NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
 					URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
 					ViewerPermission: "ADMIN",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				},
 			},
 		},
@@ -106,6 +116,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 					URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
 					IsPrivate:        true,
 					ViewerPermission: "ADMIN",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				}, {
 					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
 					DatabaseID:       263034073,
@@ -113,6 +124,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
 					IsPrivate:        true,
 					ViewerPermission: "ADMIN",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				},
 			},
 		},
@@ -127,12 +139,14 @@ func TestListAffiliatedRepositories(t *testing.T) {
 					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
 					IsPrivate:        true,
 					ViewerPermission: "ADMIN",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				}, {
 					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
 					DatabaseID:       263033949,
 					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
 					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
 					ViewerPermission: "ADMIN",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				},
 			},
 		},
@@ -478,7 +492,7 @@ func TestGetRepository(t *testing.T) {
 				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
 			}
 
-			remaining, _, _, _ = cli.RateLimitMonitor().Get()
+			remaining, _, _, _ = cli.ExternalRateLimiter().Get()
 		})
 
 		t.Run("second run", func(t *testing.T) {
@@ -496,7 +510,7 @@ func TestGetRepository(t *testing.T) {
 				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
 			}
 
-			remaining2, _, _, _ := cli.RateLimitMonitor().Get()
+			remaining2, _, _, _ := cli.ExternalRateLimiter().Get()
 			if remaining2 < remaining {
 				t.Fatalf("expected cached repsonse, but API quota used")
 			}
@@ -995,6 +1009,130 @@ func TestResponseHasNextPage(t *testing.T) {
 		if responseState.hasNextPage() != false {
 			t.Fatal("expected false, got true")
 		}
+	})
+}
+
+func TestRateLimitRetry(t *testing.T) {
+	rcache.SetupForTest(t)
+
+	ctx := context.Background()
+
+	type test struct {
+		client *V3Client
+
+		primaryLimitWasHit   bool
+		secondaryLimitWasHit bool
+		succeeded            bool
+		numRequests          int
+	}
+
+	buildNewtest := func(t *testing.T, usePrimaryLimit, useSecondaryLimit bool) *test {
+		testCase := &test{}
+
+		// Set up server for test
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			testCase.numRequests += 1
+			if usePrimaryLimit {
+				w.Header().Add("x-ratelimit-remaining", "0")
+				w.Header().Add("x-ratelimit-limit", "5000")
+				resetTime := time.Now().Add(time.Second)
+				w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
+				w.WriteHeader(http.StatusForbidden)
+				w.Write([]byte(`{"message": "Primary rate limit hit"}`))
+
+				usePrimaryLimit = false
+				testCase.primaryLimitWasHit = true
+				return
+			}
+
+			if useSecondaryLimit {
+				w.Header().Add("retry-after", "1")
+				w.WriteHeader(http.StatusForbidden)
+				w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
+
+				useSecondaryLimit = false
+				testCase.secondaryLimitWasHit = true
+				return
+			}
+
+			testCase.succeeded = true
+			w.Write([]byte(`{"message": "Very nice"}`))
+		}))
+
+		t.Cleanup(srv.Close)
+
+		srvURL, err := url.Parse(srv.URL)
+		require.NoError(t, err)
+
+		testCase.client = NewV3Client(logtest.NoOp(t), "test", srvURL, nil, nil)
+		testCase.client.waitForRateLimit = true
+
+		return testCase
+	}
+
+	t.Run("primary rate limit hit", func(t *testing.T) {
+		test := buildNewtest(t, true, false)
+
+		// We do a simple request to test the retry
+		_, err := test.client.GetVersion(ctx)
+		require.NoError(t, err)
+
+		// We assert that two requests happened
+		assert.True(t, test.succeeded)
+		assert.True(t, test.primaryLimitWasHit)
+		assert.Equal(t, 2, test.numRequests)
+	})
+
+	t.Run("secondary rate limit hit", func(t *testing.T) {
+		test := buildNewtest(t, false, true)
+
+		// We do a simple request to test the retry
+		_, err := test.client.GetVersion(ctx)
+		require.NoError(t, err)
+
+		// We assert that two requests happened
+		assert.True(t, test.succeeded)
+		assert.True(t, test.secondaryLimitWasHit)
+		assert.Equal(t, 2, test.numRequests)
+	})
+
+	t.Run("no rate limit hit", func(t *testing.T) {
+		test := buildNewtest(t, false, false)
+
+		_, err := test.client.GetVersion(ctx)
+		require.NoError(t, err)
+
+		assert.True(t, test.succeeded)
+		assert.Equal(t, 1, test.numRequests)
+	})
+
+	t.Run("error if rate limit hit but waitForRateLimit disabled", func(t *testing.T) {
+		test := buildNewtest(t, true, false)
+		test.client.waitForRateLimit = false
+
+		_, err := test.client.GetVersion(ctx)
+		require.Error(t, err)
+
+		apiError := &APIError{}
+		if errors.As(err, &apiError) && apiError.Code != http.StatusForbidden {
+			t.Fatalf("expected status %d, got %d", http.StatusForbidden, apiError.Code)
+		}
+
+		assert.False(t, test.succeeded)
+		assert.Equal(t, 1, test.numRequests)
+	})
+
+	t.Run("retry maximum number of times", func(t *testing.T) {
+		test := buildNewtest(t, true, true)
+		test.client.maxRateLimitRetries = 2
+
+		_, err := test.client.GetVersion(ctx)
+		require.NoError(t, err)
+
+		assert.True(t, test.primaryLimitWasHit)
+		assert.True(t, test.secondaryLimitWasHit)
+		assert.True(t, test.succeeded)
+		assert.Equal(t, 3, test.numRequests)
 	})
 }
 

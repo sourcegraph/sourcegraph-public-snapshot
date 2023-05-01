@@ -30,6 +30,7 @@ go_library(
 
 go_test(
     name = "licensing_test",
+    timeout = "short",
     srcs = [
         "features_test.go",
         "plans_test.go",

@@ -102,7 +102,7 @@ describe('Code insights dashboard', () => {
                         id: 'user_001',
                         organizations: { nodes: [] },
                     },
-                    site: { __typename: 'Site', id: 'site_id' },
+                    site: { __typename: 'Site', id: 'TestSiteID' },
                 }),
 
                 UpdateDashboard: () => ({

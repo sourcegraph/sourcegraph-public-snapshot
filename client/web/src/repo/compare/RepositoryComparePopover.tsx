@@ -81,6 +81,7 @@ export const RepositoryComparePopover: React.FunctionComponent<
                 <RevisionsPopover
                     repoId={repo.id}
                     repoName={repo.name}
+                    repoServiceType={repo?.externalRepository?.serviceType}
                     defaultBranch={defaultBranch}
                     currentRev={currentRevision}
                     currentCommitID={currentRevision}

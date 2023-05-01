@@ -2,17 +2,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "background",
-    srcs = [
-        "cve_downloader.go",
-        "cve_matcher.go",
-        "metrics.go",
-    ],
+    srcs = ["init.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/background",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/codeintel/sentinel/internal/background/downloader",
+        "//enterprise/internal/codeintel/sentinel/internal/background/matcher",
         "//enterprise/internal/codeintel/sentinel/internal/store",
         "//internal/goroutine",
         "//internal/observation",
-        "@com_github_prometheus_client_golang//prometheus",
     ],
 )

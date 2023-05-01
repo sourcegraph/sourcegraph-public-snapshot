@@ -29,6 +29,10 @@
         border-left: 2px solid var(--warning);
     }
 
+    &--border-info {
+        border-left: 2px solid var(--primary);
+    }
+
     &--border-progress {
         border-left: 2px solid var(--primary);
     }

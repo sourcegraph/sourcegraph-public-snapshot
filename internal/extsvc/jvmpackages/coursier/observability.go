@@ -3,7 +3,6 @@ package coursier
 import (
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/sourcegraph/log"
 
@@ -20,13 +19,17 @@ type operations struct {
 	runCommand    *observation.Operation
 }
 
+var m = new(metrics.SingletonREDMetrics)
+
 func newOperations(observationCtx *observation.Context) *operations {
-	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"codeintel_coursier",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
+	redMetrics := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationCtx.Registerer,
+			"codeintel_coursier",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
 	op := func(name string) *observation.Operation {
 		return observationCtx.Operation(observation.Op{
@@ -50,19 +53,4 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 		Logger: observationCtx.Logger,
 	}
-}
-
-var (
-	ops     *operations
-	opsOnce sync.Once
-)
-
-func getOperations() *operations {
-	opsOnce.Do(func() {
-		observationCtx := observation.NewContext(log.Scoped("jvmpackages.coursier", ""))
-
-		ops = newOperations(observationCtx)
-	})
-
-	return ops
 }

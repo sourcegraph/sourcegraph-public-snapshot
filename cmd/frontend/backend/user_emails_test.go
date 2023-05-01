@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -151,7 +152,6 @@ func TestSendUserEmailVerificationEmail(t *testing.T) {
 		t.Fatal("want sent != nil")
 	}
 	if want := (txemail.Message{
-		FromName: "",
 		To:       []string{"a@example.com"},
 		Template: verifyEmailTemplates,
 		Data: struct {
@@ -195,7 +195,6 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 		t.Fatal("want sent != nil")
 	}
 	if want := (txemail.Message{
-		FromName: "",
 		To:       []string{"a@example.com"},
 		Template: updateAccountEmailTemplate,
 		Data: struct {
@@ -215,6 +214,75 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 
 	mockrequire.Called(t, userEmails.GetPrimaryEmailFunc)
 	mockrequire.Called(t, users.GetByIDFunc)
+}
+
+func TestSendUserEmailOnTokenChange(t *testing.T) {
+	var sent *txemail.Message
+	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+		sent = &message
+		return nil
+	}
+	defer func() { txemail.MockSend = nil }()
+
+	userEmails := database.NewMockUserEmailsStore()
+	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
+
+	users := database.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "Foo"}, nil)
+
+	db := database.NewMockDB()
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	db.UsersFunc.SetDefaultReturn(users)
+	logger := logtest.Scoped(t)
+
+	svc := NewUserEmailsService(db, logger)
+	tt := []struct {
+		name      string
+		tokenName string
+		delete    bool
+		template  txtypes.Templates
+	}{
+		{
+			"Access Token deleted",
+			"my-long-last-token",
+			true,
+			accessTokenDeletedEmailTemplate,
+		},
+		{
+			"Access Token created",
+			"heyo-new-token",
+			false,
+			accessTokenCreatedEmailTemplate,
+		},
+	}
+	for _, item := range tt {
+		t.Run(item.name, func(t *testing.T) {
+			if err := svc.SendUserEmailOnAccessTokenChange(context.Background(), 123, item.tokenName, item.delete); err != nil {
+				t.Fatal(err)
+			}
+			if sent == nil {
+				t.Fatal("want sent != nil")
+			}
+
+			if want := (txemail.Message{
+				To:       []string{"a@example.com"},
+				Template: item.template,
+				Data: struct {
+					Email     string
+					TokenName string
+					Username  string
+					Host      string
+				}{
+					Email:     "a@example.com",
+					TokenName: item.tokenName,
+					Username:  "Foo",
+					Host:      "example.com",
+				},
+			}); !reflect.DeepEqual(*sent, want) {
+				t.Errorf("got %+v, want %+v", *sent, want)
+			}
+		})
+	}
 }
 
 func TestUserEmailsAddRemove(t *testing.T) {
@@ -277,6 +345,13 @@ func TestUserEmailsAddRemove(t *testing.T) {
 
 	// Can't remove primary e-mail
 	assert.Error(t, svc.Remove(ctx, createdUser.ID, email))
+
+	// Set email as verified, add a second user, and try to add the verified email
+	svc.SetVerified(ctx, createdUser.ID, email, true)
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "test-user-2"})
+	require.NoError(t, err)
+
+	require.Error(t, svc.Add(ctx, user2.ID, email))
 }
 
 func TestUserEmailsSetPrimary(t *testing.T) {
@@ -350,6 +425,18 @@ func TestUserEmailsSetVerified(t *testing.T) {
 	ctx = actor.WithInternalActor(ctx)
 	// Need to set e-mail as verified
 	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, true))
+
+	// Confirm that unverified emails get deleted when an email is marked as verified
+	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, false)) // first mark as unverified again
+
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "test-user-2"})
+	require.NoError(t, err)
+
+	assert.NoError(t, svc.Add(ctx, user2.ID, email)) // Adding an unverified email is fine if all emails are unverified
+
+	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, true)) // mark as verified again
+	_, _, err = db.UserEmails().Get(ctx, user2.ID, email)                // This should produce an error as the email should no longer exist
+	assert.Error(t, err)
 
 	emails, err := db.UserEmails().GetVerifiedEmails(ctx, email, email2)
 	assert.NoError(t, err)

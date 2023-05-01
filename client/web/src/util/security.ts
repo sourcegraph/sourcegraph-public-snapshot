@@ -5,11 +5,7 @@ import { SourcegraphContext } from '../jscontext'
 export function validatePassword(
     context: Pick<
         SourcegraphContext,
-        | 'authProviders'
-        | 'sourcegraphDotComMode'
-        | 'experimentalFeatures'
-        | 'authPasswordPolicy'
-        | 'authMinPasswordLength'
+        'authProviders' | 'sourcegraphDotComMode' | 'authPasswordPolicy' | 'authMinPasswordLength'
     >,
     password: string
 ): string | undefined {
@@ -63,11 +59,7 @@ export function validatePassword(
 export function getPasswordRequirements(
     context: Pick<
         SourcegraphContext,
-        | 'authProviders'
-        | 'sourcegraphDotComMode'
-        | 'experimentalFeatures'
-        | 'authPasswordPolicy'
-        | 'authMinPasswordLength'
+        'authProviders' | 'sourcegraphDotComMode' | 'authPasswordPolicy' | 'authMinPasswordLength'
     >
 ): string {
     const passwordPolicyReference = context.authPasswordPolicy

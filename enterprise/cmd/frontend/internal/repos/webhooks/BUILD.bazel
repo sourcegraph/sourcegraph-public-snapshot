@@ -28,9 +28,14 @@ go_library(
 
 go_test(
     name = "webhooks_test",
+    timeout = "short",
     srcs = ["handlers_test.go"],
     data = glob(["testdata/**"]),
     embed = [":webhooks"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/external/globals",
         "//cmd/frontend/webhooks",

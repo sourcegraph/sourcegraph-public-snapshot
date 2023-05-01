@@ -17,6 +17,7 @@ go_library(
 
 go_test(
     name = "errcode_test",
+    timeout = "short",
     srcs = [
         "code_test.go",
         "presentation_error_test.go",

@@ -1,47 +1,16 @@
 import { proxy } from 'comlink'
 import { castArray, isEqual } from 'lodash'
-import { combineLatest, concat, from, Observable, of, Subscribable, throwError } from 'rxjs'
-import {
-    catchError,
-    debounceTime,
-    defaultIfEmpty,
-    distinctUntilChanged,
-    map,
-    mergeMap,
-    switchMap,
-} from 'rxjs/operators'
+import { combineLatest, concat, Observable, of, Subscribable } from 'rxjs'
+import { catchError, defaultIfEmpty, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ProviderResult } from 'sourcegraph'
 
-import {
-    fromHoverMerged,
-    TextDocumentIdentifier,
-    ContributableViewContainer,
-    TextDocumentPositionParameters,
-} from '@sourcegraph/client-api'
+import { fromHoverMerged, TextDocumentIdentifier, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import {
-    allOf,
-    asError,
-    combineLatestOrDefault,
-    ErrorLike,
-    isDefined,
-    isExactly,
-    isNot,
-    logger,
-    property,
-} from '@sourcegraph/common'
+import { combineLatestOrDefault, isDefined, isExactly, isNot, logger } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Context } from '@sourcegraph/template-parser'
 
-import type {
-    ReferenceContext,
-    DocumentSelector,
-    NotificationType as LegacyNotificationType,
-    Progress,
-    DirectoryViewContext,
-    View,
-    PanelView,
-} from '../../codeintel/legacy-extensions/api'
+import type { ReferenceContext, DocumentSelector } from '../../codeintel/legacy-extensions/api'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
 import { match } from '../client/types/textDocument'
@@ -49,7 +18,7 @@ import { FlatExtensionHostAPI } from '../contract'
 import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerTypes'
 
 import { ExtensionCodeEditor } from './api/codeEditor'
-import { providerResultToObservable, ProxySubscribable, proxySubscribable } from './api/common'
+import { providerResultToObservable, proxySubscribable } from './api/common'
 import { computeContext, ContributionScope } from './api/context/context'
 import {
     evaluateContributions,
@@ -58,7 +27,6 @@ import {
     parseContributionExpressions,
 } from './api/contribution'
 import { ExtensionDirectoryViewer } from './api/directoryViewer'
-import { getInsightsViews } from './api/getInsightsViews'
 import { ExtensionDocument } from './api/textDocument'
 import { fromLocation, toPosition } from './api/types'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
@@ -129,29 +97,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             state.searchContext = context
             state.searchContextChanges.next(context)
         },
-
-        // Search
-        transformSearchQuery: query =>
-            // TODO (simon) I don't enjoy the dark arts below
-            // we return observable because of potential deferred addition of transformers
-            // in this case we need to reissue the transformation and emit the resulting value
-            // we probably won't need an Observable if we somehow coordinate with extensions activation
-            proxySubscribable(
-                state.queryTransformers.pipe(
-                    switchMap(transformers =>
-                        transformers.reduce(
-                            (currentQuery: Observable<string>, transformer) =>
-                                currentQuery.pipe(
-                                    mergeMap(query => {
-                                        const result = transformer.transformQuery(query)
-                                        return result instanceof Promise ? from(result) : of(result)
-                                    })
-                                ),
-                            of(query)
-                        )
-                    )
-                )
-            ),
 
         // Language
         getHover: (textParameters: TextDocumentPositionParameters) => {
@@ -401,74 +346,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             ),
 
-        // Notifications
-        getPlainNotifications: () => proxySubscribable(state.plainNotifications.asObservable()),
-        getProgressNotifications: () => proxySubscribable(state.progressNotifications.asObservable()),
-
-        // Views
-        getPanelViews: () =>
-            // Don't need `combineLatestOrDefault` here since each panel view
-            // is a BehaviorSubject, and therefore guaranteed to emit
-            proxySubscribable(
-                state.panelViews.pipe(
-                    switchMap(panelViews => combineLatest([...panelViews])),
-                    debounceTime(0)
-                )
-            ),
-
-        // Insight page
-        getInsightViewById: (id, context) =>
-            proxySubscribable(
-                state.insightsPageViewProviders.pipe(
-                    switchMap(providers => {
-                        const provider = providers.find(provider => {
-                            // Get everything until last dot according to extension id naming convention
-                            // <type>.<name>.<view type = directory|insightPage|homePage>
-                            const providerId = provider.id.split('.').slice(0, -1).join('.')
-
-                            return providerId === id
-                        })
-
-                        if (!provider) {
-                            return throwError(new Error(`Couldn't find view with id ${id}`))
-                        }
-
-                        return providerResultToObservable(provider.viewProvider.provideView(context))
-                    }),
-                    catchError((error: unknown) => {
-                        logger.error('View provider errored:', error)
-                        // Pass only primitive copied values because Error object is not
-                        // cloneable in Firefox and Safari
-                        const { message, name, stack } = asError(error)
-                        return of({ message, name, stack } as ErrorLike)
-                    }),
-                    map(view => ({ id, view }))
-                )
-            ),
-
-        getInsightsViews: (context, insightIds) =>
-            getInsightsViews(context, state.insightsPageViewProviders, insightIds),
-
-        getHomepageViews: context => proxySubscribable(callViewProviders(context, state.homepageViewProviders)),
-        getDirectoryViews: context =>
-            proxySubscribable(
-                callViewProviders(
-                    {
-                        viewer: {
-                            ...context.viewer,
-                            directory: {
-                                ...context.viewer.directory,
-                                uri: new URL(context.viewer.directory.uri),
-                            },
-                        },
-                        workspace: { uri: new URL(context.workspace.uri) },
-                    },
-                    state.directoryViewProviders
-                )
-            ),
-
-        getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
-
         getActiveExtensions: () => proxySubscribable(state.activeExtensions),
     }
 
@@ -604,56 +481,6 @@ function assertViewerType<T extends ExtensionViewer['type']>(
     }
 }
 
-// Views
-
-/**
- * A map from type of container names to the internal type of the context parameter provided by the container.
- */
-export interface ViewContexts {
-    [ContributableViewContainer.Panel]: never
-    [ContributableViewContainer.Homepage]: {}
-    [ContributableViewContainer.InsightsPage]: {}
-    [ContributableViewContainer.GlobalPage]: Record<string, string>
-    [ContributableViewContainer.Directory]: DirectoryViewContext
-}
-
-export interface RegisteredViewProvider<W extends ContributableViewContainer> {
-    id: string
-    viewProvider: {
-        provideView: (context: ViewContexts[W]) => ProviderResult<View>
-    }
-}
-
-function callViewProviders<W extends ContributableViewContainer>(
-    context: ViewContexts[W],
-    providers: Observable<readonly RegisteredViewProvider<W>[]>
-): Observable<ViewProviderResult[]> {
-    return providers.pipe(
-        debounceTime(0),
-        switchMap(providers =>
-            combineLatest([
-                of(null),
-                ...providers.map(({ viewProvider, id }) =>
-                    concat(
-                        [undefined],
-                        providerResultToObservable(viewProvider.provideView(context)).pipe(
-                            defaultIfEmpty<View | null | undefined>(null),
-                            catchError((error: unknown): [ErrorLike] => {
-                                logger.error('View provider errored:', error)
-                                // Pass only primitive copied values because Error object is not
-                                // cloneable in Firefox and Safari
-                                const { message, name, stack } = asError(error)
-                                return [{ message, name, stack } as ErrorLike]
-                            })
-                        )
-                    ).pipe(map(view => ({ id, view })))
-                ),
-            ])
-        ),
-        map(views => views.filter(allOf(isDefined, property('view', isNot(isExactly(null))))))
-    )
-}
-
 /**
  * A workspace root with additional metadata that is not exposed to extensions.
  */
@@ -671,66 +498,6 @@ export interface WorkspaceRootWithMetadata extends clientType.WorkspaceRoot {
      * distinct from undefined. If undefined, the Git commit SHA from {@link WorkspaceRoot#uri} should be used.
      */
     inputRevision?: string
-}
-
-/** @internal */
-export interface PanelViewData extends Omit<PanelView, 'unsubscribe'> {
-    id: string
-}
-
-/**
- * A notification message to display to the user.
- */
-export type ExtensionNotification = PlainNotification | ProgressNotification
-
-interface BaseNotification {
-    /** The message of the notification. */
-    message?: string
-
-    /**
-     * The type of the message.
-     */
-    type: LegacyNotificationType
-
-    /** The source of the notification.  */
-    source?: string
-}
-
-export interface PlainNotification extends BaseNotification {}
-
-export interface ProgressNotification {
-    // Put all base notification properties in a nested object because
-    // ProgressNotifications are proxied, so it's better to clone this
-    // notification object than to wait for all property access promises
-    // to resolve
-    baseNotification: BaseNotification
-
-    /**
-     * Progress updates to show in this notification (progress bar and status messages).
-     * If this Observable errors, the notification will be changed to an error type.
-     */
-    progress: ProxySubscribable<Progress>
-}
-
-export interface ViewProviderResult {
-    /** The ID of the view provider. */
-    id: string
-
-    /** The result returned by the provider. */
-    view: View | undefined | ErrorLike
-}
-
-/**
- * The type of a notification.
- * This is needed because if sourcegraph.NotificationType enum values are referenced,
- * the `sourcegraph` module import at the top of the file is emitted in the generated code.
- */
-export const NotificationType: typeof LegacyNotificationType = {
-    Error: 1,
-    Warning: 2,
-    Info: 3,
-    Log: 4,
-    Success: 5,
 }
 
 // Contributions

@@ -1,4 +1,4 @@
-import { forwardRef, HTMLAttributes, useContext, useRef, useState } from 'react'
+import { forwardRef, HTMLAttributes, useContext, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
@@ -12,7 +12,6 @@ import { GetInsightViewResult, GetInsightViewVariables } from '../../../../../..
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import {
     BackendInsight,
-    BackendInsightData,
     CodeInsightsBackendContext,
     InsightFilters,
     isComputeInsight,
@@ -61,13 +60,12 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
-    const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
-    const { error, loading, stopPolling, startPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
+    const { data, error, loading, stopPolling, startPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
         GET_INSIGHT_VIEW_GQL,
         {
             skip: !wasEverVisible,
@@ -85,15 +83,23 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                     sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
                 },
             },
-            onCompleted: data => {
-                // This query requests a list of 1 insight view if there is an error and the insightView
-                // will be null and error is populated
-                const node = data.insightViews.nodes[0]
-
-                seriesToggleState.setSelectedSeriesIds([])
-                setInsightData(isDefined(node) ? createBackendInsightData({ ...insight, filters }, node) : undefined)
-            },
         }
+    )
+
+    const insightData = useMemo(() => {
+        if (!data) {
+            return
+        }
+
+        const node = data.insightViews.nodes[0]
+        return isDefined(node) ? createBackendInsightData({ ...insight, filters }, node) : undefined
+    }, [data, filters, insight])
+
+    // Reset item selection items on every data change
+    useLayoutEffect(
+        () => seriesToggleState.setSelectedSeriesIds([]),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [data, seriesToggleState.setSelectedSeriesIds]
     )
 
     const isFetchingHistoricalData = insightData?.isFetchingHistoricalData

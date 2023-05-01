@@ -1,15 +1,10 @@
-import React, { useState, useMemo, Suspense, useCallback } from 'react'
+import React, { useState, useMemo, Suspense } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
-import { escapeRegExp, isEqual, groupBy } from 'lodash'
-import { NavLink, useLocation } from 'react-router-dom'
+import { escapeRegExp, groupBy } from 'lodash'
 
 import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Alert, useDebounce, ErrorMessage } from '@sourcegraph/wildcard'
 
@@ -22,61 +17,11 @@ import {
     SummaryContainer,
     ShowMoreButton,
 } from '../components/FilteredConnection/ui'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import {
-    Scalars,
-    SymbolNodeFields,
-    SymbolsResult,
-    SymbolsVariables,
-    SymbolKind as SymbolKindEnum,
-} from '../graphql-operations'
-import { parseBrowserRepoURL } from '../util/url'
+import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
+
+import { RepoRevisionSidebarSymbolTree } from './RepoRevisionSidebarSymbolTree'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
-
-const RepoRevisionSidebarSymbolTree = lazyComponent(
-    () => import('./RepoRevisionSidebarSymbolTree'),
-    'RepoRevisionSidebarSymbolTree'
-)
-
-interface SymbolNodeProps {
-    node: SymbolWithChildren
-    onHandleClick: () => void
-    isActive: boolean
-    nestedRender: HierarchicalSymbolsProps['render']
-}
-
-const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProps>> = ({
-    node,
-    onHandleClick,
-    isActive,
-    nestedRender,
-}) => {
-    const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
-
-    return (
-        <li className={styles.repoRevisionSidebarSymbolsNode}>
-            {node.__typename === 'SymbolPlaceholder' ? (
-                <span className={styles.link}>
-                    <SymbolKind kind={SymbolKindEnum.UNKNOWN} className="mr-1" symbolKindTags={symbolKindTags} />
-                    {node.name}
-                </span>
-            ) : (
-                <NavLink
-                    to={node.url}
-                    onClick={onHandleClick}
-                    className={classNames('test-symbol-link', styles.link, isActive && styles.linkActive)}
-                >
-                    <SymbolKind kind={node.kind} className="mr-1" symbolKindTags={symbolKindTags} />
-                    <span className={styles.name} data-testid="symbol-name">
-                        {node.name}
-                    </span>
-                </NavLink>
-            )}
-            {node.children && <HierarchicalSymbols symbols={node.children} render={nestedRender} className="pl-3" />}
-        </li>
-    )
-}
 
 export const SYMBOLS_QUERY = gql`
     query Symbols($repo: ID!, $revision: String!, $first: Int, $query: String, $includePatterns: [String!]) {
@@ -134,15 +79,14 @@ export interface RepoRevisionSidebarSymbolsProps extends Partial<RevisionSpec> {
     /** The path of the file or directory currently shown in the content area */
     activePath: string
     onHandleSymbolClick: () => void
+    focusKey?: string
 }
 
 export const RepoRevisionSidebarSymbols: React.FunctionComponent<
     React.PropsWithChildren<RepoRevisionSidebarSymbolsProps>
-> = ({ repoID, revision = '', activePath, onHandleSymbolClick }) => {
-    const location = useLocation()
+> = ({ repoID, revision = '', activePath, focusKey, onHandleSymbolClick }) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
-    const [enableAccessibleSymbolTree] = useFeatureFlag('accessible-symbol-tree')
 
     // URL is the most unique part we have about a symbol node. We use it
     // instead of the index to avoid pointing to the wrong symbol when the data
@@ -195,20 +139,6 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
         />
     )
 
-    const currentLocation = parseBrowserRepoURL(H.createPath(location))
-    const isSymbolActive = useCallback(
-        (symbolUrl: string): boolean => {
-            const symbolLocation = parseBrowserRepoURL(symbolUrl)
-            return (
-                currentLocation.repoName === symbolLocation.repoName &&
-                currentLocation.revision === symbolLocation.revision &&
-                currentLocation.filePath === symbolLocation.filePath &&
-                isEqual(currentLocation.position, symbolLocation.position)
-            )
-        },
-        [currentLocation]
-    )
-
     const hierarchicalSymbols = useMemo<SymbolWithChildren[]>(
         () =>
             Object.values(groupBy(connection?.nodes ?? [], symbol => symbol.location.resource.path)).flatMap(symbols =>
@@ -236,35 +166,21 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
                     <ErrorMessage error={error.message} />
                 </Alert>
             )}
-            {connection &&
-                (enableAccessibleSymbolTree ? (
-                    !loading ? (
-                        <Suspense fallback={<ConnectionLoading compact={true} />}>
-                            <RepoRevisionSidebarSymbolTree
-                                // We throw away the component state whenever the underlying query
-                                // data changes to avoid complicated bookkeeping in the tree
-                                // component.
-                                key={activePath + ':' + query}
-                                selectedSymbolUrl={selectedSymbolUrl}
-                                setSelectedSymbolUrl={setSelectedSymbolUrl}
-                                symbols={hierarchicalSymbols}
-                                onClick={onHandleSymbolClick}
-                            />
-                        </Suspense>
-                    ) : null
-                ) : (
-                    <HierarchicalSymbols
+            {connection && !loading ? (
+                <Suspense fallback={<ConnectionLoading compact={true} />}>
+                    <RepoRevisionSidebarSymbolTree
+                        // We throw away the component state whenever the underlying query
+                        // data changes to avoid complicated bookkeeping in the tree
+                        // component.
+                        key={activePath + ':' + query}
+                        focusKey={focusKey}
+                        selectedSymbolUrl={selectedSymbolUrl}
+                        setSelectedSymbolUrl={setSelectedSymbolUrl}
                         symbols={hierarchicalSymbols}
-                        render={args => (
-                            <SymbolNode
-                                node={args.symbol}
-                                onHandleClick={onHandleSymbolClick}
-                                isActive={args.symbol.__typename === 'Symbol' && isSymbolActive(args.symbol.url)}
-                                nestedRender={args.nestedRender}
-                            />
-                        )}
+                        onClick={onHandleSymbolClick}
                     />
-                ))}
+                </Suspense>
+            ) : null}
             {loading && <ConnectionLoading compact={true} />}
             {!loading && connection && (
                 <SummaryContainer compact={true} className={styles.summaryContainer}>
@@ -275,27 +191,6 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
         </ConnectionContainer>
     )
 }
-
-interface HierarchicalSymbolsProps {
-    symbols: SymbolWithChildren[]
-    render: (props: {
-        symbol: SymbolWithChildren
-        nestedRender: HierarchicalSymbolsProps['render']
-    }) => React.ReactElement
-    className?: string
-}
-
-const HierarchicalSymbols: React.FunctionComponent<HierarchicalSymbolsProps> = props => (
-    <ul className={classNames(styles.hierarchicalSymbolsContainer, props.className)}>
-        {props.symbols.map(symbol => (
-            <props.render
-                key={'url' in symbol ? symbol.url : fullName(symbol)}
-                symbol={symbol}
-                nestedRender={props.render}
-            />
-        ))}
-    </ul>
-)
 
 // When searching symbols, results may contain only child symbols without their parents
 // (e.g. when searching for "bar", a class named "Foo" with a method named "bar" will

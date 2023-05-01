@@ -23,11 +23,6 @@ var HubSpotAccessToken = env.Get("HUBSPOT_ACCESS_TOKEN", "", "HubSpot access tok
 // SurveyFormID is the ID for a satisfaction (NPS) survey.
 var SurveyFormID = "ee042306-491a-4b06-bd9c-1181774dfda0"
 
-// TrialFormID is ID for the request trial form.
-//
-// See https://app.hubspot.com/contacts/2762526/lists/244 for submissions.
-var TrialFormID = "0bbc9f90-3741-4c7a-b5f5-6c81f130ea9d"
-
 // HappinessFeedbackFormID is the ID for a Happiness survey.
 var HappinessFeedbackFormID = "417ec50b-39b4-41fa-a267-75da6f56a7cf"
 
@@ -38,6 +33,9 @@ var SignupEventID = "000001776813"
 
 // SelfHostedSiteInitEventID is the Hubstpot Event ID for when a new site is created in /site-admin/sites
 var SelfHostedSiteInitEventID = "000010399089"
+
+// CodyClientInstalledEventID is the HubSpot Event ID for when a user reports installing a Cody client.
+var CodyClientInstalledEventID = "000018021981"
 
 var client *hubspot.Client
 

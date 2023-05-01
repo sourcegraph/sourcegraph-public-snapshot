@@ -3,6 +3,8 @@ import React, { useEffect, useRef } from 'react'
 import { Args, useMemo } from '@storybook/addons'
 import { Meta, Story } from '@storybook/react'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { WebStory } from '../components/WebStory'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
@@ -24,10 +26,6 @@ const config: Meta = {
         isSourcegraphDotCom: {
             control: { type: 'boolean' },
             defaultValue: true,
-        },
-        codeHostIntegrationMessaging: {
-            control: { type: 'select', options: ['browser-extension', 'native-integration'] as const },
-            defaultValue: 'browser-extension',
         },
     },
 }
@@ -67,9 +65,9 @@ const commonProps = (props: Args): UserNavItemProps => ({
     authenticatedUser,
     isSourcegraphDotCom: props.isSourcegraphDotCom,
     isSourcegraphApp: false,
-    codeHostIntegrationMessaging: props.codeHostIntegrationMessaging,
     showKeyboardShortcutsHelp: () => undefined,
     showFeedbackModal: () => undefined,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
 })
 
 const OpenByDefaultWrapper: React.FunctionComponent<{

@@ -104,7 +104,7 @@ func TestNpmCloneCommand(t *testing.T) {
 		},
 	}
 
-	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)), nil)
+	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},
@@ -164,7 +164,7 @@ func TestNpmCloneCommand(t *testing.T) {
 		{
 			Scheme:   dependencies.NpmPackagesScheme,
 			Name:     "example",
-			Versions: []string{exampleNpmVersion},
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: exampleNpmVersion}},
 		},
 	}); err != nil {
 		t.Fatalf(err.Error())
@@ -176,7 +176,7 @@ func TestNpmCloneCommand(t *testing.T) {
 		{
 			Scheme:   dependencies.NpmPackagesScheme,
 			Name:     "example",
-			Versions: []string{exampleNpmVersion2},
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: exampleNpmVersion2}},
 		},
 	}); err != nil {
 		t.Fatalf(err.Error())

@@ -7,6 +7,7 @@ import {
     HIGHLIGHTED_FILE_LINES_LONG,
     HIGHLIGHTED_FILE_LINES_SIMPLE,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
 
 import { CodeExcerpt } from './CodeExcerpt'

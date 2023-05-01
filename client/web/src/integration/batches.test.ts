@@ -324,8 +324,11 @@ function mockCommonGraphQLResponses(
                 avatarURL: '',
                 viewerCanAdminister: true,
                 builtinAuth: true,
-                tags: [],
                 createdAt: '2020-04-10T21:11:42Z',
+                roles: {
+                    __typename: 'RoleConnection',
+                    nodes: [],
+                },
             },
         }),
         UserSettingsAreaUserProfile: () => ({
@@ -345,7 +348,11 @@ function mockCommonGraphQLResponses(
                 emails: [{ email: 'alice@example.com', verified: true, isPrimary: true }],
                 organizations: { nodes: [] },
                 permissionsInfo: null,
-                tags: [],
+                scimControlled: false,
+                roles: {
+                    __typename: 'RoleConnection',
+                    nodes: [],
+                },
             },
         }),
         BatchChangeByNamespace: () => ({
@@ -364,6 +371,10 @@ function mockCommonGraphQLResponses(
                     draft: 2,
                     isCompleted: false,
                     percentComplete: 27,
+                    failed: 0,
+                    scheduled: 0,
+                    retrying: 0,
+                    processing: 0,
                 },
                 state: BatchChangeState.OPEN,
                 closedAt: null,

@@ -105,7 +105,7 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
             args
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.site || !data.site.authProviders || errors) {
+                if (!data?.site?.authProviders || errors) {
                     throw createAggregateError(errors)
                 }
                 return data.site.authProviders

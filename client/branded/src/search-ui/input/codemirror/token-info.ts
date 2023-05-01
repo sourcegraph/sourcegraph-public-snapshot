@@ -1,4 +1,4 @@
-import { Extension, MapMode, StateEffect, StateField } from '@codemirror/state'
+import { type Extension, Facet, MapMode, type SelectionRange, StateEffect, StateField } from '@codemirror/state'
 import { Decoration, EditorView, hoverTooltip, TooltipView } from '@codemirror/view'
 
 import { renderMarkdown } from '@sourcegraph/common'
@@ -24,29 +24,29 @@ const hoverStyle = [
             borderRadius: 'var(--border-radius)',
             boxShadow: 'var(--box-shadow)',
             maxWidth: '50vw',
-        },
 
-        '.cm-tooltip p:last-child': {
-            marginBottom: 0,
-        },
+            '& p:last-child': {
+                marginBottom: 0,
+            },
 
-        '.cm-tooltip code': {
-            backgroundColor: 'rgba(220, 220, 220, 0.4)',
-            borderRadius: 'var(--border-radius)',
-            padding: '0 0.4em',
+            '& code': {
+                backgroundColor: 'rgba(220, 220, 220, 0.4)',
+                borderRadius: 'var(--border-radius)',
+                padding: '0 0.4em',
+            },
         },
 
         '.cm-tooltip-section': {
             paddingBottom: '0.25rem',
             borderTopColor: 'var(--border-color)',
-        },
 
-        '.cm-tooltip-section:last-child': {
-            paddingTop: '0.25rem',
-            paddingBottom: 0,
-        },
-        '.cm-tooltip-section:last-child:first-child': {
-            padding: 0,
+            '&:last-child': {
+                paddingTop: '0.25rem',
+                paddingBottom: 0,
+            },
+            '&:last-child:first-child': {
+                padding: 0,
+            },
         },
     }),
     // Base style for custom classes
@@ -59,6 +59,12 @@ const hoverStyle = [
         },
     }),
 ]
+
+const tooltipInformationFacet = Facet.define<TooltipInformation | null, TooltipInformation | null>({
+    combine(values) {
+        return values[0] ?? null
+    },
+})
 
 /**
  * Extension for providing token information. This includes showing a popover
@@ -94,34 +100,47 @@ export function tokenInfo(): Extension {
             return position
         },
         provide(field) {
-            return EditorView.decorations.compute([field, decoratedTokens], state => {
-                const position = state.field(field)
-                if (!position) {
-                    return Decoration.none
-                }
-
-                const tooltipInfo = getTokensTooltipInformation(state.facet(decoratedTokens), position)
-                if (!tooltipInfo) {
-                    return Decoration.none
-                }
-                let { range } = tooltipInfo
-
-                const token = tooltipInfo.tokensAtCursor[0]
-                switch (token.type) {
-                    case 'keyword': {
-                        // Find operator (AND and OR are supported) and
-                        // highlight its operands too if possible
-                        const operator = findOperatorNode(position, state.facet(parsedQuery))
-                        if (operator) {
-                            range = operator.groupRange ?? operator.range
-                        }
-                        // Highlight operator keyword only
-                        break
+            return [
+                tooltipInformationFacet.compute([field, decoratedTokens], state => {
+                    const position = state.field(field)
+                    if (!position) {
+                        return null
                     }
-                }
 
-                return Decoration.set([tokenHoverDecoration.range(range.start, range.end)])
-            })
+                    return getTokensTooltipInformation(state.facet(decoratedTokens), position)
+                }),
+
+                EditorView.decorations.compute([field, tooltipInformationFacet, 'selection'], state => {
+                    const position = state.field(field)
+                    const tooltipInfo = state.facet(tooltipInformationFacet)
+                    const selection = state.selection.main
+                    if (
+                        !position ||
+                        !tooltipInfo ||
+                        (isTextSelection(selection) &&
+                            intersects(selection.from, selection.to, tooltipInfo.range.start, tooltipInfo.range.end))
+                    ) {
+                        return Decoration.none
+                    }
+                    let { range } = tooltipInfo
+
+                    const token = tooltipInfo.tokensAtCursor[0]
+                    switch (token.type) {
+                        case 'keyword': {
+                            // Find operator (AND and OR are supported) and
+                            // highlight its operands too if possible
+                            const operator = findOperatorNode(position, state.facet(parsedQuery))
+                            if (operator) {
+                                range = operator.groupRange ?? operator.range
+                            }
+                            // Highlight operator keyword only
+                            break
+                        }
+                    }
+
+                    return Decoration.set([tokenHoverDecoration.range(range.start, range.end)])
+                }),
+            ]
         },
     })
 
@@ -132,8 +151,18 @@ export function tokenInfo(): Extension {
         EditorView.domEventHandlers({
             mousemove(event, view) {
                 const position = view.posAtCoords(event)
-                if (position && position !== view.state.field(highlightedTokenPosition)) {
-                    view.dispatch({ effects: setHighlighedTokenPosition.of(position) })
+                let effects: StateEffect<any> | null = null
+
+                // event.buttons === 0 means no button is pressed
+                if (event.buttons > 0) {
+                    // Clear/prevent token highlight while selecting text
+                    effects = setHighlighedTokenPosition.of(null)
+                } else if (position !== null && position !== view.state.field(highlightedTokenPosition)) {
+                    effects = setHighlighedTokenPosition.of(position)
+                }
+
+                if (effects) {
+                    view.dispatch({ effects })
                 }
             },
             mouseleave(_event, view) {
@@ -144,9 +173,14 @@ export function tokenInfo(): Extension {
         }),
         // Shows information about the hovered token
         hoverTooltip(
-            (view, position) => {
-                const tooltipInfo = getTokensTooltipInformation(view.state.facet(decoratedTokens), position)
-                if (!tooltipInfo) {
+            view => {
+                const selection = view.state.selection.main
+                const tooltipInfo = view.state.facet(tooltipInformationFacet)
+                if (
+                    !tooltipInfo ||
+                    (isTextSelection(selection) &&
+                        intersects(selection.from, selection.to, tooltipInfo.range.start, tooltipInfo.range.end))
+                ) {
                     return null
                 }
 
@@ -181,10 +215,27 @@ export function tokenInfo(): Extension {
     ]
 }
 
-function getTokensTooltipInformation(
-    tokens: readonly DecoratedToken[],
-    position: number
-): { tokensAtCursor: readonly DecoratedToken[]; range: { start: number; end: number }; value: string } | null {
+/**
+ * Returns true if both ranges intersect.
+ */
+function intersects(rangeAFrom: number, rangeATo: number, rangeBFrom: number, rangeBTo: number): boolean {
+    return rangeAFrom < rangeBFrom ? rangeBFrom < rangeATo : rangeAFrom < rangeBTo
+}
+
+/**
+ * Returns true of the selection spans mutiple characters.
+ */
+function isTextSelection(range: SelectionRange): boolean {
+    return range.from !== range.to
+}
+
+interface TooltipInformation {
+    tokensAtCursor: readonly DecoratedToken[]
+    range: { start: number; end: number }
+    value: string
+}
+
+function getTokensTooltipInformation(tokens: readonly DecoratedToken[], position: number): TooltipInformation | null {
     const tokensAtCursor = tokens.filter(token => {
         let { start, end } = token.range
         switch (token.type) {
@@ -255,11 +306,20 @@ function findOperatorNode(position: number, node: Node | null): Extract<Node, { 
     if (!node || node.type !== 'operator' || node.range.start >= position || node.range.end <= position) {
         return null
     }
-    for (const operand of node.operands) {
-        const result = findOperatorNode(position, operand)
+
+    if (node.left) {
+        const result = findOperatorNode(position, node.left)
         if (result) {
             return result
         }
     }
+
+    if (node.right) {
+        const result = findOperatorNode(position, node.right)
+        if (result) {
+            return result
+        }
+    }
+
     return node
 }

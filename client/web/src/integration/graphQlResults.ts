@@ -57,9 +57,15 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
         currentUser: currentUserMock,
     }),
     ...createViewerSettingsGraphQLOverride(),
-    SiteFlags: () => ({
+    GlobalAlertsSiteFlags: () => ({
         site: {
+            __typename: 'Site',
+            id: 'TestSiteID',
             needsRepositoryConfiguration: false,
+            externalServicesCounts: {
+                __typename: 'ExternalServicesCounts',
+                remoteExternalServicesCount: 1,
+            },
             freeUsersExceeded: false,
             alerts: [],
             authProviders: {
@@ -79,10 +85,6 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             productVersion: '0.0.0+dev',
         },
         productVersion: '0.0.0+dev',
-    }),
-
-    StatusMessages: () => ({
-        statusMessages: [],
     }),
 
     EventLogsData: () => ({
@@ -129,9 +131,6 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     EvaluateFeatureFlag: () => ({
         evaluateFeatureFlag: false,
-    }),
-    OrgFeatureFlagValue: () => ({
-        organizationFeatureFlagValue: false,
     }),
     OrgFeatureFlagOverrides: () => ({
         organizationFeatureFlagOverrides: [],

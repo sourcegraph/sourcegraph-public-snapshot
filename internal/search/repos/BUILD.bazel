@@ -45,12 +45,17 @@ go_library(
 
 go_test(
     name = "repos_test",
+    timeout = "short",
     srcs = [
         "excluded_job_test.go",
         "mocks_test.go",
         "repos_test.go",
     ],
     embed = [":repos"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/searcher/protocol",
         "//internal/api",

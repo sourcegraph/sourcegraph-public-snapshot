@@ -23,6 +23,7 @@ go_library(
 
 go_test(
     name = "webhooks_test",
+    timeout = "short",
     srcs = ["handler_test.go"],
     embed = [":webhooks"],
     deps = [

@@ -72,6 +72,14 @@
 .cell {
     padding: 0.5rem;
 
+    &.align-left {
+        padding-left: 0;
+    }
+
+    &.align-right {
+        padding-right: 0;
+    }
+
     &.selection {
         text-align: center;
 

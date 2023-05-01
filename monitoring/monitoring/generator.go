@@ -37,7 +37,11 @@ type GenerateOptions struct {
 	// GrafanaHeaders are additional HTTP headers to add to all requests to the target Grafana instance
 	GrafanaHeaders map[string]string
 	// GrafanaFolder is the folder on the destination Grafana instance to upload the dashboards to
+	// It should match the name of the folder at GrafanaFolderID, if GrafanaFolderID is provided
 	GrafanaFolder string
+	// GrafanaFolderID can optionally be provided if GrafanaFolder is provided, the generator
+	// will use this instead of looking for and creating the folder.
+	GrafanaFolderID int
 
 	// Output directory for generated Prometheus assets
 	PrometheusDir string
@@ -99,9 +103,13 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 			}
 
 			// try to find existing folder
-			if folder, err := grafanaClient.GetFolderByUID(ctx, opts.GrafanaFolder); err == nil {
-				gclog.Debug("Existing folder found", log.Int("folder.ID", folder.ID))
-				grafanaFolderID = folder.ID
+			grafanaFolderID = opts.GrafanaFolderID
+			if grafanaFolderID == 0 {
+				// if the ID is not provided, look for it
+				if folder, err := grafanaClient.GetFolderByUID(ctx, opts.GrafanaFolder); err == nil {
+					gclog.Debug("Existing folder found", log.Int("folder.ID", folder.ID))
+					grafanaFolderID = folder.ID
+				}
 			}
 
 			// folderId is not found, create it

@@ -1,6 +1,7 @@
 package azuredevops
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -26,6 +27,17 @@ var (
 	PullRequestMergeStrategyRebaseMerge   PullRequestMergeStrategy = "rebaseMerge"
 	PullRequestMergeStrategyNoFastForward PullRequestMergeStrategy = "notFastForward"
 )
+
+type Org struct {
+	ID   string `json:"accountId"`
+	URI  string `json:"accountUri"`
+	Name string `json:"accountName"`
+}
+
+type ListAuthorizedUserOrgsResponse struct {
+	Count int   `json:"count"`
+	Value []Org `json:"value"`
+}
 
 type OrgProjectRepoArgs struct {
 	Org          string
@@ -136,25 +148,15 @@ type PullRequestCommit struct {
 	URL      string `json:"url"`
 }
 
-type PullRequestReviewer struct {
-	ID          string `json:"id"`
-	ReviewerURL string `json:"reviewerUrl"`
-	Vote        int    `json:"vote"`
-	DisplayName string `json:"displayName"`
-	UniqueName  string `json:"uniqueName"`
-	URL         string `json:"url"`
-	ImageURL    string `json:"imageUrl"`
-}
-
 type PullRequestUpdateInput struct {
-	Status                *PullRequestStatus           `json:"status"`
-	Title                 *string                      `json:"title"`
-	Description           *string                      `json:"description"`
-	MergeOptions          *PullRequestMergeOptions     `json:"mergeOptions"`
-	LastMergeSourceCommit *PullRequestCommit           `json:"lastMergeSourceCommit"`
-	TargetRefName         *string                      `json:"targetRefName"`
-	IsDraft               bool                         `json:"isDraft"`
-	CompletionOptions     PullRequestCompletionOptions `json:"completionOptions"`
+	Status                *PullRequestStatus            `json:"status"`
+	Title                 *string                       `json:"title"`
+	Description           *string                       `json:"description"`
+	MergeOptions          *PullRequestMergeOptions      `json:"mergeOptions"`
+	LastMergeSourceCommit *PullRequestCommit            `json:"lastMergeSourceCommit"`
+	TargetRefName         *string                       `json:"targetRefName"`
+	IsDraft               *bool                         `json:"isDraft"`
+	CompletionOptions     *PullRequestCompletionOptions `json:"completionOptions"`
 	// ADO does not seem to support updating Source ref name, only TargetRefName which needs to be explicitly enabled.
 }
 
@@ -274,8 +276,23 @@ type CreatorInfo struct {
 	ImageURL    string `json:"imageUrl"`
 }
 
-type httpError struct {
+type HTTPError struct {
 	StatusCode int
 	URL        *url.URL
 	Body       []byte
+}
+
+// Error returns a minimal string of the HTTP error with the status code and the URL.
+//
+// It does not write HTTPError.Body as part of the error string as the Azure DevOPs API returns raw
+// HTML for 4xx errors and non 200 OK responses inspite of using the "application/json" header in
+// the request. It does return JSON for 200 OK responses though.
+//
+// The body would only add noise to logs and error messages that also may bubble up to the user
+// interface which makes for a bad user experience. For our usecases in debugging, the status
+// code and URL should provide plenty of information on what is going contrary to expectations.
+// In the worst case, we should reproduce the error by manually sending a curl request that
+// causes an error and inspecting the HTML output.
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q", e.StatusCode, e.URL)
 }

@@ -600,21 +600,20 @@ func ExtractRateLimit(config, kind string) (rate.Limit, error) {
 // GetLimitFromConfig gets RateLimitConfig from an already parsed config schema.
 func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 	// Rate limit config can be in a few states:
-	// 1. Not defined: We fall back to default specified in code.
+	// 1. Not defined: Some infinite, some limited, depending on code host.
 	// 2. Defined and enabled: We use their defined limit.
 	// 3. Defined and disabled: We use an infinite limiter.
 
 	var limit rate.Limit
 	switch c := config.(type) {
 	case *schema.GitLabConnection:
-		// 10/s is the default enforced by GitLab on their end
-		limit = rate.Limit(10)
+		limit = rate.Inf
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.GitHubConnection:
-		// 5000 per hour is the default enforced by GitHub on their end
-		limit = rate.Limit(5000.0 / 3600.0)
+		// Use an infinite rate limiter. GitHub has an external rate limiter we obey.
+		limit = rate.Inf
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
@@ -636,7 +635,7 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 		}
 	case *schema.JVMPackagesConnection:
 		limit = rate.Limit(2)
-		if c != nil && c.Maven != nil && c.Maven.RateLimit != nil {
+		if c != nil && c.Maven.RateLimit != nil {
 			limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
 		}
 	case *schema.PagureConnection:
@@ -729,6 +728,11 @@ type OtherRepoMetadata struct {
 	// RelativePath is relative to ServiceID which is usually the host URL.
 	// Joining them gives you the clone url.
 	RelativePath string
+
+	// AbsFilePath is an optional field which is the absolute path to the
+	// repository on the src git-serve server. Notably this is only
+	// implemented for Sourcegraph App's implementation of src git-serve.
+	AbsFilePath string
 }
 
 func UniqueEncryptableCodeHostIdentifier(ctx context.Context, kind string, config *EncryptableConfig) (string, error) {

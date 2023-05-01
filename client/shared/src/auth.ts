@@ -24,7 +24,6 @@ export const currentAuthStateQuery = gql`
             avatarURL
             displayName
             siteAdmin
-            tags
             url
             settingsURL
             organizations {
@@ -41,7 +40,6 @@ export const currentAuthStateQuery = gql`
                 canSignOut
             }
             viewerCanAdminister
-            tags
             tosAccepted
             searchable
             emails {
@@ -52,6 +50,12 @@ export const currentAuthStateQuery = gql`
             latestSettings {
                 id
                 contents
+            }
+            permissions {
+                nodes {
+                    id
+                    displayName
+                }
             }
         }
     }

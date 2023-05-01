@@ -8,7 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -444,7 +444,7 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 		return nil, errors.Wrap(err, "IsViewOnDashboard")
 	}
 	if !exists {
-		log15.Debug("attempting to add insight view to dashboard", "dashboardId", dashboardID.Arg, "insightId", viewID)
+		r.logger.Debug("attempting to add insight view to dashboard", log.Int64("dashboardID", dashboardID.Arg), log.String("insightViewID", viewID))
 		err = tx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{viewID})
 		if err != nil {
 			return nil, errors.Wrap(err, "AddInsightViewToDashboard")

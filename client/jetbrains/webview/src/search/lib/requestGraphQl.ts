@@ -44,7 +44,7 @@ export const requestGraphQL = async <R, V = object>(
         throw asError(error)
     }
 
-    if (!response || !response.ok) {
+    if (!response?.ok) {
         throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}`)
     }
 

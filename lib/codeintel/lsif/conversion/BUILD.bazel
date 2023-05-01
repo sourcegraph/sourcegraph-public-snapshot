@@ -26,6 +26,7 @@ go_library(
 
 go_test(
     name = "conversion_test",
+    timeout = "short",
     srcs = [
         "canonicalize_test.go",
         "correlate_test.go",
@@ -35,7 +36,7 @@ go_test(
     # The testdata folders lives in our parent folder, which cannot be referenced directly.
     # therefore, we have to create a filegroup with the correct visibility and reference
     # it manually below.
-    data = ["//lib/codeintel/lsif/testdata:data"],  # keep
+    data = ["//lib/codeintel/lsif/testdata:data"],
     embed = [":conversion"],
     deps = [
         "//lib/codeintel/lsif/conversion/datastructures",

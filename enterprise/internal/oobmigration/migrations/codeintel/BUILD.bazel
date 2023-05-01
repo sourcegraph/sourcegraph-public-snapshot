@@ -15,8 +15,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/codeintel/shared/ranges",
         "//enterprise/internal/codeintel/shared/trie",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/database/basestore",
         "//internal/database/batch",
         "//internal/database/dbutil",
@@ -44,6 +45,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":codeintel"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/codeintel/shared",
         "//internal/database",
@@ -52,6 +57,7 @@ go_test(
         "//internal/database/dbutil",
         "@com_github_google_go_cmp//cmp",
         "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
     ],
 )

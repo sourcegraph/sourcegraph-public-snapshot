@@ -280,7 +280,6 @@ func TestUsers_ListCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	user.Tags = []string{}
 
 	if count, err := db.Users().Count(ctx, &UsersListOptions{}); err != nil {
 		t.Fatal(err)
@@ -479,11 +478,13 @@ func TestUsers_ListForSCIM_Query(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
+	userToSoftDelete := NewUserForSCIM{NewUser: NewUser{Email: "notactive@example.com", Username: "notactive", EmailIsVerified: true}, SCIMExternalID: "notactive"}
 	// Create users
 	newUsers := []NewUserForSCIM{
 		{NewUser: NewUser{Email: "alice@example.com", Username: "alice", EmailIsVerified: true}},
 		{NewUser: NewUser{Email: "bob@example.com", Username: "bob", EmailVerificationCode: "bb"}, SCIMExternalID: "BOB"},
 		{NewUser: NewUser{Email: "charlie@example.com", Username: "charlie", EmailIsVerified: true}, SCIMExternalID: "CHARLIE", AdditionalVerifiedEmails: []string{"charlie2@example.com"}},
+		userToSoftDelete,
 	}
 	for _, newUser := range newUsers {
 		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, newUser.NewUser, extsvc.AccountSpec{ServiceType: "scim", AccountID: newUser.SCIMExternalID}, extsvc.AccountData{})
@@ -502,16 +503,25 @@ func TestUsers_ListForSCIM_Query(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	inactiveUser, err := db.Users().GetByUsername(ctx, userToSoftDelete.Username)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.Users().Delete(ctx, inactiveUser.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	users, err := db.Users().ListForSCIM(ctx, &UsersListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Len(t, users, 3)
+	assert.Len(t, users, 4)
 	assert.Equal(t, "alice", users[0].Username)
 	assert.Equal(t, "", users[0].SCIMExternalID)
 	assert.Equal(t, "BOB", users[1].SCIMExternalID)
 	assert.Equal(t, "CHARLIE", users[2].SCIMExternalID)
+	assert.Equal(t, "notactive", users[3].Username)
 	assert.Len(t, users[0].Emails, 1)
 	assert.Len(t, users[1].Emails, 0)
 	assert.Len(t, users[2].Emails, 2)
@@ -1007,45 +1017,6 @@ func TestUsers_RecoverUsers(t *testing.T) {
 	})
 }
 
-func TestUsers_HasTag(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-
-	var id int32
-	if err := db.QueryRowContext(ctx, "INSERT INTO users (username, tags) VALUES ('karim', '{\"foo\", \"bar\"}') RETURNING id").Scan(&id); err != nil {
-		t.Fatal(err)
-	}
-
-	// lookup existing tag
-	ok, err := db.Users().HasTag(ctx, id, "foo")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !ok {
-		t.Fatal("expected tag to be found")
-	}
-
-	// lookup non-existing tag
-	ok, err = db.Users().HasTag(ctx, id, "baz")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ok {
-		t.Fatal("expected tag to be not found")
-	}
-
-	// lookup non-existing user
-	ok, err = db.Users().HasTag(ctx, id+1, "bar")
-	if err == nil || ok {
-		t.Fatal("expected user to be not found")
-	}
-}
-
 func TestUsers_InvalidateSessions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1088,105 +1059,6 @@ func TestUsers_InvalidateSessions(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-}
-
-func TestUsers_SetTag(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-
-	// Create user.
-	u, err := db.Users().Create(ctx, NewUser{Username: "u"})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	checkTags := func(t *testing.T, userID int32, wantTags []string) {
-		t.Helper()
-		u, err := db.Users().GetByID(ctx, userID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		sort.Strings(u.Tags)
-		sort.Strings(wantTags)
-		if !reflect.DeepEqual(u.Tags, wantTags) {
-			t.Errorf("got tags %v, want %v", u.Tags, wantTags)
-		}
-	}
-	checkUsersWithTag := func(t *testing.T, tag string, wantUsers []int32) {
-		t.Helper()
-		users, err := db.Users().List(ctx, &UsersListOptions{Tag: tag})
-		if err != nil {
-			t.Fatal(err)
-		}
-		userIDs := make([]int32, len(users))
-		for i, u := range users {
-			userIDs[i] = u.ID
-		}
-		if !reflect.DeepEqual(userIDs, wantUsers) {
-			t.Errorf("got user IDs %v, want %v", userIDs, wantUsers)
-		}
-	}
-
-	t.Run("fails on nonexistent user", func(t *testing.T) {
-		if err := db.Users().SetTag(ctx, 1234 /* doesn't exist */, "t", true); !errcode.IsNotFound(err) {
-			t.Errorf("got err %v, want errcode.IsNotFound", err)
-		}
-		if err := db.Users().SetTag(ctx, 1234 /* doesn't exist */, "t", false); !errcode.IsNotFound(err) {
-			t.Errorf("got err %v, want errcode.IsNotFound", err)
-		}
-	})
-
-	t.Run("tags begins empty", func(t *testing.T) {
-		checkTags(t, u.ID, []string{})
-		checkUsersWithTag(t, "t1", []int32{})
-	})
-
-	t.Run("adds and removes tag", func(t *testing.T) {
-		if err := db.Users().SetTag(ctx, u.ID, "t1", true); err != nil {
-			t.Fatal(err)
-		}
-		checkTags(t, u.ID, []string{"t1"})
-		checkUsersWithTag(t, "t1", []int32{u.ID})
-
-		t.Run("deduplicates", func(t *testing.T) {
-			if err := db.Users().SetTag(ctx, u.ID, "t1", true); err != nil {
-				t.Fatal(err)
-			}
-			checkTags(t, u.ID, []string{"t1"})
-		})
-
-		if err := db.Users().SetTag(ctx, u.ID, "t2", true); err != nil {
-			t.Fatal(err)
-		}
-		checkTags(t, u.ID, []string{"t1", "t2"})
-		checkUsersWithTag(t, "t1", []int32{u.ID})
-		checkUsersWithTag(t, "t2", []int32{u.ID})
-
-		if err := db.Users().SetTag(ctx, u.ID, "t1", false); err != nil {
-			t.Fatal(err)
-		}
-		checkTags(t, u.ID, []string{"t2"})
-		checkUsersWithTag(t, "t1", []int32{})
-		checkUsersWithTag(t, "t2", []int32{u.ID})
-
-		t.Run("removing nonexistent tag is noop", func(t *testing.T) {
-			if err := db.Users().SetTag(ctx, u.ID, "t1", false); err != nil {
-				t.Fatal(err)
-			}
-			checkTags(t, u.ID, []string{"t2"})
-		})
-
-		if err := db.Users().SetTag(ctx, u.ID, "t2", false); err != nil {
-			t.Fatal(err)
-		}
-		checkTags(t, u.ID, []string{})
-		checkUsersWithTag(t, "t2", []int32{})
-	})
 }
 
 func TestUsers_SetIsSiteAdmin(t *testing.T) {
@@ -1254,6 +1126,65 @@ func TestUsers_SetIsSiteAdmin(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, u.SiteAdmin)
 	})
+}
+
+func TestUsers_GetSetCompletionsQuota(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	user, err := db.Users().Create(ctx, NewUser{
+		Email:           "alice@example.com",
+		Username:        "alice",
+		EmailIsVerified: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Initially, no quota should be set and nil should be returned.
+	{
+		quota, err := db.Users().GetCompletionsQuota(ctx, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Nil(t, quota, "expected unconfigured quota to be nil")
+	}
+
+	// Set a quota. Expect it to be returned correctly.
+	{
+		wantQuota := 10
+		err := db.Users().SetCompletionsQuota(ctx, user.ID, &wantQuota)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		quota, err := db.Users().GetCompletionsQuota(ctx, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.NotNil(t, quota, "expected quota to be non-nil after storing")
+		require.Equal(t, wantQuota, *quota, "invalid quota returned")
+	}
+
+	// Now unset the quota.
+	{
+		err := db.Users().SetCompletionsQuota(ctx, user.ID, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		quota, err := db.Users().GetCompletionsQuota(ctx, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Nil(t, quota, "expected unconfigured quota to be nil")
+	}
 }
 
 func normalizeUsers(users []*types.User) []*types.User {

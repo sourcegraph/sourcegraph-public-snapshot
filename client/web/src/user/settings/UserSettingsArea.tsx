@@ -66,7 +66,12 @@ const UserSettingsAreaGQLFragment = gql`
                 name
             }
         }
-        tags @include(if: $siteAdmin)
+        roles @skip(if: $isSourcegraphDotCom) {
+            nodes {
+                name
+                system
+            }
+        }
         ...EditUserProfilePage
     }
     ${EditUserProfilePageGQLFragment}
@@ -163,7 +168,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
                                         />
                                     )
                             )}
-                            <Route element={<NotFoundPage pageType="settings" />} />
+                            <Route path="*" element={<NotFoundPage pageType="settings" />} />
                         </Routes>
                     </React.Suspense>
                 </div>

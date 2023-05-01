@@ -467,6 +467,13 @@ func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
 	return res
 }
 
+func (p Parameters) RepoHasTopics() (res []RepoHasTopicPredicate) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasTopicPredicate) {
+		res = append(res, *pred)
+	})
+	return res
+}
+
 func (p Parameters) FileHasOwner() (include, exclude []string) {
 	VisitTypedPredicate(toNodes(p), func(pred *FileHasOwnerPredicate) {
 		if pred.Negated {

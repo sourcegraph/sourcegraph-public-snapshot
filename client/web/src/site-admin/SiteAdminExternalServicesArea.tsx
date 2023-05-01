@@ -31,9 +31,14 @@ const AddExternalServicesPage = lazyComponent(
     () => import('../components/externalServices/AddExternalServicesPage'),
     'AddExternalServicesPage'
 )
+const AddGitHubAppPage = lazyComponent(
+    () => import('../components/externalServices/AddGitHubAppPage'),
+    'AddGitHubAppPage'
+)
 
 interface Props extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser
+    isSourcegraphApp: boolean
 }
 
 export const SiteAdminExternalServicesArea: FC<Props> = props => {
@@ -80,6 +85,7 @@ export const SiteAdminExternalServicesArea: FC<Props> = props => {
                     />
                 }
             />
+            <Route path="new-gh-app" element={<AddGitHubAppPage {...props} />} />
             <Route
                 path=":externalServiceID"
                 element={

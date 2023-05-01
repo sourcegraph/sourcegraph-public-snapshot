@@ -1,8 +1,8 @@
-import type { PageLoad } from './$types'
-
 import { isErrorLike } from '$lib/common'
 import { fetchRepoCommit, queryRepositoryComparisonFileDiffs } from '$lib/loader/commits'
 import { asStore } from '$lib/utils'
+
+import type { PageLoad } from './$types'
 
 export const load: PageLoad = ({ parent, params }) => {
     const commit = parent().then(({ resolvedRevision }) => {

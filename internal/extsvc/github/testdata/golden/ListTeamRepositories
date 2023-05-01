@@ -10,6 +10,9 @@
    "IsArchived": false,
    "IsLocked": false,
    "IsDisabled": false,
-   "ViewerPermission": "READ"
+   "ViewerPermission": "READ",
+   "RepositoryTopics": {
+    "Nodes": []
+   }
   }
  ]

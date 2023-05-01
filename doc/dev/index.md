@@ -87,6 +87,7 @@ Clarification and discussion about key concepts, architecture, and development s
   - [Temporary settings](background-information/web/temporary_settings.md)
   - [Build process](background-information/web/build.md)
 - [Developing the GraphQL API](background-information/graphql_api.md)
+- [Developing the SCIM API](background-information/scim_api.md)
 - [Developing batch changes](background-information/batch_changes/index.md)
 - [Developing code navigation](background-information/codeintel/index.md)
 - [Developing code insights](background-information/insights/index.md)
@@ -108,6 +109,7 @@ Clarification and discussion about key concepts, architecture, and development s
     - [Testing web code](background-information/testing_web_code.md)
 - [Building p4-fusion](background-information/build_p4_fusion.md)
 - [The `gitserver` API](background-information/gitserver-api.md)
+- [Using gRPC alongside REST for internal APIs](background-information/gRPC_internal_api.md)
 
 ## Git
 

@@ -13,6 +13,7 @@ go_library(
 
 go_test(
     name = "commitgraph_test",
+    timeout = "short",
     srcs = ["commit_graph_test.go"],
     data = glob(["testdata/**"]),
     embed = [":commitgraph"],

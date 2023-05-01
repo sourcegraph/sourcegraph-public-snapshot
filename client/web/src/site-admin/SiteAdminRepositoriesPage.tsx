@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { useLocation } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
@@ -24,16 +25,13 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
     }, [telemetryService])
 
     // Refresh global alert about enabling repositories when the user visits & navigates away from this page.
+    const client = useApolloClient()
     useEffect(() => {
-        refreshSiteFlags()
-            .toPromise()
-            .then(null, error => logger.error(error))
+        refreshSiteFlags(client).then(null, error => logger.error(error))
         return () => {
-            refreshSiteFlags()
-                .toPromise()
-                .then(null, error => logger.error(error))
+            refreshSiteFlags(client).then(null, error => logger.error(error))
         }
-    }, [])
+    }, [client])
 
     const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
 

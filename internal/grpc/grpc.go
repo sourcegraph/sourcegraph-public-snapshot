@@ -12,7 +12,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // MultiplexHandlers takes a gRPC server and a plain HTTP handler and multiplexes the
@@ -39,5 +39,5 @@ func IsGRPCEnabled(ctx context.Context) bool {
 	if val, err := strconv.ParseBool(os.Getenv(envGRPCEnabled)); err == nil {
 		return val
 	}
-	return featureflag.FromContext(ctx).GetBoolOr("grpc", false)
+	return conf.Get().ExperimentalFeatures.EnableGRPC
 }

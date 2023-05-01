@@ -73,41 +73,48 @@ func TestCanUpdate(t *testing.T) {
 		name                string
 		now                 time.Time
 		clientVersionString string
-		latestReleaseBuild  build
+		latestReleaseBuild  pingResponse
+		deployType          string
 		hasUpdate           bool
 		err                 error
 	}{
 		{
 			name:                "no version update",
 			clientVersionString: "v1.2.3",
-			latestReleaseBuild:  newBuild("1.2.3"),
+			latestReleaseBuild:  newPingResponse("1.2.3"),
 			hasUpdate:           false,
 		},
 		{
 			name:                "version update",
 			clientVersionString: "v1.2.3",
-			latestReleaseBuild:  newBuild("1.2.4"),
+			latestReleaseBuild:  newPingResponse("1.2.4"),
 			hasUpdate:           true,
 		},
 		{
 			name:                "no date update clock skew",
 			now:                 time.Date(2018, time.August, 1, 0, 0, 0, 0, time.UTC),
 			clientVersionString: "19272_2018-08-02_f7dec47",
-			latestReleaseBuild:  newBuild("1.2.3"),
+			latestReleaseBuild:  newPingResponse("1.2.3"),
 			hasUpdate:           false,
 		},
 		{
 			name:                "no date update",
 			now:                 time.Date(2018, time.September, 1, 0, 0, 0, 0, time.UTC),
 			clientVersionString: "19272_2018-08-01_f7dec47",
-			latestReleaseBuild:  newBuild("1.2.3"),
+			latestReleaseBuild:  newPingResponse("1.2.3"),
 			hasUpdate:           false,
 		},
 		{
 			name:                "date update",
 			now:                 time.Date(2018, time.August, 42, 0, 0, 0, 0, time.UTC),
 			clientVersionString: "19272_2018-08-01_f7dec47",
-			latestReleaseBuild:  newBuild("1.2.3"),
+			latestReleaseBuild:  newPingResponse("1.2.3"),
+			hasUpdate:           true,
+		},
+		{
+			name:                "app version update",
+			clientVersionString: "2023.03.23+205275.dd37e7",
+			latestReleaseBuild:  newPingResponse("2023.03.24+205301.ca3646"),
 			hasUpdate:           true,
 		},
 	}
@@ -123,7 +130,10 @@ func TestCanUpdate(t *testing.T) {
 				timeNow = time.Now
 			}()
 
-			hasUpdate, err := canUpdate(test.clientVersionString, test.latestReleaseBuild)
+			if test.deployType == "" {
+				test.deployType = "kubernetes"
+			}
+			hasUpdate, err := canUpdate(test.clientVersionString, test.latestReleaseBuild, test.deployType)
 			if err != test.err {
 				t.Fatalf("expected error %s; got %s", test.err, err)
 			}
@@ -134,8 +144,10 @@ func TestCanUpdate(t *testing.T) {
 	}
 }
 
-func TestSerializeBasic(t *testing.T) {
-	pr := &pingRequest{
+func makeDefaultPingRequest(t *testing.T) *pingRequest {
+	t.Helper()
+
+	return &pingRequest{
 		ClientSiteID:             "0101-0101",
 		LicenseKey:               "mylicense",
 		DeployType:               "server",
@@ -144,6 +156,7 @@ func TestSerializeBasic(t *testing.T) {
 		ExternalServices:         []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		CodeHostVersions:         nil,
 		BuiltinSignupAllowed:     true,
+		AccessRequestEnabled:     true,
 		HasExtURL:                false,
 		UniqueUsers:              123,
 		Activity:                 json.RawMessage(`{"foo":"bar"}`),
@@ -154,6 +167,7 @@ func TestSerializeBasic(t *testing.T) {
 		CodeHostIntegrationUsage: nil,
 		IDEExtensionsUsage:       nil,
 		MigratedExtensionsUsage:  nil,
+		OwnUsage:                 nil,
 		SearchUsage:              nil,
 		GrowthStatistics:         nil,
 		SavedSearches:            nil,
@@ -166,6 +180,21 @@ func TestSerializeBasic(t *testing.T) {
 		EverFindRefs:             true,
 		RetentionStatistics:      nil,
 	}
+}
+
+func makeLimitedPingRequest(t *testing.T) *pingRequest {
+	return &pingRequest{
+		ClientSiteID:        "0101-0101",
+		DeployType:          "app",
+		ClientVersionString: "2023.03.23+205275.dd37e7",
+		Os:                  "mac",
+		TotalRepos:          345,
+		ActiveToday:         true,
+	}
+}
+
+func TestSerializeBasic(t *testing.T) {
+	pr := makeDefaultPingRequest(t)
 
 	now := time.Now()
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
@@ -193,24 +222,103 @@ func TestSerializeBasic(t *testing.T) {
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
 		"migrated_extensions_usage": null,
+		"own_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
 		"search_onboarding": null,
 		"homepage_panels": null,
 		"repositories": null,
+"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
 		"has_external_url": "false",
 		"has_repos": "true",
 		"ever_searched": "false",
 		"ever_find_refs": "true",
+		"total_repos": "0",
+		"active_today": "false",
+		"os": "",
+		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+	}`)
+}
+
+func TestSerializeLimited(t *testing.T) {
+	pr := makeLimitedPingRequest(t)
+
+	pingRequestBody, err := json.Marshal(pr)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+
+	// This is the expected JSON request that will be sent over HTTP to the
+	// handler. This checks that omitempty is applied to all the absent fields.
+	compareJSON(t, pingRequestBody, `{
+		"site": "0101-0101",
+		"deployType": "app",
+		"version": "2023.03.23+205275.dd37e7",
+		"os": "mac",
+		"totalRepos": 345,
+		"activeToday": true
+	}`)
+
+	now := time.Now()
+	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+
+	compareJSON(t, payload, `{
+		"remote_ip": "127.0.0.1",
+		"remote_site_version": "2023.03.23+205275.dd37e7",
+		"remote_site_id": "0101-0101",
+		"license_key": "",
+		"has_update": "true",
+		"unique_users_today": "0",
+		"site_activity": null,
+		"batch_changes_usage": null,
+		"code_intel_usage": null,
+		"new_code_intel_usage": null,
+		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
+		"code_insights_critical_telemetry": null,
+		"code_monitoring_usage": null,
+		"notebooks_usage": null,
+		"code_host_integration_usage": null,
+		"ide_extensions_usage": null,
+		"migrated_extensions_usage": null,
+		"own_usage": null,
+		"search_usage": null,
+		"growth_statistics": null,
+		"saved_searches": null,
+		"search_onboarding": null,
+		"homepage_panels": null,
+		"repositories": null,
+"repository_size_histogram": null,
+		"retention_statistics": null,
+		"installer_email": "",
+		"auth_providers": "",
+		"ext_services": "",
+		"code_host_versions": null,
+		"builtin_signup_allowed": "false",
+		"access_request_enabled": "false",
+		"deploy_type": "app",
+		"total_user_accounts": "0",
+		"has_external_url": "false",
+		"has_repos": "false",
+		"ever_searched": "false",
+		"ever_find_refs": "false",
+		"total_repos": "345",
+		"active_today": "true",
+		"os": "mac",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
 }
@@ -262,60 +370,37 @@ func TestSerializeFromQuery(t *testing.T) {
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
 		"migrated_extensions_usage": null,
+		"own_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
 		"homepage_panels": null,
 		"search_onboarding": null,
 		"repositories": null,
+"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
+		"access_request_enabled": "false",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
 		"has_external_url": "false",
 		"has_repos": "true",
 		"ever_searched": "false",
 		"ever_find_refs": "true",
+		"total_repos": "0",
+		"active_today": "false",
+		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
 }
 
 func TestSerializeBatchChangesUsage(t *testing.T) {
-	pr := &pingRequest{
-		ClientSiteID:             "0101-0101",
-		DeployType:               "server",
-		ClientVersionString:      "3.12.6",
-		AuthProviders:            []string{"foo", "bar"},
-		ExternalServices:         []string{extsvc.KindGitHub, extsvc.KindGitLab},
-		CodeHostVersions:         nil,
-		BuiltinSignupAllowed:     true,
-		HasExtURL:                false,
-		UniqueUsers:              123,
-		Activity:                 json.RawMessage(`{"foo":"bar"}`),
-		BatchChangesUsage:        json.RawMessage(`{"baz":"bonk"}`),
-		CodeIntelUsage:           nil,
-		CodeMonitoringUsage:      nil,
-		NotebooksUsage:           nil,
-		CodeHostIntegrationUsage: nil,
-		IDEExtensionsUsage:       nil,
-		MigratedExtensionsUsage:  nil,
-		NewCodeIntelUsage:        nil,
-		SearchUsage:              nil,
-		GrowthStatistics:         nil,
-		SavedSearches:            nil,
-		HomepagePanels:           nil,
-		SearchOnboarding:         nil,
-		InitialAdminEmail:        "test@sourcegraph.com",
-		TotalUsers:               234,
-		HasRepos:                 true,
-		EverSearched:             false,
-		EverFindRefs:             true,
-		RetentionStatistics:      nil,
-	}
+	pr := makeDefaultPingRequest(t)
+	pr.BatchChangesUsage = json.RawMessage(`{"baz":"bonk"}`)
 
 	now := time.Now()
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
@@ -327,7 +412,7 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
 		"remote_site_id": "0101-0101",
-		"license_key": "",
+		"license_key": "mylicense",
 		"has_update": "true",
 		"unique_users_today": "123",
 		"site_activity": {"foo":"bar"},
@@ -343,24 +428,88 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
 		"migrated_extensions_usage": null,
+		"own_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
 		"homepage_panels": null,
 		"search_onboarding": null,
 		"repositories": null,
+"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
 		"has_external_url": "false",
 		"has_repos": "true",
 		"ever_searched": "false",
 		"ever_find_refs": "true",
+		"total_repos": "0",
+		"active_today": "false",
+		"os": "",
+		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+	}`)
+}
+
+func TestSerializeGrowthStatistics(t *testing.T) {
+	pr := makeDefaultPingRequest(t)
+	pr.GrowthStatistics = json.RawMessage(`{"baz":"bonk"}`)
+
+	now := time.Now()
+	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+
+	compareJSON(t, payload, `{
+		"remote_ip": "127.0.0.1",
+		"remote_site_version": "3.12.6",
+		"remote_site_id": "0101-0101",
+		"license_key": "mylicense",
+		"has_update": "true",
+		"unique_users_today": "123",
+		"site_activity": {"foo":"bar"},
+		"batch_changes_usage": null,
+		"code_intel_usage": null,
+		"new_code_intel_usage": null,
+		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
+		"code_insights_critical_telemetry": null,
+		"code_monitoring_usage": null,
+		"notebooks_usage": null,
+		"code_host_integration_usage": null,
+		"ide_extensions_usage": null,
+		"migrated_extensions_usage": null,
+		"own_usage": null,
+		"search_usage": null,
+		"growth_statistics": {"baz":"bonk"},
+		"saved_searches": null,
+		"search_onboarding": null,
+		"homepage_panels": null,
+		"repositories": null,
+"repository_size_histogram": null,
+		"retention_statistics": null,
+		"installer_email": "test@sourcegraph.com",
+		"auth_providers": "foo,bar",
+		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": null,
+		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
+		"deploy_type": "server",
+		"total_user_accounts": "234",
+		"has_external_url": "false",
+		"has_repos": "true",
+		"ever_searched": "false",
+		"ever_find_refs": "true",
+		"total_repos": "0",
+		"active_today": "false",
+		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
 }
@@ -467,37 +616,9 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		t.Fatalf("unexpected error %s", err)
 	}
 
-	pr := &pingRequest{
-		ClientSiteID:             "0101-0101",
-		DeployType:               "server",
-		ClientVersionString:      "3.12.6",
-		AuthProviders:            []string{"foo", "bar"},
-		ExternalServices:         []string{extsvc.KindGitHub, extsvc.KindGitLab},
-		CodeHostVersions:         nil,
-		BuiltinSignupAllowed:     true,
-		HasExtURL:                false,
-		UniqueUsers:              123,
-		Activity:                 json.RawMessage(`{"foo":"bar"}`),
-		BatchChangesUsage:        nil,
-		CodeIntelUsage:           nil,
-		CodeMonitoringUsage:      nil,
-		NotebooksUsage:           nil,
-		CodeHostIntegrationUsage: nil,
-		IDEExtensionsUsage:       nil,
-		MigratedExtensionsUsage:  nil,
-		NewCodeIntelUsage:        testUsage,
-		SearchUsage:              nil,
-		GrowthStatistics:         nil,
-		SavedSearches:            nil,
-		HomepagePanels:           nil,
-		SearchOnboarding:         nil,
-		InitialAdminEmail:        "test@sourcegraph.com",
-		TotalUsers:               234,
-		HasRepos:                 true,
-		EverSearched:             false,
-		EverFindRefs:             true,
-		RetentionStatistics:      nil,
-	}
+	pr := makeDefaultPingRequest(t)
+
+	pr.NewCodeIntelUsage = testUsage
 
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
 	if err != nil {
@@ -508,7 +629,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
 		"remote_site_id": "0101-0101",
-		"license_key": "",
+		"license_key": "mylicense",
 		"has_update": "true",
 		"unique_users_today": "123",
 		"site_activity": {"foo":"bar"},
@@ -620,6 +741,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
 		"migrated_extensions_usage": null,
+		"own_usage": null,
 		"dependency_versions": null,
 		"extensions_usage": null,
 		"code_insights_usage": null,
@@ -630,18 +752,23 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		"homepage_panels": null,
 		"search_onboarding": null,
 		"repositories": null,
+"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
 		"has_external_url": "false",
 		"has_repos": "true",
 		"ever_searched": "false",
 		"ever_find_refs": "true",
+		"total_repos": "0",
+		"active_today": "false",
+		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
 }
@@ -669,37 +796,9 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 	}
 	period := string(testPeriod)
 
-	pr := &pingRequest{
-		ClientSiteID:             "0101-0101",
-		DeployType:               "server",
-		ClientVersionString:      "3.12.6",
-		AuthProviders:            []string{"foo", "bar"},
-		ExternalServices:         []string{extsvc.KindGitHub, extsvc.KindGitLab},
-		CodeHostVersions:         nil,
-		BuiltinSignupAllowed:     true,
-		HasExtURL:                false,
-		UniqueUsers:              123,
-		Activity:                 json.RawMessage(`{"foo":"bar"}`),
-		BatchChangesUsage:        nil,
-		CodeIntelUsage:           json.RawMessage(`{"Weekly": [` + period + `]}`),
-		CodeMonitoringUsage:      nil,
-		NotebooksUsage:           nil,
-		CodeHostIntegrationUsage: nil,
-		IDEExtensionsUsage:       nil,
-		MigratedExtensionsUsage:  nil,
-		NewCodeIntelUsage:        nil,
-		SearchUsage:              nil,
-		GrowthStatistics:         nil,
-		SavedSearches:            nil,
-		HomepagePanels:           nil,
-		SearchOnboarding:         nil,
-		InitialAdminEmail:        "test@sourcegraph.com",
-		TotalUsers:               234,
-		HasRepos:                 true,
-		EverSearched:             false,
-		EverFindRefs:             true,
-		RetentionStatistics:      nil,
-	}
+	pr := makeDefaultPingRequest(t)
+
+	pr.CodeIntelUsage = json.RawMessage(`{"Weekly": [` + period + `]}`)
 
 	payload, err := marshalPing(pr, true, "127.0.0.1", now)
 	if err != nil {
@@ -710,7 +809,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
 		"remote_site_id": "0101-0101",
-		"license_key": "",
+		"license_key": "mylicense",
 		"has_update": "true",
 		"unique_users_today": "123",
 		"site_activity": {"foo":"bar"},
@@ -792,6 +891,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
 		"migrated_extensions_usage": null,
+		"own_usage": null,
 		"dependency_versions": null,
 		"extensions_usage": null,
 		"code_insights_usage": null,
@@ -802,53 +902,122 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		"homepage_panels": null,
 		"search_onboarding": null,
 		"repositories": null,
+"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
 		"has_external_url": "false",
 		"has_repos": "true",
 		"ever_searched": "false",
 		"ever_find_refs": "true",
+		"total_repos": "0",
+		"active_today": "false",
+		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
 }
 
 func TestSerializeCodeHostVersions(t *testing.T) {
+	pr := makeDefaultPingRequest(t)
+	pr.CodeHostVersions = json.RawMessage(`[{"external_service_kind":"GITHUB","version":"1.2.3.4"}]`)
+
+	now := time.Now()
+	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+
+	compareJSON(t, payload, `{
+		"remote_ip": "127.0.0.1",
+		"remote_site_version": "3.12.6",
+		"remote_site_id": "0101-0101",
+		"license_key": "mylicense",
+		"has_update": "true",
+		"unique_users_today": "123",
+		"site_activity": {"foo": "bar"},
+		"batch_changes_usage": null,
+		"code_intel_usage": null,
+		"new_code_intel_usage": null,
+		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
+		"code_insights_critical_telemetry": null,
+		"code_monitoring_usage": null,
+		"notebooks_usage": null,
+		"code_host_integration_usage": null,
+		"ide_extensions_usage": null,
+		"migrated_extensions_usage": null,
+		"own_usage": null,
+		"search_usage": null,
+		"growth_statistics": null,
+		"saved_searches": null,
+		"homepage_panels": null,
+		"search_onboarding": null,
+		"repositories": null,
+"repository_size_histogram": null,
+		"retention_statistics": null,
+		"installer_email": "test@sourcegraph.com",
+		"auth_providers": "foo,bar",
+		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": [{"external_service_kind":"GITHUB","version":"1.2.3.4"}],
+		"builtin_signup_allowed": "true",
+		"access_request_enabled": "true",
+		"deploy_type": "server",
+		"total_user_accounts": "234",
+		"has_external_url": "false",
+		"has_repos": "true",
+		"ever_searched": "false",
+		"ever_find_refs": "true",
+		"total_repos": "0",
+		"active_today": "false",
+		"os": "",
+		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+	}`)
+}
+
+func TestSerializeOwn(t *testing.T) {
 	pr := &pingRequest{
-		ClientSiteID:             "0101-0101",
-		DeployType:               "server",
-		ClientVersionString:      "3.12.6",
-		AuthProviders:            []string{"foo", "bar"},
-		ExternalServices:         []string{extsvc.KindGitHub, extsvc.KindGitLab},
-		CodeHostVersions:         json.RawMessage(`[{"external_service_kind":"GITHUB","version":"1.2.3.4"}]`),
-		BuiltinSignupAllowed:     true,
-		HasExtURL:                false,
-		UniqueUsers:              123,
-		Activity:                 nil,
-		BatchChangesUsage:        nil,
-		CodeIntelUsage:           nil,
-		CodeMonitoringUsage:      nil,
-		NotebooksUsage:           nil,
-		CodeHostIntegrationUsage: nil,
-		IDEExtensionsUsage:       nil,
-		MigratedExtensionsUsage:  nil,
-		NewCodeIntelUsage:        nil,
-		SearchUsage:              nil,
-		GrowthStatistics:         nil,
-		SavedSearches:            nil,
-		HomepagePanels:           nil,
-		SearchOnboarding:         nil,
-		InitialAdminEmail:        "test@sourcegraph.com",
-		TotalUsers:               234,
-		HasRepos:                 true,
-		EverSearched:             false,
-		EverFindRefs:             true,
-		RetentionStatistics:      nil,
+		ClientSiteID:         "0101-0101",
+		DeployType:           "server",
+		ClientVersionString:  "3.12.6",
+		AuthProviders:        []string{"foo", "bar"},
+		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		BuiltinSignupAllowed: true,
+		HasExtURL:            false,
+		UniqueUsers:          123,
+		InitialAdminEmail:    "test@sourcegraph.com",
+		TotalUsers:           234,
+		HasRepos:             true,
+		EverSearched:         false,
+		EverFindRefs:         true,
+		OwnUsage: json.RawMessage(`{
+			"feature_flag_on": true,
+			"repos_count": {
+				"total": 42,
+				"with_ingested_ownership": 15
+			},
+			"select_file_owners_search": {
+				"dau": 100,
+				"wau": 150,
+				"mau": 300
+			},
+			"file_has_owner_search": {
+				"dau": 100,
+				"wau": 150,
+				"mau": 300
+			},
+			"ownership_panel_opened": {
+				"dau": 100,
+				"wau": 150,
+				"mau": 300
+			}
+		}`),
 	}
 
 	now := time.Now()
@@ -858,6 +1027,7 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 	}
 
 	compareJSON(t, payload, `{
+		"access_request_enabled": "false",
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
 		"remote_site_id": "0101-0101",
@@ -877,17 +1047,40 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
 		"migrated_extensions_usage": null,
+		"own_usage": {
+			"feature_flag_on": true,
+			"repos_count": {
+				"total": 42,
+				"with_ingested_ownership": 15
+			},
+			"select_file_owners_search": {
+				"dau": 100,
+				"wau": 150,
+				"mau": 300
+			},
+			"file_has_owner_search": {
+				"dau": 100,
+				"wau": 150,
+				"mau": 300
+			},
+			"ownership_panel_opened": {
+				"dau": 100,
+				"wau": 150,
+				"mau": 300
+			}
+		},
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
 		"homepage_panels": null,
 		"search_onboarding": null,
 		"repositories": null,
+"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
 		"ext_services": "GITHUB,GITLAB",
-		"code_host_versions": [{"external_service_kind":"GITHUB","version":"1.2.3.4"}],
+		"code_host_versions": null,
 		"builtin_signup_allowed": "true",
 		"deploy_type": "server",
 		"total_user_accounts": "234",
@@ -895,6 +1088,9 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 		"has_repos": "true",
 		"ever_searched": "false",
 		"ever_find_refs": "true",
+		"total_repos": "0",
+		"active_today": "false",
+		"os": "",
 		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
 	}`)
 }

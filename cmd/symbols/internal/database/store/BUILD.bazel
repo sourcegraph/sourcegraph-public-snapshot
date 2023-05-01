@@ -27,6 +27,7 @@ go_library(
 
 go_test(
     name = "store_test",
+    timeout = "short",
     srcs = [
         "search_test.go",
         "symbols_test.go",

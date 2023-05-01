@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,7 +34,7 @@ type crateSyncerJob struct {
 	archiveWindowSize int
 	autoindexingSvc   AutoIndexingService
 	dependenciesSvc   DependenciesService
-	gitClient         GitserverClient
+	gitClient         gitserver.Client
 	extSvcStore       ExternalServiceStore
 	clock             glock.Clock
 	operations        *operations
@@ -43,7 +44,7 @@ func NewCrateSyncer(
 	observationCtx *observation.Context,
 	autoindexingSvc AutoIndexingService,
 	dependenciesSvc DependenciesService,
-	gitClient GitserverClient,
+	gitClient gitserver.Client,
 	extSvcStore ExternalServiceStore,
 ) goroutine.BackgroundRoutine {
 	// By default, sync crates every 12h, but the user can customize this interval
@@ -224,7 +225,7 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 				if err := j.autoindexingSvc.QueueIndexesForPackage(clientCtx, shared.MinimialVersionedPackageRepo{
 					Scheme:  pkg.Scheme,
 					Name:    pkg.Name,
-					Version: version,
+					Version: version.Version,
 				}, true); err != nil {
 					queueErrs = errors.Append(queueErrs, err)
 				}
@@ -314,7 +315,13 @@ func singleRustExternalService(ctx context.Context, store ExternalServiceStore) 
 func parseCrateInformation(contents []byte) ([]shared.MinimalPackageRepoRef, error) {
 	result := make([]shared.MinimalPackageRepoRef, 0, 1)
 
-	for _, line := range bytes.Split(contents, []byte("\n")) {
+	instant := time.Now()
+
+	lr := byteutils.NewLineReader(contents)
+
+	for lr.Scan() {
+		line := lr.Line()
+
 		if len(line) == 0 {
 			continue
 		}
@@ -331,9 +338,12 @@ func parseCrateInformation(contents []byte) ([]shared.MinimalPackageRepoRef, err
 
 		name := reposource.PackageName(info.Name)
 		result = append(result, shared.MinimalPackageRepoRef{
-			Scheme:   shared.RustPackagesScheme,
-			Name:     name,
-			Versions: []string{info.Version},
+			Scheme: shared.RustPackagesScheme,
+			Name:   name,
+			// doing a bit of a dot-com specific assumption here, that all these packages are resolvable
+			// and not covered by a filter.
+			Versions:      []shared.MinimalPackageRepoRefVersion{{Version: info.Version, LastCheckedAt: &instant}},
+			LastCheckedAt: &instant,
 		})
 	}
 

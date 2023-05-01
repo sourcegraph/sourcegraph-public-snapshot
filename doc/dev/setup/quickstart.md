@@ -27,9 +27,13 @@ curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
 
 See the [`sg` documentation](../background-information/sg/index.md) for more information or ask in the `#dev-experience` Slack channel.
 
+## Ensure you have SSH setup for GitHub
+
+Follow the instructions on [Adding a new SSH key to your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) for checking if you have an existing SSH for your current machine and setting one up if not.
+
 ## Run `sg setup`
 
-Open a terminal and run the following command:
+In the directory where you want the `sourcegraph` repository to be checked out, open a terminal and run the following command:
 
 ```sh
 sg setup

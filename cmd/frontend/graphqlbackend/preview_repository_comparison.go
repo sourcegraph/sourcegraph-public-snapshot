@@ -128,7 +128,10 @@ func fileDiffConnectionCompute(patch []byte) func(ctx context.Context, args *Fil
 
 func previewNewFile(db database.DB, r *FileDiffResolver) FileResolver {
 	fileStat := CreateFileInfo(r.FileDiff.NewName, false)
-	return NewVirtualFileResolver(fileStat, fileDiffVirtualFileContent(r))
+	return NewVirtualFileResolver(fileStat, fileDiffVirtualFileContent(r), VirtualFileResolverOptions{
+		// TODO: Add view in webapp to render full preview files.
+		URL: "",
+	})
 }
 
 func fileDiffVirtualFileContent(r *FileDiffResolver) FileContentFunc {

@@ -26,12 +26,17 @@ go_library(
 
 go_test(
     name = "basestore_test",
+    timeout = "short",
     srcs = [
         "mocks_test.go",
         "scan_collections_test.go",
         "store_test.go",
     ],
     embed = [":basestore"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database/dbtest",
         "//internal/database/dbutil",

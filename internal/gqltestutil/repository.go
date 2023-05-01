@@ -278,10 +278,10 @@ query RepositoryPermissionsInfo($name: String!) {
 	return resp.Data.Repository.PermissionsInfo, nil
 }
 
-func (c *Client) AddRepoKVP(repo string, key string, value *string) error {
+func (c *Client) AddRepoMetadata(repo string, key string, value *string) error {
 	const query = `
-mutation AddRepoKVP($repo: ID!, $key: String!, $value: String) {
-	addRepoKeyValuePair(repo: $repo, key: $key, value: $value) {
+mutation AddRepoMetadata($repo: ID!, $key: String!, $value: String) {
+	addRepoMetadata(repo: $repo, key: $key, value: $value) {
 		alwaysNil
 	}
 }

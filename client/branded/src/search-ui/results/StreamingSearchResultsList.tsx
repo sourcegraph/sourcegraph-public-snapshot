@@ -10,12 +10,18 @@ import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/compon
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import {
+    BuildSearchQueryURLParameters,
+    QueryState,
+    SearchContextProps,
+    SearchMode,
+    SubmitSearchParameters,
+} from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
-    SearchMatch,
     getMatchUrl,
     getRevision,
+    SearchMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -26,7 +32,6 @@ import { FilePathSearchResult } from '../components/FilePathSearchResult'
 import { OwnerSearchResult } from '../components/OwnerSearchResult'
 import { RepoSearchResult } from '../components/RepoSearchResult'
 import { SymbolSearchResult } from '../components/SymbolSearchResult'
-import { smartSearchClickedEvent } from '../util/events'
 
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
@@ -42,13 +47,12 @@ export interface StreamingSearchResultsListProps
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
+    enableOwnershipSearch: boolean
     results?: AggregateStreamingSearchResults
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     /** Clicking on a match opens the link in a new tab. */
     openMatchesInNewTab?: boolean
-    /** Available to web app through JS Context */
-    assetsRoot?: string
 
     /**
      * Latest run query. Resets scroll visibility state when changed.
@@ -68,12 +72,30 @@ export interface StreamingSearchResultsListProps
 
     showQueryExamplesOnNoResultsPage?: boolean
 
-    /*
-     * For updating the query from the QueryExamples on NoResultsPage. Only
-     * needed if showQueryExamplesOnNoResultsPage is true.
+    /**
+     * The query state to be used for the query examples and owner search.
+     * If not provided, the query examples and owner search will not
+     * allow modifying the query.
      */
-    setQueryState?: (query: QueryState) => void
+    queryState?: QueryState
+    setQueryState?: (queryState: QueryState) => void
+    buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
+
+    searchMode?: SearchMode
+    setSearchMode?: (mode: SearchMode) => void
+    submitSearch?: (parameters: SubmitSearchParameters) => void
+    searchQueryFromURL?: string
+    caseSensitive?: boolean
+
     selectedSearchContextSpec?: string
+
+    /**
+     * An optional callback invoked whenever a search result is clicked.
+     * It's passed the index of the result in the list and the result type.
+     */
+    logSearchResultClicked?: (index: number, type: string) => void
+
+    enableRepositoryMetadata?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -85,8 +107,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     settingsCascade,
     telemetryService,
     isSourcegraphDotCom,
+    enableOwnershipSearch,
     searchContextsEnabled,
-    assetsRoot,
     platformContext,
     openMatchesInNewTab,
     executedQuery,
@@ -95,47 +117,21 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     prefetchFileEnabled,
     enableKeyboardNavigation,
     showQueryExamplesOnNoResultsPage,
+    queryState,
     setQueryState,
+    buildSearchURLQueryFromQueryState,
+    searchMode,
+    setSearchMode,
+    submitSearch,
+    caseSensitive,
+    searchQueryFromURL,
+    logSearchResultClicked,
+    enableRepositoryMetadata,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
     const location = useLocation()
     const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
-
-    const logSearchResultClicked = useCallback(
-        (index: number, type: string) => {
-            telemetryService.log('SearchResultClicked')
-
-            // This data ends up in Prometheus and is not part of the ping payload.
-            telemetryService.log('search.ranking.result-clicked', { index, type })
-
-            // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
-            if (
-                !(
-                    results?.alert?.kind === 'smart-search-additional-results' ||
-                    results?.alert?.kind === 'smart-search-pure-results'
-                )
-            ) {
-                telemetryService.log('SearchResultClickedAutoNone')
-            }
-
-            if (
-                (results?.alert?.kind === 'smart-search-additional-results' ||
-                    results?.alert?.kind === 'smart-search-pure-results') &&
-                results?.alert?.title &&
-                results.alert.proposedQueries
-            ) {
-                const event = smartSearchClickedEvent(
-                    results.alert.kind,
-                    results.alert.title,
-                    results.alert.proposedQueries.map(entry => entry.description || '')
-                )
-
-                telemetryService.log(event)
-            }
-        },
-        [telemetryService, results]
-    )
 
     const renderResult = useCallback(
         (result: SearchMatch, index: number): JSX.Element => {
@@ -163,7 +159,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                         location={location}
                                         telemetryService={telemetryService}
                                         result={result}
-                                        onSelect={() => logSearchResultClicked(index, 'fileMatch')}
+                                        onSelect={() => logSearchResultClicked?.(index, 'fileMatch')}
                                         defaultExpanded={false}
                                         showAllMatches={false}
                                         allExpanded={allExpanded}
@@ -179,7 +175,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                         index={index}
                                         telemetryService={telemetryService}
                                         result={result}
-                                        onSelect={() => logSearchResultClicked(index, 'symbolMatch')}
+                                        onSelect={() => logSearchResultClicked?.(index, 'symbolMatch')}
                                         fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                         repoDisplayName={displayRepoName(result.repository)}
                                         settingsCascade={settingsCascade}
@@ -191,7 +187,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                     <FilePathSearchResult
                                         index={index}
                                         result={result}
-                                        onSelect={() => logSearchResultClicked(index, 'filePathMatch')}
+                                        onSelect={() => logSearchResultClicked?.(index, 'filePathMatch')}
                                         repoDisplayName={displayRepoName(result.repository)}
                                         containerClassName={resultClassName}
                                         telemetryService={telemetryService}
@@ -205,7 +201,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 index={index}
                                 result={result}
                                 platformContext={platformContext}
-                                onSelect={() => logSearchResultClicked(index, 'commit')}
+                                onSelect={() => logSearchResultClicked?.(index, 'commit')}
                                 openInNewTab={openMatchesInNewTab}
                                 containerClassName={resultClassName}
                                 as="li"
@@ -216,8 +212,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             <RepoSearchResult
                                 index={index}
                                 result={result}
-                                onSelect={() => logSearchResultClicked(index, 'repo')}
+                                onSelect={() => logSearchResultClicked?.(index, 'repo')}
                                 containerClassName={resultClassName}
+                                enableRepositoryMetadata={enableRepositoryMetadata}
                                 as="li"
                             />
                         )
@@ -228,8 +225,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 index={index}
                                 result={result}
                                 as="li"
-                                onSelect={() => logSearchResultClicked(index, 'person')}
+                                onSelect={() => logSearchResultClicked?.(index, 'person')}
                                 containerClassName={resultClassName}
+                                telemetryService={telemetryService}
+                                queryState={queryState}
+                                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             />
                         )
                 }
@@ -248,6 +248,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             )
         },
         [
+            enableRepositoryMetadata,
             prefetchFileEnabled,
             prefetchFile,
             location,
@@ -258,6 +259,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             openMatchesInNewTab,
             resultClassName,
             platformContext,
+            queryState,
+            buildSearchURLQueryFromQueryState,
             logSearchResultClicked,
         ]
     )
@@ -290,17 +293,22 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             </div>
 
             {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results} telemetryService={telemetryService}>
+                <StreamingSearchResultFooter results={results}>
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                enableOwnershipSearch={enableOwnershipSearch}
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
-                                assetsRoot={assetsRoot}
                                 showQueryExamples={showQueryExamplesOnNoResultsPage}
                                 setQueryState={setQueryState}
+                                searchMode={searchMode}
+                                setSearchMode={setSearchMode}
+                                submitSearch={submitSearch}
+                                caseSensitive={caseSensitive}
+                                searchQueryFromURL={searchQueryFromURL}
                             />
                         )}
                     </>

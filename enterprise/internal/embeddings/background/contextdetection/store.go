@@ -64,8 +64,9 @@ func NewContextDetectionEmbeddingJobWorkerStore(observationCtx *observation.Cont
 		ColumnExpressions: repoEmbeddingJobsColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanContextDetectionEmbeddingJob),
 		OrderByExpression: sqlf.Sprintf("context_detection_embedding_jobs.queued_at, context_detection_embedding_jobs.id"),
-		StalledMaxAge:     time.Second * 5,
+		StalledMaxAge:     time.Second * 60,
 		MaxNumResets:      5,
+		MaxNumRetries:     1,
 	})
 }
 

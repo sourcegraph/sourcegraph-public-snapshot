@@ -38,7 +38,6 @@ public class SettingsComponent {
     private JBTextField customRequestHeadersTextField;
     private JBTextField defaultBranchNameTextField;
     private JBTextField remoteUrlReplacementsTextField;
-    private JBCheckBox globbingCheckBox;
     private JBCheckBox isUrlNotificationDismissedCheckBox;
 
     public JComponent getPreferredFocusedComponent() {
@@ -221,14 +220,6 @@ public class SettingsComponent {
         remoteUrlReplacementsTextField.setText(value);
     }
 
-    public boolean isGlobbingEnabled() {
-        return globbingCheckBox.isSelected();
-    }
-
-    public void setGlobbingEnabled(boolean value) {
-        globbingCheckBox.setSelected(value);
-    }
-
     public boolean isUrlNotificationDismissed() {
         return isUrlNotificationDismissedCheckBox.isSelected();
     }
@@ -304,7 +295,6 @@ public class SettingsComponent {
                 ? new ValidationInfo("Must be a comma-separated list of pairs", remoteUrlReplacementsTextField)
                 : null);
 
-        globbingCheckBox = new JBCheckBox("Enable globbing");
         isUrlNotificationDismissedCheckBox = new JBCheckBox("Do not show the \"No Sourcegraph URL set\" notification for this project");
 
         JPanel navigationSettingsPanel = FormBuilder.createFormBuilder()
@@ -314,7 +304,6 @@ public class SettingsComponent {
             .addTooltip("You can replace specified strings in your repo's remote URL.")
             .addTooltip("Use any number of pairs: \"search1, replacement1, search2, replacement2, ...\".")
             .addTooltip("Pairs are replaced from left to right. Whitespace around commas doesn't matter.")
-            .addComponent(globbingCheckBox)
             .addComponent(isUrlNotificationDismissedCheckBox, 10)
             .getPanel();
         navigationSettingsPanel.setBorder(IdeBorderFactory.createTitledBorder("Navigation Settings", true, JBUI.insetsTop(8)));

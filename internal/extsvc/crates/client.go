@@ -11,17 +11,21 @@ import (
 )
 
 type Client struct {
-	cli httpcli.Doer
+	uncachedClient httpcli.Doer
 
 	// Self-imposed rate-limiter.
 	limiter *ratelimit.InstrumentedLimiter
 }
 
-func NewClient(urn string, cli httpcli.Doer) *Client {
-	return &Client{
-		cli:     cli,
-		limiter: ratelimit.DefaultRegistry.Get(urn),
+func NewClient(urn string, httpfactory *httpcli.Factory) (*Client, error) {
+	uncached, err := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
+	if err != nil {
+		return nil, err
 	}
+	return &Client{
+		uncachedClient: uncached,
+		limiter:        ratelimit.DefaultRegistry.Get(urn),
+	}, nil
 }
 
 func (c *Client) Get(ctx context.Context, url string) (io.ReadCloser, error) {
@@ -35,7 +39,7 @@ func (c *Client) Get(ctx context.Context, url string) (io.ReadCloser, error) {
 	}
 	req.Header.Add("User-Agent", "sourcegraph-crates-syncer (sourcegraph.com)")
 
-	b, err := c.do(req)
+	b, err := c.do(c.uncachedClient, req)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +60,8 @@ func (e *Error) NotFound() bool {
 	return e.code == http.StatusNotFound
 }
 
-func (c *Client) do(req *http.Request) (io.ReadCloser, error) {
-	resp, err := c.cli.Do(req)
+func (c *Client) do(doer httpcli.Doer, req *http.Request) (io.ReadCloser, error) {
+	resp, err := doer.Do(req)
 	if err != nil {
 		return nil, err
 	}

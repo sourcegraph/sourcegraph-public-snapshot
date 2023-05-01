@@ -64,7 +64,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 variables
             ).pipe(
                 map(({ data, errors }) => {
-                    if (!data || !data.dotcom || !data.dotcom.productSubscriptions || (errors && errors.length > 0)) {
+                    if (!data?.dotcom?.productSubscriptions || (errors && errors.length > 0)) {
                         throw createAggregateError(errors)
                     }
                     return data.dotcom.productSubscriptions

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -64,7 +65,10 @@ func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repos
 	panic("should never be called")
 }
 
+var errPermissionsUserMappingConflict = errors.New("The explicit permissions API (site configuration `permissions.userMapping`) cannot be enabled when bitbucketServer authorization provider is in use. Blocking access to all repositories until the conflict is resolved.")
+
 func TestAuthzProvidersFromConfig(t *testing.T) {
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
 		return gitlabAuthzProviderParams{OAuthOp: op}
 	}
@@ -399,7 +403,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 
 		// For Sourcegraph authz provider
 		{
-			description: "Conflicted configuration between Sourcegraph and GitLab authz provider",
+			description: "Explicit permissions can be enabled alongside synced permissions",
 			cfg: conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					PermissionsUserMapping: &schema.PermissionsUserMapping{
@@ -426,39 +430,16 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 					Token: "asdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when \"gitlab\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
-		},
-		{
-			description: "Conflicted configuration between Sourcegraph and Bitbucket Server authz provider",
-			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					PermissionsUserMapping: &schema.PermissionsUserMapping{
-						Enabled: true,
-						BindID:  "email",
+			expAuthzAllowAccessByDefault: true,
+			expAuthzProviders: providersEqual(
+				gitlabAuthzProviderParams{
+					OAuthOp: gitlab.OAuthProviderOp{
+						URN:     "extsvc:gitlab:0",
+						BaseURL: mustURLParse(t, "https://gitlab.mine"),
+						Token:   "asdf",
 					},
 				},
-			},
-			bitbucketServerConnections: []*schema.BitbucketServerConnection{
-				{
-					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
-							Username: &schema.BitbucketServerUsernameIdentity{
-								Type: "username",
-							},
-						},
-						Oauth: schema.BitbucketServerOAuth{
-							ConsumerKey: "sourcegraph",
-							SigningKey:  bogusKey,
-						},
-					},
-					Url:      "https://bitbucketserver.mycorp.org",
-					Username: "admin",
-					Token:    "secret-token",
-				},
-			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when \"bitbucketServer\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
+			),
 		},
 	}
 
@@ -489,14 +470,13 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbs)),
 							})
 						}
-					case extsvc.KindGitHub, extsvc.KindPerforce, extsvc.KindBitbucketCloud, extsvc.KindGerrit:
+					case extsvc.KindGitHub, extsvc.KindPerforce, extsvc.KindBitbucketCloud, extsvc.KindGerrit, extsvc.KindAzureDevOps:
 					default:
 						return nil, errors.Errorf("unexpected kind: %s", kind)
 					}
 				}
 				return svcs, nil
 			})
-			licensing.MockCheckFeatureError("")
 			allowAccessByDefault, authzProviders, seriousProblems, _, _ := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
@@ -514,9 +494,11 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 }
 
 func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
+	t.Cleanup(licensing.MockCheckFeatureError("failed"))
 	tests := []struct {
 		description                string
 		cfg                        conf.Unified
+		azureDevOpsConnections     []*schema.AzureDevOpsConnection
 		gitlabConnections          []*schema.GitLabConnection
 		bitbucketServerConnections []*schema.BitbucketServerConnection
 		githubConnections          []*schema.GitHubConnection
@@ -527,6 +509,29 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 		expInvalidConnections []string
 		expSeriousProblems    []string
 	}{
+		{
+			description: "Azure DevOps connection with enforce permissions enabled but missing license for ACLs",
+			cfg: conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					AuthProviders: []schema.AuthProviders{{
+						AzureDevOps: &schema.AzureDevOpsAuthProvider{
+							ClientID:     "clientID",
+							ClientSecret: "clientSecret",
+							DisplayName:  "Azure DevOps",
+							Type:         extsvc.TypeAzureDevOps,
+						},
+					}},
+				},
+			},
+			azureDevOpsConnections: []*schema.AzureDevOpsConnection{
+				{
+					EnforcePermissions: true,
+					Url:                "https://dev.azure.com",
+				},
+			},
+			expSeriousProblems:    []string{"failed"},
+			expInvalidConnections: []string{"azuredevops"},
+		},
 		{
 			description: "GitHub connection with authz enabled but missing license for ACLs",
 			cfg: conf.Unified{
@@ -663,6 +668,13 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 				var svcs []*types.ExternalService
 				for _, kind := range opt.Kinds {
 					switch kind {
+					case extsvc.KindAzureDevOps:
+						for _, ado := range test.azureDevOpsConnections {
+							svcs = append(svcs, &types.ExternalService{
+								Kind:   kind,
+								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(ado)),
+							})
+						}
 					case extsvc.KindGitLab:
 						for _, gl := range test.gitlabConnections {
 							svcs = append(svcs, &types.ExternalService{
@@ -710,7 +722,6 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 				return svcs, nil
 			})
 
-			licensing.MockCheckFeatureError("failed")
 			_, _, seriousProblems, _, invalidConnections := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
@@ -736,4 +747,92 @@ func mustURLParse(t *testing.T, u string) *url.URL {
 		t.Fatal(err)
 	}
 	return parsed
+}
+
+type mockProvider struct {
+	codeHost *extsvc.CodeHost
+	extAcct  *extsvc.Account
+}
+
+func (p *mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
+	return p.extAcct, nil
+}
+
+func (p *mockProvider) ServiceType() string { return p.codeHost.ServiceType }
+func (p *mockProvider) ServiceID() string   { return p.codeHost.ServiceID }
+func (p *mockProvider) URN() string         { return extsvc.URN(p.codeHost.ServiceType, 0) }
+
+func (p *mockProvider) ValidateConnection(context.Context) error { return nil }
+
+func (p *mockProvider) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	return nil, nil
+}
+
+func (p *mockProvider) FetchUserPermsByToken(context.Context, string, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	return nil, nil
+}
+
+func (p *mockProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+	return nil, nil
+}
+
+func mockExplicitPermissions(enabled bool) func() {
+	orig := globals.PermissionsUserMapping()
+	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: enabled})
+	return func() {
+		globals.SetPermissionsUserMapping(orig)
+	}
+}
+
+func TestPermissionSyncingDisabled(t *testing.T) {
+	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
+	cleanupLicense := licensing.MockCheckFeatureError("")
+
+	t.Cleanup(func() {
+		authz.SetProviders(true, nil)
+		cleanupLicense()
+	})
+
+	t.Run("no authz providers", func(t *testing.T) {
+		authz.SetProviders(true, nil)
+		t.Cleanup(func() {
+			authz.SetProviders(true, []authz.Provider{&mockProvider{}})
+		})
+
+		assert.True(t, PermissionSyncingDisabled())
+	})
+
+	t.Run("permissions user mapping enabled", func(t *testing.T) {
+		cleanup := mockExplicitPermissions(true)
+		t.Cleanup(func() {
+			cleanup()
+			conf.Mock(nil)
+		})
+
+		assert.False(t, PermissionSyncingDisabled())
+	})
+
+	t.Run("license does not have acls feature", func(t *testing.T) {
+		licensing.MockCheckFeatureError("failed")
+		t.Cleanup(func() {
+			licensing.MockCheckFeatureError("")
+		})
+		assert.True(t, PermissionSyncingDisabled())
+	})
+
+	t.Run("Auto code host syncs disabled", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: true}})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		assert.True(t, PermissionSyncingDisabled())
+	})
+
+	t.Run("Auto code host syncs enabled", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: false}})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		assert.False(t, PermissionSyncingDisabled())
+	})
 }

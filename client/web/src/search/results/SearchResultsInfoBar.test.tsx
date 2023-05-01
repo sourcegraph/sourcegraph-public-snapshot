@@ -15,10 +15,12 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
         id: 'userID',
         displayName: 'Chuck Cheese',
         emails: [{ email: 'chuck@chuckeecheese.com', isPrimary: true, verified: true }],
+        permissions: { nodes: [] },
     },
     allExpanded: true,
     onExpandAllResultsToggle: noop,
     onSaveQueryClick: noop,
+    onExportCsvClick: noop,
     stats: <div />,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     patternType: SearchPatternType.standard,
@@ -26,6 +28,14 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     setSidebarCollapsed: noop,
     sidebarCollapsed: false,
     isSourcegraphDotCom: true,
+    isRankingEnabled: true,
+    setRankingEnabled: noop,
+    options: {
+        version: 'V3',
+        patternType: SearchPatternType.standard,
+        caseSensitive: false,
+        trace: undefined,
+    },
 }
 
 const renderSearchResultsInfoBar = (
@@ -40,7 +50,12 @@ const renderSearchResultsInfoBar = (
 describe('SearchResultsInfoBar', () => {
     test('code monitoring feature flag disabled', () => {
         expect(
-            renderSearchResultsInfoBar({ query: 'foo type:diff', enableCodeMonitoring: false }).asFragment()
+            renderSearchResultsInfoBar({
+                query: 'foo type:diff',
+                enableCodeMonitoring: false,
+                isRankingEnabled: true,
+                setRankingEnabled: noop,
+            }).asFragment()
         ).toMatchSnapshot()
     })
 

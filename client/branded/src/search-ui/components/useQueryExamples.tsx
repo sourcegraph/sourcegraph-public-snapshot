@@ -4,6 +4,7 @@ import { differenceInHours, formatISO, parseISO } from 'date-fns'
 
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { ProductStatusType } from '@sourcegraph/wildcard'
 
 import { basicSyntaxColumns } from './QueryExamples.constants'
 
@@ -15,6 +16,7 @@ export interface QueryExamplesContent {
 
 export interface QueryExamplesSection {
     title: string
+    productStatus?: ProductStatusType
     queryExamples: {
         id: string
         query: string
@@ -68,7 +70,8 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
 
 export function useQueryExamples(
     selectedSearchContextSpec: string,
-    isSourcegraphDotCom: boolean = false
+    isSourcegraphDotCom: boolean = false,
+    enableOwnershipSearch: boolean = false
 ): QueryExamplesSection[][] {
     const [queryExamplesContent, setQueryExamplesContent] = useState<QueryExamplesContent>()
     const [cachedQueryExamplesContent, setCachedQueryExamplesContent, cachedQueryExamplesContentLoadStatus] =
@@ -194,11 +197,26 @@ export function useQueryExamples(
                         { id: 'not-operator', query: 'lang:go NOT file:main.go' },
                     ],
                 },
-                {
-                    title: 'Get advanced',
-                    queryExamples: [{ id: 'repo-has-description', query: 'repo:has.description(hello world)' }],
-                },
+                ...(enableOwnershipSearch
+                    ? [
+                          {
+                              title: 'Explore code ownership',
+                              productStatus: 'experimental' as const,
+                              queryExamples: [
+                                  { id: 'type-has-owner', query: 'file:^some_path file:has.owner(johndoe)' },
+                                  { id: 'type-select-file-owners', query: 'file:^some_path select:file.owners' },
+                              ],
+                          },
+                      ]
+                    : [
+                          {
+                              title: 'Get advanced',
+                              queryExamples: [
+                                  { id: 'repo-has-description', query: 'repo:has.description(hello world)' },
+                              ],
+                          },
+                      ]),
             ],
         ]
-    }, [queryExamplesContent, isSourcegraphDotCom])
+    }, [queryExamplesContent, isSourcegraphDotCom, enableOwnershipSearch])
 }

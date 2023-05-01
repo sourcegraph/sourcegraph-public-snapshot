@@ -35,6 +35,7 @@ go_library(
 
 go_test(
     name = "state_test",
+    timeout = "short",
     srcs = [
         "counts_test.go",
         "main_test.go",
@@ -42,8 +43,10 @@ go_test(
     ],
     embed = [":state"],
     deps = [
+        "//enterprise/internal/batches/sources/azuredevops",
         "//enterprise/internal/batches/types",
         "//internal/extsvc",
+        "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",

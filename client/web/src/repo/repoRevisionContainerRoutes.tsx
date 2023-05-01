@@ -29,18 +29,25 @@ const routeToObjectType = {
 
 export const commitsPath = repoSplat + '/-/commits/*'
 
-export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
-    ...Object.entries(routeToObjectType).map<RepoRevisionContainerRoute>(([routePath, objectType]) => ({
-        path: routePath,
-        render: props => (
-            <TraceSpanProvider name="RepositoryFileTreePage" attributes={{ objectType }}>
-                <RepositoryFileTreePage {...props} objectType={objectType} />
-            </TraceSpanProvider>
-        ),
-    })),
-    {
-        path: commitsPath,
-        render: ({ revision, repo, ...context }) =>
-            repo ? <RepositoryCommitsPage {...context} repo={repo} revision={revision} /> : <LoadingSpinner />,
-    },
-]
+export function createRepoRevisionContainerRoutes(
+    PageComponent: typeof RepositoryFileTreePage
+): RepoRevisionContainerRoute[] {
+    return [
+        ...Object.entries(routeToObjectType).map<RepoRevisionContainerRoute>(([routePath, objectType]) => ({
+            path: routePath,
+            render: props => (
+                <TraceSpanProvider name="RepositoryFileTreePage" attributes={{ objectType }}>
+                    <PageComponent {...props} objectType={objectType} />
+                </TraceSpanProvider>
+            ),
+        })),
+        {
+            path: commitsPath,
+            render: ({ revision, repo, ...context }) =>
+                repo ? <RepositoryCommitsPage {...context} repo={repo} revision={revision} /> : <LoadingSpinner />,
+        },
+    ]
+}
+
+export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] =
+    createRepoRevisionContainerRoutes(RepositoryFileTreePage)

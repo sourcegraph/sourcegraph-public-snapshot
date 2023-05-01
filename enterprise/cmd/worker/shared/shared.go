@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/own"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -48,7 +49,6 @@ var additionalJobs = map[string]job.Job{
 	"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 	"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
 	"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
-	"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
 	"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
 	"codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
 	"codeintel-metrics-reporter":                  codeintel.NewMetricsReporterJob(),
@@ -59,6 +59,7 @@ var additionalJobs = map[string]job.Job{
 	"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
 	"codeintel-crates-syncer":                     codeintel.NewCratesSyncerJob(),
 	"codeintel-sentinel-cve-scanner":              codeintel.NewSentinelCVEScannerJob(),
+	"codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
 
 	"auth-sourcegraph-operator-cleaner":  auth.NewSourcegraphOperatorCleaner(),
 	"auth-permission-sync-job-cleaner":   auth.NewPermissionSyncJobCleaner(),
@@ -68,6 +69,8 @@ var additionalJobs = map[string]job.Job{
 	"repo-embedding-job":                  repoembeddings.NewRepoEmbeddingJob(),
 	"context-detection-embedding-janitor": contextdetectionembeddings.NewContextDetectionEmbeddingJanitorJob(),
 	"context-detection-embedding-job":     contextdetectionembeddings.NewContextDetectionEmbeddingJob(),
+
+	"own-repo-indexing-queue": own.NewOwnRepoIndexingQueue(),
 }
 
 // SetAuthzProviders waits for the database to be initialized, then periodically refreshes the

@@ -22,11 +22,16 @@ go_library(
 
 go_test(
     name = "batches_test",
+    timeout = "short",
     srcs = [
         "extsvc_webhook_migrator_test.go",
         "role_assignment_migrator_test.go",
     ],
     embed = [":batches"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/basestore",

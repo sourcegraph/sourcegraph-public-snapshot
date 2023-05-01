@@ -213,6 +213,11 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 					p.Go(func(ctx context.Context) error {
 						repo, repoErr := h.repoStore.Get(ctx, repoId)
 						if repoErr != nil {
+							// If the repo is not found it was deleted and will return no results
+							// no need to error here which will add an alert to the insight
+							if errors.Is(repoErr, &database.RepoNotFoundErr{ID: repoId}) {
+								return nil
+							}
 							mu.Lock()
 							repoErrors[int32(repoId)] = errors.Wrap(repoErr, "InProgressHandler.repoStore.Get")
 							mu.Unlock()

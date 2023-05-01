@@ -389,10 +389,11 @@ func TestService(t *testing.T) {
 			AttachedTo:    []int64{batchChange.ID},
 
 			// The important fields:
-			ReconcilerState: btypes.ReconcilerStateQueued,
-			NumResets:       0,
-			NumFailures:     0,
-			FailureMessage:  nil,
+			ReconcilerState:        btypes.ReconcilerStateQueued,
+			NumResets:              0,
+			NumFailures:            0,
+			FailureMessage:         nil,
+			PreviousFailureMessage: strPtr(bt.FailedChangesetFailureMessage),
 		})
 
 		// rs[0] is filtered out
@@ -3181,3 +3182,5 @@ func assertNoAuthError(t *testing.T, err error) {
 		t.Fatalf("got auth error")
 	}
 }
+
+func strPtr(s string) *string { return &s }

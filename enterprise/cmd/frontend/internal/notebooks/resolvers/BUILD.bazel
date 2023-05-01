@@ -30,6 +30,10 @@ go_test(
         "stars_resolvers_test.go",
     ],
     embed = [":resolvers"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//enterprise/cmd/frontend/internal/batches/resolvers/apitest",

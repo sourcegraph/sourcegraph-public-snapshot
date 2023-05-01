@@ -15,8 +15,13 @@ go_library(
 
 go_test(
     name = "locker_test",
+    timeout = "short",
     srcs = ["locker_test.go"],
     embed = [":locker"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database/basestore",
         "//internal/database/dbtest",

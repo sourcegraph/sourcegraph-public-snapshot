@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -68,7 +71,7 @@ func (s *userUsageStatisticsResolver) LastActiveCodeHostIntegrationTime() *strin
 	return nil
 }
 
-// No longer used, only here for backwards compatibility with IDE and browser extensions.
+// LogUserEvent is no longer used, only here for backwards compatibility with IDE and browser extensions.
 // Functionality removed in https://github.com/sourcegraph/sourcegraph/pull/38826.
 func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	Event        string
@@ -125,6 +128,12 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		return payload, nil
 	}
 
+	userID := actor.FromContext(ctx).UID
+	userPrimaryEmail := ""
+	if envvar.SourcegraphDotComMode() {
+		userPrimaryEmail, _, _ = r.db.UserEmails().GetPrimaryEmail(ctx, userID)
+	}
+
 	events := make([]usagestats.Event, 0, len(*args.Events))
 	for _, args := range *args.Events {
 		if strings.HasPrefix(args.Event, "search.latencies.frontend.") {
@@ -152,6 +161,13 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			continue
 		}
 
+		// On Sourcegraph.com only, log a HubSpot event indicating when the user installed a Cody client.
+		if envvar.SourcegraphDotComMode() && args.Event == "CodyInstalled" && userID != 0 && userPrimaryEmail != "" {
+			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubspot.ContactProperties{
+				DatabaseID: userID,
+			})
+		}
+
 		argumentPayload, err := decode(args.Argument)
 		if err != nil {
 			return nil, err
@@ -170,7 +186,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		events = append(events, usagestats.Event{
 			EventName:        args.Event,
 			URL:              args.URL,
-			UserID:           actor.FromContext(ctx).UID,
+			UserID:           userID,
 			UserCookieID:     args.UserCookieID,
 			FirstSourceURL:   args.FirstSourceURL,
 			LastSourceURL:    args.LastSourceURL,
@@ -234,16 +250,30 @@ var searchRankingResultClicked = promauto.NewHistogramVec(prometheus.HistogramOp
 	Name:    "src_search_ranking_result_clicked",
 	Help:    "the index of the search result which was clicked on by the user",
 	Buckets: prometheus.LinearBuckets(1, 1, 10),
-}, []string{"type"})
+}, []string{"type", "resultsLength", "ranked"})
 
 func exportPrometheusSearchRanking(payload json.RawMessage) error {
 	var v struct {
-		Index float64 `json:"index"`
-		Type  string  `json:"type"`
+		Index         float64 `json:"index"`
+		Type          string  `json:"type"`
+		ResultsLength int     `json:"resultsLength"`
+		Ranked        bool    `json:"ranked"`
 	}
+
 	if err := json.Unmarshal(payload, &v); err != nil {
 		return err
 	}
-	searchRankingResultClicked.WithLabelValues(v.Type).Observe(v.Index)
+
+	var resultsLength string
+	switch {
+	case v.ResultsLength <= 3:
+		resultsLength = "<=3"
+	default:
+		resultsLength = ">3"
+	}
+
+	ranked := strconv.FormatBool(v.Ranked)
+
+	searchRankingResultClicked.WithLabelValues(v.Type, resultsLength, ranked).Observe(v.Index)
 	return nil
 }

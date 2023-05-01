@@ -16,85 +16,77 @@ The default run type.
 
 - Pipeline for `Go` changes:
   - **Metadata**: Pipeline metadata
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - **Go checks**: Test (all), Test (all (gRPC)), Test (enterprise/internal/insights), Test (enterprise/internal/insights (gRPC)), Test (internal/repos), Test (internal/repos (gRPC)), Test (enterprise/internal/batches), Test (enterprise/internal/batches (gRPC)), Test (cmd/frontend), Test (cmd/frontend (gRPC)), Test (enterprise/cmd/frontend/internal/batches/resolvers), Test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Test (dev/sg), Test (dev/sg (gRPC)), Test (internal/database), Test (enterprise/internal/database), Build
-  - Upload build trace
 
 - Pipeline for `Client` changes:
   - **Metadata**: Pipeline metadata
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests for chrome extension, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests chunk #10, Puppeteer tests chunk #11, Puppeteer tests chunk #12, Puppeteer tests chunk #13, Puppeteer tests chunk #14, Puppeteer tests chunk #15, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Test (client/browser), Test (client/jetbrains), Build TS, ESLint (all), Stylelint (all)
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Build TS, Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
   - **Pipeline setup**: Trigger async
-  - Client PR preview
-  - Upload build trace
 
 - Pipeline for `GraphQL` changes:
   - **Metadata**: Pipeline metadata
-  - **Linters and static analysis**: GraphQL lint
-  - **Client checks**: Puppeteer tests prep, Puppeteer tests for chrome extension, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests chunk #10, Puppeteer tests chunk #11, Puppeteer tests chunk #12, Puppeteer tests chunk #13, Puppeteer tests chunk #14, Puppeteer tests chunk #15, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Test (client/browser), Test (client/jetbrains), Build TS, ESLint (all), Stylelint (all)
-  - **Go checks**: Test (all), Test (all (gRPC)), Test (enterprise/internal/insights), Test (enterprise/internal/insights (gRPC)), Test (internal/repos), Test (internal/repos (gRPC)), Test (enterprise/internal/batches), Test (enterprise/internal/batches (gRPC)), Test (cmd/frontend), Test (cmd/frontend (gRPC)), Test (enterprise/cmd/frontend/internal/batches/resolvers), Test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Test (dev/sg), Test (dev/sg (gRPC)), Test (internal/database), Test (enterprise/internal/database), Build
-  - Upload build trace
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Build TS, Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 
 - Pipeline for `DatabaseSchema` changes:
   - **Metadata**: Pipeline metadata
-  - **DB backcompat tests**: Backcompat test (all), Backcompat test (all (gRPC)), Backcompat test (enterprise/internal/insights), Backcompat test (enterprise/internal/insights (gRPC)), Backcompat test (internal/repos), Backcompat test (internal/repos (gRPC)), Backcompat test (enterprise/internal/batches), Backcompat test (enterprise/internal/batches (gRPC)), Backcompat test (cmd/frontend), Backcompat test (cmd/frontend (gRPC)), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Backcompat test (dev/sg), Backcompat test (dev/sg (gRPC)), Backcompat test (internal/database), Backcompat test (enterprise/internal/database)
-  - Upload build trace
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 
 - Pipeline for `Docs` changes:
   - **Metadata**: Pipeline metadata
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - Upload build trace
 
 - Pipeline for `Dockerfiles` changes:
   - **Metadata**: Pipeline metadata
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - Upload build trace
 
 - Pipeline for `ExecutorVMImage` changes:
   - **Metadata**: Pipeline metadata
-  - Upload build trace
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 
 - Pipeline for `ExecutorDockerRegistryMirror` changes:
   - **Metadata**: Pipeline metadata
-  - Upload build trace
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 
 - Pipeline for `CIScripts` changes:
   - **Metadata**: Pipeline metadata
-  - **CI script tests**: test-trace-command.sh
-  - Upload build trace
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 
 - Pipeline for `Terraform` changes:
   - **Metadata**: Pipeline metadata
-  - Upload build trace
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 
 - Pipeline for `SVG` changes:
   - **Metadata**: Pipeline metadata
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - Upload build trace
 
 - Pipeline for `Shell` changes:
   - **Metadata**: Pipeline metadata
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - Upload build trace
 
 - Pipeline for `DockerImages` changes:
   - **Metadata**: Pipeline metadata
-  - **Test builds**: Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build blobstore, Build blobstore2, Build node-exporter, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build executor, Build executor-vm, Build batcheshelper, Build opentelemetry-collector, Build embeddings, Build server, Build sg
-  - **Scan test builds**: Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan jaeger-agent, Scan jaeger-all-in-one, Scan blobstore2, Scan node-exporter, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan symbols, Scan syntax-highlighter, Scan worker, Scan migrator, Scan executor, Scan executor-vm, Scan batcheshelper, Scan opentelemetry-collector, Scan embeddings, Scan sg
-  - Upload build trace
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 
 - Pipeline for `WolfiPackages` changes:
   - **Metadata**: Pipeline metadata
-  - Upload build trace
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 
 - Pipeline for `WolfiBaseImages` changes:
   - **Metadata**: Pipeline metadata
-  - Upload build trace
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 
 - Pipeline for `Protobuf` changes:
   - **Metadata**: Pipeline metadata
+  - **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - Upload build trace
 
 ### Bazel Exp Branch
 
@@ -108,9 +100,7 @@ sg ci build bzl
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- Build ...
-- Tests
-- Upload build trace
+- **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
 
 ### Wolfi Exp Branch
 
@@ -124,7 +114,7 @@ sg ci build wolfi
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- Upload build trace
+- **Wolfi image builds**: Build Wolfi-based batcheshelper, Build Wolfi-based embeddings, Build Wolfi-based executor-kubernetes, Build Wolfi-based frontend, Build Wolfi-based github-proxy, Build Wolfi-based gitserver, Build Wolfi-based llm-proxy, Build Wolfi-based loadtest, Build Wolfi-based migrator, Build Wolfi-based precise-code-intel-worker, Build Wolfi-based repo-updater, Build Wolfi-based searcher, Build Wolfi-based server, Build Wolfi-based symbols, Build Wolfi-based worker, Build Wolfi-based blobstore, Build Wolfi-based cadvisor, Build Wolfi-based codeinsights-db, Build Wolfi-based codeintel-db, Build Wolfi-based indexed-searcher, Build Wolfi-based jaeger-agent, Build Wolfi-based jaeger-all-in-one, Build Wolfi-based node-exporter, Build Wolfi-based opentelemetry-collector, Build Wolfi-based postgres-12-alpine, Build Wolfi-based postgres_exporter, Build Wolfi-based prometheus, Build Wolfi-based prometheus-gcp, Build Wolfi-based redis-cache, Build Wolfi-based redis-store, Build Wolfi-based redis_exporter, Build Wolfi-based search-indexer, Build Wolfi-based sg, Build Wolfi-based syntax-highlighter
 
 ### Release branch nightly healthcheck build
 
@@ -133,9 +123,8 @@ The run type for environment including `{"RELEASE_NIGHTLY":"true"}`.
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
+- Trigger 5.0 release branch healthcheck build
 - Trigger 4.5 release branch healthcheck build
-- Trigger 4.4 release branch healthcheck build
-- Upload build trace
 
 ### Browser extension nightly release build
 
@@ -144,12 +133,12 @@ The run type for environment including `{"BEXT_NIGHTLY":"true"}`.
 Base pipeline (more steps might be included based on branch changes):
 
 - ESLint (all)
+- ESLint (web)
 - Stylelint (all)
 - Test (client/browser)
 - Puppeteer tests for chrome extension
 - Test (all)
 - E2E for chrome extension
-- Upload build trace
 
 ### VS Code extension nightly release build
 
@@ -158,17 +147,25 @@ The run type for environment including `{"VSCE_NIGHTLY":"true"}`.
 Base pipeline (more steps might be included based on branch changes):
 
 - ESLint (all)
+- ESLint (web)
 - Stylelint (all)
-- Upload build trace
+- Tests for VS Code extension
 
-### App snapshot release
+### App release build
 
-The run type for branches matching `app/release-snapshot` (exact match).
+The run type for branches matching `app/release` (exact match).
 
 Base pipeline (more steps might be included based on branch changes):
 
 - App release
-- Upload build trace
+
+### App insiders build
+
+The run type for branches matching `app/insiders` (exact match).
+
+Base pipeline (more steps might be included based on branch changes):
+
+- App release
 
 ### Tagged release
 
@@ -178,17 +175,14 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build blobstore, Build blobstore2, Build node-exporter, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build executor, Build executor-vm, Build batcheshelper, Build opentelemetry-collector, Build embeddings, Build server, Build sg, Build executor image, Build executor binary, Build docker registry mirror image
-- **Image security scans**: Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan jaeger-agent, Scan jaeger-all-in-one, Scan blobstore2, Scan node-exporter, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan symbols, Scan syntax-highlighter, Scan worker, Scan migrator, Scan executor, Scan executor-vm, Scan batcheshelper, Scan opentelemetry-collector, Scan embeddings, Scan sg
-- **Linters and static analysis**: GraphQL lint, Run sg lint
-- **Client checks**: Puppeteer tests prep, Puppeteer tests for chrome extension, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests chunk #10, Puppeteer tests chunk #11, Puppeteer tests chunk #12, Puppeteer tests chunk #13, Puppeteer tests chunk #14, Puppeteer tests chunk #15, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Test (client/browser), Test (client/jetbrains), Build TS, ESLint (all), Stylelint (all)
-- **Go checks**: Test (all), Test (all (gRPC)), Test (enterprise/internal/insights), Test (enterprise/internal/insights (gRPC)), Test (internal/repos), Test (internal/repos (gRPC)), Test (enterprise/internal/batches), Test (enterprise/internal/batches (gRPC)), Test (cmd/frontend), Test (cmd/frontend (gRPC)), Test (enterprise/cmd/frontend/internal/batches/resolvers), Test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Test (dev/sg), Test (dev/sg (gRPC)), Test (internal/database), Test (enterprise/internal/database), Build
-- **DB backcompat tests**: Backcompat test (all), Backcompat test (all (gRPC)), Backcompat test (enterprise/internal/insights), Backcompat test (enterprise/internal/insights (gRPC)), Backcompat test (internal/repos), Backcompat test (internal/repos (gRPC)), Backcompat test (enterprise/internal/batches), Backcompat test (enterprise/internal/batches (gRPC)), Backcompat test (cmd/frontend), Backcompat test (cmd/frontend (gRPC)), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Backcompat test (dev/sg), Backcompat test (dev/sg (gRPC)), Backcompat test (internal/database), Backcompat test (enterprise/internal/database)
-- **CI script tests**: test-trace-command.sh
+- **Image builds**: Build syntax-highlighter, Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary, Build docker registry mirror image
+- **Image security scans**: Scan symbols, Scan executor, Scan alpine-3.14, Scan postgres-12-alpine, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
+- **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
+- **Linters and static analysis**: Run sg lint
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Build TS, Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
-- **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, blobstore, blobstore2, node-exporter, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, executor-vm, batcheshelper, opentelemetry-collector, embeddings, server, sg, Publish executor image, Publish executor binary, Publish docker registry mirror image
-- Upload build trace
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
+- **Publish images**: symbols, server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg, Publish executor image, Publish executor binary, Publish docker registry mirror image
 
 ### Release branch
 
@@ -198,17 +192,14 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build blobstore, Build blobstore2, Build node-exporter, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build executor, Build executor-vm, Build batcheshelper, Build opentelemetry-collector, Build embeddings, Build server, Build sg, Build executor image, Build executor binary, Build docker registry mirror image
-- **Image security scans**: Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan jaeger-agent, Scan jaeger-all-in-one, Scan blobstore2, Scan node-exporter, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan symbols, Scan syntax-highlighter, Scan worker, Scan migrator, Scan executor, Scan executor-vm, Scan batcheshelper, Scan opentelemetry-collector, Scan embeddings, Scan sg
-- **Linters and static analysis**: GraphQL lint, Run sg lint
-- **Client checks**: Puppeteer tests prep, Puppeteer tests for chrome extension, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests chunk #10, Puppeteer tests chunk #11, Puppeteer tests chunk #12, Puppeteer tests chunk #13, Puppeteer tests chunk #14, Puppeteer tests chunk #15, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Test (client/browser), Test (client/jetbrains), Build TS, ESLint (all), Stylelint (all)
-- **Go checks**: Test (all), Test (all (gRPC)), Test (enterprise/internal/insights), Test (enterprise/internal/insights (gRPC)), Test (internal/repos), Test (internal/repos (gRPC)), Test (enterprise/internal/batches), Test (enterprise/internal/batches (gRPC)), Test (cmd/frontend), Test (cmd/frontend (gRPC)), Test (enterprise/cmd/frontend/internal/batches/resolvers), Test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Test (dev/sg), Test (dev/sg (gRPC)), Test (internal/database), Test (enterprise/internal/database), Build
-- **DB backcompat tests**: Backcompat test (all), Backcompat test (all (gRPC)), Backcompat test (enterprise/internal/insights), Backcompat test (enterprise/internal/insights (gRPC)), Backcompat test (internal/repos), Backcompat test (internal/repos (gRPC)), Backcompat test (enterprise/internal/batches), Backcompat test (enterprise/internal/batches (gRPC)), Backcompat test (cmd/frontend), Backcompat test (cmd/frontend (gRPC)), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Backcompat test (dev/sg), Backcompat test (dev/sg (gRPC)), Backcompat test (internal/database), Backcompat test (enterprise/internal/database)
-- **CI script tests**: test-trace-command.sh
+- **Image builds**: Build syntax-highlighter, Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary, Build docker registry mirror image
+- **Image security scans**: Scan symbols, Scan executor, Scan alpine-3.14, Scan postgres-12-alpine, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
+- **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
+- **Linters and static analysis**: Run sg lint
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Build TS, Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
-- **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, blobstore, blobstore2, node-exporter, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, executor-vm, batcheshelper, opentelemetry-collector, embeddings, server, sg
-- Upload build trace
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
+- **Publish images**: symbols, server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg
 
 ### Browser extension release build
 
@@ -217,6 +208,7 @@ The run type for branches matching `bext/release` (exact match).
 Base pipeline (more steps might be included based on branch changes):
 
 - ESLint (all)
+- ESLint (web)
 - Stylelint (all)
 - Test (client/browser)
 - Puppeteer tests for chrome extension
@@ -225,7 +217,6 @@ Base pipeline (more steps might be included based on branch changes):
 - Extension release
 - Extension release
 - npm Release
-- Upload build trace
 
 ### VS Code extension release build
 
@@ -234,10 +225,22 @@ The run type for branches matching `vsce/release` (exact match).
 Base pipeline (more steps might be included based on branch changes):
 
 - ESLint (all)
+- ESLint (web)
 - Stylelint (all)
-- Puppeteer tests for VS Code extension
+- Tests for VS Code extension
 - Extension release
-- Upload build trace
+
+### Cody VS Code extension release build
+
+The run type for branches matching `cody/release` (exact match).
+
+Base pipeline (more steps might be included based on branch changes):
+
+- ESLint (all)
+- ESLint (web)
+- Stylelint (all)
+- Integration tests for the Cody VS Code extension
+- Cody release
 
 ### Main branch
 
@@ -247,17 +250,14 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build blobstore, Build blobstore2, Build node-exporter, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build executor, Build executor-vm, Build batcheshelper, Build opentelemetry-collector, Build embeddings, Build server, Build sg, Build executor image, Build executor binary
-- **Image security scans**: Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan jaeger-agent, Scan jaeger-all-in-one, Scan blobstore2, Scan node-exporter, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan symbols, Scan syntax-highlighter, Scan worker, Scan migrator, Scan executor, Scan executor-vm, Scan batcheshelper, Scan opentelemetry-collector, Scan embeddings, Scan sg
-- **Linters and static analysis**: GraphQL lint, Run sg lint
-- **Client checks**: Puppeteer tests prep, Puppeteer tests for chrome extension, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests chunk #10, Puppeteer tests chunk #11, Puppeteer tests chunk #12, Puppeteer tests chunk #13, Puppeteer tests chunk #14, Puppeteer tests chunk #15, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Test (client/browser), Test (client/jetbrains), Build TS, ESLint (all), Stylelint (all)
-- **Go checks**: Test (all), Test (all (gRPC)), Test (enterprise/internal/insights), Test (enterprise/internal/insights (gRPC)), Test (internal/repos), Test (internal/repos (gRPC)), Test (enterprise/internal/batches), Test (enterprise/internal/batches (gRPC)), Test (cmd/frontend), Test (cmd/frontend (gRPC)), Test (enterprise/cmd/frontend/internal/batches/resolvers), Test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Test (dev/sg), Test (dev/sg (gRPC)), Test (internal/database), Test (enterprise/internal/database), Build
-- **DB backcompat tests**: Backcompat test (all), Backcompat test (all (gRPC)), Backcompat test (enterprise/internal/insights), Backcompat test (enterprise/internal/insights (gRPC)), Backcompat test (internal/repos), Backcompat test (internal/repos (gRPC)), Backcompat test (enterprise/internal/batches), Backcompat test (enterprise/internal/batches (gRPC)), Backcompat test (cmd/frontend), Backcompat test (cmd/frontend (gRPC)), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Backcompat test (dev/sg), Backcompat test (dev/sg (gRPC)), Backcompat test (internal/database), Backcompat test (enterprise/internal/database)
-- **CI script tests**: test-trace-command.sh
+- **Image builds**: Build syntax-highlighter, Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary
+- **Image security scans**: Scan symbols, Scan executor, Scan alpine-3.14, Scan postgres-12-alpine, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
+- **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
+- **Linters and static analysis**: Run sg lint
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Build TS, Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
-- **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, blobstore, blobstore2, node-exporter, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, executor-vm, batcheshelper, opentelemetry-collector, embeddings, server, sg, Publish executor image, Publish executor binary
-- Upload build trace
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
+- **Publish images**: symbols, server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg, Publish executor image, Publish executor binary
 
 ### Main dry run
 
@@ -272,17 +272,14 @@ Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
-- **Image builds**: Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build blobstore, Build blobstore2, Build node-exporter, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build executor, Build executor-vm, Build batcheshelper, Build opentelemetry-collector, Build embeddings, Build server, Build sg, Build executor image, Build executor binary
-- **Image security scans**: Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan jaeger-agent, Scan jaeger-all-in-one, Scan blobstore2, Scan node-exporter, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan symbols, Scan syntax-highlighter, Scan worker, Scan migrator, Scan executor, Scan executor-vm, Scan batcheshelper, Scan opentelemetry-collector, Scan embeddings, Scan sg
-- **Linters and static analysis**: GraphQL lint, Run sg lint
-- **Client checks**: Puppeteer tests prep, Puppeteer tests for chrome extension, Puppeteer tests chunk #1, Puppeteer tests chunk #2, Puppeteer tests chunk #3, Puppeteer tests chunk #4, Puppeteer tests chunk #5, Puppeteer tests chunk #6, Puppeteer tests chunk #7, Puppeteer tests chunk #8, Puppeteer tests chunk #9, Puppeteer tests chunk #10, Puppeteer tests chunk #11, Puppeteer tests chunk #12, Puppeteer tests chunk #13, Puppeteer tests chunk #14, Puppeteer tests chunk #15, Upload Storybook to Chromatic, Test (all), Build, Enterprise build, Test (client/web), Test (client/browser), Test (client/jetbrains), Build TS, ESLint (all), Stylelint (all)
-- **Go checks**: Test (all), Test (all (gRPC)), Test (enterprise/internal/insights), Test (enterprise/internal/insights (gRPC)), Test (internal/repos), Test (internal/repos (gRPC)), Test (enterprise/internal/batches), Test (enterprise/internal/batches (gRPC)), Test (cmd/frontend), Test (cmd/frontend (gRPC)), Test (enterprise/cmd/frontend/internal/batches/resolvers), Test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Test (dev/sg), Test (dev/sg (gRPC)), Test (internal/database), Test (enterprise/internal/database), Build
-- **DB backcompat tests**: Backcompat test (all), Backcompat test (all (gRPC)), Backcompat test (enterprise/internal/insights), Backcompat test (enterprise/internal/insights (gRPC)), Backcompat test (internal/repos), Backcompat test (internal/repos (gRPC)), Backcompat test (enterprise/internal/batches), Backcompat test (enterprise/internal/batches (gRPC)), Backcompat test (cmd/frontend), Backcompat test (cmd/frontend (gRPC)), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Backcompat test (dev/sg), Backcompat test (dev/sg (gRPC)), Backcompat test (internal/database), Backcompat test (enterprise/internal/database)
-- **CI script tests**: test-trace-command.sh
+- **Image builds**: Build syntax-highlighter, Build Docker images, Build Docker images, Build Docker images, Build executor image, Build executor binary
+- **Image security scans**: Scan symbols, Scan executor, Scan alpine-3.14, Scan postgres-12-alpine, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan migrator, Scan node-exporter, Scan opentelemetry-collector, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan syntax-highlighter, Scan worker, Scan batcheshelper, Scan blobstore2, Scan bundled-executor, Scan dind, Scan embeddings, Scan executor-kubernetes, Scan executor-vm, Scan jaeger-agent, Scan jaeger-all-in-one, Scan llm-proxy, Scan sg
+- **Bazel**: Ensure buildfiles are up to date, Tests, BackCompat Tests
+- **Linters and static analysis**: Run sg lint
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Build TS, Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
-- **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, blobstore, blobstore2, node-exporter, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, executor-vm, batcheshelper, opentelemetry-collector, embeddings, server, sg
-- Upload build trace
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
+- **Publish images**: symbols, server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg
 
 ### Patch image
 
@@ -314,9 +311,8 @@ sg ci build docker-images-candidates-notest
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- **Image builds**: Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build blobstore, Build blobstore2, Build node-exporter, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build executor, Build executor-vm, Build batcheshelper, Build opentelemetry-collector, Build embeddings, Build server, Build sg
-- **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, blobstore, blobstore2, node-exporter, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, executor-vm, batcheshelper, opentelemetry-collector, embeddings, server, sg
-- Upload build trace
+- **Image builds**: Build syntax-highlighter, Build Docker images, Build Docker images, Build Docker images
+- **Publish images**: Publish images
 
 ### Build executor without testing
 
@@ -338,7 +334,6 @@ Base pipeline (more steps might be included based on branch changes):
 - Publish executor image
 - Publish docker registry mirror image
 - Publish executor binary
-- Upload build trace
 
 ### Backend integration tests
 
@@ -357,5 +352,3 @@ Base pipeline (more steps might be included based on branch changes):
 - Backend integration tests
 - **Linters and static analysis**: Run sg lint
 - **Go checks**: Test (all), Test (all (gRPC)), Test (enterprise/internal/insights), Test (enterprise/internal/insights (gRPC)), Test (internal/repos), Test (internal/repos (gRPC)), Test (enterprise/internal/batches), Test (enterprise/internal/batches (gRPC)), Test (cmd/frontend), Test (cmd/frontend (gRPC)), Test (enterprise/cmd/frontend/internal/batches/resolvers), Test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Test (dev/sg), Test (dev/sg (gRPC)), Test (internal/database), Test (enterprise/internal/database), Build
-- **DB backcompat tests**: Backcompat test (all), Backcompat test (all (gRPC)), Backcompat test (enterprise/internal/insights), Backcompat test (enterprise/internal/insights (gRPC)), Backcompat test (internal/repos), Backcompat test (internal/repos (gRPC)), Backcompat test (enterprise/internal/batches), Backcompat test (enterprise/internal/batches (gRPC)), Backcompat test (cmd/frontend), Backcompat test (cmd/frontend (gRPC)), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers), Backcompat test (enterprise/cmd/frontend/internal/batches/resolvers (gRPC)), Backcompat test (dev/sg), Backcompat test (dev/sg (gRPC)), Backcompat test (internal/database), Backcompat test (enterprise/internal/database)
-- Upload build trace

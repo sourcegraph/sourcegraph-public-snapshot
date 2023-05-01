@@ -22,7 +22,7 @@ import (
 func serveHelp(w http.ResponseWriter, r *http.Request) {
 	page := strings.TrimPrefix(r.URL.Path, "/help")
 	versionStr := version.Version()
-	sourcegraphAppMode := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	sourcegraphAppMode := deploy.IsApp()
 
 	// For release builds, use the version string. Otherwise, don't use any
 	// version string because:

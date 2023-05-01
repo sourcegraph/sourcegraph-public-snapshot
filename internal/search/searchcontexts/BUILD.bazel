@@ -29,6 +29,10 @@ go_test(
     name = "searchcontexts_test",
     srcs = ["search_contexts_test.go"],
     embed = [":searchcontexts"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/envvar",
         "//internal/actor",

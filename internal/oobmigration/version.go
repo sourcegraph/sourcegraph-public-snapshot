@@ -33,7 +33,7 @@ func newDevVersion(major, minor int) Version {
 	}
 }
 
-var versionPattern = lazyregexp.New(`^v?(\d+)\.(\d+)(?:\.(\d+))?$`)
+var versionPattern = lazyregexp.New(`^v?(\d+)\.(\d+)(?:\.(\d+))?(?:-\w*)?(?:\+[\w.]*)?$`)
 
 // NewVersionFromString parses the major and minor version from the given string. If
 // the string does not look like a parseable version, a false-valued flag is returned.
@@ -83,6 +83,7 @@ func (v Version) GitTagWithPatch(patch int) string {
 
 var lastMinorVersionInMajorRelease = map[int]int{
 	3: 43, // 3.43.0 -> 4.0.0
+	4: 5,  // 4.5 -> 5.0.0,
 }
 
 // Next returns the next minor version immediately following the receiver.

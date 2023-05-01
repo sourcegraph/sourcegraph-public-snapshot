@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script is called by test.sh and preprod-run.sh to install an up-to-date
+# This script is called by test.sh to install an up-to-date
 # version of src-cli as required by the codeintel-qa pipeline. The target binary
 # is installed to {REPO_ROOT}/.bin/src.
 
@@ -8,8 +8,8 @@ set -eux
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 root_dir="$(pwd)"
 
-# By default, the commit that added handleSCIP support
-VERSION=${1:-'1c70d536b4ab3187b5aed41af8f259f1b8ceba6b'}
+# By default, version of src-cli that builds with 1.19.8
+VERSION=${1:-'58b3f701691cbdbd10b54161d9bfca88b781480d'}
 
 TEMP=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {

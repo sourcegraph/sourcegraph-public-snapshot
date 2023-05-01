@@ -48,6 +48,8 @@ func currentVersion(logger log.Logger) (oobmigration.Version, error) {
 //
 // Tagged release format: `v1.2.3`
 // Continuous release format: `(ef-feat_)?12345_2006-01-02-1.2-deadbeefbabe(_patch)?`
+// App release format: `2023.03.23+204874.db2922`
+// App insiders format: `2023.03.23-insiders+204874.db2922`
 func parseVersion(rawVersion string) (oobmigration.Version, bool) {
 	version, ok := oobmigration.NewVersionFromString(rawVersion)
 	if ok {

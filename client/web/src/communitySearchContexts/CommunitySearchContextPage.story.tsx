@@ -59,13 +59,13 @@ const authUser: AuthenticatedUser = {
             { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
         ] as AuthenticatedUser['organizations']['nodes'],
     },
-    tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
     tosAccepted: true,
     searchable: true,
     emails: [{ email: 'alice@sourcegraph.com', isPrimary: true, verified: true }],
     latestSettings: null,
+    permissions: { nodes: [] },
 }
 
 const repositories: SearchContextFields['repositories'] = [
@@ -125,7 +125,6 @@ const commonProps = () =>
         batchChangesEnabled: false,
         authenticatedUser: authUser,
         communitySearchContextMetadata: temporal,
-        globbing: false,
         fetchSearchContexts: mockFetchSearchContexts,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         fetchSearchContextBySpec: fetchCommunitySearchContext,

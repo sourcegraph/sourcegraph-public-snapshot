@@ -21,7 +21,6 @@ export interface PluginConfig {
     instanceURL: string
     accessToken: string | null
     customRequestHeadersAsString: string | null
-    isGlobbingEnabled: boolean
     pluginVersion: string
     anonymousUserId: string
 }

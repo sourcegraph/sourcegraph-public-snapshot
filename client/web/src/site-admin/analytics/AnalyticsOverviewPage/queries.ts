@@ -12,6 +12,9 @@ export const OVERVIEW_STATISTICS = gql`
                     expiresAt
                 }
             }
+            updateCheck {
+                updateVersionAvailable
+            }
             adminUsers: users(siteAdmin: true, deletedAt: { empty: true }) {
                 totalCount
             }

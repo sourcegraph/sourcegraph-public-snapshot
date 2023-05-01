@@ -630,7 +630,6 @@ export const extensionsController: Controller = {
             haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
         })
     ),
-    commandErrors: EMPTY,
     unsubscribe: noop,
 }
 

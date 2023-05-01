@@ -82,6 +82,9 @@ const (
 
 	// FeatureCodeInsights is whether Code Insights on this Sourcegraph instance has been purchased.
 	FeatureCodeInsights BasicFeature = "code-insights"
+
+	// FeatureSCIM is whether SCIM User Management has been purchased on this instance.
+	FeatureSCIM BasicFeature = "SCIM"
 )
 
 var AllFeatures = []Feature{
@@ -96,6 +99,7 @@ var AllFeatures = []Feature{
 	FeatureBackupAndRestore,
 	FeatureCodeInsights,
 	&FeatureBatchChanges{},
+	FeatureSCIM,
 }
 
 type PlanDetails struct {
@@ -130,6 +134,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureMonitoring,
 			FeatureBackupAndRestore,
 			FeatureCodeInsights,
+			FeatureSCIM,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -156,6 +161,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureSCIM,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -171,6 +177,7 @@ var planDetails = map[Plan]PlanDetails{
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureCodeInsights,
 			FeatureSSO,
+			FeatureSCIM,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -186,6 +193,7 @@ var planDetails = map[Plan]PlanDetails{
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
+			FeatureSCIM,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -201,6 +209,7 @@ var planDetails = map[Plan]PlanDetails{
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
+			FeatureSCIM,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Checkbox } from '@sourcegraph/wildcard'
+import { Button, Checkbox, Link, Text } from '@sourcegraph/wildcard'
 
 import { SurveyRatingRadio } from '../components/SurveyRatingRadio'
 
@@ -41,16 +41,24 @@ export const SurveyUserRatingToast: React.FunctionComponent<SurveyUserRatingToas
             </>
         }
         footer={
-            <div className="d-flex align-items-center justify-content-between">
-                <Checkbox
-                    id="survey-toast-refuse"
-                    label={<span className={styles.checkboxLabel}>Don't show this again</span>}
-                    onChange={event => setToggledPermanentlyDismiss(event.target.checked)}
-                />
-                <Button variant="secondary" size="sm" onClick={onContinue}>
-                    Continue
-                </Button>
-            </div>
+            <>
+                <Text className="d-flex align-items-center justify-content-between mb-1">
+                    <span>
+                        By submitting your feedback, you agree to the{' '}
+                        <Link to="https://about.sourcegraph.com/terms/privacy">Sourcegraph Privacy Policy</Link>.
+                    </span>
+                </Text>
+                <div className="d-flex align-items-center justify-content-between">
+                    <Checkbox
+                        id="survey-toast-refuse"
+                        label={<span className={styles.checkboxLabel}>Don't show this again</span>}
+                        onChange={event => setToggledPermanentlyDismiss(event.target.checked)}
+                    />
+                    <Button variant="secondary" size="sm" onClick={onContinue}>
+                        Continue
+                    </Button>
+                </div>
+            </>
         }
         onDismiss={onDismiss}
     />

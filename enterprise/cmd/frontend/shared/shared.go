@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches"
@@ -46,8 +45,6 @@ import (
 type EnterpriseInitializer = func(context.Context, *observation.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services) error
 
 var initFunctions = map[string]EnterpriseInitializer{
-	"search":         search.Init,
-	"app":            app.Init,
 	"authz":          authz.Init,
 	"batches":        batches.Init,
 	"codeintel":      codeintelinit.Init,
@@ -87,6 +84,12 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 	})
 	if err != nil {
 		logger.Fatal("failed to initialize code intelligence", log.Error(err))
+	}
+
+	// Initialize search first, as we require enterprise search jobs to exist already
+	// when other initializers are called.
+	if err := search.Init(ctx, observationCtx, db, codeIntelServices, conf, &enterpriseServices); err != nil {
+		logger.Fatal("failed to initialize search", log.Error(err))
 	}
 
 	for name, fn := range initFunctions {

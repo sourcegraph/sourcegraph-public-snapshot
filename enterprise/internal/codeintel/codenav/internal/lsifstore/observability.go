@@ -8,20 +8,18 @@ import (
 )
 
 type operations struct {
-	getReferences          *observation.Operation
-	getImplementations     *observation.Operation
-	getHover               *observation.Operation
-	getDefinitions         *observation.Operation
-	getDiagnostics         *observation.Operation
-	getRanges              *observation.Operation
-	getStencil             *observation.Operation
-	getExists              *observation.Operation
-	getMonikersByPosition  *observation.Operation
-	getPackageInformation  *observation.Operation
-	getBulkMonikerResults  *observation.Operation
-	getLocationsWithinFile *observation.Operation
-
-	locations *observation.Operation
+	getPathExists              *observation.Operation
+	getStencil                 *observation.Operation
+	getRanges                  *observation.Operation
+	getMonikersByPosition      *observation.Operation
+	getPackageInformation      *observation.Operation
+	getDefinitionLocations     *observation.Operation
+	getImplementationLocations *observation.Operation
+	getReferenceLocations      *observation.Operation
+	getBulkMonikerLocations    *observation.Operation
+	getHover                   *observation.Operation
+	getDiagnostics             *observation.Operation
+	scipDocument               *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -44,29 +42,18 @@ func newOperations(observationCtx *observation.Context) *operations {
 		})
 	}
 
-	// suboperations do not have their own metrics but do have their
-	// own opentracing spans. This allows us to more granularly track
-	// the latency for parts of a request without noising up Prometheus.
-	subOp := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name: fmt.Sprintf("codeintel.lsifstore.%s", name),
-		})
-	}
-
 	return &operations{
-		getReferences:          op("GetReferences"),
-		getImplementations:     op("GetImplementations"),
-		getHover:               op("GetHover"),
-		getDefinitions:         op("GetDefinitions"),
-		getDiagnostics:         op("GetDiagnostics"),
-		getRanges:              op("GetRanges"),
-		getStencil:             op("GetStencil"),
-		getExists:              op("GetExists"),
-		getMonikersByPosition:  op("GetMonikersByPosition"),
-		getPackageInformation:  op("GetPackageInformation"),
-		getBulkMonikerResults:  op("GetBulkMonikerResults"),
-		getLocationsWithinFile: op("GetLocationsWithinFile"),
-
-		locations: subOp("locations"),
+		getPathExists:              op("GetPathExists"),
+		getStencil:                 op("GetStencil"),
+		getRanges:                  op("GetRanges"),
+		getMonikersByPosition:      op("GetMonikersByPosition"),
+		getPackageInformation:      op("GetPackageInformation"),
+		getDefinitionLocations:     op("GetDefinitionLocations"),
+		getImplementationLocations: op("GetImplementationLocations"),
+		getReferenceLocations:      op("GetReferenceLocations"),
+		getBulkMonikerLocations:    op("GetBulkMonikerLocations"),
+		getHover:                   op("GetHover"),
+		getDiagnostics:             op("GetDiagnostics"),
+		scipDocument:               op("SCIPDocument"),
 	}
 }

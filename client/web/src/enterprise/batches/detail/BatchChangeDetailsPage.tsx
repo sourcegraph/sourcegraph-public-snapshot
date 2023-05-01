@@ -29,6 +29,7 @@ import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
+import { WebhookAlert } from './WebhookAlert'
 
 export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, SettingsCascadeProps<Settings> {
     /** The namespace ID. */
@@ -91,7 +92,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
         throw new Error(error.message)
     }
     // If there weren't any errors and we just didn't receive any data
-    if (!data || !data.batchChange) {
+    if (!data?.batchChange) {
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
@@ -162,9 +163,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 />
             )}
             <ChangesetsArchivedNotice />
-            {/* Temporarily disabled due to bug with discovery. */}
-            {/* See https://github.com/sourcegraph/sourcegraph/issues/45919 */}
-            {/* <WebhookAlert batchChange={batchChange} /> */}
+            <WebhookAlert batchChange={batchChange} />
             <BatchChangeStatsCard batchChange={batchChange} className="mb-3" />
             <Description description={batchChange.description} />
             <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />

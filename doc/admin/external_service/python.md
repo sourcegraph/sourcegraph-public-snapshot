@@ -35,9 +35,10 @@ By default, requests to the Python package mirrors will be rate-limited based on
 ```json
 "rateLimit": {
   "enabled": true,
-  "requestsPerHour": 57600.0
+  "requestsPerHour": 57600
 }
 ```
+
 where the `requestsPerHour` field is set based on your requirements.
 
 **Not recommended**: Rate-limiting can be turned off entirely as well.

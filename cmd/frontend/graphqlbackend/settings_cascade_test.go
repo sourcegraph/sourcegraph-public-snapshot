@@ -29,10 +29,10 @@ func TestMergeSettings(t *testing.T) {
 		name: "empty left",
 		left: &schema.Settings{},
 		right: &schema.Settings{
-			AlertsCodeHostIntegrationMessaging: "test",
+			SearchDefaultMode: "test",
 		},
 		expected: &schema.Settings{
-			AlertsCodeHostIntegrationMessaging: "test",
+			SearchDefaultMode: "test",
 		},
 	}, {
 		name: "merge bool ptr",
@@ -40,25 +40,25 @@ func TestMergeSettings(t *testing.T) {
 			AlertsHideObservabilitySiteAlerts: boolPtr(true),
 		},
 		right: &schema.Settings{
-			AlertsCodeHostIntegrationMessaging: "test",
+			SearchDefaultMode: "test",
 		},
 		expected: &schema.Settings{
-			AlertsCodeHostIntegrationMessaging: "test",
-			AlertsHideObservabilitySiteAlerts:  boolPtr(true),
+			SearchDefaultMode:                 "test",
+			AlertsHideObservabilitySiteAlerts: boolPtr(true),
 		},
 	}, {
 		name: "merge bool",
 		left: &schema.Settings{
-			AlertsShowPatchUpdates:    false,
-			CodeHostUseNativeTooltips: true,
+			AlertsShowPatchUpdates:              false,
+			BasicCodeIntelGlobalSearchesEnabled: true,
 		},
 		right: &schema.Settings{
-			AlertsShowPatchUpdates:    true,
-			CodeHostUseNativeTooltips: false, // This is the zero value, so will not override a previous non-zero value
+			AlertsShowPatchUpdates:              true,
+			BasicCodeIntelGlobalSearchesEnabled: false, // This is the zero value, so will not override a previous non-zero value
 		},
 		expected: &schema.Settings{
-			AlertsShowPatchUpdates:    true,
-			CodeHostUseNativeTooltips: true,
+			AlertsShowPatchUpdates:              true,
+			BasicCodeIntelGlobalSearchesEnabled: true,
 		},
 	}, {
 		name: "merge int",

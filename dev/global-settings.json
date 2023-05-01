@@ -4,7 +4,6 @@
     "batchChangesExecution": true,
     "showMultilineSearchConsole": true,
     "codeMonitoring": true,
-    "codeIntelRepositoryBadge": { "enabled": true },
     "enableLazyBlobSyntaxHighlighting": true,
     "enableLazyFileResultSyntaxHighlighting": true,
     "enableSearchFilePrefetch": true,

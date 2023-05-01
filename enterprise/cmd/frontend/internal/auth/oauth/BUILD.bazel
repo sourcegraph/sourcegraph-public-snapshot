@@ -16,7 +16,6 @@ go_library(
         "//cmd/frontend/auth/providers",
         "//cmd/frontend/external/session",
         "//cmd/frontend/globals",
-        "//enterprise/cmd/frontend/internal/app",
         "//internal/actor",
         "//internal/conf",
         "//internal/cookie",
@@ -42,6 +41,7 @@ go_library(
 
 go_test(
     name = "oauth_test",
+    timeout = "short",
     srcs = ["provider_test.go"],
     embed = [":oauth"],
 )

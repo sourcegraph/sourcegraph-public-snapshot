@@ -14,6 +14,7 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/globals",
+        "//cmd/frontend/internal/auth/userpasswd",
         "//internal/conf/deploy",
         "//internal/database",
         "//internal/rbac",
@@ -21,9 +22,9 @@ go_library(
         "//internal/redispool",
         "//internal/types",
         "//lib/errors",
+        "@com_github_fatih_color//:color",
         "@com_github_gomodule_redigo//redis",
         "@com_github_inconshreveable_log15//:log15",
-        "@com_github_pkg_browser//:browser",
         "@com_github_sourcegraph_log//:log",
     ],
 )

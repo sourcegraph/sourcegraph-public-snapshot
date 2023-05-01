@@ -31,7 +31,7 @@ func DocumentToSplitHTML(code string, document *scip.Document, includeLineNumber
 		appendTextToNode(currentCell, kind, line)
 	}
 
-	lsifToHTML(code, document, addRow, addText, nil)
+	scipToHTML(code, document, addRow, addText, nil)
 
 	lines := make([]template.HTML, 0, len(rows))
 	for _, line := range rows {
@@ -66,7 +66,7 @@ func DocumentToHTML(code string, document *scip.Document) (template.HTML, error)
 		appendTextToNode(currentCell, kind, line)
 	}
 
-	lsifToHTML(code, document, addRow, addText, nil)
+	scipToHTML(code, document, addRow, addText, nil)
 
 	var buf bytes.Buffer
 	if err := html.Render(&buf, table); err != nil {
@@ -96,15 +96,40 @@ func safeSlice(text []rune, start, finish int32) string {
 	return string(text[start:finish])
 }
 
-// lsifToHTML iterates on code and a document to dispatch to AddRow and AddText
+// scipToHTML iterates on code and a document to dispatch to AddRow and AddText
 // which can be used to generate different kinds of HTML.
-func lsifToHTML(
+func scipToHTML(
 	code string,
 	document *scip.Document,
 	addRow func(row int32),
 	addText func(kind scip.SyntaxKind, line string),
 	validLines map[int32]bool,
 ) {
+	manager := newHtmlManager(code, validLines, document.Occurrences, addRow, addText)
+	manager.process()
+}
+
+type htmlManager struct {
+	// Ways to add new rows and text to the output HTML
+	addRow  func(row int32)
+	addText func(kind scip.SyntaxKind, line string)
+
+	lines       [][]rune
+	occurrences []*scip.Occurrence
+	row         int32
+	occIdx      int
+
+	// Can be nil, should be ignored if nil
+	validLines map[int32]bool
+}
+
+func newHtmlManager(
+	code string,
+	validLines map[int32]bool,
+	occurrences []*scip.Occurrence,
+	addRow func(row int32),
+	addText func(kind scip.SyntaxKind, line string),
+) *htmlManager {
 	splitStringLines := strings.Split(code, "\n")
 
 	// Why split into runes?
@@ -133,73 +158,124 @@ func lsifToHTML(
 		splitLines[idx] = []rune(line)
 	}
 
-	occurrences := document.Occurrences
+	return &htmlManager{
+		lines:   splitLines,
+		row:     0,
+		addRow:  addRow,
+		addText: addText,
 
-	rowCount := int32(len(splitLines))
-	row, occIndex := int32(0), 0
-	for row < rowCount {
-		// skip invalid lines, when passed
-		if validLines != nil && !validLines[row] {
-			row += 1
-			continue
-		}
+		occIdx:      0,
+		occurrences: occurrences,
 
-		line := splitLines[row]
-
-		addRow(row)
-
-		lineCharacter := int32(0)
-		for occIndex < len(occurrences) && occurrences[occIndex].Range[0] < row+1 {
-			occ := occurrences[occIndex]
-			occIndex += 1
-
-			startRow, startCharacter, endRow, endCharacter := normalizeSCIPRange(occ.Range)
-
-			// We may not have handled all the occurrences up until now
-			// so skip the ones where the ranges do not overlap.
-			if endRow < row {
-				continue
-			}
-
-			addText(occ.SyntaxKind, safeSlice(line, lineCharacter, startCharacter))
-
-			if startRow != endRow {
-				addText(occ.SyntaxKind, safeSlice(line, startCharacter, int32(len(line))))
-
-				row += 1
-				for row < endRow {
-					// We've reached the end of the lines, so we can return now
-					if row >= rowCount {
-						return
-					}
-
-					line = splitLines[row]
-
-					addRow(row)
-					addText(occ.SyntaxKind, string(line))
-
-					row += 1
-				}
-
-				// We've reached the end of the lines, so we can return now
-				if row >= rowCount {
-					return
-				}
-
-				line = splitLines[row]
-				addRow(row)
-				addText(occ.SyntaxKind, safeSlice(line, 0, endCharacter))
-			} else {
-				addText(occ.SyntaxKind, safeSlice(line, startCharacter, endCharacter))
-			}
-
-			lineCharacter = endCharacter
-		}
-
-		addText(scip.SyntaxKind_UnspecifiedSyntaxKind, safeSlice(line, lineCharacter, int32(len(line))))
-
-		row += 1
+		validLines: validLines,
 	}
+}
+
+func (t *htmlManager) process() {
+	rowCount := int32(len(t.lines))
+	for t.row < rowCount {
+		t.processRow()
+		t.nextRow()
+	}
+}
+
+func (t *htmlManager) processRow() {
+	if !t.validRow(t.row) {
+		return
+	}
+
+	t.addRow(t.row)
+
+	lineCharacter := int32(0)
+	for t.occIdx < len(t.occurrences) && t.occurrences[t.occIdx].Range[0] < t.row+1 {
+		occ := t.occurrences[t.occIdx]
+		t.occIdx += 1
+
+		lineCharacter = t.processOneOcc(occ, lineCharacter)
+	}
+
+	// Add the rest of the line with no syntax highlighting (since it may not be covered by an occurrence).
+	line := t.currentLine()
+	if lineCharacter != int32(len(line)) {
+		t.addText(scip.SyntaxKind_UnspecifiedSyntaxKind, safeSlice(line, lineCharacter, int32(len(line))))
+	}
+}
+
+func (t *htmlManager) processOneOcc(occ *scip.Occurrence, lineCharacter int32) int32 {
+	startRow, startCharacter, endRow, endCharacter := normalizeSCIPRange(occ.Range)
+
+	// We may not have handled all the occurrences up until now
+	// so skip the ones where the ranges do not overlap.
+	if endRow < t.row {
+		return 0
+	}
+
+	// Only add the "missed" text if
+	if startRow == t.row && lineCharacter != startCharacter {
+		currentLine := t.currentLine()
+		t.addText(scip.SyntaxKind_UnspecifiedSyntaxKind, safeSlice(currentLine, lineCharacter, startCharacter))
+	}
+
+	if startRow == endRow {
+		t.processSingleLineOcc(occ, startRow, startCharacter, endCharacter)
+	} else {
+		t.processMultiLineOcc(occ, startRow, startCharacter, endRow, endCharacter)
+	}
+
+	return endCharacter
+}
+
+func (t *htmlManager) processMultiLineOcc(occ *scip.Occurrence, startRow, startCharacter, endRow, endCharacter int32) {
+	maxRow := int32(len(t.lines))
+
+	// Process the first line
+	if t.row == startRow {
+		line := t.currentLine()
+		t.addText(occ.SyntaxKind, safeSlice(line, startCharacter, int32(len(line))))
+		t.nextRow()
+		t.addRow(t.row)
+	}
+
+	// Process all middle lines (which are fully contained by this occurrence)
+	for t.row < endRow && t.row < maxRow {
+		t.addText(occ.SyntaxKind, string(t.currentLine()))
+		t.nextRow()
+
+		if t.row >= maxRow {
+			break
+		}
+
+		t.addRow(t.row)
+	}
+
+	// Process the last line.
+	//   There may be other matches on this line
+	if t.row == endRow && t.row < maxRow {
+		t.addText(occ.SyntaxKind, safeSlice(t.currentLine(), 0, endCharacter))
+		// NOTE:
+		//   We do not add nextRow()
+		//   This is because this is always handled above. So do not add that here.
+	}
+}
+
+func (t *htmlManager) processSingleLineOcc(occ *scip.Occurrence, startRow, startCharacter, endCharacter int32) {
+	if startRow != t.row {
+		return
+	}
+
+	line := t.lines[startRow]
+	t.addText(occ.SyntaxKind, safeSlice(line, startCharacter, endCharacter))
+}
+
+func (t *htmlManager) validRow(row int32) bool { return t.validLines == nil || t.validLines[row] }
+func (t *htmlManager) nextRow()                { t.row += 1 }
+
+func (t *htmlManager) currentLine() []rune {
+	if t.row >= int32(len(t.lines)) {
+		return []rune{}
+	}
+
+	return t.lines[t.row]
 }
 
 // appendTextToNode formats the text to the right css class and appends to the current

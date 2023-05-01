@@ -11,7 +11,9 @@ import {
     NOOP_SETTINGS_CASCADE,
     CHUNK_MATCH_RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
+
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { FileContentSearchResult } from './FileContentSearchResult'

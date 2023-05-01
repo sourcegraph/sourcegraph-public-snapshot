@@ -1,11 +1,14 @@
 import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
+import { exit } from 'process'
 
 import chalk from 'chalk'
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
 import execa from 'execa'
+import { DateTime } from 'luxon'
 import { SemVer } from 'semver'
+import semver from 'semver/preload'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
@@ -20,6 +23,10 @@ import {
     saveReleaseConfig,
     getReleaseDefinition,
     deactivateAllReleases,
+    setSrcCliVersion,
+    newRelease,
+    setGoogleExecutorVersion,
+    setAWSExecutorVersion,
 } from './config'
 import { getCandidateTags, getPreviousVersion } from './git'
 import {
@@ -30,17 +37,28 @@ import {
     CreatedChangeset,
     createLatestRelease,
     createTag,
+    Edit,
     ensureTrackingIssues,
     getAuthenticatedGitHubClient,
     getTrackingIssue,
     IssueLabel,
     localSourcegraphRepo,
     queryIssues,
+    releaseBlockerLabel,
     releaseName,
 } from './github'
 import { calendarTime, ensureEvent, EventOptions, getClient } from './google-calendar'
 import { postMessage, slackURL } from './slack'
 import {
+    bakeAWSExecutorsSteps,
+    bakeGoogleExecutorsSteps,
+    bakeSrcCliSteps,
+    batchChangesInAppChangelog,
+    combyReplace,
+    indexerUpdate,
+} from './static-updates'
+import {
+    backportStatus,
     cacheFolder,
     changelogURL,
     ensureDocker,
@@ -49,13 +67,21 @@ import {
     ensureSrcCliUpToDate,
     formatDate,
     getAllUpgradeGuides,
+    getLatestSrcCliGithubRelease,
     getLatestTag,
     getReleaseBlockers,
+    nextSrcCliVersionInputWithAutodetect,
+    nextGoogleExecutorVersionInputWithAutodetect,
+    nextAWSExecutorVersionInputWithAutodetect,
+    pullRequestBody,
     releaseBlockerUri,
+    retryInput,
     timezoneLink,
     updateUpgradeGuides,
+    validateNoOpenBackports,
     validateNoReleaseBlockers,
     verifyWithInput,
+    ReleaseTag,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -70,6 +96,7 @@ export type StepID =
     | 'release:branch-cut'
     // release
     | 'release:status'
+    | 'release:backport-status'
     | 'release:create-candidate'
     | 'release:promote-candidate'
     | 'release:check-candidate'
@@ -78,11 +105,14 @@ export type StepID =
     | 'release:finalize'
     | 'release:announce'
     | 'release:close'
-    | 'release:multi-version-bake'
+    | 'release:bake-content'
     | 'release:prepare'
     | 'release:remove'
     | 'release:activate-release'
     | 'release:deactivate-release'
+    // src-cli and executors
+    | 'release:create-tags'
+    | 'release:verify-releases'
     // util
     | 'util:clear-cache'
     | 'util:previous-version'
@@ -93,6 +123,7 @@ export type StepID =
     | '_test:config'
     | '_test:dockerensure'
     | '_test:srccliensure'
+    | '_test:patch-dates'
     | '_test:release-guide-content'
     | '_test:release-guide-update'
 
@@ -183,6 +214,20 @@ const steps: Step[] = [
                 },
             ]
 
+            if (next.patches) {
+                // eslint-disable-next-line id-length
+                for (let i = 0; i < next.patches.length; i++) {
+                    events.push({
+                        title: `Scheduled Patch #${i + 1} Sourcegraph ${name}`,
+                        description: '(This is not an actual event to attend, just a calendar marker.)',
+                        anyoneCanAddSelf: true,
+                        attendees: [config.metadata.teamEmail],
+                        transparency: 'transparent',
+                        ...calendarTime(next.patches[i]),
+                    })
+                }
+            }
+
             if (!config.dryRun.calendar) {
                 const googleCalendar = await getClient()
                 for (const event of events) {
@@ -245,6 +290,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
             const upcoming = await getActiveRelease(config)
+            const srcCliNext = await nextSrcCliVersionInputWithAutodetect(config)
+
             const commitMessage = `changelog: cut sourcegraph@${upcoming.version.version}`
             const prBody = commitMessage + '\n\n ## Test plan\n\nN/A'
             const pullRequest = await createChangesets({
@@ -312,6 +359,31 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                             },
                         ],
                     },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'src-cli',
+                        base: 'main',
+                        head: `changelog-${srcCliNext.version}`,
+                        title: commitMessage,
+                        body: prBody,
+                        commitMessage,
+                        edits: [
+                            (directory: string) => {
+                                console.log(`Updating '${changelogFile} for ${srcCliNext.format()}'`)
+                                const changelogPath = path.join(directory, changelogFile)
+                                let changelogContents = readFileSync(changelogPath).toString()
+
+                                // Convert 'unreleased' to a release
+                                const unreleasedHeader = '## Unreleased'
+                                const unreleasedSection = `${unreleasedHeader}\n\n### Added\n\n### Changed\n\n### Fixed\n\n### Removed\n\n`
+                                const newSection = `${unreleasedSection}## ${srcCliNext.format()}`
+                                changelogContents = changelogContents.replace(unreleasedHeader, newSection)
+
+                                // Update changelog
+                                writeFileSync(changelogPath, changelogContents)
+                            },
+                        ],
+                    },
                 ],
                 dryRun: config.dryRun.changesets,
             })
@@ -326,10 +398,11 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         description: 'Create release branch',
         run: async config => {
             const release = await getActiveRelease(config)
+            const client = await getAuthenticatedGitHubClient()
             let message: string
             // notify cs team on patch release cut
             if (release.version.patch !== 0) {
-                message = `:mega: *${release.version.version}* branch has been cut cc: @cs`
+                message = `:mega: *${release.version.version}* branch has been cut cc: @cs\nIf you need to include changes in the release, see instructions on how to backport: https://handbook.sourcegraph.com/departments/engineering/dev/tools/backport/#how-should-i-use-the-backporting-tool.`
             } else {
                 message = `:mega: *${release.version.version}* branch has been cut.`
             }
@@ -341,6 +414,25 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 console.log(`To check the status of the branch, run:\nsg ci status -branch ${release.branch} --wait\n`)
             } catch (error) {
                 console.error('Failed to create release branch', error)
+            }
+
+            if (release.version.patch === 0) {
+                // create backport label for major / minor versions
+                const params = {
+                    owner: 'sourcegraph',
+                    repo: 'sourcegraph',
+                }
+                const labelName = `backport ${release.version.major}.${release.version.minor}`
+                const labelExists = await client.issues
+                    .getLabel({ name: labelName, ...params })
+                    .then(resp => resp.status === 200)
+                    .catch(() => false)
+                if (!labelExists) {
+                    console.log(await client.issues.createLabel({ name: labelName, color: 'e69138', ...params }))
+                    console.log(`Label ${labelName} created`)
+                } else {
+                    console.log(`label ${labelName} already exists`)
+                }
             }
         },
     },
@@ -384,6 +476,17 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         },
     },
     {
+        id: 'release:backport-status',
+        description: 'Check for backport issues on the currently active release',
+        run: async config => {
+            const release = await getActiveRelease(config)
+            getAuthenticatedGitHubClient()
+                .then(client => backportStatus(client, release.version))
+                .then(str => console.log(str))
+                .catch(error => error)
+        },
+    },
+    {
         id: 'release:create-candidate',
         description: 'Generate the Nth release candidate. Set <candidate> to "final" to generate a final release',
         run: async config => {
@@ -403,7 +506,11 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 const tags = getCandidateTags(workdir, release.version.version)
                 let nextCandidate = 1
                 for (const tag of tags) {
-                    const num = parseInt(tag.slice(-1), 10)
+                    const lastNum = tag.match('.*-rc\\.(\\d+)')
+                    if (!lastNum || lastNum.length === 0) {
+                        break
+                    }
+                    const num = parseInt(lastNum[1], 10)
                     if (num >= nextCandidate) {
                         nextCandidate = num + 1
                     }
@@ -434,11 +541,12 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             'Promote a release candidate to release build. Specify the full candidate tag to promote the tagged commit to release.',
         argNames: ['candidate'],
         run: async (config, candidate) => {
-            const client = await getAuthenticatedGitHubClient()
-            await validateNoReleaseBlockers(client)
-
             const release = await getActiveRelease(config)
             ensureReleaseBranchUpToDate(release.branch)
+
+            const client = await getAuthenticatedGitHubClient()
+            await validateNoReleaseBlockers(client)
+            await validateNoOpenBackports(client, release.version)
 
             const warnMsg =
                 'Verify the provided tag is correct to promote to release. Note: it is very unusual to require a non-standard tag to promote to release, proceed with caution.'
@@ -600,7 +708,7 @@ cc @${release.captainGitHubUsername}
                             // Update Sourcegraph versions in installation guides
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version.version}"/g' {} +`,
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/--version ${versionRegex}/--version ${release.version.version}/g' {} +`,
-                            `${sed} -i -E 's/${versionRegex}/${release.version.version}/g' ./doc/admin/deploy_executors_kubernetes.md`,
+                            `${sed} -i -E 's/${versionRegex}/${release.version.version}/g' ./doc/admin/executors/deploy_executors_kubernetes.md`,
                             // Update fork variables in installation guides
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version.version}'/g" {} +`,
 
@@ -609,15 +717,16 @@ cc @${release.captainGitHubUsername}
                                 : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${release.version.version}"' doc/_resources/templates/document.html`,
 
                             // Update references to Sourcegraph deployment versions
-                            `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
-                            `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
-                            `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseKubernetesBuild = newPingResponse(":[1]")' "latestReleaseKubernetesBuild = newPingResponse(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseDockerServerImageBuild = newPingResponse(":[1]")' "latestReleaseDockerServerImageBuild = newPingResponse(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
+                            `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newPingResponse(":[1]")' "latestReleaseDockerComposeOrPureDocker = newPingResponse(\\"${release.version.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
 
                             // Support current release as the "previous release" going forward
                             notPatchRelease
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
                             updateUpgradeGuides(release.previous.version, release.version.version),
+                            `comby -in-place 'git_versions=(:[1])' 'git_versions=(:[1] ${release.version.version})' cmd/migrator/build.sh`,
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -791,19 +900,28 @@ Batch change: ${batchChangeURL}`,
             const release = await getActiveRelease(config)
             let failed = false
 
+            const defaultBranchPattern = `${release.branch}`
+            const defaultTagPattern = `v${release.version.version}`
+            const defaults = { branchPattern: defaultBranchPattern, tagPattern: defaultTagPattern }
+            const repoConfigs = [
+                { repo: 'deploy-sourcegraph', ...defaults },
+                { repo: 'deploy-sourcegraph-docker', ...defaults },
+                { repo: 'deploy-sourcegraph-docker-customer-replica-1', ...defaults },
+                { repo: 'deploy-sourcegraph-k8s', ...defaults },
+                {
+                    repo: 'deploy-sourcegraph-helm',
+                    branchPattern: `release/${release.branch}`,
+                    tagPattern: `sourcegraph-${release.version.version}`,
+                },
+            ]
+
             const owner = 'sourcegraph'
             // Push final tags
-            const tag = `v${release.version.version}`
-            for (const repo of [
-                'deploy-sourcegraph',
-                'deploy-sourcegraph-docker',
-                'deploy-sourcegraph-docker-customer-replica-1',
-                'deploy-sourcegraph-k8s',
-            ]) {
+            for (const repoConfig of repoConfigs) {
                 try {
                     const client = await getAuthenticatedGitHubClient()
-                    const { workdir } = await cloneRepo(client, owner, repo, {
-                        revision: release.branch,
+                    const { workdir } = await cloneRepo(client, owner, repoConfig.repo, {
+                        revision: repoConfig.branchPattern,
                         revisionMustExist: true,
                     })
                     await createTag(
@@ -811,15 +929,17 @@ Batch change: ${batchChangeURL}`,
                         workdir,
                         {
                             owner,
-                            repo,
-                            branch: release.branch,
-                            tag,
+                            repo: repoConfig.repo,
+                            branch: repoConfig.branchPattern,
+                            tag: repoConfig.tagPattern,
                         },
                         config.dryRun.tags || false
                     )
                 } catch (error) {
                     console.error(error)
-                    console.error(`Failed to create tag ${tag} on ${repo}@${release.branch}`)
+                    console.error(
+                        `Failed to create tag ${repoConfig.tagPattern} on ${repoConfig.repo}@${release.branch}`
+                    )
                     failed = true
                 }
             }
@@ -951,49 +1071,239 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         },
     },
     {
-        id: 'release:multi-version-bake',
+        id: 'release:bake-content',
         description:
-            'Bake stitched migration files into the build for a release version. Only required for minor / major versions.',
+            'Bake constants and other static content into the release. Only required for minor / major versions.',
         run: async config => {
             const release = await getActiveRelease(config)
+            if (release.version.patch !== 0) {
+                console.log('content bake is only required for major / minor versions')
+                exit(1)
+            }
+
+            // Creates PR's for executor release steps
+            await bakeGoogleExecutorsSteps(config)
+            await bakeAWSExecutorsSteps(config)
 
             const releaseBranch = release.branch
             const version = release.version.version
             ensureReleaseBranchUpToDate(releaseBranch)
 
-            const prConfig = {
-                edits: [
-                    `git remote set-branches --add origin '${releaseBranch}'`,
-                    `git fetch --depth 1 origin ${releaseBranch}`,
-                    `comby -in-place 'const maxVersionString = ":[1]"' "const maxVersionString = \\"${version}\\"" internal/database/migration/shared/data/cmd/generator/consts.go`,
-                    'cd internal/database/migration/shared && go run ./data/cmd/generator --write-frozen=false',
-                ],
-                repo: 'sourcegraph',
-                owner: 'sourcegraph',
-                body: 'Update the multi version upgrade constants',
-                title: `${version} multi version upgrade constants`,
-                commitMessage: `baking multi version upgrade files for version ${version}`,
+            const multiVersionSteps: Edit[] = [
+                `git remote set-branches --add origin '${releaseBranch}'`,
+                `git fetch --depth 1 origin ${releaseBranch}`,
+                combyReplace(
+                    'const maxVersionString = ":[1]"',
+                    version,
+                    'internal/database/migration/shared/data/cmd/generator/consts.go'
+                ),
+                'cd internal/database/migration/shared && go run ./data/cmd/generator --write-frozen=false',
+            ]
+            const srcCliSteps = await bakeSrcCliSteps(config)
+
+            const mainBranchEdits: Edit[] = [
+                ...multiVersionSteps,
+                ...srcCliSteps,
+                ...batchChangesInAppChangelog(new SemVer(release.version.version).inc('minor'), true), // in the next main branch this will reflect the guessed next version
+                indexerUpdate(),
+            ]
+
+            const releaseBranchEdits: Edit[] = [
+                ...multiVersionSteps,
+                ...srcCliSteps,
+                ...batchChangesInAppChangelog(release.version, false),
+                indexerUpdate(),
+            ]
+
+            const prDetails = {
+                body: pullRequestBody(`Bake constants and static content into version v${version}.`),
+                title: `v${version} bake constants and static content`,
+                commitMessage: `bake constants and static content for version v${version}`,
             }
 
             const sets = await createChangesets({
                 requiredCommands: ['comby', 'go'],
                 changes: [
                     {
-                        ...prConfig,
+                        ...prDetails,
+                        repo: 'sourcegraph',
+                        owner: 'sourcegraph',
                         base: 'main',
-                        head: `${version}-update-multi-version-upgrade`,
+                        head: `${version}-bake`,
+                        edits: mainBranchEdits,
+                        labels: [releaseBlockerLabel],
                     },
                     {
-                        ...prConfig,
+                        ...prDetails,
+                        repo: 'sourcegraph',
+                        owner: 'sourcegraph',
                         base: releaseBranch,
-                        head: `${version}-update-multi-version-upgrade-rb`,
+                        head: `${version}-bake-rb`,
+                        edits: releaseBranchEdits,
+                        labels: [releaseBlockerLabel],
                     },
                 ],
-                dryRun: false,
+                dryRun: config.dryRun.changesets,
             })
             console.log('Merge the following pull requests:\n')
             for (const set of sets) {
                 console.log(set.pullRequestURL)
+            }
+        },
+    },
+    {
+        id: 'release:create-tags',
+        description: 'Release a new version of src-cli and executors. Only required for minor and major versions',
+        run: async config => {
+            const release = await getActiveRelease(config)
+            if (release.version.patch !== 0) {
+                console.log('src-cli and executors releases are only supported in this tool for major / minor releases')
+                exit(1)
+            }
+
+            const repos = ['src-cli', 'terraform-google-executors', 'terraform-aws-executors']
+            const tags: ReleaseTag[] = []
+
+            const client = await getAuthenticatedGitHubClient()
+
+            for (const repo of repos) {
+                const { workdir } = await cloneRepo(client, 'sourcegraph', repo, {
+                    revision: repo === 'src-cli' ? 'main' : 'master',
+                    revisionMustExist: true,
+                })
+
+                switch (repo) {
+                    case 'src-cli': {
+                        const next = await nextSrcCliVersionInputWithAutodetect(config, workdir)
+                        setSrcCliVersion(config, next.version)
+                        tags.push({
+                            repo,
+                            nextTag: next.version,
+                            workDir: workdir,
+                        })
+                        break
+                    }
+                    case 'terraform-google-executors': {
+                        const nextGoogle = await nextGoogleExecutorVersionInputWithAutodetect(config, workdir)
+                        setGoogleExecutorVersion(config, nextGoogle.version)
+                        tags.push({
+                            repo,
+                            nextTag: nextGoogle.version,
+                            workDir: workdir,
+                        })
+                        break
+                    }
+                    case 'terraform-aws-executors': {
+                        const nextAWS = await nextAWSExecutorVersionInputWithAutodetect(config, workdir)
+                        setAWSExecutorVersion(config, nextAWS.version)
+                        tags.push({
+                            repo,
+                            nextTag: nextAWS.version,
+                            workDir: workdir,
+                        })
+                        break
+                    }
+                }
+            }
+
+            for (const tag of tags) {
+                const { repo, nextTag, workDir } = tag
+                if (!config.dryRun.changesets) {
+                    // actually execute the release
+                    if (repo === 'src-cli') {
+                        await execa('bash', ['-c', 'yes | ./release.sh'], {
+                            stdio: 'inherit',
+                            cwd: workDir,
+                            env: { ...process.env, VERSION: nextTag },
+                        })
+                    } else {
+                        await execa('bash', ['-c', `yes | ./release.sh ${nextTag}`], {
+                            stdio: 'inherit',
+                            cwd: workDir,
+                        })
+                    }
+                } else {
+                    console.log(chalk.blue(`Skipping ${repo} release for dry run`))
+                }
+            }
+        },
+    },
+    {
+        id: 'release:verify-releases',
+        description: 'Verify src-cli version is available in brew and npm and executors tags are available',
+        run: async config => {
+            let passed = true
+            let expected = config.in_progress?.srcCliVersion
+            let expectedAWSExecutor = config.in_progress?.awsExecutorVersion
+            let expectedGoogleExecutor = config.in_progress?.googleExecutorVersion
+
+            const formatVersion = function (val: string): string {
+                if (val === expected) {
+                    return chalk.green(val)
+                }
+                passed = false
+                return chalk.red(val)
+            }
+            if (!config.in_progress?.srcCliVersion) {
+                expected = await retryInput(
+                    'Enter the expected version of src-cli: ',
+                    val => !!semver.parse(val),
+                    'Expected semver format'
+                )
+            } else {
+                console.log(`Expecting src-cli version ${expected} from release config`)
+            }
+            if (!config.in_progress?.googleExecutorVersion) {
+                expectedGoogleExecutor = await retryInput(
+                    'Enter the expected version of the Google executor: ',
+                    val => !!semver.parse(val),
+                    'Expected semver format'
+                )
+            } else {
+                console.log(`Expecting Google executor version v${expectedGoogleExecutor} from release config`)
+            }
+
+            if (!config.in_progress?.awsExecutorVersion) {
+                expectedAWSExecutor = await retryInput(
+                    'Enter the expected version of the AWS executor: ',
+                    val => !!semver.parse(val),
+                    'Expected semver format'
+                )
+            } else {
+                console.log(`Expecting AWS executor version v${expectedAWSExecutor} from release config`)
+            }
+
+            const latestGoogleVersion = await getLatestTag('sourcegraph', 'terraform-google-executors')
+            const latestAWSVersion = await getLatestTag('sourcegraph', 'terraform-aws-executors')
+
+            if (latestGoogleVersion !== `v${expectedGoogleExecutor}`) {
+                passed = false
+            }
+            console.log(`terraform-google-executors:\t${formatVersion(latestGoogleVersion)}`)
+
+            if (latestAWSVersion !== `v${expectedAWSExecutor}`) {
+                passed = false
+            }
+
+            console.log(`terraform-aws-executors:\t${formatVersion(latestAWSVersion)}`)
+
+            const githubRelease = await getLatestSrcCliGithubRelease()
+            console.log(`github:\t${formatVersion(githubRelease)}`)
+
+            const brewVersion = execa.sync('bash', [
+                '-c',
+                "brew info sourcegraph/src-cli/src-cli -q | sed -n 's/.*stable \\([0-9]\\.[0-9]\\.[0-9]\\)/\\1/p'",
+            ]).stdout
+            console.log(`brew:\t${formatVersion(brewVersion)}`)
+
+            const npmVersion = execa.sync('bash', ['-c', 'npm show @sourcegraph/src version']).stdout
+            console.log(`npm:\t${formatVersion(npmVersion)}`)
+
+            if (passed === true) {
+                console.log(chalk.green('All versions matched expected version!'))
+            } else {
+                console.log(chalk.red('Failed to verify versions'))
+                exit(1)
             }
         },
     },
@@ -1120,6 +1430,13 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         run: async () => {
             ensureSrcCliEndpoint()
             await ensureSrcCliUpToDate()
+        },
+    },
+    {
+        id: '_test:patch-dates',
+        description: 'test patch dates',
+        run: () => {
+            console.log(newRelease(new SemVer('1.0.0'), DateTime.fromISO('2023-03-22'), 'test', 'test'))
         },
     },
 ]

@@ -1,4 +1,4 @@
-import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, { MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -8,17 +8,9 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/branded'
+import { CodeExcerpt } from '@sourcegraph/branded'
 import { HoveredToken } from '@sourcegraph/codeintellify'
-import {
-    addLineRangeQueryParameter,
-    ErrorLike,
-    formatSearchParameters,
-    logger,
-    lprToRange,
-    pluralize,
-    toPositionOrRangeQueryParameter,
-} from '@sourcegraph/common'
+import { ErrorLike, logger, pluralize } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
@@ -29,7 +21,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     RepoSpec,
@@ -60,19 +52,17 @@ import {
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
-import { LegacyBlob } from '../repo/blob/LegacyBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
+import { CodeIntelligenceProps } from '.'
 import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups, RepoLocationGroup } from './location'
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
 import { useRepoAndBlob } from './useRepoAndBlob'
 import { isDefined } from './util/helpers'
-
-import { CodeIntelligenceProps } from '.'
 
 import styles from './ReferencesPanel.module.scss'
 
@@ -161,7 +151,7 @@ export const ReferencesPanel: React.FunctionComponent<React.PropsWithChildren<Re
     )
 }
 
-export const RevisionResolvingReferencesList: React.FunctionComponent<
+const RevisionResolvingReferencesList: React.FunctionComponent<
     React.PropsWithChildren<
         ReferencesPanelProps & {
             repoName: string
@@ -358,27 +348,7 @@ const ReferencesList: React.FunctionComponent<
                 setActiveURL(undefined)
                 return
             }
-            // Reconstruct the URL instead of using `location.url` to ensure that
-            // the commitID is included even when `location.url` doesn't include the
-            // commitID (because it's the default revision '').
-            const absoluteURL = toPrettyBlobURL({
-                filePath: location.file,
-                revision: location.commitID,
-                repoName: location.repo,
-                commitID: location.commitID,
-                range: location.range
-                    ? {
-                          start: {
-                              line: location.range.start.line + 1,
-                              character: location.range.start.character + 1,
-                          },
-                          end: {
-                              line: location.range.end.line + 1,
-                              character: location.range.end.character + 1,
-                          },
-                      }
-                    : undefined,
-            })
+            const absoluteURL = locationToUrl(location)
             setActiveURL(absoluteURL)
         },
         [setActiveURL]
@@ -692,10 +662,6 @@ function parseSideBlobProps(
 }
 
 const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
-    const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
-    const BlobComponent = useCodeMirror ? CodeMirrorBlob : LegacyBlob
-
-    const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT
     const { data, error, loading } = useQuery<
         ReferencesPanelHighlightedBlobResult,
         ReferencesPanelHighlightedBlobVariables
@@ -704,8 +670,7 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
             repository: props.repository,
             commit: props.commitID,
             path: props.file,
-            format: highlightFormat,
-            html: highlightFormat === HighlightResponseFormat.HTML_HIGHLIGHT,
+            format: HighlightResponseFormat.JSON_SCIP,
         },
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
@@ -744,19 +709,18 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         return <>Nothing found</>
     }
 
-    const { html, lsif } = data?.repository?.commit?.blob?.highlight
+    const { lsif } = data?.repository?.commit?.blob?.highlight
 
     // TODO: display a helpful message if syntax highlighting aborted, see https://github.com/sourcegraph/sourcegraph/issues/40841
 
     return (
-        <BlobComponent
+        <CodeMirrorBlob
             {...props}
             nav={props.blobNav}
             wrapCode={true}
             className={styles.sideBlobCode}
             navigateToLineOnAnyClick={true}
             blobInfo={{
-                html: html ?? '',
                 lsif: lsif ?? '',
                 content: data?.repository?.commit?.blob?.content ?? '',
                 filePath: props.file,
@@ -905,7 +869,6 @@ const CollapsibleLocationGroup: React.FunctionComponent<
     handleOpenChange,
     fetchHighlightedFileLineRanges,
     navigateToUrl,
-    activeURL,
 }) => {
     // On the first load, update the scroll position towards the active
     // location.  Without this behavior, the scroll position points at the top
@@ -1018,16 +981,30 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                 const isFirstInActive =
                                     isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
                                 const locationActive = isActive ? styles.locationActive : ''
-                                const selectReference = (
-                                    event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>
-                                ): void => {
-                                    onClickCodeExcerptHref(event, () => {
-                                        if (isActive && activeURL) {
-                                            navigateToUrl(activeURL)
-                                        } else {
-                                            setActiveLocation(reference)
-                                        }
-                                    })
+                                const clickReference = (event: MouseEvent<HTMLElement>): void => {
+                                    // If anything other than a normal primary click is detected,
+                                    // treat this as a normal link click and let the browser handle
+                                    // it.
+                                    if (
+                                        event.button !== 0 ||
+                                        event.altKey ||
+                                        event.ctrlKey ||
+                                        event.metaKey ||
+                                        event.shiftKey
+                                    ) {
+                                        return
+                                    }
+
+                                    event.preventDefault()
+                                    if (isActive) {
+                                        navigateToUrl(locationToUrl(reference))
+                                    } else {
+                                        setActiveLocation(reference)
+                                    }
+                                }
+                                const doubleClickReference = (event: MouseEvent<HTMLElement>): void => {
+                                    event.preventDefault()
+                                    navigateToUrl(locationToUrl(reference))
                                 }
 
                                 return (
@@ -1035,13 +1012,13 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                         key={reference.url}
                                         className={classNames('border-0 rounded-0 mb-0', styles.location)}
                                     >
-                                        <div
-                                            role="link"
+                                        {/* eslint-disable-next-line react/forbid-elements */}
+                                        <a
                                             data-testid={`reference-item-${group.path}-${index}`}
                                             tabIndex={0}
-                                            onClick={selectReference}
-                                            onKeyDown={selectReference}
-                                            data-href={reference.url}
+                                            onClick={clickReference}
+                                            onDoubleClick={doubleClickReference}
+                                            href={reference.url}
                                             className={classNames(styles.locationLink, locationActive)}
                                         >
                                             <CodeExcerpt
@@ -1079,7 +1056,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                     </Tooltip>
                                                 </span>
                                             ) : null}
-                                        </div>
+                                        </a>
                                     </li>
                                 )
                             })}
@@ -1109,26 +1086,30 @@ const LoadingCodeIntelFailed: React.FunctionComponent<React.PropsWithChildren<{ 
     </>
 )
 
-export function locationWithoutViewState(location: H.Location): H.LocationDescriptorObject {
-    const parsedQuery = parseQueryAndHash(location.search, location.hash)
-    delete parsedQuery.viewState
-
-    const lineRangeQueryParameter = toPositionOrRangeQueryParameter({ range: lprToRange(parsedQuery) })
-    const result = {
-        search: formatSearchParameters(
-            addLineRangeQueryParameter(new URLSearchParams(location.search), lineRangeQueryParameter)
-        ),
-        hash: '',
-    }
-    return result
-}
-
-export const appendJumpToFirstQueryParameter = (url: string): string => {
-    const newUrl = new URL(url, window.location.href)
-    newUrl.searchParams.set('jumpToFirst', 'true')
-    return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
-}
-
 function sessionStorageKeyFromToken(token: Token): string {
     return `${token.repoName}@${token.commitID}/${token.filePath}?L${token.line}:${token.character}`
+}
+
+function locationToUrl(location: Location): string {
+    // Reconstruct the URL instead of using `location.url` to ensure that
+    // the commitID is included even when `location.url` doesn't include the
+    // commitID (because it's the default revision '').
+    return toPrettyBlobURL({
+        filePath: location.file,
+        revision: location.commitID,
+        repoName: location.repo,
+        commitID: location.commitID,
+        range: location.range
+            ? {
+                  start: {
+                      line: location.range.start.line + 1,
+                      character: location.range.start.character + 1,
+                  },
+                  end: {
+                      line: location.range.end.line + 1,
+                      character: location.range.end.character + 1,
+                  },
+              }
+            : undefined,
+    })
 }

@@ -41,7 +41,6 @@ To enable Perforce code host connections, a site admin must:
     - [`p4.user`](perforce.md#p4-user)
       
       The user to be authenticated for `p4` CLI, and should be capable of performing:
-      - `p4 ping`
       - `p4 login`
       - `p4 trust`
       - and any p4 commands involved with `git p4 clone` and `git p4 sync` for listed `depots`.

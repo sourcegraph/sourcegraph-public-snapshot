@@ -25,6 +25,7 @@ import { ExternalServiceNode } from './ExternalServiceNode'
 interface Props extends TelemetryProps {
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
@@ -34,6 +35,7 @@ export const ExternalServicesPage: FC<Props> = ({
     telemetryService,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
+    isSourcegraphApp,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalServices')
@@ -56,15 +58,22 @@ export const ExternalServicesPage: FC<Props> = ({
                 description="Manage code host connections to sync repositories."
                 headingElement="h2"
                 actions={
-                    <ButtonLink
-                        className="test-goto-add-external-service-page"
-                        to="/site-admin/external-services/new"
-                        variant="primary"
-                        as={Link}
-                        disabled={editingDisabled}
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
-                    </ButtonLink>
+                    <>
+                        {isSourcegraphApp && (
+                            <ButtonLink className="mr-2" to="/setup" variant="secondary" as={Link}>
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add local code
+                            </ButtonLink>
+                        )}
+                        <ButtonLink
+                            className="test-goto-add-external-service-page"
+                            to="/site-admin/external-services/new"
+                            variant="primary"
+                            as={Link}
+                            disabled={editingDisabled}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
+                        </ButtonLink>
+                    </>
                 }
                 className="mb-3"
             />

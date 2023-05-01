@@ -6,12 +6,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type getContextDetectionEmbeddingIndexFn func(ctx context.Context) (*embeddings.ContextDetectionEmbeddingIndex, error)
 
 const MIN_NO_CONTEXT_SIMILARITY_DIFF = float32(0.02)
-const MIN_QUERY_WITH_CONTEXT_LENGTH = 16
+
+var CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
+	lazyregexp.New(`(what|where|how) (are|do|does|is)`),
+	lazyregexp.New(`in (the|my) (code|codebase|repo|repository)`),
+	lazyregexp.New(`(what|which) (directory|file|folder|path)(s?)`),
+}
 
 var NO_CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
 	lazyregexp.New(`(previous|above)\s+(message|code|text)`),
@@ -33,14 +39,16 @@ func isContextRequiredForChatQuery(
 	query string,
 ) (bool, error) {
 	queryTrimmed := strings.TrimSpace(query)
-	if len(queryTrimmed) < MIN_QUERY_WITH_CONTEXT_LENGTH {
-		return false, nil
-	}
-
 	queryLower := strings.ToLower(queryTrimmed)
 	for _, regexp := range NO_CONTEXT_MESSAGES_REGEXPS {
-		if submatches := regexp.FindStringSubmatch(queryLower); len(submatches) > 0 {
+		if regexp.MatchString(queryLower) {
 			return false, nil
+		}
+	}
+
+	for _, regexp := range CONTEXT_MESSAGES_REGEXPS {
+		if regexp.MatchString(queryLower) {
+			return true, nil
 		}
 	}
 
@@ -60,16 +68,16 @@ func isQuerySimilarToNoContextMessages(
 ) (bool, error) {
 	contextDetectionEmbeddingIndex, err := getContextDetectionEmbeddingIndex(ctx)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "getting context detection embedding index")
 	}
 
-	queryEmbedding, err := getQueryEmbedding(query)
+	queryEmbedding, err := getQueryEmbedding(ctx, query)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "getting query embedding")
 	}
 
-	messagesWithContextSimilarity := embeddings.CosineSimilarity(contextDetectionEmbeddingIndex.MessagesWithAdditionalContextMeanEmbedding, queryEmbedding)
-	messagesWithoutContextSimilarity := embeddings.CosineSimilarity(contextDetectionEmbeddingIndex.MessagesWithoutAdditionalContextMeanEmbedding, queryEmbedding)
+	messagesWithContextSimilarity := embeddings.CosineSimilarityFloat32(contextDetectionEmbeddingIndex.MessagesWithAdditionalContextMeanEmbedding, queryEmbedding)
+	messagesWithoutContextSimilarity := embeddings.CosineSimilarityFloat32(contextDetectionEmbeddingIndex.MessagesWithoutAdditionalContextMeanEmbedding, queryEmbedding)
 
 	// We have to be really sure that the query is similar to no context messages, so we include the `MIN_NO_CONTEXT_SIMILARITY_DIFF` threshold.
 	isSimilarToNoContextMessages := (messagesWithoutContextSimilarity - messagesWithContextSimilarity) >= MIN_NO_CONTEXT_SIMILARITY_DIFF

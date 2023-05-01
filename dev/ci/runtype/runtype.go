@@ -19,10 +19,11 @@ const (
 
 	// Nightly builds - must be first because they take precedence
 
-	ReleaseNightly     // release branch nightly healthcheck builds
-	BextNightly        // browser extension nightly build
-	VsceNightly        // vs code extension nightly build
-	AppSnapshotRelease // app snapshot build
+	ReleaseNightly // release branch nightly healthcheck builds
+	BextNightly    // browser extension nightly build
+	VsceNightly    // vs code extension nightly build
+	AppRelease     // app release build
+	AppInsiders    // app insiders build
 
 	// Release branches
 
@@ -30,6 +31,7 @@ const (
 	ReleaseBranch     // release branch build
 	BextReleaseBranch // browser extension release build
 	VsceReleaseBranch // vs code extension release build
+	CodyReleaseBranch // cody extension release build
 
 	// Main branches
 
@@ -109,9 +111,20 @@ func (t RunType) Matcher() *RunTypeMatcher {
 			BranchExact: true,
 		}
 
-	case AppSnapshotRelease:
+	case CodyReleaseBranch:
 		return &RunTypeMatcher{
-			Branch:      "app/release-snapshot",
+			Branch:      "cody/release",
+			BranchExact: true,
+		}
+
+	case AppRelease:
+		return &RunTypeMatcher{
+			Branch:      "app/release",
+			BranchExact: true,
+		}
+	case AppInsiders:
+		return &RunTypeMatcher{
+			Branch:      "app/insiders",
 			BranchExact: true,
 		}
 
@@ -189,8 +202,10 @@ func (t RunType) String() string {
 		return "Browser extension nightly release build"
 	case VsceNightly:
 		return "VS Code extension nightly release build"
-	case AppSnapshotRelease:
-		return "App snapshot release"
+	case AppRelease:
+		return "App release build"
+	case AppInsiders:
+		return "App insiders build"
 	case TaggedRelease:
 		return "Tagged release"
 	case ReleaseBranch:
@@ -199,6 +214,8 @@ func (t RunType) String() string {
 		return "Browser extension release build"
 	case VsceReleaseBranch:
 		return "VS Code extension release build"
+	case CodyReleaseBranch:
+		return "Cody VS Code extension release build"
 
 	case MainBranch:
 		return "Main branch"

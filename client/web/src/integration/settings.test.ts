@@ -72,8 +72,11 @@ describe('Settings', () => {
                         avatarURL: null,
                         viewerCanAdminister: true,
                         builtinAuth: true,
-                        tags: [],
                         createdAt: '2020-03-02T11:52:15Z',
+                        roles: {
+                            __typename: 'RoleConnection',
+                            nodes: [],
+                        },
                     },
                 }),
                 UserSettingsAreaUserProfile: () => ({
@@ -93,7 +96,11 @@ describe('Settings', () => {
                         emails: [{ email: 'test@sourcegraph.test', verified: true, isPrimary: true }],
                         organizations: { nodes: [] },
                         permissionsInfo: null,
-                        tags: [],
+                        scimControlled: false,
+                        roles: {
+                            __typename: 'RoleConnection',
+                            nodes: [],
+                        },
                     },
                 }),
             })

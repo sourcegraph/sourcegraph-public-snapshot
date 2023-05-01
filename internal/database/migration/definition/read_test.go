@@ -75,6 +75,42 @@ func TestReadDefinitions(t *testing.T) {
 		}
 	})
 
+	t.Run("concurrent unique", func(t *testing.T) {
+		fsys, err := fs.Sub(testdata.Content, "concurrent-unique")
+		if err != nil {
+			t.Fatalf("unexpected error fetching schema %q: %s", "concurrent", err)
+		}
+
+		definitions, err := ReadDefinitions(fsys, relativeWorkingDirectory)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		expectedDefinitions := []Definition{
+			{
+				ID:        10001,
+				Name:      "first",
+				UpQuery:   sqlf.Sprintf("10001 UP"),
+				DownQuery: sqlf.Sprintf("10001 DOWN"),
+			},
+			{
+				ID:                        10002,
+				Name:                      "second",
+				UpQuery:                   sqlf.Sprintf("-- Some docs here\nCREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idx ON tbl(col1, col2, col3);"),
+				DownQuery:                 sqlf.Sprintf("DROP INDEX IF EXISTS idx;"),
+				IsCreateIndexConcurrently: true,
+				IndexMetadata: &IndexMetadata{
+					TableName: "tbl",
+					IndexName: "idx",
+				},
+				Parents: []int{10001},
+			},
+		}
+		if diff := cmp.Diff(expectedDefinitions, definitions.definitions, queryComparer); diff != "" {
+			t.Fatalf("unexpected definitions (-want +got):\n%s", diff)
+		}
+	})
+
 	t.Run("privileged", func(t *testing.T) {
 		fsys, err := fs.Sub(testdata.Content, "privileged")
 		if err != nil {

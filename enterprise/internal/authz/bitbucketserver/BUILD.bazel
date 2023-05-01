@@ -12,7 +12,6 @@ go_library(
         "//enterprise/internal/authz/types",
         "//enterprise/internal/licensing",
         "//internal/authz",
-        "//internal/conf",
         "//internal/encryption",
         "//internal/extsvc",
         "//internal/extsvc/bitbucketserver",
@@ -26,6 +25,7 @@ go_library(
 
 go_test(
     name = "bitbucketserver_test",
+    timeout = "short",
     srcs = [
         "integration_test.go",
         "main_test.go",

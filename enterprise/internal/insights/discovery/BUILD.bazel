@@ -27,6 +27,7 @@ go_library(
 
 go_test(
     name = "discovery_test",
+    timeout = "short",
     srcs = [
         "all_repos_iterator_test.go",
         "mocks_test.go",

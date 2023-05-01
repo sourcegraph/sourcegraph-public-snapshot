@@ -8,14 +8,14 @@
 # NOTE: This section is taken from https://github.com/weaveworks/ignite/blob/main/images/ubuntu/Dockerfile.
 # We maintain this on our end, so we can determine when we want to pull new ubuntu versions, sice
 # upstream ignite doesn't push new ones frequently.
-FROM amd64/ubuntu:20.04@sha256:a06ae92523384c2cd182dcfe7f8b2bf09075062e937d5653d7d0db0375ad2221
+FROM amd64/ubuntu:focal@sha256:a06ae92523384c2cd182dcfe7f8b2bf09075062e937d5653d7d0db0375ad2221
 
 # udev is needed for booting a "real" VM, setting up the ttyS0 console properly
 # kmod is needed for modprobing modules
 # systemd is needed for running as PID 1 as /sbin/init
 # Also, other utilities are installed
 # hadolint ignore=DL3008,DL3009,DL3015
-RUN apt-get update && \
+RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y \
         ca-certificates \
         curl \
@@ -31,7 +31,7 @@ RUN apt-get update && \
         sudo \
         systemd \
         udev \
-        vim-tiny \
+        nano \
         software-properties-common \
         wget && \
     apt-get clean && \

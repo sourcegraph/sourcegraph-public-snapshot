@@ -21,9 +21,6 @@ func TestPathValidator_Validate(t *testing.T) {
 			`emails.value`,
 			`emails[type eq "work"]`,
 			`emails[type eq "work"].display`,
-
-			`urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber`,
-			`urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.displayName`,
 		} {
 			validator, err := NewPathValidator(f, schema.CoreUserSchema(), schema.ExtensionEnterpriseUser())
 			if err != nil {
@@ -43,9 +40,6 @@ func TestPathValidator_Validate(t *testing.T) {
 			`name.invalid`,
 			`emails[invalid eq "work"]`,
 			`emails[type eq "work"].invalid`,
-
-			`urn:ietf:params:scim:schemas:core:2.0:User:employeeNumber`,
-			`urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:userName`,
 		} {
 			validator, err := NewPathValidator(f, schema.CoreUserSchema(), schema.ExtensionEnterpriseUser())
 			if err != nil {

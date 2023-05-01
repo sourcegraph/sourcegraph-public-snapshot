@@ -758,7 +758,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 	setGitserverRepoCloneStatus(t, db, r3.Name, types.CloneStatusCloned)
 	setGitserverRepoLastChanged(t, db, r3.Name, now.Add(-time.Hour))
 	{
-		_, err := db.Handle().ExecContext(ctx, `INSERT INTO codeintel_path_ranks (repository_id, precision, updated_at, payload) VALUES ($1, 0, $2, '{}'::jsonb)`, r3.ID, now)
+		_, err := db.Handle().ExecContext(ctx, `INSERT INTO codeintel_path_ranks (repository_id, updated_at, payload) VALUES ($1, $2, '{}'::jsonb)`, r3.ID, now)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1297,6 +1297,78 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 				t.Fatal(err)
 			}
 			assertJSONEqual(t, test.want, repos)
+		})
+	}
+}
+
+func TestRepos_List_topics(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := actor.WithInternalActor(context.Background())
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+
+	services := typestest.MakeExternalServices()
+	githubService := services[0]
+	gitlabService := services[1]
+	if err := db.ExternalServices().Create(ctx, confGet, githubService); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ExternalServices().Create(ctx, confGet, gitlabService); err != nil {
+		t.Fatal(err)
+	}
+
+	setTopics := func(topics ...string) func(r *types.Repo) {
+		return func(r *types.Repo) {
+			if ghr, ok := r.Metadata.(*github.Repository); ok {
+				for _, topic := range topics {
+					ghr.RepositoryTopics.Nodes = append(ghr.RepositoryTopics.Nodes, github.RepositoryTopic{
+						Topic: github.Topic{Name: topic},
+					})
+				}
+			}
+		}
+	}
+
+	ids := func(id int) func(r *types.Repo) {
+		return func(r *types.Repo) {
+			r.ExternalRepo.ID = strconv.Itoa(id)
+			r.Name = api.RepoName(strconv.Itoa(id))
+		}
+	}
+
+	r1 := typestest.MakeGithubRepo().With(ids(1), setTopics("topic1", "topic2"))
+	r2 := typestest.MakeGithubRepo().With(ids(2), setTopics("topic2", "topic3"))
+	r3 := typestest.MakeGithubRepo().With(ids(3), setTopics("topic1", "topic2", "topic3"))
+	r4 := typestest.MakeGitlabRepo().With(ids(4))
+	r5 := typestest.MakeGithubRepo().With(ids(5))
+	if err := db.Repos().Create(ctx, r1, r2, r3, r4, r5); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		opt  ReposListOptions
+		want []*types.Repo
+	}{
+		{"topic1", ReposListOptions{TopicFilters: []RepoTopicFilter{{Topic: "topic1"}}}, []*types.Repo{r1, r3}},
+		{"topic2", ReposListOptions{TopicFilters: []RepoTopicFilter{{Topic: "topic2"}}}, []*types.Repo{r1, r2, r3}},
+		{"topic3", ReposListOptions{TopicFilters: []RepoTopicFilter{{Topic: "topic3"}}}, []*types.Repo{r2, r3}},
+		{"not topic1", ReposListOptions{TopicFilters: []RepoTopicFilter{{Topic: "topic1", Negated: true}}}, []*types.Repo{r2, r4, r5}},
+		{
+			"topic3 not topic1",
+			ReposListOptions{TopicFilters: []RepoTopicFilter{{Topic: "topic3"}, {Topic: "topic1", Negated: true}}},
+			[]*types.Repo{r2},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repos, err := db.Repos().List(ctx, test.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			require.Equal(t, test.want, repos)
 		})
 	}
 }
@@ -2422,6 +2494,94 @@ func TestRepos_Delete(t *testing.T) {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
+	}
+}
+
+func TestRepos_DeleteReconcilesName(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
+	repo := mustCreate(ctx, t, db, &types.Repo{Name: "myrepo"})
+	// Artificially set deleted_at but do not modify the name, which all delete code does.
+	repo.DeletedAt = time.Date(2020, 10, 12, 12, 0, 0, 0, time.UTC)
+	q := sqlf.Sprintf("UPDATE repo SET deleted_at = %s WHERE id = %s", repo.DeletedAt, repo.ID)
+	if _, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		t.Fatal(err)
+	}
+	// Delete repo
+	if err := db.Repos().Delete(ctx, repo.ID); err != nil {
+		t.Fatal(err)
+	}
+	// Check if name is updated to DELETED-...
+	repos, err := db.Repos().List(ctx, ReposListOptions{
+		IDs:            []api.RepoID{repo.ID},
+		IncludeDeleted: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repos) != 1 {
+		t.Fatalf("want one repo with given ID, got %v", repos)
+	}
+	if got := string(repos[0].Name); !strings.HasPrefix(got, "DELETED-") {
+		t.Errorf("deleted repo name, got %q, want \"DELETED-..\"", got)
+	}
+	if got, want := repos[0].DeletedAt, repo.DeletedAt; got != want {
+		t.Errorf("deleted_at seems unexpectedly updated, got %s want %s", got, want)
+	}
+}
+
+func TestRepos_MultipleDeletesKeepTheSameTombstoneData(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
+	repo := mustCreate(ctx, t, db, &types.Repo{Name: "myrepo"})
+	// Delete once.
+	if err := db.Repos().Delete(ctx, repo.ID); err != nil {
+		t.Fatal(err)
+	}
+	repos, err := db.Repos().List(ctx, ReposListOptions{
+		IDs:            []api.RepoID{repo.ID},
+		IncludeDeleted: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repos) != 1 {
+		t.Fatalf("want one repo with given ID, got %v", repos)
+	}
+	afterFirstDelete := repos[0]
+	// Delete again
+	if err := db.Repos().Delete(ctx, repo.ID); err != nil {
+		t.Fatal(err)
+	}
+	repos, err = db.Repos().List(ctx, ReposListOptions{
+		IDs:            []api.RepoID{repo.ID},
+		IncludeDeleted: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repos) != 1 {
+		t.Fatalf("want one repo with given ID, got %v", repos)
+	}
+	afterSecondDelete := repos[0]
+	// Check if tombstone data - deleted_at and name are the same.
+	if got, want := afterSecondDelete.Name, afterFirstDelete.Name; got != want {
+		t.Errorf("name: got %q want %q", got, want)
+	}
+	if got, want := afterSecondDelete.DeletedAt, afterFirstDelete.DeletedAt; got != want {
+		t.Errorf("deleted_at, got %v want %v", got, want)
 	}
 }
 

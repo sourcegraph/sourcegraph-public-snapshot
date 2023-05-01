@@ -51,6 +51,9 @@ func createVirtualFile(content []byte, path string) graphqlbackend.FileResolver 
 	fileInfo := graphqlbackend.CreateFileInfo(path, false)
 	return graphqlbackend.NewVirtualFileResolver(fileInfo, func(ctx context.Context) (string, error) {
 		return string(content), nil
+	}, graphqlbackend.VirtualFileResolverOptions{
+		// TODO: Add URL to file in webapp.
+		URL: "",
 	})
 }
 

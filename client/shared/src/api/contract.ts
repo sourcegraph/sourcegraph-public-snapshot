@@ -4,26 +4,24 @@ import { DocumentHighlight } from 'sourcegraph'
 
 import { Contributions, Evaluated, Raw, TextDocumentPositionParameters, HoverMerged } from '@sourcegraph/client-api'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { DeepReplace } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { GraphQLResult } from '@sourcegraph/http-client'
 
-import type { ReferenceContext, InputBoxOptions } from '../codeintel/legacy-extensions/api'
+import type { ReferenceContext } from '../codeintel/legacy-extensions/api'
+import { Occurrence } from '../codeintel/scip'
 import { ConfiguredExtension } from '../extensions/extension'
 import { SettingsCascade } from '../settings/settings'
 
 import { SettingsEdit } from './client/services/settings'
 import { ExecutableExtension } from './extension/activation'
 import { ProxySubscribable } from './extension/api/common'
-import {
-    ViewContexts,
-    PanelViewData,
-    ViewProviderResult,
-    ProgressNotification,
-    PlainNotification,
-    ContributionOptions,
-} from './extension/extensionHostApi'
+import { ContributionOptions } from './extension/extensionHostApi'
 import { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
+
+export interface ScipParameters {
+    referenceOccurrence: Occurrence
+    documentOccurrences: Occurrence[]
+}
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -43,18 +41,17 @@ export interface FlatExtensionHostAPI {
 
     setSearchContext: (searchContext: string | undefined) => void
 
-    // Search
-    transformSearchQuery: (query: string) => ProxySubscribable<string>
-
     // Languages
     getHover: (parameters: TextDocumentPositionParameters) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
     getDocumentHighlights: (parameters: TextDocumentPositionParameters) => ProxySubscribable<DocumentHighlight[]>
     getDefinition: (
-        parameters: TextDocumentPositionParameters
+        parameters: TextDocumentPositionParameters,
+        scipParameters?: ScipParameters
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
     getReferences: (
         parameters: TextDocumentPositionParameters,
-        context: ReferenceContext
+        context: ReferenceContext,
+        scipParameters?: ScipParameters
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
     getLocations: (
         id: string,
@@ -134,33 +131,6 @@ export interface FlatExtensionHostAPI {
      */
     removeViewer(viewer: ViewerId): void
 
-    // Notifications
-    getPlainNotifications: () => ProxySubscribable<PlainNotification>
-    getProgressNotifications: () => ProxySubscribable<ProgressNotification & ProxyMarked>
-
-    // Views
-    getPanelViews: () => ProxySubscribable<PanelViewData[]>
-
-    // Insight page
-    getInsightViewById: (id: string, context: ViewContexts['insightsPage']) => ProxySubscribable<ViewProviderResult>
-    getInsightsViews: (
-        context: ViewContexts['insightsPage'],
-        // Resolve only insights that were included in that
-        // ids list. Used for the insights dashboard functionality.
-        insightIds?: string[]
-    ) => ProxySubscribable<ViewProviderResult[]>
-
-    // Home (search) page
-    getHomepageViews: (context: ViewContexts['homepage']) => ProxySubscribable<ViewProviderResult[]>
-
-    // Directory page
-    getDirectoryViews: (
-        // Construct URL object on host from string provided by main thread
-        context: DeepReplace<ViewContexts['directory'], URL, string>
-    ) => ProxySubscribable<ViewProviderResult[]>
-
-    getGlobalPageViews: (context: ViewContexts['global/page']) => ProxySubscribable<ViewProviderResult[]>
-
     /**
      * Emits true when the initial batch of extensions have been loaded.
      */
@@ -191,10 +161,6 @@ export interface MainThreadAPI {
         name: string,
         command: Remote<((...args: any) => any) & ProxyMarked>
     ) => Unsubscribable & ProxyMarked
-
-    // User interaction methods
-    showMessage: (message: string) => Promise<void>
-    showInputBox: (options?: InputBoxOptions) => Promise<string | undefined>
 
     getEnabledExtensions: () => ProxySubscribable<(ConfiguredExtension | ExecutableExtension)[]>
 

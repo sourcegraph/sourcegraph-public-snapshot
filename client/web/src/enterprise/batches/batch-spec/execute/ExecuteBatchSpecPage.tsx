@@ -269,7 +269,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                             )
                         }
                     />
-                    <Route element={<HeroPage icon={MapSearchIcon} title="404: Not Found" />} />
+                    <Route path="*" element={<HeroPage icon={MapSearchIcon} title="404: Not Found" />} />
                 </Routes>
             </div>
         )

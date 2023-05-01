@@ -10,6 +10,7 @@ go_library(
 
 go_test(
     name = "siteid_test",
+    timeout = "short",
     srcs = ["siteid_test.go"],
     embed = [":siteid"],
     deps = [

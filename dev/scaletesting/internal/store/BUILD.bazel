@@ -13,6 +13,7 @@ go_library(
 
 go_test(
     name = "store_test",
+    timeout = "short",
     srcs = ["store_test.go"],
     embed = [":store"],
     deps = ["@com_github_frankban_quicktest//:quicktest"],

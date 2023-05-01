@@ -24,6 +24,7 @@ go_binary(
 
 go_test(
     name = "src-expose_test",
+    timeout = "short",
     srcs = [
         "main_test.go",
         "serve_test.go",

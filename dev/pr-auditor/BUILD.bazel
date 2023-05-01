@@ -14,6 +14,7 @@ go_library(
         "//lib/errors",
         "@com_github_google_go_github_v41//github",
         "@com_github_grafana_regexp//:regexp",
+        "@org_golang_x_exp//slices",
         "@org_golang_x_oauth2//:oauth2",
     ],
 )
@@ -26,6 +27,7 @@ go_binary(
 
 go_test(
     name = "pr-auditor_test",
+    timeout = "short",
     srcs = [
         "check_test.go",
         "issue_test.go",

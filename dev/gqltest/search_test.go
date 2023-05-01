@@ -149,17 +149,17 @@ func addKVPs(t *testing.T, client *gqltestutil.Client) {
 	}
 
 	testVal := "testval"
-	err = client.AddRepoKVP(repo1.ID, "testkey", &testVal)
+	err = client.AddRepoMetadata(repo1.ID, "testkey", &testVal)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = client.AddRepoKVP(repo2.ID, "testkey", &testVal)
+	err = client.AddRepoMetadata(repo2.ID, "testkey", &testVal)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = client.AddRepoKVP(repo2.ID, "testtag", nil)
+	err = client.AddRepoMetadata(repo2.ID, "testtag", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1301,6 +1301,21 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `repo has kvp and not nonexistent kvp`,
 				query:  `repo:has(testkey:testval) -repo:has(noexist:false)`,
 				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo has topic`,
+				query:  `repo:has.topic(go)`, // jsonrpc2 and go-diff
+				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo has topic plus exclusion`,
+				query:  `repo:has.topic(go) -repo:has.topic(json)`, // go-diff (not jsonrpc2)
+				counts: counts{Repo: 1},
+			},
+			{
+				name:   `nonexistent topic`,
+				query:  `repo:has.topic(noexist)`,
+				counts: counts{Repo: 0},
 			},
 		}
 

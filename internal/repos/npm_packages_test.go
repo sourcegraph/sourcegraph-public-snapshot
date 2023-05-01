@@ -35,13 +35,17 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		deps, _, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+		deps, _, hasMore, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
 			Scheme:        dependencies.NpmPackagesScheme,
 			Name:          reposource.PackageName(testCase.pkgName),
 			ExactNameOnly: true,
 		})
 		if err != nil {
 			t.Fatalf("unexpected error listing package repos: %v", err)
+		}
+
+		if hasMore {
+			t.Error("unexpected more-pages flag set, expected no more pages to follow")
 		}
 
 		depStrs := []string{}
@@ -67,7 +71,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 
 	for _, testCase := range testCases {
 		var depStrs []string
-		deps, _, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+		deps, _, _, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
 			Scheme:        dependencies.NpmPackagesScheme,
 			Name:          reposource.PackageName(testCase.pkgName),
 			ExactNameOnly: true,
@@ -98,7 +102,7 @@ func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos 
 	t.Helper()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	depsSvc := dependencies.TestService(db, nil)
+	depsSvc := dependencies.TestService(db)
 
 	_, _, err := depsSvc.InsertPackageRepoRefs(ctx, dependencyRepos)
 	if err != nil {
@@ -128,7 +132,7 @@ var testDependencyRepos = func() []dependencies.MinimalPackageRepoRef {
 		dependencyRepos = append(dependencyRepos, dependencies.MinimalPackageRepoRef{
 			Scheme:   dependencies.NpmPackagesScheme,
 			Name:     dep.PackageSyntax(),
-			Versions: []string{dep.Version},
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: dep.Version}},
 		})
 	}
 
@@ -141,20 +145,20 @@ func TestNPMPackagesSource_ListRepos(t *testing.T) {
 		{
 			Scheme: dependencies.NpmPackagesScheme,
 			Name:   "@sourcegraph/sourcegraph.proposed",
-			Versions: []string{
-				"12.0.0", // test deduplication with version from config
-				"12.0.1", // test deduplication with version from config
+			Versions: []dependencies.MinimalPackageRepoRefVersion{
+				{Version: "12.0.0"}, // test deduplication with version from config
+				{Version: "12.0.1"}, // test deduplication with version from config
 			},
 		},
 		{
 			Scheme:   dependencies.NpmPackagesScheme,
 			Name:     "@sourcegraph/web-ext",
-			Versions: []string{"3.0.0-fork.1"},
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "3.0.0-fork.1"}},
 		},
 		{
 			Scheme:   dependencies.NpmPackagesScheme,
 			Name:     "fastq",
-			Versions: []string{"0.9.9"}, // test missing modules still create a repo.
+			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "0.9.9"}}, // test missing modules still create a repo.
 		},
 	})
 

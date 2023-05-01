@@ -8,6 +8,7 @@ import (
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/log"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -66,7 +68,7 @@ func newExternalHTTPHandler(
 	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(logger, db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, logger, apiHandler)                                // API accepts access tokens
-	apiHandler = requestclient.HTTPMiddleware(apiHandler)
+	apiHandler = requestclient.ExternalHTTPMiddleware(apiHandler, envvar.SourcegraphDotComMode())
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 	if envvar.SourcegraphDotComMode() {
 		apiHandler = deviceid.Middleware(apiHandler)
@@ -89,7 +91,7 @@ func newExternalHTTPHandler(
 	appHandler = middleware.OpenGraphMetadataMiddleware(db.FeatureFlags(), appHandler)
 	appHandler = session.CookieMiddleware(logger, db, appHandler)                  // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, logger, appHandler) // app accepts access tokens
-	appHandler = requestclient.HTTPMiddleware(appHandler)
+	appHandler = requestclient.ExternalHTTPMiddleware(appHandler, envvar.SourcegraphDotComMode())
 	if envvar.SourcegraphDotComMode() {
 		appHandler = deviceid.Middleware(appHandler)
 	}
@@ -137,6 +139,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 func newInternalHTTPHandler(
 	schema *graphql.Schema,
 	db database.DB,
+	grpcServer *grpc.Server,
 	enterpriseJobs jobutil.EnterpriseJobs,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
 	rankingService enterprise.RankingService,
@@ -145,23 +148,30 @@ func newInternalHTTPHandler(
 ) http.Handler {
 	internalMux := http.NewServeMux()
 	logger := log.Scoped("internal", "internal http handlers")
+
+	internalRouter := router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter())
+	internalhttpapi.RegisterInternalServices(
+		internalRouter,
+		grpcServer,
+		db,
+		enterpriseJobs,
+		schema,
+		newCodeIntelUploadHandler,
+		rankingService,
+		newComputeStreamHandler,
+		rateLimitWatcher,
+	)
+
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
 		actor.HTTPMiddleware(
 			logger,
-			featureflag.Middleware(db.FeatureFlags(),
-				internalhttpapi.NewInternalHandler(
-					router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
-					db,
-					enterpriseJobs,
-					schema,
-					newCodeIntelUploadHandler,
-					rankingService,
-					newComputeStreamHandler,
-					rateLimitWatcher,
-				),
+			featureflag.Middleware(
+				db.FeatureFlags(),
+				internalRouter,
 			),
 		),
 	))
+
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
@@ -256,7 +266,7 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 	// And you may also see the type of error the browser would produce in this instance at e.g.
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSMissingAllowOrigin
 	//
-	if policy == crossOriginPolicyNever {
+	if policy == crossOriginPolicyNever && !deploy.IsApp() {
 		return false
 	}
 
@@ -333,6 +343,7 @@ func isTrustedOrigin(r *http.Request) bool {
 	requestOrigin := r.Header.Get("Origin")
 
 	isExtensionRequest := requestOrigin == devExtension || requestOrigin == prodExtension
+	isAppRequest := deploy.IsApp() && strings.HasPrefix(requestOrigin, "tauri://")
 
 	var isCORSAllowedRequest bool
 	if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" {
@@ -343,5 +354,5 @@ func isTrustedOrigin(r *http.Request) bool {
 		isCORSAllowedRequest = true
 	}
 
-	return isExtensionRequest || isCORSAllowedRequest
+	return isExtensionRequest || isAppRequest || isCORSAllowedRequest
 }

@@ -19,6 +19,7 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
+import { OwnConfigProps } from '../own/OwnConfigProps'
 import { SearchStreamingProps } from '../search'
 import { eventLogger } from '../tracking/eventLogger'
 import { RouteV6Descriptor } from '../util/contributions'
@@ -27,6 +28,7 @@ import { parseBrowserRepoURL } from '../util/url'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
 import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
+import { isPackageServiceType } from './packages/isPackageServiceType'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -53,13 +55,12 @@ export interface RepoRevisionContainerContext
         BatchChangesProps,
         Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
         CodeInsightsProps,
-        NotebookProps {
+        NotebookProps,
+        OwnConfigProps {
     repo: RepositoryFields | undefined
     resolvedRevision: ResolvedRevision | undefined
 
     repoName: string
-
-    globbing: boolean
 
     isMacPlatform: boolean
 
@@ -84,7 +85,8 @@ interface RepoRevisionContainerProps
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        NotebookProps {
+        NotebookProps,
+        OwnConfigProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -98,8 +100,6 @@ interface RepoRevisionContainerProps
 
     /** The repoName from the URL */
     repoName: string
-
-    globbing: boolean
 
     isMacPlatform: boolean
 
@@ -148,6 +148,7 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
                     <RevisionsPopover
                         repoId={repo?.id}
                         repoName={repoName}
+                        repoServiceType={repo?.externalRepository?.serviceType}
                         defaultBranch={resolvedRevision?.defaultBranch}
                         currentRev={revision}
                         currentCommitID={resolvedRevision?.commitID}
@@ -189,6 +190,11 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
         }, [resolvedRevision, revision, repo, repoName])
     )
 
+    const isPackage = useMemo(
+        () => isPackageServiceType(repo?.externalRepository.serviceType),
+        [repo?.externalRepository.serviceType]
+    )
+
     const repoRevisionContainerContext: RepoRevisionContainerContext = {
         ...props,
         ...breadcrumbSetters,
@@ -216,7 +222,7 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                     <CopyPathAction telemetryService={eventLogger} filePath={filePath || repoName} key="copy-path" />
                 )}
             </RepoHeaderContributionPortal>
-            {resolvedRevision && (
+            {resolvedRevision && !isPackage && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={3}

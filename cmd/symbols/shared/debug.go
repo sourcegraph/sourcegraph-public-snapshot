@@ -7,5 +7,5 @@ import (
 // GRPCWebUIDebugEndpoint returns a debug endpoint that serves the GRPCWebUI that targets
 // this symbols instance.
 func GRPCWebUIDebugEndpoint() debugserver.Endpoint {
-	return debugserver.NewGRPCWebUIEndpoint(addr)
+	return debugserver.NewGRPCWebUIEndpoint("symbols", addr)
 }

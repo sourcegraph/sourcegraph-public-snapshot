@@ -10,7 +10,10 @@
    "IsArchived": false,
    "IsLocked": false,
    "IsDisabled": false,
-   "ViewerPermission": "ADMIN"
+   "ViewerPermission": "ADMIN",
+   "RepositoryTopics": {
+    "Nodes": []
+   }
   },
   {
    "ID": "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
@@ -23,6 +26,9 @@
    "IsArchived": false,
    "IsLocked": false,
    "IsDisabled": false,
-   "ViewerPermission": "ADMIN"
+   "ViewerPermission": "ADMIN",
+   "RepositoryTopics": {
+    "Nodes": []
+   }
   }
  ]

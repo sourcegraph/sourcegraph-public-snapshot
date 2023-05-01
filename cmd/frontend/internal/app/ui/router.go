@@ -38,7 +38,7 @@ const (
 	routeSearchBadge             = "search-badge"
 	routeRepo                    = "repo"
 	routeRepoSettings            = "repo-settings"
-	routeRepoCodeIntelligence    = "repo-code-intelligence"
+	routeRepoCodeGraph           = "repo-code-intelligence"
 	routeRepoCommit              = "repo-commit"
 	routeRepoBranches            = "repo-branches"
 	routeRepoBatchChanges        = "repo-batch-changes"
@@ -46,6 +46,7 @@ const (
 	routeRepoTags                = "repo-tags"
 	routeRepoCompare             = "repo-compare"
 	routeRepoStats               = "repo-stats"
+	routeRepoOwn                 = "repo-own"
 	routeInsights                = "insights"
 	routeSetup                   = "setup"
 	routeBatchChanges            = "batch-changes"
@@ -79,7 +80,10 @@ const (
 	routeViews                   = "views"
 	routeDevToolTime             = "devtooltime"
 	routeEmbed                   = "embed"
-	routeCody                    = "cody"
+	routeCodySearch              = "cody-search"
+	routeOwn                     = "own"
+	routeAppComingSoon           = "app-coming-soon"
+	routeAppAuthCallback         = "app-auth-callback"
 
 	routeSearchStream  = "search.stream"
 	routeSearchConsole = "search.console"
@@ -144,6 +148,7 @@ func newRouter() *mux.Router {
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
+	r.Path("/search/cody").Methods("GET").Name(routeCodySearch)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/request-access").Methods("GET").Name(uirouter.RouteRequestAccess)
@@ -174,7 +179,9 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
 	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
-	r.PathPrefix("/cody").Methods("GET").Name(routeCody)
+	r.PathPrefix("/own").Methods("GET").Name(routeOwn)
+	r.Path("/app/coming-soon").Methods("GET").Name(routeAppComingSoon)
+	r.Path("/app/auth/callback").Methods("GET").Name(routeAppAuthCallback)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
@@ -211,13 +218,14 @@ func newRouter() *mux.Router {
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
-	repo.PathPrefix("/code-intelligence").Methods("GET").Name(routeRepoCodeIntelligence)
+	repo.PathPrefix("/code-graph").Methods("GET").Name(routeRepoCodeGraph)
 	repo.PathPrefix("/commit").Methods("GET").Name(routeRepoCommit)
 	repo.PathPrefix("/branches").Methods("GET").Name(routeRepoBranches)
 	repo.PathPrefix("/batch-changes").Methods("GET").Name(routeRepoBatchChanges)
 	repo.PathPrefix("/tags").Methods("GET").Name(routeRepoTags)
 	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
 	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
+	repo.PathPrefix("/own").Methods("GET").Name(routeRepoOwn)
 
 	// legacy redirects
 	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
@@ -265,7 +273,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	router.Get(uirouter.RoutePasswordReset).Handler(brandedNoIndex("Reset password"))
 	router.Get(routeAPIConsole).Handler(brandedIndex("API console"))
 	router.Get(routeRepoSettings).Handler(brandedNoIndex("Repository settings"))
-	router.Get(routeRepoCodeIntelligence).Handler(brandedNoIndex("Code intelligence"))
+	router.Get(routeRepoCodeGraph).Handler(brandedNoIndex("Code graph"))
 	router.Get(routeRepoCommit).Handler(brandedNoIndex("Commit"))
 	router.Get(routeRepoBranches).Handler(brandedNoIndex("Branches"))
 	router.Get(routeRepoBatchChanges).Handler(brandedIndex("Batch Changes"))
@@ -273,6 +281,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	router.Get(routeRepoTags).Handler(brandedNoIndex("Tags"))
 	router.Get(routeRepoCompare).Handler(brandedNoIndex("Compare"))
 	router.Get(routeRepoStats).Handler(brandedNoIndex("Stats"))
+	router.Get(routeRepoOwn).Handler(brandedNoIndex("Ownership"))
 	router.Get(routeSurvey).Handler(brandedNoIndex("Survey"))
 	router.Get(routeSurveyScore).Handler(brandedNoIndex("Survey"))
 	router.Get(routeRegistry).Handler(brandedNoIndex("Registry"))
@@ -285,7 +294,10 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	router.Get(routeSnippets).Handler(brandedNoIndex("Snippets"))
 	router.Get(routeSubscriptions).Handler(brandedNoIndex("Subscriptions"))
 	router.Get(routeViews).Handler(brandedNoIndex("View"))
-	router.Get(routeCody).Handler(brandedNoIndex("Cody"))
+	router.Get(routeCodySearch).Handler(brandedNoIndex("Search (Cody)"))
+	router.Get(routeOwn).Handler(brandedNoIndex("Own"))
+	router.Get(routeAppComingSoon).Handler(brandedNoIndex("Coming soon"))
+	router.Get(routeAppAuthCallback).Handler(brandedNoIndex("Auth callback"))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.

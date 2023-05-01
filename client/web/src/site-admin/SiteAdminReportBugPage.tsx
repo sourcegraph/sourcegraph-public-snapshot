@@ -109,10 +109,13 @@ const allConfigSchema = {
         .reduce((allDefinitions, definitions) => ({ ...allDefinitions, ...definitions }), {}),
 }
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps {
+    isSourcegraphApp: boolean
+}
 
 export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    isSourcegraphApp,
 }) => {
     const isLightTheme = useIsLightTheme()
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
@@ -124,7 +127,11 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                 <Link
                     target="_blank"
                     rel="noopener noreferrer"
-                    to="https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title="
+                    to={
+                        isSourcegraphApp
+                            ? 'https://github.com/sourcegraph/app/issues/new?assignees=&labels=&template=bug_report.md&title='
+                            : 'https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title='
+                    }
                 >
                     Create an issue on the public issue tracker
                 </Link>

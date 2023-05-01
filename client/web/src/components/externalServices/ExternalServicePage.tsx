@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, FC } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -30,6 +31,8 @@ import { ExternalServiceInformation } from './ExternalServiceInformation'
 import { resolveExternalServiceCategory } from './externalServices'
 import { ExternalServiceSyncJobsList } from './ExternalServiceSyncJobsList'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
+
+import styles from './ExternalServicePage.module.scss'
 
 interface Props extends TelemetryProps {
     afterDeleteRoute: string
@@ -105,6 +108,7 @@ export const ExternalServicePage: FC<Props> = props => {
     const editingEnabled = allowEditExternalServicesWithFile || !externalServicesFromFile
 
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
+    const client = useApolloClient()
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         if (!externalService) {
             return
@@ -116,13 +120,12 @@ export const ExternalServicePage: FC<Props> = props => {
         try {
             await deleteExternalService(externalService.id)
             setIsDeleting(false)
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe()
+            await refreshSiteFlags(client)
             navigate(afterDeleteRoute)
         } catch (error) {
             setIsDeleting(asError(error))
         }
-    }, [afterDeleteRoute, navigate, externalService])
+    }, [afterDeleteRoute, navigate, externalService, client])
 
     // If external service is undefined, we won't use doCheckConnection anyway,
     // that's why it's safe to pass an empty ID to useExternalServiceCheckConnectionByIdLazyQuery
@@ -166,7 +169,7 @@ export const ExternalServicePage: FC<Props> = props => {
     }
 
     return (
-        <div>
+        <div className={styles.externalServicePage}>
             {externalService ? (
                 <PageTitle title={`Code host - ${externalService.displayName}`} />
             ) : (
@@ -180,7 +183,21 @@ export const ExternalServicePage: FC<Props> = props => {
                         path={[
                             { icon: mdiCog },
                             { to: '/site-admin/external-services', text: 'Code hosts' },
-                            { text: externalService.displayName },
+                            {
+                                text: (
+                                    <>
+                                        {externalServiceCategory && (
+                                            <Icon
+                                                inline={true}
+                                                as={externalServiceCategory.icon}
+                                                aria-label="Code host logo"
+                                                className="mr-2"
+                                            />
+                                        )}
+                                        {externalService.displayName}
+                                    </>
+                                ),
+                            },
                         ]}
                         byline={
                             <CreatedByAndUpdatedByInfoByline

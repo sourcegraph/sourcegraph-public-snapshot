@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/insights",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//cmd/frontend/enterprise",
+        "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/database",
         "//internal/conf",
         "//internal/conf/conftypes",

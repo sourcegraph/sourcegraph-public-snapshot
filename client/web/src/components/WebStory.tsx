@@ -9,11 +9,11 @@ import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 import { usePrependStyles, useStorybookTheme } from '@sourcegraph/wildcard/src/stories'
 
-import { legacyLayoutRouteContextMock } from '../__mocks__/legacyLayoutRouteContext'
 import { SourcegraphContext } from '../jscontext'
 import { LegacyLayoutRouteContext, LegacyRouteContext } from '../LegacyRouteContext'
 
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
+import { legacyLayoutRouteContextMock } from './legacyLayoutRouteContext'
 
 import webStyles from '../SourcegraphWebApp.scss'
 

@@ -13,10 +13,12 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { Text } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanel } from '../../../codeintel/ReferencesPanel'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
+import { OwnConfigProps } from '../../../own/OwnConfigProps'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { FileOwnershipPanel } from '../own/FileOwnershipPanel'
 
@@ -27,8 +29,10 @@ interface Props
         ExtensionsControllerProps,
         PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
+        OwnConfigProps,
         TelemetryProps {
     repoID: Scalars['ID']
+    isPackage: boolean
     repoName: string
     commitID: string
 
@@ -45,11 +49,13 @@ function useBlobPanelViews({
     revision,
     filePath,
     repoID,
+    isPackage,
     settingsCascade,
     platformContext,
     useCodeIntel,
     telemetryService,
     fetchHighlightedFileLineRanges,
+    ownEnabled,
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
 
@@ -65,7 +71,7 @@ function useBlobPanelViews({
             : undefined
     }, [location.hash, location.search])
 
-    const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
+    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
 
     useBuiltinTabbedPanelViews(
         useMemo(() => {
@@ -91,33 +97,49 @@ function useBlobPanelViews({
                           ),
                       }
                     : null,
-                {
-                    id: 'history',
-                    title: 'History',
-                    element: (
-                        <PanelContent>
-                            <RepoRevisionSidebarCommits
-                                key="commits"
-                                repoID={repoID}
-                                revision={revision}
-                                filePath={filePath}
-                                preferAbsoluteTimestamps={preferAbsoluteTimestamps}
-                                defaultPageSize={defaultPageSize}
-                            />
-                        </PanelContent>
-                    ),
-                },
-                enableOwnershipPanel
+
+                isPackage
+                    ? {
+                          id: 'history',
+                          title: 'History',
+                          element: (
+                              <PanelContent>
+                                  {/* Instead of removing the "History" tab, explain why it's not available */}
+                                  <Text>Git history is not available when browsing packages</Text>
+                              </PanelContent>
+                          ),
+                      }
+                    : {
+                          id: 'history',
+                          title: 'History',
+                          element: (
+                              <PanelContent>
+                                  <RepoRevisionSidebarCommits
+                                      key="commits"
+                                      repoID={repoID}
+                                      revision={revision}
+                                      filePath={filePath}
+                                      preferAbsoluteTimestamps={preferAbsoluteTimestamps}
+                                      defaultPageSize={defaultPageSize}
+                                  />
+                              </PanelContent>
+                          ),
+                      },
+                ownEnabled && ownFeatureFlagEnabled
                     ? {
                           id: 'ownership',
                           title: 'Ownership',
+                          productStatus: 'experimental' as const,
                           element: (
-                              <FileOwnershipPanel
-                                  key="ownership"
-                                  repoID={repoID}
-                                  revision={revision}
-                                  filePath={filePath}
-                              />
+                              <PanelContent>
+                                  <FileOwnershipPanel
+                                      key="ownership"
+                                      repoID={repoID}
+                                      revision={revision}
+                                      filePath={filePath}
+                                      telemetryService={telemetryService}
+                                  />
+                              </PanelContent>
                           ),
                       }
                     : null,
@@ -125,6 +147,7 @@ function useBlobPanelViews({
 
             return panelDefinitions
         }, [
+            isPackage,
             position,
             settingsCascade,
             platformContext,
@@ -137,7 +160,8 @@ function useBlobPanelViews({
             filePath,
             preferAbsoluteTimestamps,
             defaultPageSize,
-            enableOwnershipPanel,
+            ownEnabled,
+            ownFeatureFlagEnabled,
         ])
     )
 

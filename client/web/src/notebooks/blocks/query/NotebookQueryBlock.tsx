@@ -23,7 +23,11 @@ import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../../../graphql-operations'
+import { OwnConfigProps } from '../../../own/OwnConfigProps'
+import { submitSearch } from '../../../search/helpers'
+import { setSearchMode, useNavbarQueryState } from '../../../stores'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
@@ -37,8 +41,8 @@ interface NotebookQueryBlockProps
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         SettingsCascadeProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'> {
-    globbing: boolean
+        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'>,
+        OwnConfigProps {
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
@@ -66,9 +70,9 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         onBlockInputChange,
         fetchHighlightedFileLineRanges,
         onRunBlock,
-        globbing,
         isSourcegraphDotCom,
         searchContextsEnabled,
+        ownEnabled,
         ...props
     }) => {
         const [editor, setEditor] = useState<EditorView>()
@@ -76,6 +80,12 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
         const applySuggestionsOnEnter =
             useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+        const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
+        const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
+
+        const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
+        const searchMode = useNavbarQueryState(state => state.searchMode)
+        const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
 
         const onInputChange = useCallback(
             (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
@@ -128,11 +138,10 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
             () =>
                 createDefaultSuggestions({
                     isSourcegraphDotCom,
-                    globbing,
                     fetchSuggestions: fetchStreamSuggestions,
                     applyOnEnter: applySuggestionsOnEnter,
                 }),
-            [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
+            [isSourcegraphDotCom, applySuggestionsOnEnter]
         )
 
         // Focus editor on component creation if necessary
@@ -191,16 +200,21 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                         <div className={styles.results}>
                             <StreamingSearchResultsList
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                enableOwnershipSearch={enableOwnershipSearch}
                                 searchContextsEnabled={searchContextsEnabled}
                                 allExpanded={false}
                                 results={searchResults}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 telemetryService={telemetryService}
                                 settingsCascade={settingsCascade}
-                                assetsRoot={window.context?.assetsRoot || ''}
                                 platformContext={props.platformContext}
                                 openMatchesInNewTab={true}
                                 executedQuery={executedQuery}
+                                searchMode={searchMode}
+                                setSearchMode={setSearchMode}
+                                submitSearch={submitSearch}
+                                caseSensitive={caseSensitive}
+                                searchQueryFromURL={submittedURLQuery}
                             />
                         </div>
                     )}

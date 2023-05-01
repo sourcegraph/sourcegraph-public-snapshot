@@ -2,7 +2,6 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { appendSubtreeQueryParameter } from '@sourcegraph/common'
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import { Link } from '@sourcegraph/wildcard'
 
@@ -32,7 +31,7 @@ export const RepoFileSymbolLink: React.FunctionComponent<React.PropsWithChildren
                 {displayRepoName(repoName)}
             </Link>
             <span className={classNames('mx-1', styles.xsHide)}>›</span>
-            <Link to={appendSubtreeQueryParameter(fileURL)} className={classNames(symbolURL && styles.xsHide)}>
+            <Link to={fileURL} className={classNames(symbolURL && styles.xsHide)}>
                 <span className={styles.xsHide}>{fileBase ? `${fileBase}/` : null}</span>
                 {!symbolURL ? <strong>{fileName}</strong> : <>{fileName}</>}
             </Link>

@@ -5,16 +5,13 @@ import (
 	"net/url"
 
 	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configtelemetry"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/otel"
-	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
-	"go.opentelemetry.io/otel/metric"
-	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric"
 
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
@@ -48,7 +45,7 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 
 		TracerProvider: otel.GetTracerProvider(),
 
-		MeterProvider: mustPrometheusMetricsProvider(logger),
+		MeterProvider: metric.NewMeterProvider(),
 		MetricsLevel:  configtelemetry.LevelBasic,
 	}
 	componentName := "otlpadapter"
@@ -125,16 +122,4 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 		otelSignal := otelSignal // copy
 		otelSignal.Register(ctx, logger, r, receiverURL)
 	}
-}
-
-// mustPrometheusMetricsProvider creates a metric provider that uses the default
-// Prometheus metrics registerer to report metrics. If it fails to create one,
-// an error is logged and a no-op metrics provider is used.
-func mustPrometheusMetricsProvider(l log.Logger) metric.MeterProvider {
-	prom, err := otelprometheus.New(otelprometheus.WithRegisterer(prometheus.DefaultRegisterer))
-	if err != nil {
-		l.Error("failed to register prometheus metrics for otlpadapter", log.Error(err))
-		return metric.NewNoopMeterProvider()
-	}
-	return sdkmetric.NewMeterProvider(sdkmetric.WithReader(prom))
 }

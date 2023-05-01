@@ -33,6 +33,7 @@ export interface Props
 
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 /**
@@ -45,7 +46,7 @@ const AuthenticatedOrgsArea: React.FunctionComponent<React.PropsWithChildren<Pro
         )}
         <Route path="invitation/:token" element={<OrgInvitationPage {...props} />} />
         <Route path=":orgName/*" element={<OrgAreaWithRouteProps {...props} />} />
-        <Route element={<NotFoundPage pageType="organization" />} />
+        <Route path="*" element={<NotFoundPage pageType="organization" />} />
     </Routes>
 )
 

@@ -93,13 +93,14 @@ const keybindings: KeyBinding[] = [
             // show loading tooltip
             view.dispatch({ effects: setFocusedOccurrenceTooltip.of(new LoadingTooltip(offset)) })
 
+            const startTime = Date.now()
             goToDefinitionAtOccurrence(view, selected.occurrence)
                 .then(
                     ({ handler, url }) => {
                         if (view.state.field(isModifierKeyHeld) && url) {
                             window.open(url, '_blank')
                         } else {
-                            handler(selected.occurrence.range.start)
+                            handler(selected.occurrence.range.start, startTime)
                         }
                     },
                     () => {}
@@ -296,27 +297,25 @@ const selectionLayer = Prec.high(
     })
 )
 
+const theme = EditorView.theme({
+    '.cm-line': {
+        '& ::selection': {
+            backgroundColor: 'transparent !important',
+        },
+        '&::selection': {
+            backgroundColor: 'transparent !important',
+        },
+    },
+    '.cm-selectionLayer .cm-selectionBackground': {
+        background: 'var(--code-selection-bg-2)',
+    },
+})
+
 /**
  * Extension that adds support for the text selection with keyboard.
  */
 function textSelectionExtension(): Extension {
-    return [
-        keymap.of(textSelectionKeybindings),
-        selectionLayer,
-        EditorView.theme({
-            '.cm-line': {
-                '& ::selection': {
-                    backgroundColor: 'transparent !important',
-                },
-                '&::selection': {
-                    backgroundColor: 'transparent !important',
-                },
-            },
-            '.cm-selectionLayer .cm-selectionBackground': {
-                background: 'var(--code-selection-bg-2)',
-            },
-        }),
-    ]
+    return [keymap.of(textSelectionKeybindings), selectionLayer, theme]
 }
 
 export function keyboardShortcutsExtension(): Extension {

@@ -17,7 +17,7 @@ type indexesAPI struct{}
 
 var defaultIndexers = map[string]string{
 	"clang":      "sourcegraph/lsif-clang",
-	"go":         "sourcegraph/lsif-go",
+	"go":         "sourcegraph/scip-go",
 	"java":       "sourcegraph/scip-java",
 	"python":     "sourcegraph/scip-python",
 	"rust":       "sourcegraph/scip-rust",
@@ -27,13 +27,13 @@ var defaultIndexers = map[string]string{
 
 // To update, run `DOCKER_USER=... DOCKER_PASS=... ./update-shas.sh`
 var defaultIndexerSHAs = map[string]string{
-	"sourcegraph/lsif-clang":      "sha256:99ca372c61b7cc5e32d5aedf87a7eb93a23443bd46d1e937dfa21b9ba2c6acd6",
-	"sourcegraph/lsif-go":         "sha256:cba76f5b3edb5d9af43e1dc59e27ecdb4b8b2fafda6a5d55d7e37def3b502775",
+	"sourcegraph/scip-go":         "sha256:2430d1a85f081bceb54d7ae21df7f3f40cff91bed35df124ed45ae134aba3743",
+	"sourcegraph/lsif-clang":      "sha256:ea814e5ab5c6e1e6ab4d001e4f4afddcc7b44128edbeeedf1d97da553813a4c8",
 	"sourcegraph/lsif-rust":       "sha256:83cb769788987eb52f21a18b62d51ebb67c9436e1b0d2e99904c70fef424f9d1",
 	"sourcegraph/scip-rust":       "sha256:e9c400fd1d3146cd9a3d98f89c6d9a70e0a116618057e0dac452219b1c60b658",
-	"sourcegraph/scip-java":       "sha256:964a45ef06b7d914729b1c61b6907b662fc54545b188881c6d25e56fcc8dfb8c",
-	"sourcegraph/scip-python":     "sha256:5049c4598d03af542bde5e1254a17fa6d1eb794c1bdd14d0162fb39c604581b4",
-	"sourcegraph/scip-typescript": "sha256:37546e04763d6d1853fb6f32285ad630fc0d8671d4f1d2db40c6df272120f2f8",
+	"sourcegraph/scip-java":       "sha256:4fee3d21692df0e3cd59245ee2adcf5a522d46e450fb9bc0561dc0907f50844b",
+	"sourcegraph/scip-python":     "sha256:4cb64c4f62cfa611fcb217581073c2831fb9350bbb1c8e855f152cc4b3428a00",
+	"sourcegraph/scip-typescript": "sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92",
 	"sourcegraph/scip-ruby":       "sha256:e553fee039973cda8726d4c8c13cdbb851f82a6fca5daa15798a595ee4042906",
 }
 

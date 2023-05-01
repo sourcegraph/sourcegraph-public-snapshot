@@ -1,8 +1,6 @@
 package conf
 
 import (
-	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -270,7 +268,7 @@ mtfypOsa1bKhEL84nZ/ivEbBriRGjP2kyDDv3RX4WBk=
 	}
 }
 
-func TestIsAccessRequestsEnabled(t *testing.T) {
+func TestIsAccessRequestEnabled(t *testing.T) {
 	falseVal, trueVal := false, true
 	tests := []struct {
 		name string
@@ -286,28 +284,26 @@ func TestIsAccessRequestsEnabled(t *testing.T) {
 			name: "parent object set should return default true",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{},
+					AuthAccessRequest: &schema.AuthAccessRequest{},
 				},
 			},
 			want: true,
 		},
 		{
-			name: "explicitly set true should return true",
+			name: "explicitly set enabled=true should return true",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						AccessRequestsEnabled: &trueVal,
-					},
+					AuthAccessRequest: &schema.AuthAccessRequest{Enabled: &trueVal},
 				},
 			},
 			want: true,
 		},
 		{
-			name: "explicitly set false should return false",
+			name: "explicitly set enabled=false should return false",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						AccessRequestsEnabled: &falseVal,
+					AuthAccessRequest: &schema.AuthAccessRequest{
+						Enabled: &falseVal,
 					},
 				},
 			},
@@ -318,34 +314,9 @@ func TestIsAccessRequestsEnabled(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			Mock(test.sc)
-			have := IsAccessRequestsEnabled()
+			have := IsAccessRequestEnabled()
 			assert.Equal(t, test.want, have)
 		})
-	}
-}
-
-func setenv(t *testing.T, keyval string) func() {
-	t.Helper()
-
-	parts := strings.SplitN(keyval, "=", 2)
-	key := parts[0]
-	value := parts[1]
-
-	orig, set := os.LookupEnv(key)
-	if err := os.Setenv(key, value); err != nil {
-		t.Fatal(err)
-	}
-	if set {
-		return func() {
-			if err := os.Setenv(key, orig); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	return func() {
-		if err := os.Unsetenv(key); err != nil {
-			t.Fatal(err)
-		}
 	}
 }
 

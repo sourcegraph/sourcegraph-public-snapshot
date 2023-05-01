@@ -29,6 +29,7 @@ export const CaptureGroupCreationPage: Story = () => {
             onSuccessfulCreation={noop}
             onInsightCreateRequest={() => Promise.resolve()}
             onCancel={noop}
+            isSourcegraphApp={false}
         />
     )
 }

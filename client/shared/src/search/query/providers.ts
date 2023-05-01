@@ -41,7 +41,6 @@ export function getProviders(
     fetchSuggestions: (input: string) => Observable<SearchMatch[]>,
     options: {
         patternType: SearchPatternType
-        globbing: boolean
         disablePatternSuggestions?: boolean
         interpretComments?: boolean
         isSourcegraphDotCom?: boolean

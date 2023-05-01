@@ -1,5 +1,6 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { canWriteBatchChanges } from '../../../batches/utils'
 import { userSettingsAreaRoutes } from '../../../user/settings/routes'
 import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
 import { SHOW_BUSINESS_FEATURES } from '../../dotcom/productSubscriptions/features'
@@ -28,7 +29,8 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
     {
         path: 'executors/*',
         render: props => <ExecutorsUserArea {...props} namespaceID={props.user.id} />,
-        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
+        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
+            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
     },
     {
         path: 'batch-changes',
@@ -36,8 +38,8 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
             () => import('../../batches/settings/BatchChangesSettingsArea'),
             'BatchChangesSettingsArea'
         ),
-        condition: ({ batchChangesEnabled, user: { viewerCanAdminister } }) =>
-            batchChangesEnabled && viewerCanAdminister,
+        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
+            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
     },
     {
         path: 'subscriptions/:subscriptionUUID',

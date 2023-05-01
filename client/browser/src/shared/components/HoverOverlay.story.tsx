@@ -1,10 +1,8 @@
-import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { BrowserRouter } from 'react-router-dom'
 
 import { registerHighlightContributions } from '@sourcegraph/common'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import {
     commonProps,
@@ -15,6 +13,7 @@ import {
 
 import browserExtensionStyles from '../../app.scss'
 import bitbucketCodeHostStyles from '../code-hosts/bitbucket/codeHost.module.scss'
+import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 
 const decorator: DecoratorFn = story => (
     <>
@@ -45,14 +44,6 @@ const BITBUCKET_CLASS_PROPS: HoverOverlayClassProps = {
     className: 'aui-dialog',
     actionItemClassName: classNames('aui-button', bitbucketCodeHostStyles.hoverActionItem),
     iconClassName: 'aui-icon',
-    getAlertClassName: alertKind => {
-        switch (alertKind) {
-            case NotificationType.Error:
-                return 'aui-message aui-message-error'
-            default:
-                return 'aui-message aui-message-info'
-        }
-    },
 }
 
 export const BitbucketStyles: Story = (props = {}) => (

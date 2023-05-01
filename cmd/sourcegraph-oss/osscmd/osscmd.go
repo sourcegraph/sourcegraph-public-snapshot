@@ -1,4 +1,4 @@
-// Package osscmd defines entrypoint functions for the OSS build of Sourcegraph's single-program
+// Package osscmd defines entrypoint functions for the OSS build of Sourcegraph's single-binary
 // distribution. It is invoked by all OSS commands' main functions.
 package osscmd
 
@@ -17,8 +17,8 @@ var config = svcmain.Config{
 }
 
 // Main is called from the `main` function of the `sourcegraph-oss` command.
-func MainOSS(services []service.Service) {
-	svcmain.Main(services, config)
+func MainOSS(services []service.Service, args []string) {
+	svcmain.Main(services, config, args)
 }
 
 // DeprecatedSingleServiceMainOSS is called from the `main` function of a command in the OSS build

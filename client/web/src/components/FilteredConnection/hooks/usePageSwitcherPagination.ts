@@ -42,6 +42,8 @@ export interface UsePaginatedConnectionResult<TResult, TVariables, TNode> extend
     loading: boolean
     error?: ApolloError
     refetch: (variables?: TVariables) => any
+    startPolling: (pollInterval: number) => void
+    stopPolling: () => void
 }
 
 interface UsePaginatedConnectionConfig<TResult> {
@@ -102,6 +104,8 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         error,
         loading,
         refetch,
+        startPolling: startPollingFunction,
+        stopPolling: stopPollingFunction,
     } = useQuery<TResult, TVariables>(query, {
         variables: queryVariables,
         fetchPolicy: options?.fetchPolicy,
@@ -151,6 +155,17 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         await updatePagination({ after: null, first: null, last: pageSize, before: null })
     }, [updatePagination, pageSize])
 
+    const startPolling = useCallback(
+        (pollInterval: number): void => {
+            startPollingFunction(pollInterval)
+        },
+        [startPollingFunction]
+    )
+
+    const stopPolling = useCallback((): void => {
+        stopPollingFunction()
+    }, [stopPollingFunction])
+
     return {
         data,
         variables: queryVariables,
@@ -164,6 +179,8 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         goToPreviousPage,
         goToFirstPage,
         goToLastPage,
+        startPolling,
+        stopPolling,
     }
 }
 

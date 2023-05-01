@@ -3,19 +3,23 @@ import path from 'path'
 
 import * as esbuild from 'esbuild'
 
+import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
+
 import { WebpackManifest, WEBPACK_MANIFEST_PATH } from '../utils'
 
 export const assetPathPrefix = '/.assets'
 
-export const getManifest = (): WebpackManifest => ({
-    'app.js': path.join(assetPathPrefix, 'scripts/app.js'),
-    'app.css': path.join(assetPathPrefix, 'scripts/app.css'),
+export const getManifest = (jsEntrypoint?: string, cssEntrypoint?: string): WebpackManifest => ({
+    'app.js': path.join(assetPathPrefix, jsEntrypoint ?? 'scripts/app.js'),
+    'app.css': path.join(assetPathPrefix, cssEntrypoint ?? 'scripts/app.css'),
     isModule: true,
 })
 
 const writeManifest = async (manifest: WebpackManifest): Promise<void> => {
     await fs.promises.writeFile(WEBPACK_MANIFEST_PATH, JSON.stringify(manifest, null, 2))
 }
+
+const ENTRYPOINT_NAME = 'scripts/app'
 
 /**
  * An esbuild plugin to write a webpack.manifest.json file (just as Webpack does), for compatibility
@@ -24,11 +28,41 @@ const writeManifest = async (manifest: WebpackManifest): Promise<void> => {
 export const manifestPlugin: esbuild.Plugin = {
     name: 'manifest',
     setup: build => {
-        build.onStart(async () => {
-            // The bug https://github.com/evanw/esbuild/issues/1384 means that onEnd isn't called in
-            // serve mode, so write it here instead of waiting for onEnd. This is OK because we
-            // don't actually need any information that's only available in onEnd.
-            await writeManifest(getManifest())
+        build.initialOptions.metafile = true
+
+        build.onEnd(async result => {
+            console.log(process.cwd())
+            const { entryPoints } = build.initialOptions
+            const outputs = result?.metafile?.outputs
+
+            if (!entryPoints) {
+                console.error('[manifestPlugin] No entrypoints found')
+                return
+            }
+            const absoluteEntrypoint: string | undefined = (entryPoints as any)[ENTRYPOINT_NAME]
+            if (!absoluteEntrypoint) {
+                console.error('[manifestPlugin] No entrypoint found with the name scripts/app')
+                return
+            }
+            const relativeEntrypoint = path.relative(process.cwd(), absoluteEntrypoint)
+
+            if (!outputs) {
+                return
+            }
+            let jsEntrypoint: string | undefined
+            let cssEntrypoint: string | undefined
+
+            // Find the entrypoint in the output files
+            for (const [asset, output] of Object.entries(outputs)) {
+                if (output.entryPoint === relativeEntrypoint) {
+                    jsEntrypoint = path.relative(STATIC_ASSETS_PATH, asset)
+                    if (output.cssBundle) {
+                        cssEntrypoint = path.relative(STATIC_ASSETS_PATH, output.cssBundle)
+                    }
+                }
+            }
+
+            await writeManifest(getManifest(jsEntrypoint, cssEntrypoint))
         })
     },
 }

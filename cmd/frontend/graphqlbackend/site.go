@@ -12,6 +12,8 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
@@ -20,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -28,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
@@ -44,11 +48,7 @@ func (r *schemaResolver) siteByGQLID(_ context.Context, id graphql.ID) (Node, er
 	if siteGQLID != singletonSiteGQLID {
 		return nil, errors.Errorf("site not found: %q", siteGQLID)
 	}
-	return &siteResolver{
-		logger: r.logger,
-		db:     r.db,
-		gqlID:  siteGQLID,
-	}, nil
+	return newSiteResolver(r.logger, r.db), nil
 }
 
 func marshalSiteGQLID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
@@ -63,9 +63,17 @@ func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 }
 
 func (r *schemaResolver) Site() *siteResolver {
+	return newSiteResolver(r.logger, r.db)
+}
+
+func NewSiteResolver(logger log.Logger, db database.DB) *siteResolver {
+	return newSiteResolver(logger, db)
+}
+
+func newSiteResolver(logger log.Logger, db database.DB) *siteResolver {
 	return &siteResolver{
-		logger: r.logger,
-		db:     r.db,
+		logger: logger,
+		db:     db,
 		gqlID:  singletonSiteGQLID,
 	}
 }
@@ -141,6 +149,70 @@ func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
 
 func (r *siteResolver) AllowSiteSettingsEdits() bool {
 	return canUpdateSiteConfiguration()
+}
+
+func (r *siteResolver) ExternalServicesCounts(ctx context.Context) (*externalServicesCountsResolver, error) {
+	// 🚨 SECURITY: Only admins can view repositories counts
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	return &externalServicesCountsResolver{db: r.db}, nil
+}
+
+type externalServicesCountsResolver struct {
+	remoteExternalServicesCount int32
+	localExternalServicesCount  int32
+
+	db   database.DB
+	once sync.Once
+	err  error
+}
+
+func (r *externalServicesCountsResolver) compute(ctx context.Context) (int32, int32, error) {
+	r.once.Do(func() {
+		remoteCount, localCount, err := backend.NewAppExternalServices(r.db).ExternalServicesCounts(ctx)
+		if err != nil {
+			r.err = err
+		}
+
+		// if this is not sourcegraph app then local repos count should be zero because
+		// serve-git service only runs in sourcegraph app
+		// see /internal/service/servegit/serve.go
+		if !deploy.IsApp() {
+			localCount = 0
+		}
+
+		r.remoteExternalServicesCount = int32(remoteCount)
+		r.localExternalServicesCount = int32(localCount)
+	})
+
+	return r.remoteExternalServicesCount, r.localExternalServicesCount, r.err
+}
+
+func (r *externalServicesCountsResolver) RemoteExternalServicesCount(ctx context.Context) (int32, error) {
+	remoteCount, _, err := r.compute(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return remoteCount, nil
+}
+
+func (r *externalServicesCountsResolver) LocalExternalServicesCount(ctx context.Context) (int32, error) {
+	_, localCount, err := r.compute(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return localCount, nil
+}
+
+func (r *siteResolver) AppHasConnectedDotComAccount() bool {
+	if !deploy.IsApp() {
+		return false
+	}
+
+	appConfig := conf.SiteConfig().App
+	return appConfig != nil && appConfig.DotcomAuthToken != ""
 }
 
 type siteConfigurationResolver struct {
@@ -230,6 +302,31 @@ func canUpdateSiteConfiguration() bool {
 	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
 }
 
+// IsCodeInsightsEnabled tells if code insights are enabled or not.
+func IsCodeInsightsEnabled() bool {
+	if envvar.SourcegraphDotComMode() {
+		return false
+	}
+	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
+		// Code insights can always be disabled. This can be a helpful escape hatch if e.g. there
+		// are issues with (or connecting to) the codeinsights-db deployment and it is preventing
+		// the Sourcegraph frontend or repo-updater from starting.
+		//
+		// It is also useful in dev environments if you do not wish to spend resources running Code
+		// Insights.
+		return false
+	}
+	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
+		// Code insights is not supported in single-container Docker demo deployments unless
+		// explicity allowed, (for example by backend integration tests.)
+		if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
+			return true
+		}
+		return false
+	}
+	return true
+}
+
 func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessResolver, error) {
 	// 🚨 SECURITY: Only site admins may view upgrade readiness information.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -246,62 +343,81 @@ type upgradeReadinessResolver struct {
 	logger log.Logger
 	db     database.DB
 
-	initOnce sync.Once
-	initErr  error
-	runner   cliutil.Runner
-	version  oobmigration.Version
-	patch    int
+	initOnce    sync.Once
+	initErr     error
+	runner      cliutil.Runner
+	version     string
+	schemaNames []string
 }
+
+var devSchemaFactory = cliutil.NewExpectedSchemaFactory(
+	"Local file",
+	[]cliutil.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
+	func(filename, _ string) string { return filename },
+	cliutil.ReadSchemaFromFile,
+)
 
 var schemaFactories = append(
 	migratorshared.DefaultSchemaFactories,
 	// Special schema factory for dev environment.
-	cliutil.NewExpectedSchemaFactory(
-		"Local file",
-		[]cliutil.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
-		func(filename, _ string) string { return filename },
-		cliutil.ReadSchemaFromFile,
-	),
+	devSchemaFactory,
 )
 
-func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, _ oobmigration.Version, patch int, _ error) {
+var insidersVersionPattern = lazyregexp.New(`^[\w-]+_\d{4}-\d{2}-\d{2}_\d+\.\d+-(\w+)$`)
+
+func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, version string, schemaNames []string, _ error) {
 	r.initOnce.Do(func() {
-		r.runner, r.version, r.patch, r.initErr = func() (_ cliutil.Runner, _ oobmigration.Version, patch int, _ error) {
+		r.runner, r.version, r.schemaNames, r.initErr = func() (cliutil.Runner, string, []string, error) {
+			schemaNames := []string{schemas.Frontend.Name, schemas.CodeIntel.Name}
+			schemaList := []*schemas.Schema{schemas.Frontend, schemas.CodeIntel}
+			if IsCodeInsightsEnabled() {
+				schemaNames = append(schemaNames, schemas.CodeInsights.Name)
+				schemaList = append(schemaList, schemas.CodeInsights)
+			}
 			observationCtx := observation.NewContext(r.logger)
-			runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemas.SchemaNames, schemas.Schemas)
+			runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemaNames, schemaList)
 			if err != nil {
-				return nil, oobmigration.Version{}, 0, errors.Wrap(err, "new runner")
+				return nil, "", nil, errors.Wrap(err, "new runner")
 			}
 
-			version, patch, ok, err := cliutil.GetServiceVersion(ctx, runner)
+			versionStr, ok, err := cliutil.GetRawServiceVersion(ctx, runner)
 			if err != nil {
-				return nil, oobmigration.Version{}, 0, errors.Wrap(err, "get service version")
+				return nil, "", nil, errors.Wrap(err, "get service version")
 			} else if !ok {
-				return nil, oobmigration.Version{}, 0, errors.New("invalid service version")
+				return nil, "", nil, errors.New("invalid service version")
 			}
-			return runner, version, patch, nil
+
+			// Return abbreviated commit hash from insiders version
+			if matches := insidersVersionPattern.FindStringSubmatch(versionStr); len(matches) > 0 {
+				return runner, matches[1], schemaNames, nil
+			}
+
+			v, patch, ok := oobmigration.NewVersionAndPatchFromString(versionStr)
+			if !ok {
+				return nil, "", nil, errors.Newf("cannot parse version: %q - expected [v]X.Y[.Z]", versionStr)
+			}
+
+			if v.Dev {
+				return runner, "dev", schemaNames, nil
+			}
+
+			return runner, v.GitTagWithPatch(patch), schemaNames, nil
 		}()
 	})
-	return r.runner, r.version, r.patch, r.initErr
+
+	return r.runner, r.version, r.schemaNames, r.initErr
 }
 
 func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, error) {
-	runner, v, patch, err := r.init(ctx)
+	runner, version, schemaNames, err := r.init(ctx)
 	if err != nil {
 		return "", err
-	}
-
-	var version string
-	if v.Dev {
-		version = "dev"
-	} else {
-		version = v.GitTagWithPatch(patch)
 	}
 	r.logger.Debug("schema drift", log.String("version", version))
 
 	var drift bytes.Buffer
 	out := output.NewOutput(&drift, output.OutputOpts{Verbose: true})
-	err = cliutil.CheckDrift(ctx, runner, version, out, true, schemaFactories)
+	err = cliutil.CheckDrift(ctx, runner, version, out, true, schemaNames, schemaFactories)
 	if err == cliutil.ErrDatabaseDriftDetected {
 		return drift.String(), nil
 	} else if err != nil {
@@ -321,8 +437,11 @@ func isRequiredOutOfBandMigration(version oobmigration.Version, m oobmigration.M
 
 func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
 	updateStatus := updatecheck.Last()
-	if updateStatus == nil || !updateStatus.HasUpdate() {
+	if updateStatus == nil {
 		return nil, errors.New("no latest update version available (reload in a few seconds)")
+	}
+	if !updateStatus.HasUpdate() {
+		return nil, nil
 	}
 	version, _, ok := oobmigration.NewVersionAndPatchFromString(updateStatus.UpdateVersion)
 	if !ok {
@@ -341,4 +460,37 @@ func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Conte
 		}
 	}
 	return requiredMigrations, nil
+}
+
+// Return the enablement of auto upgrades
+func (r *siteResolver) AutoUpgradeEnabled(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: Only site admins can set auto_upgrade readiness
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return false, err
+	}
+	_, enabled, err := upgradestore.NewWith(r.db.Handle()).GetAutoUpgrade(ctx)
+	if err != nil {
+		return false, err
+	}
+	return enabled, nil
+}
+
+func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
+	Enable bool
+}) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can set auto_upgrade readiness
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return &EmptyResponse{}, err
+	}
+	err := upgradestore.NewWith(r.db.Handle()).SetAutoUpgrade(ctx, args.Enable)
+	return &EmptyResponse{}, err
+}
+
+func (r *siteResolver) PerUserCompletionsQuota() *int32 {
+	c := conf.Get()
+	if c.Completions != nil && c.Completions.PerUserDailyLimit > 0 {
+		i := int32(c.Completions.PerUserDailyLimit)
+		return &i
+	}
+	return nil
 }

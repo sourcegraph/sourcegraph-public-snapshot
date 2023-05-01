@@ -30,6 +30,7 @@ go_library(
 
 go_test(
     name = "sysreq_test",
+    timeout = "short",
     srcs = ["sysreq_test.go"],
     embed = [":sysreq"],
     deps = ["//lib/errors"],

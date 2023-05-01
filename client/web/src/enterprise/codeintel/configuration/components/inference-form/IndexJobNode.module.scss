@@ -1,0 +1,89 @@
+.job-anchor {
+    display: block;
+    position: relative;
+    top: -4rem;
+    visibility: hidden;
+}
+
+.job-content {
+    padding: 0.25rem;
+    margin-bottom: 0;
+    list-style-type: none;
+}
+
+.job-step-container {
+    padding: 0 1rem;
+    margin-top: 1rem;
+    border: 3px solid var(--subtle-bg);
+}
+.job-step {
+    border-bottom: 3px solid var(--subtle-bg);
+    padding: 1rem;
+
+    &:last-of-type {
+        border-bottom: none;
+    }
+}
+
+.job-step-content {
+    padding: 0;
+    list-style-type: none;
+}
+
+// Misc
+.job-header,
+.job-step-header {
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+
+    margin: 0 -0.25rem 1rem;
+}
+
+.job-step-header {
+    margin: 0 -0.5rem 1rem;
+}
+
+.job-input {
+    grid-area: value;
+    // Ensure consistent height even when no value
+    min-height: 2rem;
+    height: auto;
+    margin-bottom: 0.5rem;
+    overflow: auto;
+
+    input[readonly] {
+        // Override disabled bg-color
+        background-color: var(--input-bg);
+    }
+
+    &:last-of-type {
+        margin-bottom: 0;
+    }
+}
+
+.job-input-action {
+    grid-area: value;
+    min-height: 2rem;
+    margin-bottom: 0.5rem;
+    max-width: 7rem;
+
+    &:last-of-type {
+        margin-bottom: 0;
+    }
+}
+
+.job-command-container {
+    grid-area: value;
+    padding: 1rem;
+    border: 3px solid var(--subtle-bg);
+}
+
+.job-command {
+    display: flex;
+    margin-bottom: 0.5rem;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}

@@ -9,8 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/kylelemons/godebug/pretty"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -22,6 +22,7 @@ import (
 // super-set of the validation performed by the OSS version.
 func TestValidateExternalServiceConfig(t *testing.T) {
 	t.Parallel()
+	t.Cleanup(licensing.TestingSkipFeatureChecks())
 
 	// Assertion helpers
 	equals := func(want ...string) func(testing.TB, []string) {
@@ -665,11 +666,11 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "without url, token, githubAppInstallationID, repositoryQuery, repos nor orgs",
+			desc:   "without url, token, repositoryQuery, repos nor orgs",
 			config: `{}`,
 			assert: includes(
 				"url is required",
-				"at least one of token or githubAppInstallationID must be set",
+				"token must be set",
 				"at least one of repositoryQuery, repos or orgs must be set",
 			),
 		},
@@ -681,17 +682,6 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 				"url": "https://github.corp.com",
 				"token": "very-secret-token",
 				"repositoryQuery": ["none"],
-			}`,
-			assert: equals(`<nil>`),
-		},
-		{
-			kind: extsvc.KindGitHub,
-			desc: "with url, githubAppInstallationID, repos",
-			config: `
-			{
-				"url": "https://github.corp.com",
-				"githubAppInstallationID": "21994992",
-				"repos": [],
 			}`,
 			assert: equals(`<nil>`),
 		},
@@ -1291,7 +1281,6 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 	} {
-		licensing.MockCheckFeatureError("")
 		tc := tc
 		t.Run(tc.kind+"/"+tc.desc, func(t *testing.T) {
 			var have []string

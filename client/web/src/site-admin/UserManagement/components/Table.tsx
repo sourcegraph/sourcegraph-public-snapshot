@@ -100,6 +100,7 @@ export interface IColumn<T> {
     align?: 'left' | 'right' | 'center'
     render?: (data: T, index: number) => JSX.Element | null
     filter?: ColumnFilterProps
+    cellClassName?: ((data: T, index: number) => string) | string
 }
 
 interface IAction<T> {
@@ -129,6 +130,7 @@ interface TableProps<T> {
     onClearAllFiltersClick?: () => void
     onSortByChange?: (newOderBy: NonNullable<TableProps<T>['sortBy']>) => void
     pagination?: PaginationProps
+    rowClassName?: ((data: T) => string) | string
 }
 
 export function Table<T>({
@@ -142,6 +144,7 @@ export function Table<T>({
     selectable = false,
     onClearAllFiltersClick,
     pagination,
+    rowClassName,
 }: TableProps<T>): JSX.Element {
     const [selection, setSelection] = useState<T[]>([])
 
@@ -216,17 +219,19 @@ export function Table<T>({
 
     return (
         <>
-            <div className="mb-4 d-flex justify-content-between">
-                {selectable && <SelectionActions<T> actions={bulkActions} position="top" selection={selection} />}
-                {pagination && (
-                    <Pagination
-                        {...pagination}
-                        onPrevious={onPreviousPage}
-                        onLimitChange={onLimitChange}
-                        onNext={onNextPage}
-                    />
-                )}
-            </div>
+            {(selectable || pagination) && (
+                <div className="mb-4 d-flex justify-content-between">
+                    {selectable && <SelectionActions<T> actions={bulkActions} position="top" selection={selection} />}
+                    {pagination && (
+                        <Pagination
+                            {...pagination}
+                            onPrevious={onPreviousPage}
+                            onLimitChange={onLimitChange}
+                            onNext={onNextPage}
+                        />
+                    )}
+                </div>
+            )}
             <table className={styles.table}>
                 <thead>
                     <tr>
@@ -321,6 +326,7 @@ export function Table<T>({
                             selection={selection}
                             getRowId={getRowId}
                             onSelectionChange={onRowSelectionChange}
+                            rowClassName={rowClassName}
                         />
                     ))}
                 </tbody>
@@ -342,14 +348,23 @@ interface RowProps<T> {
     selection: T[]
     getRowId: (data: T) => string | number
     onSelectionChange: (data: T, selected: boolean) => void
+    rowClassName?: ((data: T) => string) | string
 }
 
-function Row<T>({ data, columns, selectable, selection, getRowId, onSelectionChange }: RowProps<T>): JSX.Element {
+function Row<T>({
+    data,
+    columns,
+    selectable,
+    selection,
+    getRowId,
+    onSelectionChange,
+    rowClassName,
+}: RowProps<T>): JSX.Element {
     const rowKey = getRowId(data)
     const isSelected = useMemo(() => !!selection.find(row => getRowId(row) === rowKey), [getRowId, rowKey, selection])
 
     return (
-        <tr>
+        <tr className={typeof rowClassName === 'function' ? rowClassName(data) : rowClassName}>
             {selectable && (
                 <td className={styles.selectionTd}>
                     <div className={classNames(styles.cell, styles.selection)}>
@@ -362,12 +377,20 @@ function Row<T>({ data, columns, selectable, selection, getRowId, onSelectionCha
                     </div>
                 </td>
             )}
-            {columns.map(({ align, accessor, render, key }, index) => (
-                <td key={key}>
+            {columns.map(({ align, accessor, render, key, cellClassName }, index) => (
+                <td
+                    key={key}
+                    className={typeof cellClassName === 'function' ? cellClassName(data, index) : cellClassName}
+                >
                     {render ? (
                         render(data, index)
                     ) : (
-                        <div className={styles.cell}>
+                        <div
+                            className={classNames(styles.cell, {
+                                [styles.alignLeft]: !align || align === 'left',
+                                [styles.alignRight]: align === 'right',
+                            })}
+                        >
                             <Text alignment={align || 'left'} className="mb-0">
                                 {typeof accessor === 'function'
                                     ? accessor(data)
@@ -420,16 +443,17 @@ function Actions<T>({ children, actions, disabled, selection, className }: Actio
         setIsOpen(event.isOpen)
     }, [])
 
+    const filteredActions = actions.filter(({ condition }) => !condition || condition(selection))
+
     return (
         <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
             <PopoverTrigger as={Button} className={className} disabled={disabled} variant="secondary" outline={true}>
                 {children}
             </PopoverTrigger>
             <PopoverContent position={Position.bottom} focusLocked={false}>
-                <ul className="list-unstyled mb-0">
-                    {actions
-                        .filter(({ condition }) => !condition || condition(selection))
-                        .map(({ key, label, icon, iconColor, labelColor, onClick, href, target }) => (
+                {filteredActions.length > 0 ? (
+                    <ul className="list-unstyled mb-0">
+                        {filteredActions.map(({ key, label, icon, iconColor, labelColor, onClick, href, target }) => (
                             <Button
                                 className={styles.actionItem}
                                 key={key}
@@ -454,7 +478,10 @@ function Actions<T>({ children, actions, disabled, selection, className }: Actio
                                 </span>
                             </Button>
                         ))}
-                </ul>
+                    </ul>
+                ) : (
+                    <Text className="m-2 font-italic text-muted">No actions available</Text>
+                )}
             </PopoverContent>
         </Popover>
     )

@@ -17,7 +17,7 @@ img.screenshot {
 </p>
 </aside>
 
-With Sourcegraph deployments supporting [executors](../../admin/executors.md), your repository contents can be automatically analyzed to produce a code graph index file. Once [auto-indexing is enabled](../how-to/enable_auto_indexing.md) and [auto-indexing policies are configured](../how-to/configure_auto_indexing.md), repositories will be periodically cloned into an executor sandbox, analyzed, and the resulting index file will be uploaded back to the Sourcegraph instance.
+With Sourcegraph deployments supporting [executors](../../admin/executors/index.md), your repository contents can be automatically analyzed to produce a code graph index file. Once [auto-indexing is enabled](../how-to/enable_auto_indexing.md) and [auto-indexing policies are configured](../how-to/configure_auto_indexing.md), repositories will be periodically cloned into an executor sandbox, analyzed, and the resulting index file will be uploaded back to the Sourcegraph instance.
 
 ## Language support
 
@@ -29,9 +29,9 @@ Index jobs are run asynchronously from a queue. Each index job has an attached _
 
 ![Index job state diagram](./diagrams/index-states.svg)
 
-The general happy-path for an index job is: `QUEUED`, `PROCESSING`, then `COMPLETED`.
+The general happy-path for an index job is: `QUEUED_FOR_INDEXING`, `INDEXING`, then `INDEXING_COMPLETED`. Once uploaded, the remaining lifecycle is described in [lifecycle of an upload](uploads#lifecycle-of-an-upload).
 
-Index jobs may fail to complete due to the job configuration not aligning with the repository contents or due to transient errors related to the network (for example). An index job will enter the `FAILED` state on the former type of error and the `ERRORED` state on the later. Errored index jobs may be retried a number of times before moving into the `FAILED` state.
+Index jobs may fail to complete due to the job configuration not aligning with the repository contents or due to transient errors related to the network (for example). An index job will enter the `INDEXING_ERRORED` state on such conditions. Errored index jobs may be retried a number of times before moving into a permanently errored state.
 
 At any point, an index job record may be deleted (usually due to explicit deletion by the user).
 
@@ -43,16 +43,16 @@ Users can see precise code navigation index jobs for a particular, repository by
 
 Administrators of a Sourcegraph instance can see a global view of code graph index jobs across all repositories from the _Site Admin_ page.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/indexes/list.png" class="screenshot" alt="Global list of precise code navigation index jobs across all repositories">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/indexes-list.png" class="screenshot" alt="Global list of precise code navigation index jobs across all repositories">
 
 The detail page of an index job will show its current state as well as detailed logs about its execution up to the current point in time.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/indexes/processing.png" class="screenshot" alt="Upload in processing state">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/indexes-processing.png" class="screenshot" alt="Upload in processing state">
 
 The stdout and stderr of each command run during pre-indexing and indexing steps are viewable as the index job is processed. This information is valuable when troubleshooting a [custom index configuration](../references/auto_indexing_configuration.md) for your repository.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/indexes/processing-detail.png" class="screenshot" alt="Detailed look at index job logs">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/indexes-processing-detail.png" class="screenshot" alt="Detailed look at index job logs">
 
-Once the index job completes, a code graph data file has been uploaded to the Sourcegraph instance. The associated upload record is available from the detail view of an index job.
+Once the index job completes, a code graph data file has been uploaded to the Sourcegraph instance.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/indexes/completed.png" class="screenshot" alt="Upload in completed state">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/indexes-completed.png" class="screenshot" alt="Upload in completed state">

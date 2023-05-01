@@ -337,7 +337,7 @@ export const highlightCode = memoizeObservable(
             })
             .pipe(
                 map(({ data, errors }) => {
-                    if (!data || !data.highlightCode) {
+                    if (!data?.highlightCode) {
                         throw createAggregateError(errors)
                     }
                     return data.highlightCode

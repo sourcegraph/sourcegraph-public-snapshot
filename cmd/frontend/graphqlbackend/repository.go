@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
@@ -85,6 +86,14 @@ func (r *RepositoryResolver) ID() graphql.ID {
 
 func (r *RepositoryResolver) IDInt32() api.RepoID {
 	return r.RepoMatch.ID
+}
+
+func (r *RepositoryResolver) EmbeddingExists(ctx context.Context) (bool, error) {
+	if !conf.EmbeddingsEnabled() {
+		return false, nil
+	}
+
+	return r.db.Repos().RepoEmbeddingExists(ctx, r.IDInt32())
 }
 
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
@@ -284,6 +293,7 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 
 func (r *RepositoryResolver) Enabled() bool { return true }
 
+// CreatedAt is deprecated and will be removed in a future release.
 // No clients that we know of read this field. Additionally on performance profiles
 // the marshalling of timestamps is significant in our postgres client. So we
 // deprecate the fields and return fake data for created_at.
@@ -361,7 +371,12 @@ func (r *RepositoryResolver) Stars(ctx context.Context) (int32, error) {
 	return int32(repo.Stars), nil
 }
 
+// Deprecated: Use RepositoryResolver.Metadata instead.
 func (r *RepositoryResolver) KeyValuePairs(ctx context.Context) ([]KeyValuePair, error) {
+	return r.Metadata(ctx)
+}
+
+func (r *RepositoryResolver) Metadata(ctx context.Context) ([]KeyValuePair, error) {
 	repo, err := r.repo(ctx)
 	if err != nil {
 		return nil, err
@@ -392,20 +407,6 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	})
 
 	return r.err
-}
-
-func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *resolverstubs.LSIFUploadsQueryArgs) (resolverstubs.LSIFUploadConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &resolverstubs.LSIFRepositoryUploadsQueryArgs{
-		LSIFUploadsQueryArgs: args,
-		RepositoryID:         r.ID(),
-	})
-}
-
-func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *resolverstubs.LSIFIndexesQueryArgs) (resolverstubs.LSIFIndexConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &resolverstubs.LSIFRepositoryIndexesQueryArgs{
-		LSIFIndexesQueryArgs: args,
-		RepositoryID:         r.ID(),
-	})
 }
 
 func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (resolverstubs.IndexConfigurationResolver, error) {
@@ -644,7 +645,17 @@ func (k KeyValuePair) Value() *string {
 	return k.value
 }
 
+// Deprecated: Use AddRepoMetadata instead.
 func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+},
+) (*EmptyResponse, error) {
+	return r.AddRepoMetadata(ctx, args)
+}
+
+func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
 	Repo  graphql.ID
 	Key   string
 	Value *string
@@ -666,7 +677,17 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
 }
 
+// Deprecated: Use UpdateRepoMetadata instead.
 func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+},
+) (*EmptyResponse, error) {
+	return r.UpdateRepoMetadata(ctx, args)
+}
+
+func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
 	Repo  graphql.ID
 	Key   string
 	Value *string
@@ -689,7 +710,16 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 	return &EmptyResponse{}, err
 }
 
+// Deprecated: Use DeleteRepoMetadata instead.
 func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
+	Repo graphql.ID
+	Key  string
+},
+) (*EmptyResponse, error) {
+	return r.DeleteRepoMetadata(ctx, args)
+}
+
+func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 	Repo graphql.ID
 	Key  string
 },
@@ -708,4 +738,8 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 	}
 
 	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
+}
+
+func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {
+	return EnterpriseResolvers.ownResolver.RepoIngestedCodeowners(ctx, r.IDInt32())
 }

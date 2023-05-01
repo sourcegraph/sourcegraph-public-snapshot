@@ -16,7 +16,7 @@ type ContextDetectionEmbeddingJob struct {
 	ProcessAfter    *time.Time
 	NumResets       int
 	NumFailures     int
-	LastHeartbeatAt time.Time
+	LastHeartbeatAt *time.Time
 	ExecutionLogs   []executor.ExecutionLogEntry
 	WorkerHostname  string
 	Cancel          bool

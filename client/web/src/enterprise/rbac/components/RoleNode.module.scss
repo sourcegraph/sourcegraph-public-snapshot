@@ -1,0 +1,45 @@
+.role-node {
+    padding: 1rem;
+    border: 1px solid var(--secondary);
+    margin-top: 1rem;
+
+    &__collapsible-header {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        width: 100%;
+
+        &:hover,
+        &:active {
+            background-color: transparent !important;
+        }
+    }
+
+    &__permissions {
+        background-color: var(--body-bg);
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        grid-column: 1 / -1;
+        margin-top: 0.5rem;
+    }
+
+    &__system-text {
+        background-color: var(--secondary);
+        color: var(--body-color);
+        padding: 0.1rem 0.5rem;
+        margin: 0 0.5rem;
+        border-radius: 10%;
+        font-size: 0.75rem;
+        text-align: center;
+    }
+
+    &__delete-btn {
+        max-height: 2rem;
+        align-self: center;
+    }
+
+    &__delete-btn-icon,
+    &__locked-icon {
+        flex-shrink: 0;
+        fill: currentColor !important;
+    }
+}

@@ -1,8 +1,9 @@
 import { act, fireEvent } from '@testing-library/react'
 import { Route, Routes } from 'react-router-dom'
 
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+
+import { SourcegraphContext } from '../jscontext'
 
 import { RequestAccessPage } from './RequestAccessPage'
 
@@ -10,21 +11,21 @@ function renderPage({
     route = '/request-access',
     sourcegraphDotComMode = false,
     allowSignup = false,
-    experimentalFeatures = {},
     isAuthenticatedUser = false,
     xhrHeaders = {},
+    authAccessRequest,
 }: {
     route?: string
     isAuthenticatedUser?: boolean
     sourcegraphDotComMode?: boolean
     allowSignup?: boolean
-    experimentalFeatures?: SiteConfiguration['experimentalFeatures']
+    authAccessRequest?: SourcegraphContext['authAccessRequest']
     xhrHeaders?: Record<string, string>
 } = {}) {
     window.context = {
         sourcegraphDotComMode,
         allowSignup,
-        experimentalFeatures,
+        authAccessRequest,
         isAuthenticatedUser,
         xhrHeaders,
     } as any
@@ -93,10 +94,10 @@ describe('RequestAccessPage', () => {
             expect(locationRef?.current?.pathname).toBe('/sign-in')
         })
 
-        test('if experimentalFeatures.accessRequests.enabled=false', () => {
+        test('if auth.accessRequest.enabled=false', () => {
             const { locationRef } = renderPage({
-                experimentalFeatures: {
-                    'accessRequests.enabled': false,
+                authAccessRequest: {
+                    enabled: false,
                 },
             })
             expect(locationRef?.current?.pathname).toBe('/sign-in')

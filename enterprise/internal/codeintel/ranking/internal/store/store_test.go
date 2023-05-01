@@ -2,193 +2,141 @@ package store
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestGetStarRank(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
+const (
+	mockRankingGraphKey  = "mockDev" // NOTE: ensure we don't have hyphens so we can validate derivative keys easily
+	mockRankingBatchSize = 10
+)
+
+// insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
+// with the given identifiers. Each upload is assumed to refer to the tip of the default branch. To mark
+// an upload as protected (visible to _some_ branch) butn ot visible from the default branch, use the
+// insertVisibleAtTipNonDefaultBranch method instead.
+func insertVisibleAtTip(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
+	var rows []*sqlf.Query
+	for _, uploadID := range uploadIDs {
+		rows = append(rows, sqlf.Sprintf("(%s, %s, %s)", repositoryID, uploadID, true))
 	}
 
-	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := newInternal(&observation.TestContext, db)
-
-	if _, err := db.ExecContext(ctx, `
-		INSERT INTO repo (name, stars)
-		VALUES
-			('foo', 1000),
-			('bar',  200),
-			('baz',  300),
-			('bonk',  50),
-			('quux',   0),
-			('honk',   0)
-	`); err != nil {
-		t.Fatalf("failed to insert repos: %s", err)
+	query := sqlf.Sprintf(
+		`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id, is_default_branch) VALUES %s`,
+		sqlf.Join(rows, ","),
+	)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while updating uploads visible at tip: %s", err)
 	}
+}
 
-	testCases := []struct {
-		name     string
-		expected float64
-	}{
-		{"foo", 1.0},  // 1000
-		{"baz", 0.8},  // 300
-		{"bar", 0.6},  // 200
-		{"bonk", 0.4}, // 50
-		{"quux", 0.0}, // 0
-		{"honk", 0.0}, // 0
-	}
-
-	for _, testCase := range testCases {
-		stars, err := store.GetStarRank(ctx, api.RepoName(testCase.name))
-		if err != nil {
-			t.Fatalf("unexpected error getting star rank: %s", err)
+// insertUploads populates the lsif_uploads table with the given upload models.
+func insertUploads(t testing.TB, db database.DB, uploads ...uploadsshared.Upload) {
+	for _, upload := range uploads {
+		if upload.Commit == "" {
+			upload.Commit = makeCommit(upload.ID)
+		}
+		if upload.State == "" {
+			upload.State = "completed"
+		}
+		if upload.RepositoryID == 0 {
+			upload.RepositoryID = 50
+		}
+		if upload.Indexer == "" {
+			upload.Indexer = "lsif-go"
+		}
+		if upload.IndexerVersion == "" {
+			upload.IndexerVersion = "latest"
+		}
+		if upload.UploadedParts == nil {
+			upload.UploadedParts = []int{}
 		}
 
-		if stars != testCase.expected {
-			t.Errorf("unexpected rank. want=%.2f have=%.2f", testCase.expected, stars)
+		// Ensure we have a repo for the inner join in select queries
+		insertRepo(t, db, upload.RepositoryID, upload.RepositoryName)
+
+		query := sqlf.Sprintf(`
+			INSERT INTO lsif_uploads (
+				id,
+				commit,
+				root,
+				uploaded_at,
+				state,
+				failure_message,
+				started_at,
+				finished_at,
+				process_after,
+				num_resets,
+				num_failures,
+				repository_id,
+				indexer,
+				indexer_version,
+				num_parts,
+				uploaded_parts,
+				upload_size,
+				associated_index_id,
+				should_reindex
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+		`,
+			upload.ID,
+			upload.Commit,
+			upload.Root,
+			upload.UploadedAt,
+			upload.State,
+			upload.FailureMessage,
+			upload.StartedAt,
+			upload.FinishedAt,
+			upload.ProcessAfter,
+			upload.NumResets,
+			upload.NumFailures,
+			upload.RepositoryID,
+			upload.Indexer,
+			upload.IndexerVersion,
+			upload.NumParts,
+			pq.Array(upload.UploadedParts),
+			upload.UploadSize,
+			upload.AssociatedIndexID,
+			upload.ShouldReindex,
+		)
+
+		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("unexpected error while inserting upload: %s", err)
 		}
 	}
 }
 
-func TestDocumentRanks(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := newInternal(&observation.TestContext, db)
-	repoName := api.RepoName("foo")
-
-	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name, stars) VALUES ('foo', 1000)`); err != nil {
-		t.Fatalf("failed to insert repos: %s", err)
-	}
-
-	if err := store.SetDocumentRanks(ctx, repoName, 0.25, map[string]float64{
-		"cmd/main.go":        2, // no longer referenced
-		"internal/secret.go": 3,
-		"internal/util.go":   4,
-		"README.md":          5, // no longer referenced
-	}); err != nil {
-		t.Fatalf("unexpected error setting document ranks: %s", err)
-	}
-	if err := store.SetDocumentRanks(ctx, repoName, 0.25, map[string]float64{
-		"cmd/args.go":        8, // new
-		"internal/secret.go": 7, // edited
-		"internal/util.go":   6, // edited
-	}); err != nil {
-		t.Fatalf("unexpected error setting document ranks: %s", err)
-	}
-
-	ranks, _, err := store.GetDocumentRanks(ctx, repoName)
-	if err != nil {
-		t.Fatalf("unexpected error setting document ranks: %s", err)
-	}
-	expectedRanks := map[string][2]float64{
-		"cmd/args.go":        {0.25, 8},
-		"internal/secret.go": {0.25, 7},
-		"internal/util.go":   {0.25, 6},
-	}
-	if diff := cmp.Diff(expectedRanks, ranks); diff != "" {
-		t.Errorf("unexpected ranks (-want +got):\n%s", diff)
-	}
+// makeCommit formats an integer as a 40-character git commit hash.
+func makeCommit(i int) string {
+	return fmt.Sprintf("%040d", i)
 }
 
-func TestLastUpdatedAt(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
+// insertRepo creates a repository record with the given id and name. If there is already a repository
+// with the given identifier, nothing happens
+func insertRepo(t testing.TB, db database.DB, id int, name string) {
+	if name == "" {
+		name = fmt.Sprintf("n-%d", id)
 	}
 
-	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := newInternal(&observation.TestContext, db)
-
-	idFoo := api.RepoID(1)
-	idBar := api.RepoID(2)
-	if _, err := db.ExecContext(ctx, `INSERT INTO repo (id, name) VALUES (1, 'foo'), (2, 'bar'), (3, 'baz')`); err != nil {
-		t.Fatalf("failed to insert repos: %s", err)
-	}
-	if err := store.SetDocumentRanks(ctx, "foo", 0.25, nil); err != nil {
-		t.Fatalf("unexpected error setting document ranks: %s", err)
-	}
-	if err := store.SetDocumentRanks(ctx, "bar", 0.25, nil); err != nil {
-		t.Fatalf("unexpected error setting document ranks: %s", err)
+	deletedAt := sqlf.Sprintf("NULL")
+	if strings.HasPrefix(name, "DELETED-") {
+		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
 	}
 
-	pairs, err := store.LastUpdatedAt(ctx, []api.RepoID{idFoo, idBar})
-	if err != nil {
-		t.Fatalf("unexpected error getting repo last update times: %s", err)
-	}
-
-	fooUpdatedAt, ok := pairs[idFoo]
-	if !ok {
-		t.Fatalf("expected 'foo' in result: %v", pairs)
-	}
-	barUpdatedAt, ok := pairs[idBar]
-	if !ok {
-		t.Fatalf("expected 'bar' in result: %v", pairs)
-	}
-	if _, ok := pairs[999]; ok {
-		t.Fatalf("unexpected 'bonk' in result: %v", pairs)
-	}
-
-	if !fooUpdatedAt.Before(barUpdatedAt) {
-		t.Errorf("unexpected timestamp ordering: %v and %v", fooUpdatedAt, barUpdatedAt)
-	}
-}
-
-func TestUpdatedAfter(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := newInternal(&observation.TestContext, db)
-
-	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
-		t.Fatalf("failed to insert repos: %s", err)
-	}
-	if err := store.SetDocumentRanks(ctx, "foo", 0.25, nil); err != nil {
-		t.Fatalf("unexpected error setting document ranks: %s", err)
-	}
-	if err := store.SetDocumentRanks(ctx, "bar", 0.25, nil); err != nil {
-		t.Fatalf("unexpected error setting document ranks: %s", err)
-	}
-
-	// past
-	{
-		repoNames, err := store.UpdatedAfter(ctx, time.Now().Add(-time.Hour*24))
-		if err != nil {
-			t.Fatalf("unexpected error getting updated repos: %s", err)
-		}
-		if diff := cmp.Diff([]api.RepoName{"bar", "foo"}, repoNames); diff != "" {
-			t.Errorf("unexpected repository names (-want +got):\n%s", diff)
-		}
-	}
-
-	// future
-	{
-		repoNames, err := store.UpdatedAfter(ctx, time.Now().Add(time.Hour*24))
-		if err != nil {
-			t.Fatalf("unexpected error getting updated repos: %s", err)
-		}
-		if len(repoNames) != 0 {
-			t.Fatal("expected no repos")
-		}
+	query := sqlf.Sprintf(
+		`INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING`,
+		id,
+		name,
+		deletedAt,
+	)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while upserting repository: %s", err)
 	}
 }

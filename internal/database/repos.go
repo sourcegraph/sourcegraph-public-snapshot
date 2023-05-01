@@ -95,6 +95,7 @@ type RepoStore interface {
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
 	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
+	RepoEmbeddingExists(ctx context.Context, repoID api.RepoID) (bool, error)
 }
 
 var _ RepoStore = (*repoStore)(nil)
@@ -614,6 +615,9 @@ type ReposListOptions struct {
 	// A set of filters to select only repos with a given set of key-value pairs.
 	KVPFilters []RepoKVPFilter
 
+	// A set of filters to select only repos with the given set of topics
+	TopicFilters []RepoTopicFilter
+
 	// CaseSensitivePatterns determines if IncludePatterns and ExcludePattern are treated
 	// with case sensitivity or not.
 	CaseSensitivePatterns bool
@@ -759,6 +763,13 @@ type RepoKVPFilter struct {
 	KeyOnly bool
 }
 
+type RepoTopicFilter struct {
+	Topic string
+	// If negated is true, this filter will select only repos
+	// that do _not_ have the associated topic
+	Negated bool
+}
+
 type RepoListOrderBy []RepoListSort
 
 func (r RepoListOrderBy) SQL() *sqlf.Query {
@@ -868,11 +879,23 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 	return nil
 }
 
+const repoEmbeddingExists = `SELECT EXISTS(SELECT 1 FROM repo_embedding_jobs WHERE repo_id = %s AND state = 'completed')`
+
+// RepoEmbeddingExists returns boolean indicating whether embeddings are generated for the repo.
+func (s *repoStore) RepoEmbeddingExists(ctx context.Context, repoID api.RepoID) (bool, error) {
+	q := sqlf.Sprintf(repoEmbeddingExists, repoID)
+	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
+
+	return exists, err
+}
+
 // ListMinimalRepos returns a list of repositories names and ids.
 func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) (results []types.MinimalRepo, err error) {
 	preallocSize := 128
 	if opt.LimitOffset != nil {
 		preallocSize = opt.Limit
+	} else if len(opt.IDs) > 0 {
+		preallocSize = len(opt.IDs)
 	}
 	if preallocSize > 4096 {
 		preallocSize = 4096
@@ -912,8 +935,6 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 	if err != nil {
 		return err
 	}
-
-	tr.LogFields(trace.SQL(q)) //nolint:staticcheck // TODO when updating observation package
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -1163,6 +1184,29 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 				}
 				ands = append(ands, sqlf.Sprintf(q, filter.Key))
 			}
+		}
+		where = append(where, sqlf.Join(ands, "AND"))
+	}
+
+	if len(opt.TopicFilters) > 0 {
+		var ands []*sqlf.Query
+		for _, filter := range opt.TopicFilters {
+			// This condition checks that the requested topics are contained in
+			// the repo's metadata. This is designed to work with the
+			// idx_repo_github_topics index.
+			//
+			// We use the unusual `jsonb_build_array` and `jsonb_build_object`
+			// syntax instead of JSONB literals so that we can use SQL
+			// variables for the user-provided topic names (don't want SQL
+			// injections here).
+			cond := `external_service_type = 'github' AND metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`
+			if filter.Negated {
+				// Use Coalesce in case the JSON access evaluates to NULL.
+				// Since negating a NULL evaluates to NULL, we want to
+				// explicitly treat NULLs as false first
+				cond = `NOT COALESCE(` + cond + `, false)`
+			}
+			ands = append(ands, sqlf.Sprintf(cond, filter.Topic))
 		}
 		where = append(where, sqlf.Join(ands, "AND"))
 	}
@@ -1599,10 +1643,9 @@ WITH repo_ids AS (
 UPDATE repo
 SET
   name = soft_deleted_repository_name(name),
-  deleted_at = transaction_timestamp()
+  deleted_at = COALESCE(deleted_at, transaction_timestamp())
 FROM repo_ids
-WHERE deleted_at IS NULL
-AND repo.id = repo_ids.id::int
+WHERE repo.id = repo_ids.id::int
 `
 
 const getFirstRepoNamesByCloneURLQueryFmtstr = `

@@ -25,20 +25,27 @@ go_library(
 
 go_test(
     name = "processor_test",
+    timeout = "short",
     srcs = ["bulk_processor_test.go"],
     embed = [":processor"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/batches/global",
         "//enterprise/internal/batches/sources/testing",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/testing",
         "//enterprise/internal/batches/types",
+        "//enterprise/internal/batches/webhooks",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/extsvc/github",
+        "//internal/httpcli",
         "//internal/observation",
         "@com_github_sourcegraph_log//logtest",
     ],

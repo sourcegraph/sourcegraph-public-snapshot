@@ -275,6 +275,22 @@ func GitServer() *monitoring.Dashboard {
 						},
 						shared.FrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerRepoManagement).Observable(),
 					},
+					{
+						{
+							Name:          "src_gitserver_repo_count",
+							Description:   "number of repositories on gitserver",
+							Query:         "src_gitserver_repo_count",
+							NoAlert:       true,
+							Panel:         monitoring.Panel().LegendFormat("repo count"),
+							Owner:         monitoring.ObservableOwnerRepoManagement,
+							MultiInstance: true,
+							Interpretation: `
+								This metric is only for informational purposes. It indicates the total number of repositories on gitserver.
+
+								It does not indicate any problems with the instance.
+							`,
+						},
+					},
 				},
 			},
 			shared.GitServer.NewAPIGroup(containerName),

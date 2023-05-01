@@ -78,7 +78,7 @@ export const ExecutorsListPage: React.FC<ExecutorsListPageProps> = ({ queryExecu
                         running batch changes server-side
                     </Link>
                     . In order to use those features,{' '}
-                    <Link to="/help/admin/deploy_executors" rel="noopener">
+                    <Link to="/help/admin/executors/deploy_executors" rel="noopener">
                         set them up
                     </Link>
                     .

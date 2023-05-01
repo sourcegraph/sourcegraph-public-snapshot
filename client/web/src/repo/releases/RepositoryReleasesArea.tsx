@@ -1,7 +1,8 @@
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RepositoryFields } from '../../graphql-operations'
+import { isPackageServiceType } from '../packages/isPackageServiceType'
 import { RepoContainerContext } from '../RepoContainer'
 
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
@@ -20,7 +21,8 @@ export interface RepositoryReleasesAreaPageProps {
     repo: RepositoryFields
 }
 
-const BREADCRUMB = { key: 'tags', element: 'Tags' }
+const TAGS_BREADCRUMB = { key: 'tags', element: 'Tags' }
+const VERSIONS_BREADCRUMB = { key: 'versions', element: 'Versions' }
 
 /**
  * Renders pages related to repository branches.
@@ -28,13 +30,18 @@ const BREADCRUMB = { key: 'tags', element: 'Tags' }
 export const RepositoryReleasesArea: FC<Props> = props => {
     const { useBreadcrumb, repo } = props
 
-    useBreadcrumb(BREADCRUMB)
+    const isPackage = useMemo(
+        () => isPackageServiceType(repo?.externalRepository.serviceType),
+        [repo.externalRepository.serviceType]
+    )
+
+    useBreadcrumb(isPackage ? VERSIONS_BREADCRUMB : TAGS_BREADCRUMB)
 
     return (
         <div className="repository-graph-area">
             <div className="container">
                 <div className="container-inner">
-                    <RepositoryReleasesTagsPage repo={repo} />
+                    <RepositoryReleasesTagsPage repo={repo} isPackage={isPackage} />
                 </div>
             </div>
         </div>

@@ -5,7 +5,7 @@ import webpack from 'webpack'
 import { ROOT_PATH } from '../paths'
 
 // TODO(bazel): drop when non-bazel removed.
-const IS_BAZEL = !!process.env.BAZEL_BINDIR
+const IS_BAZEL = !!(process.env.JS_BINARY__TARGET || process.env.BAZEL_BINDIR)
 
 interface CacheConfigOptions {
     invalidateCacheFiles?: string[]

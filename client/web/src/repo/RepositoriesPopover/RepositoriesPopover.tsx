@@ -81,7 +81,7 @@ export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildre
         query: REPOSITORIES_FOR_POPOVER,
         variables: { first: BATCH_COUNT, after: null, query },
         getConnection: ({ data, errors }) => {
-            if (!data || !data.repositories) {
+            if (!data?.repositories) {
                 throw createAggregateError(errors)
             }
             return data.repositories

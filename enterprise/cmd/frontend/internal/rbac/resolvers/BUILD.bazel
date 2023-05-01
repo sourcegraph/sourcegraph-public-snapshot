@@ -2,28 +2,18 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "resolvers",
-    srcs = [
-        "errors.go",
-        "permission.go",
-        "permission_connection_store.go",
-        "permissions.go",
-        "resolver.go",
-        "role.go",
-        "role_connection_store.go",
-        "roles.go",
-    ],
+    srcs = ["resolver.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac/resolvers",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//internal/actor",
         "//internal/auth",
         "//internal/database",
-        "//internal/gqlutil",
+        "//internal/deviceid",
+        "//internal/featureflag",
         "//internal/types",
-        "//lib/errors",
-        "@com_github_graph_gophers_graphql_go//:graphql-go",
-        "@com_github_graph_gophers_graphql_go//relay",
+        "//internal/usagestats",
         "@com_github_sourcegraph_log//:log",
     ],
 )
@@ -31,28 +21,24 @@ go_library(
 go_test(
     name = "resolvers_test",
     srcs = [
-        "error_test.go",
         "main_test.go",
-        "permission_test.go",
-        "permissions_test.go",
-        "role_test.go",
-        "roles_test.go",
+        "resolver_test.go",
     ],
     embed = [":resolvers"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//enterprise/cmd/frontend/internal/rbac/resolvers/apitest",
         "//internal/actor",
-        "//internal/auth",
         "//internal/database",
         "//internal/database/dbtest",
-        "//internal/gqlutil",
         "//internal/types",
-        "@com_github_google_go_cmp//cmp",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",
-        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
 )

@@ -10,9 +10,10 @@ import (
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -45,13 +47,6 @@ type Server struct {
 		// our internal rate limiters are kept in sync
 		SyncRateLimiters(ctx context.Context, ids ...int64) error
 	}
-	PermsSyncer interface {
-		// ScheduleUsers schedules new permissions syncing requests for given users.
-		ScheduleUsers(ctx context.Context, opts authz.FetchPermsOptions, userIDs ...int32)
-		// ScheduleRepos schedules new permissions syncing requests for given repositories.
-		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
-	}
-	DatabaseBackedPermissionSyncerEnabled func(ctx context.Context) bool
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -65,7 +60,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/enqueue-repo-update", trace.WithRouteName("enqueue-repo-update", s.handleEnqueueRepoUpdate))
 	mux.HandleFunc("/sync-external-service", trace.WithRouteName("sync-external-service", s.handleExternalServiceSync))
 	mux.HandleFunc("/enqueue-changeset-sync", trace.WithRouteName("enqueue-changeset-sync", s.handleEnqueueChangesetSync))
-	mux.HandleFunc("/schedule-perms-sync", trace.WithRouteName("schedule-perms-sync", s.handleSchedulePermsSync))
 	mux.HandleFunc("/external-service-namespaces", trace.WithRouteName("external-service-namespaces", s.handleExternalServiceNamespaces))
 	mux.HandleFunc("/external-service-repositories", trace.WithRouteName("external-service-repositories", s.handleExternalServiceRepositories))
 	return mux
@@ -186,6 +180,15 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// sync the rate limit first, because externalServiceValidate potentially
+	// makes a call to the code host, which might be rate limited
+	if s.RateLimitSyncer != nil {
+		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalServiceID)
+		if err != nil {
+			logger.Warn("Handling rate limiter sync", log.Error(err))
+		}
+	}
+
 	statusCode, resp := handleExternalServiceValidate(ctx, logger, es, genericSrc)
 	if statusCode > 0 {
 		s.respond(w, statusCode, resp)
@@ -194,13 +197,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	if statusCode == 0 {
 		// client is gone
 		return
-	}
-
-	if s.RateLimitSyncer != nil {
-		err = s.RateLimitSyncer.SyncRateLimiters(ctx, req.ExternalServiceID)
-		if err != nil {
-			logger.Warn("Handling rate limiter sync", log.Error(err))
-		}
 	}
 
 	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalServiceID); err != nil {
@@ -373,61 +369,35 @@ func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Reque
 	s.respond(w, http.StatusOK, nil)
 }
 
-// TODO(naman): remove this while removing old perms syncer
-func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request) {
-	if s.DatabaseBackedPermissionSyncerEnabled != nil && s.DatabaseBackedPermissionSyncerEnabled(r.Context()) {
-		s.Logger.Warn("Dropping schedule-perms-sync request because PermissionSyncWorker is enabled. This should not happen.")
-		s.respond(w, http.StatusOK, nil)
-		return
-	}
-
-	if s.PermsSyncer == nil {
-		s.respond(w, http.StatusForbidden, nil)
-		return
-	}
-
-	var req protocol.PermsSyncRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.respond(w, http.StatusBadRequest, err)
-		return
-	}
-	if len(req.UserIDs) == 0 && len(req.RepoIDs) == 0 {
-		s.respond(w, http.StatusBadRequest, errors.New("neither user IDs nor repo IDs was provided in request (must provide at least one)"))
-		return
-	}
-
-	s.PermsSyncer.ScheduleUsers(r.Context(), req.Options, req.UserIDs...)
-	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
-
-	s.respond(w, http.StatusOK, nil)
-}
-
 func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-
 	var req protocol.ExternalServiceNamespacesArgs
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	var (
-		externalSvc *types.ExternalService
-		err         error
-		result      *protocol.ExternalServiceNamespacesResult
-	)
+	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
 
-	if req.ExternalServiceID != nil {
-		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *req.ExternalServiceID)
+	result, err := s.externalServiceNamespaces(r.Context(), logger, req.ToProto())
+	if err != nil {
+		logger.Error("server.query-external-service-namespaces", log.Error(err))
+		httpCode := codeToStatus(status.Code(err))
+		s.respond(w, httpCode, &protocol.ExternalServiceNamespacesResult{Error: err.Error()})
+		return
+	}
+	s.respond(w, http.StatusOK, protocol.ExternalServiceNamespacesResultFromProto(result))
+}
+
+func (s *Server) externalServiceNamespaces(ctx context.Context, logger log.Logger, req *proto.ExternalServiceNamespacesRequest) (*proto.ExternalServiceNamespacesResponse, error) {
+	var externalSvc *types.ExternalService
+	if req.ExternalServiceId != nil {
+		var err error
+		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *req.ExternalServiceId)
 		if err != nil {
-			result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
 			if errcode.IsNotFound(err) {
-				s.respond(w, http.StatusNotFound, result)
-			} else {
-				s.respond(w, http.StatusInternalServerError, result)
+				return nil, status.Error(codes.NotFound, err.Error())
 			}
-			return
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 	} else {
 		externalSvc = &types.ExternalService{
@@ -436,88 +406,77 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		}
 	}
 
-	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
-
 	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, externalSvc)
 	if err != nil {
-		logger.Error("server.query-external-service-namespaces", log.Error(err))
-		result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
-		s.respond(w, http.StatusBadRequest, result)
-		return
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err = genericSrc.CheckConnection(ctx); err != nil {
-		result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
 		if errcode.IsUnauthorized(err) {
-			s.respond(w, http.StatusUnauthorized, result)
-			return
+			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
-
-		s.respond(w, http.StatusServiceUnavailable, result)
-		return
+		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
 	discoverableSrc, ok := genericSrc.(repos.DiscoverableSource)
-
 	if !ok {
-		result = &protocol.ExternalServiceNamespacesResult{Error: repos.UnimplementedDiscoverySource}
-		s.respond(w, http.StatusNotImplemented, result)
-		return
+		return nil, status.Error(codes.Unimplemented, repos.UnimplementedDiscoverySource)
 	}
 
 	results := make(chan repos.SourceNamespaceResult)
-
 	go func() {
 		discoverableSrc.ListNamespaces(ctx, results)
 		close(results)
 	}()
 
 	var sourceErrs error
-	namespaces := make([]*types.ExternalServiceNamespace, 0)
+	namespaces := make([]*proto.ExternalServiceNamespace, 0)
 
 	for res := range results {
 		if res.Err != nil {
 			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: externalSvc})
 			continue
 		}
-		namespaces = append(namespaces, res.Namespace)
+		namespaces = append(namespaces, &proto.ExternalServiceNamespace{
+			Id:         int64(res.Namespace.ID),
+			Name:       res.Namespace.Name,
+			ExternalId: res.Namespace.ExternalID,
+		})
 	}
 
-	if sourceErrs != nil {
-		result = &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces, Error: sourceErrs.Error()}
-	} else {
-		result = &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces}
-	}
-	s.respond(w, http.StatusOK, result)
+	return &proto.ExternalServiceNamespacesResponse{Namespaces: namespaces}, sourceErrs
 }
 
 func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-
 	var req protocol.ExternalServiceRepositoriesArgs
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	var (
-		externalSvc *types.ExternalService
-		err         error
-		result      *protocol.ExternalServiceRepositoriesResult
-	)
+	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
 
-	if req.ExternalServiceID != nil {
-		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *req.ExternalServiceID)
+	result, err := s.externalServiceRepositories(r.Context(), logger, req.ToProto())
+	if err != nil {
+		logger.Error("server.query-external-service-repositories", log.Error(err))
+		httpCode := codeToStatus(status.Code(err))
+		s.respond(w, httpCode, &protocol.ExternalServiceRepositoriesResult{Error: err.Error()})
+		return
+	}
+	s.respond(w, http.StatusOK, protocol.ExternalServiceRepositoriesResultFromProto(result))
+}
+
+func (s *Server) externalServiceRepositories(ctx context.Context, logger log.Logger, req *proto.ExternalServiceRepositoriesRequest) (*proto.ExternalServiceRepositoriesResponse, error) {
+	var externalSvc *types.ExternalService
+	if req.ExternalServiceId != nil {
+		var err error
+		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *req.ExternalServiceId)
 		if err != nil {
-			result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
 			if errcode.IsNotFound(err) {
-				s.respond(w, http.StatusNotFound, result)
-			} else {
-				s.respond(w, http.StatusInternalServerError, result)
+				return nil, status.Error(codes.NotFound, err.Error())
 			}
-			return
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 	} else {
 		externalSvc = &types.ExternalService{
@@ -526,32 +485,22 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 		}
 	}
 
-	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
-
 	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, externalSvc)
 	if err != nil {
-		logger.Error("server.query-external-service-repositories", log.Error(err))
-		result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
-		s.respond(w, http.StatusBadRequest, result)
-		return
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err = genericSrc.CheckConnection(ctx); err != nil {
-		result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
 		if errcode.IsUnauthorized(err) {
-			s.respond(w, http.StatusUnauthorized, result)
-		} else {
-			s.respond(w, http.StatusServiceUnavailable, result)
+			return nil, status.Error(codes.PermissionDenied, err.Error())
 		}
-		return
+		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
 	discoverableSrc, ok := genericSrc.(repos.DiscoverableSource)
 	if !ok {
-		result = &protocol.ExternalServiceRepositoriesResult{Error: repos.UnimplementedDiscoverySource}
-		s.respond(w, http.StatusNotImplemented, result)
-		return
+		return nil, status.Error(codes.Unimplemented, repos.UnimplementedDiscoverySource)
 	}
 
 	results := make(chan repos.SourceResult)
@@ -562,27 +511,46 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 	}
 
 	go func() {
-		discoverableSrc.SearchRepositories(ctx, req.Query, first, req.ExcludeRepos, results)
+		discoverableSrc.SearchRepositories(ctx, req.Query, first, req.GetExcludeRepos(), results)
 		close(results)
 	}()
 
 	var sourceErrs error
-	repositories := make([]*types.ExternalServiceRepository, 0)
+	repositories := make([]*proto.ExternalServiceRepository, 0)
 
 	for res := range results {
 		if res.Err != nil {
 			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: externalSvc})
 			continue
 		}
-		repositories = append(repositories, res.Repo.ToExternalServiceRepository())
+		repositories = append(repositories, &proto.ExternalServiceRepository{
+			Id:         int32(res.Repo.ID),
+			Name:       string(res.Repo.Name),
+			ExternalId: res.Repo.ExternalRepo.ID,
+		})
 	}
 
-	if sourceErrs != nil {
-		result = &protocol.ExternalServiceRepositoriesResult{Repos: repositories, Error: sourceErrs.Error()}
-	} else {
-		result = &protocol.ExternalServiceRepositoriesResult{Repos: repositories}
+	return &proto.ExternalServiceRepositoriesResponse{Repos: repositories}, sourceErrs
+}
+
+// codeToStatus translates the grpc status codes used in this package to http status codes.
+func codeToStatus(code codes.Code) int {
+	switch code {
+	case codes.NotFound:
+		return http.StatusNotFound
+	case codes.Internal:
+		return http.StatusInternalServerError
+	case codes.InvalidArgument:
+		return http.StatusBadRequest
+	case codes.PermissionDenied:
+		return http.StatusUnauthorized
+	case codes.Unavailable:
+		return http.StatusServiceUnavailable
+	case codes.Unimplemented:
+		return http.StatusNotImplemented
+	default:
+		return http.StatusInternalServerError
 	}
-	s.respond(w, http.StatusOK, result)
 }
 
 var mockNewGenericSourcer func() repos.Sourcer

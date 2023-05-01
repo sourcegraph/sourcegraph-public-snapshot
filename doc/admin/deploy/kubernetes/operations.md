@@ -290,9 +290,9 @@ and i.indisready AND i.indisvalid;
 D. Generate the database dumps
 
 ```bash
-$ kubectl exec -it $pgsql_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
-$ kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > codeintel_db.out
-$ kubectl exec -it $codeinsights-db_POD_NAME -- bash -c 'pg_dump -C --username postgres postgres' > codeinsights_db.out
+$ kubectl exec -it $pgsql_POD_NAME -- bash -c 'pg_dump -C --clean --if-exists --username sg sg' > sourcegraph_db.out
+$ kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'pg_dump -C --clean --if-exists --username sg sg' > codeintel_db.out
+$ kubectl exec -it $codeinsights-db_POD_NAME -- bash -c 'pg_dump -C --clean --if-exists --username postgres postgres' > codeinsights_db.out
 ```
 
 Ensure the `sourcegraph_db.out`, `codeintel_db.out` and `codeinsights_db.out` files are moved to a safe and secure location.

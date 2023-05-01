@@ -81,7 +81,7 @@ export function getEditorSettingsErrorMessage(
         }).`
     }
 
-    if (!editorSettings.editorIds || !editorSettings.editorIds.length) {
+    if (!editorSettings.editorIds?.length) {
         return `Add \`editorIds\` to your user settings to open files. [Learn more](${learnMoreURL})`
     }
     const validEditorCount = editorSettings.editorIds.map(id => getEditor(id)).filter(editor => editor).length

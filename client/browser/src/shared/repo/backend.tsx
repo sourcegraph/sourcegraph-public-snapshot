@@ -5,9 +5,9 @@ import { createAggregateError, memoizeObservable, sha256 } from '@sourcegraph/co
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
     CloneInProgressError,
+    isCloneInProgressErrorLike,
     RepoNotFoundError,
     RevisionNotFoundError,
-    isCloneInProgressErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
@@ -235,7 +235,7 @@ export const fetchBlobContentLines = memoizeObservable(
                     throw createAggregateError(errors)
                 }
                 const { repository } = data
-                if (!repository || !repository.commit || !repository.commit.file || !repository.commit.file.content) {
+                if (!repository?.commit?.file?.content) {
                     return []
                 }
                 return repository.commit.file.content.split('\n')

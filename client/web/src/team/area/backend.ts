@@ -3,10 +3,14 @@ import { MutationTuple, QueryResult } from '@apollo/client'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 
 import {
-    TeamResult,
-    TeamVariables,
+    AssignParentTeamResult,
+    AssignParentTeamVariables,
     ChangeTeamDisplayNameResult,
     ChangeTeamDisplayNameVariables,
+    RemoveParentTeamResult,
+    RemoveParentTeamVariables,
+    TeamResult,
+    TeamVariables,
 } from '../../graphql-operations'
 
 export function useTeam(name: string): QueryResult<TeamResult, TeamVariables> {
@@ -39,6 +43,12 @@ export function useTeam(name: string): QueryResult<TeamResult, TeamVariables> {
                 members {
                     totalCount
                 }
+                creator {
+                    username
+                    displayName
+                    avatarURL
+                    url
+                }
             }
         `,
         {
@@ -52,6 +62,30 @@ export function useChangeTeamDisplayName(): MutationTuple<ChangeTeamDisplayNameR
         gql`
             mutation ChangeTeamDisplayName($id: ID!, $displayName: String) {
                 updateTeam(id: $id, displayName: $displayName) {
+                    id
+                }
+            }
+        `
+    )
+}
+
+export function useAssignParentTeam(): MutationTuple<AssignParentTeamResult, AssignParentTeamVariables> {
+    return useMutation<AssignParentTeamResult, AssignParentTeamVariables>(
+        gql`
+            mutation AssignParentTeam($id: ID!, $parentTeamName: String!) {
+                updateTeam(id: $id, parentTeamName: $parentTeamName) {
+                    id
+                }
+            }
+        `
+    )
+}
+
+export function useRemoveParentTeam(): MutationTuple<RemoveParentTeamResult, RemoveParentTeamVariables> {
+    return useMutation<RemoveParentTeamResult, RemoveParentTeamVariables>(
+        gql`
+            mutation RemoveParentTeam($id: ID!) {
+                updateTeam(id: $id, makeRoot: true) {
                     id
                 }
             }

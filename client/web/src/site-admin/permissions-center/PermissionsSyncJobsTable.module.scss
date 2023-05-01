@@ -1,8 +1,0 @@
-.jobs {
-    &__grid {
-        display: grid;
-        grid-template-columns: [status] max-content [name] minmax(auto, 1fr) [reason] minmax(auto, 1fr) [added] min-content [removed] min-content [total] min-content;
-        column-gap: 1rem;
-        align-items: center;
-    }
-}

@@ -61,7 +61,11 @@ export const ExternalServiceWebhook: React.FunctionComponent<React.PropsWithChil
             <H3>Batch changes webhooks</H3>
             <H4>
                 Adding webhooks via code host connections has been{' '}
-                <Link to="/help/admin/config/webhooks#deprecation-notice" target="_blank" rel="noopener noreferrer">
+                <Link
+                    to="/help/admin/config/webhooks/incoming#deprecation-notice"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
                     deprecated.
                 </Link>
             </H4>

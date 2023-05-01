@@ -17,16 +17,16 @@ import { GET_INSIGHT_DASHBOARDS_GQL } from '../core/hooks/use-insight-dashboards
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'
 
-interface ReactRouterMock {
-    useNavigate: () => unknown
+function mockRouterDom() {
+    return {
+        ...jest.requireActual('react-router-dom'),
+        useNavigate: () => ({
+            push: jest.fn(),
+        }),
+    }
 }
 
-jest.mock('react-router-dom', () => ({
-    ...jest.requireActual<ReactRouterMock>('react-router-dom'),
-    useNavigate: () => ({
-        push: jest.fn(),
-    }),
-}))
+jest.mock('react-router-dom', () => mockRouterDom())
 
 const mockTelemetryService = {
     log: sinon.spy(),
@@ -105,6 +105,7 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
+                isSourcegraphApp={false}
             />,
             {
                 route: '/insights/dashboards/foo',
@@ -120,6 +121,7 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
+                isSourcegraphApp={false}
             />,
             {
                 route: '/insights/dashboards/foo',

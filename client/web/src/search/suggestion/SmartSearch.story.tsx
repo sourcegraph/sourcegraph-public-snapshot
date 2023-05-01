@@ -9,7 +9,7 @@ import { WebStory } from '../../components/WebStory'
 import { SmartSearch } from './SmartSearch'
 
 const config: Meta = {
-    title: 'web/searc/suggestion/SmartSearch',
+    title: 'web/search/suggestion/SmartSearch',
     parameters: {
         chromatic: { viewports: [480, 993], disableSnapshot: false },
     },

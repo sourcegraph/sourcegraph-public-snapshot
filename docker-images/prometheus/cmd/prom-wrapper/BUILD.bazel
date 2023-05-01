@@ -41,11 +41,17 @@ go_library(
 go_binary(
     name = "prom-wrapper",
     embed = [":prom-wrapper_lib"],
+    gotags = [
+        "netgo",
+        "dist",
+    ],
+    static = "on",
     visibility = ["//visibility:public"],
 )
 
 go_test(
     name = "prom-wrapper_test",
+    timeout = "short",
     srcs = [
         "receivers_test.go",
         "silence_test.go",

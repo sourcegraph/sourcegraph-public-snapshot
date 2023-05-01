@@ -25,6 +25,7 @@ go_library(
         "//internal/metrics",
         "//internal/oauthutil",
         "//internal/ratelimit",
+        "//internal/timeutil",
         "//internal/trace/ot",
         "//lib/errors",
         "//schema",
@@ -35,6 +36,7 @@ go_library(
 
 go_test(
     name = "bitbucketcloud_test",
+    timeout = "short",
     srcs = [
         "client_test.go",
         "events_test.go",

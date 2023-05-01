@@ -48,9 +48,9 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 func newTestClient(t *testing.T) *Client {
 	rcache.SetupForTest(t)
 	return &Client{
-		baseURL:          &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
-		httpClient:       &http.Client{},
-		rateLimitMonitor: &ratelimit.Monitor{},
-		projCache:        rcache.NewWithTTL("__test__gl_proj", 1000),
+		baseURL:             &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
+		httpClient:          &http.Client{},
+		externalRateLimiter: &ratelimit.Monitor{},
+		projCache:           rcache.NewWithTTL("__test__gl_proj", 1000),
 	}
 }

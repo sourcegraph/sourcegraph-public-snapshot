@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -16,7 +15,6 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sourcegraph/log"
-	"github.com/tidwall/gjson"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
@@ -33,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
@@ -52,7 +49,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -72,16 +68,23 @@ var (
 	rateLimitSyncerLimitPerSecond = env.MustGetInt("SRC_REPOS_SYNC_RATE_LIMIT_RATE_PER_SECOND", 80, "Rate limit applied to rate limit syncing")
 )
 
-type EnterpriseInit func(db database.DB)
+type EnterpriseInit func(db database.DB, keyring keyring.Ring)
 
 type Config struct {
 	env.BaseConfig
 
-	ReposDir string
+	ReposDir         string
+	CoursierCacheDir string
 }
 
 func (c *Config) Load() {
 	c.ReposDir = c.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+
+	// if COURSIER_CACHE_DIR is set, try create that dir and use it. If not set, use the SRC_REPOS_DIR value (or default).
+	c.CoursierCacheDir = env.Get("COURSIER_CACHE_DIR", "", "Directory in which coursier data is cached for JVM package repos.")
+	if c.CoursierCacheDir == "" && c.ReposDir != "" {
+		c.CoursierCacheDir = filepath.Join(c.ReposDir, "coursier")
+	}
 }
 
 func LoadConfig() *Config {
@@ -121,7 +124,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	if enterpriseInit != nil {
-		enterpriseInit(db)
+		enterpriseInit(db, keyring.Default())
 	}
 
 	if err != nil {
@@ -134,10 +137,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		ReposDir:           config.ReposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
+			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir, config.CoursierCacheDir)
 		},
 		Hostname:                externalAddress(),
 		DB:                      db,
@@ -164,7 +167,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
 	handler = actor.HTTPMiddleware(logger, handler)
-	handler = requestclient.HTTPMiddleware(handler)
+	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
@@ -307,7 +310,6 @@ func getRemoteURLFunc(
 	ctx context.Context,
 	externalServiceStore database.ExternalServiceStore,
 	repoStore database.RepoStore,
-	cli httpcli.Doer,
 	repo api.RepoName,
 ) (string, error) {
 	r, err := repoStore.GetByName(ctx, repo)
@@ -331,87 +333,9 @@ func getRemoteURLFunc(
 			continue
 		}
 
-		if svc.Kind == extsvc.KindGitHub {
-			config, err := conf.GitHubAppConfig()
-			if err != nil {
-				return "", err
-			}
-			if config.Configured() {
-				rawConfig, err := svc.Config.Decrypt(ctx)
-				if err != nil {
-					return "", err
-				}
-				installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
-				if installationID > 0 {
-					rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, config.PrivateKey, config.AppID, installationID, cli)
-					if err != nil {
-						return "", errors.Wrap(err, "edit GitHub App external service config token")
-					}
-					svc.Config.Set(rawConfig)
-				}
-			}
-		}
 		return repos.EncryptableCloneURL(ctx, log.Scoped("repos.CloneURL", ""), svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
-}
-
-// editGitHubAppExternalServiceConfigToken updates the "token" field of the given
-// external service config through GitHub App and returns a new copy of the
-// config ensuring the token is always valid.
-func editGitHubAppExternalServiceConfigToken(
-	ctx context.Context,
-	externalServiceStore database.ExternalServiceStore,
-	svc *types.ExternalService,
-	rawConfig string,
-	privateKey []byte,
-	appID string,
-	installationID int64,
-	cli httpcli.Doer,
-) (string, error) {
-	logger := log.Scoped("editGitHubAppExternalServiceConfigToken", "updates the 'token' field of the given external service")
-
-	baseURL, err := url.Parse(gjson.Get(rawConfig, "url").String())
-	if err != nil {
-		return "", errors.Wrap(err, "parse base URL")
-	}
-
-	apiURL, githubDotCom := github.APIRoot(baseURL)
-	if !githubDotCom {
-		return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
-	}
-
-	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return "", nil
-	}
-
-	appAuther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "new authenticator with GitHub App")
-	}
-
-	scopedLogger := logger.Scoped("app", "github client for github app").With(log.String("appID", appID))
-	appClient := github.NewV3Client(scopedLogger, svc.URN(), apiURL, appAuther, cli)
-
-	token, err := appClient.CreateAppInstallationAccessToken(ctx, installationID)
-	if err != nil {
-		return "", errors.Wrap(err, "get or renew GitHub App installation access token")
-	}
-
-	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
-	// validation with missing "repos" property when no repository has been selected,
-	// due to generated JSON tag of ",omitempty".
-	config, err := jsonc.Edit(rawConfig, token.Token, "token")
-	if err != nil {
-		return "", errors.Wrap(err, "edit token")
-	}
-	err = externalServiceStore.Update(ctx, conf.Get().AuthProviders, svc.ID,
-		&database.ExternalServiceUpdate{
-			Config:         &config,
-			TokenExpiresAt: token.ExpiresAt,
-		})
-	return config, err
 }
 
 func getVCSSyncer(
@@ -421,6 +345,7 @@ func getVCSSyncer(
 	depsSvc *dependencies.Service,
 	repo api.RepoName,
 	reposDir string,
+	coursierCacheDir string,
 ) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
@@ -476,14 +401,17 @@ func getVCSSyncer(
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return server.NewJVMPackagesSyncer(&c, depsSvc), nil
+		return server.NewJVMPackagesSyncer(&c, depsSvc, coursierCacheDir), nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
 		if err != nil {
 			return nil, err
 		}
-		cli := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalDoer)
+		cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalClientFactory)
+		if err != nil {
+			return nil, err
+		}
 		return server.NewNpmPackagesSyncer(c, depsSvc, cli), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
@@ -491,7 +419,7 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalDoer)
+		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
 		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
 	case extsvc.TypePythonPackages:
 		var c schema.PythonPackagesConnection
@@ -499,15 +427,21 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := pypi.NewClient(urn, c.Urls, httpcli.ExternalDoer)
-		return server.NewPythonPackagesSyncer(&c, depsSvc, cli), nil
+		cli, err := pypi.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
+		if err != nil {
+			return nil, err
+		}
+		return server.NewPythonPackagesSyncer(&c, depsSvc, cli, reposDir), nil
 	case extsvc.TypeRustPackages:
 		var c schema.RustPackagesConnection
 		urn, err := extractOptions(&c)
 		if err != nil {
 			return nil, err
 		}
-		cli := crates.NewClient(urn, httpcli.ExternalDoer)
+		cli, err := crates.NewClient(urn, httpcli.ExternalClientFactory)
+		if err != nil {
+			return nil, err
+		}
 		return server.NewRustPackagesSyncer(&c, depsSvc, cli), nil
 	case extsvc.TypeRubyPackages:
 		var c schema.RubyPackagesConnection
@@ -515,7 +449,10 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := rubygems.NewClient(urn, c.Repository, httpcli.ExternalDoer)
+		cli, err := rubygems.NewClient(urn, c.Repository, httpcli.ExternalClientFactory)
+		if err != nil {
+			return nil, err
+		}
 		return server.NewRubyPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil

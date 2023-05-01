@@ -15,6 +15,7 @@ const mockUser = {
     avatarURL: 'https://example.com/image.jpg',
     viewerCanChangeUsername: true,
     createdAt: new Date().toISOString(),
+    scimControlled: false,
 }
 
 const newUserValues = {

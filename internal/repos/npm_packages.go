@@ -27,7 +27,7 @@ func NewNpmPackagesSource(ctx context.Context, svc *types.ExternalService, cf *h
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
-	cli, err := cf.Doer()
+	client, err := npm.NewHTTPClient(svc.URN(), c.Registry, c.Credentials, cf)
 	if err != nil {
 		return nil, err
 	}
@@ -37,14 +37,11 @@ func NewNpmPackagesSource(ctx context.Context, svc *types.ExternalService, cf *h
 		configDeps: c.Dependencies,
 		scheme:     dependencies.NpmPackagesScheme,
 		/* depsSvc initialized in SetDependenciesService */
-		src: &npmPackagesSource{
-			client: npm.NewHTTPClient(svc.URN(), c.Registry, c.Credentials, cli),
-		},
+		src: &npmPackagesSource{client},
 	}, nil
 }
 
 var _ packagesSource = &npmPackagesSource{}
-var _ packagesDownloadSource = &npmPackagesSource{}
 
 type npmPackagesSource struct {
 	client npm.Client

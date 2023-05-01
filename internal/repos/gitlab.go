@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -92,6 +91,15 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 	for _, r := range c.Exclude {
 		eb.Exact(r.Name)
 		eb.Exact(strconv.Itoa(r.Id))
+		excludeFunc := func(repo any) bool {
+			if project, ok := repo.(gitlab.Project); ok {
+				return project.EmptyRepo
+			}
+			return false
+		}
+		if r.EmptyRepos {
+			eb.Generic(excludeFunc)
+		}
 	}
 	exclude, err := eb.Build()
 	if err != nil {
@@ -115,7 +123,7 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 	}
 
 	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
-		client.RateLimitMonitor().SetCollector(&ratelimit.MetricsCollector{
+		client.ExternalRateLimiter().SetCollector(&ratelimit.MetricsCollector{
 			Remaining: func(n float64) {
 				gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(n)
 			},
@@ -237,7 +245,7 @@ func (s *GitLabSource) remoteURL(proj *gitlab.Project) string {
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {
-	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID))
+	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID)) || s.exclude(*p)
 }
 
 func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {
@@ -278,9 +286,6 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				} else {
 					ch <- batch{projs: []*gitlab.Project{proj}}
 				}
-
-				// 0-duration sleep unless nearing rate limit exhaustion. If context has been canceled, next iteration of loop will return error.
-				timeutil.SleepWithContext(ctx, s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
 			}
 		}()
 	}
@@ -331,9 +336,6 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 					return
 				}
 				urlStr = *nextPageURL
-
-				// 0-duration sleep unless nearing rate limit exhaustion. If context has been canceled, next iteration of loop will return error.
-				timeutil.SleepWithContext(ctx, s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))
 			}
 		}(projectQuery)
 	}

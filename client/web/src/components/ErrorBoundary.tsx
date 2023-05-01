@@ -5,7 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 import { isRouteErrorResponse, useRouteError } from 'react-router-dom'
 
-import { asError } from '@sourcegraph/common'
+import { asError, logger } from '@sourcegraph/common'
 import { Button, Code, Text } from '@sourcegraph/wildcard'
 
 import { isWebpackChunkError } from '../monitoring'
@@ -102,6 +102,7 @@ export const RouteError: React.FC = () => {
         return asError(routeError)
     }, [routeError])
     useEffect(() => {
+        logger.error(error)
         if (typeof Sentry !== 'undefined') {
             Sentry.captureException(error)
         }

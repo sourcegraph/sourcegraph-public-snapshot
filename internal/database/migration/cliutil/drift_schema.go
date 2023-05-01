@@ -35,10 +35,11 @@ func (r NamedRegexp) Example() string {
 }
 
 var (
-	versionBranchPattern = NamedRegexp{lazyregexp.New(`^\d+\.\d+$`), `4.1 (version branch)`}
-	tagPattern           = NamedRegexp{lazyregexp.New(`^v\d+\.\d+\.\d+$`), `v4.1.1 (tagged release)`}
-	commitPattern        = NamedRegexp{lazyregexp.New(`^[0-9A-Fa-f]{40}$`), `57b1f56787619464dc62f469127d64721b428b76 (40-character sha)`}
-	allPatterns          = []NamedRegexp{versionBranchPattern, tagPattern, commitPattern}
+	versionBranchPattern     = NamedRegexp{lazyregexp.New(`^\d+\.\d+$`), `4.1 (version branch)`}
+	tagPattern               = NamedRegexp{lazyregexp.New(`^v\d+\.\d+\.\d+$`), `v4.1.1 (tagged release)`}
+	commitPattern            = NamedRegexp{lazyregexp.New(`^[0-9A-Fa-f]{40}$`), `57b1f56787619464dc62f469127d64721b428b76 (40-character sha)`}
+	abbreviatedCommitPattern = NamedRegexp{lazyregexp.New(`^[0-9A-Fa-f]{12}$`), `57b1f5678761 (12-character sha)`}
+	allPatterns              = []NamedRegexp{versionBranchPattern, tagPattern, commitPattern, abbreviatedCommitPattern}
 )
 
 // GitHubExpectedSchemaFactory reads schema definitions from the sourcegraph/sourcegraph repository via GitHub's API.

@@ -25,7 +25,7 @@ func newTest(t *testing.T) *httptestutil.Client {
 	logger := logtest.Scoped(t)
 	enterpriseServices := enterprise.DefaultServices()
 	rateLimitStore, _ := memstore.New(1024)
-	rateLimiter := graphqlbackend.NewRateLimiteWatcher(logger, rateLimitStore)
+	rateLimiter := graphqlbackend.NewBasicLimitWatcher(logger, rateLimitStore)
 
 	db := database.NewMockDB()
 
@@ -43,11 +43,13 @@ func newTest(t *testing.T) *httptestutil.Client {
 			BitbucketCloudSyncWebhook:     enterpriseServices.ReposBitbucketCloudWebhook,
 			BatchesBitbucketServerWebhook: enterpriseServices.BatchesBitbucketServerWebhook,
 			BatchesBitbucketCloudWebhook:  enterpriseServices.BatchesBitbucketCloudWebhook,
+			BatchesAzureDevOpsWebhook:     enterpriseServices.BatchesAzureDevOpsWebhook,
 			SCIMHandler:                   enterpriseServices.SCIMHandler,
 			NewCodeIntelUploadHandler:     enterpriseServices.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:       enterpriseServices.NewComputeStreamHandler,
 			PermissionsGitHubWebhook:      enterpriseServices.PermissionsGitHubWebhook,
 			NewCompletionsStreamHandler:   enterpriseServices.NewCompletionsStreamHandler,
+			NewCodeCompletionsHandler:     enterpriseServices.NewCodeCompletionsHandler,
 		},
 	))
 }

@@ -2,24 +2,16 @@ package authz
 
 import (
 	"fmt"
-	"sort"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var ErrPermsNotFound = errors.New("permissions not found")
-
-// RepoPerms contains a repo and the permissions a given user
-// has associated with it.
-type RepoPerms struct {
-	Repo  *types.Repo
-	Perms Perms
-}
 
 // Perms is a permission set represented as bitset.
 type Perms uint32
@@ -59,21 +51,6 @@ const (
 	PermRepos PermType = "repos"
 )
 
-// RepoPermsSort sorts a slice of RepoPerms to guarantee a stable ordering.
-type RepoPermsSort []RepoPerms
-
-func (s RepoPermsSort) Len() int      { return len(s) }
-func (s RepoPermsSort) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s RepoPermsSort) Less(i, j int) bool {
-	if s[i].Repo.ID != s[j].Repo.ID {
-		return s[i].Repo.ID < s[j].Repo.ID
-	}
-	if s[i].Repo.ExternalRepo.ID != s[j].Repo.ExternalRepo.ID {
-		return s[i].Repo.ExternalRepo.ID < s[j].Repo.ExternalRepo.ID
-	}
-	return s[i].Repo.Name < s[j].Repo.Name
-}
-
 // ErrStalePermissions is returned by LoadPermissions when the stored
 // permissions are stale (e.g. the first time a user needs them and they haven't
 // been fetched yet). Callers should pass this error up to the user and show a
@@ -92,12 +69,12 @@ func (e ErrStalePermissions) Error() string {
 // Permission determines if a user with a specific id
 // can read a repository with a specific id
 type Permission struct {
-	UserID            int32     // The internal database ID of a user
-	ExternalAccountID int32     // The internal database ID of a user external account
-	RepoID            int32     // The internal database ID of a repo
-	CreatedAt         time.Time // The creation time
-	UpdatedAt         time.Time // The last updated time
-	Source            string    // source of the permission
+	UserID            int32       // The internal database ID of a user
+	ExternalAccountID int32       // The internal database ID of a user external account
+	RepoID            int32       // The internal database ID of a repo
+	CreatedAt         time.Time   // The creation time
+	UpdatedAt         time.Time   // The last updated time
+	Source            PermsSource // source of the permission
 }
 
 // A struct that holds the entity we are updating the permissions for
@@ -113,9 +90,13 @@ type UserIDWithExternalAccountID struct {
 	ExternalAccountID int32
 }
 
-const SourceRepoSync = "repo_sync"
-const SourceUserSync = "user_sync"
-const SourceAPI = "api"
+type PermsSource string
+
+const (
+	SourceRepoSync PermsSource = "repo_sync"
+	SourceUserSync PermsSource = "user_sync"
+	SourceAPI      PermsSource = "api"
+)
 
 // TracingFields returns tracing fields for the opentracing log.
 func (p *Permission) TracingFields() []otlog.Field {
@@ -125,89 +106,20 @@ func (p *Permission) TracingFields() []otlog.Field {
 		otlog.Int32("SrcPermissions.ExternalAccountID", p.ExternalAccountID),
 		otlog.String("SrcPermissions.CreatedAt", p.CreatedAt.String()),
 		otlog.String("SrcPermissions.UpdatedAt", p.UpdatedAt.String()),
-		otlog.String("SrcPermissions.UpdatedAt", p.Source),
+		otlog.String("SrcPermissions.Source", string(p.Source)),
 	}
-	return fs
-}
-
-// UserPermissions are the permissions of a user to perform an action
-// on the given set of object IDs of the defined type.
-type UserPermissions struct {
-	UserID    int32              // The internal database ID of a user
-	Perm      Perms              // The permission set
-	Type      PermType           // The type of the permissions
-	IDs       map[int32]struct{} // The object IDs
-	UpdatedAt time.Time          // The last updated time
-	SyncedAt  time.Time          // The last user-centric synced time
-}
-
-// Expired returns true if these UserPermissions have elapsed the given ttl.
-func (p *UserPermissions) Expired(ttl time.Duration, now time.Time) bool {
-	return !now.Before(p.UpdatedAt.Add(ttl))
-}
-
-// AuthorizedRepos returns the intersection of the given repository IDs with
-// the authorized IDs.
-func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []RepoPerms {
-	// Return directly if it's used for wrong permissions type or no permissions available.
-	if p.Type != PermRepos ||
-		p.IDs == nil || len(p.IDs) == 0 {
-		return []RepoPerms{}
-	}
-
-	perms := make([]RepoPerms, 0, len(repos))
-	for _, r := range repos {
-		_, ok := p.IDs[int32(r.ID)]
-		if r.ID != 0 && ok {
-			perms = append(perms, RepoPerms{Repo: r, Perms: p.Perm})
-		}
-	}
-	return perms
-}
-
-// GenerateSortedIDsSlice returns a sorted slice of the IDs set.
-func (p *UserPermissions) GenerateSortedIDsSlice() []int32 {
-	return convertMapSetToSortedSlice(p.IDs)
-}
-
-// TracingFields returns tracing fields for the opentracing log.
-func (p *UserPermissions) TracingFields() []otlog.Field {
-	fs := []otlog.Field{
-		otlog.Int32("UserPermissions.UserID", p.UserID),
-		trace.Stringer("UserPermissions.Perm", p.Perm),
-		otlog.String("UserPermissions.Type", string(p.Type)),
-	}
-
-	if p.IDs != nil {
-		fs = append(fs,
-			otlog.Int("UserPermissions.IDs.Count", len(p.IDs)),
-			otlog.String("UserPermissions.UpdatedAt", p.UpdatedAt.String()),
-			otlog.String("UserPermissions.SyncedAt", p.SyncedAt.String()),
-		)
-	}
-
 	return fs
 }
 
 // RepoPermissions declares which users have access to a given repository
 type RepoPermissions struct {
-	RepoID         int32              // The internal database ID of a repository
-	Perm           Perms              // The permission set
-	UserIDs        map[int32]struct{} // The user IDs
-	PendingUserIDs map[int64]struct{} // The pending user IDs
-	UpdatedAt      time.Time          // The last updated time
-	SyncedAt       time.Time          // The last repo-centric synced time
-	Unrestricted   bool               // Anyone can see the repo, overrides all other permissions
-}
-
-// Expired returns true if these RepoPermissions have elapsed the given ttl.
-func (p *RepoPermissions) Expired(ttl time.Duration, now time.Time) bool {
-	return !now.Before(p.UpdatedAt.Add(ttl))
-}
-
-// GenerateSortedIDsSlice returns a sorted slice of the IDs set.
-func (p *RepoPermissions) GenerateSortedIDsSlice() []int32 {
-	return convertMapSetToSortedSlice(p.UserIDs)
+	RepoID         int32                  // The internal database ID of a repository
+	Perm           Perms                  // The permission set
+	UserIDs        collections.Set[int32] // The user IDs
+	PendingUserIDs collections.Set[int64] // The pending user IDs
+	UpdatedAt      time.Time              // The last updated time
+	SyncedAt       time.Time              // The last repo-centric synced time
+	Unrestricted   bool                   // Anyone can see the repo, overrides all other permissions
 }
 
 // TracingFields returns tracing fields for the opentracing log.
@@ -224,6 +136,34 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 			otlog.String("RepoPermissions.UpdatedAt", p.UpdatedAt.String()),
 			otlog.String("RepoPermissions.SyncedAt", p.SyncedAt.String()),
 		)
+	}
+
+	return fs
+}
+
+// UserGrantPermissions defines the structure to grant pending permissions to a user.
+// See also UserPendingPermissions.
+type UserGrantPermissions struct {
+	// UserID of the user to grant permissions to.
+	UserID int32
+	// ID of the user external account that the permissions are from.
+	UserExternalAccountID int32
+	// The type of the code host as if it would be used as extsvc.AccountSpec.ServiceType
+	ServiceType string
+	// The ID of the code host as if it would be used as extsvc.AccountSpec.ServiceID
+	ServiceID string
+	// The account ID of the user external account, that the permissions are from
+	AccountID string
+}
+
+// TracingFields returns tracing fields for the opentracing log.
+func (p *UserGrantPermissions) TracingFields() []otlog.Field {
+	fs := []otlog.Field{
+		otlog.Int32("UserGrantPermissions.UserID", p.UserID),
+		otlog.Int32("UserGrantPermissions.UserExternalAccountID", p.UserExternalAccountID),
+		otlog.String("UserPendingPermissions.ServiceType", p.ServiceType),
+		otlog.String("UserPendingPermissions.ServiceID", p.ServiceID),
+		otlog.String("UserPendingPermissions.AccountID", p.AccountID),
 	}
 
 	return fs
@@ -254,14 +194,14 @@ type UserPendingPermissions struct {
 	// The type of permissions this user has.
 	Type PermType
 	// The object IDs with the "Type".
-	IDs map[int32]struct{}
+	IDs collections.Set[int32]
 	// The last updated time.
 	UpdatedAt time.Time
 }
 
 // GenerateSortedIDsSlice returns a sorted slice of the IDs set.
 func (p *UserPendingPermissions) GenerateSortedIDsSlice() []int32 {
-	return convertMapSetToSortedSlice(p.IDs)
+	return p.IDs.Sorted(collections.NaturalCompare[int32])
 }
 
 // TracingFields returns tracing fields for the opentracing log.
@@ -283,14 +223,4 @@ func (p *UserPendingPermissions) TracingFields() []otlog.Field {
 	}
 
 	return fs
-}
-
-// convertMapSetToSortedSlice converts a map set into a slice of sorted integers
-func convertMapSetToSortedSlice(mapSet map[int32]struct{}) []int32 {
-	returnSlice := make([]int32, 0, len(mapSet))
-	for id := range mapSet {
-		returnSlice = append(returnSlice, id)
-	}
-	sort.Slice(returnSlice, func(i, j int) bool { return returnSlice[i] < returnSlice[j] })
-	return returnSlice
 }

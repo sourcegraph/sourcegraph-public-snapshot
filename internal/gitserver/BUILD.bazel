@@ -21,6 +21,7 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/byteutils",
         "//internal/conf",
         "//internal/extsvc/gitolite",
         "//internal/fileutil",
@@ -42,7 +43,6 @@ go_library(
         "//lib/errors",
         "@com_github_go_git_go_git_v5//plumbing/format/config",
         "@com_github_golang_groupcache//lru",
-        "@com_github_grafana_regexp//:regexp",
         "@com_github_opentracing_contrib_go_stdlib//nethttp",
         "@com_github_opentracing_opentracing_go//ext",
         "@com_github_opentracing_opentracing_go//log",
@@ -62,6 +62,7 @@ go_library(
 
 go_test(
     name = "gitserver_test",
+    timeout = "short",
     srcs = [
         "addrs_test.go",
         "client_test.go",
@@ -70,6 +71,9 @@ go_test(
         "internal_test.go",
     ],
     embed = [":gitserver"],
+    # This test loads coursier as a side effect, so we ensure the
+    # path is sandboxed properly.
+    env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
         "//cmd/gitserver/server",
         "//internal/actor",

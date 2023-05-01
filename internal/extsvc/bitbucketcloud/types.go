@@ -10,7 +10,11 @@ import (
 // Types that are returned by Bitbucket Cloud calls.
 
 type Account struct {
-	Links         Links         `json:"links"`
+	Links Links `json:"links"`
+	// BitBucket cloud no longer exposes username in its API, favoring account_id instead.
+	// This field should be removed and updated in the places where it is currently
+	// depended upon.
+	// https://developer.atlassian.com/cloud/bitbucket/bitbucket-api-changes-gdpr/#removal-of-usernames-from-user-referencing-apis
 	Username      string        `json:"username"`
 	Nickname      string        `json:"nickname"`
 	AccountStatus AccountStatus `json:"account_status"`

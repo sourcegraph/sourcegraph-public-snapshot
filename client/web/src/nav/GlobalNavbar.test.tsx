@@ -26,7 +26,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     showSearchBox: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
-    globbing: false,
     branding: undefined,
     routes: [],
     searchContextsEnabled: true,
@@ -36,6 +35,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     setFuzzyFinderIsVisible: () => undefined,
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
+    ownEnabled: true,
     showFeedbackModal: () => undefined,
 }
 

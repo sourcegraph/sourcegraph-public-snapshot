@@ -20,10 +20,8 @@ ts_config(
 ts_project(
     name = "dev",
     srcs = [
-        "esbuild/build.ts",
-        "esbuild/manifestPlugin.ts",
-        "esbuild/server.ts",
         "mocks/mockEventLogger.ts",
+        "server/bazel.server.ts",
         "server/production.server.ts",
         "utils/constants.ts",
         "utils/create-js-context.ts",
@@ -48,7 +46,6 @@ ts_project(
         "//:node_modules/chalk",
         "//:node_modules/compression",
         "//:node_modules/connect-history-api-fallback",
-        "//:node_modules/esbuild",
         "//:node_modules/express",
         "//:node_modules/express-static-gzip",
         "//:node_modules/http-proxy-middleware",
@@ -56,8 +53,8 @@ ts_project(
         "//:node_modules/lodash",
         "//:node_modules/signale",
         "//:node_modules/webpack",  #keep
+        "//:node_modules/webpack-dev-server",  #keep
         "//client/web:node_modules/@sourcegraph/build-config",
-        "//client/web:node_modules/@sourcegraph/common",
         "//client/web:web_lib",  #keep
     ],
 )

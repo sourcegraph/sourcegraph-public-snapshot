@@ -12,6 +12,7 @@ go_library(
 
 go_test(
     name = "iterator_test",
+    timeout = "short",
     srcs = [
         "functions_test.go",
         "iterator_test.go",

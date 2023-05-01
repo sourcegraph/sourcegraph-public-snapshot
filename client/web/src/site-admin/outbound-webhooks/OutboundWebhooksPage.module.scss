@@ -1,6 +1,6 @@
 .grid {
     display: grid;
-    grid-template-columns: 1fr max-content max-content max-content;
+    grid-template-columns: 1fr max-content max-content;
     column-gap: 1rem;
     row-gap: 1rem;
     align-items: center;
@@ -23,12 +23,8 @@
     grid-column: 2 / 3;
 }
 
-.edit {
+.buttons {
     grid-column: 3 / 4;
-}
-
-.del {
-    grid-column: 4 / 5;
 }
 
 .separator {

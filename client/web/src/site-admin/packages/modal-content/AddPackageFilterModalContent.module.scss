@@ -1,0 +1,33 @@
+.header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    flex-flow: nowrap;
+}
+
+.content {
+    min-height: 5rem;
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+
+    &-button {
+        align-self: stretch;
+    }
+}
+
+.list {
+    max-height: 15rem;
+    overflow-y: auto;
+}
+
+.list-container {
+    // Ensure no layout shifts regardless of content/error
+    min-height: 3rem;
+}
+
+.ecosystem-select {
+    max-width: 6rem;
+}

@@ -1,3 +1,7 @@
+import FileMatchChildrenStyles from './FileMatchChildren.module.scss'
+import SearchResultStyles from './SearchResult.module.scss'
+import SymbolSearchResultStyles from './SymbolSearchResult.module.scss'
+
 export * from './CodeExcerpt'
 export * from './CodeHostIcon'
 export * from './CommitSearchResult'
@@ -6,6 +10,7 @@ export * from './CopyPathAction'
 export * from './FileContentSearchResult'
 export * from './LastSyncedIcon'
 export * from './RepoFileLink'
+export * from './RepoMetadata'
 export * from './RepoSearchResult'
 export * from './FilePathSearchResult'
 export * from './SymbolSearchResult'
@@ -15,7 +20,4 @@ export * from './SearchResultStar'
 export * from './SyntaxHighlightedSearchQuery'
 export * from './codeLinkNavigation'
 
-import FileMatchChildrenStyles from './FileMatchChildren.module.scss'
-import SearchResultStyles from './SearchResult.module.scss'
-import SymbolSearchResultStyles from './SymbolSearchResult.module.scss'
 export { SearchResultStyles, FileMatchChildrenStyles, SymbolSearchResultStyles }

@@ -29,7 +29,7 @@ type ProductLicenseInfo struct {
 }
 
 func (r ProductLicenseInfo) ProductNameWithBrand() string {
-	return GetProductNameWithBrand(true, r.TagsValue)
+	return GetProductNameWithBrand(IsFreePlan(&r), r.TagsValue)
 }
 
 func (r ProductLicenseInfo) Tags() []string { return r.TagsValue }

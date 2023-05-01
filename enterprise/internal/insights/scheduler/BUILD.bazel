@@ -56,6 +56,10 @@ go_test(
         "scheduler_test.go",
     ],
     embed = [":scheduler"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//enterprise/internal/insights/discovery",
@@ -64,6 +68,7 @@ go_test(
         "//enterprise/internal/insights/scheduler/iterator",
         "//enterprise/internal/insights/store",
         "//enterprise/internal/insights/types",
+        "//internal/api",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",

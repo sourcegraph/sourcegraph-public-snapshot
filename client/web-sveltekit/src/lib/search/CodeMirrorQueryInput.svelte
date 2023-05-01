@@ -44,7 +44,6 @@
             parseInputAsQuery({ patternType: config.patternType, interpretComments: config.interpretComments }),
             createDefaultSuggestions({
                 fetchSuggestions: query => fetchStreamSuggestions(query),
-                globbing: false,
                 isSourcegraphDotCom: false,
                 navigate: url => goto(url.toString()),
                 applyOnEnter: true,

@@ -1,0 +1,113 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=7.0
+    method: GET
+  response:
+    body: '{"displayName":"idan.varsano","publicAlias":"473dec3e-03d7-6147-b106-0b0a7f766a92","emailAddress":"idan.varsano@sourcegraph.com","coreRevision":411938451,"timeStamp":"2023-01-20T19:20:51.6433333+00:00","id":"473dec3e-03d7-6147-b106-0b0a7f766a92","revision":411938451}'
+    headers:
+      Access-Control-Expose-Headers:
+      - Request-Context
+      Activityid:
+      - d2cf0ab4-6956-4880-bffa-eebdf9f92550
+      Cache-Control:
+      - no-cache, no-store, must-revalidate
+      Content-Type:
+      - application/json; charset=utf-8; api-version=7.0
+      Date:
+      - Thu, 02 Mar 2023 18:36:45 GMT
+      Etag:
+      - '"0"'
+      Expires:
+      - "-1"
+      Last-Modified:
+      - Fri, 20 Jan 2023 19:20:51 GMT
+      P3p:
+      - CP="CAO DSP COR ADMa DEV CONo TELo CUR PSA PSD TAI IVDo OUR SAMi BUS DEM NAV
+        STA UNI COM INT PHY ONL FIN PUR LOC CNT"
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:20b3930f-73dc-453a-b660-e3891d782eef
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Vary:
+      - Accept-Encoding
+      X-Cache:
+      - CONFIG_NOCACHE
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Msedge-Ref:
+      - 'Ref A: 5C3F7F96F5674231B1EC5F1F62DC3144 Ref B: MAA01EDGE1111 Ref C: 2023-03-02T18:36:45Z'
+      X-Tfs-Processid:
+      - 820ab1ae-fa5e-4b54-bcd3-c19228bd810b
+      X-Tfs-Session:
+      - d2cf0ab4-6956-4880-bffa-eebdf9f92550
+      X-Vss-E2eid:
+      - d2cf0ab4-6956-4880-bffa-eebdf9f92550
+      X-Vss-Senderdeploymentid:
+      - a5ca35eb-148e-4ccd-bbb3-d31576d75958
+      X-Vss-Userdata:
+      - 473dec3e-03d7-6147-b106-0b0a7f766a92:idan.varsano@sourcegraph.com
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://app.vssps.visualstudio.com/_apis/accounts?api-version=7.0&memberId=473dec3e-03d7-6147-b106-0b0a7f766a92
+    method: GET
+  response:
+    body: '{"count":4,"value":[{"accountId":"3b958f8e-017e-4f06-95ce-1b6cdd242b36","accountUri":"https://vssps.dev.azure.com:443/sgtestazure/","accountName":"sgtestazure","properties":{}},{"accountId":"65fd1acc-c89e-43e5-9069-395214eb0c25","accountUri":"https://vssps.dev.azure.com:443/repo-management/","accountName":"repo-management","properties":{}},{"accountId":"e8899f60-b66c-4106-8176-8c75b1710c97","accountUri":"https://vssps.dev.azure.com:443/indra-foobar/","accountName":"indra-foobar","properties":{}},{"accountId":"0b807719-5c78-49cd-a851-b24b694db41c","accountUri":"https://vssps.dev.azure.com:443/sgtestazure2/","accountName":"sgtestazure2","properties":{}}]}'
+    headers:
+      Access-Control-Expose-Headers:
+      - Request-Context
+      Activityid:
+      - e2fa6c27-6b16-4f2d-83e4-bfc6a8cbcc87
+      Cache-Control:
+      - no-cache, no-store, must-revalidate
+      Content-Type:
+      - application/json; charset=utf-8; api-version=7.0
+      Date:
+      - Thu, 02 Mar 2023 18:36:45 GMT
+      Expires:
+      - "-1"
+      P3p:
+      - CP="CAO DSP COR ADMa DEV CONo TELo CUR PSA PSD TAI IVDo OUR SAMi BUS DEM NAV
+        STA UNI COM INT PHY ONL FIN PUR LOC CNT"
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:20b3930f-73dc-453a-b660-e3891d782eef
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Vary:
+      - Accept-Encoding
+      X-Cache:
+      - CONFIG_NOCACHE
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Msedge-Ref:
+      - 'Ref A: BB7D52F5D4D94054936DD2D1686AD864 Ref B: MAA01EDGE1111 Ref C: 2023-03-02T18:36:45Z'
+      X-Tfs-Processid:
+      - 7079e5b3-fcdc-4e60-bc32-c76d7829ecec
+      X-Tfs-Session:
+      - e2fa6c27-6b16-4f2d-83e4-bfc6a8cbcc87
+      X-Vss-E2eid:
+      - e2fa6c27-6b16-4f2d-83e4-bfc6a8cbcc87
+      X-Vss-Senderdeploymentid:
+      - a5ca35eb-148e-4ccd-bbb3-d31576d75958
+      X-Vss-Userdata:
+      - 473dec3e-03d7-6147-b106-0b0a7f766a92:idan.varsano@sourcegraph.com
+    status: 200 OK
+    code: 200
+    duration: ""

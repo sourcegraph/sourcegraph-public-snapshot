@@ -27,7 +27,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
             aria-label="Open search actions menu"
             class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
-            id="menu-button-2"
+            id="menu-button-test-id"
             type="button"
           >
             Actions
@@ -101,7 +101,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             aria-label="Open search actions menu"
             class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
-            id="menu-button-6"
+            id="menu-button-test-id"
             type="button"
           >
             Actions
@@ -175,7 +175,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             aria-label="Open search actions menu"
             class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
-            id="menu-button-8"
+            id="menu-button-test-id"
             type="button"
           >
             Actions
@@ -249,7 +249,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
             aria-label="Open search actions menu"
             class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
-            id="menu-button-4"
+            id="menu-button-test-id"
             type="button"
           >
             Actions
@@ -323,7 +323,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
             aria-label="Open search actions menu"
             class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
-            id="menu-button-10"
+            id="menu-button-test-id"
             type="button"
           >
             Actions

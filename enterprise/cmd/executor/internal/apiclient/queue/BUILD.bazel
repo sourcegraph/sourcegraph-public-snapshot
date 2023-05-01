@@ -11,7 +11,7 @@ go_library(
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
         "//enterprise/cmd/executor/internal/apiclient",
-        "//enterprise/cmd/executor/internal/command",
+        "//enterprise/cmd/executor/internal/worker/command",
         "//enterprise/internal/executor/types",
         "//internal/executor",
         "//internal/metrics",
@@ -28,6 +28,7 @@ go_library(
 
 go_test(
     name = "queue_test",
+    timeout = "short",
     srcs = ["client_test.go"],
     deps = [
         ":queue",

@@ -15,8 +15,13 @@ go_library(
 
 go_test(
     name = "author_test",
+    timeout = "short",
     srcs = ["author_test.go"],
     embed = [":author"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

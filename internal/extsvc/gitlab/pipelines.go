@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -29,8 +28,6 @@ func (c *Client) GetMergeRequestPipelines(ctx context.Context, project *Project,
 		if currentPage == "" {
 			return page, nil
 		}
-
-		time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
 		parsedUrl, err := url.Parse(baseURL)
 		if err != nil {

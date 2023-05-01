@@ -22,11 +22,25 @@
 
 ## Unreleased
 
+No applicable notes for unreleased versions.
+
 <!-- Add changes changes to this section before release. -->
+
+## v5.0.1 ➔ v5.0.2
+
+#### Notes:
+
+## v5.0.0 ➔ v5.0.1
+
+No upgrade notes.
+
+## v4.5.1 ➔ v5.0.0
+
+No upgrade notes.
 
 ## v4.5.0 ➔ v4.5.1
 
-#### Notes:
+No upgrade notes.
 
 ## v4.4.2 ➔ v4.5.0
 
@@ -34,9 +48,16 @@
 
 - This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](../how-to/lsif_scip_migration.md) for more details.
 
+**Kubernetes with Helm**
+- Searcher and Symbols now use StatefulSets and PVCs to avoid large `ephermeralStorage` requests [#242](https://github.com/sourcegraph/deploy-sourcegraph-helm/pull/242)
+- This release updates `searcher` and `symbols` services to be headless.
+  - Before upgrading, delete your `searcher` and `symbols` services (ex: `kubectl delete svc/searcher svc/symbols`) [#250](https://github.com/sourcegraph/deploy-sourcegraph-helm/pull/250)
+- An env var `CACHE_DIR` was renamed to `SYMBOLS_CACHE_DIR` in `sourcegraph/sourcegraph`. This change was missed in the Helm charts, which caused a permissions issue during some symbols searches. For more details, see the PR to fix the env var: [#258](https://github.com/sourcegraph/deploy-sourcegraph-helm/pull/258).
+  - A revision to the 4.5.1 chart (`4.5.1-rev.1`) was released to address the above issue. Use this revision for upgrades to 4.5.1. (ex: `helm upgrade --install --version 4.5.1-rev.1`) [#259](https://github.com/sourcegraph/deploy-sourcegraph-helm/pull/259)
+
 ## v4.4.1 ➔ v4.4.2
 
-#### Notes:
+No upgrade notes.
 
 ## v4.3 ➔ v4.4.1
 
@@ -48,7 +69,7 @@
 
 ## v4.2 ➔ v4.3.1
 
-_No notes._
+No upgrade notes.
 
 ## v4.1 ➔ v4.2.1
 
@@ -71,7 +92,7 @@ _No notes._
 
 ## v4.0 ➔ v4.1.3
 
-<!-- Add changes changes to this section before release. -->
+No upgrade notes.
 
 ## v3.43 ➔ v4.0
 

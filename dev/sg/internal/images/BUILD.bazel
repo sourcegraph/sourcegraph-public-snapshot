@@ -27,6 +27,7 @@ go_library(
 
 go_test(
     name = "images_test",
+    timeout = "short",
     srcs = ["images_test.go"],
     embed = [":images"],
     deps = ["//enterprise/dev/ci/images"],

@@ -1,39 +1,29 @@
 package autoindexing
 
 import (
-	"context"
-	"time"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background/dependencies"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background/scheduler"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background/summary"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/enqueuer"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 )
 
-type DependenciesService = background.DependenciesService
+type (
+	DependenciesService  = dependencies.DependenciesService
+	PoliciesService      = scheduler.PoliciesService
+	ReposStore           = dependencies.ReposStore
+	GitserverRepoStore   = dependencies.GitserverRepoStore
+	ExternalServiceStore = dependencies.ExternalServiceStore
+	PolicyMatcher        = scheduler.PolicyMatcher
+	InferenceService     = jobselector.InferenceService
+)
 
-type PoliciesService = background.PoliciesService
-
-type ReposStore = background.ReposStore
-
-type GitserverRepoStore = background.GitserverRepoStore
-
-type ExternalServiceStore = background.ExternalServiceStore
-
-type AutoIndexingServiceForDepScheduling interface {
-	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
-	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
+type RepoUpdaterClient interface {
+	dependencies.RepoUpdaterClient
+	enqueuer.RepoUpdaterClient
 }
 
-type PolicyMatcher = background.PolicyMatcher
-
-type RepoUpdaterClient = background.RepoUpdaterClient
-
-type GitserverClient = background.GitserverClient
-
-type InferenceService interface {
-	InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJob, error)
-	InferIndexJobHints(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJobHint, error)
+type UploadService interface {
+	dependencies.UploadService
+	summary.UploadService
 }
-
-type UploadService = background.UploadService

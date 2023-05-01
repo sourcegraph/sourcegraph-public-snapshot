@@ -46,7 +46,7 @@ var (
 	AfterCreateUser func(ctx context.Context, db DB, user *types.User) error
 	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
 	// site admin.
-	BeforeSetUserIsSiteAdmin func(isSiteAdmin bool) error
+	BeforeSetUserIsSiteAdmin func(ctx context.Context, isSiteAdmin bool) error
 )
 
 // UserStore provides access to the `users` table.
@@ -56,6 +56,7 @@ type UserStore interface {
 	basestore.ShareableStore
 	CheckAndDecrementInviteQuota(context.Context, int32) (ok bool, err error)
 	Count(context.Context, *UsersListOptions) (int, error)
+	CountForSCIM(context.Context, *UsersListOptions) (int, error)
 	Create(context.Context, NewUser) (*types.User, error)
 	CreateInTransaction(context.Context, NewUser, *extsvc.AccountSpec) (*types.User, error)
 	CreatePassword(ctx context.Context, id int32, password string) error
@@ -72,7 +73,6 @@ type UserStore interface {
 	GetByVerifiedEmail(context.Context, string) (*types.User, error)
 	HardDelete(context.Context, int32) error
 	HardDeleteList(context.Context, []int32) error
-	HasTag(ctx context.Context, userID int32, tag string) (bool, error)
 	InvalidateSessionsByID(context.Context, int32) (err error)
 	InvalidateSessionsByIDs(context.Context, []int32) (err error)
 	IsPassword(ctx context.Context, id int32, password string) (bool, error)
@@ -85,11 +85,11 @@ type UserStore interface {
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
 	SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error)
-	SetTag(ctx context.Context, userID int32, tag string, present bool) error
-	Tags(context.Context, int32) (map[string]bool, error)
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
+	SetCompletionsQuota(ctx context.Context, id int32, quota *int) error
+	GetCompletionsQuota(ctx context.Context, id int32) (*int, error)
 	With(basestore.ShareableStore) UserStore
 }
 
@@ -454,6 +454,50 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 	}
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+
+	eArg, _ := json.Marshal(struct {
+		Creator     int32  `json:"creator"`
+		Created     int32  `json:"created"`
+		SiteAdmin   bool   `json:"site_admin"`
+		ServiceType string `json:"service_type"`
+	}{
+		Creator:     a.UID,
+		Created:     u.ID,
+		SiteAdmin:   u.SiteAdmin,
+		ServiceType: serviceType,
+	})
+	logEvent := &Event{
+		Name:            "AccountCreated",
+		URL:             "",
+		AnonymousUserID: "backend",
+		Argument:        eArg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+	_ = db.EventLogs().Insert(ctx, logEvent)
+}
+
+func logAccountModifiedEvent(ctx context.Context, db DB, userID int32, serviceType string) {
+	a := actor.FromContext(ctx)
+	arg, _ := json.Marshal(struct {
+		Modifier    int32  `json:"modifier"`
+		ServiceType string `json:"service_type"`
+	}{
+		Modifier:    a.UID,
+		ServiceType: serviceType,
+	})
+
+	event := &SecurityEvent{
+		Name:            SecurityEventNameAccountModified,
+		URL:             "",
+		UserID:          uint32(userID),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -704,19 +748,36 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 	events := make([]*SecurityEvent, len(ids))
 	for index, id := range ids {
 		events[index] = &SecurityEvent{
-			Name:            name,
-			URL:             "",
-			UserID:          uint32(id),
-			AnonymousUserID: "",
-			Argument:        arg,
+			Name:      name,
+			UserID:    uint32(id),
+			Argument:  arg,
+			Source:    "BACKEND",
+			Timestamp: now,
+		}
+	}
+	db.SecurityEventLogs().LogEventList(ctx, events)
+
+	logEvents := make([]*Event, len(ids))
+	for index, id := range ids {
+		eArg, _ := json.Marshal(struct {
+			Deleter int32 `json:"deleter"`
+			Deleted int32 `json:"deleted"`
+		}{
+			Deleter: a.UID,
+			Deleted: id,
+		})
+		logEvents[index] = &Event{
+			Name:            string(name),
+			AnonymousUserID: "backend",
+			Argument:        eArg,
 			Source:          "BACKEND",
 			Timestamp:       now,
 		}
 	}
-	db.SecurityEventLogs().LogEventList(ctx, events)
+	_ = db.EventLogs().BulkInsert(ctx, logEvents)
 }
 
-// RecoverList recovers a list of users by their IDs.
+// RecoverUsersList recovers a list of users by their IDs.
 func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int32, err error) {
 	tx, err := u.transact(ctx)
 	if err != nil {
@@ -798,7 +859,7 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 // to the user when `isSiteAdmin` is true and revokes the role when false.
 func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	if BeforeSetUserIsSiteAdmin != nil {
-		if err := BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
+		if err := BeforeSetUserIsSiteAdmin(ctx, isSiteAdmin); err != nil {
 			return err
 		}
 	}
@@ -817,6 +878,24 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				UserID: id,
 				Role:   types.SiteAdministratorSystemRole,
 			})
+			a := actor.FromContext(ctx)
+			arg, _ := json.Marshal(struct {
+				Assigner int32  `json:"assigner"`
+				Assignee int32  `json:"assignee"`
+				Role     string `json:"role"`
+			}{
+				Assigner: a.UID,
+				Assignee: id,
+				Role:     string(types.SiteAdministratorSystemRole),
+			})
+			logEvent := &Event{
+				Name:            "RoleChangeGranted",
+				AnonymousUserID: "backend",
+				Argument:        arg,
+				Source:          "BACKEND",
+				Timestamp:       time.Now(),
+			}
+			_ = db.EventLogs().Insert(ctx, logEvent)
 			return err
 		}
 
@@ -927,6 +1006,14 @@ func (u *userStore) InvalidateSessionsByIDs(ctx context.Context, ids []int32) (e
 	return nil
 }
 
+func (u *userStore) CountForSCIM(ctx context.Context, opt *UsersListOptions) (int, error) {
+	if opt == nil {
+		opt = &UsersListOptions{}
+	}
+	opt.includeDeleted = true
+	return u.Count(ctx, opt)
+}
+
 func (u *userStore) Count(ctx context.Context, opt *UsersListOptions) (int, error) {
 	if opt == nil {
 		opt = &UsersListOptions{}
@@ -952,8 +1039,6 @@ type UsersListOptions struct {
 	// Only show users inside this org
 	OrgID int32
 
-	Tag string // only include users with this tag
-
 	// InactiveSince filters out users that have had an eventlog entry with a
 	// `timestamp` greater-than-or-equal to the given timestamp.
 	InactiveSince time.Time
@@ -966,6 +1051,11 @@ type UsersListOptions struct {
 	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
 	// user accounts.
 	ExcludeSourcegraphOperators bool
+	// includeDeleted indicates whether to include soft deleted user accounts.
+	//
+	// The intention is that external consumers should not need to interact with soft deleted users but
+	// internally there are valid reasons to include them.
+	includeDeleted bool
 
 	*LimitOffset
 }
@@ -997,6 +1087,7 @@ func (u *userStore) ListForSCIM(ctx context.Context, opt *UsersListOptions) (_ [
 	if opt == nil {
 		opt = &UsersListOptions{}
 	}
+	opt.includeDeleted = true
 	conditions := u.listSQL(*opt)
 
 	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conditions, "AND"), opt.LimitOffset.SQL())
@@ -1098,7 +1189,11 @@ func newQueryCond(query *string) *sqlf.Query {
 }
 
 func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
-	conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
+
+	if !opt.includeDeleted {
+		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	}
 
 	if cond := newQueryCond(&opt.Query); cond != nil {
 		conds = append(conds, cond)
@@ -1122,9 +1217,6 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	}
 	if opt.OrgID != 0 {
 		conds = append(conds, sqlf.Sprintf(orgMembershipCond, opt.OrgID))
-	}
-	if opt.Tag != "" {
-		conds = append(conds, sqlf.Sprintf("%s::text = ANY(u.tags)", opt.Tag))
 	}
 
 	if !opt.InactiveSince.IsZero() {
@@ -1191,7 +1283,20 @@ func (u *userStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.User, error) {
-	q := sqlf.Sprintf("SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at, u.tos_accepted, u.searchable FROM users u %s", query)
+	q := sqlf.Sprintf(`
+SELECT u.id,
+       u.username,
+       u.display_name,
+       u.avatar_url,
+       u.created_at,
+       u.updated_at,
+       u.site_admin,
+       u.passwd IS NOT NULL,
+       u.invalidated_sessions_at,
+       u.tos_accepted,
+       u.searchable,
+       EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled
+FROM users u %s`, query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -1202,7 +1307,7 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, &u.SCIMControlled)
 		if err != nil {
 			return nil, err
 		}
@@ -1218,22 +1323,32 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 }
 
 const userForSCIMQueryFmtStr = `
+WITH scim_accounts AS (
+    SELECT
+        user_id,
+        account_id,
+        account_data
+    FROM user_external_accounts
+    WHERE service_type = 'scim'
+)
 SELECT u.id,
        u.username,
        u.display_name,
        u.avatar_url,
        u.created_at,
        u.updated_at,
+	   u.deleted_at,
        u.site_admin,
        u.passwd IS NOT NULL,
-       u.tags,
        u.invalidated_sessions_at,
        u.tos_accepted,
        u.searchable,
        ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
-       (SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id,
-       (SELECT account_data FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_account_data
-  FROM users u %s`
+       sa.account_id AS scim_external_id,
+       sa.account_data AS scim_account_data
+FROM users u
+LEFT JOIN scim_accounts sa ON u.id = sa.user_id
+%s`
 
 // getBySQLForSCIM returns users matching the SQL query, along with their email addresses and SCIM ExternalID.
 func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*types.UserForSCIM, error) {
@@ -1247,7 +1362,8 @@ func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*
 func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	var u types.UserForSCIM
 	var displayName, avatarURL, scimExternalID, scimAccountData sql.NullString
-	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
+	var deletedAt sql.NullTime
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &deletedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
 	if err != nil {
 		return nil, err
 	}
@@ -1255,6 +1371,7 @@ func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	u.AvatarURL = avatarURL.String
 	u.SCIMExternalID = scimExternalID.String
 	u.SCIMAccountData = scimAccountData.String
+	u.Active = !deletedAt.Valid
 	return &u, nil
 }
 
@@ -1366,6 +1483,26 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	return nil
 }
 
+// SetCompletionsQuota sets the user's quota override for completions. Nil means unset.
+func (u *userStore) SetCompletionsQuota(ctx context.Context, id int32, quota *int) error {
+	if quota == nil {
+		return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET completions_quota = NULL WHERE id = %s", id))
+	}
+	return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET completions_quota = %s WHERE id = %s", *quota, id))
+}
+
+// GetCompletionsQuota reads the user's quota override for completions. Nil means unset.
+func (u *userStore) GetCompletionsQuota(ctx context.Context, id int32) (*int, error) {
+	quota, found, err := basestore.ScanFirstInt(u.Query(ctx, sqlf.Sprintf("SELECT completions_quota FROM users WHERE id = %s AND completions_quota IS NOT NULL", id)))
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return &quota, nil
+	}
+	return nil, nil
+}
+
 // CreatePassword creates a user's password if they don't have a password.
 func (u *userStore) CreatePassword(ctx context.Context, id int32, password string) error {
 	// 🚨 SECURITY: Check min and max password length
@@ -1434,8 +1571,10 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	})
 
 	var path string
+	var host string
 	if r != nil {
 		path = r.URL.Path
+		host = r.URL.Host
 	}
 	event := &SecurityEvent{
 		Name:      name,
@@ -1448,6 +1587,24 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+
+	eArgs, _ := json.Marshal(struct {
+		Requester int32 `json:"requester"`
+		Requestee int32 `json:"requestee"`
+	}{
+		Requester: a.UID,
+		Requestee: userID,
+	})
+	logEvent := &Event{
+		Name:            string(name),
+		AnonymousUserID: "backend",
+		URL:             host,
+		Argument:        eArgs,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	}
+
+	_ = db.EventLogs().Insert(ctx, logEvent)
 }
 
 func hashPassword(password string) (sql.NullString, error) {
@@ -1466,80 +1623,6 @@ func validPassword(hash, password string) bool {
 		return MockValidPassword(hash, password)
 	}
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
-}
-
-const (
-	// TagAllowUserExternalServicePrivate if set on a user, allows them to add
-	// private code through external services they own.
-	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
-	// TagAllowUserExternalServicePublic if set on a user, allows them to add
-	// public code through external services they own.
-	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
-)
-
-// SetTag adds (present=true) or removes (present=false) a tag from the given user's set of tags. An
-// error occurs if the user does not exist. Adding a duplicate tag or removing a nonexistent tag is
-// not an error.
-func (u *userStore) SetTag(ctx context.Context, userID int32, tag string, present bool) error {
-	var q *sqlf.Query
-	if present {
-		// Add tag.
-		q = sqlf.Sprintf(`UPDATE users SET tags=CASE WHEN NOT %s::text = ANY(tags) THEN (tags || %s::text) ELSE tags END WHERE id=%s`, tag, tag, userID)
-	} else {
-		// Remove tag.
-		q = sqlf.Sprintf(`UPDATE users SET tags=array_remove(tags, %s::text) WHERE id=%s`, tag, userID)
-	}
-
-	res, err := u.ExecResult(ctx, q)
-	if err != nil {
-		return err
-	}
-	nrows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if nrows == 0 {
-		return userNotFoundErr{args: []any{userID}}
-	}
-	return nil
-}
-
-// HasTag reports whether the context actor has the given tag.
-// If not, it returns false and a nil error.
-func (u *userStore) HasTag(ctx context.Context, userID int32, tag string) (bool, error) {
-	var tags []string
-	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, userNotFoundErr{[]any{userID}}
-		}
-		return false, err
-	}
-
-	for _, t := range tags {
-		if t == tag {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// Tags returns a map with all the tags currently belonging to the user.
-func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, error) {
-	var tags []string
-	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, userNotFoundErr{[]any{userID}}
-		}
-		return nil, err
-	}
-
-	tagMap := make(map[string]bool, len(tags))
-	for _, t := range tags {
-		tagMap[t] = true
-	}
-	return tagMap, nil
 }
 
 // MockHashPassword if non-nil is used instead of database.hashPassword. This is useful

@@ -7,7 +7,6 @@ import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { LineOrPositionOrRange } from '@sourcegraph/common'
-import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/deprecated-theme-utils'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
@@ -27,15 +26,12 @@ import { getPlatformName } from '../../util/context'
 import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
 import { CodeView, toCodeViewResolver } from '../shared/codeViews'
-import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
-import { NativeTooltip } from '../shared/nativeTooltips'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { ViewResolver } from '../shared/views'
 
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
-import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
-import { getFileContainers, parseURL, getSelectorFor } from './util'
+import { getFileContainers, parseURL, getSelectorFor, isNewGitHubUI, getEmbeddedData } from './util'
 
 import styles from './codeHost.module.scss'
 
@@ -163,16 +159,16 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.style.alignItems = 'center'
     mountElement.className = className
 
-    // new GitHub UI
+    // new GitHub code view: https://docs.github.com/en/repositories/working-with-files/managing-files/navigating-files-with-the-new-code-view
     const container =
         codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
-            ?.childNodes[1] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
+            ?.childNodes[2] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
     if (container instanceof HTMLElement) {
         container.prepend(mountElement)
         return mountElement
     }
 
-    // old GitHub UI (e.g., GHE)
+    // old GitHub code view (aka new code view feature disabled: https://docs.github.com/en/repositories/working-with-files/managing-files/navigating-files-with-the-new-code-view)
     const rawURLLink = codeViewElement.querySelector('#raw-url')
     const buttonGroup = rawURLLink?.closest('.BtnGroup')
     if (buttonGroup?.parentNode) {
@@ -185,7 +181,6 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
 
 /**
  * Matches the modern single-file code view, or snippets embedded in comments.
- *
  */
 const fileLineContainerResolver: ViewResolver<CodeView> = {
     selector: getSelectorFor('blobContainer'),
@@ -303,7 +298,11 @@ export const checkIsGitHub = (): boolean => checkIsGitHubDotCom() || checkIsGitH
 const OPEN_ON_SOURCEGRAPH_ID = 'open-on-sourcegraph'
 
 export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLElement): HTMLElement | null => {
-    const pageheadActions = querySelectorOrSelf(container, '.pagehead-actions')
+    const isGlobalNavigationUpdateFeaturePreviewEnabled = !!querySelectorOrSelf(container, 'header.AppHeader')
+    const pageheadActions = querySelectorOrSelf(
+        container,
+        isGlobalNavigationUpdateFeaturePreviewEnabled ? '.AppHeader-globalBar-end' : '.pagehead-actions'
+    )
     // If ran on page that isn't under a repository namespace.
     if (!pageheadActions || pageheadActions.children.length === 0) {
         return null
@@ -314,26 +313,13 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
         return mount
     }
     // Create new
-    mount = document.createElement('li')
+    mount = document.createElement(isGlobalNavigationUpdateFeaturePreviewEnabled ? 'div' : 'li')
     mount.id = OPEN_ON_SOURCEGRAPH_ID
     pageheadActions.prepend(mount)
     return mount
 }
 
-const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
-    selector: '.js-tagsearch-popover',
-    resolveView: element => ({ element }),
-}
-
 const iconClassName = classNames(styles.icon, 'v-align-text-bottom')
-
-const notificationClassNames = {
-    [NotificationType.Log]: 'flash',
-    [NotificationType.Success]: 'flash flash-success',
-    [NotificationType.Info]: 'flash',
-    [NotificationType.Warning]: 'flash flash-warn',
-    [NotificationType.Error]: 'flash flash-error',
-}
 
 const searchEnhancement: GithubCodeHost['searchEnhancement'] = {
     searchViewResolver: {
@@ -397,7 +383,7 @@ const searchEnhancement: GithubCodeHost['searchEnhancement'] = {
 export const isPrivateRepository = async (
     repoName: string,
     fetchCache = background.fetchCache,
-    fallbackSelector = '#repository-container-header h2 span.Label'
+    fallbackSelector = '#repository-container-header span.Label'
 ): Promise<boolean> => {
     if (window.location.hostname !== 'github.com') {
         return Promise.resolve(true)
@@ -682,7 +668,6 @@ export const githubCodeHost: GithubCodeHost = {
     searchEnhancement,
     enhanceSearchPage,
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
-    nativeTooltipResolvers: [nativeTooltipResolver],
     routeChange: mutations =>
         mutations.pipe(
             map(() => {
@@ -712,7 +697,7 @@ export const githubCodeHost: GithubCodeHost = {
         return {
             rawRepoName,
             revision: pageType === 'blob' || pageType === 'tree' ? resolveFileInfo().blob.revision : undefined,
-            privateRepository: await isPrivateRepository(repoName),
+            privateRepository: isNewGitHubUI() ? getEmbeddedData().repo.private : await isPrivateRepository(repoName),
         }
     },
     isLightTheme: defer(() => {
@@ -728,24 +713,6 @@ export const githubCodeHost: GithubCodeHost = {
         iconClassName,
     },
     check: checkIsGitHub,
-    getCommandPaletteMount,
-    notificationClassNames,
-    commandPaletteClassProps: {
-        buttonClassName: 'Header-link d-flex flex-items-baseline',
-        popoverClassName: classNames('Box', styles.commandPalettePopover),
-        formClassName: 'p-1',
-        inputClassName: 'form-control input-sm header-search-input jump-to-field-active',
-        listClassName: 'p-0 m-0 js-navigation-container jump-to-suggestions-results-container',
-        selectedListItemClassName: 'navigation-focus',
-        listItemClassName:
-            'd-flex flex-justify-start flex-items-center p-0 f5 navigation-item js-navigation-item js-jump-to-scoped-search',
-        actionItemClassName: classNames(
-            styles.commandPaletteActionItem,
-            'no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path p-2'
-        ),
-        noResultsClassName: 'd-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
-        iconClassName,
-    },
     codeViewToolbarClassProps: {
         className: styles.codeViewToolbar,
         listItemClass: classNames(styles.codeViewToolbarItem, 'BtnGroup'),
@@ -759,7 +726,6 @@ export const githubCodeHost: GithubCodeHost = {
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn-octicon p-0 hover-overlay__close-button--github',
         badgeClassName: classNames('label', styles.hoverOverlayBadge),
-        getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,
     },
     urlToFile: (sourcegraphURL, target, context) => {
@@ -818,7 +784,7 @@ export const githubCodeHost: GithubCodeHost = {
         return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },
     observeLineSelection: fromEvent(window, 'hashchange').pipe(
-        startWith(undefined), // capture intital value
+        startWith(undefined), // capture initial value
         map(() => parseHash(window.location.hash))
     ),
     codeViewsRequireTokenization: true,

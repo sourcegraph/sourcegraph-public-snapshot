@@ -146,16 +146,15 @@ because Sourcegraph usernames are mutable.
 To configure GitLab as an authentication provider (which will enable sign-in via GitLab), see the
 [authentication documentation](../auth/index.md#gitlab).
 
-## Internal rate limits
+## Rate limits
 
-Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitLab.
+Always include a token in a configuration for a GitLab.com URL to avoid being denied service by GitLab's [unauthenticated rate limits](https://docs.gitlab.com/ee/user/gitlab_com/index.html#gitlabcom-specific-rate-limits).
 
-If enabled, the default rate is set at 36,000 per hour (10 per second) which can be configured via the `requestsPerHour` field (see below):
+When Sourcegraph hits a rate limit imposed by GitLab, Sourcegraph waits the appropriate amount of time specified by GitLab before retrying the request. This can be several minutes in extreme cases.
 
-- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
-- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
+### Internal rate limits
 
-**NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
+See [Internal rate limits](./rate_limits.md#internal-rate-limits).
 
 ## Configuration
 
@@ -172,16 +171,6 @@ The Sourcegraph instance's site admin must [update the `corsOrigin` site config 
   // ...
   "corsOrigin":
     "https://my-gitlab.example.com"
-  // ...
-}
-```
-
-The site admin should also set `alerts.codeHostIntegrationMessaging` in [global settings](../config/settings.md#editing-global-settings-for-site-admins) to ensure informational content for users in the Sourcegraph webapp references the native integration and not the browser extension.
-
-```json
-{
-  // ...
-  "alerts.codeHostIntegrationMessaging": "native-integration"
   // ...
 }
 ```
@@ -205,4 +194,4 @@ We are actively collaborating with GitLab to improve our integration (e.g. the [
 
 Using the `webhooks` property on the external service has been deprecated.
 
-Please consult [this page](../config/webhooks.md) in order to configure webhooks.
+Please consult [this page](../config/webhooks/incoming.md) in order to configure webhooks.

@@ -1,3 +1,5 @@
+"Sass compilation rules"
+
 load("@npm//client/build-config:sass/package_json.bzl", sass_bin = "bin")
 load("@npm//client/build-config:postcss-cli/package_json.bzl", postcss_bin = "bin")
 
@@ -7,6 +9,19 @@ def _sass_out(n):
 
 # SASS and PostCSS
 def sass(name, srcs, deps = [], runtime_deps = [], **kwargs):
+    """Runs SASS and PostCSS on sass inputs
+
+    Args:
+        name: A unique name for the terminal target
+
+        srcs: A list of .scss sources
+
+        deps: A list of dependencies
+
+        runtime_deps: A list of runtime_dependencies
+
+        **kwargs: Additional arguments
+    """
     visibility = kwargs.pop("visibility", None)
 
     sass_bin.sass(

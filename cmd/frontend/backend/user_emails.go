@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -33,6 +34,7 @@ type UserEmailsService interface {
 	SetVerified(ctx context.Context, userID int32, email string, verified bool) error
 	ResendVerificationEmail(ctx context.Context, userID int32, email string, now time.Time) error
 	SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error
+	SendUserEmailOnAccessTokenChange(ctx context.Context, id int32, tokenName string, deleted bool) error
 }
 
 // NewUserEmailsService creates an instance of UserEmailsService that contains
@@ -40,7 +42,7 @@ type UserEmailsService interface {
 func NewUserEmailsService(db database.DB, logger log.Logger) UserEmailsService {
 	return &userEmails{
 		db:     db,
-		logger: logger,
+		logger: logger.Scoped("UserEmails", "user emails handling service"),
 	}
 }
 
@@ -52,7 +54,7 @@ type userEmails struct {
 // Add adds an email address to a user. If email verification is required, it sends an email
 // verification email.
 func (e *userEmails) Add(ctx context.Context, userID int32, email string) error {
-	logger := e.logger.Scoped("UserEmails.Add", "handles addition of user emails")
+	logger := e.logger.Scoped("Add", "handles addition of user emails")
 	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, e.db, userID); err != nil {
 		return err
@@ -78,22 +80,17 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 		code = &tmp
 	}
 
-	// Another user may have already verified this email address. If so, do not send another
-	// verification email (it would be pointless and also be an abuse vector). Do not tell the
-	// user that another user has already verified it, to avoid needlessly leaking the existence
-	// of emails.
-	var emailAlreadyExistsAndIsVerified bool
 	if _, err := e.db.Users().GetByVerifiedEmail(ctx, email); err != nil && !errcode.IsNotFound(err) {
 		return err
 	} else if err == nil {
-		emailAlreadyExistsAndIsVerified = true
+		return errors.New("a user with this email already exists")
 	}
 
 	if err := e.db.UserEmails().Add(ctx, userID, email, code); err != nil {
 		return err
 	}
 
-	if conf.EmailVerificationRequired() && !emailAlreadyExistsAndIsVerified {
+	if conf.EmailVerificationRequired() {
 		usr, err := e.db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return err
@@ -120,7 +117,8 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 // Remove removes the e-mail from the specified user. Perforce external accounts
 // using the e-mail will also be removed.
 func (e *userEmails) Remove(ctx context.Context, userID int32, email string) error {
-	logger := e.logger.Scoped("UserEmails.Remove", "handles removal of user emails")
+	logger := e.logger.Scoped("Remove", "handles removal of user emails").
+		With(log.Int32("userID", userID))
 
 	// 🚨 SECURITY: Only the authenticated user and site admins can remove email
 	// from users' accounts.
@@ -144,8 +142,7 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 		}
 
 		if conf.CanSendEmail() {
-			svc := NewUserEmailsService(tx, logger)
-			if err := svc.SendUserEmailOnFieldUpdate(ctx, userID, "removed an email"); err != nil {
+			if err := e.SendUserEmailOnFieldUpdate(ctx, userID, "removed an email"); err != nil {
 				logger.Warn("Failed to send email to inform user of email removal", log.Error(err))
 			}
 		}
@@ -167,7 +164,8 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 // SetPrimaryEmail sets the supplied e-mail address as the primary address for
 // the given user.
 func (e *userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email string) error {
-	logger := e.logger.Scoped("UserEmails.SetPrimaryEmail", "handles setting primary e-mail for user")
+	logger := e.logger.Scoped("SetPrimaryEmail", "handles setting primary e-mail for user").
+		With(log.Int32("userID", userID))
 
 	// 🚨 SECURITY: Only the authenticated user and site admins can set the primary
 	// email for users' accounts.
@@ -192,7 +190,7 @@ func (e *userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email st
 // If verified is false, Perforce external accounts using the e-mail will be
 // removed.
 func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
-	logger := e.logger.Scoped("UserEmails.SetVerified", "handles setting e-mail as verified")
+	logger := e.logger.Scoped("SetVerified", "handles setting e-mail as verified")
 
 	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email
 	// verification status. Users themselves must go through the normal email
@@ -218,7 +216,7 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
 		}); err != nil {
-			logger.Error("schemaResolver.SetUserEmailVerified: failed to grant user pending permissions", log.Int32("userID", userID), log.Error(err))
+			logger.Error("failed to grant user pending permissions", log.Int32("userID", userID), log.Error(err))
 		}
 
 		return nil
@@ -282,19 +280,27 @@ func (e *userEmails) ResendVerificationEmail(ctx context.Context, userID int32, 
 	return SendUserEmailVerificationEmail(ctx, user.Username, email, code)
 }
 
-// SendUserEmailOnFieldUpdate sends the user an email that important account information has changed.
-// The change is the information we want to provide the user about the change
-func (e *userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error {
+func (e *userEmails) loadUserForEmail(ctx context.Context, id int32) (*types.User, string, error) {
 	email, verified, err := e.db.UserEmails().GetPrimaryEmail(ctx, id)
 	if err != nil {
-		return errors.Wrap(err, "get user primary email")
+		return nil, "", errors.Wrap(err, "get user primary email")
 	}
 	if !verified {
-		return errors.Newf("unable to send email to user ID %d's unverified primary email address", id)
+		return nil, "", errors.Newf("unable to send email to user ID %d's unverified primary email address", id)
 	}
 	usr, err := e.db.Users().GetByID(ctx, id)
 	if err != nil {
-		return errors.Wrap(err, "get user")
+		return nil, "", errors.Wrap(err, "get user")
+	}
+	return usr, email, nil
+}
+
+// SendUserEmailOnFieldUpdate sends the user an email that important account information has changed.
+// The change is the information we want to provide the user about the change
+func (e *userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error {
+	usr, email, err := e.loadUserForEmail(ctx, id)
+	if err != nil {
+		return err
 	}
 
 	return txemail.Send(ctx, "user_account_update", txemail.Message{
@@ -317,16 +323,79 @@ func (e *userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, c
 var updateAccountEmailTemplate = txemail.MustValidate(txtypes.Templates{
 	Subject: `Update to your Sourcegraph account ({{.Host}})`,
 	Text: `
-Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph ({{.Host}}).
+Hi there! Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph ({{.Host}}).
 
-If this was not you please change your password immediately.
+If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.
 `,
 	HTML: `
 <p>
-Somebody (likely you) <strong>{{.Change}}</strong> for the user <strong>{{.Username}}</strong> on Sourcegraph ({{.Host}}).
+Hi there! Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph ({{.Host}}).
 </p>
 
-<p><strong>If this was not you please change your password immediately.</strong></p>
+<p>If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.</p>
+`,
+})
+
+// SendUserEmailOnAccessTokenCreation sends the user an email that an access
+// token has been created or deleted.
+func (e *userEmails) SendUserEmailOnAccessTokenChange(ctx context.Context, id int32, tokenName string, deleted bool) error {
+	usr, email, err := e.loadUserForEmail(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	var tmpl txtypes.Templates
+	if deleted {
+		tmpl = accessTokenDeletedEmailTemplate
+	} else {
+		tmpl = accessTokenCreatedEmailTemplate
+	}
+	return txemail.Send(ctx, "user_access_token_created", txemail.Message{
+		To:       []string{email},
+		Template: tmpl,
+		Data: struct {
+			Email     string
+			TokenName string
+			Username  string
+			Host      string
+		}{
+			Email:     email,
+			TokenName: tokenName,
+			Username:  usr.Username,
+			Host:      globals.ExternalURL().Host,
+		},
+	})
+}
+
+var accessTokenCreatedEmailTemplate = txemail.MustValidate(txtypes.Templates{
+	Subject: `New Sourcegraph access token created ({{.Host}})`,
+	Text: `
+Hi there! Somebody (likely you) created a new access token "{{.TokenName}}" for the user {{.Username}} on Sourcegraph ({{.Host}}).
+
+If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.
+`,
+	HTML: `
+<p>
+Hi there! Somebody (likely you) created a new access token "{{.TokenName}}" for the user {{.Username}} on Sourcegraph ({{.Host}}).
+</p>
+
+<p>If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.</p>
+`,
+})
+
+var accessTokenDeletedEmailTemplate = txemail.MustValidate(txtypes.Templates{
+	Subject: `Sourcegraph access token deleted ({{.Host}})`,
+	Text: `
+Hi there! Somebody (likely you) deleted the access token "{{.TokenName}}" for the user {{.Username}} on Sourcegraph ({{.Host}}).
+
+If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.
+`,
+	HTML: `
+<p>
+Hi there! Somebody (likely you) deleted the access token "{{.TokenName}}" for the user {{.Username}} on Sourcegraph ({{.Host}}).
+</p>
+
+<p>If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.</p>
 `,
 })
 

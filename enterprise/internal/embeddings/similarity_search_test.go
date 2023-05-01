@@ -1,42 +1,210 @@
 package embeddings
 
 import (
+	"fmt"
+	"math"
+	"math/rand"
 	"testing"
+	"testing/quick"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/require"
 )
 
+// Data below was generated using the testdata/generate_similarity_search_test_data.py script.
+
+// Each line represents a separate embedding.
+var embeddings = []int8{
+	64, 83, 70,
+	73, 56, 86,
+	40, 81, 88,
+	47, 97, 65,
+	66, 108, 8,
+	13, 3, 126,
+	64, 72, 81,
+	83, 48, 82,
+	22, 121, 27,
+	103, 57, 45,
+	35, 104, 61,
+	85, 2, 93,
+	60, 61, 93,
+	97, 51, 62,
+	91, 7, 87,
+	119, 37, 22,
+}
+
+// Each line represents a separate query.
+var queries = []int8{
+	53, 61, 97,
+	51, 115, 11,
+	37, 29, 117,
+}
+
+// Each subarray contains ranked nearest neighbors for each query.
+var ranks = [][]int{
+	{12, 6, 1, 2, 7, 0, 3, 13, 10, 14, 11, 9, 5, 8, 4, 15},
+	{4, 8, 10, 3, 0, 6, 2, 9, 13, 1, 12, 7, 15, 14, 11, 5},
+	{5, 12, 1, 2, 11, 7, 6, 14, 0, 13, 3, 10, 9, 15, 8, 4},
+}
+
 func TestSimilaritySearch(t *testing.T) {
-	embeddings := []float32{
-		0.26726124, 0.53452248, 0.80178373,
-		0.45584231, 0.56980288, 0.68376346,
-		0.50257071, 0.57436653, 0.64616234,
-	}
-	index := EmbeddingIndex[RepoEmbeddingRowMetadata]{
+	numRows, numQueries, columnDimension := 16, 3, 3
+	index := EmbeddingIndex{
 		Embeddings:      embeddings,
-		ColumnDimension: 3,
-		RowMetadata: []RepoEmbeddingRowMetadata{
-			{FileName: "a"},
-			{FileName: "b"},
-			{FileName: "c"},
+		ColumnDimension: columnDimension,
+		RowMetadata:     []RepoEmbeddingRowMetadata{},
+	}
+
+	for i := 0; i < numRows; i++ {
+		index.RowMetadata = append(index.RowMetadata, RepoEmbeddingRowMetadata{FileName: fmt.Sprintf("%d", i)})
+	}
+
+	for _, numWorkers := range []int{0, 1, 2, 3, 5, 8, 9, 16, 20, 33} {
+		for _, numResults := range []int{32} {
+			for q := 0; q < numQueries; q++ {
+				t.Run(fmt.Sprintf("find nearest neighbors query=%d numResults=%d numWorkers=%d", q, numResults, numWorkers), func(t *testing.T) {
+					query := queries[q*columnDimension : (q+1)*columnDimension]
+					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0}, SearchOptions{})
+					resultRowNums := make([]int, len(results))
+					for i, r := range results {
+						resultRowNums[i] = r.RowNum
+					}
+					expectedResults := ranks[q]
+					require.Equal(t, expectedResults[:min(numResults, len(expectedResults))], resultRowNums)
+				})
+			}
+		}
+	}
+}
+
+func TestSplitRows(t *testing.T) {
+	tests := []struct {
+		numRows        int
+		numWorkers     int
+		minRowsToSplit int
+		want           []partialRows
+	}{
+		{
+			numRows:    0,
+			numWorkers: 1,
+			want:       []partialRows{{0, 0}},
+		},
+		{
+			numRows:    128,
+			numWorkers: 1,
+			want:       []partialRows{{0, 128}},
+		},
+		{
+			numRows:    16,
+			numWorkers: 4,
+			want:       []partialRows{{0, 4}, {4, 8}, {8, 12}, {12, 16}},
+		},
+		{
+			numRows:    5,
+			numWorkers: 4,
+			want:       []partialRows{{0, 2}, {2, 4}, {4, 5}, {5, 5}},
+		},
+		{
+			numRows:    16,
+			numWorkers: 3,
+			want:       []partialRows{{0, 6}, {6, 12}, {12, 16}},
+		},
+		{
+			numRows:        20,
+			numWorkers:     5,
+			minRowsToSplit: 20,
+			want:           []partialRows{{0, 20}},
 		},
 	}
 
-	t.Run("find row with exact match", func(t *testing.T) {
-		query := embeddings[0:3]
-		results := index.SimilaritySearch(query, 1)
-		autogold.ExpectFile(t, results)
-	})
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("numRows=%d numWorkers=%d", tt.numRows, tt.numWorkers), func(t *testing.T) {
+			got := splitRows(tt.numRows, tt.numWorkers, tt.minRowsToSplit)
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
 
-	t.Run("find nearest neighbors", func(t *testing.T) {
-		query := []float32{0.87006284, 0.48336824, 0.09667365}
-		results := index.SimilaritySearch(query, 2)
-		autogold.ExpectFile(t, results)
-	})
+func getRandomEmbeddings(prng *rand.Rand, numElements int) []int8 {
+	slice := make([]int8, numElements)
+	for idx := range slice {
+		slice[idx] = int8(prng.Int())
+	}
+	return slice
+}
 
-	t.Run("request more results then there are rows", func(t *testing.T) {
-		query := embeddings[0:3]
-		results := index.SimilaritySearch(query, 5)
-		autogold.ExpectFile(t, results)
-	})
+func BenchmarkSimilaritySearch(b *testing.B) {
+	prng := rand.New(rand.NewSource(0))
+
+	numRows := 1_000_000
+	numResults := 100
+	columnDimension := 1536
+	index := &EmbeddingIndex{
+		Embeddings:      getRandomEmbeddings(prng, numRows*columnDimension),
+		ColumnDimension: columnDimension,
+		RowMetadata:     make([]RepoEmbeddingRowMetadata, numRows),
+	}
+	query := getRandomEmbeddings(prng, columnDimension)
+
+	b.ResetTimer()
+
+	for _, numWorkers := range []int{1, 2, 4, 8, 16} {
+		b.Run(fmt.Sprintf("numWorkers=%d", numWorkers), func(b *testing.B) {
+			for n := 0; n < b.N; n++ {
+				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers}, SearchOptions{})
+			}
+		})
+	}
+}
+
+func TestScore(t *testing.T) {
+	var ranks []float32
+	for i := 1; i < len(embeddings); i++ {
+		ranks = append(ranks, float32(i))
+	}
+
+	columnDimension := 3
+	index := &EmbeddingIndex{
+		Embeddings:      embeddings,
+		ColumnDimension: columnDimension,
+		Ranks:           ranks,
+	}
+	// embeddings[0] = 64, 83, 70,
+	// queries[0:3] = 53, 61, 97,
+	score, debugInfo := index.score(queries[0:columnDimension], 0, SearchOptions{Debug: true, UseDocumentRanks: true})
+
+	// Check that the score is correct
+	expectedScore := scoreSimilarityWeight * ((64 * 53) + (83 * 61) + (70 * 97))
+	if math.Abs(float64(score-expectedScore)) > 0.0001 {
+		t.Fatalf("Expected score %d, but got %d", expectedScore, score)
+	}
+
+	if debugInfo.String() == "" {
+		t.Fatal("Expected a non-empty debug")
+	}
+}
+
+func simpleCosineSimilarity(a, b []int8) int32 {
+	similarity := int32(0)
+	for i := 0; i < len(a); i++ {
+		similarity += int32(a[i]) * int32(b[i])
+	}
+	return similarity
+}
+
+func TestCosineSimilarity(t *testing.T) {
+	f := func(a, b []int8) bool {
+		if len(a) > len(b) {
+			a = a[:len(b)]
+		} else if len(a) < len(b) {
+			b = b[:len(a)]
+		}
+
+		want := simpleCosineSimilarity(a, b)
+		got := CosineSimilarity(a, b)
+		return want == got
+	}
+	err := quick.Check(f, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

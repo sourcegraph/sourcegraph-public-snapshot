@@ -1,11 +1,11 @@
 import { catchError } from 'rxjs/operators'
 
-import type { PageLoad } from './$types'
-
 import { asError, isErrorLike, type ErrorLike } from '$lib/common'
 import { fetchTreeEntries } from '$lib/loader/repo'
 import { asStore } from '$lib/utils'
 import { requestGraphQL } from '$lib/web'
+
+import type { PageLoad } from './$types'
 
 export const load: PageLoad = ({ params, parent }) => ({
     treeEntries: asStore(

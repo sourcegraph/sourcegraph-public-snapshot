@@ -2,10 +2,10 @@ import { QueryResult } from '@apollo/client'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 
-import { UserSelectSearchResult, UserSelectSearchVariables } from '../../../graphql-operations'
+import { TeamMemberUserSelectSearchResult, TeamMemberUserSelectSearchVariables } from '../../../graphql-operations'
 
 const USER_SELECT_SEARCH_FIELDS = gql`
-    fragment UserSelectSearchFields on User {
+    fragment TeamMemberUserSelectSearchFields on User {
         id
         username
         displayName
@@ -14,10 +14,10 @@ const USER_SELECT_SEARCH_FIELDS = gql`
 `
 
 const USER_SELECT_SEARCH = gql`
-    query UserSelectSearch($search: String!) {
+    query TeamMemberUserSelectSearch($search: String!) {
         users(query: $search, first: 15) {
             nodes {
-                ...UserSelectSearchFields
+                ...TeamMemberUserSelectSearchFields
             }
         }
     }
@@ -27,8 +27,8 @@ const USER_SELECT_SEARCH = gql`
 
 export function useUserSelectSearch(
     searchTerm: string
-): QueryResult<UserSelectSearchResult, UserSelectSearchVariables> {
-    return useQuery<UserSelectSearchResult, UserSelectSearchVariables>(USER_SELECT_SEARCH, {
+): QueryResult<TeamMemberUserSelectSearchResult, TeamMemberUserSelectSearchVariables> {
+    return useQuery<TeamMemberUserSelectSearchResult, TeamMemberUserSelectSearchVariables>(USER_SELECT_SEARCH, {
         variables: {
             search: searchTerm,
         },

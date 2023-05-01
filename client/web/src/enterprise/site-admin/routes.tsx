@@ -1,11 +1,14 @@
-import { Navigate, useLocation, useParams } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { siteAdminAreaRoutes } from '../../site-admin/routes'
+import { otherSiteAdminRoutes, UsersManagement } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
+import { SiteAdminRolesPageProps } from '../rbac/SiteAdminRolesPage'
+
+import { RoleAssignmentModalProps } from './UserManagement/components/RoleAssignmentModal'
 
 const SiteAdminProductSubscriptionPage = lazyComponent(
     () => import('./productSubscription/SiteAdminProductSubscriptionPage'),
@@ -47,38 +50,44 @@ const BatchSpecsPage = lazyComponent<BatchSpecsPageProps, 'BatchSpecsPage'>(
     () => import('../batches/BatchSpecsPage'),
     'BatchSpecsPage'
 )
-const WebhookLogPage = lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage')
-const CodeIntelPreciseIndexesPage = lazyComponent(
-    () => import('../codeintel/indexes/pages/CodeIntelPreciseIndexesPage'),
-    'CodeIntelPreciseIndexesPage'
+const AdminCodeIntelArea = lazyComponent(() => import('../codeintel/admin/AdminCodeIntelArea'), 'AdminCodeIntelArea')
+const SiteAdminPreciseIndexPage = lazyComponent(
+    () => import('./SiteAdminPreciseIndexPage'),
+    'SiteAdminPreciseIndexPage'
 )
-const CodeIntelPreciseIndexPage = lazyComponent(
-    () => import('../codeintel/indexes/pages/CodeIntelPreciseIndexPage'),
-    'CodeIntelPreciseIndexPage'
-)
-const CodeIntelConfigurationPage = lazyComponent(
-    () => import('../codeintel/configuration/pages/CodeIntelConfigurationPage'),
-    'CodeIntelConfigurationPage'
-)
-const CodeIntelConfigurationPolicyPage = lazyComponent(
-    () => import('../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'),
-    'CodeIntelConfigurationPolicyPage'
-)
-const CodeIntelInferenceConfigurationPage = lazyComponent(
-    () => import('../codeintel/configuration/pages/CodeIntelInferenceConfigurationPage'),
-    'CodeIntelInferenceConfigurationPage'
-)
-const SiteAdminLsifUploadPage = lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage')
 const ExecutorsSiteAdminArea = lazyComponent(
     () => import('../executors/ExecutorsSiteAdminArea'),
     'ExecutorsSiteAdminArea'
 )
 
+const SiteAdminRolesPage = lazyComponent<SiteAdminRolesPageProps, 'SiteAdminRolesPage'>(
+    () => import('../rbac/SiteAdminRolesPage'),
+    'SiteAdminRolesPage'
+)
+
+const RoleAssignmentModal = lazyComponent<RoleAssignmentModalProps, 'RoleAssignmentModal'>(
+    () => import('./UserManagement/components/RoleAssignmentModal'),
+    'RoleAssignmentModal'
+)
+
 const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/CodeInsightsJobs'), 'CodeInsightsJobs')
+
+const SiteAdminCodyPage = lazyComponent(() => import('./cody/SiteAdminCodyPage'), 'SiteAdminCodyPage')
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
-        ...siteAdminAreaRoutes,
+        ...otherSiteAdminRoutes,
+        {
+            path: '/users',
+            render: () => (
+                <UsersManagement
+                    isEnterprise={true}
+                    renderAssignmentModal={(onCancel, onSuccess, user) => (
+                        <RoleAssignmentModal onCancel={onCancel} onSuccess={onSuccess} user={user} />
+                    )}
+                />
+            ),
+        },
         {
             path: '/license',
             render: () => <SiteAdminProductSubscriptionPage />,
@@ -127,9 +136,12 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
                 batchChangesEnabled && batchChangesExecutionEnabled,
         },
+        // Old batch changes webhooks logs page redirects to new incoming webhooks page.
+        // The old page components and documentation are still available in the codebase
+        // but should be fully removed in the next release.
         {
             path: '/batch-changes/webhook-logs',
-            render: () => <WebhookLogPage />,
+            render: () => <Navigate to="/site-admin/webhooks/incoming" replace={true} />,
             condition: ({ batchChangesEnabled, batchChangesWebhookLogsEnabled }) =>
                 batchChangesEnabled && batchChangesWebhookLogsEnabled,
         },
@@ -147,39 +159,14 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             path: '/code-intelligence/*',
             render: () => <NavigateToCodeGraph />,
         },
-
-        // Precise index routes
+        // Code graph routes
         {
-            path: '/code-graph/indexes',
-            render: props => <CodeIntelPreciseIndexesPage {...props} />,
-        },
-        {
-            path: '/code-graph/indexes/:id',
-            render: props => <CodeIntelPreciseIndexPage {...props} />,
-        },
-
-        // Code graph configuration
-        {
-            path: '/code-graph/configuration',
-            render: props => <CodeIntelConfigurationPage {...props} />,
-        },
-        {
-            path: '/code-graph/configuration/:id',
-            render: props => <CodeIntelConfigurationPolicyPage {...props} />,
-        },
-        {
-            path: '/code-graph/inference-configuration',
-            render: props => <CodeIntelInferenceConfigurationPage {...props} />,
-        },
-
-        // Legacy routes
-        {
-            path: '/code-graph/uploads/:id',
-            render: () => <NavigateToLegacyUploadPage />,
+            path: '/code-graph/*',
+            render: props => <AdminCodeIntelArea {...props} />,
         },
         {
             path: '/lsif-uploads/:id',
-            render: () => <SiteAdminLsifUploadPage />,
+            render: () => <SiteAdminPreciseIndexPage />,
         },
 
         // Executor routes
@@ -188,19 +175,23 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             render: () => <ExecutorsSiteAdminArea />,
             condition: () => Boolean(window.context?.executorsEnabled),
         },
+
+        // Cody configuration
+        {
+            path: '/cody',
+            render: props => <SiteAdminCodyPage {...props} />,
+            condition: () => Boolean(window.context?.embeddingsEnabled),
+        },
+        // rbac-related routes
+        {
+            path: '/roles',
+            exact: true,
+            render: props => <SiteAdminRolesPage {...props} />,
+        },
     ] as readonly (SiteAdminAreaRoute | undefined)[]
 ).filter(Boolean) as readonly SiteAdminAreaRoute[]
 
 function NavigateToCodeGraph(): JSX.Element {
     const location = useLocation()
     return <Navigate to={location.pathname.replace('/code-intelligence', '/code-graph')} />
-}
-
-function NavigateToLegacyUploadPage(): JSX.Element {
-    const { id = '' } = useParams<{ id: string }>()
-    return (
-        <Navigate
-            to={`/site-admin/code-graph/indexes/${btoa(`PreciseIndex:"U:${(atob(id).match(/(\d+)/) ?? [''])[0]}"`)}`}
-        />
-    )
 }

@@ -9,7 +9,20 @@ OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
   rm -rf "$OUTPUT"
 }
+
 trap cleanup EXIT
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
+  ./dev/ci/bazel.sh build //cmd/repo-updater
+  out=$(./dev/ci/bazel.sh cquery //cmd/repo-updater --output=files)
+  cp "$out" "$OUTPUT"
+
+  docker build -f cmd/repo-updater/Dockerfile -t "$IMAGE" "$OUTPUT" \
+    --progress=plain \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION
+  exit $?
+fi
 
 # Environment for building linux binaries
 export GO111MODULE=on

@@ -127,15 +127,6 @@ export const isExternalLink = (url: string): boolean =>
     !!tryCatch(() => new URL(url, window.location.href).origin !== window.location.origin)
 
 /**
- * Appends the query parameter subtree=true to URLs.
- */
-export const appendSubtreeQueryParameter = (url: string): string => {
-    const newUrl = new URL(url, window.location.href)
-    newUrl.searchParams.set('subtree', 'true')
-    return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
-}
-
-/**
  * Stringifies the provided search parameters, replaces encoded `/` and `:` characters,
  * and removes trailing `=`.
  */

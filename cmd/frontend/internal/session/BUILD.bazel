@@ -9,7 +9,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/auth",
         "//internal/actor",
         "//internal/conf",
         "//internal/conf/conftypes",
@@ -30,6 +29,7 @@ go_library(
 
 go_test(
     name = "session_test",
+    timeout = "short",
     srcs = ["session_test.go"],
     embed = [":session"],
     deps = [

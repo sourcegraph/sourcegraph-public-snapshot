@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -185,34 +186,57 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 }
 
 func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
+	// Enable SOAP
+	cloud.MockSiteConfig(t, &cloud.SchemaSiteConfig{
+		AuthProviders: &cloud.SchemaAuthProviders{
+			SourcegraphOperator: &cloud.SchemaAuthProviderSourcegraphOperator{
+				ClientID: "foobar",
+			},
+		},
+	})
+	defer cloud.MockSiteConfig(t, nil)
+
 	tests := []struct {
 		name        string
 		license     *license.Info
+		ctx         context.Context
 		isSiteAdmin bool
 		wantErr     bool
 	}{
 		{
 			name:        "promote to site admin with a valid license is OK",
 			license:     &license.Info{ExpiresAt: time.Now().Add(1 * time.Hour)},
+			ctx:         context.Background(),
 			isSiteAdmin: true,
 			wantErr:     false,
 		},
 		{
 			name:        "revoke site admin with a valid license is OK",
 			license:     &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(1 * time.Hour)},
+			ctx:         context.Background(),
 			isSiteAdmin: false,
 			wantErr:     false,
 		},
 		{
 			name:        "revoke site admin without a license is not OK",
+			ctx:         context.Background(),
 			isSiteAdmin: false,
 			wantErr:     true,
 		},
 		{
 			name:        "promote to site admin with expired license is not OK",
 			license:     &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(-1 * time.Hour)},
+			ctx:         context.Background(),
 			isSiteAdmin: true,
 			wantErr:     true,
+		},
+
+		{
+			name:        "promote to site admin with expired license is OK with Sourcegraph operators",
+			license:     &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(-1 * time.Hour)},
+			ctx:         actor.WithActor(context.Background(), &actor.Actor{SourcegraphOperator: true}),
+			isSiteAdmin: true,
+			wantErr:     false,
 		},
 	}
 	for _, test := range tests {
@@ -221,7 +245,7 @@ func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
 				return test.license, "test-signature", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
-			err := NewBeforeSetUserIsSiteAdmin()(test.isSiteAdmin)
+			err := NewBeforeSetUserIsSiteAdmin()(test.ctx, test.isSiteAdmin)
 			if gotErr := err != nil; gotErr != test.wantErr {
 				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
 			}

@@ -11,6 +11,7 @@ import { ExternalAccount } from './ExternalAccount'
 import { AccountByServiceID, UserExternalAccount } from './UserSettingsSecurityPage'
 
 import styles from './ExternalAccountsSignIn.module.scss'
+
 export interface NormalizedExternalAccount {
     name: string
     icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>

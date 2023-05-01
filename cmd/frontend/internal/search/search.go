@@ -1,4 +1,4 @@
-// package search is search specific logic for the frontend. Also see
+// Package search is search specific logic for the frontend. Also see
 // github.com/sourcegraph/sourcegraph/internal/search for more generic search
 // code.
 package search
@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -481,7 +480,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		repoEvent.Fork = r.Fork
 		repoEvent.Archived = r.Archived
 		repoEvent.Private = r.Private
-		repoEvent.KeyValuePairs = r.KeyValuePairs
+		repoEvent.Metadata = r.KeyValuePairs
 	}
 
 	return repoEvent
@@ -521,7 +520,7 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 
 func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 	switch v := owner.ResolvedOwner.(type) {
-	case *codeowners.Person:
+	case *result.OwnerPerson:
 		person := &streamhttp.EventPersonMatch{
 			Type:   streamhttp.PersonMatchType,
 			Handle: v.Handle,
@@ -535,7 +534,7 @@ func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 			}
 		}
 		return person
-	case *codeowners.Team:
+	case *result.OwnerTeam:
 		return &streamhttp.EventTeamMatch{
 			Type:        streamhttp.TeamMatchType,
 			Handle:      v.Handle,

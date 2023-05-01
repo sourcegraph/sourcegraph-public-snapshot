@@ -20,7 +20,6 @@ const defaultProps: GlobalNavbarProps = {
         subjects: null,
     },
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    globbing: false,
     platformContext: {} as any,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
@@ -37,6 +36,7 @@ const defaultProps: GlobalNavbarProps = {
     setFuzzyFinderIsVisible: () => {},
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
+    ownEnabled: true,
     showFeedbackModal: () => undefined,
 }
 

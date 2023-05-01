@@ -416,7 +416,8 @@ const StartedStoppedIndicator: React.FunctionComponent<{ routine: BackgroundRout
     const mostRecentRunDate = routine.recentRuns.length ? new Date(routine.recentRuns[0].at) : null
 
     // See if this routine is stopped or not seen recently
-    const isStopped = earliestStopDateString ? earliestStopDateString >= latestStartDateString : false
+    const isStopped =
+        latestStartDateString && earliestStopDateString ? earliestStopDateString >= latestStartDateString : false
     const isUnseenInAWhile = !!(
         routine.intervalMs &&
         routine.type !== BackgroundRoutineType.DB_BACKED &&

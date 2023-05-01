@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -15,12 +16,13 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -33,6 +35,152 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func mustParse(t *testing.T, dateStr string) time.Time {
+	date, err := time.Parse(time.RFC3339, dateStr)
+	if err != nil {
+		date, err = time.Parse("2006-01-02T15:04:05", dateStr)
+		if err != nil {
+			date, err = time.Parse("2006-01-02", dateStr)
+			if err != nil {
+				t.Fatal("Failed to parse date from", dateStr)
+			}
+		}
+	}
+	return date
+}
+
+func TestGitHub_stripDateRange(t *testing.T) {
+	testCases := map[string]struct {
+		query         string
+		wantQuery     string
+		wantDateRange *dateRange
+	}{
+		"from and to with ..": {
+			query:     "some part of query created:2008-11-10T01:23:45+00:00..2010-01-30T23:45:59+02:00 and others",
+			wantQuery: "some part of query  and others",
+			wantDateRange: &dateRange{
+				From: mustParse(t, "2008-11-10T01:23:45+00:00"),
+				To:   mustParse(t, "2010-01-30T23:45:59+02:00"),
+			},
+		},
+		"from with >": {
+			query: "created:>2011-01-01T00:00:00+00:00 and other stuff",
+			wantDateRange: &dateRange{
+				From: mustParse(t, "2011-01-01T00:00:01+00:00"),
+			},
+		},
+		"from with >=": {
+			query: "created:>=2011-01-01T00:00:00+00:00 and other stuff",
+			wantDateRange: &dateRange{
+				From: mustParse(t, "2011-01-01T00:00:00+00:00"),
+			},
+		},
+		"from with ..*": {
+			query: "created:2010-01-01..*",
+			wantDateRange: &dateRange{
+				From: mustParse(t, "2010-01-01T00:00:00+00:00"),
+			},
+		},
+		"to with <": {
+			query: "created:<2015-12-12",
+			wantDateRange: &dateRange{
+				To: mustParse(t, "2015-12-11T23:59:59+00:00"),
+			},
+		},
+		"to with <=": {
+			query: "created:<=2015-12-12",
+			wantDateRange: &dateRange{
+				To: mustParse(t, "2015-12-12T23:59:59+00:00"),
+			},
+		},
+		"to with *..": {
+			query:     "created:*..2015-12-12",
+			wantQuery: "",
+			wantDateRange: &dateRange{
+				To: mustParse(t, "2015-12-12T23:59:59"),
+			},
+		},
+		"no date query": {
+			query:         "just some random things",
+			wantQuery:     "just some random things",
+			wantDateRange: nil,
+		},
+	}
+
+	for tname, tcase := range testCases {
+		t.Run(tname, func(t *testing.T) {
+			date := stripDateRange(&tcase.query)
+			if tcase.wantDateRange == nil {
+				assert.Nil(t, date)
+			} else {
+				assert.True(t, date.From.Equal(tcase.wantDateRange.From), "got %q want %q", date.From, tcase.wantDateRange.From)
+				assert.True(t, date.To.Equal(tcase.wantDateRange.To), "got %q want %q", date.To, tcase.wantDateRange.To)
+			}
+			if tcase.wantQuery != "" {
+				assert.Equal(t, tcase.wantQuery, tcase.query)
+			}
+		})
+	}
+}
+
+func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
+	setUpRcache(t)
+
+	fixtureName := "GITHUB-ENTERPRISE/list-public-repos"
+	gheToken := prepareGheToken(t, fixtureName)
+
+	service := &types.ExternalService{
+		Kind: extsvc.KindGitHub,
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://ghe.sgdev.org",
+			Token: gheToken,
+		})),
+	}
+
+	factory, save := newClientFactory(t, fixtureName)
+	defer save(t)
+
+	ctx := context.Background()
+	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), service, factory)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results := make(chan *githubResult)
+	go func() {
+		githubSrc.listPublic(ctx, results)
+		close(results)
+	}()
+
+	count := 0
+	countArchived := 0
+	for result := range results {
+		if result.err != nil {
+			t.Errorf("unexpected error: %s, expected repository instead", result.err.Error())
+		}
+		if result.repo.IsArchived {
+			countArchived++
+		}
+		count++
+	}
+	if count != 100 {
+		t.Errorf("unexpected repo count, wanted: 100, but got: %d", count)
+	}
+	if countArchived != 1 {
+		t.Errorf("unexpected archived repo count, wanted: 1, but got: %d", countArchived)
+	}
+}
+
+func prepareGheToken(t *testing.T, fixtureName string) string {
+	t.Helper()
+	gheToken := os.Getenv("GHE_TOKEN")
+
+	if update(fixtureName) && gheToken == "" {
+		t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
+	}
+	return gheToken
+}
 
 func TestGithubSource_GetRepo(t *testing.T) {
 	testCases := []struct {
@@ -83,7 +231,8 @@ func TestGithubSource_GetRepo(t *testing.T) {
 						ForkCount:      164,
 						// We're hitting github.com here, so visibility will be empty irrespective
 						// of repository type. This is a GitHub enterprise only feature.
-						Visibility: "",
+						Visibility:       "",
+						RepositoryTopics: github.RepositoryTopics{Nodes: []github.RepositoryTopic{}},
 					},
 				}
 
@@ -113,7 +262,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -168,15 +317,16 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 						},
 					},
 					Metadata: &github.Repository{
-						ID:             "MDEwOlJlcG9zaXRvcnk0NDIyODU=",
-						DatabaseID:     442285,
-						NameWithOwner:  "admiring-austin-120/fluffy-enigma",
-						Description:    "Internal repo used in tests in sourcegraph code.",
-						URL:            "https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
-						StargazerCount: 0,
-						ForkCount:      0,
-						IsPrivate:      true,
-						Visibility:     github.VisibilityInternal,
+						ID:               "MDEwOlJlcG9zaXRvcnk0NDIyODU=",
+						DatabaseID:       442285,
+						NameWithOwner:    "admiring-austin-120/fluffy-enigma",
+						Description:      "Internal repo used in tests in sourcegraph code.",
+						URL:              "https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
+						StargazerCount:   0,
+						ForkCount:        0,
+						IsPrivate:        true,
+						Visibility:       github.VisibilityInternal,
+						RepositoryTopics: github.RepositoryTopics{Nodes: []github.RepositoryTopic{{Topic: github.Topic{Name: "fluff"}}}},
 					},
 				}
 
@@ -222,7 +372,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			defer save(t)
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -241,6 +391,26 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMakeRepo_NullCharacter(t *testing.T) {
+	r := &github.Repository{
+		Description: "Fun nulls \x00\x00\x00",
+	}
+
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindGitHub,
+		Config: extsvc.NewEmptyConfig(),
+	}
+	schema := &schema.GitHubConnection{
+		Url: "https://github.com",
+	}
+	s, err := newGitHubSource(context.Background(), logtest.Scoped(t), &svc, schema, nil)
+	require.NoError(t, err)
+	repo := s.makeRepo(r)
+
+	require.Equal(t, "Fun nulls ", repo.Description)
 }
 
 func TestGithubSource_makeRepo(t *testing.T) {
@@ -291,8 +461,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GithubSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-
-			s, err := newGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, test.schema, nil)
+			s, err := newGitHubSource(context.Background(), logtest.Scoped(t), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -330,6 +499,85 @@ func TestMatchOrg(t *testing.T) {
 		if got := matchOrg(str); got != want {
 			t.Errorf("error:\nhave: %s\nwant: %s", got, want)
 		}
+	}
+}
+
+func TestGitHubSource_doRecursively(t *testing.T) {
+	rcache.SetupForTest(t)
+	ctx := context.Background()
+
+	testCases := map[string]struct {
+		requestsBeforeFullSet int // Number of requests before all repositories are returned
+		expectedRepoCount     int
+	}{
+		"retries until full list of repositories": {
+			requestsBeforeFullSet: 2,
+			expectedRepoCount:     5,
+		},
+		"retries a limited amount of times": {
+			requestsBeforeFullSet: 50,
+			expectedRepoCount:     4,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			requestCounter := 0
+			// We create a server that returns a repository count of 5, but only returns 4 repositories.
+			// After the server has been hit two times, a fifth repository is added to the result set.
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				defer func() {
+					requestCounter += 1
+				}()
+
+				resp := struct {
+					Data struct {
+						Search struct {
+							RepositoryCount int
+							PageInfo        struct {
+								HasNextPage bool
+								EndCursor   github.Cursor
+							}
+							Nodes []github.Repository
+						}
+					}
+				}{}
+
+				resp.Data.Search.RepositoryCount = 5
+				resp.Data.Search.Nodes = []github.Repository{
+					{DatabaseID: 1}, {DatabaseID: 2}, {DatabaseID: 3}, {DatabaseID: 4},
+				}
+
+				if requestCounter >= tc.requestsBeforeFullSet {
+					resp.Data.Search.Nodes = append(resp.Data.Search.Nodes, github.Repository{DatabaseID: 5})
+				}
+
+				encoder := json.NewEncoder(w)
+				require.NoError(t, encoder.Encode(resp))
+			}))
+			defer srv.Close()
+
+			apiURL, err := url.Parse(srv.URL)
+			require.NoError(t, err)
+			ghCli := github.NewV4Client("", apiURL, nil, nil)
+			q := newRepositoryQuery("stars:>=5", ghCli, logtest.NoOp(t))
+			q.Limit = 5
+
+			// Fetch the repositories
+			results := make(chan *githubResult)
+			go func() {
+				q.doRecursively(ctx, results)
+				close(results)
+			}()
+
+			repos := []github.Repository{}
+			for res := range results {
+				repos = append(repos, *res.repo)
+			}
+
+			// Confirm that we received 5 repositories, confirming that we retried the request.
+			assert.Len(t, repos, tc.expectedRepoCount)
+		})
 	}
 }
 
@@ -487,7 +735,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -523,7 +771,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
+	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -540,26 +788,6 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 			t.Error("unexpected nil Source")
 		}
 	})
-
-	t.Run("unsupported", func(t *testing.T) {
-		for name, tc := range map[string]auth.Authenticator{
-			"nil":         nil,
-			"BasicAuth":   &auth.BasicAuth{},
-			"OAuthClient": &auth.OAuthClient{},
-		} {
-			t.Run(name, func(t *testing.T) {
-				src, err := githubSrc.WithAuthenticator(tc)
-				if err == nil {
-					t.Error("unexpected nil error")
-				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
-					t.Errorf("unexpected error of type %T: %v", err, err)
-				}
-				if src != nil {
-					t.Errorf("expected non-nil Source: %v", src)
-				}
-			})
-		}
-	})
 }
 
 func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
@@ -572,7 +800,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
+	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -599,7 +827,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		githubSrc, err := NewGithubSource(ctx, logger, database.NewMockExternalServiceStore(), svc, nil)
+		githubSrc, err := NewGitHubSource(ctx, logger, svc, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -635,7 +863,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		githubSrc, err := NewGithubSource(ctx, logger, database.NewMockExternalServiceStore(), svc, cf)
+		githubSrc, err := NewGitHubSource(ctx, logger, svc, cf)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -958,7 +1186,7 @@ func TestGithubSource_SearchRepositories(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}

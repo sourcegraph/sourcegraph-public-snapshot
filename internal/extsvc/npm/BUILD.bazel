@@ -24,6 +24,7 @@ go_library(
 
 go_test(
     name = "npm_test",
+    timeout = "short",
     srcs = ["npm_test.go"],
     data = glob(["testdata/**"]),
     embed = [":npm"],

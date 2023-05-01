@@ -49,7 +49,6 @@ export const Default: Story = () => (
                 isReadOnly={false}
                 showMenu={false}
                 isSourcegraphDotCom={false}
-                globbing={false}
             />
         )}
     </WebStory>
@@ -68,7 +67,6 @@ export const EditMode: Story = () => (
                 isReadOnly={false}
                 showMenu={false}
                 isSourcegraphDotCom={false}
-                globbing={false}
             />
         )}
     </WebStory>
@@ -89,7 +87,6 @@ export const ErrorFetchingFile: Story = () => (
                 isReadOnly={false}
                 showMenu={false}
                 isSourcegraphDotCom={false}
-                globbing={false}
             />
         )}
     </WebStory>

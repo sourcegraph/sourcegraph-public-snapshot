@@ -1,5 +1,5 @@
 // Package enterprisecmd defines entrypoint functions for the enterprise (non-OSS) build of
-// Sourcegraph's single-program distribution. It is invoked by all enterprise (non-OSS) commands'
+// Sourcegraph's single-binary distribution. It is invoked by all enterprise (non-OSS) commands'
 // main functions.
 package enterprisecmd
 
@@ -12,8 +12,8 @@ import (
 var config = svcmain.Config{}
 
 // MainEnterprise is called from the `main` function of the `sourcegraph` command.
-func MainEnterprise(services []service.Service) {
-	svcmain.Main(services, config)
+func MainEnterprise(services []service.Service, args []string) {
+	svcmain.Main(services, config, args)
 }
 
 // DeprecatedSingleServiceMainEnterprise is called from the `main` function of a command in the

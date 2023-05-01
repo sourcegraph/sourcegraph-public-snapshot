@@ -1,9 +1,7 @@
 package contextdetection
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -30,19 +28,18 @@ var _ workerutil.Handler[*contextdetectionbg.ContextDetectionEmbeddingJob] = &ha
 const MAX_EMBEDDINGS_RETRIES = 3
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetectionbg.ContextDetectionEmbeddingJob) error {
-	config := conf.Get().Embeddings
-	if config == nil || !config.Enabled {
+	if !conf.EmbeddingsEnabled() {
 		return errors.New("embeddings are not configured or disabled")
 	}
 
 	embeddingsClient := embed.NewEmbeddingsClient()
 
-	messagesWithAdditionalContextMeanEmbedding, err := getContextDetectionMessagesMeanEmbedding(MESSAGES_WITH_ADDITIONAL_CONTEXT, embeddingsClient)
+	messagesWithAdditionalContextMeanEmbedding, err := getContextDetectionMessagesMeanEmbedding(ctx, MESSAGES_WITH_ADDITIONAL_CONTEXT, embeddingsClient)
 	if err != nil {
 		return err
 	}
 
-	messagesWithoutAdditionalContextMeanEmbedding, err := getContextDetectionMessagesMeanEmbedding(MESSAGES_WITHOUT_ADDITIONAL_CONTEXT, embeddingsClient)
+	messagesWithoutAdditionalContextMeanEmbedding, err := getContextDetectionMessagesMeanEmbedding(ctx, MESSAGES_WITHOUT_ADDITIONAL_CONTEXT, embeddingsClient)
 	if err != nil {
 		return err
 	}
@@ -52,18 +49,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetec
 		MessagesWithoutAdditionalContextMeanEmbedding: messagesWithoutAdditionalContextMeanEmbedding,
 	}
 
-	indexJsonBytes, err := json.Marshal(contextDetectionIndex)
-	if err != nil {
-		return err
-	}
-
-	bytesReader := bytes.NewReader(indexJsonBytes)
-	_, err = h.uploadStore.Upload(ctx, embeddings.CONTEXT_DETECTION_INDEX_NAME, bytesReader)
-	return err
+	return embeddings.UploadIndex(ctx, h.uploadStore, embeddings.CONTEXT_DETECTION_INDEX_NAME, contextDetectionIndex)
 }
 
-func getContextDetectionMessagesMeanEmbedding(messages []string, client embed.EmbeddingsClient) ([]float32, error) {
-	messagesEmbeddings, err := client.GetEmbeddingsWithRetries(messages, MAX_EMBEDDINGS_RETRIES)
+func getContextDetectionMessagesMeanEmbedding(ctx context.Context, messages []string, client embed.EmbeddingsClient) ([]float32, error) {
+	messagesEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, messages, MAX_EMBEDDINGS_RETRIES)
 	if err != nil {
 		return nil, err
 	}

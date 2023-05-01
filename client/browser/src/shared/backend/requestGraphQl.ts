@@ -110,7 +110,6 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
             cache,
             headers: getHeaders(),
             baseUrl: sourcegraphURL,
-            isAuthenticated: false,
             credentials: 'include',
         })
     )

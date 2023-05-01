@@ -788,6 +788,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 
 	t.Run("GetBatchChangeDiffStat", func(t *testing.T) {
 		userID := bt.CreateTestUser(t, s.DatabaseDB(), false).ID
+		otherUserID := bt.CreateTestUser(t, s.DatabaseDB(), false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 		repoStore := database.ReposWith(logger, s)
 		esStore := database.ExternalServicesWith(logger, s)
@@ -822,8 +823,9 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			}
 		}
 
-		// Now revoke repo access, and check that we don't see it in the diff stat anymore.
-		bt.MockRepoPermissions(t, s.DatabaseDB(), 0, repo.ID)
+		// Now give repo access only to otherUserID, and check that
+		// userID cannot see it in the diff stat anymore.
+		bt.MockRepoPermissions(t, s.DatabaseDB(), otherUserID, repo.ID)
 		{
 			want := &godiff.Stat{
 				Added:   0,
@@ -844,6 +846,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 
 	t.Run("GetRepoDiffStat", func(t *testing.T) {
 		userID := bt.CreateTestUser(t, s.DatabaseDB(), false).ID
+		otherUserID := bt.CreateTestUser(t, s.DatabaseDB(), false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 		repoStore := database.ReposWith(logger, s)
 		esStore := database.ExternalServicesWith(logger, s)
@@ -925,8 +928,9 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 
 		}
 
-		// Now revoke repo1 access, and check that we don't get a diff stat for it anymore.
-		bt.MockRepoPermissions(t, s.DatabaseDB(), 0, repo1.ID)
+		// Now give repo access only to otherUserID, and check that
+		// userID cannot see it in the diff stat anymore.
+		bt.MockRepoPermissions(t, s.DatabaseDB(), otherUserID, repo1.ID)
 		{
 			want := &godiff.Stat{
 				Added:   0,

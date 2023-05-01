@@ -1245,7 +1245,7 @@ This will cause Prometheus to drop all metrics *from cAdvisor* that are not serv
 
 ## Private registry
 
-**Step 1** To update all image names with your private registry, eg. `index.docker.io/sourcegraph/service_name` to `your.private.registry.com/sourcegraph/service_name`, include the `private-registry` component:
+**Step 1:** To update all image names with your private registry, eg. `index.docker.io/sourcegraph/service_name` to `your.private.registry.com/sourcegraph/service_name`, include the `private-registry` component:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -1253,12 +1253,50 @@ This will cause Prometheus to drop all metrics *from cAdvisor* that are not serv
     - ../../components/enable/private-registry
 ```
 
-**Step 2** Set the `PRIVATE_REGISTRY` variable in your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file. For example:
+**Step 2:** Set the `PRIVATE_REGISTRY` variable in your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file. For example:
 
 ```yaml
 # instances/$INSTANCE_NAME/buildConfig.yaml
   data:
     PRIVATE_REGISTRY: your.private.registry.com # -- Replace 'your.private.registry.com'
+```
+
+### Add imagePullSecrets
+
+To add `imagePullSecrets` to all resources:
+
+**Step 1:** Include the `imagepullsecrets` component.
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+  components:
+    - ../../components/resources/imagepullsecrets
+```
+
+**Step 2:** Set the `IMAGE_PULL_SECRET_NAME` variable in your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file. 
+
+For example:
+
+```yaml
+# instances/$INSTANCE_NAME/buildConfig.yaml
+  data:
+    IMAGE_PULL_SECRET_NAME: YOUR_SECRET_NAME
+```
+
+**Alternative:** You can add the following patch under `patches`, and replace `YOUR_SECRET_NAME` with the name of your secret.
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+patches:
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/imagePullSecrets
+        value:
+          name: YOUR_SECRET_NAME
+    target:
+      group: apps
+      kind: StatefulSet|Deployment|DaemonSet
+      version: v1
 ```
 
 ---

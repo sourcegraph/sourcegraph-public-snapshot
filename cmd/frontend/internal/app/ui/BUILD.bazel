@@ -1,5 +1,6 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
+# gazelle:resolve go github.com/sourcegraph/sourcegraph/ui/assets //ui/assets
 go_library(
     name = "ui",
     srcs = [
@@ -29,6 +30,7 @@ go_library(
         "//cmd/frontend/internal/app/assetsutil",
         "//cmd/frontend/internal/app/jscontext",
         "//cmd/frontend/internal/app/ui/router",
+        "//cmd/frontend/internal/auth/userpasswd",
         "//cmd/frontend/internal/handlerutil",
         "//cmd/frontend/internal/routevar",
         "//cmd/frontend/internal/search",
@@ -69,8 +71,10 @@ go_library(
     ],
 )
 
+# gazelle:resolve go github.com/sourcegraph/sourcegraph/ui/assets //ui/assets
 go_test(
     name = "ui_test",
+    timeout = "short",
     srcs = [
         "handlers_test.go",
         "help_test.go",
@@ -92,6 +96,7 @@ go_test(
         "//internal/conf",
         "//internal/database",
         "//internal/errcode",
+        "//internal/extsvc",
         "//internal/fileutil",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
@@ -100,6 +105,7 @@ go_test(
         "//internal/search/result",
         "//internal/types",
         "//internal/version",
+        "//schema",
         "//ui/assets",
         "@com_github_gorilla_mux//:mux",
         "@com_github_stretchr_testify//assert",

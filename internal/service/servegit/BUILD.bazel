@@ -30,11 +30,16 @@ go_library(
 
 go_test(
     name = "servegit_test",
+    timeout = "short",
     srcs = [
         "extsvc_test.go",
         "serve_test.go",
     ],
     embed = [":servegit"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",

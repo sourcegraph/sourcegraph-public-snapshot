@@ -40,6 +40,7 @@ go_library(
         "//internal/api",
         "//internal/codeintel/dependencies",
         "//internal/conf",
+        "//internal/conf/deploy",
         "//internal/conf/reposource",
         "//internal/database",
         "//internal/database/dbutil",
@@ -52,6 +53,7 @@ go_library(
         "//internal/extsvc/npm",
         "//internal/extsvc/pypi",
         "//internal/extsvc/rubygems",
+        "//internal/featureflag",
         "//internal/fileutil",
         "//internal/gitserver",
         "//internal/gitserver/adapters",
@@ -119,6 +121,13 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":server"],
+    # This test loads coursier as a side effect, so we ensure the
+    # path is sandboxed properly.
+    env = {"COURSIER_CACHE_DIR": "/tmp"},
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/actor",
         "//internal/api",

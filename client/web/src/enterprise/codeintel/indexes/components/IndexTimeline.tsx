@@ -189,7 +189,7 @@ const indexPreIndexStage = (index: PreciseIndexFields, now?: () => Date): Timeli
 }
 
 const indexIndexStage = (index: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
-    !index.steps || !index.steps.index.logEntry
+    !index.steps?.index?.logEntry
         ? undefined
         : {
               text: 'Index',
@@ -210,7 +210,7 @@ const indexIndexStage = (index: PreciseIndexFields, now?: () => Date): TimelineS
           }
 
 const indexUploadStage = (index: PreciseIndexFields, now?: () => Date): TimelineStage | undefined =>
-    !index.steps || !index.steps.upload
+    !index?.steps?.upload
         ? undefined
         : {
               text: 'Upload',

@@ -12,7 +12,6 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -42,7 +41,7 @@ func repoUpdaterURLDefault() string {
 		return u
 	}
 
-	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
+	if deploy.IsApp() {
 		return "http://127.0.0.1:3182"
 	}
 
@@ -72,7 +71,7 @@ func NewClient(serverURL string) *Client {
 			if err != nil {
 				return nil, err
 			}
-			conn, err := grpc.Dial(u.Host, defaults.DialOptions()...)
+			conn, err := defaults.Dial(u.Host)
 			if err != nil {
 				return nil, err
 			}
@@ -311,49 +310,6 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 	return errors.New(res.Error)
 }
 
-// MockSchedulePermsSync mocks (*Client).SchedulePermsSync for tests.
-var MockSchedulePermsSync func(ctx context.Context, args protocol.PermsSyncRequest) error
-
-func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error {
-	if MockSchedulePermsSync != nil {
-		return MockSchedulePermsSync(ctx, args)
-	}
-
-	if internalgrpc.IsGRPCEnabled(ctx) {
-		client, err := c.grpcClient()
-		if err != nil {
-			return err
-		}
-
-		// empty response can be ignored
-		_, err = client.SchedulePermsSync(ctx, args.ToProto())
-		return err
-	}
-
-	resp, err := c.httpPost(ctx, "schedule-perms-sync", args)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	bs, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return errors.Wrap(err, "read response body")
-	}
-
-	var res protocol.PermsSyncResponse
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return errors.New(string(bs))
-	} else if err = json.Unmarshal(bs, &res); err != nil {
-		return err
-	}
-
-	if res.Error == "" {
-		return nil
-	}
-	return errors.New(res.Error)
-}
-
 // MockSyncExternalService mocks (*Client).SyncExternalService for tests.
 var MockSyncExternalService func(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error)
 
@@ -410,6 +366,20 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.Ex
 		return MockExternalServiceNamespaces(ctx, args)
 	}
 
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.grpcClient()
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := client.ExternalServiceNamespaces(ctx, args.ToProto())
+		if err != nil {
+			return nil, err
+		}
+
+		return protocol.ExternalServiceNamespacesResultFromProto(resp), nil
+	}
+
 	resp, err := c.httpPost(ctx, "external-service-namespaces", args)
 	if err != nil {
 		return nil, err
@@ -430,6 +400,20 @@ var MockExternalServiceRepositories func(ctx context.Context, args protocol.Exte
 func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (result *protocol.ExternalServiceRepositoriesResult, err error) {
 	if MockExternalServiceRepositories != nil {
 		return MockExternalServiceRepositories(ctx, args)
+	}
+
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.grpcClient()
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := client.ExternalServiceRepositories(ctx, args.ToProto())
+		if err != nil {
+			return nil, err
+		}
+
+		return protocol.ExternalServiceRepositoriesResultFromProto(resp), nil
 	}
 
 	resp, err := c.httpPost(ctx, "external-service-repositories", args)

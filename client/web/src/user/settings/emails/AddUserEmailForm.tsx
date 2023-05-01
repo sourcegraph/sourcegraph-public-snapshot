@@ -9,12 +9,13 @@ import { screenReaderAnnounce, Input, Label, ErrorAlert } from '@sourcegraph/wil
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
-import { AddUserEmailResult, AddUserEmailVariables } from '../../../graphql-operations'
+import { AddUserEmailResult, AddUserEmailVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props {
-    user: string
+    user: Pick<UserSettingsAreaUserFields, 'id' | 'scimControlled'>
     onDidAdd: () => void
+    emails: Set<string>
 
     className?: string
 }
@@ -28,16 +29,21 @@ enum InputState {
     INVALID = 'error',
 }
 
-export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>> = ({ user, className, onDidAdd }) => {
+export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>> = ({
+    user,
+    className,
+    onDidAdd,
+    emails,
+}) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
 
     const [emailState, nextEmailFieldChange, emailInputReference, overrideEmailState] = useInputValidation(
         useMemo(
             () => ({
-                synchronousValidators: [],
+                synchronousValidators: [email => validateEmail(email, emails)],
                 asynchronousValidators: [],
             }),
-            []
+            [emails]
         )
     )
 
@@ -57,7 +63,7 @@ export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>>
                                 }
                             }
                         `,
-                        { user, email: emailState.value }
+                        { user: user.id, email: emailState.value }
                     ).toPromise()
                 )
 
@@ -104,13 +110,14 @@ export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>>
                     spellCheck={false}
                     readOnly={false}
                     status={InputState[emailState.kind]}
+                    disabled={user.scimControlled}
                     className={classNames(deriveInputClassName(emailState), 'mr-sm-2')}
                 />
                 <LoaderButton
                     loading={statusOrError === 'loading'}
                     label="Add"
                     type="submit"
-                    disabled={statusOrError === 'loading' || emailState.kind !== 'VALID'}
+                    disabled={statusOrError === 'loading' || emailState.kind !== 'VALID' || user.scimControlled}
                     variant="primary"
                 />
                 {emailState.kind === 'INVALID' && (
@@ -123,3 +130,6 @@ export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>>
         </div>
     )
 }
+
+const validateEmail = (email: string, existingEmails: Set<string>): string | undefined =>
+    existingEmails.has(email) ? 'Email already exists' : undefined

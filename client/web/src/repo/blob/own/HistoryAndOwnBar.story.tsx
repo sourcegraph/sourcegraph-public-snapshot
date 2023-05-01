@@ -17,11 +17,11 @@ const barData: FetchOwnersAndHistoryResult = {
                     nodes: [
                         {
                             owner: {
-                                email: '',
                                 avatarURL: null,
-                                displayName: 'xclaesse',
-                                user: null,
-                                __typename: 'Person',
+                                teamDisplayName: 'Xclaesse',
+                                url: '/teams/xclaesse',
+                                name: 'xclaesse',
+                                __typename: 'Team',
                             },
                             __typename: 'Ownership',
                         },
@@ -34,6 +34,7 @@ const barData: FetchOwnersAndHistoryResult = {
                                     displayName: 'Philip Withnall',
                                     url: '/users/pwithnall',
                                     username: 'pwithnall',
+                                    primaryEmail: null,
                                 },
                                 __typename: 'Person',
                             },

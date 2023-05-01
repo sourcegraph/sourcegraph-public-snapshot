@@ -70,12 +70,14 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/gqlutil",
+        "//internal/rbac",
         "//internal/trace",
         "//internal/types",
         "//internal/usagestats",
         "//lib/batches",
         "//lib/batches/execution",
         "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_sourcegraph_go_diff//diff",
@@ -112,6 +114,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":resolvers"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/globals",
@@ -144,6 +150,7 @@ go_test(
         "//internal/gqlutil",
         "//internal/httptestutil",
         "//internal/observation",
+        "//internal/rbac",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",

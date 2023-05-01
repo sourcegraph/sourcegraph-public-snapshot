@@ -1,6 +1,6 @@
 import { FC, useEffect } from 'react'
 
-import { mdiCog } from '@mdi/js'
+import { mdiWebhook } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
@@ -18,11 +18,16 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
 
     return (
         <Container>
-            <PageTitle title="Incoming webhook" />
+            <PageTitle title="Create incoming webhook" />
             <PageHeader
-                path={[{ icon: mdiCog }, { to: '/site-admin/webhooks', text: 'Incoming webhooks' }, { text: 'Create' }]}
-                className="mb-3"
+                path={[
+                    { icon: mdiWebhook },
+                    { to: '/site-admin/webhooks/incoming', text: 'Incoming webhooks' },
+                    { text: 'Create' },
+                ]}
                 headingElement="h2"
+                description="Create a new incoming webhook"
+                className="mb-3"
             />
             <WebhookCreateUpdatePage />
         </Container>

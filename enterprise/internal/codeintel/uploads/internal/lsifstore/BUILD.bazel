@@ -3,22 +3,18 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "lsifstore",
     srcs = [
-        "lsifstore.go",
-        "lsifstore_delete.go",
-        "lsifstore_documents.go",
-        "lsifstore_janitor.go",
-        "lsifstore_ranking.go",
-        "lsifstore_reconcile.go",
+        "cleanup.go",
+        "insert.go",
         "observability.go",
-        "scip_write.go",
-        "stream.go",
+        "scan_documents.go",
+        "store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/shared",
+        "//enterprise/internal/codeintel/shared/ranges",
         "//enterprise/internal/codeintel/shared/trie",
-        "//enterprise/internal/codeintel/shared/types",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/database/basestore",
         "//internal/database/batch",
@@ -38,14 +34,16 @@ go_library(
 go_test(
     name = "lsifstore_test",
     srcs = [
-        "lsifstore_delete_test.go",
-        "lsifstore_documents_test.go",
-        "lsifstore_janitor_test.go",
-        "lsifstore_reconcile_test.go",
-        "scip_write_test.go",
+        "cleanup_test.go",
+        "insert_test.go",
+        "scan_documents_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":lsifstore"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/codeintel/shared",
         "//internal/database/basestore",

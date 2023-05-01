@@ -2,8 +2,6 @@ import { BehaviorSubject, merge, Observable, of } from 'rxjs'
 import { shareReplay } from 'rxjs/operators'
 import { get } from 'svelte/store'
 
-import type { PageLoad } from './$types'
-
 import { navigating } from '$app/stores'
 import { SearchPatternType } from '$lib/graphql-operations'
 import {
@@ -17,6 +15,8 @@ import {
     omitFilter,
 } from '$lib/shared'
 import { parseSearchURL } from '$lib/web'
+
+import type { PageLoad } from './$types'
 
 const cache: Record<string, Observable<AggregateStreamingSearchResults | undefined>> = {}
 

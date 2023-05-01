@@ -1,0 +1,51 @@
+.outer-container {
+    background-color: var(--vscode-sideBar-background);
+    border-top: 1px solid var(--vscode-sideBarSectionHeader-border);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+button {
+    font-family: var(--vscode-font-family);
+}
+
+.inner-container {
+    background-color: var(--vscode-sideBar-background);
+    min-height: 0;
+    overflow-x: scroll;
+    box-sizing: border-box;
+}
+
+.non-transcript-container {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    flex: 1;
+}
+
+.error {
+    flex-direction: row;
+    display: flex;
+    margin: 0.5em;
+    padding: 1rem;
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-inputValidation-errorBackground);
+    border: 2px solid var(--vscode-inputValidation-errorBorder);
+    justify-content: space-between;
+    align-items: center;
+    min-height: 2rem;
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: none;
+    border: none;
+    color: var(--vscode-input-foreground);
+    cursor: pointer;
+}

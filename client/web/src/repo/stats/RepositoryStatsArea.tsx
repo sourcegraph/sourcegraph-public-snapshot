@@ -9,7 +9,6 @@ import { RepositoryStatsContributorsPage } from './RepositoryStatsContributorsPa
 
 interface Props extends BreadcrumbSetters {
     repo: RepositoryFields | undefined
-    globbing: boolean
 }
 
 /**
@@ -28,12 +27,12 @@ const BREADCRUMB = { key: 'contributors', element: 'Contributors' }
  * Renders pages related to repository stats.
  */
 export const RepositoryStatsArea: FC<Props> = props => {
-    const { useBreadcrumb, repo, globbing } = props
+    const { useBreadcrumb, repo } = props
     useBreadcrumb(BREADCRUMB)
 
     return (
         <div className="repository-stats-area container mt-3">
-            {repo ? <RepositoryStatsContributorsPage repo={repo} globbing={globbing} /> : <LoadingSpinner />}
+            {repo ? <RepositoryStatsContributorsPage repo={repo} /> : <LoadingSpinner />}
         </div>
     )
 }

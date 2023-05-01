@@ -31,6 +31,7 @@ export const generateCache = (): InMemoryCache =>
             ChangesetSpec: ['VisibleChangesetSpec', 'HiddenChangesetSpec'],
             Changeset: ['ExternalChangeset', 'HiddenExternalChangeset'],
             TeamMember: ['User'],
+            Owner: ['Person', 'Team'],
         },
     })
 

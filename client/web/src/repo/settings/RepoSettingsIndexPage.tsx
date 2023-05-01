@@ -93,7 +93,7 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<Repositor
         { id }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.node || errors) {
+            if (!data?.node || errors) {
                 throw createAggregateError(errors)
             }
             return (data.node as RepositoryTextSearchIndexRepository).textSearchIndex

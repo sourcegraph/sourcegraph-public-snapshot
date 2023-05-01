@@ -10,7 +10,6 @@ The browser extension also does not store sensitive data locally. The informatio
 
 - AnonymousUid
 - Feature flags
-  - Hover alerts
 - Client settings
   - Enable/disable status
   - Sourcegraph URL

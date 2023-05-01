@@ -25,9 +25,10 @@ import {
     createRepoChangesetsStatsResult,
     createFileNamesResult,
     createResolveCloningRepoRevisionResult,
+    createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, percySnapshotWithVariants } from './utils'
+import { commonWebGraphQlResults } from './graphQlResults'
+import { createEditorAPI, percySnapshotWithVariants, removeContextFromQuery } from './utils'
 
 export const getCommonRepositoryGraphQlResults = (
     repositoryName: string,
@@ -35,18 +36,12 @@ export const getCommonRepositoryGraphQlResults = (
     fileEntries: string[] = []
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
-    ...createViewerSettingsGraphQLOverride({
-        user: {
-            experimentalFeatures: {
-                enableCodeMirrorFileView: false,
-            },
-        },
-    }),
     RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
     ResolveRepoRev: () => createResolveRepoRevisionResult(repositoryName),
     FileNames: () => createFileNamesResult(),
     FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
     TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),
+    FileTreeEntries: () => createFileTreeEntriesResult(repositoryUrl, fileEntries),
     TreeCommits: () => ({
         node: {
             __typename: 'Repository',
@@ -472,6 +467,28 @@ describe('Repository', () => {
             const directoryName = "Geoffrey's random queries.32r242442bf"
             const filePath = path.posix.join(directoryName, fileName)
 
+            const TreeEntries = {
+                repository: {
+                    id: 'test-repo-id',
+                    commit: {
+                        tree: {
+                            isRoot: false,
+                            url: '/github.com/ggilmore/q-test/-/tree/Geoffrey%27s%20random%20queries.32r242442bf',
+                            entries: [
+                                {
+                                    name: fileName,
+                                    path: filePath,
+                                    isDirectory: false,
+                                    url: '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
+                                    submodule: null,
+                                    isSingleChild: false,
+                                },
+                            ],
+                        },
+                    },
+                },
+            }
+
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl),
@@ -481,26 +498,8 @@ describe('Repository', () => {
                             revision
                         )}/${encodeURIPathComponent(filePath)}`
                     ),
-                TreeEntries: () => ({
-                    repository: {
-                        commit: {
-                            tree: {
-                                isRoot: false,
-                                url: '/github.com/ggilmore/q-test/-/tree/Geoffrey%27s%20random%20queries.32r242442bf',
-                                entries: [
-                                    {
-                                        name: fileName,
-                                        path: filePath,
-                                        isDirectory: false,
-                                        url: '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
-                                        submodule: null,
-                                        isSingleChild: false,
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                }),
+                TreeEntries: () => TreeEntries,
+                FileTreeEntries: () => TreeEntries,
             })
 
             await driver.page.goto(
@@ -528,6 +527,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
+
             assert.deepStrictEqual(breadcrumbTexts, [
                 shortRepositoryName,
                 '@master',
@@ -535,9 +535,9 @@ describe('Repository', () => {
             ])
 
             {
-                const queryInput = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
+                const queryInput = await createEditorAPI(driver, '.test-query-input')
                 assert.strictEqual(
-                    await queryInput.getValue(),
+                    removeContextFromQuery((await queryInput.getValue()) ?? ''),
                     "repo:^github\\.com/ggilmore/q-test$ file:^Geoffrey's\\ random\\ queries\\.32r242442bf/%\\ token\\.4288249258\\.sql"
                 )
             }
@@ -551,9 +551,11 @@ describe('Repository', () => {
             )
 
             const blobContent = await driver.page.evaluate(
-                () => document.querySelector('[data-testid="repo-blob"]')?.textContent
+                () => document.querySelector('[data-testid="repo-blob"] .cm-content')?.textContent
             )
-            assert.strictEqual(blobContent, `content for: ${filePath}\nsecond line\nthird line`)
+            // CodeMirror blob content has no newline characters
+            const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`.replace(/\n/g, '')
+            assert.strictEqual(blobContent, expectedBlobContent)
         })
 
         it('works with a plus sign in the repository name', async () => {
@@ -573,8 +575,11 @@ describe('Repository', () => {
             await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
 
             {
-                const queryInput = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
-                assert.strictEqual(await queryInput.getValue(), 'repo:^ubuntu/\\+source/quemu$ ') // + should be escaped in regular expression
+                const queryInput = await createEditorAPI(driver, '.test-query-input')
+                assert.strictEqual(
+                    removeContextFromQuery((await queryInput.getValue()) ?? ''),
+                    'repo:^ubuntu/\\+source/quemu$ '
+                ) // + should be escaped in regular expression
             }
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement

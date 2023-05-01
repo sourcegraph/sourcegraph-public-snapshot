@@ -8,7 +8,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/sourcegraph/conc/pool"
 	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
@@ -16,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
@@ -24,10 +27,21 @@ import (
 )
 
 func init() {
-	postInitHooks = append(postInitHooks, func(cmd *cli.Context) {
-		// Create 'sg start' help text after flag (and config) initialization
-		startCommand.Description = constructStartCmdLongHelp()
-	})
+	postInitHooks = append(postInitHooks,
+		func(cmd *cli.Context) {
+			// Create 'sg start' help text after flag (and config) initialization
+			startCommand.Description = constructStartCmdLongHelp()
+		},
+		func(cmd *cli.Context) {
+			ctx, cancel := context.WithCancel(cmd.Context)
+			interrupt.Register(func() {
+				cancel()
+				// TODO wait for stuff properly.
+				time.Sleep(1 * time.Second)
+			})
+			cmd.Context = ctx
+		},
+	)
 }
 
 const devPrivateDefaultBranch = "master"
@@ -276,7 +290,16 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		cmds = append(cmds, cmd)
 	}
 
-	if len(cmds) == 0 {
+	bcmds := make([]run.BazelCommand, 0, len(set.BazelCommands))
+	for _, name := range set.BazelCommands {
+		bcmd, ok := conf.BazelCommands[name]
+		if !ok {
+			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
+		}
+
+		bcmds = append(bcmds, bcmd)
+	}
+	if len(cmds) == 0 && len(bcmds) == 0 {
 		std.Out.WriteLine(output.Styled(output.StyleWarning, "WARNING: no commands to run"))
 		return nil
 	}
@@ -291,7 +314,20 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		env[k] = v
 	}
 
-	return run.Commands(ctx, env, verbose, cmds...)
+	// First we build everything once, to ensure all binaries are present.
+	if err := run.BazelBuild(ctx, bcmds...); err != nil {
+		return err
+	}
+
+	p := pool.New().WithContext(ctx).WithCancelOnError()
+	p.Go(func(ctx context.Context) error {
+		return run.Commands(ctx, env, verbose, cmds...)
+	})
+	p.Go(func(ctx context.Context) error {
+		return run.BazelCommands(ctx, env, verbose, bcmds...)
+	})
+
+	return p.Wait()
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.

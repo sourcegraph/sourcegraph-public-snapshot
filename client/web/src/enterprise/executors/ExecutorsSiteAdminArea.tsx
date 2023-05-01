@@ -24,6 +24,6 @@ export const ExecutorsSiteAdminArea: FC = () => (
     <Routes>
         <Route index={true} element={<ExecutorsListPage />} />
         <Route path="secrets" element={<GlobalExecutorSecretsListPage />} />
-        <Route element={<NotFoundPage pageType="settings" />} />
+        <Route path="*" element={<NotFoundPage pageType="settings" />} />
     </Routes>
 )

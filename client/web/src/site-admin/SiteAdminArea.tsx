@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -16,8 +16,18 @@ import { BatchChangesProps } from '../batches'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
+import { useUserExternalAccounts } from '../hooks/useUserExternalAccounts'
 import { RouteV6Descriptor } from '../util/contributions'
 
+import {
+    maintenanceGroupHeaderLabel,
+    maintenanceGroupInstrumentationItemLabel,
+    maintenanceGroupMonitoringItemLabel,
+    maintenanceGroupMigrationsItemLabel,
+    maintenanceGroupUpdatesItemLabel,
+    maintenanceGroupTracingItemLabel,
+} from './sidebaritems'
 import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 import styles from './SiteAdminArea.module.scss'
@@ -42,6 +52,7 @@ export interface SiteAdminAreaRouteContext
     site: Pick<SiteSettingFields, '__typename' | 'id'>
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
@@ -55,10 +66,53 @@ interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps,
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
+
+const sourcegraphOperatorSiteAdminMaintenanceBlockItems = new Set([
+    maintenanceGroupInstrumentationItemLabel,
+    maintenanceGroupMonitoringItemLabel,
+    maintenanceGroupMigrationsItemLabel,
+    maintenanceGroupUpdatesItemLabel,
+    maintenanceGroupTracingItemLabel,
+])
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
     const reference = useRef<HTMLDivElement>(null)
+
+    const { data: externalAccounts, loading: isExternalAccountsLoading } = useUserExternalAccounts(
+        props.authenticatedUser.username
+    )
+    const [isSourcegraphOperatorSiteAdminHideMaintenance] = useFeatureFlag(
+        'sourcegraph-operator-site-admin-hide-maintenance'
+    )
+
+    const adminSideBarGroups = useMemo(
+        () =>
+            props.sideBarGroups.map(group => {
+                if (
+                    !isSourcegraphOperatorSiteAdminHideMaintenance ||
+                    group.header?.label !== maintenanceGroupHeaderLabel ||
+                    (!isExternalAccountsLoading &&
+                        externalAccounts.some(account => account.serviceType === 'sourcegraph-operator'))
+                ) {
+                    return group
+                }
+
+                return {
+                    ...group,
+                    items: group.items.filter(
+                        item => !sourcegraphOperatorSiteAdminMaintenanceBlockItems.has(item.label)
+                    ),
+                }
+            }),
+        [
+            props.sideBarGroups,
+            isSourcegraphOperatorSiteAdminHideMaintenance,
+            isExternalAccountsLoading,
+            externalAccounts,
+        ]
+    )
 
     // If not site admin, redirect to sign in.
     if (!props.authenticatedUser.siteAdmin) {
@@ -70,6 +124,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         platformContext: props.platformContext,
         settingsCascade: props.settingsCascade,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
+        isSourcegraphApp: props.isSourcegraphApp,
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
         batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
@@ -82,14 +137,17 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         <Page>
             <PageHeader>
                 <PageHeader.Heading as="h2" styleAs="h1">
-                    <PageHeader.Breadcrumb>Admin</PageHeader.Breadcrumb>
+                    <PageHeader.Breadcrumb>
+                        {props.isSourcegraphApp ? 'Advanced Settings' : 'Admin'}
+                    </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
             <div className="d-flex my-3 flex-column flex-sm-row" ref={reference}>
                 <SiteAdminSidebar
                     className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
-                    groups={props.sideBarGroups}
+                    groups={adminSideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    isSourcegraphApp={props.isSourcegraphApp}
                     batchChangesEnabled={props.batchChangesEnabled}
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}

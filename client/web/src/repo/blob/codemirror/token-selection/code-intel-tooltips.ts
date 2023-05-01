@@ -1,4 +1,12 @@
-import { countColumn, Extension, Prec, StateEffect, StateField } from '@codemirror/state'
+import {
+    countColumn,
+    EditorSelection,
+    Extension,
+    Prec,
+    StateEffect,
+    StateField,
+    TransactionSpec,
+} from '@codemirror/state'
 import { EditorView, getTooltip, PluginValue, showTooltip, Tooltip, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
 import { debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
@@ -100,7 +108,7 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
              * If there is a focused occurrence set editor's tabindex to -1, so that pressing Shift+Tab moves the focus
              * outside the editor instead of focusing the editor itself.
              *
-             * Explicitly define extension precedence to override the [default tabindex value](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@728ea45d1cc063cd60cbd552e00929c09cb8ced8/-/blob/client/web/src/repo/blob/CodeMirrorBlob.tsx?L47&subtree=true).
+             * Explicitly define extension precedence to override the [default tabindex value](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@728ea45d1cc063cd60cbd552e00929c09cb8ced8/-/blob/client/web/src/repo/blob/CodeMirrorBlob.tsx?L47&).
              */
             Prec.high(
                 EditorView.contentAttributes.compute([field], state => ({
@@ -144,15 +152,21 @@ const warmupOccurrence = (view: EditorView, occurrence: Occurrence): void => {
 }
 
 /**
- * Sets given occurrence to {@link codeIntelTooltipsState}, syncs editor selection with occurrence range,
+ * Sets given occurrence to {@link codeIntelTooltipsState}, sets editor selection to the occurrence range start,
  * fetches hover, definition data and document highlights for occurrence, and focuses the selected occurrence DOM node.
  */
-export const selectOccurrence = (view: EditorView, occurrence: Occurrence): void => {
+export const selectOccurrence = (view: EditorView, occurrence: Occurrence, isClickEvent?: boolean): void => {
     warmupOccurrence(view, occurrence)
-    view.dispatch({
-        effects: setFocusedOccurrence.of(occurrence),
-        selection: rangeToCmSelection(view.state, occurrence.range),
-    })
+    const spec: TransactionSpec = { effects: setFocusedOccurrence.of(occurrence) }
+    if (!isClickEvent) {
+        /**
+         * Set editor selection cursor to the occurrence start.
+         * Ignore click events, they update editor selection by default.
+         */
+        const selection = rangeToCmSelection(view.state, occurrence.range)
+        spec.selection = EditorSelection.cursor(selection.from)
+    }
+    view.dispatch(spec)
     showDocumentHighlightsForOccurrence(view, occurrence)
     focusOccurrence(view, occurrence)
 }
@@ -199,7 +213,7 @@ async function hoverRequest(
     params: TextDocumentPositionParameters
 ): Promise<HoverResult> {
     const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
-    const hover = await api.getHover(params).toPromise()
+    const hover = await api.getHover(params)
 
     let markdownContents: string =
         hover === null || hover === undefined || hover.contents.length === 0
@@ -208,10 +222,20 @@ async function hoverRequest(
                   .map(({ value }) => value)
                   .join('\n\n----\n\n')
                   .trimEnd()
+    const precise = isPrecise(hover)
+    if (!precise && markdownContents.length > 0 && !isInteractiveOccurrence(occurrence)) {
+        // Don't show search-based results for non-interactive tokens. For example, we don't
+        // want to show results for keyword tokens or string literals.
+        return {
+            isPrecise: false,
+            markdownContents: '',
+            hoverMerged: null,
+        }
+    }
     if (markdownContents === '' && isInteractiveOccurrence(occurrence)) {
         markdownContents = 'No hover information available'
     }
-    return { markdownContents, hoverMerged: hover, isPrecise: isPrecise(hover) }
+    return { markdownContents, hoverMerged: hover, isPrecise: precise }
 }
 
 function isPrecise(hover: HoverMerged | null | undefined): boolean {
@@ -439,7 +463,7 @@ function isOffsetInHoverRange(offset: number, range: { from: number; to: number 
 export const [pin, updatePin] = createUpdateableField<LineOrPositionOrRange | null>(null)
 
 const getPinnedOccurrence = (view: EditorView, pin: LineOrPositionOrRange | null): Occurrence | null => {
-    if (!pin || !pin.line || !pin.character) {
+    if (!pin?.line || !pin?.character) {
         return null
     }
     const offset = uiPositionToOffset(view.state.doc, { line: pin.line, character: pin.character })
@@ -552,9 +576,11 @@ export function codeIntelTooltipsExtension(): Extension {
 
         ViewPlugin.define(view => ({
             update(update: ViewUpdate) {
-                if (update.viewportChanged) {
+                if (update.selectionSet) {
                     /**
-                     * When the focused occurrence is outside the viewport, it is removed from the DOM and editor loses focus.
+                     * Selection change may result in the focused occurrence being outside the viewport
+                     * (e.g. selecting text from current position to the end of the document).
+                     * When focused occurrence is outside the viewport, it is removed from the DOM and editor loses focus.
                      * Ensure the editor remains focused when this happens for keyboard navigation to work.
                      * Ignore cases when viewport change is caused by navigating to next/previous search result
                      * (e.g., by clicking 'Enter' when the search input field is focused).

@@ -18,7 +18,7 @@ import styles from './OrgSettingsSidebar.module.scss'
 
 export interface OrgSettingsSidebarItemConditionContext extends BatchChangesProps {
     org: OrgAreaOrganizationFields
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
+    authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
 

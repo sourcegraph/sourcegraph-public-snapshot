@@ -50,8 +50,6 @@ func getProvider(pcID string) *provider {
 }
 
 func handleGetProvider(ctx context.Context, w http.ResponseWriter, pcID string) (p *provider, handled bool) {
-	handled = true // safer default
-
 	p = getProvider(pcID)
 	if p == nil {
 		log15.Error("No SAML auth provider found with ID", "id", pcID)

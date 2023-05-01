@@ -8,9 +8,11 @@ import { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, Link, Tooltip, Text, Badge } from '@sourcegraph/wildcard'
 
+import { CodyIcon } from '../../../cody/CodyIcon'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
 
@@ -27,11 +29,13 @@ interface SearchPageContentProps {
 export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const { shouldShowAddCodeHostWidget } = props
 
-    const { telemetryService, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser } =
+    const { telemetryService, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser, ownEnabled } =
         useLegacyContext_onlyInStormRoutes()
 
     const isLightTheme = useIsLightTheme()
     const [experimentalQueryInput] = useExperimentalQueryInput()
+    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
+    const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -61,20 +65,8 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
             <BrandLogo className={styles.logo} isLightTheme={isLightTheme} variant="logo" />
             {isSourcegraphDotCom && (
-                <div className="d-sm-flex flex-row text-center">
-                    <div className={classNames(styles.slogan, 'text-muted mt-3 mr-sm-2 pr-2')}>
-                        Searching millions of public repositories
-                    </div>
-                    <div className="mt-3">
-                        <Link
-                            to="https://about.sourcegraph.com"
-                            onClick={() =>
-                                telemetryService.log('ClickedOnEnterpriseCTA', { location: 'HomeAboveSearch' })
-                            }
-                        >
-                            Get Sourcegraph Enterprise <Icon svgPath={mdiArrowRight} aria-hidden={true} />
-                        </Link>
-                    </div>
+                <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">
+                    Searching millions of public repositories
                 </div>
             )}
 
@@ -92,7 +84,45 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         <AddCodeHostWidget className="mb-4" />
                     </>
                 ) : (
-                    <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
+                    <>
+                        <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
+                        {!window.context?.codyEnabled && !authenticatedUser && isSourcegraphDotCom && (
+                            <div className="d-flex justify-content-center mt-4">
+                                <Text className="text-muted">
+                                    <Badge variant="merged">Experimental</Badge>{' '}
+                                    <Link
+                                        to="/sign-in?returnTo=/search"
+                                        onClick={() =>
+                                            telemetryService.log('ClickedOnSignupToTryCodySearchCTA', {
+                                                location: 'SearchPage',
+                                            })
+                                        }
+                                    >
+                                        Sign in to try our new AI coding assistant, Cody <CodyIcon />{' '}
+                                        <Icon svgPath={mdiArrowRight} aria-hidden={true} />
+                                    </Link>
+                                </Text>
+                            </div>
+                        )}
+                        {window.context?.codyEnabled && (
+                            <div className="d-flex justify-content-center mt-4">
+                                <Text className="text-muted">
+                                    <Badge variant="merged">Experimental</Badge>{' '}
+                                    <Link
+                                        to="/search/cody"
+                                        onClick={() =>
+                                            telemetryService.log('ClickedOnTryCodySearchCTA', {
+                                                location: 'SearchPage',
+                                            })
+                                        }
+                                    >
+                                        Ask Cody to construct a query from natural language <CodyIcon />{' '}
+                                        <Icon svgPath={mdiArrowRight} aria-hidden={true} />
+                                    </Link>
+                                </Text>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
             <div className={classNames(styles.panelsContainer)}>
@@ -103,6 +133,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         queryState={queryState}
                         setQueryState={setQueryState}
                         isSourcegraphDotCom={isSourcegraphDotCom}
+                        enableOwnershipSearch={enableOwnershipSearch}
                     />
                 )}
             </div>

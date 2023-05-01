@@ -39,6 +39,7 @@ go_library(
 
 go_test(
     name = "githuboauth_test",
+    timeout = "short",
     srcs = [
         "config_test.go",
         "main_test.go",
@@ -47,6 +48,10 @@ go_test(
         "session_test.go",
     ],
     embed = [":githuboauth"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/auth/providers",

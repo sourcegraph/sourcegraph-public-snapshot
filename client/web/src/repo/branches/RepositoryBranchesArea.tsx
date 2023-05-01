@@ -40,7 +40,7 @@ export const RepositoryBranchesArea: FC<Props> = props => {
             <Routes>
                 <Route path="all" element={<RepositoryBranchesAllPage repo={repo} />} />
                 <Route path="" element={<RepositoryBranchesOverviewPage repo={repo} />} />
-                <Route element={<NotFoundPage pageType="repository branches" />} />
+                <Route path="*" element={<NotFoundPage pageType="repository branches" />} />
             </Routes>
         </div>
     )
