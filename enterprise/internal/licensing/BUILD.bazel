@@ -8,6 +8,7 @@ go_library(
         "doc.go",
         "features.go",
         "licensing.go",
+        "llmproxy.go",
         "plans.go",
         "tags.go",
         "user_count.go",

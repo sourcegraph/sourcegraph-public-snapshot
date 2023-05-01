@@ -48,11 +48,32 @@ type DotcomMutation {
     ): ProductSubscriptionAccessToken!
 
     """
+    Applies a partial update to a product subscription.
+
+    Only Sourcegraph.com site admins may perform this mutation.
+    FOR INTERNAL USE ONLY.
+    """
+    updateProductSubscription(
+        """
+        The product subscription to update.
+        """
+        id: ID!
+        """
+        Partial update to apply.
+        """
+        update: UpdateProductSubscriptionInput!
+    ): EmptyResponse!
+    """
     Archives an existing product subscription.
     Only Sourcegraph.com site admins may perform this mutation.
     FOR INTERNAL USE ONLY.
     """
-    archiveProductSubscription(id: ID!): EmptyResponse!
+    archiveProductSubscription(
+        """
+        The product subscription to archive.
+        """
+        id: ID!
+    ): EmptyResponse!
 }
 
 """
@@ -260,6 +281,10 @@ type ProductSubscription implements Node {
         first: Int
     ): ProductLicenseConnection!
     """
+    LLM-proxy access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
+    """
+    llmProxyAccess: LLMProxyAccess!
+    """
     The date when this product subscription was created.
     """
     createdAt: DateTime!
@@ -287,4 +312,69 @@ type ProductSubscriptionAccessToken {
     Access token for authenticating as a subscription.
     """
     accessToken: String!
+}
+
+"""
+LLM-proxy access granted to a subscription.
+FOR INTERNAL USE ONLY.
+"""
+type LLMProxyAccess {
+    """
+    Whether or not a subscription has LLM-proxy access.
+
+    It may be true, even if a subscription is archived, as a historical record. However,
+    archived subscriptions should not be treated as having access to LLM-proxy.
+    """
+    enabled: Boolean!
+    """
+    Rate limits for LLM-proxy access, if access is enabled.
+    """
+    rateLimit: LLMProxyRateLimit
+}
+
+"""
+LLM-proxy access rate limits for a subscription.
+FOR INTERNAL USE ONLY.
+"""
+type LLMProxyRateLimit {
+    """
+    Requests per time interval.
+    """
+    limit: Int!
+    """
+    Interval for rate limiting.
+    """
+    intervalSeconds: Int!
+}
+
+"""
+Partial update to apply to a subscription. Omitted fields are not applied.
+"""
+input UpdateProductSubscriptionInput {
+    """
+    Partial update to LLM-proxy access granted to this subscription.
+    """
+    llmProxyAccess: UpdateLLMProxyAccessInput
+}
+
+"""
+Partial update to apply to a subscription's LLM-proxy access. Omitted fields are not applied.
+"""
+input UpdateLLMProxyAccessInput {
+    """
+    Enable or disable LLM-proxy access.
+    """
+    enabled: Boolean
+    """
+    Override default requests per time interval.
+
+    Set to 0 to remove the override.
+    """
+    rateLimit: Int
+    """
+    Override default interval for rate limiting.
+
+    Set to 0 to remove the override.
+    """
+    rateLimitIntervalSeconds: Int
 }

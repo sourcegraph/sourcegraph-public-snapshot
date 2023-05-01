@@ -20057,6 +20057,45 @@
           "Comment": ""
         },
         {
+          "Name": "llm_proxy_enabled",
+          "Index": 8,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "true",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Whether or not this subscription has access to LLM-proxy"
+        },
+        {
+          "Name": "llm_proxy_rate_interval_seconds",
+          "Index": 10,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Custom time interval over which the for LLM-proxy rate limit is applied"
+        },
+        {
+          "Name": "llm_proxy_rate_limit",
+          "Index": 9,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Custom requests per time interval allowed for LLM-proxy"
+        },
+        {
           "Name": "updated_at",
           "Index": 5,
           "TypeName": "timestamp with time zone",

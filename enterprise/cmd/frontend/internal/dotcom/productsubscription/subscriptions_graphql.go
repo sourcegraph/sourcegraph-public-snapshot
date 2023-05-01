@@ -20,9 +20,14 @@ import (
 )
 
 // productSubscription implements the GraphQL type ProductSubscription.
+// It must not be copied.
 type productSubscription struct {
 	db database.DB
 	v  *dbSubscription
+
+	activeLicense     *dbLicense
+	activeLicenseErr  error
+	activeLicenseOnce sync.Once
 }
 
 // ProductSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
@@ -95,15 +100,23 @@ func (r *productSubscription) Account(ctx context.Context) (*graphqlbackend.User
 }
 
 func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend.ProductLicense, error) {
-	// Return newest license.
-	active, err := dbLicenses{db: r.db}.Active(ctx, r.v.ID)
-	if err != nil {
-		return nil, err
+	r.hydrateActiveLicense(ctx)
+	if r.activeLicenseErr != nil {
+		return nil, r.activeLicenseErr
 	}
-	if active == nil {
+	if r.activeLicense == nil {
 		return nil, nil
 	}
-	return &productLicense{db: r.db, v: active}, nil
+	return &productLicense{db: r.db, v: r.activeLicense}, nil
+}
+
+// hydrateActiveLicense populates r.activeLicense and r.activeLicenseErr once,
+// make sure this is called before attempting to use either.
+func (r *productSubscription) hydrateActiveLicense(ctx context.Context) {
+	// Get newest license.
+	r.activeLicenseOnce.Do(func() {
+		r.activeLicense, r.activeLicenseErr = dbLicenses{db: r.db}.Active(ctx, r.v.ID)
+	})
 }
 
 func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ProductLicenseConnection, error) {
@@ -116,6 +129,10 @@ func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphql
 	opt := dbLicensesListOptions{ProductSubscriptionID: r.v.ID}
 	args.Set(&opt.LimitOffset)
 	return &productLicenseConnection{db: r.db, opt: opt}, nil
+}
+
+func (r *productSubscription) LLMProxyAccess() graphqlbackend.LLMProxyAccess {
+	return llmProxyAccessResolver{sub: r}
 }
 
 func (r *productSubscription) CreatedAt() gqlutil.DateTime {
@@ -157,6 +174,25 @@ func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx cont
 		return nil, err
 	}
 	return productSubscriptionByDBID(ctx, r.DB, id)
+}
+
+func (r ProductSubscriptionLicensingResolver) UpdateProductSubscription(ctx context.Context, args *graphqlbackend.UpdateProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may update product subscriptions.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+		return nil, err
+	}
+
+	sub, err := productSubscriptionByID(ctx, r.DB, args.ID)
+	if err != nil {
+		return nil, err
+	}
+	if err := (dbSubscriptions{db: r.DB}).Update(ctx, sub.v.ID, dbSubscriptionUpdate{
+		llmProxyAccess: args.Update.LLMProxyAccess,
+	}); err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 func (r ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx context.Context, args *graphqlbackend.ArchiveProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {

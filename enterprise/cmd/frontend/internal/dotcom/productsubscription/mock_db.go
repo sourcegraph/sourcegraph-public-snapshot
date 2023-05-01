@@ -6,3 +6,5 @@ type dbMocks struct {
 }
 
 var mocks dbMocks
+
+func pointify[T any](v T) *T { return &v }

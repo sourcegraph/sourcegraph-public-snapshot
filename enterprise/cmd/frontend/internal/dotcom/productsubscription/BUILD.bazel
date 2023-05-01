@@ -8,6 +8,7 @@ go_library(
         "license_expiration.go",
         "licenses_db.go",
         "licenses_graphql.go",
+        "llmproxy_graphql.go",
         "mock_db.go",
         "service_account.go",
         "subscriptions_db.go",
@@ -50,6 +51,7 @@ go_test(
     srcs = [
         "license_expiration_test.go",
         "licenses_db_test.go",
+        "llmproxy_graphql_test.go",
         "service_account_test.go",
         "subscriptions_db_test.go",
         "subscriptions_graphql_test.go",
@@ -61,6 +63,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/license",
         "//enterprise/internal/licensing",
         "//internal/actor",
@@ -76,6 +79,7 @@ go_test(
         "@com_github_derision_test_glock//:glock",
         "@com_github_google_go_cmp//cmp",
         "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_hexops_valast//:valast",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

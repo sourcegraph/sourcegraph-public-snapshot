@@ -66,23 +66,7 @@ func (p Plan) IsFree() bool {
 
 // Plan is the pricing plan of the license.
 func (info *Info) Plan() Plan {
-	for _, tag := range info.Tags {
-		// A tag that begins with "plan:" indicates the license's plan.
-		if strings.HasPrefix(tag, planTagPrefix) {
-			plan := Plan(tag[len(planTagPrefix):])
-			if plan.isKnown() {
-				return plan
-			}
-		}
-
-		// Backcompat: support the old "starter" tag (which mapped to "Enterprise Starter").
-		if tag == "starter" {
-			return PlanOldEnterpriseStarter
-		}
-	}
-
-	// Backcompat: no tags means it is the old "Enterprise" plan.
-	return PlanOldEnterprise
+	return PlanFromTags(info.Tags)
 }
 
 // hasUnknownPlan returns an error if the plan is presented in the license tags
@@ -100,4 +84,25 @@ func (info *Info) hasUnknownPlan() error {
 		}
 	}
 	return nil
+}
+
+// PlanFromTags returns the pricing plan of the license, based on the given tags.
+func PlanFromTags(tags []string) Plan {
+	for _, tag := range tags {
+		// A tag that begins with "plan:" indicates the license's plan.
+		if strings.HasPrefix(tag, planTagPrefix) {
+			plan := Plan(tag[len(planTagPrefix):])
+			if plan.isKnown() {
+				return plan
+			}
+		}
+
+		// Backcompat: support the old "starter" tag (which mapped to "Enterprise Starter").
+		if tag == "starter" {
+			return PlanOldEnterpriseStarter
+		}
+	}
+
+	// Backcompat: no tags means it is the old "Enterprise" plan.
+	return PlanOldEnterprise
 }
