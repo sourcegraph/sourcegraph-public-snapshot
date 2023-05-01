@@ -38,6 +38,10 @@ Instead of performing this work within the Sourcegraph instance, where code is a
 
 Executor instances are capable of being deployed in a variety of ways. Each runtime vary in _how_ jobs are executed.
 
+<!-- 
+Diagrams are at: https://app.excalidraw.com/s/4Dr1S6qmmY7/6WJFG2bwdx
+-->
+
 ### Locally with src-cli
 
 <a href='src_local_arch.png' target='_blank'><img src="src_local_arch.png" alt="Executors architecture - local with src-cli"></a>
