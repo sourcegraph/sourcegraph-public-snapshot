@@ -40,7 +40,7 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 	store := r.db.RecentContributionSignals()
 	err = store.ClearSignals(ctx, repoId)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "ClearSignals")
 	}
 
 	for _, commit := range commitLog {
