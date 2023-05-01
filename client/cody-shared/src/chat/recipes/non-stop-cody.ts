@@ -14,6 +14,7 @@ import { updateRange } from './tracked-range'
 type TrackedDecoration = vscode.DecorationOptions
 
 interface BatchState {
+    editor: vscode.TextEditor
     original: string
     range: vscode.Range
 }
@@ -165,13 +166,19 @@ export class NonStopCody implements Recipe {
         this.thread = thread
         thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
 
-        const providedCodeStart = selection.start.translate({ lineDelta: Math.max(-50, -selection.start.line) })
-        const providedCodeEnd = editor.document.validatePosition(selection.end.translate({ lineDelta: 50 }))
+        const providedCodeStart = selection.start.translate({
+            lineDelta: Math.max(-50, -selection.start.line),
+            characterDelta: -selection.start.character,
+        })
+        const providedCodeEnd = editor.document.validatePosition(
+            selection.end.translate({ lineDelta: 50, characterDelta: -selection.end.character })
+        )
         const precedingText = editor.document.getText(new vscode.Range(providedCodeStart, editor.selection.start))
         const selectedText = editor.document.getText(selection)
         const followingText = editor.document.getText(new vscode.Range(selection.end, providedCodeEnd))
 
         this.batch = {
+            editor,
             original: precedingText + selectedText + followingText,
             range: new vscode.Range(providedCodeStart, providedCodeEnd),
         }
@@ -244,11 +251,10 @@ Human: Great, thank you! This is part of the file ${
 
     private async handleResult(content: string): Promise<void> {
         // TODO: Handle multiple concurrent editors, don't use activeTextEditor here but make it part of the batch
-        const editor = vscode.window.activeTextEditor
-        if (!editor || !this.batch) {
+        if (!this.batch) {
             return
         }
-        const editedText = editor.document.getText(this.batch.range)
+        const editedText = this.batch.editor.document.getText(this.batch.range)
         const diff = computeDiff(this.batch.original, content, editedText, this.batch.range.start)
 
         if (!diff.clean) {
@@ -259,7 +265,7 @@ Human: Great, thank you! This is part of the file ${
         }
 
         // TODO: Animate diff availability
-        const success = await editor.edit(
+        const success = await this.batch.editor.edit(
             editBuilder => {
                 for (const edit of diff.edits) {
                     editBuilder.replace(
