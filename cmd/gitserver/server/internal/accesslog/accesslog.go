@@ -6,9 +6,11 @@ package accesslog
 import (
 	"context"
 	"net/http"
+	"sync"
 
 	"github.com/sourcegraph/log"
 	"go.uber.org/atomic"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -48,12 +50,21 @@ func fromContext(ctx context.Context) *paramsContext {
 
 // accessLogger handles HTTP requests and, if logEnabled, logs accesses.
 type accessLogger struct {
-	logger     log.Logger
-	next       http.HandlerFunc
-	logEnabled *atomic.Bool
+	logger log.Logger
+
+	logEnabled       *atomic.Bool
+	watcher          conftypes.WatchableSiteConfig
+	watchEnabledOnce sync.Once
 }
 
-var _ http.Handler = &accessLogger{}
+func newAccessLogger(logger log.Logger, watcher conftypes.WatchableSiteConfig) *accessLogger {
+	return &accessLogger{
+		logger: logger,
+
+		logEnabled: atomic.NewBool(false),
+		watcher:    watcher,
+	}
+}
 
 // messages are defined here to make assertions in testing.
 const (
@@ -61,29 +72,25 @@ const (
 	accessLoggingEnabledMessage = "access logging enabled"
 )
 
-func (a *accessLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Prepare the context to hold the params which the handler is going to set.
-	ctx := r.Context()
-	r = r.WithContext(withContext(ctx, &paramsContext{}))
-	a.next(w, r)
-
+func (a *accessLogger) maybeLog(ctx context.Context) {
 	// If access logging is not enabled, we are done
-	if !a.logEnabled.Load() {
+	if !a.isEnabled() {
 		return
 	}
 
 	// Otherwise, log this access
-	var fields []log.Field
 
 	// Now we've gone through the handler, we can get the params that the handler
 	// got from the request body.
-	paramsCtx := fromContext(r.Context())
+	paramsCtx := fromContext(ctx)
 	if paramsCtx == nil {
 		return
 	}
 	if paramsCtx.repo == "" {
 		return
 	}
+
+	var fields []log.Field
 
 	if paramsCtx != nil {
 		params := append([]log.Field{log.String("repo", paramsCtx.repo)}, paramsCtx.metadata...)
@@ -99,30 +106,102 @@ func (a *accessLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (a *accessLogger) isEnabled() bool {
+	a.watchEnabledOnce.Do(func() {
+		// Initialize the logEnabled field with the current value
+		logEnabled := audit.IsEnabled(a.watcher.SiteConfig(), audit.GitserverAccess)
+		if logEnabled {
+			a.logger.Info(accessLoggingEnabledMessage)
+		}
+
+		a.logEnabled.Store(logEnabled)
+
+		// Watch for changes to the site config
+		a.watcher.Watch(func() {
+			newShouldLog := audit.IsEnabled(a.watcher.SiteConfig(), audit.GitserverAccess)
+			changed := a.logEnabled.Swap(newShouldLog) != newShouldLog
+			if changed {
+				if newShouldLog {
+					a.logger.Info(accessLoggingEnabledMessage)
+				} else {
+					a.logger.Info("access logging disabled")
+				}
+			}
+		})
+	})
+
+	return a.logEnabled.Load()
+}
+
 // HTTPMiddleware will extract actor information and params collected by Record that has
 // been stored in the context, in order to log a trace of the access.
 func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, next http.HandlerFunc) http.HandlerFunc {
-	handler := &accessLogger{
-		logger:     logger,
-		next:       next,
-		logEnabled: atomic.NewBool(audit.IsEnabled(watcher.SiteConfig(), audit.GitserverAccess)),
+	a := newAccessLogger(logger, watcher)
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Prepare the context to hold the params which the handler is going to set.
+		ctx := withContext(r.Context(), &paramsContext{})
+		r = r.WithContext(ctx)
+
+		// Call the next handler in the chain.
+		next(w, r)
+
+		// Log the access
+		a.maybeLog(ctx)
 	}
-	if handler.logEnabled.Load() {
-		logger.Info(accessLoggingEnabledMessage)
+}
+
+// GRPCMethodFilter is a function that returns true if the given method should be logged.
+type GRPCMethodFilter func(method string) bool
+
+// AllowAllGRPCMethodsFilter is a GRPCMethodFilter that returns true for all methods.
+func AllowAllGRPCMethodsFilter(_ string) bool { return true }
+
+// AllowListGRPCMethodsFilter is a GRPCMethodFilter that returns true for only methods in the allowList.
+func AllowListGRPCMethodsFilter(allowList []string) GRPCMethodFilter {
+	allMethods := make(map[string]struct{}, len(allowList))
+	for _, m := range allowList {
+		allMethods[m] = struct{}{}
 	}
 
-	// Allow live toggling of access logging
-	watcher.Watch(func() {
-		newShouldLog := audit.IsEnabled(watcher.SiteConfig(), audit.GitserverAccess)
-		changed := handler.logEnabled.Swap(newShouldLog) != newShouldLog
-		if changed {
-			if newShouldLog {
-				logger.Info(accessLoggingEnabledMessage)
-			} else {
-				logger.Info("access logging disabled")
-			}
+	return func(method string) bool {
+		_, ok := allMethods[method]
+		return ok
+	}
+}
+
+func UnaryServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteConfig, filter GRPCMethodFilter) grpc.UnaryServerInterceptor {
+	a := newAccessLogger(logger, watcher)
+
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		// If the filter returns false, we don't want to log this method.
+		if !filter(info.FullMethod) {
+			return handler(ctx, req)
 		}
-	})
 
-	return handler.ServeHTTP
+		ctx = withContext(ctx, &paramsContext{})
+		resp, err = handler(ctx, req)
+
+		a.maybeLog(ctx)
+
+		return resp, err
+	}
+}
+
+func StreamServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteConfig, filter GRPCMethodFilter) grpc.StreamServerInterceptor {
+	a := newAccessLogger(logger, watcher)
+
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		// If the filter returns false, we don't want to log this method.
+		if !filter(info.FullMethod) {
+			return handler(srv, ss)
+		}
+
+		ctx := withContext(ss.Context(), &paramsContext{})
+
+		err := handler(srv, ss)
+		a.maybeLog(ctx)
+
+		return err
+	}
 }

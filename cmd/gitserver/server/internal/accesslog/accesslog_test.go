@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
@@ -138,6 +139,71 @@ func TestHTTPMiddleware(t *testing.T) {
 		// Enabled, should have handled AND generated a log message
 		assert.True(t, handled)
 		logs = exportLogs()
+		require.Len(t, logs, 2)
+		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
+		assert.Contains(t, logs[1].Message, accessEventMessage)
+	})
+}
+
+func TestGRPCMethodFilter(t *testing.T) {
+	t.Run("allow all", func(t *testing.T) {
+		if !AllowAllGRPCMethodsFilter("someMethod") {
+			t.Error("AllowAllGRPCMethodsFilter should allow all methods")
+		}
+	})
+
+	t.Run("allow list", func(t *testing.T) {
+		allowList := []string{"foo", "bar"}
+		allowListFilter := AllowListGRPCMethodsFilter(allowList)
+
+		if !allowListFilter("foo") {
+			t.Error("AllowListGRPCMethodsFilter should allow listed methods")
+		}
+		if allowListFilter("baz") {
+			t.Error("AllowListGRPCMethodsFilter should not allow unlisted methods")
+		}
+	})
+}
+
+//type accessLogRunFunc func(t *testing.T, logger *logtest.Recorder, watcher *accessLogConf, filter GRPCMethodFilter)
+
+func TestAccessLogGRPC(t *testing.T) {
+	t.Run("unary", func(t *testing.T) {
+		logger, exportLogs := logtest.Captured(t)
+
+		watcher := &accessLogConf{}
+		filter := AllowAllGRPCMethodsFilter
+
+		interceptor := UnaryServerInterceptor(logger, watcher, filter)
+		ctx := context.Background()
+
+		req := "request"
+		info := &grpc.UnaryServerInfo{
+			FullMethod: "testmethod",
+		}
+		handlerCalled := false
+		handler := func(ctx context.Context, req any) (any, error) {
+			Record(ctx, "testRepo", log.String("foo", "bar"))
+
+			handlerCalled = true
+			return "response", nil
+		}
+
+		resp, err := interceptor(ctx, req, info, handler)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !handlerCalled {
+			t.Fatal("handler not called")
+		}
+
+		if resp != "response" {
+			t.Errorf("got resp %v, want %v", resp, "response")
+		}
+
+		logs := exportLogs()
+
 		require.Len(t, logs, 2)
 		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
 		assert.Contains(t, logs[1].Message, accessEventMessage)
