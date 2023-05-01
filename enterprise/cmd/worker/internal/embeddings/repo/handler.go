@@ -33,8 +33,8 @@ const (
 	embeddingChunkTokensThreshold           = 256
 	embeddingChunkEarlySplitTokensThreshold = embeddingChunkTokensThreshold - 32
 
-	maxCodeEmbeddingsPerRepo = 3_072_000
-	maxTextEmbeddingsPerRepo = 512_000
+	defaultMaxCodeEmbeddingsPerRepo = 3_072_000
+	defaultMaxTextEmbeddingsPerRepo = 512_000
 )
 
 var splitOptions = split.SplitOptions{
@@ -69,8 +69,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		Revision:          record.Revision,
 		ExcludePatterns:   excludedGlobPatterns,
 		SplitOptions:      splitOptions,
-		MaxCodeEmbeddings: defaultTo(config.MaxCodeEmbeddingsPerRepo, maxCodeEmbeddingsPerRepo),
-		MaxTextEmbeddings: defaultTo(config.MaxTextEmbeddingsPerRepo, maxTextEmbeddingsPerRepo),
+		MaxCodeEmbeddings: defaultTo(config.MaxCodeEmbeddingsPerRepo, defaultMaxCodeEmbeddingsPerRepo),
+		MaxTextEmbeddings: defaultTo(config.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo),
 	}
 
 	repoEmbeddingIndex, stats, err := embed.EmbedRepo(
