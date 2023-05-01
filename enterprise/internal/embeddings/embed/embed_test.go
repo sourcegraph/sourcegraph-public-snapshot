@@ -102,10 +102,12 @@ func TestEmbedRepo(t *testing.T) {
 	excludedGlobPatterns := GetDefaultExcludedFilePathPatterns()
 
 	opts := EmbedRepoOpts{
-		RepoName:        repoName,
-		Revision:        revision,
-		ExcludePatterns: excludedGlobPatterns,
-		SplitOptions:    splitOptions,
+		RepoName:          repoName,
+		Revision:          revision,
+		ExcludePatterns:   excludedGlobPatterns,
+		SplitOptions:      splitOptions,
+		MaxCodeEmbeddings: 100000,
+		MaxTextEmbeddings: 100000,
 	}
 
 	t.Run("no files", func(t *testing.T) {

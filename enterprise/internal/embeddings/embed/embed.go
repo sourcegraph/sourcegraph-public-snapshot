@@ -14,8 +14,6 @@ import (
 )
 
 const GET_EMBEDDINGS_MAX_RETRIES = 5
-const MAX_CODE_EMBEDDING_VECTORS = 3_072_000
-const MAX_TEXT_EMBEDDING_VECTORS = 512_000
 
 const EMBEDDING_BATCHES = 5
 const EMBEDDING_BATCH_SIZE = 512
@@ -55,12 +53,12 @@ func EmbedRepo(
 		return nil, nil, err
 	}
 
-	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, opts.ExcludePatterns, opts.SplitOptions, readLister, MAX_CODE_EMBEDDING_VECTORS, ranks)
+	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, opts.ExcludePatterns, opts.SplitOptions, readLister, MAX_TEXT_EMBEDDING_VECTORS, ranks)
+	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks)
 	if err != nil {
 		return nil, nil, err
 
