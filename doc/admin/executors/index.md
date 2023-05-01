@@ -1,14 +1,5 @@
 # Executors
 
-<style type="text/css">
-  img.executor-diagram {
-    display: block;
-    margin: 1em auto;
-    max-width: 700px;
-    margin-bottom: 0.5em;
-  }
-</style>
-
 <aside class="beta">
 <p>
 <span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
