@@ -97,6 +97,12 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Query: `file:"\\.go(?m:$)" file:"\\.go(?m:$)" lang:Go`,
 		},
 		{
+			Name:    "repo:has.file, path only ",
+			Type:    search.TextRequest,
+			Pattern: `repo:has.file(path:\.go$)`,
+			Query:   `type:repo file:"\\.go(?-m:$)"`,
+		},
+		{
 			Name:    "repo:has.file, bare path",
 			Type:    search.TextRequest,
 			Pattern: `repo:has.file(\.go$)`,
