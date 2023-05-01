@@ -95,14 +95,22 @@ func QueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive boo
 		if err != nil {
 			panic(err)
 		}
-		children = append(children, &zoekt.Regexp{Regexp: re, FileName: true, CaseSensitive: caseSensitive})
+		cq := zoekt.Q(&zoekt.Regexp{Regexp: re, FileName: true, CaseSensitive: caseSensitive})
+		if opt.PathNegated {
+			cq = &zoekt.Not{Child: cq}
+		}
+		children = append(children, cq)
 	}
 	if opt.Content != "" {
 		re, err := syntax.Parse(opt.Content, syntax.Perl)
 		if err != nil {
 			panic(err)
 		}
-		children = append(children, &zoekt.Regexp{Regexp: re, Content: true, CaseSensitive: caseSensitive})
+		cq := zoekt.Q(&zoekt.Regexp{Regexp: re, Content: true, CaseSensitive: caseSensitive})
+		if opt.ContentNegated {
+			cq = &zoekt.Not{Child: cq}
+		}
+		children = append(children, cq)
 	}
 	q := zoekt.NewAnd(children...)
 	q = &zoekt.Type{Type: zoekt.TypeRepo, Child: q}

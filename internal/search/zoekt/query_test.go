@@ -97,10 +97,34 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Query: `file:"\\.go(?m:$)" file:"\\.go(?m:$)" lang:Go`,
 		},
 		{
-			Name:    "repo:has.file, path only ",
+			Name:    "repo:has.file, bare path",
 			Type:    search.TextRequest,
-			Pattern: `repo:has.file(path:\.go$)`,
+			Pattern: `repo:has.file(\.go$)`,
 			Query:   `type:repo file:"\\.go(?-m:$)"`,
+		},
+		{
+			Name:    "repo:has.file, both positive",
+			Type:    search.TextRequest,
+			Pattern: `repo:has.file(path:\.go$ content:fo*)`,
+			Query:   `type:repo file:"\\.go(?-m:$)" regex:"fo*"`,
+		},
+		{
+			Name:    "repo:has.file, path negated",
+			Type:    search.TextRequest,
+			Pattern: `repo:has.file(-path:\.go$ content:fo*)`,
+			Query:   `type:repo -file:"\\.go(?-m:$)" regex:"fo*"`,
+		},
+		{
+			Name:    "repo:has.file, content negated",
+			Type:    search.TextRequest,
+			Pattern: `repo:has.file(path:\.go$ -content:fo*)`,
+			Query:   `type:repo file:"\\.go(?-m:$)" -regex:"fo*"`,
+		},
+		{
+			Name:    "repo:has.file, both negated",
+			Type:    search.TextRequest,
+			Pattern: `repo:has.file(-path:\.go$ -content:fo*)`,
+			Query:   `type:repo -file:"\\.go(?-m:$)" -regex:"fo*"`,
 		},
 	}
 	for _, tt := range cases {
