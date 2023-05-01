@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -177,14 +178,16 @@ func (s GitHubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return err
 	}
 
-	owner, repo, err := github.SplitRepositoryNameWithOwner(pr.RepoWithOwner)
+	repo := c.TargetRepo.Metadata.(*github.Repository)
+
+	owner, repoName, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
 	if err != nil {
 		return err
 	}
 
 	deleteBranch := conf.Get().BatchChangesAutoDeleteBranch
 	if deleteBranch {
-		err := s.client.DeleteRef(ctx, owner, repo, pr.HeadRefName)
+		err := s.client.DeleteRef(ctx, owner, repoName, pr.HeadRefName)
 		if err != nil {
 			return err
 		}
@@ -294,14 +297,25 @@ func (s GitHubSource) MergeChangeset(ctx context.Context, c *Changeset, squash b
 		return err
 	}
 
+	repo := c.TargetRepo.Metadata.(*github.Repository)
+
+	owner, repoName, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
+	if err != nil {
+		return err
+	}
+
 	deleteBranch := conf.Get().BatchChangesAutoDeleteBranch
 	if deleteBranch {
-		err := s.client.DeleteRef(ctx, pr.RepoWithOwner, pr.Title, pr.HeadRefName)
+		err := s.client.DeleteRef(ctx, owner, repoName, pr.HeadRefName)
+		fmt.Printf("owner: %v", owner)
+		fmt.Printf("repoName: %v", repoName)
+
+		fmt.Printf("pr.HeadRefName: %v", pr.HeadRefName)
+
 		if err != nil {
 			return err
 		}
 	}
-
 	return c.Changeset.SetMetadata(pr)
 }
 
