@@ -89,12 +89,12 @@ Diagrams are at: https://app.excalidraw.com/s/4Dr1S6qmmY7/6WJFG2bwdx
 4.  The executor instance "dequeues" a Job.
 5.  Executor calls the Sourcegraph API to clone a repository.
     1.  The repositories are written to a directory.
-6.  A Docker Container is created for each "step."
+6. `ignite` starts up a Docker container that spawns a single Firecracker VM within the Docker container.
+    1. The directory containing the repository is mounted to the VM.
+7. Docker Container is created in the Firecracker VM for each "step."
     1.  If the Job is `batches` (non-native execution), `src` is invoked
     2.  Docker is invoked directly for other Jobs (`codeintel` and native execution `batches`)
     3.  "Steps" are ran in sequential order.
-7.  Within each Docker container a single Firecracker VM is started
-    1.  The directory containing the repository is mounted to the VM.
 8.  Within each Firecracker VM a single Docker container is created
 9.  The container run a defined command against the repository.
 10.  Logs from the container are sent back to the executor.
