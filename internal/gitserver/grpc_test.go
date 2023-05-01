@@ -19,7 +19,7 @@ import (
 )
 
 func TestClient_AddrMatchesTarget(t *testing.T) {
-	client := NewTestClient(nil, []string{"localhost:1234", "localhost:4321"}, nil).(*clientImplementor)
+	client := NewTestClient(nil, nil, []string{"localhost:1234", "localhost:4321"}).(*clientImplementor)
 
 	for _, repo := range []api.RepoName{"a", "b", "c", "d"} {
 		addr := client.AddrForRepo(repo)
