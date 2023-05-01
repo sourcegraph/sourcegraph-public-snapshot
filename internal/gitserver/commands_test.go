@@ -16,7 +16,6 @@ import (
 	"time"
 
 	godiff "github.com/sourcegraph/go-diff/diff"
-
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
 	"github.com/google/go-cmp/cmp"
