@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -143,6 +144,16 @@ func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset)
 	declined, err := s.callAndRetryIfOutdated(ctx, c, s.client.DeclinePullRequest)
 	if err != nil {
 		return err
+	}
+
+	pr := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+
+	deleteBranch := conf.Get().BatchChangesAutoDeleteBranch
+	if deleteBranch {
+		err := s.client.DeleteSourceBranch(ctx, pr)
+		if err != nil {
+			return err
+		}
 	}
 
 	return c.Changeset.SetMetadata(declined)
