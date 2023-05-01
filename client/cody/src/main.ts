@@ -155,16 +155,15 @@ const register = async (
             },
         }),
         // File Chat Provider
-        vscode.commands.registerCommand(
-            'cody.file.chat',
-            (reply: vscode.CommentReply) => chatProvider.fileChatAdd(reply),
-            { hidden: true }
+        vscode.commands.registerCommand('cody.file.chat', (reply: vscode.CommentReply) =>
+            chatProvider.fileChatAdd(reply)
         ),
-        vscode.commands.registerCommand(
-            'cody.file.fix',
-            (reply: vscode.CommentReply) => chatProvider.fileChatFix(reply),
-            { hidden: true }
+        vscode.commands.registerCommand('cody.file.fix', (reply: vscode.CommentReply) =>
+            chatProvider.fileChatFix(reply)
         ),
+        vscode.commands.registerCommand('cody.file.done', (thread: vscode.CommentThread) => {
+            chatProvider.fileChatDelete(thread)
+        }),
         // Toggle Chat
         vscode.commands.registerCommand('cody.toggle-enabled', async () => {
             await workspaceConfig.update(

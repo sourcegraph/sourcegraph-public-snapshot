@@ -5,7 +5,7 @@ import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '../editor/vscode-editor'
 
 export class FileChatMessage implements vscode.Comment {
-    public id = 0
+    private id = 0
     public label: string | undefined
     public markdownBody: string | vscode.MarkdownString
     constructor(
@@ -23,13 +23,14 @@ export class FileChatMessage implements vscode.Comment {
 export class FileChatProvider {
     private commentController: vscode.CommentController
     private options = {
-        prompt: 'Click here to ask Cody anything about this file.',
-        placeHolder: 'Enter your question here...',
+        prompt: 'Click here to continue',
+        placeHolder:
+            'Select the lines of code you want to ask Cody for help, and then enter your questions or instruction here.',
     }
 
     private readonly id = 'cody-file-chat'
-    private readonly label = 'Cody: In-File Chat'
-    private readonly threadLabel = 'Ask Cody anything about this file 😉'
+    private readonly label = 'Cody: File Chat'
+    private readonly threadLabel = 'Ask Cody for help with this file 😉'
 
     private codyIcon: vscode.Uri
     private userIcon: vscode.Uri
@@ -71,15 +72,11 @@ export class FileChatProvider {
         )
 
         thread.comments = [...thread.comments, newComment]
-
+        // disable reply until the task is completed
+        thread.canReply = false
         this.threads = threads
         this.thread = thread
         this.selection = await this.getSelection(isFixMode)
-
-        // Add loading message
-        if (isFixMode) {
-            this.reply('Got it! Working on it!')
-        }
     }
 
     // Add response from Cody
@@ -89,13 +86,26 @@ export class FileChatProvider {
         }
 
         const codyReply = new FileChatMessage(
-            this.markdown(text),
+            this.markdown(text.replace(/:$/, '.')),
             vscode.CommentMode.Preview,
             { name: 'Cody', iconPath: this.codyIcon },
             this.thread,
             undefined
         )
+
         this.thread.comments = [...this.thread.comments, codyReply]
+        this.thread.canReply = true
+    }
+
+    public delete(thread: vscode.CommentThread): void {
+        thread.dispose()
+        this.thread = null
+        this.reset()
+    }
+
+    public reset(): void {
+        // reset
+        this.selectionRange = null
     }
 
     private markdown(text: string): vscode.MarkdownString {

@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
+- New Recipe: `File Chat` that allows users to interact with Cody in the editor view.
+
 ### Fixed
 
 ### Changed

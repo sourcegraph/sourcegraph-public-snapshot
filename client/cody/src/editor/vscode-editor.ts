@@ -129,7 +129,6 @@ export class VSCodeEditor implements Editor {
                 this.fileChatProvider.selectionRange.start,
                 this.fileChatProvider.selectionRange.end
             )
-            console.log(selection, this.fileChatProvider.selectionRange)
         }
         if (!selection) {
             return
@@ -142,11 +141,36 @@ export class VSCodeEditor implements Editor {
             )
             return
         }
+        const currentText = activeEditor.document.getText()
 
+        const newPos = new vscode.Position(selection.start.line, 0)
         await activeEditor.edit(edit => {
-            edit.replace(this.fileChatProvider.selectionRange || selection, replacement)
+            edit.delete(this.fileChatProvider.selectionRange || selection)
+            edit.insert(newPos, replacement.trim())
+            // edit.replace(this.fileChatProvider.selectionRange || selection, replacement)
         })
+        this.fileChatProvider.selectionRange = null
+        await this.showDiff(currentText, activeEditor.document.uri)
         return
+    }
+
+    public async showDiff(original: string, updated: vscode.Uri): Promise<void> {
+        const oldDoc = await vscode.workspace.openTextDocument({ content: original })
+        // await vscode.window.showTextDocument(oldDoc, { viewColumn: vscode.ViewColumn.Beside })
+        await vscode.commands.executeCommand('vscode.diff', oldDoc.uri, updated, 'Diff by Cody')
+    }
+
+    public async showDiff1(original: string, filePath: vscode.Uri): Promise<void> {
+        const edit = new vscode.WorkspaceEdit()
+        const newFilePath = vscode.Uri.file(filePath.fsPath + '.cody')
+        edit.createFile(filePath, { ignoreIfExists: true })
+        await vscode.workspace.applyEdit(edit)
+        await vscode.workspace.openTextDocument(filePath)
+        await vscode.workspace.openTextDocument({ content: original }).then(doc => doc.save())
+
+        // Open the document in a new editor group/tab.
+        await vscode.window.showTextDocument(newFilePath, { viewColumn: vscode.ViewColumn.Beside })
+        await vscode.commands.executeCommand('vscode.diff', newFilePath, filePath, 'Diff by Cody')
     }
 
     public async showQuickPick(labels: string[]): Promise<string | undefined> {

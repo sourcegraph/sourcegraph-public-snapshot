@@ -185,8 +185,14 @@
       },
       {
         "command": "cody.file.fix",
-        "title": "Ask Cody: Fixup",
+        "title": "Fixup file",
         "enablement": "!commentIsEmpty"
+      },
+      {
+        "command": "cody.file.done",
+        "title": "Cody: Remove chat",
+        "enablement": "!commentThreadIsEmpty",
+        "icon": "$(trash)"
       }
     ],
     "keybindings": [
@@ -237,6 +243,14 @@
         {
           "command": "cody.recipe.fixup",
           "when": "cody.activated"
+        },
+        {
+          "command": "cody.file.chat",
+          "when": "false"
+        },
+        {
+          "command": "cody.file.fix",
+          "when": "false"
         }
       ],
       "editor/context": [
@@ -308,11 +322,11 @@
           "when": "cody.activated"
 				}
 			],
-      "comments/comment/context": [
+      "comments/commentThread/title": [
 				{
-					"command": "cody.file.fix",
-					"group": "inline@3",
-					"when": "commentController == code-file-chat"
+					"command": "cody.file.done",
+					"group": "navigation",
+					"when": "cody.activated"
 				}
 			]
     },

@@ -37,7 +37,7 @@ export class Fixup implements Recipe {
                     )
                     return
                 }
-                await context.editor.replaceSelection(selection.fileName, selection.selectedText, content)
+                await context.editor.replaceSelection(selection.fileName, selection.selectedText, this.clean(content))
             })
         )
 
@@ -83,5 +83,13 @@ It is OK to provide some commentary before you tell me the replacement <selectio
             numTextResults: 3,
         })
         return contextMessages
+    }
+
+    private clean(text: string): string {
+        const tagsIndex = text.indexOf('tags:')
+        if (tagsIndex !== -1) {
+            return text.slice(tagsIndex + 6).trim()
+        }
+        return text.trim()
     }
 }

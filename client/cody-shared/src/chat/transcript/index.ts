@@ -76,10 +76,16 @@ export class Transcript {
     }
 
     public addErrorAsAssistantResponse(errorText: string): void {
-        this.getLastInteraction()?.setAssistantMessage({
+        const lastMessage = this.getLastInteraction()
+        if (!lastMessage) {
+            return
+        }
+        // Adds error after Cody's response before it was interrupted
+        const lastMessageText = lastMessage.getAssistantMessage().text
+        lastMessage.setAssistantMessage({
             speaker: 'assistant',
-            text: 'Failed to generate response due to server error.',
-            displayText: errorText,
+            text: `${lastMessageText}\nFailed to generate the rest of the response due to server error.`,
+            displayText: `${lastMessageText}\n${errorText}`,
         })
     }
 

@@ -630,13 +630,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public async fileChatAdd(threads: vscode.CommentReply): Promise<void> {
         await this.editor.fileChatProvider.chat(threads)
-        console.log(threads.text)
         void this.executeRecipe('file-chat', threads.text, false)
     }
 
     public async fileChatFix(threads: vscode.CommentReply): Promise<void> {
         await this.editor.fileChatProvider.chat(threads, true)
         await this.executeRecipe('fixup', `/fix ${threads.text}`, false)
+    }
+
+    public fileChatDelete(thread: vscode.CommentThread): void {
+        this.editor.fileChatProvider.delete(thread)
     }
 
     /**
