@@ -62,10 +62,12 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(config.ExcludedFilePathPatterns)...)
 
 	opts := embed.EmbedRepoOpts{
-		RepoName:        repo.Name,
-		Revision:        record.Revision,
-		ExcludePatterns: excludedGlobPatterns,
-		SplitOptions:    splitOptions,
+		RepoName:          repo.Name,
+		Revision:          record.Revision,
+		ExcludePatterns:   excludedGlobPatterns,
+		SplitOptions:      splitOptions,
+		MaxCodeEmbeddings: embed.MAX_CODE_EMBEDDING_VECTORS,
+		MaxTextEmbeddings: embed.MAX_TEXT_EMBEDDING_VECTORS,
 	}
 
 	repoEmbeddingIndex, stats, err := embed.EmbedRepo(

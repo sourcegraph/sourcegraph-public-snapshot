@@ -84,10 +84,12 @@ func EmbedRepo(
 }
 
 type EmbedRepoOpts struct {
-	RepoName        api.RepoName
-	Revision        api.CommitID
-	ExcludePatterns []*paths.GlobPattern
-	SplitOptions    split.SplitOptions
+	RepoName          api.RepoName
+	Revision          api.CommitID
+	ExcludePatterns   []*paths.GlobPattern
+	SplitOptions      split.SplitOptions
+	MaxCodeEmbeddings int
+	MaxTextEmbeddings int
 }
 
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
