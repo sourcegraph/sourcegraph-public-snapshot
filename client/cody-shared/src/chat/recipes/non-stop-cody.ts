@@ -22,8 +22,6 @@ interface BatchState {
 // TODO(dpc): This is similar to Cody: Fixup so if it works well, integrate them.
 export class NonStopCody implements Recipe {
     public id = 'non-stop-cody'
-    private decoCodyContribution: vscode.TextEditorDecorationType
-    private decoCodyContributionFade: vscode.TextEditorDecorationType
     private tick = 0
     private decorations: Map<vscode.Uri, TrackedDecoration[]> = new Map()
     private comments: vscode.CommentController
@@ -32,25 +30,61 @@ export class NonStopCody implements Recipe {
     // TODO: Generalize this to having multiple in-flight at once.
     private batch?: BatchState
 
+    private fadeDecorations: vscode.TextEditorDecorationType[]
+    private fadeAnimation = 0
+    private fadeTimer: NodeJS.Timeout | undefined = undefined
+
     constructor() {
         // TODO: Dispose the subscription. Array of disposables?
         const subscription = vscode.workspace.onDidChangeTextDocument(this.textDocumentChanged.bind(this))
-        this.decoCodyContribution = vscode.window.createTextEditorDecorationType({
-            backgroundColor: '#0ca67888', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
-            rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-            // TODO: Gutter icon w/ Cody branding could be cool
-        })
-        this.decoCodyContributionFade = vscode.window.createTextEditorDecorationType({
-            backgroundColor: 'orange', // oc-teal-7; TODO(dpc): Account for themes. See: light, dark.
-            rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-            // TODO: Gutter icon w/ Cody branding could be cool
-        })
+
+        this.fadeDecorations = [
+            vscode.window.createTextEditorDecorationType({
+                backgroundColor: '#0ca67888', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
+                rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+                // TODO: Gutter icon w/ Cody branding could be cool
+            }),
+            vscode.window.createTextEditorDecorationType({
+                backgroundColor: '#0ca67855', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
+                rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+            }),
+            vscode.window.createTextEditorDecorationType({
+                backgroundColor: '#0ca67822', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
+                rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+            }),
+            vscode.window.createTextEditorDecorationType({
+                backgroundColor: '#0ca67811', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
+                rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+            }),
+        ]
 
         this.comments = vscode.comments.createCommentController('cody', 'Cody')
         this.comments.options = {
             prompt: 'Hello, world',
             placeHolder: 'Replace me',
         }
+    }
+
+    private onAnimationTick(): void {
+        // TODO: Make this animation tick per document
+        if (this.fadeAnimation === this.fadeDecorations.length) {
+            for (const editor of vscode.window.visibleTextEditors) {
+                this.decorations.delete(editor.document.uri)
+                editor.setDecorations(this.fadeDecorations.at(-1)!, [])
+            }
+            clearInterval(this.fadeTimer!)
+            this.fadeTimer = undefined
+            return
+        }
+        for (const editor of vscode.window.visibleTextEditors) {
+            editor.setDecorations(this.fadeDecorations[this.fadeAnimation], [])
+            const decorations = this.decorations.get(editor.document.uri)
+            if (!decorations) {
+                continue
+            }
+            editor.setDecorations(this.fadeDecorations[this.fadeAnimation + 1], decorations)
+        }
+        this.fadeAnimation++
     }
 
     private textDocumentChanged(event: vscode.TextDocumentChangeEvent): void {
@@ -89,14 +123,6 @@ export class NonStopCody implements Recipe {
                     decorations = decorations.filter(decoration => !decorationsToDelete.includes(decoration))
                     this.decorations.set(event.document.uri, decorations)
                 }
-            }
-            this.tick++
-            const oldHi = this.tick % 2 === 0 ? this.decoCodyContribution : this.decoCodyContributionFade
-            const newHi = this.tick % 2 === 1 ? this.decoCodyContribution : this.decoCodyContributionFade
-            // TODO: Also need to listen to the active editor change event and update highlights
-            if (vscode.window.activeTextEditor?.document === event.document) {
-                vscode.window.activeTextEditor.setDecorations(oldHi, [])
-                vscode.window.activeTextEditor.setDecorations(newHi, decorations)
             }
         }
     }
@@ -233,6 +259,7 @@ Human: Great, thank you! This is part of the file ${
         )}</cody-replace>\n\n${context.responseMultiplexer.prompt()}`
         // TODO: Move the prompt suffix from the recipe to the chat view. It may have other subscribers.
 
+        const text = selectedText || precedingText + followingText
         return Promise.resolve(
             new Interaction(
                 {
@@ -241,7 +268,7 @@ Human: Great, thank you! This is part of the file ${
                     displayText: 'Replace the instructions in the selection.',
                 },
                 { speaker: 'assistant' },
-                this.getContextMessages(selectedText || precedingText + followingText, context.codebaseContext)
+                text ? this.getContextMessages(text, context.codebaseContext) : Promise.resolve([])
             )
         )
     }
@@ -298,8 +325,13 @@ Human: Great, thank you! This is part of the file ${
                 ),
             }
             decorations.push(deco)
-            vscode.window.activeTextEditor?.setDecorations(this.decoCodyContribution, decorations)
         }
+        vscode.window.activeTextEditor?.setDecorations(this.fadeDecorations[0], decorations)
+        this.fadeAnimation = 0
+        if (typeof this.fadeTimer !== 'undefined') {
+            clearInterval(this.fadeTimer)
+        }
+        this.fadeTimer = setInterval(this.onAnimationTick.bind(this), 1500)
 
         await vscode.window.showInformationMessage(
             `Cody done, generated ${content.length} characters; edit: ${success}`
