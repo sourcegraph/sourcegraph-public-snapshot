@@ -345,7 +345,14 @@ func TestExtractOccurrenceData(t *testing.T) {
 						{
 							Symbol: "react 17.1 main.go func1",
 							Relationships: []*scip.Relationship{
-								{IsReference: true},
+								{
+									Symbol:      "react 17.1 main.go func1",
+									IsReference: true,
+								},
+								{
+									Symbol:       "react 17.1 main.go func2",
+									IsDefinition: true,
+								},
 							},
 						},
 					},
