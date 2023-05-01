@@ -58,8 +58,10 @@ developers to explore code by
 
 Code navigation is made up of multiple features that build on top of each other:
 
-- [Search-based code navigation](explanations/search_based_code_navigation.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search.
-- [Precise code navigation](explanations/precise_code_navigation.md) uses code graph data to provide precise code navigation features and accurate cross-repository navigation. We currently have precise code navigation support for the languages below. See the [indexers page](references/indexers.md) for a detailed breakdown of each indexer's status.
+- [Search-based code navigation](explanations/search_based_code_navigation.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search. Our default search-based code navigation uses `ctags` for fast, performant searches across large code bases.
+- [Precise code navigation](explanations/precise_code_navigation.md) powers our code graph by providing users with extremely precise and accurate cross-repository* compile-time information. This means you'll get an accurate view of all symbols and where they are used across your code base.
+
+Precise code navigation requires language-specific indexers to be generated and uploaded to your instance. We currently have precise code navigation support for the languages below. See the [indexers page](references/indexers.md) for a detailed breakdown of each indexer's status.
 <table>
    <thead>
       <tr>
