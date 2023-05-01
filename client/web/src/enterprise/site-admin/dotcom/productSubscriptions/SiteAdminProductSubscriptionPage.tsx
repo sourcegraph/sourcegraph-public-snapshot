@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
+import { gql as apolloGQL, useMutation } from '@apollo/client'
 import { mdiArrowLeft, mdiPlus } from '@mdi/js'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Observable, Subject, NEVER } from 'rxjs'
@@ -20,9 +21,11 @@ import {
     Icon,
     H2,
     ErrorAlert,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
+import { CopyableText } from '../../../../components/CopyableText'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import {
@@ -31,6 +34,8 @@ import {
     DotComProductSubscriptionResult,
     ProductLicensesResult,
     ProductLicenseFields,
+    GenerateProductSubscriptionAccessTokenResult,
+    GenerateProductSubscriptionAccessTokenVariables,
 } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
@@ -124,6 +129,13 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
         toggleShowGenerate()
     }, [licenseUpdates, toggleShowGenerate])
 
+    const [
+        generateAccessTokenMutation,
+        { loading: tokenLoading, called: generateTokenCalled, data: tokenData, error: tokenError },
+    ] = useMutation<GenerateProductSubscriptionAccessTokenResult, GenerateProductSubscriptionAccessTokenVariables>(
+        GENERATE_ACCESS_TOKEN_GQL
+    )
+
     const nodeProps: Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'> = {
         showSubscription: false,
     }
@@ -186,6 +198,37 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                 </tr>
                             </tbody>
                         </table>
+                    </Card>
+                    <Card className="mt-3">
+                        <CardHeader className="d-flex align-items-center justify-content-between">
+                            Access token
+                            <Button
+                                onClick={() =>
+                                    generateAccessTokenMutation({
+                                        variables: { productSubscriptionID: productSubscription.id },
+                                    })
+                                }
+                                variant="primary"
+                                size="sm"
+                                disabled={tokenLoading}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate access token
+                            </Button>
+                        </CardHeader>
+                        <CardBody>
+                            <Text>Access tokens can be used for LLM-proxy access - coming soon!</Text>
+                            {tokenLoading && <LoadingSpinner />}
+                            {tokenError && <ErrorAlert className="mt-2" error={tokenError.message} />}
+                            {generateTokenCalled && !tokenLoading && tokenData && (
+                                <CopyableText
+                                    label="Access token"
+                                    secret={true}
+                                    flex={true}
+                                    text={tokenData.dotcom.generateAccessTokenForSubscription.accessToken}
+                                    className="mt-2"
+                                />
+                            )}
+                        </CardBody>
                     </Card>
                     <LicenseGenerationKeyWarning className="mt-3" />
                     <Card className="mt-1">
@@ -357,3 +400,15 @@ function archiveProductSubscription(args: ArchiveProductSubscriptionVariables): 
         })
     )
 }
+
+const GENERATE_ACCESS_TOKEN_GQL = apolloGQL`
+    mutation GenerateProductSubscriptionAccessToken($productSubscriptionID: ID!) {
+        dotcom {
+            generateAccessTokenForSubscription(
+                productSubscriptionID: $productSubscriptionID
+            ) {
+                accessToken
+            }
+        }
+    }
+`

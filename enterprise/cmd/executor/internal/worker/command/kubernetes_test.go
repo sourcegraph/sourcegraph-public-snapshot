@@ -346,7 +346,7 @@ func TestNewKubernetesJob(t *testing.T) {
 	assert.Equal(t, "sg-executor-job-container", job.Spec.Template.Spec.Containers[0].Name)
 	assert.Equal(t, "my-image:latest", job.Spec.Template.Spec.Containers[0].Image)
 	assert.Equal(t, []string{"echo", "hello"}, job.Spec.Template.Spec.Containers[0].Command)
-	assert.Equal(t, "/data", job.Spec.Template.Spec.Containers[0].WorkingDir)
+	assert.Equal(t, "/job", job.Spec.Template.Spec.Containers[0].WorkingDir)
 
 	require.Len(t, job.Spec.Template.Spec.Containers[0].Env, 1)
 	assert.Equal(t, "FOO", job.Spec.Template.Spec.Containers[0].Env[0].Name)
@@ -359,7 +359,7 @@ func TestNewKubernetesJob(t *testing.T) {
 
 	require.Len(t, job.Spec.Template.Spec.Containers[0].VolumeMounts, 1)
 	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name)
-	assert.Equal(t, "/data", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
+	assert.Equal(t, "/job", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
 	assert.Equal(t, "/my/path", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].SubPath)
 
 	require.Len(t, job.Spec.Template.Spec.Volumes, 1)

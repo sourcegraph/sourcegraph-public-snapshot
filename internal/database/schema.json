@@ -19847,6 +19847,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "access_token_enabled",
+          "Index": 9,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Whether this license key can be used as an access token to authenticate API requests"
+        },
+        {
           "Name": "created_at",
           "Index": 4,
           "TypeName": "timestamp with time zone",

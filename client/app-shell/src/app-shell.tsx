@@ -7,19 +7,20 @@ import { listen, Event } from '@tauri-apps/api/event'
 //   options.
 // * app-main.tsx: served by the Go backend, renders the Sourcegraph web UI that you see everywhere else.
 
+interface TauriLog {
+    level: number
+    message: string
+}
+
 // TODO(burmudar): use logging service to log that this has been loaded
-const outputHandler = (event: Event<string>): void => {
-    if (event.payload.startsWith('tauri:sign-in-url: ')) {
-        const url = event.payload.slice('tauri:sign-in-url: '.length).trim()
+const outputHandler = (event: Event<TauriLog>): void => {
+    if (event.payload.message.includes('tauri:sign-in-url: ')) {
+        const url = event.payload.message.split('tauri:sign-in-url: ')[1]
         window.location.href = url
     }
 }
 
 // Note we currently ignore the unlisten cb returned from listen
-let sidecar: String = 'sourcegraph-backend'
-listen(`${sidecar}-stdout`, outputHandler)
-    .then(() => console.log(`${sidecar}-stdout listener registered`))
-    .catch(error => console.error(`failed to register backend-stdout handler: ${error}`))
-listen(`${sidecar}-stderr`, outputHandler)
-    .then(() => console.log(`${sidecar}-stderr listener registered`))
-    .catch(error => console.error(`failed to register backend-stderr handler: ${error}`))
+listen('log://log', outputHandler)
+    .then(() => console.log('registered stdout handler'))
+    .catch(error => console.error(`failed to register stdout handler: ${error}`))

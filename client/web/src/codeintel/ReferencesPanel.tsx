@@ -21,7 +21,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     RepoSpec,
@@ -52,7 +52,6 @@ import {
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
-import { LegacyBlob } from '../repo/blob/LegacyBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
@@ -663,10 +662,6 @@ function parseSideBlobProps(
 }
 
 const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
-    const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
-    const BlobComponent = useCodeMirror ? CodeMirrorBlob : LegacyBlob
-
-    const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT
     const { data, error, loading } = useQuery<
         ReferencesPanelHighlightedBlobResult,
         ReferencesPanelHighlightedBlobVariables
@@ -675,8 +670,7 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
             repository: props.repository,
             commit: props.commitID,
             path: props.file,
-            format: highlightFormat,
-            html: highlightFormat === HighlightResponseFormat.HTML_HIGHLIGHT,
+            format: HighlightResponseFormat.JSON_SCIP,
         },
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
@@ -715,19 +709,18 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         return <>Nothing found</>
     }
 
-    const { html, lsif } = data?.repository?.commit?.blob?.highlight
+    const { lsif } = data?.repository?.commit?.blob?.highlight
 
     // TODO: display a helpful message if syntax highlighting aborted, see https://github.com/sourcegraph/sourcegraph/issues/40841
 
     return (
-        <BlobComponent
+        <CodeMirrorBlob
             {...props}
             nav={props.blobNav}
             wrapCode={true}
             className={styles.sideBlobCode}
             navigateToLineOnAnyClick={true}
             blobInfo={{
-                html: html ?? '',
                 lsif: lsif ?? '',
                 content: data?.repository?.commit?.blob?.content ?? '',
                 filePath: props.file,
