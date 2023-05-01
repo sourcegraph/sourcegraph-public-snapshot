@@ -106,3 +106,17 @@ The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the C
 ## Turning Cody off
 
 To turn Cody off, set `embeddings` and `completions` site-admin settings to `enabled:false` (or remove them altogether).
+
+## Turning Cody on, only for some users
+
+To turn Cody on only for some users, for example when rolling out a Cody POC, follow all the steps in [Step 1: Enable Cody on your Sourcegraph instance](#step-1-enable-cody-on-your-sourcegraph-instance). Then use the feature flag `cody-experimental` to turn Cody on selectively for some users.
+To do so:
+
+1. Go to `site-admin/feature-flags`
+2. Add a feature flag called `cody-experimental`. Select the `boolean` type and set it to `false`.
+3. Once added, click on the feature flag and use **add overrides** to pick users that will have access to Cody.
+
+<img width="979" alt="Add overides" src="https://user-images.githubusercontent.com/25070988/235454594-9f1a6b27-6882-44d9-be32-258d6c244880.png">
+
+
+
