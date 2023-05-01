@@ -80,7 +80,7 @@ func (r *ownResolver) GitBlobOwnership(
 	}
 	repo := blob.Repository()
 	repoID, repoName := repo.IDInt32(), repo.RepoName()
-	commitID := api.CommitID(blob.Commit().OID())
+	commitID := api.CommitID(blob.Commit().OID(ctx))
 	ownService := r.ownService()
 	rs, err := ownService.RulesetForRepo(ctx, repoName, repoID, commitID)
 	if err != nil {

@@ -67,7 +67,8 @@ type GitCommitResolver struct {
 
 	// perforceChangelistID is generated during initalisation of the GitCommitResolver a side effect
 	// of a git-repo being converted from a perforce depot.
-	perforceChangelistID string
+	perforceChangelistID     string
+	perforceChangelistIDOnce sync.Once
 }
 
 type perforceMetadata struct {
@@ -91,30 +92,6 @@ func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *Repos
 		gitRepo:         repoName,
 		oid:             GitObjectID(id),
 		commit:          commit,
-	}
-
-	if repo.IsPerforceDepot() {
-		// Load the commit because we need it.
-		if _, err := r.resolveCommit(context.Background()); err != nil {
-			r.logger.Error("failed to resolveCommit", log.Error(err))
-			return r
-		}
-
-		changelistID, err := getP4ChangelistID(r.commit.Message.Body())
-		if err != nil {
-			r.logger.Error(
-				"failed to generate perforceChangelistID (the commit SHA will be used instead as the value of OID)",
-				log.Error(err),
-			)
-		}
-		// Fallback to the git commit SHA if we fail to retrieve a changelist ID for any reason
-		// instead of erroring out.
-		//
-		// If a user sees this behaviour, the commit SHA will be helpful to debug why this fails
-		// for that commit.
-		if changelistID != "" {
-			r.perforceChangelistID = changelistID
-		}
 	}
 
 	return r
@@ -155,7 +132,32 @@ func (r *GitCommitResolver) ID() graphql.ID {
 
 func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
 
-func (r *GitCommitResolver) OID() GitObjectID {
+func (r *GitCommitResolver) OID(ctx context.Context) GitObjectID {
+	r.perforceChangelistIDOnce.Do(func() {
+		if r.repoResolver.IsPerforceDepot() {
+			// Load the commit because we need it.
+			if _, err := r.resolveCommit(ctx); err != nil {
+				r.logger.Error("perforceChangelistIDOnce: failed to resolveCommit", log.Error(err))
+			}
+
+			changelistID, err := getP4ChangelistID(r.commit.Message.Body())
+			if err != nil {
+				r.logger.Error(
+					"failed to generate perforceChangelistID (the commit SHA will be used instead as the value of OID)",
+					log.Error(err),
+				)
+			}
+			// Fallback to the git commit SHA if we fail to retrieve a changelist ID for any reason
+			// instead of erroring out.
+			//
+			// If a user sees this behaviour, the commit SHA will be helpful to debug why this fails
+			// for that commit.
+			if changelistID != "" {
+				r.perforceChangelistID = changelistID
+			}
+		}
+	})
+
 	if r.perforceChangelistID != "" {
 		return GitObjectID(r.perforceChangelistID)
 	}
@@ -165,10 +167,10 @@ func (r *GitCommitResolver) OID() GitObjectID {
 
 func (r *GitCommitResolver) InputRev() *string { return r.inputRev }
 
-func (r *GitCommitResolver) AbbreviatedOID() string {
+func (r *GitCommitResolver) AbbreviatedOID(ctx context.Context) string {
 	// Do not abbreviate the OID since this is a changelist ID and not a commit SHA.
 	if r.perforceChangelistID != "" {
-		return string(r.OID())
+		return string(r.OID(ctx))
 	}
 
 	return string(r.oid)[:7]

@@ -109,7 +109,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context, args *GitTreeContent
 			ctx,
 			authz.DefaultSubRepoPermsChecker,
 			r.commit.repoResolver.RepoName(),
-			api.CommitID(r.commit.OID()),
+			api.CommitID(r.commit.OID(ctx)),
 			r.Path(),
 		)
 	})
@@ -285,7 +285,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	entries, err := r.gitserverClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
+	entries, err := r.gitserverClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID(ctx)), path.Dir(r.Path()), false)
 	if err != nil {
 		return false, err
 	}
@@ -305,7 +305,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 
 	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &resolverstubs.GitBlobLSIFDataArgs{
 		Repo:      repo,
-		Commit:    api.CommitID(r.Commit().OID()),
+		Commit:    api.CommitID(r.Commit().OID(ctx)),
 		Path:      r.Path(),
 		ExactPath: !r.stat.IsDir(),
 		ToolName:  toolName,

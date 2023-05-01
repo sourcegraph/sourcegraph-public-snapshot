@@ -162,7 +162,7 @@ func TestRepositoryComparison(t *testing.T) {
 		}
 
 		for i, n := range nodes {
-			if have, want := string(n.OID()), string(commits[i].ID); have != want {
+			if have, want := string(n.OID(context.Background())), string(commits[i].ID); have != want {
 				t.Fatalf("nodes[%d] has wrong commit ID. want=%s, have=%s", i, want, have)
 			}
 		}
@@ -312,7 +312,7 @@ func TestRepositoryComparison(t *testing.T) {
 			if !ok {
 				t.Fatalf("OldFile() is no GitBlob")
 			}
-			if have, want := string(gitBlob.Commit().OID()), wantMergeBaseRevision; have != want {
+			if have, want := string(gitBlob.Commit().OID(context.Background())), wantMergeBaseRevision; have != want {
 				t.Fatalf("Got wrong commit ID for OldFile(): want=%s have=%s", want, have)
 			}
 			newFile := n.NewFile()

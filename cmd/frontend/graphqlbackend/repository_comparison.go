@@ -238,7 +238,7 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 			if cmp.base == nil {
 				base = cmp.baseRevspec
 			} else {
-				base = string(cmp.base.OID())
+				base = string(cmp.base.OID(ctx))
 			}
 
 			var paths []string
@@ -250,7 +250,7 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 			iter, err = cmp.gitserverClient.Diff(ctx, authz.DefaultSubRepoPermsChecker, gitserver.DiffOptions{
 				Repo:      cmp.repo.RepoName(),
 				Base:      base,
-				Head:      string(cmp.head.OID()),
+				Head:      string(cmp.head.OID(ctx)),
 				RangeType: cmp.rangeType,
 				Paths:     paths,
 			})

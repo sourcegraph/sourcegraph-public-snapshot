@@ -160,10 +160,12 @@ func TestGitCommitResolver(t *testing.T) {
 		})
 		commitResolver := NewGitCommitResolver(db, client, repo, "c1", commit)
 
+		ctx := context.Background()
+
 		require.True(t, commitResolver.repoResolver.IsPerforceDepot())
-		require.Equal(t, GitObjectID("123"), commitResolver.OID())
-		require.Equal(t, "123", commitResolver.AbbreviatedOID())
-		subject, err := commitResolver.Subject(context.Background())
+		require.Equal(t, GitObjectID("123"), commitResolver.OID(ctx))
+		require.Equal(t, "123", commitResolver.AbbreviatedOID(ctx))
+		subject, err := commitResolver.Subject(ctx)
 		require.NoError(t, err)
 		require.Equal(t, "subject: Changes things", subject)
 	})
@@ -190,10 +192,12 @@ func TestGitCommitResolver(t *testing.T) {
 		})
 		commitResolver := NewGitCommitResolver(db, client, repo, "c1", commit)
 
+		ctx := context.Background()
+
 		require.True(t, commitResolver.repoResolver.IsPerforceDepot())
-		require.Equal(t, GitObjectID("123"), commitResolver.OID())
-		require.Equal(t, "123", commitResolver.AbbreviatedOID())
-		subject, err := commitResolver.Subject(context.Background())
+		require.Equal(t, GitObjectID("123"), commitResolver.OID(ctx))
+		require.Equal(t, "123", commitResolver.AbbreviatedOID(ctx))
+		subject, err := commitResolver.Subject(ctx)
 		require.NoError(t, err)
 		require.Equal(t, "subject: Changes things", subject)
 	})

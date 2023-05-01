@@ -14,7 +14,7 @@ func (r *GitTreeEntryResolver) Blame(ctx context.Context,
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
 	hunks, err := r.gitserverClient.BlameFile(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), r.Path(), &gitserver.BlameOptions{
-		NewestCommit: api.CommitID(r.commit.OID()),
+		NewestCommit: api.CommitID(r.commit.OID(ctx)),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),
 	})
