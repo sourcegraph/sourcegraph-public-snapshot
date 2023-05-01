@@ -127,6 +127,7 @@ func transformRecord(ctx context.Context, db database.DB, index uploadsshared.In
 				"-upload-route", uploadRoute,
 				"-file", outfile,
 				"-associated-index-id", strconv.Itoa(index.ID),
+				"-trace=3",
 			),
 		},
 		Dir: index.Root,
