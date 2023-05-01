@@ -139,7 +139,6 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	t.Log("gitserver addrs:", addrs)
 	ctx := context.Background()
 	var spyGitserverService *spyGitserverServiceClient
 	spy := func(conns grpc.ClientConnInterface) proto.GitserverServiceClient {
