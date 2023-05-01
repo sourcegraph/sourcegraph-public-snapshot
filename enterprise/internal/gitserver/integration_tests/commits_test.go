@@ -67,7 +67,7 @@ func TestGetCommits(t *testing.T) {
 			nil,
 		}
 
-		commits, err := gitserver.NewTestClient(http.DefaultClient, inttests.GitserverAddresses, nil).GetCommits(ctx, getTestSubRepoPermsChecker("file1", "file3"), repoCommits, true)
+		commits, err := gitserver.NewTestClient(http.DefaultClient, inttests.GitserverAddresses, defaultGRPCSource).GetCommits(ctx, getTestSubRepoPermsChecker("file1", "file3"), repoCommits, true)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
