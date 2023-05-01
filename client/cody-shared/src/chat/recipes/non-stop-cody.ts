@@ -149,6 +149,11 @@ export class NonStopCody implements Recipe {
         //     decorations = []
         //     this.decorations.set(vscode.window.activeTextEditor!.document.uri, decorations)
         // }
+        // const deco = {
+        //     hoverMessage: 'Edited by Cody', // TODO: Put the prompt in here
+        //     range: vscode.window.activeTextEditor!.selection,
+        //     // TODO: Render options
+        // }
         // decorations!.push(deco)
         // vscode.window.activeTextEditor?.setDecorations(this.decoCodyContribution, decorations)
 
@@ -265,6 +270,7 @@ Human: Great, thank you! This is part of the file ${
         }
 
         // TODO: Animate diff availability
+
         const success = await this.batch.editor.edit(
             editBuilder => {
                 for (const edit of diff.edits) {
@@ -279,6 +285,22 @@ Human: Great, thank you! This is part of the file ${
             },
             { undoStopAfter: true, undoStopBefore: true }
         )
+
+        // Highlight what Cody did
+        const decorations: vscode.DecorationOptions[] = []
+        this.decorations.set(this.batch.editor.document.uri, decorations)
+        for (const highlight of diff.highlights) {
+            const deco = {
+                hoverMessage: 'Edited by Cody', // TODO: Put the prompt in here
+                range: new vscode.Range(
+                    new vscode.Position(highlight.start.line, highlight.start.character),
+                    new vscode.Position(highlight.end.line, highlight.end.character)
+                ),
+            }
+            decorations.push(deco)
+            vscode.window.activeTextEditor?.setDecorations(this.decoCodyContribution, decorations)
+        }
+
         await vscode.window.showInformationMessage(
             `Cody done, generated ${content.length} characters; edit: ${success}`
         )
