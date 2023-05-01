@@ -21,7 +21,6 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/segmentio/fasthash/fnv1"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -532,16 +531,15 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 	}
 
 	type requestBody struct {
-		Title             string     `json:"title"`
-		Description       string     `json:"description"`
-		State             string     `json:"state"`
-		Open              bool       `json:"open"`
-		Closed            bool       `json:"closed"`
-		FromRef           Ref        `json:"fromRef"`
-		ToRef             Ref        `json:"toRef"`
-		Locked            bool       `json:"locked"`
-		Reviewers         []reviewer `json:"reviewers"`
-		CloseSourceBranch bool       `json:"closeSourceBranch"`
+		Title       string     `json:"title"`
+		Description string     `json:"description"`
+		State       string     `json:"state"`
+		Open        bool       `json:"open"`
+		Closed      bool       `json:"closed"`
+		FromRef     Ref        `json:"fromRef"`
+		ToRef       Ref        `json:"toRef"`
+		Locked      bool       `json:"locked"`
+		Reviewers   []reviewer `json:"reviewers"`
 	}
 
 	defaultReviewers, err := c.FetchDefaultReviewers(ctx, pr)
@@ -559,30 +557,21 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		}{Name: r}})
 	}
 
-	var closeSourceBranch bool
-
-	if conf.Get().BatchChangesAutoDeleteBranch {
-		closeSourceBranch = true
-	} else {
-		closeSourceBranch = false
-	}
-
 	// Bitbucket Server doesn't support GFM taskitems. But since we might add
 	// those to a PR description for certain batch changes, we have to
 	// "downgrade" here and for now, removing taskitems is enough.
 	description := strings.ReplaceAll(pr.Description, "- [ ] ", "- ")
 
 	payload := requestBody{
-		Title:             pr.Title,
-		Description:       description,
-		State:             "OPEN",
-		Open:              true,
-		Closed:            false,
-		FromRef:           pr.FromRef,
-		ToRef:             pr.ToRef,
-		Locked:            false,
-		Reviewers:         reviewers,
-		CloseSourceBranch: closeSourceBranch,
+		Title:       pr.Title,
+		Description: description,
+		State:       "OPEN",
+		Open:        true,
+		Closed:      false,
+		FromRef:     pr.FromRef,
+		ToRef:       pr.ToRef,
+		Locked:      false,
+		Reviewers:   reviewers,
 	}
 
 	path := fmt.Sprintf(
@@ -671,10 +660,6 @@ func (c *Client) DeclinePullRequest(ctx context.Context, pr *PullRequest) error 
 		return errors.New("project key empty")
 	}
 
-	type requestBody struct {
-		CloseSourceBranch bool `json:"closeSourceBranch"`
-	}
-
 	path := fmt.Sprintf(
 		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/decline",
 		pr.ToRef.Repository.Project.Key,
@@ -684,19 +669,7 @@ func (c *Client) DeclinePullRequest(ctx context.Context, pr *PullRequest) error 
 
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
-	var closeSourceBranch bool
-
-	if conf.Get().BatchChangesAutoDeleteBranch {
-		closeSourceBranch = true
-	} else {
-		closeSourceBranch = false
-	}
-
-	payload := requestBody{
-		CloseSourceBranch: closeSourceBranch,
-	}
-
-	_, err := c.send(ctx, "POST", path, qry, payload, pr)
+	_, err := c.send(ctx, "POST", path, qry, nil, pr)
 	return err
 }
 
