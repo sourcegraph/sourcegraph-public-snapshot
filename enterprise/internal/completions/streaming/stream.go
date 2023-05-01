@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/openai"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/passthrough"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -44,6 +45,9 @@ func GetCompletionClient(provider string, accessToken string, model string) (typ
 		return anthropic.NewAnthropicClient(httpcli.ExternalDoer, accessToken, model), nil
 	case "openai":
 		return openai.NewOpenAIClient(httpcli.ExternalDoer, accessToken, model), nil
+	case "dotcom":
+		//TODO(chwarwick): Maybe this is "app" and url is configurable also figure out proper way to get access token.
+		return passthrough.NewPassthoughClient(httpcli.ExternalDoer, "https://sourcegraph.sourcegraph.com/.api/completions/stream", accessToken, model), nil
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}
