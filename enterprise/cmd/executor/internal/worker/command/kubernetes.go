@@ -25,12 +25,12 @@ const (
 
 const (
 	// KubernetesExecutorMountPath is the path where the Kubernetes volume is mounted in the container.
-	KubernetesExecutorMountPath = "/data"
+	KubernetesExecutorMountPath = "/data/executors"
 	// KubernetesJobMountPath is the path where the Kubernetes volume is mounted in the container.
 	KubernetesJobMountPath = "/job"
 	// KubernetesVolumeMountSubPath is the path that is mounted in the Kubernetes pod container.
 	// The path is removed from the path that the job data is writt
-	KubernetesVolumeMountSubPath = "/data/"
+	KubernetesVolumeMountSubPath = "/data/executors/"
 )
 
 // KubernetesContainerOptions contains options for the Kubernetes Job containers.
