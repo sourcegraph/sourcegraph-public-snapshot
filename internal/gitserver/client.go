@@ -200,7 +200,7 @@ type clientImplementor struct {
 	// operations are used for internal observability
 	operations *operations
 
-	// grpcClient is a function that returns the current grpc client
+	// grpcClient is a function that returns a gRPC client to use for the given connection 
 	grpcClient func(cc grpc.ClientConnInterface) proto.GitserverServiceClient
 }
 
