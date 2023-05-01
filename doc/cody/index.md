@@ -11,7 +11,11 @@ Cody uses a combination of Sourcegraph's code graph and Large Language Models (L
 - **Sourcegraph Enterprise customers:** Contact your Sourcegraph techical advisor or [request enterprise access](https://sourcegraph.typeform.com/to/pIXTgwrd) to use Cody on your existing Sourcegraph instance.
 - **Everyone:** Share your Sourcegraph username with us in [Discord](https://discord.gg/sourcegraph-969688426372825169) and we'll get you set up to use Cody on open source code.
 
-Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and in Sourcegraph itself.
+There are two ways to experience Cody:
+* In your editor
+  * Download the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) 
+  * Jetbrains (coming soon)
+* In the [Sourcegraph App](https://about.sourcegraph.com/app)
 
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ VS Code extension quickstart</a>
