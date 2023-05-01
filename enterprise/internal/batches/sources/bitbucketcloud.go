@@ -152,7 +152,9 @@ func (s BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset
 	// request when updating a pull request.
 	opts.Reviewers = pr.Reviewers
 
-	opts.CloseSourceBranch = conf.Get().BatchChangesAutoDeleteBranch
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		opts.CloseSourceBranch = true
+	}
 
 	updated, err := s.client.UpdatePullRequest(ctx, targetRepo, pr.ID, opts)
 	if err != nil {
@@ -326,8 +328,6 @@ func (s BitbucketCloudSource) changesetToPullRequestInput(cs *Changeset) bitbuck
 	var closeSourceBranch bool
 	if conf.Get().BatchChangesAutoDeleteBranch {
 		closeSourceBranch = true
-	} else {
-		closeSourceBranch = false
 	}
 
 	opts := bitbucketcloud.PullRequestInput{
