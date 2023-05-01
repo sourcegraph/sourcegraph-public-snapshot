@@ -15,7 +15,7 @@ There are two ways to experience Cody:
 * In your editor
   * Download the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) 
   * Jetbrains (coming soon)
-* In the [Sourcegraph App](https://about.sourcegraph.com/app)
+* In Sourcegraph itself
 
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ VS Code extension quickstart</a>
