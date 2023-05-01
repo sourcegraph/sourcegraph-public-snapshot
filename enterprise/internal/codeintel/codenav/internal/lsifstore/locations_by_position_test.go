@@ -425,18 +425,13 @@ func TestExtractOccurrenceData(t *testing.T) {
 			expectedRanges []*scip.Range
 		}{
 			{
-				explanation: "#1 happy path: symbol name match",
+				explanation: "#1 happy path: we have implementation",
 				document: &scip.Document{
 					Occurrences: []*scip.Occurrence{
 						{
-							Range:       []int32{1, 100, 1, 200},
-							Symbol:      "react 17.1 main.go func1",
-							SymbolRoles: 0,
-						},
-						{
 							Range:       []int32{3, 300, 4, 400},
-							Symbol:      "react 17.1 main.go iface",
-							SymbolRoles: 0, // not a definition so its a reference
+							Symbol:      "react 17.1 main.go func1A",
+							SymbolRoles: 1, // a definition
 						},
 					},
 					Symbols: []*scip.SymbolInformation{
@@ -444,15 +439,24 @@ func TestExtractOccurrenceData(t *testing.T) {
 							Symbol: "react 17.1 main.go func1",
 							Relationships: []*scip.Relationship{
 								{
-									Symbol:           "react 17.1 main.go iface",
+									Symbol:           "react 17.1 main.go func1A",
 									IsImplementation: true,
+								},
+							},
+						},
+						{
+							Symbol: "react 17.1 main.go func1A",
+							Relationships: []*scip.Relationship{
+								{
+									Symbol:       "react 17.1 main.go func1",
+									IsDefinition: true,
 								},
 							},
 						},
 					},
 				},
 				occurrence: &scip.Occurrence{
-					Symbol:      "react 17.1 main.go func1",
+					Symbol:      "react 17.1 main.go func1A",
 					SymbolRoles: 1,
 				},
 				expectedRanges: []*scip.Range{
@@ -488,6 +492,52 @@ func TestExtractOccurrenceData(t *testing.T) {
 
 		for _, testCase := range testCases {
 			if diff := cmp.Diff(testCase.expectedRanges, extractOccurrenceData(testCase.document, testCase.occurrence).implementations); diff != "" {
+				t.Errorf("unexpected ranges (-want +got):\n%s -- %s", diff, testCase.explanation)
+			}
+		}
+	})
+
+	t.Run("prototypes", func(t *testing.T) {
+		testCases := []struct {
+			explanation    string
+			document       *scip.Document
+			occurrence     *scip.Occurrence
+			expectedRanges []*scip.Range
+		}{
+			{
+				explanation: "#1 happy path: we have prototype",
+				document: &scip.Document{
+					Occurrences: []*scip.Occurrence{
+						{
+							Range:       []int32{3, 300, 4, 400},
+							Symbol:      "react 17.1 main.go func1",
+							SymbolRoles: 1, // a definition
+						},
+					},
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react 17.1 main.go func1A",
+							Relationships: []*scip.Relationship{
+								{
+									Symbol:           "react 17.1 main.go func1",
+									IsImplementation: true,
+								},
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react 17.1 main.go func1A",
+					SymbolRoles: 1,
+				},
+				expectedRanges: []*scip.Range{
+					scip.NewRange([]int32{3, 300, 4, 400}),
+				},
+			},
+		}
+
+		for _, testCase := range testCases {
+			if diff := cmp.Diff(testCase.expectedRanges, extractOccurrenceData(testCase.document, testCase.occurrence).prototypes); diff != "" {
 				t.Errorf("unexpected ranges (-want +got):\n%s -- %s", diff, testCase.explanation)
 			}
 		}

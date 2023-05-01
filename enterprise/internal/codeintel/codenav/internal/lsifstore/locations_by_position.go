@@ -250,7 +250,7 @@ func extractDefinitionRanges(document *scip.Document, occurrence *scip.Occurrenc
 }
 
 func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
-	return append(extractOccurrenceData(document, occurrence).definitions, extractOccurrenceData(document, occurrence).references...)
+	return extractOccurrenceData(document, occurrence).references
 }
 
 func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
@@ -277,6 +277,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		definitionSymbol        = occurrence.Symbol
 		referencesBySymbol      = map[string]struct{}{}
 		implementationsBySymbol = map[string]struct{}{}
+		prototypeBySymbol       = map[string]struct{}{}
 	)
 
 	// Extract hover text and relationship data from the symbol information that
@@ -294,7 +295,17 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 				referencesBySymbol[rel.Symbol] = struct{}{}
 			}
 			if rel.IsImplementation {
-				implementationsBySymbol[rel.Symbol] = struct{}{}
+				prototypeBySymbol[rel.Symbol] = struct{}{}
+			}
+		}
+	}
+
+	for _, sym := range document.Symbols {
+		for _, rel := range sym.Relationships {
+			if rel.IsImplementation {
+				if rel.Symbol == occurrence.Symbol {
+					implementationsBySymbol[occurrence.Symbol] = struct{}{}
+				}
 			}
 		}
 	}
@@ -319,17 +330,17 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		}
 
 		// This occurrence references this symbol (or a sibling of it)
-		if _, ok := referencesBySymbol[occ.Symbol]; ok && !isDefinition {
+		if _, ok := referencesBySymbol[occ.Symbol]; ok && !isDefinition && definitionSymbol != occ.Symbol {
 			references = append(references, scip.NewRange(occ.Range))
 		}
 
 		// This occurrence is a definition of a symbol with an implementation relationship
-		if _, ok := implementationsBySymbol[occ.Symbol]; ok && !isDefinition && definitionSymbol != occ.Symbol {
+		if _, ok := implementationsBySymbol[occ.Symbol]; ok && isDefinition && definitionSymbol != occ.Symbol {
 			implementations = append(implementations, scip.NewRange(occ.Range))
 		}
 
 		// This occurrence is a definition of a symbol with a prototype relationship
-		if _, ok := implementationsBySymbol[occ.Symbol]; ok && isDefinition {
+		if _, ok := prototypeBySymbol[occ.Symbol]; ok && isDefinition {
 			prototypes = append(prototypes, scip.NewRange(occ.Range))
 		}
 	}

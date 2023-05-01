@@ -836,49 +836,6 @@ func (s *Service) GetPrototypes(ctx context.Context, args RequestArgs, requestSt
 		}
 	}
 
-	// Phase 2: Gather all "remote" locations in dependencies via moniker search. We only do this if
-	// there are no more local results. We'll continue to request additional locations until we fill an
-	// entire page or there are no more local results remaining, just as we did above.
-	if cursor.Phase == "dependencies" {
-		uploads, err := s.getUploadsWithDefinitionsForMonikers(ctx, cursor.OrderedImplementationMonikers, requestState)
-		if err != nil {
-			return nil, cursor, err
-		}
-		trace.AddEvent("TODO Domain Owner",
-			attribute.Int("numGetUploadsWithDefinitionsForMonikers", len(uploads)),
-			attribute.String("getUploadsWithDefinitionsForMonikers", uploadIDsToString(uploads)))
-
-		definitionLocations, _, err := s.getBulkMonikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "definitions", DefinitionsLimit, 0)
-		if err != nil {
-			return nil, cursor, err
-		}
-		locations = append(locations, definitionLocations...)
-
-		prototypeLocations, _, err := s.getBulkMonikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "implementations", DefinitionsLimit, 0)
-		if err != nil {
-			return nil, cursor, err
-		}
-		locations = append(locations, prototypeLocations...)
-
-		cursor.Phase = "dependents"
-	}
-
-	// Phase 3: Gather all "remote" locations in dependents via moniker search.
-	if cursor.Phase == "dependents" {
-		for len(locations) < args.Limit {
-			remoteLocations, hasMore, err := s.getPageRemoteLocations(ctx, "implementations", visibleUploads, cursor.OrderedExportMonikers, &cursor.RemoteCursor, args.Limit-len(locations), trace, args, requestState)
-			if err != nil {
-				return nil, cursor, err
-			}
-			locations = append(locations, remoteLocations...)
-
-			if !hasMore {
-				cursor.Phase = "done"
-				break
-			}
-		}
-	}
-
 	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
