@@ -8,6 +8,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
+- Fixes an issue where code blocks were unexpectedly escaped [pull/51247](https://github.com/sourcegraph/sourcegraph/pull/51247)
+
 ### Changed
 
 ## [0.0.9]

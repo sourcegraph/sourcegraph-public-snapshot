@@ -49,21 +49,26 @@ func NewDecoder(r io.Reader) *Decoder {
 // Scan advances the decoder to the next event in the stream. It returns
 // false when it either hits the end of the stream or an error.
 func (d *Decoder) Scan() bool {
-	if !d.scanner.Scan() {
-		d.err = d.scanner.Err()
-		return false
+	for d.scanner.Scan() {
+		// data: json($data)|[DONE]
+		data := d.scanner.Bytes()
+		dataK, data := splitColon(data)
+		switch {
+		case bytes.Equal(dataK, []byte("data")):
+			d.data = data
+			return true
+		case bytes.Equal(dataK, []byte("event")):
+			// Anthropic occasionally sends ping events.
+			// Just ignore these and continue scanning.
+			continue
+		default:
+			d.err = errors.Errorf("malformed data, expected data: %s", dataK)
+			return false
+		}
 	}
 
-	// data: json($data)|[DONE]
-	data := d.scanner.Bytes()
-	dataK, data := splitColon(data)
-	if !bytes.Equal(dataK, []byte("data")) {
-		d.err = errors.Errorf("malformed data, expected data: %s", dataK)
-		return false
-	}
-
-	d.data = data
-	return true
+	d.err = d.scanner.Err()
+	return false
 }
 
 // Event returns the event data of the last decoded event
