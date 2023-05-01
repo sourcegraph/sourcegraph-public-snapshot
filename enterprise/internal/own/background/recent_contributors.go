@@ -4,6 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,6 +28,11 @@ type recentContributorsIndexer struct {
 func newRecentContributorsIndexer(client gitserver.Client, db database.DB, lgr logger.Logger) *recentContributorsIndexer {
 	return &recentContributorsIndexer{client: client, db: db, logger: lgr}
 }
+
+var commitCounter = promauto.NewCounter(prometheus.CounterOpts{
+	Namespace: "src",
+	Name:      "own_recent_contributors_commits_indexed_total",
+})
 
 func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.RepoID) error {
 	repoStore := r.db.Repos()
@@ -57,6 +65,7 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 		}
 	}
 	r.logger.Info("commits inserted", logger.Int("count", len(commitLog)), logger.Int("repo_id", int(repoId)))
+	commitCounter.Add(float64(len(commitLog)))
 	if err != nil {
 		return err
 	}
