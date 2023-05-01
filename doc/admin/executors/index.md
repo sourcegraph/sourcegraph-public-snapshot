@@ -65,8 +65,8 @@ Executor instances are capable of being deployed in a variety of ways. Each runt
 5.  Executor calls the Sourcegraph API to clone a repository.
     1. The repositories are written to a directory.
 6.  A Docker Container is created for each "step."
-    1.  `src` is invoked for batch change Jobs
-    2.  Docker is invoked directly for other Jobs
+    1.  If the Job is `batches` (non-native execution), `src` is invoked
+    2.  Docker is invoked directly for other Jobs (`codeintel` and native execution `batches`)
     3.  The directory containing the repository is mounted to the container.
     4.  "Steps" are ran in sequential order.
 7.  The container run a defined command against the repository.
@@ -86,8 +86,8 @@ Executor instances are capable of being deployed in a variety of ways. Each runt
 5.  Executor calls the Sourcegraph API to clone a repository.
     1.  The repositories are written to a directory.
 6.  A Docker Container is created for each "step."
-    1.  `src` is invoked for batch change Jobs
-    2.  Docker is invoked directly for other Jobs
+    1.  If the Job is `batches` (non-native execution), `src` is invoked
+    2.  Docker is invoked directly for other Jobs (`codeintel` and native execution `batches`)
     3.  "Steps" are ran in sequential order.
 7.  Within each Docker container a single Firecracker VM is started
     1.  The directory containing the repository is mounted to the VM.
@@ -108,8 +108,8 @@ Executor instances are capable of being deployed in a variety of ways. Each runt
 5.  Executor calls the Sourcegraph API to clone a repository.
     1.  The repositories are written to a directory.
 6.  A Docker Container is created for each "step."
-    1.  `src` is invoked for batch change Jobs
-    2.  Docker is invoked directly for other Jobs
+    1.  If the Job is `batches` (non-native execution), `src` is invoked
+    2.  Docker is invoked directly for other Jobs (`codeintel` and native execution `batches`)
     3.  The directory containing the repository is mounted to the container.
     4.  "Steps" are ran in sequential order.
 7.  The container run a defined command against the repository.
@@ -151,8 +151,8 @@ Comment out until ready to advertise this
 5.  Executor calls the Sourcegraph API to clone a repository.
     1.  The repositories are written to a directory.
 6.  A Docker Container is created for each "step."
-    1.  `src` is invoked for batch change Jobs
-    2.  Docker is invoked directly for other Jobs
+    1.  If the Job is `batches` (non-native execution), `src` is invoked
+    2.  Docker is invoked directly for other Jobs (`codeintel` and native execution `batches`)
     3.  The directory containing the repository is mounted to the container.
     4.  "Steps" are ran in sequential order.
 7.  The container run a defined command against the repository.
