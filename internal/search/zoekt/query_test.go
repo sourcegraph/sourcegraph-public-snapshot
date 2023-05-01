@@ -96,6 +96,12 @@ func TestQueryToZoektQuery(t *testing.T) {
 			},
 			Query: `file:"\\.go(?m:$)" file:"\\.go(?m:$)" lang:Go`,
 		},
+		{
+			Name:    "repo:has.file, path only ",
+			Type:    search.TextRequest,
+			Pattern: `repo:has.file(path:\.go$)`,
+			Query:   `type:repo file:"\\.go(?-m:$)"`,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {

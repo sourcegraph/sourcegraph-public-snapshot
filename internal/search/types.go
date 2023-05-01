@@ -445,8 +445,14 @@ func (op *RepoOptions) Tags() []otlog.Field {
 			if arg.Path != "" {
 				nondefault = append(nondefault, otlog.String("path", arg.Path))
 			}
+			if arg.PathNegated {
+				nondefault = append(nondefault, otlog.Bool("pathNegated", arg.PathNegated))
+			}
 			if arg.Content != "" {
 				nondefault = append(nondefault, otlog.String("content", arg.Content))
+			}
+			if arg.ContentNegated {
+				nondefault = append(nondefault, otlog.Bool("contentNegated", arg.ContentNegated))
 			}
 			if arg.Negated {
 				nondefault = append(nondefault, otlog.Bool("negated", arg.Negated))
@@ -536,8 +542,14 @@ func (op *RepoOptions) String() string {
 			if arg.Path != "" {
 				fmt.Fprintf(&b, "HasFileContent[%d].path: %s\n", i, arg.Path)
 			}
+			if arg.PathNegated {
+				fmt.Fprintf(&b, "HasFileContent[%d].pathNegated: %t\n", i, arg.PathNegated)
+			}
 			if arg.Content != "" {
 				fmt.Fprintf(&b, "HasFileContent[%d].content: %s\n", i, arg.Content)
+			}
+			if arg.ContentNegated {
+				fmt.Fprintf(&b, "HasFileContent[%d].contentNegated: %t\n", i, arg.ContentNegated)
 			}
 			if arg.Negated {
 				fmt.Fprintf(&b, "HasFileContent[%d].negated: %t\n", i, arg.Negated)
