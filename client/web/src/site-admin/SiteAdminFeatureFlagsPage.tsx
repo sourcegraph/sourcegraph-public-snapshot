@@ -58,7 +58,15 @@ export function parseProductReference(productVersion: string): string {
     if (parts.length === 3) {
         // We need to split $VERSION-$COMMIT - if any of these step fails, we
         // fall back to main.
-        return parts.pop()?.split('-')?.pop() || 'main'
+        const versionAndCommit = parts.pop()?.split('-')
+        if (!versionAndCommit || versionAndCommit.length !== 2) {
+            return 'main'
+        }
+        return versionAndCommit[1]
+    }
+    // Unknown format, fall back to main
+    if (parts.length === 2) {
+        return 'main'
     }
     // Special case for dev tag
     if (productVersion.startsWith('0.0.0')) {

@@ -5,7 +5,11 @@ describe('parseProductReference', () => {
         const parsed = parseProductReference('214157_2023-04-19_5.0-89aa613e7e1e')
         expect(parsed).toEqual('89aa613e7e1e')
     })
-    it('falls back to main', () => {
+    it('leaves tags untouched', () => {
+        const parsed = parseProductReference('v5.0.0')
+        expect(parsed).toEqual('v5.0.0')
+    })
+    it('unknown versions fall back to main', () => {
         for (const reference of [
             '0.0.0', // dev version
             '214157_2023-04-19', // unknown format
