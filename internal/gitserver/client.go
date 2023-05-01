@@ -92,7 +92,7 @@ func defaultGRPCClientSource(cc grpc.ClientConnInterface) proto.GitserverService
 
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
-func NewTestClient(cli httpcli.Doer, addrs []string, grpcClientFunc func(cc grpc.ClientConnInterface) proto.GitserverServiceClient) Client {
+func NewTestClient(cli httpcli.Doer, grpcClientFunc func(cc grpc.ClientConnInterface) proto.GitserverServiceClient,  addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger:      logger,
