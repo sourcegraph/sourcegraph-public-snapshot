@@ -29,13 +29,10 @@ type ranksGetter func(ctx context.Context, repoName string) (types.RepoPathRanks
 // It returns a RepoEmbeddingIndex containing the embeddings and metadata.
 func EmbedRepo(
 	ctx context.Context,
-	repoName api.RepoName,
-	revision api.CommitID,
-	excludePatterns []*paths.GlobPattern,
 	client EmbeddingsClient,
-	splitOptions split.SplitOptions,
 	readLister FileReadLister,
 	getDocumentRanks ranksGetter,
+	opts EmbedRepoOpts,
 ) (*embeddings.RepoEmbeddingIndex, *embeddings.EmbedRepoStats, error) {
 	start := time.Now()
 
@@ -53,25 +50,25 @@ func EmbedRepo(
 		}
 	}
 
-	ranks, err := getDocumentRanks(ctx, string(repoName))
+	ranks, err := getDocumentRanks(ctx, string(opts.RepoName))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, excludePatterns, splitOptions, readLister, MAX_CODE_EMBEDDING_VECTORS, ranks)
+	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, opts.ExcludePatterns, opts.SplitOptions, readLister, MAX_CODE_EMBEDDING_VECTORS, ranks)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, excludePatterns, splitOptions, readLister, MAX_TEXT_EMBEDDING_VECTORS, ranks)
+	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, opts.ExcludePatterns, opts.SplitOptions, readLister, MAX_TEXT_EMBEDDING_VECTORS, ranks)
 	if err != nil {
 		return nil, nil, err
 
 	}
 
 	index := &embeddings.RepoEmbeddingIndex{
-		RepoName:  repoName,
-		Revision:  revision,
+		RepoName:  opts.RepoName,
+		Revision:  opts.Revision,
 		CodeIndex: codeIndex,
 		TextIndex: textIndex,
 	}
@@ -84,6 +81,13 @@ func EmbedRepo(
 	}
 
 	return index, stats, nil
+}
+
+type EmbedRepoOpts struct {
+	RepoName        api.RepoName
+	Revision        api.CommitID
+	ExcludePatterns []*paths.GlobPattern
+	SplitOptions    split.SplitOptions
 }
 
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed

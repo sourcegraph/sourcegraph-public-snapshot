@@ -61,15 +61,19 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
 	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(config.ExcludedFilePathPatterns)...)
 
+	opts := embed.EmbedRepoOpts{
+		RepoName:        repo.Name,
+		Revision:        record.Revision,
+		ExcludePatterns: excludedGlobPatterns,
+		SplitOptions:    splitOptions,
+	}
+
 	repoEmbeddingIndex, stats, err := embed.EmbedRepo(
 		ctx,
-		repo.Name,
-		record.Revision,
-		excludedGlobPatterns,
 		embeddingsClient,
-		splitOptions,
 		fetcher,
 		getDocumentRanks,
+		opts,
 	)
 	if err != nil {
 		return err
