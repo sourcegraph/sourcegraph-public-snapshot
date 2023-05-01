@@ -146,6 +146,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"codeintel-db",
 				"indexed-searcher",
 				"opentelemetry-collector",
+				"cadvisor",
 			}, c.Version,
 				// c.candidateImageTag(),
 				"latest", // TODO: Do not merge; used to simplify dev
