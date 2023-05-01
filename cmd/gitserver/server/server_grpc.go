@@ -129,7 +129,7 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		},
 	}
 
-	if req.Format == string(gitserver.ArchiveFormatZip) {
+	if req.GetFormat() == string(gitserver.ArchiveFormatZip) {
 		execReq.Args = append(execReq.Args, "-0")
 	}
 
