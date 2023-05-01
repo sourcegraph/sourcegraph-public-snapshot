@@ -80,9 +80,9 @@ You will need `cmake` to build `p4-fusion`. The compiler it uses
 - `openssl@3.0.8`
 
 - the P4 API for your OS + platform:
-  - [macOS ARM 64-bit](http://filehost.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl3.tgz)
-  - [macOS Intel 64-bit](http://filehost.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl3.tgz)
-  - [Linux Intel 64-bit](http://filehost.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz)
+  - [macOS ARM 64-bit](https://filehost.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl3.tgz)
+  - [macOS Intel 64-bit](https://filehost.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl3.tgz)
+  - [Linux Intel 64-bit](https://filehost.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz)
   - If you need a different one, browse the parent directory of one of the above to see if it's available.
 
 ###### Source code
@@ -165,7 +165,7 @@ cd p4-fusion
   tar xzf v1.12.tar.gz
 }
 cd p4-fusion-1.12
-curl -sSLO http://filehost.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz
+curl -sSLO https://filehost.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz
 tar xzf p4api-glibc2.3-openssl3.tgz
 rm -rf vendor/helix-core-api/linux
 mkdir -p vendor/helix-core-api/linux
