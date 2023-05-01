@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"path"
 	"time"
 
@@ -227,7 +226,6 @@ func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Co
 	if err != nil {
 		return errors.Wrap(err, "cannot insert repo paths")
 	}
-	fmt.Println(fmt.Sprintf("commit: %s", commit.CommitSHA))
 	// Insert individual signals into own_signal_recent_contribution:
 	for _, pathID := range pathIDs {
 		q := sqlf.Sprintf(insertRecentContributorSignalFmtstr,
