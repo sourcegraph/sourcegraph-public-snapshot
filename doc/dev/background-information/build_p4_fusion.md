@@ -93,7 +93,7 @@ You will need `cmake` to build `p4-fusion`. The compiler it uses
 
 1. Set the `OPENSSL_ROOT_DIR` environment variable to point to the OpenSSL install location - the directory that contains OpenSSL's `bin`, `include`, and `lib` directories.
 
-Note that we're building with dynamic linking, so the OpenSSL libraries need to sstay there for `p4-fusion` to be able to run.
+Note that we're building with dynamic linking, so the OpenSSL libraries need to stay there for `p4-fusion` to be able to run.
 You might be able to fiddle with that using `LD_LIBRARY_PATH`, but it's safest to leave them there.
 
 1. Unpack the P4 API archives into the `p4-fusion` source directory tree, into the `vendor/helix-core-api/{OS}` directory, where `{OS}` is either `mac` or `linux`, depending on your OS. You'll need the `include` and `lib` dirs from the P4 API archive.
