@@ -1,5 +1,0 @@
-filegroup(
-    name = "testdata",
-    srcs = glob(["*.json"]),
-    visibility = ["//enterprise/dev/ci/integration/executors:__subpackages__"],
-)
