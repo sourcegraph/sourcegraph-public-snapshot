@@ -8,11 +8,13 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-func UnaryServerInterceptor(
-	ctx context.Context,
-	req any,
-	_ *grpc.UnaryServerInfo,
-	handler grpc.UnaryHandler) (resp interface{}, err error) {
+// UnaryServerInterceptor returns a grpc.UnaryServerInterceptor that sets the
+// Client in the context based on the peer address. See https://pkg.go.dev/google.golang.org/grpc/peer
+// for more information.
+//
+// Note: This interceptor doesn't set the ForwardedFor field of the Client, as our gRPC implementation
+// only handles requests from internal services.
+func UnaryServerInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	p, ok := peer.FromContext(ctx)
 	if !ok || p == nil {
 		return handler(ctx, req)
@@ -26,11 +28,13 @@ func UnaryServerInterceptor(
 	return handler(ctx, req)
 }
 
-func StreamServerInterceptor(
-	srv interface{},
-	ss grpc.ServerStream,
-	_ *grpc.StreamServerInfo,
-	handler grpc.StreamHandler) error {
+// StreamServerInterceptor returns a grpc.StreamServerInterceptor that sets the
+// Client in the context based on the peer address. See https://pkg.go.dev/google.golang.org/grpc/peer
+// for more information.
+//
+// Note: This interceptor doesn't set the ForwardedFor field of the Client, as our gRPC implementation
+// only handles requests from internal services.
+func StreamServerInterceptor(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	p, ok := peer.FromContext(ss.Context())
 	if !ok || p == nil {
 		return handler(srv, ss)
