@@ -2,7 +2,6 @@ package aggregation
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -37,14 +36,14 @@ type SearchResultsAggregator interface {
 type AggregationTabulator func(*AggregationMatchResult, error)
 type OnMatches func(matches []result.Match)
 
-type AggregationCountFunc func(result.Match) (map[MatchKey]int, error)
+type AggregationCountFunc func(result.Match, *sTypes.Repo) (map[MatchKey]int, error)
 type MatchKey struct {
 	Repo   string
 	RepoID int32
 	Group  string
 }
 
-func countRepo(r result.Match) (map[MatchKey]int, error) {
+func countRepo(r result.Match, _ *sTypes.Repo) (map[MatchKey]int, error) {
 	if r.RepoName().Name != "" {
 		return map[MatchKey]int{{
 			RepoID: int32(r.RepoName().ID),
@@ -55,7 +54,7 @@ func countRepo(r result.Match) (map[MatchKey]int, error) {
 	return nil, nil
 }
 
-func countPath(r result.Match) (map[MatchKey]int, error) {
+func countPath(r result.Match, _ *sTypes.Repo) (map[MatchKey]int, error) {
 	var path string
 	switch match := r.(type) {
 	case *result.FileMatch:
@@ -72,7 +71,7 @@ func countPath(r result.Match) (map[MatchKey]int, error) {
 	return nil, nil
 }
 
-func countAuthor(r result.Match) (map[MatchKey]int, error) {
+func countAuthor(r result.Match, _ *sTypes.Repo) (map[MatchKey]int, error) {
 	var author string
 	switch match := r.(type) {
 	case *result.CommitMatch:
@@ -99,7 +98,7 @@ func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
 		return nil, errors.Wrap(err, "Could not compile regexp")
 	}
 
-	return func(r result.Match) (map[MatchKey]int, error) {
+	return func(r result.Match, _ *sTypes.Repo) (map[MatchKey]int, error) {
 		content := matchContent(r)
 		if len(content) != 0 {
 			matches := map[MatchKey]int{}
@@ -152,14 +151,10 @@ func matchContent(event result.Match) []string {
 	}
 }
 
-func countRepoMetadata(r result.Match) (map[MatchKey]int, error) {
+func countRepoMetadata(r result.Match, repo *sTypes.Repo) (map[MatchKey]int, error) {
 	metadata := map[string]*string{types.NO_REPO_METADATA_KEY: nil}
-	switch match := r.(type) {
-	case *result.RepoMatch:
-		if match.Metadata != nil {
-			metadata = match.Metadata
-		}
-	default:
+	if repo != nil && repo.KeyValuePairs != nil {
+		metadata = repo.KeyValuePairs
 	}
 	matches := map[MatchKey]int{}
 	for key := range metadata {
@@ -238,13 +233,28 @@ func (r *searchAggregationResults) ResultLimitHit(limit int) bool {
 	return limit <= r.resultCount
 }
 
-func repoIDs(results []result.Match) []api.RepoID {
-	ids := collections.NewSet[api.RepoID]()
-	for _, r := range results {
-		ids.Add(r.RepoName().ID)
+func (r *searchAggregationResults) repos(matches result.Matches) (map[api.RepoID]*sTypes.Repo, error) {
+	repos := make(map[api.RepoID]*sTypes.Repo, 0)
+	// initialize repos if we are in repo metadata aggregation mode
+	// other modes currently don't use the repo parameter
+	if r.mode != types.REPO_METADATA_AGGREGATION_MODE {
+		return repos, nil
 	}
 
-	return ids.Values()
+	repoIDs := collections.NewSet[api.RepoID]()
+	for _, r := range matches {
+		repoIDs.Add(r.RepoName().ID)
+	}
+
+	res, err := r.db.Repos().List(r.ctx, database.ReposListOptions{IDs: repoIDs.Values()})
+	repos = make(map[api.RepoID]*sTypes.Repo, len(res))
+	if err != nil {
+		return nil, err
+	}
+	for _, repo := range res {
+		repos[repo.ID] = repo
+	}
+	return repos, nil
 }
 
 func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
@@ -252,24 +262,14 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 	defer r.mu.Unlock()
 
 	r.progress.Update(event)
-	matches := event.Results
-	r.resultCount += matches.ResultCount()
+	r.resultCount += event.Results.ResultCount()
 	combined := map[MatchKey]int{}
-	fmt.Println("Send/mode", r.mode)
-	// todo: refactor to a more nicer way
-	repos := make(map[api.RepoID]*sTypes.Repo, 0)
-	if r.mode == types.REPO_METADATA_AGGREGATION_MODE {
-		repoList, err := r.db.Repos().List(r.ctx, database.ReposListOptions{IDs: repoIDs(matches)})
-		if err != nil {
-			r.tabulator(nil, err)
-			return
-		}
-		repos = make(map[api.RepoID]*sTypes.Repo, len(repoList))
-		for _, repo := range repoList {
-			repos[repo.ID] = repo
-		}
+	repos, err := r.repos(event.Results)
+	if err != nil {
+		r.tabulator(nil, err)
+		return
 	}
-	for _, match := range matches {
+	for _, match := range event.Results {
 		select {
 		case <-r.ctx.Done():
 			// let the tabulator an error occured.
@@ -277,20 +277,7 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 			r.tabulator(nil, err)
 			return
 		default:
-			switch match := match.(type) {
-			case *result.RepoMatch:
-				if r.mode == types.REPO_METADATA_AGGREGATION_MODE {
-					// delegate error handling to the passed in tabulator
-					repo, ok := repos[match.RepoName().ID]
-					if !ok {
-						r.tabulator(nil, errors.Errorf("repo %s not found", match.RepoName().Name))
-						continue
-					}
-					match.Metadata = repo.KeyValuePairs
-				}
-			default:
-			}
-			groups, err := r.countFunc(match) // pass metadata or entire repo here?
+			groups, err := r.countFunc(match, repos[match.RepoName().ID]) // pass metadata or entire repo here?
 			for groupKey, count := range groups {
 				// delegate error handling to the passed in tabulator
 				if err != nil {

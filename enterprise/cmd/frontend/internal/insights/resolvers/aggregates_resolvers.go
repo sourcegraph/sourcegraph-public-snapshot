@@ -232,7 +232,12 @@ func getDefaultAggregationMode(searchQuery, patternType string) types.SearchAggr
 	if file && targetsSingleRepo {
 		return types.PATH_AGGREGATION_MODE
 	}
-	// todo: shall we add check for repo metadata aggregation mode?
+
+	repoMetadata,_, _ := canAggregateByRepoMetadata(searchQuery, patternType)
+	if repoMetadata {
+		return types.REPO_METADATA_AGGREGATION_MODE
+	}
+
 	return types.REPO_AGGREGATION_MODE
 }
 
@@ -388,23 +393,6 @@ type notAvailableReason struct {
 
 type canAggregateBy func(searchQuery, patternType string) (bool, *notAvailableReason, error)
 
-func canAggregateByRepoMetadata(searchQuery, patternType string) (bool, *notAvailableReason, error) {
-	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
-	if err != nil {
-		return false, &notAvailableReason{reason: invalidQueryMsg, reasonType: types.INVALID_QUERY}, errors.Wrapf(err, "ParseQuery")
-	}
-	parameters := querybuilder.ParametersFromQueryPlan(plan)
-	// can only aggregate over select:repo searches.
-	for _, parameter := range parameters {
-		if parameter.Field == query.FieldSelect {
-			if parameter.Value == "repo" {
-				return true, nil, nil
-			}
-		}
-	}
-	return false, &notAvailableReason{reason: repoMetadataNotRepoSelectMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
-}
-
 func canAggregateByRepo(searchQuery, patternType string) (bool, *notAvailableReason, error) {
 	_, err := querybuilder.ParseQuery(searchQuery, patternType)
 	if err != nil {
@@ -503,6 +491,23 @@ func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, *notAvai
 	}
 
 	return true, nil, nil
+}
+
+func canAggregateByRepoMetadata(searchQuery, patternType string) (bool, *notAvailableReason, error) {
+	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
+	if err != nil {
+		return false, &notAvailableReason{reason: invalidQueryMsg, reasonType: types.INVALID_QUERY}, errors.Wrapf(err, "ParseQuery")
+	}
+	parameters := querybuilder.ParametersFromQueryPlan(plan)
+	// we allow aggregating only for select:repo searches
+	for _, parameter := range parameters {
+		if parameter.Field == query.FieldSelect {
+			if parameter.Value == "repo" {
+				return true, nil, nil
+			}
+		}
+	}
+	return false, &notAvailableReason{reason: repoMetadataNotRepoSelectMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 }
 
 // A  type to represent the GraphQL union SearchAggregationResult
