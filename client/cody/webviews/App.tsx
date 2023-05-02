@@ -123,7 +123,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             )}
             {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
-            {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
+            {view === 'settings' && (
+                <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} vscodeAPI={vscodeAPI} />
+            )}
             {view === 'chat' && errorMessage && (
                 <div className="error">
                     Error: {errorMessage}

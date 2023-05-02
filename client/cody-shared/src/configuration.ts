@@ -3,6 +3,7 @@ export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blend
 export interface Configuration {
     enabled: boolean
     serverEndpoint: string
+    appEndpoint: string | null
     codebase?: string
     debug: boolean
     useContext: ConfigurationUseContext
