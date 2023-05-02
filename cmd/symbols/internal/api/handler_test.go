@@ -38,7 +38,7 @@ func TestHandler(t *testing.T) {
 
 	cache := diskcache.NewStore(tmpDir, "symbols", diskcache.WithBackgroundTimeout(20*time.Minute))
 
-	parserFactory := func() (ctags.Parser, error) {
+	parserFactory := func(source parser.CtagsSource) (ctags.Parser, error) {
 		pathToEntries := map[string][]*ctags.Entry{
 			"a.js": {
 				{

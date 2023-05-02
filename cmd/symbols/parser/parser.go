@@ -2,6 +2,7 @@ package parser
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -142,7 +143,22 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	}})
 	defer endObservation(1, observation.Args{})
 
-	parser, err := p.parserFromPool(ctx)
+	var source CtagsSource
+
+	// TODO(SuperAuguste): actually map files/extensions to languages rather
+	switch p.parserPool.symbolsSource[filepath.Ext(parseRequest.Path)] {
+	case "off":
+		return nil
+
+	case "scip-ctags":
+		source = Scip
+
+	default:
+		source = Universal
+		break
+	}
+
+	parser, err := p.parserFromPool(ctx, source)
 	if err != nil {
 		return err
 	}
@@ -156,12 +172,12 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 		}
 
 		if err == nil {
-			p.parserPool.Done(parser)
+			p.parserPool.Done(parser, source)
 		} else {
 			// Close parser and return nil to pool, indicating that the next receiver should create a new parser
 			log15.Error("Closing failed parser", "error", err)
 			parser.Close()
-			p.parserPool.Done(nil)
+			p.parserPool.Done(nil, source)
 			p.operations.parseFailed.Inc()
 		}
 	}()
@@ -220,11 +236,11 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	return nil
 }
 
-func (p *parser) parserFromPool(ctx context.Context) (ctags.Parser, error) {
+func (p *parser) parserFromPool(ctx context.Context, source CtagsSource) (ctags.Parser, error) {
 	p.operations.parseQueueSize.Inc()
 	defer p.operations.parseQueueSize.Dec()
 
-	parser, err := p.parserPool.Get(ctx)
+	parser, err := p.parserPool.Get(ctx, source)
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			p.operations.parseQueueTimeouts.Inc()
@@ -251,12 +267,20 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 	return true
 }
 
-func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig) (ctags.Parser, error) {
+func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig, source CtagsSource) (ctags.Parser, error) {
 	logger = logger.Scoped("ctags", "ctags processes")
 
-	options := ctags.Options{
-		Bin:                ctagsConfig.Command,
-		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
+	var options ctags.Options
+	if source == Universal {
+		options = ctags.Options{
+			Bin:                ctagsConfig.UniversalCommand,
+			PatternLengthLimit: ctagsConfig.PatternLengthLimit,
+		}
+	} else {
+		options = ctags.Options{
+			Bin:                ctagsConfig.ScipCommand,
+			PatternLengthLimit: ctagsConfig.PatternLengthLimit,
+		}
 	}
 	if ctagsConfig.LogErrors {
 		options.Info = std.NewLogger(logger, log.LevelInfo)

@@ -46,7 +46,7 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 	// anything that tries to open a SQLite database.
 	sqlite.Init()
 
-	if deploy.IsSingleBinary() && config.Ctags.Command == "" {
+	if deploy.IsSingleBinary() && config.Ctags.UniversalCommand == "" {
 		// app: ctags is not available
 		searchFunc := func(ctx context.Context, params search.SymbolsParameters) (result.Symbols, error) {
 			return nil, nil
@@ -54,8 +54,8 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 		return searchFunc, nil, []goroutine.BackgroundRoutine{}, "", nil
 	}
 
-	parserFactory := func() (ctags.Parser, error) {
-		return symbolparser.SpawnCtags(logger, config.Ctags)
+	parserFactory := func(source symbolparser.CtagsSource) (ctags.Parser, error) {
+		return symbolparser.SpawnCtags(logger, config.Ctags, source)
 	}
 	parserPool, err := symbolparser.NewParserPool(parserFactory, config.NumCtagsProcesses)
 	if err != nil {
@@ -76,5 +76,5 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 	cacheSizeBytes := int64(config.CacheSizeMB) * 1000 * 1000
 	cacheEvicter := janitor.NewCacheEvicter(evictionInterval, cache, cacheSizeBytes, janitor.NewMetrics(observationCtx))
 
-	return searchFunc, nil, []goroutine.BackgroundRoutine{cacheEvicter}, config.Ctags.Command, nil
+	return searchFunc, nil, []goroutine.BackgroundRoutine{cacheEvicter}, config.Ctags.UniversalCommand, nil
 }
