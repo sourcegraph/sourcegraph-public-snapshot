@@ -85,6 +85,8 @@ See handbook to where images are stored: https://handbook.sourcegraph.com/handbo
 
 ### Firecracker
 
+> NOTE: [What the heck is firecracker, anyway](./firecracker.md)??
+
 <a href='https://storage.googleapis.com/sourcegraph-assets/executor_firecracker_arch.png' target='_blank'>
   <img src="https://storage.googleapis.com/sourcegraph-assets/executor_firecracker_arch.png" alt="Executors architecture - firecracker">
 </a>
