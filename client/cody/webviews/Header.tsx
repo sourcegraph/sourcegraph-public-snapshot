@@ -11,10 +11,11 @@ export const Header: React.FunctionComponent = () => (
                 <CodyColoredSvg />
             </div>
             <div className={styles.headerTitle}>
-                <span className={styles.headerCody}>Cody</span>
-                <VSCodeTag className={styles.tagBeta}>experimental</VSCodeTag>
+                <VSCodeTag className={styles.headerTagBeta}>experimental</VSCodeTag>
             </div>
         </div>
         <div className={styles.headerContainerRight} />
+
+        
     </div>
 )
