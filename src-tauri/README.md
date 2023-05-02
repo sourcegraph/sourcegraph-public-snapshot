@@ -42,8 +42,6 @@ Tauri has two modes that you can run.
 
 - `Dev mode` which will run all of tauri but it does not embed the `sourcegraph-backend` instead it utilizes externally running sidecars and will directly open the app according to the `devPath` set in `tauri.conf.json`. To run the app in 'dev' mode you need to run the following command:
   - `sg start app`
-- - `sg start app`
-- - `pnpm tauri dev`
 - `pnpm tauri build` this will build the complete Tauri bundle, which, if you're on mac, will be called `Sourcegrap App.dmg`. The other noticable difference is that is will run the `client/app-shell` code.
 
 ## Where to get help or support
