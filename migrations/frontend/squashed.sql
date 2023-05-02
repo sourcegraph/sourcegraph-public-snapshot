@@ -2361,8 +2361,8 @@ ALTER SEQUENCE github_app_installs_id_seq OWNED BY github_app_installs.id;
 CREATE TABLE github_apps (
     id integer NOT NULL,
     app_id integer NOT NULL,
-    name text NOT NULL,
-    slug text NOT NULL,
+    name text,
+    slug text,
     base_url text NOT NULL,
     client_id text NOT NULL,
     client_secret text NOT NULL,

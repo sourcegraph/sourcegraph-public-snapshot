@@ -1582,8 +1582,8 @@ Foreign-key constraints:
 -------------------+--------------------------+-----------+----------+-----------------------------------------
  id                | integer                  |           | not null | nextval('github_apps_id_seq'::regclass)
  app_id            | integer                  |           | not null | 
- name              | text                     |           | not null | 
- slug              | text                     |           | not null | 
+ name              | text                     |           |          | 
+ slug              | text                     |           |          | 
  base_url          | text                     |           | not null | 
  client_id         | text                     |           | not null | 
  client_secret     | text                     |           | not null | 
