@@ -51,7 +51,7 @@ func newHandler(config *Config) http.Handler {
 			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("failed to create request: %s", err)))
+				_, _ = w.Write([]byte(fmt.Sprintf(`{"error": "failed to create request: %s"}`, err)))
 				return
 			}
 
@@ -66,12 +66,12 @@ func newHandler(config *Config) http.Handler {
 			resp, err := httpcli.ExternalDoer.Do(r)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("failed to make request to Anthropic: %s", err)))
+				_, _ = w.Write([]byte(fmt.Sprintf(`{"error": "failed to make request to Anthropic: %s"}`, err)))
 				return
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			io.Copy(w, resp.Body)
+			_, _ = io.Copy(w, resp.Body)
 		}),
 	).Methods(http.MethodPost)
 	return r
