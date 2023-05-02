@@ -76,8 +76,8 @@ func isQuerySimilarToNoContextMessages(
 		return false, errors.Wrap(err, "getting query embedding")
 	}
 
-	messagesWithContextSimilarity := embeddings.CosineSimilarityFloat32(contextDetectionEmbeddingIndex.MessagesWithAdditionalContextMeanEmbedding, queryEmbedding)
-	messagesWithoutContextSimilarity := embeddings.CosineSimilarityFloat32(contextDetectionEmbeddingIndex.MessagesWithoutAdditionalContextMeanEmbedding, queryEmbedding)
+	messagesWithContextSimilarity := embeddings.DotFloat32(contextDetectionEmbeddingIndex.MessagesWithAdditionalContextMeanEmbedding, queryEmbedding)
+	messagesWithoutContextSimilarity := embeddings.DotFloat32(contextDetectionEmbeddingIndex.MessagesWithoutAdditionalContextMeanEmbedding, queryEmbedding)
 
 	// We have to be really sure that the query is similar to no context messages, so we include the `MIN_NO_CONTEXT_SIMILARITY_DIFF` threshold.
 	isSimilarToNoContextMessages := (messagesWithoutContextSimilarity - messagesWithContextSimilarity) >= MIN_NO_CONTEXT_SIMILARITY_DIFF

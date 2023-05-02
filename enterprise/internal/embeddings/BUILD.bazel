@@ -4,6 +4,10 @@ go_library(
     name = "embeddings",
     srcs = [
         "client.go",
+        "dot.go",
+        "dot_amd64.go",
+        "dot_amd64.s",
+        "dot_noamd64.go",
         "index_name.go",
         "index_storage.go",
         "quantize.go",
@@ -27,13 +31,19 @@ go_library(
         "@com_github_sourcegraph_conc//:conc",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_x_sync//errgroup",
-    ],
+    ] + select({
+        "@io_bazel_rules_go//go/platform:amd64": [
+            "@com_github_klauspost_cpuid_v2//:cpuid",
+        ],
+        "//conditions:default": [],
+    }),
 )
 
 go_test(
     name = "embeddings_test",
     timeout = "short",
     srcs = [
+        "dot_test.go",
         "index_storage_test.go",
         "similarity_search_test.go",
     ],
