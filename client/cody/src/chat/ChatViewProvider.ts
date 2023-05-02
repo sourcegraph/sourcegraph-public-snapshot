@@ -677,7 +677,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
 // This should captures:
-// - "github:sourcegraph/sourcegraph"
+// - "github:sourcegraph/sourcegraph" a common SSH host alias
 // - "https://github.com/sourcegraph/deploy-sourcegraph-k8s.git"
 // - "git@github.com:sourcegraph/sourcegraph.git"
 export function convertGitCloneURLToCodebaseName(cloneURL: string): string | null {
