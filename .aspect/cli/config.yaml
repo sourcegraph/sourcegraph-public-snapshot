@@ -8,7 +8,7 @@ plugins:
     from: github.com/aspect-build/plugin-fix-visibility
     version: v0.1.0
   - name: buildkite
-    version: v0.0.2
+    version: v0.0.3
     from: github.com/sourcegraph/aspect-cli-plugin-buildkite
     properties:
       # pretend: true
