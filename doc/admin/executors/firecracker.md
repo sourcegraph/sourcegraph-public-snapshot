@@ -24,4 +24,4 @@ See [deploying Executors binary](./deploy_executors_binary.md) for additional in
 
 ## Known caveats
 
-We configure iptables to prevent Firecracker-isolated processes from talking on [Private IPv4 Addresses](https://en.wikipedia.org/wiki/Private_network#Private_IPv4_addresses) (providing network-level isolation). They can talk to DNS and Sourcegraph only, which prevents users from talking to a 10.x.x.x, 172.x.x.x, or 192.168.x.x range IP.
+We [configure iptables](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/cmd/executor/internal/run/install.go?L229-255) to prevent Firecracker-isolated processes from talking on [Private IPv4 Addresses](https://en.wikipedia.org/wiki/Private_network#Private_IPv4_addresses) (providing network-level isolation). They can talk to DNS and Sourcegraph only, which prevents users from talking to a 10.x.x.x, 172.x.x.x, or 192.168.x.x range IP.
