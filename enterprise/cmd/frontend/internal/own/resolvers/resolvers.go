@@ -9,7 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -20,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -42,7 +42,11 @@ func NewWithService(db database.DB, gitserver gitserver.Client, ownService own.S
 }
 
 var (
-	_ graphqlbackend.OwnResolver = &ownResolver{}
+	_ graphqlbackend.OwnResolver                      = &ownResolver{}
+	_ graphqlbackend.OwnershipReasonResolver          = &ownershipReasonResolver{}
+	_ graphqlbackend.GitCommitOwnershipSignalResolver = &gitCommitOwnershipSignalResolver{}
+	_ graphqlbackend.SimpleOwnReasonResolver          = &gitCommitOwnershipSignalResolver{}
+	_ graphqlbackend.SimpleOwnReasonResolver          = &codeownersFileEntryResolver{}
 )
 
 type ownResolver struct {
@@ -54,6 +58,38 @@ type ownResolver struct {
 
 func (r *ownResolver) ownService() own.Service {
 	return r.ownServiceFn()
+}
+
+type ownershipReasonResolver struct {
+	resolver graphqlbackend.SimpleOwnReasonResolver
+}
+
+func (o *ownershipReasonResolver) Title() (string, error) {
+	if res, ok := o.resolver.(graphqlbackend.SimpleOwnReasonResolver); ok {
+		return res.Title()
+	}
+	return "", errors.New("invalid resolver")
+}
+
+func (o *ownershipReasonResolver) Description() (string, error) {
+	if res, ok := o.resolver.(graphqlbackend.SimpleOwnReasonResolver); ok {
+		return res.Description()
+	}
+	return "", errors.New("invalid resolver")
+}
+
+func (o *ownershipReasonResolver) ToCodeownersFileEntry() (graphqlbackend.CodeownersFileEntryResolver, bool) {
+	if res, ok := o.resolver.(*codeownersFileEntryResolver); ok {
+		return res, true
+	}
+	return nil, false
+}
+
+func (o *ownershipReasonResolver) ToGitCommitOwnershipSignal() (graphqlbackend.GitCommitOwnershipSignalResolver, bool) {
+	if res, ok := o.resolver.(*gitCommitOwnershipSignalResolver); ok {
+		return res, true
+	}
+	return nil, false
 }
 
 func ownerText(o *codeownerspb.Owner) string {
@@ -117,21 +153,55 @@ func (r *ownResolver) GitBlobOwnership(
 	}
 	ownerships := make([]graphqlbackend.OwnershipResolver, 0, len(resolvedOwners))
 	for _, ro := range resolvedOwners {
-		reasons := []graphqlbackend.OwnershipReasonResolver{
-			&codeownersFileEntryResolver{
-				db:              r.db,
-				gitserverClient: r.gitserver,
-				source:          rs.GetSource(),
-				repo:            blob.Repository(),
-				matchLineNumber: rule.GetLineNumber(),
-			},
+
+		res := &codeownersFileEntryResolver{
+			db:              r.db,
+			gitserverClient: r.gitserver,
+			source:          rs.GetSource(),
+			repo:            blob.Repository(),
+			matchLineNumber: rule.GetLineNumber(),
 		}
+
+		reasons := []graphqlbackend.OwnershipReasonResolver{
+			&ownershipReasonResolver{res},
+			// &ownershipReasonResolver{&gitCommitOwnershipSignalResolver{repo: repoID, rev: commitID.Short(), path: blob.Path(), repoName: repoName}},
+		}
+
 		ownerships = append(ownerships, &ownershipResolver{
 			db:            r.db,
 			resolvedOwner: ro,
 			reasons:       reasons,
 		})
 	}
+
+	name, email, count, err := computeCommitOwner(blob.Path(), commitID.Short(), repoName)
+	if err != nil {
+		return nil, err
+	}
+
+	contribResolver := &ownershipResolver{
+		db: r.db,
+		resolvedOwner: &codeowners.Person{
+			User:         nil,
+			PrimaryEmail: nil,
+			Handle:       name,
+			Email:        email,
+		},
+		reasons: []graphqlbackend.OwnershipReasonResolver{&ownershipReasonResolver{&gitCommitOwnershipSignalResolver{total: count}}},
+	}
+
+	user, err := identifyUser(r.db, email)
+	if err == nil {
+		// if we don't get an error (meaning we can match) we will add it to the resolver
+		contribResolver.resolvedOwner = &codeowners.Person{
+			User:   user,
+			Handle: name,
+			Email:  email,
+		}
+	}
+
+	ownerships = append(ownerships, contribResolver)
+
 	return &ownershipConnectionResolver{
 		db:             r.db,
 		total:          total,
@@ -244,15 +314,11 @@ type codeownersFileEntryResolver struct {
 	gitserverClient gitserver.Client
 }
 
-func (r *codeownersFileEntryResolver) ToCodeownersFileEntry() (graphqlbackend.CodeownersFileEntryResolver, bool) {
-	return r, true
-}
-
-func (r *codeownersFileEntryResolver) Title(_ context.Context) (string, error) {
+func (r *codeownersFileEntryResolver) Title() (string, error) {
 	return "CODEOWNERS", nil
 }
 
-func (r *codeownersFileEntryResolver) Description(_ context.Context) (string, error) {
+func (r *codeownersFileEntryResolver) Description() (string, error) {
 	return "Owner is associated with a rule in a CODEOWNERS file.", nil
 }
 
@@ -289,4 +355,73 @@ func areOwnEndpointsAvailable(ctx context.Context) error {
 		return errors.New("own is not available yet")
 	}
 	return nil
+}
+
+type gitCommitOwnershipSignalResolver struct {
+	total int32
+}
+
+func (g *gitCommitOwnershipSignalResolver) Title() (string, error) {
+	return "TOP CONTRIBUTOR", nil
+}
+
+func (g *gitCommitOwnershipSignalResolver) Description() (string, error) {
+	return "Owner is associated because they are the top committer in the file", nil
+}
+
+func (g *gitCommitOwnershipSignalResolver) TotalCount() (int32, error) {
+	return g.total, nil
+}
+
+func (g *gitCommitOwnershipSignalResolver) RecentCount() (int32, error) {
+	return 0, nil
+}
+
+func computeCommitOwner(path string, rev string, repoName api.RepoName) (name string, email string, total int32, err error) {
+	fmt.Println("asdfasdf")
+	// commits, err := gitserver.NewClient().Commits(context.Background(), authz.DefaultSubRepoPermsChecker, repoName, gitserver.CommitsOptions{
+	// 	Path:  path,
+	// 	Range: rev,
+	// })
+	// if err != nil {
+	// 	return "", 0, err
+	// }
+	//
+	// counts := make(map[string]int)
+	// for _, commit := range commits {
+	// 	counts[commit.Author.Name]++
+	// }
+	//
+	// max := ""
+	// maxVal := 0
+	// for key, val := range counts {
+	// 	if val > maxVal {
+	// 		max = key
+	// 		maxVal = val
+	// 	}
+	// }
+
+	contribs, err := gitserver.NewClient().ContributorCount(context.Background(), repoName, gitserver.ContributorOptions{
+		Path:  path,
+		Range: rev,
+	})
+
+	if len(contribs) == 0 {
+		return "", "", 0, nil
+	}
+
+	var max int
+	for i := range contribs {
+		if contribs[i].Count > contribs[max].Count {
+			max = i
+		}
+	}
+
+	top := contribs[max]
+
+	return top.Name, top.Email, top.Count, nil
+}
+
+func identifyUser(db database.DB, email string) (*types.User, error) {
+	return db.Users().GetByVerifiedEmail(context.Background(), email)
 }

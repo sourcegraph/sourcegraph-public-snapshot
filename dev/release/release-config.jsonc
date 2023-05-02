@@ -27,5 +27,15 @@
     "trackingIssues": false,
     "calendar": false,
     "slack": false
+  },
+  "in_progress": {
+    "captainGitHubUsername": "BolajiOlajide",
+    "captainSlackUsername": "bolaji",
+    "releases": [
+      {
+        "version": "5.0.2",
+        "previous": "5.0.1"
+      }
+    ]
   }
 }
