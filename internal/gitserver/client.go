@@ -70,6 +70,8 @@ func ResetClientMocks() {
 
 var _ Client = &clientImplementor{}
 
+type gRPCClientSource func(cc grpc.ClientConnInterface) proto.GitserverServiceClient
+
 // NewClient returns a new gitserver.Client.
 func NewClient() Client {
 	return &clientImplementor{
@@ -92,7 +94,7 @@ func DefaultGRPCSource(cc grpc.ClientConnInterface) proto.GitserverServiceClient
 
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
-func NewTestClient(cli httpcli.Doer, grpcClientFunc func(cc grpc.ClientConnInterface) proto.GitserverServiceClient, addrs []string) Client {
+func NewTestClient(cli httpcli.Doer, grpcClientFunc gRPCClientSource, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger:      logger,
@@ -201,7 +203,7 @@ type clientImplementor struct {
 	operations *operations
 
 	// grpcClient is a function that returns a gRPC client to use for the given connection
-	gRPCClientSource func(cc grpc.ClientConnInterface) proto.GitserverServiceClient
+	gRPCClientSource gRPCClientSource
 }
 
 type RawBatchLogResult struct {
