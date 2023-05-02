@@ -1,0 +1,32 @@
+extend type Mutation {
+    """
+    Returns a created github app
+    """
+    createGitHubApp(input: CreateGitHubAppInput!): Int
+}
+
+"""
+Input wrapper for creating github app
+"""
+input CreateGitHubAppInput {
+    """
+    AppID of the GitHub App
+    """
+    appID: Int!
+    """
+    Base URL of the GitHub server where the App is defined
+    """
+    baseURL: String!
+    """
+    Client ID of the GitHub App
+    """
+    clientID: String!
+    """
+    Client secret of the GitHub App
+    """
+    clientSecret: String!
+    """
+    Private key of the GitHub App
+    """
+    privateKey: String!
+}
