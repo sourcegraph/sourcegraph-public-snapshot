@@ -14,6 +14,11 @@
     align-items: center;
 }
 
+.header-container-right svg {
+    opacity: 0.4;
+}
+
+
 .reset-conversation {
     margin: 0;
     cursor: pointer;
