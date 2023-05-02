@@ -16,7 +16,6 @@ func testSG() *cli.App {
 }
 
 func TestAppRun(t *testing.T) {
-	t.Fail()
 	sg := testSG()
 
 	// Capture output

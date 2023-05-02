@@ -22,7 +22,6 @@ var shortDateFormat = "2006-01-02"
 var longDateFormat = "2006-01-02 15:04 (MST)"
 
 func init() {
-	wfpwfpw
 	flag.StringVar(&token, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&date, "date", "", "date for builds")
 	flag.StringVar(&pipeline, "buildkite.pipeline", "sourcegraph", "name of the pipeline to inspect")

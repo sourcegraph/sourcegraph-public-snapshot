@@ -25,7 +25,6 @@ type repoBranchLocker struct {
 }
 
 func NewBranchLocker(ghc *github.Client, owner, repo, branch string) BranchLocker {
-	fefefefefef
 	return &repoBranchLocker{
 		ghc:    ghc,
 		owner:  owner,
