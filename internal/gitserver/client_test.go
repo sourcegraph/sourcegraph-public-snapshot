@@ -86,16 +86,16 @@ func TestClient_ArchiveReader(t *testing.T) {
 	root := gitserver.CreateRepoDir(t)
 
 	type test struct {
-		remote string
-		branch string
-		want   map[string]string
-		err    error
+		remote   string
+		revision string
+		want     map[string]string
+		err      error
 	}
 
 	tests := map[api.RepoName]test{
 		"simple": {
-			remote: createSimpleGitRepo(t, root),
-			branch: "HEAD",
+			remote:   createSimpleGitRepo(t, root),
+			revision: "HEAD",
 			want: map[string]string{
 				"dir1/":      "",
 				"dir1/file1": "infile1",
@@ -103,8 +103,8 @@ func TestClient_ArchiveReader(t *testing.T) {
 			},
 		},
 		"repo-with-dotgit-dir": {
-			remote: createRepoWithDotGitDir(t, root),
-			branch: "HEAD",
+			remote:   createRepoWithDotGitDir(t, root),
+			revision: "HEAD",
 			want: map[string]string{
 				"file1":            "hello\n",
 				".git/mydir/file2": "milton\n",
@@ -113,12 +113,13 @@ func TestClient_ArchiveReader(t *testing.T) {
 			},
 		},
 		"not-found": {
-			branch: "HEAD",
-			err:    errors.New("repository does not exist: not-found"),
+			revision: "HEAD",
+			err:      errors.New("repository does not exist: not-found"),
 		},
-		"revision-not-found": {
-			branch: "nonexistent-revision",
-			err:    errors.New("repository does not exist: revision-not-found"),
+		"repo-with-dotgit-dir-1": {
+			remote:   createRepoWithDotGitDir(t, root),
+			revision: "nonexistent-revision",
+			err:      errors.New("exit status 128 (stderr: \"fatal: not a valid object name: nonexistent-revision\n\")"),
 		},
 	}
 
@@ -157,7 +158,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 				}
 			}
 
-			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: test.branch, Format: gitserver.ArchiveFormatZip})
+			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: test.revision, Format: gitserver.ArchiveFormatZip})
 			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}
