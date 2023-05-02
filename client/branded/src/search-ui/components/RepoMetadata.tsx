@@ -16,6 +16,10 @@ export interface RepoMetadataItem {
     value?: string | null
 }
 
+const MetaContainer: React.FC<React.PropsWithChildren<{ to?: string }>> = ({ children, to }) => (
+    <Code className={styles.text}>{to ? <Link to={to}>{children}</Link> : children}</Code>
+)
+
 interface MetaProps {
     meta: RepoMetadataItem
     buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
@@ -28,27 +32,23 @@ const Meta: React.FC<MetaProps> = ({ meta: { key, value }, queryState, buildSear
             return undefined
         }
 
-        const query = appendFilter(queryState.query, 'repo', `has.key(${key})`)
+        const query = appendFilter(queryState.query, 'repo', value ? `has(${key}:${value})` : `has.key(${key})`)
 
         const searchParams = buildSearchURLQueryFromQueryState({ query })
         return `/search?${searchParams}`
-    }, [buildSearchURLQueryFromQueryState, key, queryState])
+    }, [buildSearchURLQueryFromQueryState, key, value, queryState])
 
     return (
-        <Code className={styles.meta}>
-            {filterLink ? (
-                <Link aria-label="Filter by repository metadata" className={styles.highlight} to={filterLink}>
-                    {key}
-                </Link>
-            ) : (
-                <span aria-label="Repository metadata key">{key}</span>
-            )}
+        <MetaContainer to={filterLink}>
+            <span aria-label="Repository metadata key">
+                {key}
+            </span>
             {value ? (
-                <span aria-label="Repository metadata value">:{value}</span>
+                <span aria-label="Repository metadata value" className={styles.text}>:{value}</span>
             ) : (
                 <VisuallyHidden>No metadata value</VisuallyHidden>
             )}
-        </Code>
+        </MetaContainer>
     )
 }
 
@@ -83,7 +83,7 @@ export const RepoMetadata: React.FC<RepoMetadataProps> = ({
                     {onDelete ? (
                         <Tooltip content="Delete metadata">
                             <Button
-                                className={styles.deleteButton}
+                                className={styles.button}
                                 variant="secondary"
                                 outline={true}
                                 size="sm"
