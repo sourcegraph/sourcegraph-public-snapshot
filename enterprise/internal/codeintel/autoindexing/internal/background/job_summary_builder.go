@@ -7,17 +7,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
-	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-// For mocking in tests
-var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
 func NewSummaryBuilder(
 	observationCtx *observation.Context,
@@ -48,7 +44,7 @@ func NewSummaryBuilder(
 					return err
 				}
 
-				inferredAvailableIndexers := map[string]uploadsshared.AvailableIndexer{}
+				inferredAvailableIndexers := map[string]shared.AvailableIndexer{}
 
 				if autoIndexingEnabled() {
 					commit := "HEAD"
@@ -72,15 +68,15 @@ func NewSummaryBuilder(
 					// Create blocklist for indexes that have already been uploaded.
 					blocklist := map[string]struct{}{}
 					for _, u := range recentUploads {
-						key := uploadsshared.GetKeyForLookup(u.Indexer, u.Root)
+						key := shared.GetKeyForLookup(u.Indexer, u.Root)
 						blocklist[key] = struct{}{}
 					}
 					for _, u := range recentIndexes {
-						key := uploadsshared.GetKeyForLookup(u.Indexer, u.Root)
+						key := shared.GetKeyForLookup(u.Indexer, u.Root)
 						blocklist[key] = struct{}{}
 					}
 
-					inferredAvailableIndexers = uploadsshared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
+					inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
 					// inferredAvailableIndexers = uploadsshared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 				}
 
