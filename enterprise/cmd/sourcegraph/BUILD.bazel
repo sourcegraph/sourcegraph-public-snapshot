@@ -5,6 +5,11 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph",
     visibility = ["//visibility:private"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType": "app",
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "5.0.2",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
     deps = [
         "//cmd/blobstore/shared",
         "//cmd/github-proxy/shared",
@@ -28,5 +33,8 @@ go_library(
 go_binary(
     name = "sourcegraph",
     embed = [":sourcegraph_lib"],
+    # x_defs = {
+    #     "github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType": "app",
+    # },
     visibility = ["//visibility:public"],
 )

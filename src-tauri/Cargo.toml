@@ -18,9 +18,17 @@ tauri-build = { version = "1.2.1", features = [] }
 serde_json = "1.0"
 log = "0.4.17"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.2.4", features = ["devtools", "process-command-api", "shell-open", "shell-sidecar", "system-tray", "window-start-dragging"] }
-tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace" }
+tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "dev" }
 tauri-plugin-deep-link = { git = "https://github.com/FabianLars/tauri-plugin-deep-link", branch = "main" }
+tauri-utils = { git = "https://github.com/tauri-apps/tauri", branch = "dev" }
+
+[dependencies.tauri]
+git = "https://github.com/tauri-apps/tauri"
+branch = "dev"
+features = ["devtools", "process-command-api", "shell-open", "shell-sidecar", "system-tray", "window-start-dragging"]
+
+[patch.crates-io]
+tauri = { git = "https://github.com/tauri-apps/tauri", branch = "dev" }
 
 [dependencies.fix-path-env]
 git = "https://github.com/tauri-apps/fix-path-env-rs"
