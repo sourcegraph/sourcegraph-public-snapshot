@@ -25,41 +25,43 @@ func (h *UploadHandler[T]) handleEnqueueSinglePayload(ctx context.Context, uploa
 		}})
 	}()
 
-	tx, err := h.dbStore.Transact(ctx)
-	if err != nil {
-		return nil, http.StatusInternalServerError, err
-	}
-	defer func() { err = tx.Done(err) }()
+	var a int
+	if err := h.dbStore.WithTransaction(ctx, func(tx DBStore[T]) error {
+		id, err := tx.InsertUpload(ctx, Upload[T]{
+			State:            "uploading",
+			NumParts:         1,
+			UploadedParts:    []int{0},
+			UncompressedSize: uploadState.uncompressedSize,
+			Metadata:         uploadState.metadata,
+		})
+		if err != nil {
+			return err
+		}
+		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", id))
 
-	id, err := tx.InsertUpload(ctx, Upload[T]{
-		State:            "uploading",
-		NumParts:         1,
-		UploadedParts:    []int{0},
-		UncompressedSize: uploadState.uncompressedSize,
-		Metadata:         uploadState.metadata,
-	})
-	if err != nil {
-		return nil, http.StatusInternalServerError, err
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", id))
+		size, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.lsif.gz", id), body)
+		if err != nil {
+			return err
+		}
+		trace.AddEvent("TODO Domain Owner", attribute.Int("gzippedUploadSize", int(size)))
 
-	size, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.lsif.gz", id), body)
-	if err != nil {
-		return nil, http.StatusInternalServerError, err
-	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("gzippedUploadSize", int(size)))
+		if err := tx.MarkQueued(ctx, id, &size); err != nil {
+			return err
+		}
 
-	if err := tx.MarkQueued(ctx, id, &size); err != nil {
+		a = id
+		return nil
+	}); err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
 
 	h.logger.Info(
 		"uploadhandler: enqueued upload",
-		sglog.Int("id", id),
+		sglog.Int("id", a),
 	)
 
 	// older versions of src-cli expect a string
 	return struct {
 		ID string `json:"id"`
-	}{ID: strconv.Itoa(id)}, 0, nil
+	}{ID: strconv.Itoa(a)}, 0, nil
 }

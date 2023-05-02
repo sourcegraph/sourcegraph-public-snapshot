@@ -141,26 +141,10 @@ func TestUser(t *testing.T) {
 
 func TestUser_Email(t *testing.T) {
 	db := database.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+	user := &types.User{ID: 1}
+	ctx := actor.WithActor(context.Background(), actor.FromActualUser(user))
 
-		users := database.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, database.ErrNoCurrentUser)
-		db.UsersFunc.SetDefaultReturn(users)
-
-		_, err := NewUserResolver(db, &types.User{ID: 1}).Email(context.Background())
-		got := fmt.Sprintf("%v", err)
-		want := "must be authenticated as the authorized user or site admin"
-		assert.Equal(t, want, got)
-	})
-
-	t.Run("allowed by authenticated site admin user on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
-
+	t.Run("allowed by authenticated site admin user", func(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, SiteAdmin: true}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
@@ -169,26 +153,22 @@ func TestUser_Email(t *testing.T) {
 		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("john@doe.com", true, nil)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
-		email, _ := NewUserResolver(db, &types.User{ID: 1}).Email(actor.WithActor(context.Background(), &actor.Actor{UID: 2}))
+		email, _ := NewUserResolver(ctx, db, user).Email(actor.WithActor(context.Background(), &actor.Actor{UID: 2}))
 		got := fmt.Sprintf("%v", email)
 		want := "john@doe.com"
 		assert.Equal(t, want, got)
 	})
 
-	t.Run("allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
-
+	t.Run("allowed by authenticated user", func(t *testing.T) {
 		users := database.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
 		userEmails := database.NewMockUserEmailsStore()
 		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("john@doe.com", true, nil)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
-		email, _ := NewUserResolver(db, &types.User{ID: 1}).Email(actor.WithActor(context.Background(), &actor.Actor{UID: 1}))
+		email, _ := NewUserResolver(ctx, db, user).Email(actor.WithActor(context.Background(), &actor.Actor{UID: 1}))
 		got := fmt.Sprintf("%v", email)
 		want := "john@doe.com"
 		assert.Equal(t, want, got)
@@ -240,7 +220,7 @@ func TestUser_LatestSettings(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := NewUserResolver(db, &types.User{ID: 1}).LatestSettings(test.ctx)
+				_, err := NewUserResolver(test.ctx, db, &types.User{ID: 1}).LatestSettings(test.ctx)
 				got := fmt.Sprintf("%v", err)
 				want := "must be authenticated as user with id 1"
 				assert.Equal(t, want, got)
@@ -251,51 +231,66 @@ func TestUser_LatestSettings(t *testing.T) {
 
 func TestUser_ViewerCanAdminister(t *testing.T) {
 	db := database.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+	t.Run("settings edit only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
 		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		t.Cleanup(func() {
+			envvar.MockSourcegraphDotComMode(orig)
+		})
 
 		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
+			name string
+			ctx  context.Context
 		}{
-			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				},
-			},
 			{
 				name: "another user",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
-					})
-				},
 			},
 			{
 				name: "site admin",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
-					})
-				},
 			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				test.setup()
-
-				ok, _ := NewUserResolver(db, &types.User{ID: 1}).ViewerCanAdminister(test.ctx)
+				ok, _ := NewUserResolver(test.ctx, db, &types.User{ID: 1}).viewerCanAdministerSettings()
 				assert.False(t, ok, "ViewerCanAdminister")
+			})
+		}
+	})
+
+	t.Run("allowed by same user or site admin", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		tests := []struct {
+			name string
+			ctx  context.Context
+			want bool
+		}{
+			{
+				name: "same user",
+				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+				want: true,
+			},
+			{
+				name: "another user",
+				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				want: false,
+			},
+			{
+				name: "another user, but site admin",
+				ctx:  actor.WithActor(context.Background(), actor.FromActualUser(&types.User{ID: 2, SiteAdmin: true})),
+				want: true,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				ok, _ := NewUserResolver(test.ctx, db, &types.User{ID: 1}).ViewerCanAdminister()
+				assert.Equal(t, test.want, ok, "ViewerCanAdminister")
 			})
 		}
 	})
@@ -549,13 +544,17 @@ func TestUpdateUser(t *testing.T) {
 
 	t.Run("success with an empty avatarURL", func(t *testing.T) {
 		users := database.NewMockUserStore()
+		siteAdminUser := &types.User{SiteAdmin: true}
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			if id == 0 {
+				return siteAdminUser, nil
+			}
 			return &types.User{
 				ID:       id,
 				Username: strconv.Itoa(int(id)),
 			}, nil
 		})
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(siteAdminUser, nil)
 		users.UpdateFunc.SetDefaultReturn(nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -587,7 +586,11 @@ func TestUpdateUser(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		users := database.NewMockUserStore()
+		siteAdminUser := &types.User{SiteAdmin: true}
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			if id == 0 {
+				return siteAdminUser, nil
+			}
 			return &types.User{
 				ID:       id,
 				Username: strconv.Itoa(int(id)),
@@ -754,6 +757,81 @@ func TestUser_Organizations(t *testing.T) {
 
 		t.Run("site admin", func(t *testing.T) {
 			expectOrgSuccess(t, 3)
+		})
+	})
+}
+
+func TestSchema_SetUserCompletionsQuota(t *testing.T) {
+	db := database.NewMockDB()
+
+	t.Run("not site admin", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:       id,
+				Username: strconv.Itoa(int(id)),
+			}, nil
+		})
+		// Different user.
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).SetUserCompletionsQuota(context.Background(),
+			SetUserCompletionsQuotaArgs{
+				User:  MarshalUserID(1),
+				Quota: nil,
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := auth.ErrMustBeSiteAdmin.Error()
+		assert.Equal(t, want, got)
+		assert.Nil(t, result)
+	})
+
+	t.Run("site admin can change quota", func(t *testing.T) {
+		mockUser := &types.User{
+			ID:        1,
+			Username:  "alice",
+			SiteAdmin: true,
+		}
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
+		users.UpdateFunc.SetDefaultReturn(nil)
+		db.UsersFunc.SetDefaultReturn(users)
+		var quota *int
+		users.SetCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i1 int32, i2 *int) error {
+			quota = i2
+			return nil
+		})
+		users.GetCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i int32) (*int, error) {
+			return quota, nil
+		})
+
+		RunTests(t, []*Test{
+			{
+				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+			mutation {
+				setUserCompletionsQuota(
+					user: "VXNlcjox",
+					quota: 10
+				) {
+					username
+					completionsQuotaOverride
+				}
+			}
+		`,
+				ExpectedResult: `
+			{
+				"setUserCompletionsQuota": {
+					"username": "alice",
+					"completionsQuotaOverride": 10
+				}
+			}
+		`,
+			},
 		})
 	})
 }

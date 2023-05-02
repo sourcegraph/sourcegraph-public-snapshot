@@ -392,17 +392,6 @@ input.btn {
     > .btn {
         position: relative;
         flex: 1 1 auto;
-
-        // Bring the hover, focused, and "active" buttons to the front to overlay
-        // the borders properly
-        &:hover {
-            z-index: 1;
-        }
-        &:focus,
-        &:active,
-        &:global(.active) {
-            z-index: 1;
-        }
     }
 }
 

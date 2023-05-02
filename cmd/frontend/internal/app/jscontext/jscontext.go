@@ -4,11 +4,9 @@ package jscontext
 
 import (
 	"context"
-	"net"
 	"net/http"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	logger "github.com/sourcegraph/log"
@@ -24,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -39,11 +38,12 @@ import (
 var BillingPublishableKey string
 
 type authProviderInfo struct {
-	IsBuiltin         bool   `json:"isBuiltin"`
-	DisplayName       string `json:"displayName"`
-	ServiceType       string `json:"serviceType"`
-	AuthenticationURL string `json:"authenticationURL"`
-	ServiceID         string `json:"serviceID"`
+	IsBuiltin         bool    `json:"isBuiltin"`
+	DisplayName       string  `json:"displayName"`
+	DisplayPrefix     *string `json:"displayPrefix"`
+	ServiceType       string  `json:"serviceType"`
+	AuthenticationURL string  `json:"authenticationURL"`
+	ServiceID         string  `json:"serviceID"`
 }
 
 // GenericPasswordPolicy a generic password policy that holds password requirements
@@ -144,7 +144,6 @@ type JSContext struct {
 	EmailEnabled  bool   `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
-	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
 	NeedServerRestart bool                     `json:"needServerRestart"`
 	DeployType        string                   `json:"deployType"`
 
@@ -164,13 +163,19 @@ type JSContext struct {
 	AuthMinPasswordLength int                `json:"authMinPasswordLength"`
 	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
 
-	AuthProviders []authProviderInfo `json:"authProviders"`
+	AuthProviders                  []authProviderInfo `json:"authProviders"`
+	AuthPrimaryLoginProvidersCount int                `json:"primaryLoginProvidersCount"`
+
+	AuthAccessRequest *schema.AuthAccessRequest `json:"authAccessRequest"`
 
 	Branding *schema.Branding `json:"branding"`
 
-	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
-	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
-	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
+	BatchChangesEnabled                bool                                `json:"batchChangesEnabled"`
+	BatchChangesDisableWebhooksWarning bool                                `json:"batchChangesDisableWebhooksWarning"`
+	BatchChangesWebhookLogsEnabled     bool                                `json:"batchChangesWebhookLogsEnabled"`
+	BatchChangesRolloutWindows         *[]*schema.BatchChangeRolloutWindow `json:"batchChangesRolloutWindows"`
+
+	CodyEnabled bool `json:"codyEnabled"`
 
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
@@ -230,15 +235,17 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	// Auth providers
 	var authProviders []authProviderInfo
-	for _, p := range providers.Providers() {
-		if p.Config().Github != nil && p.Config().Github.Hidden {
+	for _, p := range providers.SortedProviders() {
+		commonConfig := providers.GetAuthProviderCommon(p)
+		if commonConfig.Hidden {
 			continue
 		}
 		info := p.CachedInfo()
 		if info != nil {
 			authProviders = append(authProviders, authProviderInfo{
 				IsBuiltin:         p.Config().Builtin != nil,
-				DisplayName:       info.DisplayName,
+				DisplayName:       commonConfig.DisplayName,
+				DisplayPrefix:     commonConfig.DisplayPrefix,
 				ServiceType:       p.ConfigID().Type,
 				AuthenticationURL: info.AuthenticationURL,
 				ServiceID:         info.ServiceID,
@@ -318,7 +325,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedsSiteInit:     needsSiteInit,
 		EmailEnabled:      conf.CanSendEmail(),
 		Site:              publicSiteConfiguration(),
-		LikelyDockerOnMac: likelyDockerOnMac(),
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
@@ -340,13 +346,19 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AuthMinPasswordLength: conf.AuthMinPasswordLength(),
 		AuthPasswordPolicy:    authPasswordPolicy,
 
-		AuthProviders: authProviders,
+		AuthProviders:                  authProviders,
+		AuthPrimaryLoginProvidersCount: conf.AuthPrimaryLoginProvidersCount(),
+
+		AuthAccessRequest: conf.Get().AuthAccessRequest,
 
 		Branding: globals.Branding(),
 
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
+		BatchChangesRolloutWindows:         conf.Get().BatchChangesRolloutWindows,
+
+		CodyEnabled: cody.IsCodyEnabled(ctx),
 
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
@@ -390,13 +402,13 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		return nil
 	}
 
-	userResolver := graphqlbackend.NewUserResolver(db, user)
+	userResolver := graphqlbackend.NewUserResolver(ctx, db, user)
 
-	siteAdmin, err := userResolver.SiteAdmin(ctx)
+	siteAdmin, err := userResolver.SiteAdmin()
 	if err != nil {
 		return nil
 	}
-	canAdminister, err := userResolver.ViewerCanAdminister(ctx)
+	canAdminister, err := userResolver.ViewerCanAdminister()
 	if err != nil {
 		return nil
 	}
@@ -440,7 +452,7 @@ func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.Us
 		Nodes:           []Permission{},
 	}
 
-	permissionResolver, err := userResolver.Permissions(ctx)
+	permissionResolver, err := userResolver.Permissions()
 	if err != nil {
 		return connection
 	}
@@ -537,15 +549,4 @@ var isBotPat = lazyregexp.New(`(?i:googlecloudmonitoring|pingdom.com|go .* packa
 
 func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)
-}
-
-func likelyDockerOnMac() bool {
-	r := net.DefaultResolver
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	addrs, err := r.LookupHost(ctx, "host.docker.internal")
-	if err != nil || len(addrs) == 0 {
-		return false //  Assume we're not docker for mac.
-	}
-	return true
 }

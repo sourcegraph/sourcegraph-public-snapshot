@@ -22,15 +22,25 @@
 
 ## Unreleased
 
+No applicable notes for unreleased versions.
+
 <!-- Add changes changes to this section before release. -->
+
+## v5.0.1 ➔ v5.0.2
+
+#### Notes:
+
+## v5.0.0 ➔ v5.0.1
+
+No upgrade notes.
 
 ## v4.5.1 ➔ v5.0.0
 
-#### Notes:
+No upgrade notes.
 
 ## v4.5.0 ➔ v4.5.1
 
-#### Notes:
+No upgrade notes.
 
 ## v4.4.2 ➔ v4.5.0
 
@@ -47,7 +57,7 @@
 
 ## v4.4.1 ➔ v4.4.2
 
-#### Notes:
+No upgrade notes.
 
 ## v4.3 ➔ v4.4.1
 
@@ -59,7 +69,7 @@
 
 ## v4.2 ➔ v4.3.1
 
-#### Notes:
+No upgrade notes.
 
 ## v4.1 ➔ v4.2.1
 
@@ -82,7 +92,7 @@
 
 ## v4.0 ➔ v4.1.3
 
-<!-- Add changes changes to this section before release. -->
+No upgrade notes.
 
 ## v3.43 ➔ v4.0
 

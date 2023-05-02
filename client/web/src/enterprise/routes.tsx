@@ -2,10 +2,11 @@ import { Navigate, RouteObject } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LegacyRoute } from '../LegacyRouteContext'
 import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
+
+import { isSentinelEnabled } from './sentinel/utils/isSentinelEnabled'
 
 const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
 const GlobalBatchChangesArea = lazyComponent(
@@ -21,6 +22,7 @@ const SearchContextsListPage = lazyComponent(
     () => import('./searchContexts/SearchContextsListPage'),
     'SearchContextsListPage'
 )
+const SentinelRouter = lazyComponent(() => import('./sentinel/SentinelRouter'), 'SentinelRouter')
 const CreateSearchContextPage = lazyComponent(
     () => import('./searchContexts/CreateSearchContextPage'),
     'CreateSearchContextPage'
@@ -57,7 +59,16 @@ export const enterpriseRoutes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <CodeInsightsRouter {...props} />}
-                condition={props => isCodeInsightsEnabled(props.settingsCascade)}
+                condition={({ codeInsightsEnabled }) => !!codeInsightsEnabled}
+            />
+        ),
+    },
+    {
+        path: EnterprisePageRoutes.Sentinel,
+        element: (
+            <LegacyRoute
+                render={props => <SentinelRouter {...props} />}
+                condition={props => isSentinelEnabled(props)}
             />
         ),
     },
@@ -87,7 +98,7 @@ export const enterpriseRoutes: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.CodySearch,
-        element: <CodySearchPage />,
+        element: <LegacyRoute render={props => <CodySearchPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.Own,

@@ -4969,6 +4969,10 @@ type MockDB struct {
 	// QueryRowContextFunc is an instance of a mock function object
 	// controlling the behavior of the method QueryRowContext.
 	QueryRowContextFunc *DBQueryRowContextFunc
+	// RecentContributionSignalsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// RecentContributionSignals.
+	RecentContributionSignalsFunc *DBRecentContributionSignalsFunc
 	// RedisKeyValueFunc is an instance of a mock function object
 	// controlling the behavior of the method RedisKeyValue.
 	RedisKeyValueFunc *DBRedisKeyValueFunc
@@ -5180,6 +5184,11 @@ func NewMockDB() *MockDB {
 		},
 		QueryRowContextFunc: &DBQueryRowContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (r0 *sql.Row) {
+				return
+			},
+		},
+		RecentContributionSignalsFunc: &DBRecentContributionSignalsFunc{
+			defaultHook: func() (r0 RecentContributionSignalStore) {
 				return
 			},
 		},
@@ -5440,6 +5449,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.QueryRowContext")
 			},
 		},
+		RecentContributionSignalsFunc: &DBRecentContributionSignalsFunc{
+			defaultHook: func() RecentContributionSignalStore {
+				panic("unexpected invocation of MockDB.RecentContributionSignals")
+			},
+		},
 		RedisKeyValueFunc: &DBRedisKeyValueFunc{
 			defaultHook: func() RedisKeyValueStore {
 				panic("unexpected invocation of MockDB.RedisKeyValue")
@@ -5638,6 +5652,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		QueryRowContextFunc: &DBQueryRowContextFunc{
 			defaultHook: i.QueryRowContext,
+		},
+		RecentContributionSignalsFunc: &DBRecentContributionSignalsFunc{
+			defaultHook: i.RecentContributionSignals,
 		},
 		RedisKeyValueFunc: &DBRedisKeyValueFunc{
 			defaultHook: i.RedisKeyValue,
@@ -8626,6 +8643,106 @@ func (c DBQueryRowContextFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBQueryRowContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBRecentContributionSignalsFunc describes the behavior when the
+// RecentContributionSignals method of the parent MockDB instance is
+// invoked.
+type DBRecentContributionSignalsFunc struct {
+	defaultHook func() RecentContributionSignalStore
+	hooks       []func() RecentContributionSignalStore
+	history     []DBRecentContributionSignalsFuncCall
+	mutex       sync.Mutex
+}
+
+// RecentContributionSignals delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDB) RecentContributionSignals() RecentContributionSignalStore {
+	r0 := m.RecentContributionSignalsFunc.nextHook()()
+	m.RecentContributionSignalsFunc.appendCall(DBRecentContributionSignalsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// RecentContributionSignals method of the parent MockDB instance is invoked
+// and the hook queue is empty.
+func (f *DBRecentContributionSignalsFunc) SetDefaultHook(hook func() RecentContributionSignalStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecentContributionSignals method of the parent MockDB instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBRecentContributionSignalsFunc) PushHook(hook func() RecentContributionSignalStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRecentContributionSignalsFunc) SetDefaultReturn(r0 RecentContributionSignalStore) {
+	f.SetDefaultHook(func() RecentContributionSignalStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRecentContributionSignalsFunc) PushReturn(r0 RecentContributionSignalStore) {
+	f.PushHook(func() RecentContributionSignalStore {
+		return r0
+	})
+}
+
+func (f *DBRecentContributionSignalsFunc) nextHook() func() RecentContributionSignalStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRecentContributionSignalsFunc) appendCall(r0 DBRecentContributionSignalsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRecentContributionSignalsFuncCall objects
+// describing the invocations of this function.
+func (f *DBRecentContributionSignalsFunc) History() []DBRecentContributionSignalsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRecentContributionSignalsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRecentContributionSignalsFuncCall is an object that describes an
+// invocation of method RecentContributionSignals on an instance of MockDB.
+type DBRecentContributionSignalsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RecentContributionSignalStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRecentContributionSignalsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRecentContributionSignalsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -25114,7 +25231,7 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		UpdateRepoSizesFunc: &GitserverRepoStoreUpdateRepoSizesFunc{
-			defaultHook: func(context.Context, string, map[api.RepoID]int64) (r0 int, r1 error) {
+			defaultHook: func(context.Context, string, map[api.RepoName]int64) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -25212,7 +25329,7 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		UpdateRepoSizesFunc: &GitserverRepoStoreUpdateRepoSizesFunc{
-			defaultHook: func(context.Context, string, map[api.RepoID]int64) (int, error) {
+			defaultHook: func(context.Context, string, map[api.RepoName]int64) (int, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.UpdateRepoSizes")
 			},
 		},
@@ -27064,15 +27181,15 @@ func (c GitserverRepoStoreUpdateFuncCall) Results() []interface{} {
 // UpdateRepoSizes method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreUpdateRepoSizesFunc struct {
-	defaultHook func(context.Context, string, map[api.RepoID]int64) (int, error)
-	hooks       []func(context.Context, string, map[api.RepoID]int64) (int, error)
+	defaultHook func(context.Context, string, map[api.RepoName]int64) (int, error)
+	hooks       []func(context.Context, string, map[api.RepoName]int64) (int, error)
 	history     []GitserverRepoStoreUpdateRepoSizesFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateRepoSizes delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) UpdateRepoSizes(v0 context.Context, v1 string, v2 map[api.RepoID]int64) (int, error) {
+func (m *MockGitserverRepoStore) UpdateRepoSizes(v0 context.Context, v1 string, v2 map[api.RepoName]int64) (int, error) {
 	r0, r1 := m.UpdateRepoSizesFunc.nextHook()(v0, v1, v2)
 	m.UpdateRepoSizesFunc.appendCall(GitserverRepoStoreUpdateRepoSizesFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -27081,7 +27198,7 @@ func (m *MockGitserverRepoStore) UpdateRepoSizes(v0 context.Context, v1 string, 
 // SetDefaultHook sets function that is called when the UpdateRepoSizes
 // method of the parent MockGitserverRepoStore instance is invoked and the
 // hook queue is empty.
-func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultHook(hook func(context.Context, string, map[api.RepoID]int64) (int, error)) {
+func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultHook(hook func(context.Context, string, map[api.RepoName]int64) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -27090,7 +27207,7 @@ func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushHook(hook func(context.Context, string, map[api.RepoID]int64) (int, error)) {
+func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushHook(hook func(context.Context, string, map[api.RepoName]int64) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -27099,19 +27216,19 @@ func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushHook(hook func(context.Conte
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreUpdateRepoSizesFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, map[api.RepoID]int64) (int, error) {
+	f.SetDefaultHook(func(context.Context, string, map[api.RepoName]int64) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreUpdateRepoSizesFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, string, map[api.RepoID]int64) (int, error) {
+	f.PushHook(func(context.Context, string, map[api.RepoName]int64) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverRepoStoreUpdateRepoSizesFunc) nextHook() func(context.Context, string, map[api.RepoID]int64) (int, error) {
+func (f *GitserverRepoStoreUpdateRepoSizesFunc) nextHook() func(context.Context, string, map[api.RepoName]int64) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -27153,7 +27270,7 @@ type GitserverRepoStoreUpdateRepoSizesFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 map[api.RepoID]int64
+	Arg2 map[api.RepoName]int64
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -33358,6 +33475,9 @@ type MockOutboundWebhookJobStore struct {
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *OutboundWebhookJobStoreGetByIDFunc
+	// GetLastFunc is an instance of a mock function object controlling the
+	// behavior of the method GetLast.
+	GetLastFunc *OutboundWebhookJobStoreGetLastFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *OutboundWebhookJobStoreHandleFunc
@@ -33394,6 +33514,11 @@ func NewMockOutboundWebhookJobStore() *MockOutboundWebhookJobStore {
 		},
 		GetByIDFunc: &OutboundWebhookJobStoreGetByIDFunc{
 			defaultHook: func(context.Context, int64) (r0 *types.OutboundWebhookJob, r1 error) {
+				return
+			},
+		},
+		GetLastFunc: &OutboundWebhookJobStoreGetLastFunc{
+			defaultHook: func(context.Context) (r0 *types.OutboundWebhookJob, r1 error) {
 				return
 			},
 		},
@@ -33445,6 +33570,11 @@ func NewStrictMockOutboundWebhookJobStore() *MockOutboundWebhookJobStore {
 				panic("unexpected invocation of MockOutboundWebhookJobStore.GetByID")
 			},
 		},
+		GetLastFunc: &OutboundWebhookJobStoreGetLastFunc{
+			defaultHook: func(context.Context) (*types.OutboundWebhookJob, error) {
+				panic("unexpected invocation of MockOutboundWebhookJobStore.GetLast")
+			},
+		},
 		HandleFunc: &OutboundWebhookJobStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockOutboundWebhookJobStore.Handle")
@@ -33484,6 +33614,9 @@ func NewMockOutboundWebhookJobStoreFrom(i OutboundWebhookJobStore) *MockOutbound
 		},
 		GetByIDFunc: &OutboundWebhookJobStoreGetByIDFunc{
 			defaultHook: i.GetByID,
+		},
+		GetLastFunc: &OutboundWebhookJobStoreGetLastFunc{
+			defaultHook: i.GetLast,
 		},
 		HandleFunc: &OutboundWebhookJobStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -33932,6 +34065,113 @@ func (c OutboundWebhookJobStoreGetByIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c OutboundWebhookJobStoreGetByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// OutboundWebhookJobStoreGetLastFunc describes the behavior when the
+// GetLast method of the parent MockOutboundWebhookJobStore instance is
+// invoked.
+type OutboundWebhookJobStoreGetLastFunc struct {
+	defaultHook func(context.Context) (*types.OutboundWebhookJob, error)
+	hooks       []func(context.Context) (*types.OutboundWebhookJob, error)
+	history     []OutboundWebhookJobStoreGetLastFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLast delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockOutboundWebhookJobStore) GetLast(v0 context.Context) (*types.OutboundWebhookJob, error) {
+	r0, r1 := m.GetLastFunc.nextHook()(v0)
+	m.GetLastFunc.appendCall(OutboundWebhookJobStoreGetLastFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetLast method of
+// the parent MockOutboundWebhookJobStore instance is invoked and the hook
+// queue is empty.
+func (f *OutboundWebhookJobStoreGetLastFunc) SetDefaultHook(hook func(context.Context) (*types.OutboundWebhookJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLast method of the parent MockOutboundWebhookJobStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *OutboundWebhookJobStoreGetLastFunc) PushHook(hook func(context.Context) (*types.OutboundWebhookJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *OutboundWebhookJobStoreGetLastFunc) SetDefaultReturn(r0 *types.OutboundWebhookJob, r1 error) {
+	f.SetDefaultHook(func(context.Context) (*types.OutboundWebhookJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *OutboundWebhookJobStoreGetLastFunc) PushReturn(r0 *types.OutboundWebhookJob, r1 error) {
+	f.PushHook(func(context.Context) (*types.OutboundWebhookJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *OutboundWebhookJobStoreGetLastFunc) nextHook() func(context.Context) (*types.OutboundWebhookJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *OutboundWebhookJobStoreGetLastFunc) appendCall(r0 OutboundWebhookJobStoreGetLastFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of OutboundWebhookJobStoreGetLastFuncCall
+// objects describing the invocations of this function.
+func (f *OutboundWebhookJobStoreGetLastFunc) History() []OutboundWebhookJobStoreGetLastFuncCall {
+	f.mutex.Lock()
+	history := make([]OutboundWebhookJobStoreGetLastFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// OutboundWebhookJobStoreGetLastFuncCall is an object that describes an
+// invocation of method GetLast on an instance of
+// MockOutboundWebhookJobStore.
+type OutboundWebhookJobStoreGetLastFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.OutboundWebhookJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c OutboundWebhookJobStoreGetLastFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c OutboundWebhookJobStoreGetLastFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -38321,7 +38561,7 @@ func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 			},
 		},
 		SaveSyncResultFunc: &PermissionSyncJobStoreSaveSyncResultFunc{
-			defaultHook: func(context.Context, int, *SetPermissionsResult, CodeHostStatusesSet) (r0 error) {
+			defaultHook: func(context.Context, int, bool, *SetPermissionsResult, CodeHostStatusesSet) (r0 error) {
 				return
 			},
 		},
@@ -38394,7 +38634,7 @@ func NewStrictMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 			},
 		},
 		SaveSyncResultFunc: &PermissionSyncJobStoreSaveSyncResultFunc{
-			defaultHook: func(context.Context, int, *SetPermissionsResult, CodeHostStatusesSet) error {
+			defaultHook: func(context.Context, int, bool, *SetPermissionsResult, CodeHostStatusesSet) error {
 				panic("unexpected invocation of MockPermissionSyncJobStore.SaveSyncResult")
 			},
 		},
@@ -39547,24 +39787,24 @@ func (c PermissionSyncJobStoreListFuncCall) Results() []interface{} {
 // SaveSyncResult method of the parent MockPermissionSyncJobStore instance
 // is invoked.
 type PermissionSyncJobStoreSaveSyncResultFunc struct {
-	defaultHook func(context.Context, int, *SetPermissionsResult, CodeHostStatusesSet) error
-	hooks       []func(context.Context, int, *SetPermissionsResult, CodeHostStatusesSet) error
+	defaultHook func(context.Context, int, bool, *SetPermissionsResult, CodeHostStatusesSet) error
+	hooks       []func(context.Context, int, bool, *SetPermissionsResult, CodeHostStatusesSet) error
 	history     []PermissionSyncJobStoreSaveSyncResultFuncCall
 	mutex       sync.Mutex
 }
 
 // SaveSyncResult delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockPermissionSyncJobStore) SaveSyncResult(v0 context.Context, v1 int, v2 *SetPermissionsResult, v3 CodeHostStatusesSet) error {
-	r0 := m.SaveSyncResultFunc.nextHook()(v0, v1, v2, v3)
-	m.SaveSyncResultFunc.appendCall(PermissionSyncJobStoreSaveSyncResultFuncCall{v0, v1, v2, v3, r0})
+func (m *MockPermissionSyncJobStore) SaveSyncResult(v0 context.Context, v1 int, v2 bool, v3 *SetPermissionsResult, v4 CodeHostStatusesSet) error {
+	r0 := m.SaveSyncResultFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.SaveSyncResultFunc.appendCall(PermissionSyncJobStoreSaveSyncResultFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the SaveSyncResult
 // method of the parent MockPermissionSyncJobStore instance is invoked and
 // the hook queue is empty.
-func (f *PermissionSyncJobStoreSaveSyncResultFunc) SetDefaultHook(hook func(context.Context, int, *SetPermissionsResult, CodeHostStatusesSet) error) {
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) SetDefaultHook(hook func(context.Context, int, bool, *SetPermissionsResult, CodeHostStatusesSet) error) {
 	f.defaultHook = hook
 }
 
@@ -39573,7 +39813,7 @@ func (f *PermissionSyncJobStoreSaveSyncResultFunc) SetDefaultHook(hook func(cont
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PermissionSyncJobStoreSaveSyncResultFunc) PushHook(hook func(context.Context, int, *SetPermissionsResult, CodeHostStatusesSet) error) {
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) PushHook(hook func(context.Context, int, bool, *SetPermissionsResult, CodeHostStatusesSet) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -39582,19 +39822,19 @@ func (f *PermissionSyncJobStoreSaveSyncResultFunc) PushHook(hook func(context.Co
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *PermissionSyncJobStoreSaveSyncResultFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, *SetPermissionsResult, CodeHostStatusesSet) error {
+	f.SetDefaultHook(func(context.Context, int, bool, *SetPermissionsResult, CodeHostStatusesSet) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *PermissionSyncJobStoreSaveSyncResultFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, *SetPermissionsResult, CodeHostStatusesSet) error {
+	f.PushHook(func(context.Context, int, bool, *SetPermissionsResult, CodeHostStatusesSet) error {
 		return r0
 	})
 }
 
-func (f *PermissionSyncJobStoreSaveSyncResultFunc) nextHook() func(context.Context, int, *SetPermissionsResult, CodeHostStatusesSet) error {
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) nextHook() func(context.Context, int, bool, *SetPermissionsResult, CodeHostStatusesSet) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -39637,10 +39877,13 @@ type PermissionSyncJobStoreSaveSyncResultFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 *SetPermissionsResult
+	Arg2 bool
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 CodeHostStatusesSet
+	Arg3 *SetPermissionsResult
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 CodeHostStatusesSet
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -39649,7 +39892,7 @@ type PermissionSyncJobStoreSaveSyncResultFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c PermissionSyncJobStoreSaveSyncResultFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -41592,6 +41835,9 @@ type MockRepoStore struct {
 	// QueryFunc is an instance of a mock function object controlling the
 	// behavior of the method Query.
 	QueryFunc *RepoStoreQueryFunc
+	// RepoEmbeddingExistsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoEmbeddingExists.
+	RepoEmbeddingExistsFunc *RepoStoreRepoEmbeddingExistsFunc
 	// StreamMinimalReposFunc is an instance of a mock function object
 	// controlling the behavior of the method StreamMinimalRepos.
 	StreamMinimalReposFunc *RepoStoreStreamMinimalReposFunc
@@ -41694,6 +41940,11 @@ func NewMockRepoStore() *MockRepoStore {
 		},
 		QueryFunc: &RepoStoreQueryFunc{
 			defaultHook: func(context.Context, *sqlf.Query) (r0 *sql.Rows, r1 error) {
+				return
+			},
+		},
+		RepoEmbeddingExistsFunc: &RepoStoreRepoEmbeddingExistsFunc{
+			defaultHook: func(context.Context, api.RepoID) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -41809,6 +42060,11 @@ func NewStrictMockRepoStore() *MockRepoStore {
 				panic("unexpected invocation of MockRepoStore.Query")
 			},
 		},
+		RepoEmbeddingExistsFunc: &RepoStoreRepoEmbeddingExistsFunc{
+			defaultHook: func(context.Context, api.RepoID) (bool, error) {
+				panic("unexpected invocation of MockRepoStore.RepoEmbeddingExists")
+			},
+		},
 		StreamMinimalReposFunc: &RepoStoreStreamMinimalReposFunc{
 			defaultHook: func(context.Context, ReposListOptions, func(*types.MinimalRepo)) error {
 				panic("unexpected invocation of MockRepoStore.StreamMinimalRepos")
@@ -41884,6 +42140,9 @@ func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {
 		},
 		QueryFunc: &RepoStoreQueryFunc{
 			defaultHook: i.Query,
+		},
+		RepoEmbeddingExistsFunc: &RepoStoreRepoEmbeddingExistsFunc{
+			defaultHook: i.RepoEmbeddingExists,
 		},
 		StreamMinimalReposFunc: &RepoStoreStreamMinimalReposFunc{
 			defaultHook: i.StreamMinimalRepos,
@@ -43862,6 +44121,115 @@ func (c RepoStoreQueryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoStoreQueryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RepoStoreRepoEmbeddingExistsFunc describes the behavior when the
+// RepoEmbeddingExists method of the parent MockRepoStore instance is
+// invoked.
+type RepoStoreRepoEmbeddingExistsFunc struct {
+	defaultHook func(context.Context, api.RepoID) (bool, error)
+	hooks       []func(context.Context, api.RepoID) (bool, error)
+	history     []RepoStoreRepoEmbeddingExistsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoEmbeddingExists delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRepoStore) RepoEmbeddingExists(v0 context.Context, v1 api.RepoID) (bool, error) {
+	r0, r1 := m.RepoEmbeddingExistsFunc.nextHook()(v0, v1)
+	m.RepoEmbeddingExistsFunc.appendCall(RepoStoreRepoEmbeddingExistsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepoEmbeddingExists
+// method of the parent MockRepoStore instance is invoked and the hook queue
+// is empty.
+func (f *RepoStoreRepoEmbeddingExistsFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoEmbeddingExists method of the parent MockRepoStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *RepoStoreRepoEmbeddingExistsFunc) PushHook(hook func(context.Context, api.RepoID) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStoreRepoEmbeddingExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStoreRepoEmbeddingExistsFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoStoreRepoEmbeddingExistsFunc) nextHook() func(context.Context, api.RepoID) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStoreRepoEmbeddingExistsFunc) appendCall(r0 RepoStoreRepoEmbeddingExistsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoStoreRepoEmbeddingExistsFuncCall
+// objects describing the invocations of this function.
+func (f *RepoStoreRepoEmbeddingExistsFunc) History() []RepoStoreRepoEmbeddingExistsFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStoreRepoEmbeddingExistsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStoreRepoEmbeddingExistsFuncCall is an object that describes an
+// invocation of method RepoEmbeddingExists on an instance of MockRepoStore.
+type RepoStoreRepoEmbeddingExistsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoStoreRepoEmbeddingExistsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStoreRepoEmbeddingExistsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -61929,6 +62297,9 @@ type MockUserStore struct {
 	// CountFunc is an instance of a mock function object controlling the
 	// behavior of the method Count.
 	CountFunc *UserStoreCountFunc
+	// CountForSCIMFunc is an instance of a mock function object controlling
+	// the behavior of the method CountForSCIM.
+	CountForSCIMFunc *UserStoreCountForSCIMFunc
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
 	CreateFunc *UserStoreCreateFunc
@@ -61971,6 +62342,9 @@ type MockUserStore struct {
 	// GetByVerifiedEmailFunc is an instance of a mock function object
 	// controlling the behavior of the method GetByVerifiedEmail.
 	GetByVerifiedEmailFunc *UserStoreGetByVerifiedEmailFunc
+	// GetCompletionsQuotaFunc is an instance of a mock function object
+	// controlling the behavior of the method GetCompletionsQuota.
+	GetCompletionsQuotaFunc *UserStoreGetCompletionsQuotaFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *UserStoreHandleFunc
@@ -62011,6 +62385,9 @@ type MockUserStore struct {
 	// RenewPasswordResetCodeFunc is an instance of a mock function object
 	// controlling the behavior of the method RenewPasswordResetCode.
 	RenewPasswordResetCodeFunc *UserStoreRenewPasswordResetCodeFunc
+	// SetCompletionsQuotaFunc is an instance of a mock function object
+	// controlling the behavior of the method SetCompletionsQuota.
+	SetCompletionsQuotaFunc *UserStoreSetCompletionsQuotaFunc
 	// SetIsSiteAdminFunc is an instance of a mock function object
 	// controlling the behavior of the method SetIsSiteAdmin.
 	SetIsSiteAdminFunc *UserStoreSetIsSiteAdminFunc
@@ -62041,6 +62418,11 @@ func NewMockUserStore() *MockUserStore {
 			},
 		},
 		CountFunc: &UserStoreCountFunc{
+			defaultHook: func(context.Context, *UsersListOptions) (r0 int, r1 error) {
+				return
+			},
+		},
+		CountForSCIMFunc: &UserStoreCountForSCIMFunc{
 			defaultHook: func(context.Context, *UsersListOptions) (r0 int, r1 error) {
 				return
 			},
@@ -62115,6 +62497,11 @@ func NewMockUserStore() *MockUserStore {
 				return
 			},
 		},
+		GetCompletionsQuotaFunc: &UserStoreGetCompletionsQuotaFunc{
+			defaultHook: func(context.Context, int32) (r0 *int, r1 error) {
+				return
+			},
+		},
 		HandleFunc: &UserStoreHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
 				return
@@ -62180,6 +62567,11 @@ func NewMockUserStore() *MockUserStore {
 				return
 			},
 		},
+		SetCompletionsQuotaFunc: &UserStoreSetCompletionsQuotaFunc{
+			defaultHook: func(context.Context, int32, *int) (r0 error) {
+				return
+			},
+		},
 		SetIsSiteAdminFunc: &UserStoreSetIsSiteAdminFunc{
 			defaultHook: func(context.Context, int32, bool) (r0 error) {
 				return
@@ -62225,6 +62617,11 @@ func NewStrictMockUserStore() *MockUserStore {
 		CountFunc: &UserStoreCountFunc{
 			defaultHook: func(context.Context, *UsersListOptions) (int, error) {
 				panic("unexpected invocation of MockUserStore.Count")
+			},
+		},
+		CountForSCIMFunc: &UserStoreCountForSCIMFunc{
+			defaultHook: func(context.Context, *UsersListOptions) (int, error) {
+				panic("unexpected invocation of MockUserStore.CountForSCIM")
 			},
 		},
 		CreateFunc: &UserStoreCreateFunc{
@@ -62297,6 +62694,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.GetByVerifiedEmail")
 			},
 		},
+		GetCompletionsQuotaFunc: &UserStoreGetCompletionsQuotaFunc{
+			defaultHook: func(context.Context, int32) (*int, error) {
+				panic("unexpected invocation of MockUserStore.GetCompletionsQuota")
+			},
+		},
 		HandleFunc: &UserStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockUserStore.Handle")
@@ -62362,6 +62764,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.RenewPasswordResetCode")
 			},
 		},
+		SetCompletionsQuotaFunc: &UserStoreSetCompletionsQuotaFunc{
+			defaultHook: func(context.Context, int32, *int) error {
+				panic("unexpected invocation of MockUserStore.SetCompletionsQuota")
+			},
+		},
 		SetIsSiteAdminFunc: &UserStoreSetIsSiteAdminFunc{
 			defaultHook: func(context.Context, int32, bool) error {
 				panic("unexpected invocation of MockUserStore.SetIsSiteAdmin")
@@ -62405,6 +62812,9 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		CountFunc: &UserStoreCountFunc{
 			defaultHook: i.Count,
 		},
+		CountForSCIMFunc: &UserStoreCountForSCIMFunc{
+			defaultHook: i.CountForSCIM,
+		},
 		CreateFunc: &UserStoreCreateFunc{
 			defaultHook: i.Create,
 		},
@@ -62447,6 +62857,9 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		GetByVerifiedEmailFunc: &UserStoreGetByVerifiedEmailFunc{
 			defaultHook: i.GetByVerifiedEmail,
 		},
+		GetCompletionsQuotaFunc: &UserStoreGetCompletionsQuotaFunc{
+			defaultHook: i.GetCompletionsQuota,
+		},
 		HandleFunc: &UserStoreHandleFunc{
 			defaultHook: i.Handle,
 		},
@@ -62485,6 +62898,9 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		},
 		RenewPasswordResetCodeFunc: &UserStoreRenewPasswordResetCodeFunc{
 			defaultHook: i.RenewPasswordResetCode,
+		},
+		SetCompletionsQuotaFunc: &UserStoreSetCompletionsQuotaFunc{
+			defaultHook: i.SetCompletionsQuota,
 		},
 		SetIsSiteAdminFunc: &UserStoreSetIsSiteAdminFunc{
 			defaultHook: i.SetIsSiteAdmin,
@@ -62723,6 +63139,114 @@ func (c UserStoreCountFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UserStoreCountForSCIMFunc describes the behavior when the CountForSCIM
+// method of the parent MockUserStore instance is invoked.
+type UserStoreCountForSCIMFunc struct {
+	defaultHook func(context.Context, *UsersListOptions) (int, error)
+	hooks       []func(context.Context, *UsersListOptions) (int, error)
+	history     []UserStoreCountForSCIMFuncCall
+	mutex       sync.Mutex
+}
+
+// CountForSCIM delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUserStore) CountForSCIM(v0 context.Context, v1 *UsersListOptions) (int, error) {
+	r0, r1 := m.CountForSCIMFunc.nextHook()(v0, v1)
+	m.CountForSCIMFunc.appendCall(UserStoreCountForSCIMFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountForSCIM method
+// of the parent MockUserStore instance is invoked and the hook queue is
+// empty.
+func (f *UserStoreCountForSCIMFunc) SetDefaultHook(hook func(context.Context, *UsersListOptions) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountForSCIM method of the parent MockUserStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *UserStoreCountForSCIMFunc) PushHook(hook func(context.Context, *UsersListOptions) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreCountForSCIMFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, *UsersListOptions) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreCountForSCIMFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, *UsersListOptions) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserStoreCountForSCIMFunc) nextHook() func(context.Context, *UsersListOptions) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreCountForSCIMFunc) appendCall(r0 UserStoreCountForSCIMFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreCountForSCIMFuncCall objects
+// describing the invocations of this function.
+func (f *UserStoreCountForSCIMFunc) History() []UserStoreCountForSCIMFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreCountForSCIMFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreCountForSCIMFuncCall is an object that describes an invocation
+// of method CountForSCIM on an instance of MockUserStore.
+type UserStoreCountForSCIMFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *UsersListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreCountForSCIMFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreCountForSCIMFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -64227,6 +64751,115 @@ func (c UserStoreGetByVerifiedEmailFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// UserStoreGetCompletionsQuotaFunc describes the behavior when the
+// GetCompletionsQuota method of the parent MockUserStore instance is
+// invoked.
+type UserStoreGetCompletionsQuotaFunc struct {
+	defaultHook func(context.Context, int32) (*int, error)
+	hooks       []func(context.Context, int32) (*int, error)
+	history     []UserStoreGetCompletionsQuotaFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCompletionsQuota delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserStore) GetCompletionsQuota(v0 context.Context, v1 int32) (*int, error) {
+	r0, r1 := m.GetCompletionsQuotaFunc.nextHook()(v0, v1)
+	m.GetCompletionsQuotaFunc.appendCall(UserStoreGetCompletionsQuotaFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetCompletionsQuota
+// method of the parent MockUserStore instance is invoked and the hook queue
+// is empty.
+func (f *UserStoreGetCompletionsQuotaFunc) SetDefaultHook(hook func(context.Context, int32) (*int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCompletionsQuota method of the parent MockUserStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UserStoreGetCompletionsQuotaFunc) PushHook(hook func(context.Context, int32) (*int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreGetCompletionsQuotaFunc) SetDefaultReturn(r0 *int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (*int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreGetCompletionsQuotaFunc) PushReturn(r0 *int, r1 error) {
+	f.PushHook(func(context.Context, int32) (*int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserStoreGetCompletionsQuotaFunc) nextHook() func(context.Context, int32) (*int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreGetCompletionsQuotaFunc) appendCall(r0 UserStoreGetCompletionsQuotaFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreGetCompletionsQuotaFuncCall
+// objects describing the invocations of this function.
+func (f *UserStoreGetCompletionsQuotaFunc) History() []UserStoreGetCompletionsQuotaFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreGetCompletionsQuotaFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreGetCompletionsQuotaFuncCall is an object that describes an
+// invocation of method GetCompletionsQuota on an instance of MockUserStore.
+type UserStoreGetCompletionsQuotaFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreGetCompletionsQuotaFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreGetCompletionsQuotaFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // UserStoreHandleFunc describes the behavior when the Handle method of the
 // parent MockUserStore instance is invoked.
 type UserStoreHandleFunc struct {
@@ -65620,6 +66253,115 @@ func (c UserStoreRenewPasswordResetCodeFuncCall) Args() []interface{} {
 // invocation.
 func (c UserStoreRenewPasswordResetCodeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// UserStoreSetCompletionsQuotaFunc describes the behavior when the
+// SetCompletionsQuota method of the parent MockUserStore instance is
+// invoked.
+type UserStoreSetCompletionsQuotaFunc struct {
+	defaultHook func(context.Context, int32, *int) error
+	hooks       []func(context.Context, int32, *int) error
+	history     []UserStoreSetCompletionsQuotaFuncCall
+	mutex       sync.Mutex
+}
+
+// SetCompletionsQuota delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserStore) SetCompletionsQuota(v0 context.Context, v1 int32, v2 *int) error {
+	r0 := m.SetCompletionsQuotaFunc.nextHook()(v0, v1, v2)
+	m.SetCompletionsQuotaFunc.appendCall(UserStoreSetCompletionsQuotaFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetCompletionsQuota
+// method of the parent MockUserStore instance is invoked and the hook queue
+// is empty.
+func (f *UserStoreSetCompletionsQuotaFunc) SetDefaultHook(hook func(context.Context, int32, *int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetCompletionsQuota method of the parent MockUserStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UserStoreSetCompletionsQuotaFunc) PushHook(hook func(context.Context, int32, *int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreSetCompletionsQuotaFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, *int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreSetCompletionsQuotaFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, *int) error {
+		return r0
+	})
+}
+
+func (f *UserStoreSetCompletionsQuotaFunc) nextHook() func(context.Context, int32, *int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreSetCompletionsQuotaFunc) appendCall(r0 UserStoreSetCompletionsQuotaFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreSetCompletionsQuotaFuncCall
+// objects describing the invocations of this function.
+func (f *UserStoreSetCompletionsQuotaFunc) History() []UserStoreSetCompletionsQuotaFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreSetCompletionsQuotaFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreSetCompletionsQuotaFuncCall is an object that describes an
+// invocation of method SetCompletionsQuota on an instance of MockUserStore.
+type UserStoreSetCompletionsQuotaFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreSetCompletionsQuotaFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreSetCompletionsQuotaFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // UserStoreSetIsSiteAdminFunc describes the behavior when the

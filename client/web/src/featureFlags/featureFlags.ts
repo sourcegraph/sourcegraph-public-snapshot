@@ -19,11 +19,14 @@ export type FeatureFlagName =
     | 'accessible-symbol-tree'
     | 'accessible-file-tree-always-load-ancestors'
     | 'search-ownership'
-    | 'cody'
     | 'search-ranking'
-    | 'database-permission-sync-worker'
     | 'blob-page-switch-areas-shortcuts'
     | 'app-connect-dotcom'
+    | 'sentinel'
+    | 'clone-progress-logging'
+    | 'sourcegraph-operator-site-admin-hide-maintenance'
+    | 'repository-metadata'
+    | 'llm-proxy-management-ui'
 
 interface OrgFlagOverride {
     orgID: string

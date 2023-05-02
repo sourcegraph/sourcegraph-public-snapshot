@@ -31,8 +31,8 @@ tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod", rev 
 tree-sitter-ruby = "0.20.0"
 tree-sitter-rust = "0.20.3"
 tree-sitter-typescript = "0.20.2"
-# Since there is no version tag, we pin the dependency to a specific revision
 tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg", rev = "d956b54ea151b12f19c945f7be421c3dcd3a77ba" }
+tree-sitter-zig = { git = "https://github.com/maxxnino/tree-sitter-zig", rev = "2c7b6308d906d7aec4b3e1fafaaeca447a8a2c2f" }
 
 # Using a fork of tree-sitter-scala because upstream Rust crate didn't compile.
 tree-sitter-scala = { git = "https://github.com/sourcegraph/tree-sitter-scala", rev = "6cd3cb6074624dd3d88e458343475ca4c701cb06" }

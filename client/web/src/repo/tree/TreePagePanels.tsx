@@ -3,6 +3,7 @@ import React, { FC, useCallback, useRef, useState, useMemo, useEffect } from 're
 import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
 
+import { basename, dirname } from '@sourcegraph/common'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Card,
@@ -19,7 +20,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { BlobFileFields } from '../../graphql-operations'
-import { basename, dirname } from '../../util/path'
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 
@@ -29,8 +29,14 @@ interface ReadmePreviewCardProps {
     entry: TreeFields['entries'][number]
     repoName: string
     revision: string
+    className?: string
 }
-export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> = ({ entry, repoName, revision }) => {
+export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> = ({
+    entry,
+    repoName,
+    revision,
+    className,
+}) => {
     const [readmeInfo, setReadmeInfo] = useState<null | BlobFileFields>(null)
 
     useEffect(() => {
@@ -50,7 +56,7 @@ export const ReadmePreviewCard: React.FunctionComponent<ReadmePreviewCardProps> 
     }, [repoName, revision, entry.path])
 
     return (
-        <section className="mb-4">
+        <section className={classNames('mb-4', className)}>
             {readmeInfo ? (
                 <RenderedReadmeFile blob={readmeInfo} entryUrl={entry.url} />
             ) : (

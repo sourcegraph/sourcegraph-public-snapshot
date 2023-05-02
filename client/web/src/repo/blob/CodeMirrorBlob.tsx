@@ -28,6 +28,7 @@ import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, Scalars } from '../../graphql-operations'
+import { useEditorStore } from '../../stores/editor'
 import { BlameHunkData } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -40,12 +41,14 @@ import { buildLinks } from './codemirror/links'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
+import { scipSnapshot } from './codemirror/scip-snapshot'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { pin, updatePin, selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
+import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
 
@@ -95,9 +98,6 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** The raw content of the blob. */
     content: string
 
-    /** The trusted syntax-highlighted code as HTML */
-    html: string
-
     /** LSIF syntax-highlighting data */
     lsif?: string
 
@@ -106,6 +106,8 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** External URLs for the file */
     externalURLs?: ExternalLinkFields[]
+
+    snapshotData?: { offset: number; data: string }[] | null
 }
 
 const staticExtensions: Extension = [
@@ -144,9 +146,10 @@ const staticExtensions: Extension = [
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
-        },
-        '.selected-line:focus': {
-            boxShadow: 'none',
+
+            '&:focus': {
+                boxShadow: 'none',
+            },
         },
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
@@ -268,6 +271,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         },
         [customHistoryAction]
     )
+
     const extensions = useMemo(
         () => [
             // Log uncaught errors that happen in callbacks that we pass to
@@ -282,7 +286,9 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
+            scipSnapshot(blobInfo.snapshotData),
             codeFoldingExtension(),
+            window.context?.codyEnabled ? codyWidgetExtension() : [],
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
@@ -425,6 +431,23 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             openSearchPanel(editorRef.current)
         }
     }, [])
+
+    // Sync the currently viewed document with the editor zustand store. This is used for features
+    // like Cody to know what file and range a user is looking at.
+    useEffect(() => {
+        const view = editorRef.current
+        useEditorStore.setState({
+            editor: view
+                ? {
+                      view,
+                      repo: props.blobInfo.repoName,
+                      filename: props.blobInfo.filePath,
+                      content: props.blobInfo.content,
+                  }
+                : null,
+        })
+        return () => useEditorStore.setState({ editor: null })
+    }, [props.blobInfo.content, props.blobInfo.filePath, props.blobInfo.repoName])
 
     return (
         <>

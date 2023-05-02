@@ -14,21 +14,21 @@
 
 ### Security
 
+## [2.1.3]
+
+### Added
+
+- Compatibility with IntelliJ 2023.1
+
+### Fixed
+
+- Fixed a backward-compatibility issue with Sourcegraph versions prior to 4.3 [#50080](https://github.com/sourcegraph/sourcegraph/issues/50080)
+
 ## [2.1.2]
 
 ### Added
 
 - Compatibility with IntelliJ 2022.3
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [2.1.1]
 

@@ -5,19 +5,17 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/grafana/regexp"
-
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type handler struct {
@@ -28,20 +26,21 @@ type handler struct {
 
 var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
 
-var matchEverythingRegexp = regexp.MustCompile(``)
-
-const MAX_FILE_SIZE = 1000000 // 1MB
-
 // The threshold to embed the entire file is slightly larger than the chunk threshold to
 // avoid splitting small files unnecessarily.
-const EMBED_ENTIRE_FILE_TOKENS_THRESHOLD = 384
-const EMBEDDING_CHUNK_TOKENS_THRESHOLD = 256
-const EMBEDDING_CHUNK_EARLY_SPLIT_TOKENS_THRESHOLD = EMBEDDING_CHUNK_TOKENS_THRESHOLD - 32
+const (
+	embedEntireFileTokensThreshold          = 384
+	embeddingChunkTokensThreshold           = 256
+	embeddingChunkEarlySplitTokensThreshold = embeddingChunkTokensThreshold - 32
+
+	defaultMaxCodeEmbeddingsPerRepo = 3_072_000
+	defaultMaxTextEmbeddingsPerRepo = 512_000
+)
 
 var splitOptions = split.SplitOptions{
-	NoSplitTokensThreshold:         EMBED_ENTIRE_FILE_TOKENS_THRESHOLD,
-	ChunkTokensThreshold:           EMBEDDING_CHUNK_TOKENS_THRESHOLD,
-	ChunkEarlySplitTokensThreshold: EMBEDDING_CHUNK_EARLY_SPLIT_TOKENS_THRESHOLD,
+	NoSplitTokensThreshold:         embedEntireFileTokensThreshold,
+	ChunkTokensThreshold:           embeddingChunkTokensThreshold,
+	ChunkEarlySplitTokensThreshold: embeddingChunkEarlySplitTokensThreshold,
 }
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoembeddingsbg.RepoEmbeddingJob) error {
@@ -54,41 +53,78 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
-	files, err := h.gitserverClient.ListFiles(ctx, nil, repo.Name, record.Revision, matchEverythingRegexp)
+	embeddingsClient := embed.NewEmbeddingsClient()
+	fetcher := &revisionFetcher{
+		repo:      repo.Name,
+		revision:  record.Revision,
+		gitserver: h.gitserverClient,
+	}
+
+	config := conf.Get().Embeddings
+	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
+	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(config.ExcludedFilePathPatterns)...)
+
+	opts := embed.EmbedRepoOpts{
+		RepoName:          repo.Name,
+		Revision:          record.Revision,
+		ExcludePatterns:   excludedGlobPatterns,
+		SplitOptions:      splitOptions,
+		MaxCodeEmbeddings: defaultTo(config.MaxCodeEmbeddingsPerRepo, defaultMaxCodeEmbeddingsPerRepo),
+		MaxTextEmbeddings: defaultTo(config.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo),
+	}
+
+	repoEmbeddingIndex, stats, err := embed.EmbedRepo(
+		ctx,
+		embeddingsClient,
+		fetcher,
+		getDocumentRanks,
+		opts,
+	)
 	if err != nil {
 		return err
 	}
 
-	validFiles := []string{}
-	for _, file := range files {
-		stat, err := h.gitserverClient.Stat(ctx, nil, repo.Name, record.Revision, file)
-		if err != nil {
-			return err
-		}
-
-		if !stat.IsDir() && stat.Size() <= MAX_FILE_SIZE {
-			validFiles = append(validFiles, file)
-		}
-	}
-
-	embeddingsClient := embed.NewEmbeddingsClient()
-
-	repoEmbeddingIndex, err := embed.EmbedRepo(
-		ctx,
-		repo.Name,
-		record.Revision,
-		validFiles,
-		embeddingsClient,
-		splitOptions,
-		func(fileName string) ([]byte, error) {
-			return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
-		},
-		getDocumentRanks,
+	logger.Info(
+		"finished generating repo embeddings",
+		log.String("repoName", string(repo.Name)),
+		log.String("revision", string(record.Revision)),
+		log.Object("stats", stats.ToFields()...),
 	)
 
+	return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
+}
+
+func defaultTo(input, def int) int {
+	if input == 0 {
+		return def
+	}
+	return input
+}
+
+type revisionFetcher struct {
+	repo      api.RepoName
+	revision  api.CommitID
+	gitserver gitserver.Client
+}
+
+func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, error) {
+	return r.gitserver.ReadFile(ctx, nil, r.repo, r.revision, fileName)
+}
+
+func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
+	fileInfos, err := r.gitserver.ReadDir(ctx, nil, r.repo, r.revision, "", true)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return embeddings.UploadIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
+	entries := make([]embed.FileEntry, 0, len(fileInfos))
+	for _, fileInfo := range fileInfos {
+		if !fileInfo.IsDir() {
+			entries = append(entries, embed.FileEntry{
+				Name: fileInfo.Name(),
+				Size: fileInfo.Size(),
+			})
+		}
+	}
+	return entries, nil
 }

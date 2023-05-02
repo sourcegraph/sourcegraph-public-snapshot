@@ -100,6 +100,7 @@ Available commands in `sg.config.yaml`:
 * codeintel-executor
 * codeintel-executor-firecracker
 * codeintel-worker
+* cody-slack: Start Cody-Slack locally server locally
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
 * embeddings
@@ -112,6 +113,7 @@ Available commands in `sg.config.yaml`:
 * gitserver-template
 * grafana
 * jaeger
+* llm-proxy
 * loki
 * monitoring-generator
 * oss-frontend
@@ -134,6 +136,7 @@ Available commands in `sg.config.yaml`:
 * storybook
 * symbols
 * syntax-highlighter
+* tauri: App shell (Tauri)
 * web-integration-build-prod: Build production web application for integration tests
 * web-integration-build: Build development web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
@@ -552,7 +555,7 @@ $ sg db reset-pg -db=all
 $ sg db reset-redis
 
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
-$ sg db add-user -name=foo
+$ sg db add-user -username=foo
 ```
 
 ### sg db delete-test-dbs
@@ -1102,6 +1105,18 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--format, -f="<value>"`: Output format of list ('markdown', 'plain', 'regexp') (default: markdown)
+
+## sg embeddings-qa
+
+Calculate recall for embeddings.
+
+Requires a running embeddings service with embeddings of the Sourcegraph repository.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--url, -u="<value>"`: Run the evaluation against this endpoint (default: http://localhost:9991/search)
 
 ## sg secret
 

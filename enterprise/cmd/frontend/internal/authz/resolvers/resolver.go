@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	authworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/worker/auth"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -132,8 +133,6 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 
 	if _, err = txs.SetRepoPerms(ctx, p.RepoID, perms, authz.SourceAPI); err != nil {
 		return nil, errors.Wrap(err, "set user repo permissions")
-	} else if _, err = txs.SetRepoPermissions(ctx, p); err != nil {
-		return nil, errors.Wrap(err, "set repository permissions")
 	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
 		return nil, errors.Wrap(err, "set repository pending permissions")
 	}
@@ -684,4 +683,61 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.
 	}
 
 	return NewPermissionsSyncJobsResolver(r.db, args)
+}
+
+func (r *Resolver) PermissionsSyncingStats(ctx context.Context) (graphqlbackend.PermissionsSyncingStatsResolver, error) {
+	stats := permissionsSyncingStats{
+		db:    r.db,
+		ossDB: r.ossDB,
+	}
+
+	// 🚨 SECURITY: Only site admins can query permissions syncing stats.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return stats, err
+	}
+
+	return stats, nil
+}
+
+type permissionsSyncingStats struct {
+	db    edb.EnterpriseDB
+	ossDB database.DB
+}
+
+func (s permissionsSyncingStats) QueueSize(ctx context.Context) (int32, error) {
+	count, err := s.ossDB.PermissionSyncJobs().Count(ctx, database.ListPermissionSyncJobOpts{State: database.PermissionsSyncJobStateQueued})
+
+	return int32(count), err
+}
+
+func (s permissionsSyncingStats) UsersWithLatestJobFailing(ctx context.Context) (int32, error) {
+	return s.ossDB.PermissionSyncJobs().CountUsersWithFailingSyncJob(ctx)
+}
+
+func (s permissionsSyncingStats) ReposWithLatestJobFailing(ctx context.Context) (int32, error) {
+	return s.ossDB.PermissionSyncJobs().CountReposWithFailingSyncJob(ctx)
+}
+
+func (s permissionsSyncingStats) UsersWithNoPermissions(ctx context.Context) (int32, error) {
+	count, err := s.db.Perms().CountUsersWithNoPerms(ctx)
+
+	return int32(count), err
+}
+
+func (s permissionsSyncingStats) ReposWithNoPermissions(ctx context.Context) (int32, error) {
+	count, err := s.db.Perms().CountReposWithNoPerms(ctx)
+
+	return int32(count), err
+}
+
+func (s permissionsSyncingStats) UsersWithStalePermissions(ctx context.Context) (int32, error) {
+	count, err := s.db.Perms().CountUsersWithStalePerms(ctx, authworker.SyncUserBackoff())
+
+	return int32(count), err
+}
+
+func (s permissionsSyncingStats) ReposWithStalePermissions(ctx context.Context) (int32, error) {
+	count, err := s.db.Perms().CountReposWithStalePerms(ctx, authworker.SyncRepoBackoff())
+
+	return int32(count), err
 }

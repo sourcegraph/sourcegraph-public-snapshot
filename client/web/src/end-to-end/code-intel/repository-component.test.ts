@@ -66,7 +66,7 @@ describe('Repository component', () => {
         await driver.page.waitForSelector(selector, { visible: true })
         return driver.page.evaluate(() =>
             // You can't reference hoverContentSelector in puppeteer's driver.page.evaluate
-            [...document.querySelectorAll('.test-tooltip-content')].map(content => content.textContent || '')
+            Array.from(document.querySelectorAll('.test-tooltip-content')).map(content => content.textContent || '')
         )
     }
 

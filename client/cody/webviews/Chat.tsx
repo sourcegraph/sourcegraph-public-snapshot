@@ -1,244 +1,247 @@
-/* eslint-disable react/no-array-index-key */
-/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
+import classNames from 'classnames'
 
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { escapeCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import {
+    Chat as ChatUI,
+    ChatUISubmitButtonProps,
+    ChatUISuggestionButtonProps,
+    ChatUITextAreaProps,
+    EditButtonProps,
+    FeedbackButtonsProps,
+} from '@sourcegraph/cody-ui/src/Chat'
+import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
-import { Tips } from './Tips'
-import { SubmitSvg } from './utils/icons'
-import { ChatMessage } from './utils/types'
-import { vscodeAPI } from './utils/VSCodeApi'
+import { FileLink } from './FileLink'
+import { VSCodeWrapper } from './utils/VSCodeApi'
 
-import './Chat.css'
-
-const SCROLL_THRESHOLD = 15
+import styles from './Chat.module.css'
 
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
+    messageBeingEdited: boolean
+    setMessageBeingEdited: (input: boolean) => void
     transcript: ChatMessage[]
+    contextStatus: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
+    vscodeAPI: VSCodeWrapper
+    suggestions?: string[]
+    setSuggestions?: (suggestions: undefined | string[]) => void
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
+    messageBeingEdited,
+    setMessageBeingEdited,
     transcript,
+    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
     setInputHistory,
+    vscodeAPI,
+    suggestions,
+    setSuggestions,
 }) => {
-    const [inputRows, setInputRows] = useState(5)
-    const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
-    const transcriptContainerRef = useRef<HTMLDivElement>(null)
-
-    const inputHandler = useCallback(
-        (inputValue: string) => {
-            const rowsCount = inputValue.match(/\n/g)?.length
-            if (rowsCount) {
-                setInputRows(rowsCount < 5 ? 5 : rowsCount > 25 ? 25 : rowsCount)
-            } else {
-                setInputRows(5)
-            }
-            setFormInput(inputValue)
-            if (inputValue !== inputHistory[historyIndex]) {
-                setHistoryIndex(inputHistory.length)
-            }
+    const onSubmit = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'submit', text: escapeCodyMarkdown(text) })
         },
-        [historyIndex, inputHistory, setFormInput]
+        [vscodeAPI]
     )
 
-    const onChatSubmit = useCallback(() => {
-        // Submit chat only when input is not empty
-        if (formInput !== undefined) {
-            vscodeAPI.postMessage({ command: 'submit', text: formInput })
-            setHistoryIndex(inputHistory.length + 1)
-            setInputHistory([...inputHistory, formInput])
-            setInputRows(5)
-            setFormInput('')
-        }
-    }, [formInput, inputHistory, setFormInput, setInputHistory])
-
-    const onChatKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLDivElement>): void => {
-            // Submit input on Enter press (without shift)
-            if (event.key === 'Enter' && !event.shiftKey && formInput) {
-                event.preventDefault()
-                event.stopPropagation()
-                onChatSubmit()
-            }
-            // Loop through input history on up arrow press
-            if (event.key === 'ArrowUp' && inputHistory.length) {
-                if (formInput === inputHistory[historyIndex] || !formInput) {
-                    const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
-                    setHistoryIndex(newIndex)
-                    setFormInput(inputHistory[newIndex])
-                }
-            }
+    const onEditBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'edit', text })
         },
-        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput]
+        [vscodeAPI]
     )
 
-    const bubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
+    const onFeedbackBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'event', event: 'feedback', value: text })
+        },
+        [vscodeAPI]
+    )
 
-    useEffect(() => {
-        if (transcriptContainerRef.current) {
-            // Only scroll if the user didn't scroll up manually more than the scrolling threshold.
-            // That is so that you can freely copy content or read up on older content while new
-            // content is being produced.
-            // We allow some small threshold for "what is considered not scrolled up" so that minimal
-            // scroll doesn't affect it (ie. if I'm not all the way scrolled down by like a pixel or two,
-            // I probably still want it to scroll).
-            // Sice this container uses flex-direction: column-reverse, the scrollTop starts in the negatives
-            // and ends at 0.
-            if (transcriptContainerRef.current.scrollTop >= -SCROLL_THRESHOLD) {
-                transcriptContainerRef.current.scrollTo({ behavior: 'smooth', top: 0 })
-            }
-        }
-    }, [transcript, transcriptContainerRef])
+    const onCopyBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'event', event: 'click', value: text })
+        },
+        [vscodeAPI]
+    )
 
     return (
-        <div className="inner-container">
-            <div ref={transcriptContainerRef} className={`${transcript.length >= 1 ? '' : 'non-'}transcript-container`}>
-                {/* Show Tips view if no conversation has happened */}
-                {transcript.length === 0 && !messageInProgress && <Tips />}
-                {transcript.length > 0 && (
-                    <div className="bubble-container">
-                        {transcript.map((message, index) => (
-                            <div
-                                key={`message-${index}`}
-                                className={`bubble-row ${bubbleClassName(message.speaker)}-bubble-row`}
-                            >
-                                <div className={`bubble ${bubbleClassName(message.speaker)}-bubble`}>
-                                    <div
-                                        className={`bubble-content ${bubbleClassName(message.speaker)}-bubble-content`}
-                                    >
-                                        {message.displayText && (
-                                            <p
-                                                dangerouslySetInnerHTML={{
-                                                    __html: renderMarkdown(message.displayText),
-                                                }}
-                                            />
-                                        )}
-                                        {message.contextFiles && message.contextFiles.length > 0 && (
-                                            <ContextFiles contextFiles={message.contextFiles} />
-                                        )}
-                                    </div>
-                                    <div className={`bubble-footer ${bubbleClassName(message.speaker)}-bubble-footer`}>
-                                        <div className="bubble-footer-timestamp">{`${
-                                            message.speaker === 'assistant' ? 'Cody' : 'Me'
-                                        } · ${message.timestamp}`}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-
-                        {messageInProgress && messageInProgress.speaker === 'assistant' && (
-                            <div className="bubble-row bot-bubble-row">
-                                <div className="bubble bot-bubble">
-                                    <div className="bubble-content bot-bubble-content">
-                                        {messageInProgress.displayText ? (
-                                            <p
-                                                dangerouslySetInnerHTML={{
-                                                    __html: renderMarkdown(messageInProgress.displayText),
-                                                }}
-                                            />
-                                        ) : (
-                                            <div className="bubble-loader">
-                                                <div className="bubble-loader-dot" />
-                                                <div className="bubble-loader-dot" />
-                                                <div className="bubble-loader-dot" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="bubble-footer bot-bubble-footer">
-                                        <span>Cody is typing...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-            <form className="input-row">
-                <VSCodeTextArea
-                    className="chat-input"
-                    rows={inputRows}
-                    name="user-query"
-                    value={formInput}
-                    autofocus={true}
-                    required={true}
-                    onInput={({ target }) => {
-                        const { value } = target as HTMLInputElement
-                        inputHandler(value)
-                    }}
-                    onKeyDown={onChatKeyDown}
-                />
-                <VSCodeButton
-                    className="submit-button"
-                    appearance="icon"
-                    type="button"
-                    onClick={onChatSubmit}
-                    disabled={!!messageInProgress}
-                >
-                    <SubmitSvg />
-                </VSCodeButton>
-            </form>
-        </div>
+        <ChatUI
+            messageInProgress={messageInProgress}
+            messageBeingEdited={messageBeingEdited}
+            setMessageBeingEdited={setMessageBeingEdited}
+            transcript={transcript}
+            contextStatus={contextStatus}
+            formInput={formInput}
+            setFormInput={setFormInput}
+            inputHistory={inputHistory}
+            setInputHistory={setInputHistory}
+            onSubmit={onSubmit}
+            textAreaComponent={TextArea}
+            submitButtonComponent={SubmitButton}
+            suggestionButtonComponent={SuggestionButton}
+            fileLinkComponent={FileLink}
+            className={styles.innerContainer}
+            codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
+            transcriptItemClassName={styles.transcriptItem}
+            humanTranscriptItemClassName={styles.humanTranscriptItem}
+            transcriptItemParticipantClassName={styles.transcriptItemParticipant}
+            transcriptActionClassName={styles.transcriptAction}
+            inputRowClassName={styles.inputRow}
+            chatInputContextClassName={styles.chatInputContext}
+            chatInputClassName={styles.chatInputClassName}
+            EditButtonContainer={EditButton}
+            editButtonOnSubmit={onEditBtnClick}
+            FeedbackButtonsContainer={FeedbackButtons}
+            feedbackButtonsOnSubmit={onFeedbackBtnClick}
+            copyButtonOnSubmit={onCopyBtnClick}
+            suggestions={suggestions}
+            setSuggestions={setSuggestions}
+        />
     )
 }
 
-export const ContextFiles: React.FunctionComponent<{ contextFiles: string[] }> = ({ contextFiles }) => {
-    const [isExpanded, setIsExpanded] = useState(false)
+const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
+    className,
+    rows,
+    autoFocus,
+    value,
+    required,
+    onInput,
+    onKeyDown,
+}) => {
+    // Focus the textarea when the webview gains focus (unless there is text selected). This makes
+    // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
+    // View` with the keyboard.
+    const inputRef = useRef<HTMLElement>(null)
+    useEffect(() => {
+        const handleFocus = (): void => {
+            if (document.getSelection()?.isCollapsed) {
+                inputRef.current?.focus()
+            }
+        }
+        window.addEventListener('focus', handleFocus)
+        return () => {
+            window.removeEventListener('focus', handleFocus)
+        }
+    }, [])
 
-    if (contextFiles.length === 1) {
-        return (
-            <p>
-                Cody read <code className="context-file">{contextFiles[0].split('/').pop()}</code> file to provide an
-                answer.
-            </p>
-        )
-    }
+    // <VSCodeTextArea autofocus> does not work, so implement autofocus ourselves.
+    useEffect(() => {
+        if (autoFocus) {
+            inputRef.current?.focus()
+        }
+    }, [autoFocus])
 
-    if (isExpanded) {
+    return (
+        <VSCodeTextArea
+            className={classNames(styles.chatInput, className)}
+            rows={rows}
+            ref={
+                // VSCodeTextArea has a very complex type.
+                //
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                inputRef as any
+            }
+            value={value}
+            autofocus={autoFocus}
+            required={required}
+            onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
+            onKeyDown={onKeyDown}
+        />
+    )
+}
+
+const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
+    <VSCodeButton
+        className={classNames(styles.submitButton, className)}
+        appearance="icon"
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+    >
+        <SubmitSvg />
+    </VSCodeButton>
+)
+
+const SuggestionButton: React.FunctionComponent<ChatUISuggestionButtonProps> = ({ suggestion, onClick }) => (
+    <VSCodeButton className={styles.suggestionButton} appearance="secondary" type="button" onClick={onClick}>
+        <i className="codicon codicon-sparkle" slot="start">
+            {/* Fallback emoji because this icon is a new addition and doesn't seem to work for me? */}✨
+        </i>{' '}
+        {suggestion}
+    </VSCodeButton>
+)
+
+const EditButton: React.FunctionComponent<EditButtonProps> = ({
+    className,
+    messageBeingEdited,
+    setMessageBeingEdited,
+}) => (
+    <div className={className}>
+        <VSCodeButton
+            className={classNames(styles.editButton)}
+            appearance="secondary"
+            type="button"
+            onClick={() => setMessageBeingEdited(!messageBeingEdited)}
+        >
+            <i className={messageBeingEdited ? 'codicon codicon-close' : 'codicon codicon-edit'} />
+        </VSCodeButton>
+    </div>
+)
+
+const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ className, feedbackButtonsOnSubmit }) => {
+    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+
+    const onFeedbackBtnSubmit = useCallback(
+        (text: string) => {
+            feedbackButtonsOnSubmit(text)
+            setFeedbackSubmitted(true)
+        },
+        [feedbackButtonsOnSubmit]
+    )
+
+    if (feedbackSubmitted) {
         return (
-            <p className="context-files-expanded">
-                <span className="context-files-toggle-icon" onClick={() => setIsExpanded(false)}>
-                    <i className="codicon codicon-triangle-down" slot="start" />
-                </span>
-                <div>
-                    <div className="context-files-list-title" onClick={() => setIsExpanded(false)}>
-                        Cody read the following files to provide an answer:
-                    </div>
-                    <ul className="context-files-list-container">
-                        {contextFiles.map(file => (
-                            <li key={file}>
-                                <code className="context-file">{file}</code>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </p>
+            <div className={className}>
+                <VSCodeButton className={classNames(styles.submitButton)} title="Feedback submitted." disabled={true}>
+                    <i className="codicon codicon-check" />
+                </VSCodeButton>
+            </div>
         )
     }
 
     return (
-        <p className="context-files-collapsed" onClick={() => setIsExpanded(true)}>
-            <span className="context-files-toggle-icon">
-                <i className="codicon codicon-triangle-right" slot="start" />
-            </span>
-            <div className="context-files-collapsed-text">
-                <span>
-                    Cody read <code className="context-file">{contextFiles[0].split('/').pop()}</code> and{' '}
-                    {contextFiles.length - 1} other {contextFiles.length > 2 ? 'files' : 'file'} to provide an answer.
-                </span>
-            </div>
-        </p>
+        <div className={classNames(styles.feedbackButtons, className)}>
+            <VSCodeButton
+                className={classNames(styles.submitButton)}
+                appearance="icon"
+                type="button"
+                onClick={() => onFeedbackBtnSubmit('thumbsUp')}
+            >
+                <i className="codicon codicon-thumbsup" />
+            </VSCodeButton>
+            <VSCodeButton
+                className={classNames(styles.submitButton)}
+                appearance="icon"
+                type="button"
+                onClick={() => onFeedbackBtnSubmit('thumbsDown')}
+            >
+                <i className="codicon codicon-thumbsdown" />
+            </VSCodeButton>
+        </div>
     )
 }

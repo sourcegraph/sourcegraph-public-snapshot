@@ -31,6 +31,7 @@ const (
 	ReleaseBranch     // release branch build
 	BextReleaseBranch // browser extension release build
 	VsceReleaseBranch // vs code extension release build
+	CodyReleaseBranch // cody extension release build
 
 	// Main branches
 
@@ -107,6 +108,12 @@ func (t RunType) Matcher() *RunTypeMatcher {
 	case VsceReleaseBranch:
 		return &RunTypeMatcher{
 			Branch:      "vsce/release",
+			BranchExact: true,
+		}
+
+	case CodyReleaseBranch:
+		return &RunTypeMatcher{
+			Branch:      "cody/release",
 			BranchExact: true,
 		}
 
@@ -207,6 +214,8 @@ func (t RunType) String() string {
 		return "Browser extension release build"
 	case VsceReleaseBranch:
 		return "VS Code extension release build"
+	case CodyReleaseBranch:
+		return "Cody VS Code extension release build"
 
 	case MainBranch:
 		return "Main branch"

@@ -8,7 +8,7 @@ import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@source
 import { asError } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { HighlightResponseFormat, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
@@ -31,9 +31,9 @@ import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { OwnConfigProps } from '../../own/OwnConfigProps'
-import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
+import { fetchBlob } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { buildSearchURLQueryFromQueryState, useNavbarQueryState, useNotepad } from '../../stores'
+import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
@@ -41,6 +41,7 @@ import { DidYouMean } from '../suggestion/DidYouMean'
 import { SmartSearch, smartSearchEvent } from '../suggestion/SmartSearch'
 
 import { AggregationUIMode, SearchAggregationResult, useAggregationUIMode } from './components/aggregation'
+import { SearchResultsCsvExportModal } from './export/SearchResultsCsvExportModal'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
@@ -73,6 +74,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         searchAggregationEnabled,
         codeMonitoringEnabled,
         ownEnabled,
+        platformContext,
     } = props
 
     const location = useLocation()
@@ -81,9 +83,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     // Feature flags
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
-    const prefetchBlobFormat = usePrefetchBlobFormat()
     const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
     const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
@@ -103,8 +105,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const [aggregationUIMode] = useAggregationUIMode()
 
     // Local state
-    const [allExpanded, setAllExpanded] = useState(false)
-    const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
     const [showMobileSidebar, setShowMobileSidebar] = useState(false)
 
     // Derived state
@@ -275,22 +275,27 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         )
     )
 
+    // Expand/contract all results
+    const [allExpanded, setAllExpanded] = useState(false)
     const onExpandAllResultsToggle = useCallback(() => {
         setAllExpanded(oldValue => !oldValue)
         telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
     }, [allExpanded, telemetryService])
+    useEffect(() => {
+        setAllExpanded(false) // Reset expanded state when new search is started
+    }, [location.search])
 
+    // Save search
+    const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
     const onSaveQueryClick = useCallback(() => setShowSavedSearchModal(true), [])
-
     const onSaveQueryModalClose = useCallback(() => {
         setShowSavedSearchModal(false)
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
     }, [telemetryService])
 
-    // Reset expanded state when new search is started
-    useEffect(() => {
-        setAllExpanded(false)
-    }, [location.search])
+    // Export results to CSV
+    const [showCsvExportModal, setShowCsvExportModal] = useState(false)
+    const onExportCsvClick = useCallback(() => setShowCsvExportModal(true), [])
 
     const handleSidebarSearchSubmit = useCallback(
         /**
@@ -381,9 +386,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         params =>
             fetchBlob({
                 ...params,
-                format: prefetchBlobFormat,
+                format: HighlightResponseFormat.JSON_SCIP,
             }),
-        [prefetchBlobFormat]
+        []
     )
 
     return (
@@ -440,6 +445,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         allExpanded={allExpanded}
                         onExpandAllResultsToggle={onExpandAllResultsToggle}
                         onSaveQueryClick={onSaveQueryClick}
+                        onExportCsvClick={onExportCsvClick}
                         onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
                         sidebarCollapsed={!!sidebarCollapsed}
                         setSidebarCollapsed={setSidebarCollapsed}
@@ -483,6 +489,16 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                                 onDidCancel={onSaveQueryModalClose}
                             />
                         )}
+                        {showCsvExportModal && (
+                            <SearchResultsCsvExportModal
+                                query={submittedURLQuery}
+                                options={options}
+                                results={results}
+                                sourcegraphURL={platformContext.sourcegraphURL}
+                                telemetryService={telemetryService}
+                                onClose={() => setShowCsvExportModal(false)}
+                            />
+                        )}
                         {results?.alert && (!results?.alert.kind || !isSmartSearchAlert(results.alert.kind)) && (
                             <div className={classNames(styles.alertArea, 'mt-4')}>
                                 {results?.alert?.kind === 'unowned-results' ? (
@@ -507,9 +523,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         <StreamingSearchResultsList
                             {...props}
                             enableOwnershipSearch={enableOwnershipSearch}
+                            enableRepositoryMetadata={enableRepositoryMetadata}
                             results={results}
                             allExpanded={allExpanded}
-                            assetsRoot={window.context?.assetsRoot || ''}
                             executedQuery={location.search}
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
@@ -518,6 +534,11 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             queryState={queryState}
                             setQueryState={setQueryState}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                            searchMode={searchMode}
+                            setSearchMode={setSearchMode}
+                            submitSearch={submitSearch}
+                            caseSensitive={caseSensitive}
+                            searchQueryFromURL={submittedURLQuery}
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             logSearchResultClicked={logSearchResultClicked}
                         />

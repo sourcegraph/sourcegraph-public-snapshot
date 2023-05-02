@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "githubappauth",
+    srcs = ["middleware.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githubappauth",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/auth",
+        "//enterprise/internal/database",
+        "//enterprise/internal/github_apps/types",
+        "//internal/auth",
+        "//internal/database",
+        "//internal/rcache",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_gorilla_mux//:mux",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)

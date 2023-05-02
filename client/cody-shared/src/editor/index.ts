@@ -16,9 +16,17 @@ export interface ActiveTextEditorVisibleContent {
 }
 
 export interface Editor {
+    getWorkspaceRootPath(): string | null
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
+
+    /**
+     * Gets the active text editor's selection, or the entire file if the selected range is empty.
+     */
+    getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null
+
     getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null
+    replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
     showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
 }

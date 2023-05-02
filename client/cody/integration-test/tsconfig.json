@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "sourceMap": true,
+    "rootDir": ".",
+    "sourceRoot": ".",
+    "outDir": "../out/integration-test",
+    "types": ["mocha", "node"],
+    "jsx": "preserve",
+  },
+  "references": [{ "path": "../" }],
+  "include": ["*", "**/*", ".eslintrc.js"],
+  "exclude": ["out", "testdata"],
+}

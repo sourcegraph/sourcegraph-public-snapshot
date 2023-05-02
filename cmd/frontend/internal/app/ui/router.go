@@ -38,7 +38,7 @@ const (
 	routeSearchBadge             = "search-badge"
 	routeRepo                    = "repo"
 	routeRepoSettings            = "repo-settings"
-	routeRepoCodeIntelligence    = "repo-code-intelligence"
+	routeRepoCodeGraph           = "repo-code-intelligence"
 	routeRepoCommit              = "repo-commit"
 	routeRepoBranches            = "repo-branches"
 	routeRepoBatchChanges        = "repo-batch-changes"
@@ -218,7 +218,7 @@ func newRouter() *mux.Router {
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
-	repo.PathPrefix("/code-intelligence").Methods("GET").Name(routeRepoCodeIntelligence)
+	repo.PathPrefix("/code-graph").Methods("GET").Name(routeRepoCodeGraph)
 	repo.PathPrefix("/commit").Methods("GET").Name(routeRepoCommit)
 	repo.PathPrefix("/branches").Methods("GET").Name(routeRepoBranches)
 	repo.PathPrefix("/batch-changes").Methods("GET").Name(routeRepoBatchChanges)
@@ -273,7 +273,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	router.Get(uirouter.RoutePasswordReset).Handler(brandedNoIndex("Reset password"))
 	router.Get(routeAPIConsole).Handler(brandedIndex("API console"))
 	router.Get(routeRepoSettings).Handler(brandedNoIndex("Repository settings"))
-	router.Get(routeRepoCodeIntelligence).Handler(brandedNoIndex("Code intelligence"))
+	router.Get(routeRepoCodeGraph).Handler(brandedNoIndex("Code graph"))
 	router.Get(routeRepoCommit).Handler(brandedNoIndex("Commit"))
 	router.Get(routeRepoBranches).Handler(brandedNoIndex("Branches"))
 	router.Get(routeRepoBatchChanges).Handler(brandedIndex("Batch Changes"))

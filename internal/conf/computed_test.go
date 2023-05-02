@@ -1,8 +1,6 @@
 package conf
 
 import (
-	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -286,28 +284,26 @@ func TestIsAccessRequestEnabled(t *testing.T) {
 			name: "parent object set should return default true",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{},
+					AuthAccessRequest: &schema.AuthAccessRequest{},
 				},
 			},
 			want: true,
 		},
 		{
-			name: "explicitly set true should return true",
+			name: "explicitly set enabled=true should return true",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						AccessRequestEnabled: &trueVal,
-					},
+					AuthAccessRequest: &schema.AuthAccessRequest{Enabled: &trueVal},
 				},
 			},
 			want: true,
 		},
 		{
-			name: "explicitly set false should return false",
+			name: "explicitly set enabled=false should return false",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						AccessRequestEnabled: &falseVal,
+					AuthAccessRequest: &schema.AuthAccessRequest{
+						Enabled: &falseVal,
 					},
 				},
 			},
@@ -321,31 +317,6 @@ func TestIsAccessRequestEnabled(t *testing.T) {
 			have := IsAccessRequestEnabled()
 			assert.Equal(t, test.want, have)
 		})
-	}
-}
-
-func setenv(t *testing.T, keyval string) func() {
-	t.Helper()
-
-	parts := strings.SplitN(keyval, "=", 2)
-	key := parts[0]
-	value := parts[1]
-
-	orig, set := os.LookupEnv(key)
-	if err := os.Setenv(key, value); err != nil {
-		t.Fatal(err)
-	}
-	if set {
-		return func() {
-			if err := os.Setenv(key, orig); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	return func() {
-		if err := os.Unsetenv(key); err != nil {
-			t.Fatal(err)
-		}
 	}
 }
 

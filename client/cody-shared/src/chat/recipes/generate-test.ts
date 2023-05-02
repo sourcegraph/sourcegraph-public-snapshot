@@ -1,9 +1,5 @@
-import { CodebaseContext } from '../../codebase-context'
-import { Editor } from '../../editor'
-import { IntentDetector } from '../../intent-detector'
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
-import { getShortTimestamp } from '../../timestamp'
 import { Interaction } from '../transcript/interaction'
 
 import {
@@ -12,25 +8,17 @@ import {
     getFileExtension,
     getContextMessagesFromSelection,
 } from './helpers'
-import { Recipe } from './recipe'
+import { Recipe, RecipeContext } from './recipe'
 
 export class GenerateTest implements Recipe {
-    public getID(): string {
-        return 'generate-unit-test'
-    }
+    public id = 'generate-unit-test'
 
-    public async getInteraction(
-        _humanChatInput: string,
-        editor: Editor,
-        _intentDetector: IntentDetector,
-        codebaseContext: CodebaseContext
-    ): Promise<Interaction | null> {
-        const selection = editor.getActiveTextEditorSelection()
+    public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             return Promise.resolve(null)
         }
 
-        const timestamp = getShortTimestamp()
         const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS)
         const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
         const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
@@ -43,20 +31,18 @@ export class GenerateTest implements Recipe {
         const displayText = `Generate a unit test for the following code:\n\`\`\`${extension}\n${selection.selectedText}\n\`\`\``
 
         return new Interaction(
-            { speaker: 'human', text: promptMessage, displayText, timestamp },
+            { speaker: 'human', text: promptMessage, displayText },
             {
                 speaker: 'assistant',
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
-                displayText: '',
-                timestamp,
             },
             getContextMessagesFromSelection(
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
                 selection.fileName,
-                codebaseContext
+                context.codebaseContext
             )
         )
     }

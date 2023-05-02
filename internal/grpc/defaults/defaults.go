@@ -49,16 +49,22 @@ func DialOptions() []grpc.DialOption {
 			grpc_prometheus.StreamClientInterceptor(metrics),
 			internalgrpc.StreamClientPropagator(actor.ActorPropagator{}),
 			internalgrpc.StreamClientPropagator(policy.ShouldTracePropagator{}),
-			otelgrpc.StreamClientInterceptor(),
+			otelStreamInterceptor,
 		),
 		grpc.WithChainUnaryInterceptor(
 			grpc_prometheus.UnaryClientInterceptor(metrics),
 			internalgrpc.UnaryClientPropagator(actor.ActorPropagator{}),
 			internalgrpc.UnaryClientPropagator(policy.ShouldTracePropagator{}),
-			otelgrpc.UnaryClientInterceptor(),
+			otelUnaryInterceptor,
 		),
 	}
 }
+
+var (
+	// Package-level variables because they are somewhat expensive to recreate every time
+	otelStreamInterceptor = otelgrpc.StreamClientInterceptor()
+	otelUnaryInterceptor  = otelgrpc.UnaryClientInterceptor()
+)
 
 // NewServer creates a new *grpc.Server with the default options
 func NewServer(logger log.Logger, additionalOpts ...grpc.ServerOption) *grpc.Server {

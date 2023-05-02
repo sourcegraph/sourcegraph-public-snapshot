@@ -15,8 +15,11 @@ Sourcegraph supports the following ways for users to sign in:
 - [Username normalization](#username-normalization)
 - [Troubleshooting](#troubleshooting)
 
-The authentication provider is configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
+The authentication providers are configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
 
+## Login form configuration
+
+To configure the presentation of the login form, see the [login form configuration page](./login_form.md).
 ## Recommendations
 
 If you are unsure which auth provider is right for you, we recommend applying the following rules in
@@ -75,7 +78,7 @@ You can use the filter `allowSignup`, available in the builtin configuration, to
 
   If set to `true`, users will see a sign-up link under the login form and will have access to the sign-up page, where they can create their accounts without restriction.
 
-  When not set, it will default to `false` -- in this case, users will see request access link. Unauthenticated users can submit request access forms and admins will get notification on the instance which they can approve or reject. Account request feature can be disabled by setting `experimentalFeatures.accessRequest.enabled: false`, and in this case new user accounts should be created by the site admin manually.
+  When not set, it will default to `false` -- in this case, users will see request account link. Unauthenticated users can submit request account forms and admins will get notification on the instance which they can approve or reject. Account request feature can be disabled by setting `auth.accessRequest: {enabled: false}`, and in this case new user accounts should be created by the site admin manually.
 
   If you choose to block sign-ups by using the `allowSignup` filter avaliable in another auth provider (eg., [GitHub](#how-to-control-user-sign-up-and-sign-in-with-github-auth-provider) or [GiLab](#how-to-control-user-sign-up-and-sign-in-with-gitlab-auth-provider)), make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
 
@@ -248,7 +251,7 @@ When combined with `"allowSignup": false` or unset, an admin should first create
 Sourcegraph instance:
 
 - Authorization callback URL: `https://sourcegraph.example.com/.auth/gitlab/callback`
-- Scopes: `api`, `read_user`
+- Scopes: `read_user`, `read_api` (be sure to set `"apiScope": "read_api"` in the `auth.providers` config, as indicated below)
 
 Then add the following lines to your site configuration:
 
@@ -262,6 +265,7 @@ Then add the following lines to your site configuration:
         "clientID": "replace-with-the-oauth-application-id",
         "clientSecret": "replace-with-the-oauth-secret",
         "url": "https://gitlab.example.com",
+        "apiScope": "read_api", // If not set, it defaults to "api" and the OAuth application will have to be adjusted accordingly.
         "allowSignup": false, // If not set, it defaults to true allowing any GitLab user with access to your instance to sign up.
         "allowGroups": ["group", "group/subgroup", "group/subgroup/subgroup"], // Restrict logins and sign-ups to members of groups or subgroups based on the full-path provided.
       }

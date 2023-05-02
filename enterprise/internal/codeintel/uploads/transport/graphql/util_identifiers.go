@@ -10,10 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func unmarshalPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err error) {
+func UnmarshalPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err error) {
 	uploadID, indexID, err = unmarshalRawPreciseIndexGQLID(id)
 	if err == nil && uploadID == 0 && indexID == 0 {
-		err = errors.New("no payload")
+		err = errors.Newf("invalid precise index id %q", id)
 	}
 
 	return uploadID, indexID, errors.Wrap(err, "unexpected precise index ID")

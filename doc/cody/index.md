@@ -1,149 +1,78 @@
-# Cody (experimental)
+# <picture title="Cody"><img class="theme-dark-only" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-white.png" width="200"><img class="theme-light-only" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-black.png" width="200"><div style="display:none">Cody</div></picture>
 
-<aside class="experimental">
-<p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
-</p>
-</aside>
+<span class="badge badge-experimental">Experimental</span>
 
-Cody is an AI coding assistant that lives in your editor that can find, explain, and write code. Cody uses a combination of Large Language Models (LLMs), Sourcegraph search, and Sourcegraph code intelligence to provide answers that eliminate toil and keep human programmers in flow. You can think of Cody as your programmer buddy who has read through all the code in open source, all the questions on StackOverflow, and all your organization's private code, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge.
+Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
 
-Cody is in private alpha (tagged as an [experimental](../doc/admin/beta_and_experimental_features.md) feature) at this stage. 
-- If you are an existing Sourcegraph Enterprise customer or want to use Cody for your team, contact your techical advisor or [sign up here](https://sourcegraph.typeform.com/to/pIXTgwrd) to get access
-- If you want to try Cody on open source code, sign up [here](https://forms.gle/cffMa8mrr8YuHv8o8) and we'll e-mail you instructions to connect Cody to sourcegraph.com as soon as your account is added.
+Cody uses a combination of Sourcegraph's code graph and Large Language Models (LLMs) to eliminate toil and keep human devs in flow. You can think of Cody as your coding assistant who has read through all the code in open source, all the questions on StackOverflow, and your own entire codebase, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge.
 
-Currently, Cody is available for VS Code. More editors are on the way—[join the Discord](https://discord.gg/8wJF5EdAyA) to inquire about your editor of choice.
+## Get Cody
 
-## Cody on Sourcegraph.com
+- **Sourcegraph Enterprise customers:** Contact your Sourcegraph technical advisor or [request enterprise access](https://sourcegraph.typeform.com/to/pIXTgwrd) to use Cody on your existing Sourcegraph instance.
+- **Everyone:** Cody for open source code is now available to all users with a Sourcegraph.com account. If you don't yet have a Sourcegraph.com account, you can [create one for free](https://sourcegraph.com/sign-up).
 
-Cody uses Sourcegraph to fetch relevant context to generate answers and code. These instructions walk through installing Cody and connecting it to sourcegraph.com. For private instances of Sourcegraph, see the section below about enabling Cody for Enterprise.
+Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and in Sourcegraph itself.
 
-1. Sign into [sourcegraph.com](https://sourcegraph.com)
-1. Request access [here](https://forms.gle/cffMa8mrr8YuHv8o8) and we'll send you an e-mail you as soon as your account is added. At this time, we are approving all requests.
-1. [Create a Sourcegraph access token](https://sourcegraph.com/user/settings/tokens)
-1. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-  1. Set the Sourcegraph URL to be `https://sourcegraph.com`
-  1. Set the access token to be the token you just created
+<div class="cta-group">
+<a class="btn btn-primary" href="quickstart">★ VS Code extension quickstart</a>
+<a class="btn" href="explanations/use_cases">Cody use cases</a>
+<a class="btn" href="faq">FAQ</a>
+<a class="btn" href="https://discord.com/servers/sourcegraph-969688426372825169">Join our Discord</a>
+</div>
 
-After installing, we recommend the following:
+## Features
 
-* Request embeddings for your repositories. Embeddings significantly improve the accuracy and quality of Cody's responses. To request embeddings, join the Cody Discord and ping a Sourcegraph team member. Note that embeddings are only available for public repositories on sourcegraph.com. If you want to use Cody with embeddings on private code, consider moving to a Sourcegraph Enterprise instance.
-* Spread the word online and send us your feedback in Discord. Cody is open source and we'd love to hear from you if you have bug reports or feature requests.
+<!-- NOTE: These should stay roughly in sync with client/cody/README.md, although these need to be not specific to VS Code. -->
 
-## Cody on your Sourcegraph Enterprise instance
+- **🤖 Chatbot that knows _your_ code:** Writes code and answers questions with knowledge of your entire codebase, following your project's code conventions and architecture better than other AI code chatbots.
+- **✨ Fixup code:** Interactively writes and refactors code for you, based on quick natural-language instructions.
+- **🧪 Recipes:** Generates unit tests, documentation, and more, with full codebase awareness.
 
-There are two steps required to enable Cody for Enterprise: enable your Sourcegraph instance and configure the VS Code extension.
+### 🤖 Chatbot that knows _your_ code
 
-### Step 1: Enable Cody on your Sourcegraph instance
+[**📽️ Demo**](https://twitter.com/beyang/status/1647744307045228544)
 
-Note that this requires site-admin privileges.
+You can chat with Cody in VS Code or in the Sourcegraph sidebar.
 
-1. Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). In particular, code snippets will be sent to a third-party language model provider when you use the Cody extension.
-2. To turn Cody on, you will need to set an access token for Sourcegraph to authentify with the third-party large language model provider (currently Anthropic but we may use different or several models over time). Reach out to your Sourcegraph Technical Advisor to get a key.
-3. Once you have the key, go to Site admin > Site configuration (`/site-admin/configuration`) on your instance and set:
+Examples of the kinds of questions Cody can handle:
 
-```json
-"completions": {
-  "enabled": true,
-  "accessToken": "<token>",
-  "model": "claude-v1",
-  "provider": "anthropic"
-}
-```
-4. You're done! 
-5. (Optional). Cody can be configured to use embeddings to improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [embeddings](#embeddings) section for more.
+- How is our app's secret storage implemented on Linux?
+- Where is the CI config for the web integration tests?
+- Write a new GraphQL resolver for the AuditLog.
+- Why is the UserConnectionResolver giving an error `unknown user`, and how do I fix it?
 
-### Step 2: Configure the VS Code extension
+Cody tells you which code files it read to generate its response. (If Cody gives a wrong answer, please share feedback so we can improve it.)
 
-Now that Cody is turned on on your Sourcegraph instance, any user can configure and use the Cody VS Code extension. This does not require admin privilege.
+### ✨ Fixup code
 
-1. If you currently have a previous version of Cody installed, uninstall it and reload VS Code before proceeding to the next steps.
-1. Search for “Sourcegraph Cody” in your VS Code extension marketplace, and install it.
+[**📽️ Demo**](https://twitter.com/sqs/status/1647673013343780864)
 
-<img width="500" alt="image" src="https://user-images.githubusercontent.com/25070988/227508342-cc6f29c0-ed91-4381-b651-16870c7c676b.png">
+In VS Code, just sprinkle your code with instructions in natural language, select the code, and run `Cody: Fixup` (<kbd>Ctrl+Alt+/</kbd>/<kbd>Ctrl+Opt+/</kbd>). Cody will figure out what edits to make.
 
-3. Reload VS Code, and open the Cody extension. Review and accept the terms.
+Examples of the kinds of fixup instructions Cody can handle:
 
-4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
+- "Factor out any common helper functions" (when multiple functions are selected)
+- "Use the imported CSS module's class names"
+- "Extract the list item to a separate React component"
+- "Handle errors better"
+- "Add helpful debug log statements"
+- "Make this work" (seriously, it often works--try it!)
 
-<img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
+### 🧪 Recipes
 
-5. In the Cody VS Code extension, set your instance URL and the access token
-    
-<img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
+In VS Code, right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
 
-You're all set!
+- Explain Code
+- Generate Unit Test
+- Generate Docstring
+- Improve Variable Names
 
+## Troubleshooting
 
-### Step 3: Try Cody!
+See [Cody troubleshooting guide](troubleshooting.md).
 
-A few things you can ask Cody:
+## Explanations
 
-- "What are popular go libraries for building CLIs?"
-- Open your workspace, and ask "Do we have a React date picker component in this repository?"
-- Right click on a function, and ask Cody to explain it
-- Try any of the Cody recipes!
-
-<img width="510" alt="image" src="https://user-images.githubusercontent.com/25070988/227511383-aa60f074-817d-4875-af41-54558dfe1951.png">
-
-## Embeddings
-
-Embeddings are a semantic representation of text. Embeddings are usually floating-point vectors with 256+ elements. The useful thing about embeddings is that they allow us to search over textual information using a semantic correlation between the query and the text, not just syntactic (matching keywords). We are using embeddings to create a search index over an entire codebase which allows us to perform natural language code search over the codebase. Indexing involves splitting the **entire codebase** into searchable chunks, and sending them to the external service specified in the site config for embedding. The final embedding index is stored in a managed object storage service. The available storage configurations are listed in the next section.
-
-### Configuring embeddings
-
-Here is the config for the OpenAI Embeddings API:
-
-```json
-"embeddings": {
-  "enabled": true,
-  "url": "https://api.openai.com/v1/embeddings",
-  "accessToken": "<token>",
-  "model": "text-embedding-ada-002",
-  "dimensions": 1536
-}
-```
-
-* Navigate to Site admin > Cody (`/site-admin/cody`) and schedule repositories for embedding.
-
-> NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice). 
-
-### Storing embedding indexes
-
-To target a managed object storage service, you will need to set a handful of environment variables for configuration and authentication to the target service. **If you are running a sourcegraph/server deployment, set the environment variables on the server container. Otherwise, if running via Docker-compose or Kubernetes, set the environment variables on the `frontend`, `embeddings`, and `worker` containers.**
-
-### Using S3
-
-To target an S3 bucket you've already provisioned, set the following environment variables. Authentication can be done through [an access and secret key pair](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) (and optional session token), or via the EC2 metadata API.
-
-**_Warning:_** Remember never to commit aws access keys in git. Consider using a secret handling service offered by your cloud provider. 
-
-- `EMBEDDINGS_UPLOAD_BACKEND=S3`
-- `EMBEDDINGS_UPLOAD_BUCKET=<my bucket name>`
-- `EMBEDDINGS_UPLOAD_AWS_ENDPOINT=https://s3.us-east-1.amazonaws.com`
-- `EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID=<your access key>`
-- `EMBEDDINGS_UPLOAD_AWS_SECRET_ACCESS_KEY=<your secret key>`
-- `EMBEDDINGS_UPLOAD_AWS_SESSION_TOKEN=<your session token>` (optional)
-- `EMBEDDINGS_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` (optional; set to use EC2 metadata API over static credentials)
-- `EMBEDDINGS_UPLOAD_AWS_REGION=us-east-1` (default)
-
-**_Note:_** If a non-default region is supplied, ensure that the subdomain of the endpoint URL (_the `AWS_ENDPOINT` value_) matches the target region.
-
-> NOTE: You don't need to set the `EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID` environment variable when using `EMBEDDINGS_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` because role credentials will be automatically resolved. 
-
-
-### Using GCS
-
-To target a GCS bucket you've already provisioned, set the following environment variables. Authentication is done through a service account key, supplied as either a path to a volume-mounted file, or the contents read in as an environment variable payload.
-
-- `EMBEDDINGS_UPLOAD_BACKEND=GCS`
-- `EMBEDDINGS_UPLOAD_BUCKET=<my bucket name>`
-- `EMBEDDINGS_UPLOAD_GCP_PROJECT_ID=<my project id>`
-- `EMBEDDINGS_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE=</path/to/file>`
-- `EMBEDDINGS_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT=<{"my": "content"}>`
-
-### Provisioning buckets
-
-If you would like to allow your Sourcegraph instance to control the creation and lifecycle configuration management of the target buckets, set the following environment variables:
-
-- `EMBEDDINGS_UPLOAD_MANAGE_BUCKET=true`
+- [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
+- [Enabling Cody for open source Sourcegraph.com users](explanations/enabling_cody.md)
+- [Configuring code graph context](explanations/code_graph_context.md)

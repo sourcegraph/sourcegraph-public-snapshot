@@ -153,6 +153,7 @@ export interface RepositoryMatch {
     private?: boolean
     branches?: string[]
     descriptionMatches?: Range[]
+    metadata?: Record<string, string | undefined>
 }
 
 export type OwnerMatch = PersonMatch | TeamMatch
@@ -279,7 +280,7 @@ interface Alert {
 // Same key values from internal/search/alert.go
 export type AnnotationName = 'ResultCount'
 
-interface ProposedQuery {
+export interface ProposedQuery {
     description?: string | null
     annotations?: { name: AnnotationName; value: string }[]
     query: string
@@ -475,6 +476,7 @@ export interface StreamSearchOptions {
     decorationContextLines?: number
     displayLimit?: number
     chunkMatches?: boolean
+    enableRepositoryMetadata?: boolean
 }
 
 function initiateSearchStream(

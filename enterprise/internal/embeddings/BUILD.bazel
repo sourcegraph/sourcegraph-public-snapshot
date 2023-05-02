@@ -6,6 +6,7 @@ go_library(
         "client.go",
         "index_name.go",
         "index_storage.go",
+        "quantize.go",
         "similarity_search.go",
         "tokens.go",
         "types.go",
@@ -24,6 +25,8 @@ go_library(
         "//internal/uploadstore",
         "//lib/errors",
         "@com_github_sourcegraph_conc//:conc",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_sync//errgroup",
     ],
 )
 

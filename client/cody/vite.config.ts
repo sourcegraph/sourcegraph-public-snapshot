@@ -9,9 +9,19 @@ export default defineConfig({
     plugins: [react()],
     publicDir: 'resources',
     base: './',
+    css: {
+        modules: {
+            localsConvention: 'camelCaseOnly',
+        },
+    },
+    logLevel: 'warn',
     build: {
         emptyOutDir: false,
         outDir: 'dist',
+        target: 'esnext',
+        minify: false,
+        sourcemap: 'inline',
+        reportCompressedSize: false,
         rollupOptions: {
             external: [/^vscode/],
             watch: {

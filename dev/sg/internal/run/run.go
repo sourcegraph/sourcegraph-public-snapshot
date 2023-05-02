@@ -327,7 +327,7 @@ func (c *cmdRunner) waitForInstallation(ctx context.Context, cmdNames map[string
 		"At this point it could be anything - does your computer still have power?",
 		"Might as well check Slack. %s is taking its time...",
 		"In German there's a saying: ein guter Käse braucht seine Zeit - a good cheese needs its time. Maybe %s is cheese?",
-		"If %s turns out to be cheese I'm gonna lose it. Hey, %s, hurry up, will ya",
+		"If %[1]s turns out to be cheese I'm gonna lose it. Hey, %[1]s, hurry up, will ya",
 		"Still waiting for %s to finish installing...",
 	}
 	messageCount := 0

@@ -3,32 +3,23 @@ import { ContextMessage, getContextMessageWithResponse } from '../../codebase-co
 import { Editor } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
-import { populateCodeContextTemplate } from '../../prompt/templates'
+import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
-import { getShortTimestamp } from '../../timestamp'
 import { Interaction } from '../transcript/interaction'
 
-import { Recipe } from './recipe'
+import { Recipe, RecipeContext } from './recipe'
 
 export class ChatQuestion implements Recipe {
-    public getID(): string {
-        return 'chat-question'
-    }
+    public id = 'chat-question'
 
-    public async getInteraction(
-        humanChatInput: string,
-        editor: Editor,
-        intentDetector: IntentDetector,
-        codebaseContext: CodebaseContext
-    ): Promise<Interaction | null> {
-        const timestamp = getShortTimestamp()
+    public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
 
         return Promise.resolve(
             new Interaction(
-                { speaker: 'human', text: truncatedText, displayText: humanChatInput, timestamp },
-                { speaker: 'assistant', text: '', displayText: '', timestamp },
-                this.getContextMessages(truncatedText, editor, intentDetector, codebaseContext)
+                { speaker: 'human', text: truncatedText, displayText: humanChatInput },
+                { speaker: 'assistant' },
+                this.getContextMessages(truncatedText, context.editor, context.intentDetector, context.codebaseContext)
             )
         )
     }
@@ -39,18 +30,22 @@ export class ChatQuestion implements Recipe {
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext
     ): Promise<ContextMessage[]> {
+        const contextMessages: ContextMessage[] = []
+
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
-        if (!isCodebaseContextRequired) {
-            return []
+        if (isCodebaseContextRequired) {
+            const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
+                numCodeResults: 12,
+                numTextResults: 3,
+            })
+            contextMessages.push(...codebaseContextMessages)
         }
 
-        const editorContextMessages = this.getEditorContext(editor)
-        const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
-            numCodeResults: 8,
-            numTextResults: 2,
-        })
+        if (isCodebaseContextRequired || intentDetector.isEditorContextRequired(text)) {
+            contextMessages.push(...this.getEditorContext(editor))
+        }
 
-        return editorContextMessages.concat(codebaseContextMessages)
+        return contextMessages
     }
 
     private getEditorContext(editor: Editor): ContextMessage[] {
@@ -60,7 +55,7 @@ export class ChatQuestion implements Recipe {
         }
         const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
-            populateCodeContextTemplate(truncatedContent, visibleContent.fileName),
+            populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName),
             visibleContent.fileName
         )
     }

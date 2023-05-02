@@ -6,6 +6,7 @@
     "sourceRoot": "src",
     "outDir": "out",
     "jsx": "react-jsx",
+    "types": ["jest"],
   },
   "include": [
     "src",
@@ -16,6 +17,6 @@
     ".eslintrc.js",
     "jest.config.js",
   ],
-  "exclude": ["scripts", "out", "dist"],
-  "references": [{ "path": "../cody-shared" }],
+  "exclude": ["scripts", "out", "dist", "integration-test"],
+  "references": [{ "path": "../cody-shared" }, { "path": "../cody-ui" }],
 }

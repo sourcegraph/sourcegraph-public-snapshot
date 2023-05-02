@@ -1,5 +1,5 @@
 # Build custom collector binary
-FROM golang:1.19.6-alpine@sha256:f2e0acaf7c628cd819b73541d7c1ea8f888d51edb0a58935a3c46a084fa953fa AS build
+FROM golang:1.19.8-alpine@sha256:841c160ed35923d96c95c52403c4e6db5decd9cbce034aa851e412ade5d4b74f AS build
 
 ARG OTEL_COLLECTOR_VERSION
 ENV OTEL_COLLECTOR_VERSION=${OTEL_COLLECTOR_VERSION}
@@ -22,7 +22,7 @@ RUN go run go.opentelemetry.io/collector/cmd/builder@v${OTEL_COLLECTOR_VERSION} 
     --output-path=/cmd/otelcol-sourcegraph
 
 # Package the final distribution image
-FROM sourcegraph/alpine-3.14:208635_2023-03-20_4.5-5e69dce80501@sha256:9e480efdf1b7fa41a4aae0d1111cffed9653aca375f0af4d466eea9a703234f8
+FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

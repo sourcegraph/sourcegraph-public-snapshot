@@ -1066,10 +1066,10 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	})
 
 	// Setting repo sizes in DB
-	sizes := map[api.RepoID]int64{
-		repo1.ID: 100,
-		repo2.ID: 500,
-		repo3.ID: 800,
+	sizes := map[api.RepoName]int64{
+		repo1.Name: 100,
+		repo2.Name: 500,
+		repo3.Name: 800,
 	}
 	numUpdated, err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
 	if err != nil {
@@ -1080,9 +1080,9 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 
 	// Updating sizes in test data for further diff comparison
-	gitserverRepo1.RepoSizeBytes = sizes[gitserverRepo1.RepoID]
-	gitserverRepo2.RepoSizeBytes = sizes[gitserverRepo2.RepoID]
-	gitserverRepo3.RepoSizeBytes = sizes[gitserverRepo3.RepoID]
+	gitserverRepo1.RepoSizeBytes = sizes[repo1.Name]
+	gitserverRepo2.RepoSizeBytes = sizes[repo2.Name]
+	gitserverRepo3.RepoSizeBytes = sizes[repo3.Name]
 
 	// Checking repo diffs, excluding UpdatedAt. This is to verify that nothing except repo_size_bytes
 	// has changed
@@ -1114,8 +1114,8 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 
 	// update subset
-	sizes = map[api.RepoID]int64{
-		repo3.ID: 900,
+	sizes = map[api.RepoName]int64{
+		repo3.Name: 900,
 	}
 	numUpdated, err = db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
 	if err != nil {
@@ -1128,10 +1128,10 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	// update with different batch sizes
 	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithHandle(db.Handle())}
 	for _, batchSize := range []int64{1, 2, 3, 6} {
-		sizes = map[api.RepoID]int64{
-			repo1.ID: 123 + batchSize,
-			repo2.ID: 456 + batchSize,
-			repo3.ID: 789 + batchSize,
+		sizes = map[api.RepoName]int64{
+			repo1.Name: 123 + batchSize,
+			repo2.Name: 456 + batchSize,
+			repo3.Name: 789 + batchSize,
 		}
 
 		numUpdated, err = gitserverRepoStore.updateRepoSizesWithBatchSize(ctx, sizes, int(batchSize))

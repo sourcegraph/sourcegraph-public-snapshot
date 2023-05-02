@@ -10,11 +10,13 @@ describe('getConfiguration', () => {
         expect(getConfiguration(config)).toEqual({
             enabled: true,
             serverEndpoint: '',
-            codebase: undefined,
+            codebase: '',
             debug: false,
             useContext: 'embeddings',
             experimentalSuggest: false,
-            openaiKey: null,
+            experimentalChatPredictions: false,
+            anthropicKey: null,
+            customHeaders: {},
         })
     })
 
@@ -34,8 +36,15 @@ describe('getConfiguration', () => {
                         return 'keyword'
                     case 'cody.experimental.suggestions':
                         return true
-                    case 'cody.experimental.keys.openai':
-                        return 'sk-XXX'
+                    case 'cody.experimental.chatPredictions':
+                        return true
+                    case 'cody.experimental.keys.anthropic':
+                        return 'sk-YYY'
+                    case 'cody.customHeaders':
+                        return {
+                            'Cache-Control': 'no-cache',
+                            'Proxy-Authenticate': 'Basic',
+                        }
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -48,7 +57,12 @@ describe('getConfiguration', () => {
             debug: true,
             useContext: 'keyword',
             experimentalSuggest: true,
-            openaiKey: 'sk-XXX',
+            experimentalChatPredictions: true,
+            anthropicKey: 'sk-YYY',
+            customHeaders: {
+                'Cache-Control': 'no-cache',
+                'Proxy-Authenticate': 'Basic',
+            },
         })
     })
 })

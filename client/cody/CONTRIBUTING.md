@@ -8,7 +8,7 @@
 
 2. Run `pnpm install` from the **root** of this repository
 3. Select `Launch Cody Extension` from the dropdown menu in the `RUN AND DEBUG` sidebar
-   1. Remove `node_modeules` from `root` and `client/cody` before re-running `pnpm install` if the start up failed
+   1. Remove `node_modules` from `root` and `client/cody` before re-running `pnpm install` if the start up failed
 4. Refresh the extension to see updated changes
 
 ## File structure
@@ -18,6 +18,7 @@
 - `webviews`: source code of the extension UI (webviews),
   build with Vite and rollup.js using the `vite.config.ts` file at directory
   root
+- `integration-test`: code for integration tests
 - `dist`: build outputs from both webpack and vite
 - `resources`: everything in this directory will be move to
   the ./dist directory automatically during build time for easy packaging
@@ -50,7 +51,6 @@ Follow the steps below to package and publish the VS Code extension.
 ### Prerequisite
 
 - Install the [VSCE CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
-- Obtain the marketplace token for publishing Cody from 1Password
 
 ### Release Steps
 
@@ -64,12 +64,18 @@ Follow the steps below to package and publish the VS Code extension.
 2. To try the packaged extension locally, disable any other installations of it and then run:
 
    ```sh
+   $ cd client/cody
    $ code --install-extension dist/cody.vsix
    ```
 
-3. To publish the packaged extension to the VS Code Extension Marketplace:
+3. When the changes look good, create and merge a pull request with the changes into `main` and push an update to `cody/release` branch to trigger an automated release:
 
-   ```sh
-   $ cd client/cody
-   $ pnpm run vsce:publish
+   ```shell
+   $ git push origin main:cody/release
    ```
+
+   - This will trigger the build pipeline for publishing the extension using the `pnpm release` command
+   - Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+   - Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai)
+
+   4. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=cody%2Frelease) to watch the build process

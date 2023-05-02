@@ -330,8 +330,19 @@ func IsBuiltinSignupAllowed() bool {
 
 // IsAccessRequestEnabled returns whether request access experimental feature is enabled or not.
 func IsAccessRequestEnabled() bool {
-	experimentalFeatures := Get().ExperimentalFeatures
-	return experimentalFeatures == nil || experimentalFeatures.AccessRequestEnabled == nil || *experimentalFeatures.AccessRequestEnabled
+	authAccessRequest := Get().AuthAccessRequest
+	return authAccessRequest == nil || authAccessRequest.Enabled == nil || *authAccessRequest.Enabled
+}
+
+// AuthPrimaryLoginProvidersCount returns the number of primary login providers
+// configured, or 3 (the default) if not explicitly configured.
+// This is only used for the UI
+func AuthPrimaryLoginProvidersCount() int {
+	c := Get().AuthPrimaryLoginProvidersCount
+	if c == 0 {
+		return 3 // default to 3
+	}
+	return c
 }
 
 // SearchSymbolsParallelism returns 20, or the site config
@@ -342,11 +353,6 @@ func SearchSymbolsParallelism() int {
 		return 20
 	}
 	return val
-}
-
-func BitbucketServerPluginPerm() bool {
-	val := ExperimentalFeatures().BitbucketServerFastPerm
-	return val == "enabled"
 }
 
 func EventLoggingEnabled() bool {

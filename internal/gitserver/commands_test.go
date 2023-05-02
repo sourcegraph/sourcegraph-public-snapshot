@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/regexp"
 	godiff "github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -654,38 +654,37 @@ func TestLsFiles(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 	client := NewClient()
-	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
-		return client.LsFiles(ctx, checker, repo, "HEAD")
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
+		return client.LsFiles(ctx, checker, repo, api.CommitID(commit))
 	})
 }
 
 func TestListFiles(t *testing.T) {
-	// TODO this test doesn't actually exercise recursive listing or the
-	// pattern regex. But better than nothing.
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 	client := NewClient()
-	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
-		return client.ListFiles(ctx, checker, repo, "HEAD", regexp.MustCompile(""))
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
+		return client.ListFiles(ctx, checker, repo, api.CommitID(commit), &protocol.ListFilesOpts{})
 	})
 }
 
 // runFileListingTest tests the specified function which must return a list of filenames and an error. The test first
 // tests the basic case (all paths returned), then the case with sub-repo permissions specified.
 func runFileListingTest(t *testing.T,
-	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) ([]string, error),
+	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string) ([]string, error),
 ) {
 	t.Helper()
 	gitCommands := []string{
 		"touch file1",
-		"touch file2",
-		"touch file3",
-		"git add file1 file2 file3",
+		"mkdir dir",
+		"touch dir/file2",
+		"touch dir/file3",
+		"git add file1 dir/file2 dir/file3",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 
-	repo := MakeGitRepository(t, gitCommands...)
-
+	repo, dir := MakeGitRepositoryAndReturnDir(t, gitCommands...)
+	headCommit := GetHeadCommitFromGitDir(t, dir)
 	ctx := context.Background()
 
 	checker := authz.NewMockSubRepoPermissionChecker()
@@ -694,12 +693,12 @@ func runFileListingTest(t *testing.T,
 		return false
 	})
 
-	files, err := listingFunctionToTest(ctx, checker, repo)
+	files, err := listingFunctionToTest(ctx, checker, repo, headCommit)
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []string{
-		"file1", "file2", "file3",
+		"dir/file2", "dir/file3", "file1",
 	}
 	if diff := cmp.Diff(want, files); diff != "" {
 		t.Fatal(diff)
@@ -710,7 +709,7 @@ func runFileListingTest(t *testing.T,
 		return true
 	})
 	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		if content.Path == "file1" {
+		if content.Path == "dir/file2" {
 			return authz.Read, nil
 		}
 		return authz.None, nil
@@ -719,12 +718,12 @@ func runFileListingTest(t *testing.T,
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
-	files, err = listingFunctionToTest(ctx, checker, repo)
+	files, err = listingFunctionToTest(ctx, checker, repo, headCommit)
 	if err != nil {
 		t.Fatal(err)
 	}
 	want = []string{
-		"file1",
+		"dir/file2",
 	}
 	if diff := cmp.Diff(want, files); diff != "" {
 		t.Fatal(diff)

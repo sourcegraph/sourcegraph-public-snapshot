@@ -13,14 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -28,13 +27,9 @@ import (
 type Service struct {
 	store           store.Store
 	repoStore       database.RepoStore
-	inferenceSvc    InferenceService
-	repoUpdater     RepoUpdaterClient
 	gitserverClient gitserver.Client
-	symbolsClient   *symbols.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
 	jobSelector     *jobselector.JobSelector
-	logger          log.Logger
 	operations      *operations
 }
 
@@ -45,7 +40,6 @@ func newService(
 	repoUpdater RepoUpdaterClient,
 	repoStore database.RepoStore,
 	gitserverClient gitserver.Client,
-	symbolsClient *symbols.Client,
 ) *Service {
 	// NOTE - this should go up a level in init.go.
 	// Not going to do this now so that we don't blow up all of the
@@ -74,22 +68,11 @@ func newService(
 	return &Service{
 		store:           store,
 		repoStore:       repoStore,
-		inferenceSvc:    inferenceSvc,
 		gitserverClient: gitserverClient,
-		symbolsClient:   symbolsClient,
 		indexEnqueuer:   indexEnqueuer,
 		jobSelector:     jobSelector,
-		logger:          observationCtx.Logger,
 		operations:      newOperations(observationCtx),
 	}
-}
-
-func (s *Service) GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]shared.IndexesWithRepositoryNamespace, error) {
-	return s.store.GetRecentIndexesSummary(ctx, repositoryID)
-}
-
-func (s *Service) GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error) {
-	return s.store.GetLastIndexScanForRepository(ctx, repositoryID)
 }
 
 func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (shared.IndexConfiguration, bool, error) {
@@ -134,7 +117,7 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 		return nil, nil, err
 	}
 
-	indexJobHints, err := s.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
+	indexJobHints, err := s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repo.Name, commit)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -152,31 +135,6 @@ func (s *Service) UpdateIndexConfigurationByRepositoryID(ctx context.Context, re
 	return s.store.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, data)
 }
 
-func (s *Service) GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error) {
-	mappings, err := s.symbolsClient.ListLanguageMappings(ctx, repoName)
-	if err != nil {
-		return false, "", err
-	}
-
-	for language, globs := range mappings {
-		for _, glob := range globs {
-			if glob.Match(filepath) {
-				return true, language, nil
-			}
-		}
-	}
-
-	return false, "", nil
-}
-
-func (s *Service) SetRequestLanguageSupport(ctx context.Context, userID int, language string) error {
-	return s.store.SetRequestLanguageSupport(ctx, userID, language)
-}
-
-func (s *Service) GetLanguagesRequestedBy(ctx context.Context, userID int) ([]string, error) {
-	return s.store.GetLanguagesRequestedBy(ctx, userID)
-}
-
 func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string) error {
 	return s.store.QueueRepoRev(ctx, repositoryID, rev)
 }
@@ -189,7 +147,7 @@ func (s *Service) GetInferenceScript(ctx context.Context) (string, error) {
 	return s.store.GetInferenceScript(ctx)
 }
 
-func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]types.Index, error) {
+func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]uploadsshared.Index, error) {
 	return s.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, force, bypassLimit)
 }
 
@@ -201,22 +159,18 @@ func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, rep
 	return s.jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
 }
 
-func (s *Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
-	return s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
+func IsLimitError(err error) bool {
+	return errors.As(err, &inference.LimitError{})
 }
 
-func (s *Service) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error) {
-	return s.store.NumRepositoriesWithCodeIntelligence(ctx)
+func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error) {
+	return s.store.GetRepositoriesForIndexScan(ctx, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, now)
 }
 
-func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]shared.RepositoryWithCount, int, error) {
-	return s.store.RepositoryIDsWithErrors(ctx, offset, limit)
-}
-
-func (s *Service) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]shared.RepositoryWithAvailableIndexers, int, error) {
+func (s *Service) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithAvailableIndexers, int, error) {
 	return s.store.RepositoryIDsWithConfiguration(ctx, offset, limit)
 }
 
-func IsLimitError(err error) bool {
-	return errors.As(err, &inference.LimitError{})
+func (s *Service) GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error) {
+	return s.store.GetLastIndexScanForRepository(ctx, repositoryID)
 }

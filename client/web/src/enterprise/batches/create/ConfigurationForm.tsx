@@ -104,8 +104,9 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     const [isNameValid, setIsNameValid] = useState<boolean>()
 
     const onNameChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setNameInput(event.target.value)
-        setIsNameValid(NAME_PATTERN.test(event.target.value))
+        const newName = event.target.value.replaceAll(' ', '-')
+        setNameInput(newName)
+        setIsNameValid(NAME_PATTERN.test(newName))
     }, [])
 
     const { isUnlicensed, maxUnlicensedChangesets } = useBatchChangesLicense()

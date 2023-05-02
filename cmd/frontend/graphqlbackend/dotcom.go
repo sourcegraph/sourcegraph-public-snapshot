@@ -19,12 +19,15 @@ type DotcomRootResolver interface {
 type DotcomResolver interface {
 	// DotcomMutation
 	CreateProductSubscription(context.Context, *CreateProductSubscriptionArgs) (ProductSubscription, error)
+	UpdateProductSubscription(context.Context, *UpdateProductSubscriptionArgs) (*EmptyResponse, error)
 	GenerateProductLicenseForSubscription(context.Context, *GenerateProductLicenseForSubscriptionArgs) (ProductLicense, error)
+	GenerateAccessTokenForSubscription(context.Context, *GenerateAccessTokenForSubscriptionArgs) (ProductSubscriptionAccessToken, error)
 	ArchiveProductSubscription(context.Context, *ArchiveProductSubscriptionArgs) (*EmptyResponse, error)
 
 	// DotcomQuery
 	ProductSubscription(context.Context, *ProductSubscriptionArgs) (ProductSubscription, error)
 	ProductSubscriptions(context.Context, *ProductSubscriptionsArgs) (ProductSubscriptionConnection, error)
+	ProductSubscriptionByAccessToken(context.Context, *ProductSubscriptionByAccessTokenArgs) (ProductSubscription, error)
 	ProductLicenses(context.Context, *ProductLicensesArgs) (ProductLicenseConnection, error)
 	ProductLicenseByID(ctx context.Context, id graphql.ID) (ProductLicense, error)
 	ProductSubscriptionByID(ctx context.Context, id graphql.ID) (ProductSubscription, error)
@@ -38,6 +41,7 @@ type ProductSubscription interface {
 	Account(context.Context) (*UserResolver, error)
 	ActiveLicense(context.Context) (ProductLicense, error)
 	ProductLicenses(context.Context, *graphqlutil.ConnectionArgs) (ProductLicenseConnection, error)
+	LLMProxyAccess() LLMProxyAccess
 	CreatedAt() gqlutil.DateTime
 	IsArchived() bool
 	URL(context.Context) (string, error)
@@ -51,6 +55,15 @@ type CreateProductSubscriptionArgs struct {
 type GenerateProductLicenseForSubscriptionArgs struct {
 	ProductSubscriptionID graphql.ID
 	License               *ProductLicenseInput
+}
+
+type GenerateAccessTokenForSubscriptionArgs struct {
+	ProductSubscriptionID graphql.ID
+}
+
+// ProductSubscriptionAccessToken is the interface for the GraphQL type ProductSubscriptionAccessToken.
+type ProductSubscriptionAccessToken interface {
+	AccessToken() string
 }
 
 type ArchiveProductSubscriptionArgs struct{ ID graphql.ID }
@@ -100,4 +113,33 @@ type ProductLicenseConnection interface {
 	Nodes(context.Context) ([]ProductLicense, error)
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type ProductSubscriptionByAccessTokenArgs struct {
+	AccessToken string
+}
+
+type UpdateProductSubscriptionArgs struct {
+	ID     graphql.ID
+	Update UpdateProductSubscriptionInput
+}
+
+type UpdateProductSubscriptionInput struct {
+	LLMProxyAccess *UpdateLLMProxyAccessInput
+}
+
+type UpdateLLMProxyAccessInput struct {
+	Enabled                  *bool
+	RateLimit                *int32
+	RateLimitIntervalSeconds *int32
+}
+
+type LLMProxyAccess interface {
+	Enabled() bool
+	RateLimit(context.Context) (LLMProxyRateLimit, error)
+}
+
+type LLMProxyRateLimit interface {
+	Limit() int32
+	IntervalSeconds() int32
 }

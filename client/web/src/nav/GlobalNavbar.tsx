@@ -5,9 +5,10 @@ import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import CommentQuoteOutline from 'mdi-react/CommentQuoteOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
 import { RouteObject, useLocation } from 'react-router-dom'
 
-import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
+import { isMacPlatform } from '@sourcegraph/common'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -28,11 +29,11 @@ import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinde
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
-import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { NotebookProps } from '../notebooks'
 import { OwnConfigProps } from '../own/OwnConfigProps'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { SentinelProps } from '../sentinel/types'
 import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
@@ -50,6 +51,7 @@ export interface GlobalNavbarProps
         TelemetryProps,
         SearchContextInputProps,
         CodeInsightsProps,
+        SentinelProps,
         BatchChangesProps,
         NotebookProps,
         CodeMonitoringProps,
@@ -123,6 +125,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     isSourcegraphApp,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
+    sentinelEnabled,
     searchContextsEnabled,
     codeMonitoringEnabled,
     notebooksEnabled,
@@ -145,6 +148,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showCodeMonitoring = codeMonitoringEnabled
     const showSearchNotebook = notebooksEnabled
 
+    const [isSentinelEnabled] = useFeatureFlag('sentinel')
+    // TODO: Include isSourcegraphDotCom in subsequent PR
+    // const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin
+    const showSentinel = isSentinelEnabled && props.authenticatedUser?.siteAdmin
+
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
         // the main query input to avoid misleading users
@@ -159,19 +167,19 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.authenticatedUser)
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
-    // isCodeInsightsEnabled selector controls appearance based on user settings flags
-    const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
-
-    const [codyEnabled] = useFeatureFlag('cody')
+    const codeInsights = codeInsightsEnabled
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
-            codyEnabled && { path: EnterprisePageRoutes.CodySearch, content: 'Cody' },
+            window.context?.codyEnabled && {
+                path: EnterprisePageRoutes.CodySearch,
+                content: 'Cody',
+            },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [codyEnabled, ownEnabled, showSearchContext])
+    }, [ownEnabled, showSearchContext])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
@@ -235,6 +243,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavItem icon={BarChartIcon}>
                             <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
+                            </NavLink>
+                        </NavItem>
+                    )}
+                    {showSentinel && (
+                        <NavItem icon={ShieldHalfFullIcon}>
+                            <NavLink variant={navLinkVariant} to="/sentinel">
+                                Sentinel
                             </NavLink>
                         </NavItem>
                     )}
@@ -304,24 +319,32 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             Try Sourcegraph Enterprise
                         </ButtonLink>
                     )}
-                    {props.authenticatedUser?.siteAdmin && (
-                        <AccessRequestsGlobalNavItem
-                            isSourcegraphDotCom={isSourcegraphDotCom}
-                            context={window.context}
-                        />
-                    )}
+                    {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
-                        <NavAction>
-                            <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
-                                <Link
-                                    to="https://about.sourcegraph.com/app"
-                                    className={classNames(styles.link, 'small')}
-                                    onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'NavBar' })}
-                                >
-                                    Download app
-                                </Link>
-                            </Tooltip>
-                        </NavAction>
+                        <>
+                            <NavAction>
+                                <Tooltip content="The AI code assistant you can trust to answer questions and write code for you.">
+                                    <Link
+                                        to="https://about.sourcegraph.com/cody"
+                                        className={classNames(styles.link, 'small')}
+                                        onClick={() => eventLogger.log('ClickedOnCodyCTA', { location: 'NavBar' })}
+                                    >
+                                        Cody
+                                    </Link>
+                                </Tooltip>
+                            </NavAction>
+                            <NavAction>
+                                <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
+                                    <Link
+                                        to="https://about.sourcegraph.com/app"
+                                        className={classNames(styles.link, 'small')}
+                                        onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'NavBar' })}
+                                    >
+                                        App
+                                    </Link>
+                                </Tooltip>
+                            </NavAction>
+                        </>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser?.siteAdmin && (
@@ -361,11 +384,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 authenticatedUser={props.authenticatedUser}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isSourcegraphApp={isSourcegraphApp}
-                                codeHostIntegrationMessaging={
-                                    (!isErrorLike(props.settingsCascade.final) &&
-                                        props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
-                                    'browser-extension'
-                                }
                                 showFeedbackModal={showFeedbackModal}
                             />
                         </NavAction>

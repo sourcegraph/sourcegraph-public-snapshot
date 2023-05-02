@@ -56,6 +56,7 @@ type UserStore interface {
 	basestore.ShareableStore
 	CheckAndDecrementInviteQuota(context.Context, int32) (ok bool, err error)
 	Count(context.Context, *UsersListOptions) (int, error)
+	CountForSCIM(context.Context, *UsersListOptions) (int, error)
 	Create(context.Context, NewUser) (*types.User, error)
 	CreateInTransaction(context.Context, NewUser, *extsvc.AccountSpec) (*types.User, error)
 	CreatePassword(ctx context.Context, id int32, password string) error
@@ -87,6 +88,8 @@ type UserStore interface {
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
+	SetCompletionsQuota(ctx context.Context, id int32, quota *int) error
+	GetCompletionsQuota(ctx context.Context, id int32) (*int, error)
 	With(basestore.ShareableStore) UserStore
 }
 
@@ -1003,6 +1006,14 @@ func (u *userStore) InvalidateSessionsByIDs(ctx context.Context, ids []int32) (e
 	return nil
 }
 
+func (u *userStore) CountForSCIM(ctx context.Context, opt *UsersListOptions) (int, error) {
+	if opt == nil {
+		opt = &UsersListOptions{}
+	}
+	opt.includeDeleted = true
+	return u.Count(ctx, opt)
+}
+
 func (u *userStore) Count(ctx context.Context, opt *UsersListOptions) (int, error) {
 	if opt == nil {
 		opt = &UsersListOptions{}
@@ -1040,6 +1051,11 @@ type UsersListOptions struct {
 	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
 	// user accounts.
 	ExcludeSourcegraphOperators bool
+	// includeDeleted indicates whether to include soft deleted user accounts.
+	//
+	// The intention is that external consumers should not need to interact with soft deleted users but
+	// internally there are valid reasons to include them.
+	includeDeleted bool
 
 	*LimitOffset
 }
@@ -1071,6 +1087,7 @@ func (u *userStore) ListForSCIM(ctx context.Context, opt *UsersListOptions) (_ [
 	if opt == nil {
 		opt = &UsersListOptions{}
 	}
+	opt.includeDeleted = true
 	conditions := u.listSQL(*opt)
 
 	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conditions, "AND"), opt.LimitOffset.SQL())
@@ -1172,7 +1189,11 @@ func newQueryCond(query *string) *sqlf.Query {
 }
 
 func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
-	conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
+
+	if !opt.includeDeleted {
+		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	}
 
 	if cond := newQueryCond(&opt.Query); cond != nil {
 		conds = append(conds, cond)
@@ -1309,7 +1330,6 @@ WITH scim_accounts AS (
         account_data
     FROM user_external_accounts
     WHERE service_type = 'scim'
-    AND deleted_at IS NULL
 )
 SELECT u.id,
        u.username,
@@ -1317,6 +1337,7 @@ SELECT u.id,
        u.avatar_url,
        u.created_at,
        u.updated_at,
+	   u.deleted_at,
        u.site_admin,
        u.passwd IS NOT NULL,
        u.invalidated_sessions_at,
@@ -1341,7 +1362,8 @@ func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*
 func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	var u types.UserForSCIM
 	var displayName, avatarURL, scimExternalID, scimAccountData sql.NullString
-	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
+	var deletedAt sql.NullTime
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &deletedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
 	if err != nil {
 		return nil, err
 	}
@@ -1349,6 +1371,7 @@ func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	u.AvatarURL = avatarURL.String
 	u.SCIMExternalID = scimExternalID.String
 	u.SCIMAccountData = scimAccountData.String
+	u.Active = !deletedAt.Valid
 	return &u, nil
 }
 
@@ -1458,6 +1481,26 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	}
 
 	return nil
+}
+
+// SetCompletionsQuota sets the user's quota override for completions. Nil means unset.
+func (u *userStore) SetCompletionsQuota(ctx context.Context, id int32, quota *int) error {
+	if quota == nil {
+		return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET completions_quota = NULL WHERE id = %s", id))
+	}
+	return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET completions_quota = %s WHERE id = %s", *quota, id))
+}
+
+// GetCompletionsQuota reads the user's quota override for completions. Nil means unset.
+func (u *userStore) GetCompletionsQuota(ctx context.Context, id int32) (*int, error) {
+	quota, found, err := basestore.ScanFirstInt(u.Query(ctx, sqlf.Sprintf("SELECT completions_quota FROM users WHERE id = %s AND completions_quota IS NOT NULL", id)))
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return &quota, nil
+	}
+	return nil, nil
 }
 
 // CreatePassword creates a user's password if they don't have a password.

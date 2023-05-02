@@ -209,7 +209,7 @@ func (r *TeamResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return canModifyTeam(ctx, r.db, r.team)
 }
 
-func (r *TeamResolver) Members(ctx context.Context, args *ListTeamMembersArgs) (*teamMemberConnection, error) {
+func (r *TeamResolver) Members(_ context.Context, args *ListTeamMembersArgs) (*teamMemberConnection, error) {
 	c := &teamMemberConnection{
 		db:     r.db,
 		teamID: r.team.ID,
@@ -220,7 +220,7 @@ func (r *TeamResolver) Members(ctx context.Context, args *ListTeamMembersArgs) (
 	return c, nil
 }
 
-func (r *TeamResolver) ChildTeams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
+func (r *TeamResolver) ChildTeams(_ context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
 	c := &teamConnectionResolver{
 		db:       r.db,
 		parentID: r.team.ID,
@@ -356,7 +356,7 @@ func (r *teamMemberConnection) Nodes(ctx context.Context) ([]*UserResolver, erro
 		if err != nil {
 			return nil, err
 		}
-		rs = append(rs, NewUserResolver(r.db, user))
+		rs = append(rs, NewUserResolver(ctx, r.db, user))
 	}
 	return rs, nil
 }

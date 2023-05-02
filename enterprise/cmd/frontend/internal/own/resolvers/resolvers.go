@@ -1,5 +1,3 @@
-// Ownership resolvers are currently just returning fake data to support development.
-// The actual resolver implementation is landing with #46592.
 package resolvers
 
 import (
@@ -143,15 +141,15 @@ func (r *ownResolver) GitBlobOwnership(
 	}, nil
 }
 
-func (r *ownResolver) PersonOwnerField(person *graphqlbackend.PersonResolver) string {
+func (r *ownResolver) PersonOwnerField(_ *graphqlbackend.PersonResolver) string {
 	return "owner"
 }
 
-func (r *ownResolver) UserOwnerField(user *graphqlbackend.UserResolver) string {
+func (r *ownResolver) UserOwnerField(_ *graphqlbackend.UserResolver) string {
 	return "owner"
 }
 
-func (r *ownResolver) TeamOwnerField(team *graphqlbackend.TeamResolver) string {
+func (r *ownResolver) TeamOwnerField(_ *graphqlbackend.TeamResolver) string {
 	return "owner"
 }
 

@@ -9,9 +9,12 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,27 +31,28 @@ type preciseIndexResolver struct {
 	gitserverClient  gitserver.Client
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	repoStore        database.RepoStore
-	locationResolver *sharedresolvers.CachedLocationResolver
+	locationResolver *gitresolvers.CachedLocationResolver
 	traceErrs        *observation.ErrCollector
-	upload           *types.Upload
-	index            *types.Index
+	upload           *shared.Upload
+	index            *uploadsshared.Index
 }
 
-func NewPreciseIndexResolver(
+func newPreciseIndexResolver(
 	ctx context.Context,
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
-	prefetcher *sharedresolvers.Prefetcher,
+	uploadLoader UploadLoader,
+	indexLoader IndexLoader,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
-	locationResolver *sharedresolvers.CachedLocationResolver,
+	locationResolver *gitresolvers.CachedLocationResolver,
 	traceErrs *observation.ErrCollector,
-	upload *types.Upload,
-	index *types.Index,
+	upload *shared.Upload,
+	index *uploadsshared.Index,
 ) (resolverstubs.PreciseIndexResolver, error) {
 	if index != nil && index.AssociatedUploadID != nil && upload == nil {
-		v, ok, err := prefetcher.GetUploadByID(ctx, *index.AssociatedUploadID)
+		v, ok, err := uploadLoader.GetByID(ctx, *index.AssociatedUploadID)
 		if err != nil {
 			return nil, err
 		}
@@ -59,7 +63,7 @@ func NewPreciseIndexResolver(
 
 	if upload != nil {
 		if upload.AssociatedIndexID != nil {
-			v, ok, err := prefetcher.GetIndexByID(ctx, *upload.AssociatedIndexID)
+			v, ok, err := indexLoader.GetByID(ctx, *upload.AssociatedIndexID)
 			if err != nil {
 				return nil, err
 			}
@@ -223,9 +227,9 @@ func (r *preciseIndexResolver) PlaceInQueue() *int32 {
 func (r *preciseIndexResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
 	if r.index != nil {
 		// Note: check index as index fields may contain docker shas
-		return types.NewCodeIntelIndexerResolver(r.index.Indexer, r.index.Indexer)
+		return NewCodeIntelIndexerResolver(r.index.Indexer, r.index.Indexer)
 	} else if r.upload != nil {
-		return types.NewCodeIntelIndexerResolver(r.upload.Indexer, "")
+		return NewCodeIntelIndexerResolver(r.upload.Indexer, "")
 	}
 
 	return nil
@@ -414,11 +418,11 @@ func (r *preciseIndexResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.
 
 type retentionPolicyMatcherResolver struct {
 	repoStore    database.RepoStore
-	policy       types.RetentionPolicyMatchCandidate
+	policy       policiesshared.RetentionPolicyMatchCandidate
 	errCollector *observation.ErrCollector
 }
 
-func newRetentionPolicyMatcherResolver(repoStore database.RepoStore, policy types.RetentionPolicyMatchCandidate) resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver {
+func newRetentionPolicyMatcherResolver(repoStore database.RepoStore, policy policiesshared.RetentionPolicyMatchCandidate) resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver {
 	return &retentionPolicyMatcherResolver{repoStore: repoStore, policy: policy}
 }
 
@@ -442,18 +446,20 @@ func (r *retentionPolicyMatcherResolver) ProtectingCommits() *[]string {
 //
 
 type lsifUploadsAuditLogResolver struct {
-	log types.UploadLog
+	log shared.UploadLog
 }
 
-func newLSIFUploadsAuditLogsResolver(log types.UploadLog) resolverstubs.LSIFUploadsAuditLogsResolver {
+func newLSIFUploadsAuditLogsResolver(log shared.UploadLog) resolverstubs.LSIFUploadsAuditLogsResolver {
 	return &lsifUploadsAuditLogResolver{log: log}
 }
 
 func (r *lsifUploadsAuditLogResolver) Reason() *string { return r.log.Reason }
+
 func (r *lsifUploadsAuditLogResolver) ChangedColumns() (values []resolverstubs.AuditLogColumnChange) {
 	for _, transition := range r.log.TransitionColumns {
-		values = append(values, &auditLogColumnChangeResolver{transition})
+		values = append(values, newAuditLogColumnChangeResolver(transition))
 	}
+
 	return values
 }
 

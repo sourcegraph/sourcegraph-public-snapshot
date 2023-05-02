@@ -17,6 +17,7 @@
 
 .sidebar-view-button {
     background-color: transparent;
+    color: inherit !important;
 
     &::part(control) {
         justify-content: flex-start;

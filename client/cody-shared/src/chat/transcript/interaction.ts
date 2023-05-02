@@ -1,16 +1,39 @@
 import { ContextMessage } from '../../codebase-context/messages'
+import { PromptMixin } from '../../prompt/prompt-mixin'
 import { Message } from '../../sourcegraph-api'
 
 import { ChatMessage, InteractionMessage } from './messages'
 
+export interface InteractionJSON {
+    humanMessage: InteractionMessage
+    assistantMessage: InteractionMessage
+    context: ContextMessage[]
+    timestamp: string
+}
+
 export class Interaction {
     private cachedContextFileNames: string[] = []
+    private context: Promise<ContextMessage[]>
+    public readonly timestamp: string
 
     constructor(
         private humanMessage: InteractionMessage,
         private assistantMessage: InteractionMessage,
-        private context: Promise<ContextMessage[]>
-    ) {}
+        context: Promise<ContextMessage[]>,
+        timestamp: string = new Date().toISOString()
+    ) {
+        this.timestamp = timestamp
+        this.context = context.then(messages => {
+            const contextFileNames = messages
+                .map(message => message.fileName)
+                .filter((fileName): fileName is string => !!fileName)
+
+            // Cache the context files so we don't have to block the UI when calling `toChat` by waiting for the context to resolve.
+            this.cachedContextFileNames = [...new Set<string>(contextFileNames)].sort((a, b) => a.localeCompare(b))
+
+            return messages
+        })
+    }
 
     public getAssistantMessage(): InteractionMessage {
         return this.assistantMessage
@@ -20,25 +43,33 @@ export class Interaction {
         this.assistantMessage = assistantMessage
     }
 
+    public async hasContext(): Promise<boolean> {
+        const contextMessages = await this.context
+        return contextMessages.length > 0
+    }
+
     public async toPrompt(includeContext: boolean): Promise<Message[]> {
+        const messages: (ContextMessage | InteractionMessage)[] = [
+            PromptMixin.mixInto(this.humanMessage),
+            this.assistantMessage,
+        ]
         if (includeContext) {
-            const contextMessages = await this.context.then(messages => {
-                const contextFileNames = messages
-                    .map(message => message.fileName)
-                    .filter((fileName): fileName is string => !!fileName)
-
-                // Cache the context files so we don't have to block the UI when calling `toChat` by waiting for the context to resolve.
-                this.cachedContextFileNames = [...new Set<string>(contextFileNames)].sort((a, b) => a.localeCompare(b))
-
-                return messages
-            })
-            return [...contextMessages, this.humanMessage, this.assistantMessage].map(toPromptMessage)
+            messages.unshift(...(await this.context))
         }
-        return [this.humanMessage, this.assistantMessage].map(toPromptMessage)
+        return messages.map(toPromptMessage)
     }
 
     public toChat(): ChatMessage[] {
         return [this.humanMessage, { ...this.assistantMessage, contextFiles: this.cachedContextFileNames }]
+    }
+
+    public async toJSON(): Promise<InteractionJSON> {
+        return {
+            humanMessage: this.humanMessage,
+            assistantMessage: this.assistantMessage,
+            context: await this.context,
+            timestamp: this.timestamp,
+        }
     }
 }
 

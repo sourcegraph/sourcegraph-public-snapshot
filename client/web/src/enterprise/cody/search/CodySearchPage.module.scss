@@ -4,6 +4,12 @@
 
 .input {
     font-size: 1.15rem;
+    box-shadow: none !important;
+
+    &::placeholder {
+        font-size: 1rem;
+        color: var(--violet-03);
+    }
 }
 
 :global(.theme-light) .input {

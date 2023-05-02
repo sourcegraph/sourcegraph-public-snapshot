@@ -834,6 +834,7 @@ type UserForSCIM struct {
 	Emails          []string
 	SCIMExternalID  string
 	SCIMAccountData string
+	Active          bool
 }
 
 type SystemRole string

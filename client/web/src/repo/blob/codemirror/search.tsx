@@ -398,6 +398,41 @@ function announceMatch(view: EditorView, { from, to }: { from: number; to: numbe
     )
 }
 
+const theme = EditorView.theme({
+    '.cm-sg-search-container': {
+        backgroundColor: 'var(--code-bg)',
+        padding: '0.375rem 1rem',
+    },
+    '.cm-sg-search-input': {
+        borderRadius: 'var(--border-radius)',
+        border: '1px solid var(--input-border-color)',
+
+        '&:focus-within': {
+            borderColor: 'var(--inpt-focus-border-color)',
+            boxShadow: 'var(--input-focus-box-shadow)',
+        },
+
+        '& input': {
+            borderColor: 'transparent',
+            '&:focus': {
+                boxShadow: 'none',
+            },
+        },
+    },
+    '.search-container > input.form-control': {
+        width: '15rem',
+    },
+    '.cm-searchMatch': {
+        backgroundColor: 'var(--mark-bg)',
+    },
+    '.cm-searchMatch-selected': {
+        backgroundColor: 'var(--oc-orange-3)',
+    },
+    '.cm-sg-search-info': {
+        color: 'var(--gray-06)',
+    },
+})
+
 interface SearchConfig {
     overrideBrowserFindInPageShortcut: boolean
     onOverrideBrowserFindInPageToggle: (enabled: boolean) => void
@@ -424,38 +459,7 @@ export function search(config: SearchConfig): Extension {
                 update.view.dispatch({ effects: keymapCompartment.reconfigure(keymap.of(getKeyBindings(override))) })
             }
         }),
-        EditorView.theme({
-            '.cm-sg-search-container': {
-                backgroundColor: 'var(--code-bg)',
-                padding: '0.375rem 1rem',
-            },
-            '.cm-sg-search-input': {
-                borderRadius: 'var(--border-radius)',
-                border: '1px solid var(--input-border-color)',
-            },
-            '.cm-sg-search-input:focus-within': {
-                borderColor: 'var(--inpt-focus-border-color)',
-                boxShadow: 'var(--input-focus-box-shadow)',
-            },
-            '.cm-sg-search-input input': {
-                borderColor: 'transparent',
-            },
-            '.cm-sg-search-input input:focus': {
-                boxShadow: 'none',
-            },
-            '.search-container > input.form-control': {
-                width: '15rem',
-            },
-            '.cm-searchMatch': {
-                backgroundColor: 'var(--mark-bg)',
-            },
-            '.cm-searchMatch-selected': {
-                backgroundColor: 'var(--oc-orange-3)',
-            },
-            '.cm-sg-search-info': {
-                color: 'var(--gray-06)',
-            },
-        }),
+        theme,
         keymapCompartment.of(keymap.of(getKeyBindings(config.overrideBrowserFindInPageShortcut))),
         codemirrorSearch({
             createPanel: view => new SearchPanel(view),

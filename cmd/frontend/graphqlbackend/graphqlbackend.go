@@ -15,6 +15,7 @@ import (
 	"github.com/graph-gophers/graphql-go/trace/otel"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/log"
 
 	oteltracer "go.opentelemetry.io/otel"
@@ -419,11 +420,16 @@ func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema,
 	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{OwnResolver: own})
 }
 
+func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver CompletionsResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{CompletionsResolver: completionsResolver})
+}
+
 func NewSchema(
 	db database.DB,
 	gitserverClient gitserver.Client,
 	enterpriseJobs jobutil.EnterpriseJobs,
 	optional OptionalResolver,
+	graphqlOpts ...graphql.SchemaOpt,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db, gitserverClient, enterpriseJobs)
 	schemas := []string{mainSchema, outboundWebhooksSchema}
@@ -563,6 +569,12 @@ func NewSchema(
 		}
 	}
 
+	if completionsResolver := optional.CompletionsResolver; completionsResolver != nil {
+		EnterpriseResolvers.completionsResolver = completionsResolver
+		resolver.CompletionsResolver = completionsResolver
+		schemas = append(schemas, completionSchema)
+	}
+
 	if appResolver := optional.AppResolver; appResolver != nil {
 		// Not under enterpriseResolvers, as this is a OSS schema extension.
 		resolver.AppResolver = appResolver
@@ -570,9 +582,7 @@ func NewSchema(
 	}
 
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
-	return graphql.ParseSchema(
-		strings.Join(schemas, "\n"),
-		resolver,
+	opts := []graphql.SchemaOpt{
 		graphql.Tracer(&requestTracer{
 			DB: db,
 			tracer: &otel.Tracer{
@@ -581,7 +591,12 @@ func NewSchema(
 			logger: logger,
 		}),
 		graphql.UseStringDescriptions(),
-	)
+	}
+	opts = append(opts, graphqlOpts...)
+	return graphql.ParseSchema(
+		strings.Join(schemas, "\n"),
+		resolver,
+		opts...)
 }
 
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
@@ -619,6 +634,7 @@ type OptionalResolver struct {
 	RBACResolver
 	OwnResolver
 	AppResolver
+	CompletionsResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -727,6 +743,7 @@ var EnterpriseResolvers = struct {
 	embeddingsResolver          EmbeddingsResolver
 	rbacResolver                RBACResolver
 	ownResolver                 OwnResolver
+	completionsResolver         CompletionsResolver
 }{}
 
 // Root returns a new schemaResolver.

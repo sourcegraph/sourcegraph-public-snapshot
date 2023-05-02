@@ -16,7 +16,26 @@ export type Event = DoneEvent | CompletionEvent | ErrorEvent
 
 export interface Message {
     speaker: 'human' | 'assistant'
-    text: string
+    text?: string
+}
+
+export interface CodeCompletionResponse {
+    completion: string
+    stop: string | null
+    stopReason: string
+    truncated: boolean
+    exception: string | null
+    logID: string
+}
+
+export interface CodeCompletionParameters {
+    prompt: string
+    temperature: number
+    maxTokensToSample: number
+    stopSequences: string[]
+    topK: number
+    topP: number
+    model?: string
 }
 
 export interface CompletionParameters {
@@ -30,5 +49,5 @@ export interface CompletionParameters {
 export interface CompletionCallbacks {
     onChange: (text: string) => void
     onComplete: () => void
-    onError: (message: string) => void
+    onError: (message: string, statusCode?: number) => void
 }
