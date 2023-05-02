@@ -15,6 +15,9 @@ type StaticLimiter struct {
 	Redis    RedisStore
 	Limit    int
 	Interval time.Duration
+
+	// Optional stub for current time. Used for testing.
+	nowFunc func() time.Time
 }
 
 func (l StaticLimiter) TryAcquire(ctx context.Context, identifier string) error {
@@ -48,13 +51,19 @@ func (l StaticLimiter) TryAcquire(ctx context.Context, identifier string) error 
 	// the error is of type RateLimitExceededError and extract additional information
 	// like the limit and the time by when they should retry.
 	if currentUsage > l.Limit {
+		var now time.Time
+		if l.nowFunc != nil {
+			now = l.nowFunc()
+		} else {
+			now = time.Now()
+		}
 		return RateLimitExceededError{
 			Limit: l.Limit,
 			// Return the minimum value of currentUsage and limit to not return
 			// confusing values when the limit was exceeded. This method increases
 			// on every check, even if the limit was reached.
 			Used:       min(currentUsage, l.Limit),
-			RetryAfter: time.Now().Add(time.Duration(ttl) * time.Second),
+			RetryAfter: now.Add(time.Duration(ttl) * time.Second),
 		}
 	}
 

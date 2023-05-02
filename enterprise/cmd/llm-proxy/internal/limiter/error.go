@@ -19,5 +19,5 @@ func (e RateLimitExceededError) Error() string {
 type NoAccessError struct{}
 
 func (e NoAccessError) Error() string {
-	return fmt.Sprintf("completions access has not been granted")
+	return "completions access has not been granted"
 }

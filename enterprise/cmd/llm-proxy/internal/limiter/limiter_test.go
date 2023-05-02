@@ -10,6 +10,9 @@ import (
 )
 
 func TestStaticLimiterTryAcquire(t *testing.T) {
+	// Stable time for testing
+	now := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+
 	for _, tc := range []struct {
 		name string
 
@@ -82,7 +85,7 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				Limit:    10,
 				Interval: 24 * time.Hour,
 			},
-			wantErr: autogold.Expect("you exceeded the rate limit for completions. Current usage: 10 out of 10 requests. Retry after 2023-05-02 14:59:05 -0700 PDT"),
+			wantErr: autogold.Expect("you exceeded the rate limit for completions. Current usage: 10 out of 10 requests. Retry after 2000-01-01 00:01:00 +0000 UTC"),
 			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
 				value: 11,
 				ttl:   60,
@@ -93,6 +96,7 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 			if tc.limiter.Redis == nil {
 				tc.limiter.Redis = mockStore{}
 			}
+			tc.limiter.nowFunc = func() time.Time { return now }
 			err := tc.limiter.TryAcquire(context.Background(), "foobar")
 			if tc.wantErr != nil {
 				require.Error(t, err)
