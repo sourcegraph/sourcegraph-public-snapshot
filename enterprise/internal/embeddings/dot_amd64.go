@@ -3,8 +3,6 @@
 package embeddings
 
 import (
-	"unsafe"
-
 	"github.com/klauspost/cpuid/v2"
 )
 
@@ -19,11 +17,7 @@ func archDot(a []int8, b []int8) int32 {
 		return 0
 	}
 
-	return int32(avx2Dot(
-		uintptr(unsafe.Pointer(&a[0])),
-		uintptr(unsafe.Pointer(&b[0])),
-		int64(len(a)),
-	))
+	return int32(avx2Dot(a, b))
 }
 
-func avx2Dot(a, b uintptr, n int64) int64
+func avx2Dot(a, b []int8) int64

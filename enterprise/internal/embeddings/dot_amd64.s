@@ -1,9 +1,9 @@
 #include "textflag.h"
 
-TEXT ·avx2Dot(SB), NOSPLIT, $0-24
-	MOVQ a+0(FP), SI
-	MOVQ b+8(FP), DI
-	MOVQ n+16(FP), DX
+TEXT ·avx2Dot(SB), NOSPLIT, $0-54
+	MOVQ a_base+0(FP), AX
+	MOVQ b_base+24(FP), BX
+	MOVQ a_len+8(FP), DX
 
 	XORQ R8, R8 // return sum
 
@@ -16,8 +16,8 @@ blockloop:
 	JB reduce
 
 	// Sign-extend 16 bytes into 16 int16s
-	VPMOVSXBW (SI), Y1
-	VPMOVSXBW (DI), Y2
+	VPMOVSXBW (AX), Y1
+	VPMOVSXBW (BX), Y2
 
 	// Multiply words vertically to form doubleword intermediates,
 	// then add adjacent doublewords.
@@ -26,8 +26,8 @@ blockloop:
 	// Add results to the running sum
 	VPADDD Y0, Y1, Y0
 
-	ADDQ $16, SI
-	ADDQ $16, DI
+	ADDQ $16, AX
+	ADDQ $16, BX
 	SUBQ $16, DX
 	JMP blockloop
 
@@ -52,19 +52,19 @@ tailloop:
 	JE end
 
 	// Load values from the input slices
-	MOVBQSX (SI), R9
-	MOVBQSX (DI), R10
+	MOVBQSX (AX), R9
+	MOVBQSX (BX), R10
 
 	// Multiply and accumulate
 	IMULQ R9, R10
 	ADDQ R10, R8
 
-	INCQ SI
-	INCQ DI
+	INCQ AX
+	INCQ BX
 	DECQ DX
 	JMP tailloop
 
 end:
-	MOVQ R8, ret+24(FP)
+	MOVQ R8, ret+48(FP)
 	RET
 
