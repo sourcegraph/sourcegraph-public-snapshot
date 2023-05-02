@@ -334,11 +334,11 @@ func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, af
 	}
 
 	cmd := c.gitCommand(repo, args...)
-
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "gitCommand")
 	}
+
 	var ls []CommitLog
 	lines := strings.Split(string(out), "\n\n")
 
@@ -348,7 +348,12 @@ func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, af
 			continue
 		}
 		metaLine := partitions[0]
-		changedFiles := partitions[1:]
+		var changedFiles []string
+		for _, pt := range partitions[1:] {
+			if pt != "" {
+				changedFiles = append(changedFiles, pt)
+			}
+		}
 
 		parts := strings.Split(metaLine, "<!>")
 		if len(parts) != 4 {

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -28,7 +29,7 @@ import (
 
 type IndexJobType struct {
 	Name            string
-	Id              JobTypeId
+	Id              JobTypeID
 	IndexInterval   time.Duration
 	RefreshInterval time.Duration
 }
@@ -43,7 +44,7 @@ var IndexJobTypes = []IndexJobType{{
 type JobTypeID int
 
 const (
-	_ JobTypeId = iota
+	_ JobTypeID = iota
 	RecentContributors
 )
 
@@ -190,7 +191,7 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 	}
 
 	var delegate signalIndexFunc
-	switch JobTypeId(record.JobType) {
+	switch JobTypeID(record.JobType) {
 	case RecentContributors:
 		delegate = handleRecentContributors
 	default:
