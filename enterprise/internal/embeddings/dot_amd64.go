@@ -14,7 +14,7 @@ var (
 	haveArchDot = simdEnabled && hasAVX2
 )
 
-func archDot(a []int8, b []int8) int32 {
+func dotArch(a []int8, b []int8) int32 {
 	if len(a) != len(b) {
 		panic("mismatched lengths")
 	}
@@ -26,4 +26,4 @@ func archDot(a []int8, b []int8) int32 {
 	return int32(avx2Dot(a, b))
 }
 
-func avx2Dot(a, b []int8) int64
+func dotAVX2(a, b []int8) int64
