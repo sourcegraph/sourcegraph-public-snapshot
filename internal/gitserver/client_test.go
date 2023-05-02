@@ -149,8 +149,6 @@ func TestClient_ArchiveReader(t *testing.T) {
 	addrs := []string{u.Host}
 	ctx := context.Background()
 
-	var spyGitserverService *spyGitserverServiceClient
-
 	runArchiveReaderTestfunc := func(t *testing.T, ctx context.Context, cli gitserver.Client, name api.RepoName, test test) {
 		t.Run(string(name), func(t *testing.T) {
 			if test.remote != "" {
@@ -206,6 +204,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 	t.Run("grpc", func(t *testing.T) {
 		t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
 		for name, test := range tests {
+			var spyGitserverService *spyGitserverServiceClient
 			spy := func(conns grpc.ClientConnInterface) proto.GitserverServiceClient {
 				spyGitserverService = &spyGitserverServiceClient{base: proto.NewGitserverServiceClient(conns)}
 				return spyGitserverService
