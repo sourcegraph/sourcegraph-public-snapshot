@@ -323,6 +323,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			buildExecutorVM(c, true),
 			buildExecutorDockerMirror(c),
 			buildExecutorBinary(c),
+			executorsE2E(c.candidateImageTag()),
 			wait,
 			publishFinalDockerImage(c, executorVMImage),
 			publishExecutorVM(c, true),
