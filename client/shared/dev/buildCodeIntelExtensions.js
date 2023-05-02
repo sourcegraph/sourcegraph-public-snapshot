@@ -1,4 +1,4 @@
-/* eslint-disable no-sync */
+/* eslint-disable no-sync, @typescript-eslint/restrict-template-expressions */
 const fs = require('fs')
 const path = require('path')
 
@@ -12,17 +12,12 @@ const bundlesRepoName = 'sourcegraph-extensions-bundles'
  * extensions bundles to the specified path. These bundles may be included into IDE/browser extensions bundles
  * in order not to require access to the extensions registry for the code intel features to work.
  */
-function buildCodeIntelExtensions({ pathToExtensionBundles, pathToRevisionFile, pathToDistributionRevisionFile }) {
-  const revisionFileContent = fs.existsSync(pathToRevisionFile) && fs.readFileSync(pathToRevisionFile).toString()
-  const revision = revisionFileContent ? revisionFileContent.trim() : ''
-  if (!revision) {
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    signale.fatal(`Couldn't find "${bundlesRepoName}" revision to fetch at ${pathToRevisionFile}`)
-    return
-  }
+function buildCodeIntelExtensions({ pathToExtensionBundles, revision }) {
+  const pathToDistributionRevisionFile = path.join(pathToExtensionBundles, 'revision.txt')
 
   const currentRevision =
     fs.existsSync(pathToDistributionRevisionFile) && fs.readFileSync(pathToDistributionRevisionFile).toString()
+
   if (currentRevision === revision) {
     signale.success(`Code-intel-extensions for revision "${revision}" are already bundled.`)
     return
@@ -30,8 +25,14 @@ function buildCodeIntelExtensions({ pathToExtensionBundles, pathToRevisionFile, 
 
   signale.info(`Did not find an existing code-intel-extensions bundles matching revision ${revision}.`)
 
-  signale.watch('Fetching code intel extensions bundles...')
-  shelljs.exec(`curl -OLs https://github.com/sourcegraph/${bundlesRepoName}/archive/${revision}.zip`)
+  signale.pending('Fetching code intel extensions bundles...')
+
+  const result = shelljs.exec(`curl -OLs https://github.com/sourcegraph/${bundlesRepoName}/archive/${revision}.zip`)
+
+  if (result.code !== 0) {
+    console.error('Curl command failed with exit code:', result.code)
+    console.error('Error message:', result.stderr)
+  }
 
   // when repo archive is unpacked the leading 'v' from tag is trimmed: v1.0.0.zip => sourcegraph-extensions-bundles-1.0.0
   const bundlesRepoDirectoryName = `${bundlesRepoName}-${revision.replace(/^v/g, '')}`
@@ -104,3 +105,19 @@ function buildCodeIntelExtensions({ pathToExtensionBundles, pathToRevisionFile, 
 }
 
 module.exports = { buildCodeIntelExtensions }
+
+// Use this script in Bazel. Remove `module.exports` once the Bazel migration is completed.
+function main(args) {
+  if (args.length !== 2) {
+    throw new Error('Usage: <revision> <outputPath>')
+  }
+
+  const [revision, outputPath] = args
+  const output = path.join(process.cwd(), outputPath)
+
+  buildCodeIntelExtensions({ pathToExtensionBundles: output, revision })
+}
+
+if (require.main === module) {
+  main(process.argv.slice(2))
+}
