@@ -28,7 +28,7 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 	cacheSize := 10 * 1024 * 1024
 	hasDownloadedRepoEmbeddingIndex := false
 	downloadLargeCount := 0
-	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(
+	indexGetter, err := NewCachedEmbeddingIndexGetter(
 		mockRepoStore,
 		mockRepoEmbeddingJobsStore,
 		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
@@ -54,7 +54,7 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 	ctx := context.Background()
 
 	// Initial request should download and cache the index.
-	_, err = getRepoEmbeddingIndex(ctx, api.RepoName("a"))
+	_, err = indexGetter.Get(ctx, api.RepoName("a"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,7 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 
 	// Subsequent requests should read from the cache.
 	hasDownloadedRepoEmbeddingIndex = false
-	_, err = getRepoEmbeddingIndex(ctx, api.RepoName("a"))
+	_, err = indexGetter.Get(ctx, api.RepoName("a"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 
 	// Simulate a newer completed repo embedding job.
 	finishedAt = finishedAt.Add(time.Hour)
-	_, err = getRepoEmbeddingIndex(ctx, api.RepoName("a"))
+	_, err = indexGetter.Get(ctx, api.RepoName("a"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,13 +82,13 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 		t.Fatal("expected to download the index after a newer embedding job is completed")
 	}
 
-	_, err = getRepoEmbeddingIndex(ctx, api.RepoName("toolarge"))
+	_, err = indexGetter.Get(ctx, api.RepoName("toolarge"))
 	require.NoError(t, err)
 	require.Equal(t, 1, downloadLargeCount)
 
 	// Fetching a second time should trigger a second download since it's
 	// too large to fit in the cache
-	_, err = getRepoEmbeddingIndex(ctx, api.RepoName("toolarge"))
+	_, err = indexGetter.Get(ctx, api.RepoName("toolarge"))
 	require.NoError(t, err)
 	require.Equal(t, 2, downloadLargeCount)
 }
@@ -142,7 +142,7 @@ func TestConcurrentGetCachedRepoEmbeddingIndex(t *testing.T) {
 
 	var mu sync.Mutex
 	hasDownloadedRepoEmbeddingIndex := false
-	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(
+	indexGetter, err := NewCachedEmbeddingIndexGetter(
 		mockRepoStore,
 		mockRepoEmbeddingJobsStore,
 		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
@@ -170,7 +170,7 @@ func TestConcurrentGetCachedRepoEmbeddingIndex(t *testing.T) {
 		ctx := context.Background()
 		go func() {
 			defer wg.Done()
-			getRepoEmbeddingIndex(ctx, api.RepoName("a"))
+			indexGetter.Get(ctx, api.RepoName("a"))
 		}()
 	}
 	wg.Wait()
