@@ -8,18 +8,12 @@ import { LocalStorage } from './command/LocalStorageProvider'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
-import { getConfiguration } from './configuration'
+import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { getRgPath } from './rg'
-import {
-    CODY_ACCESS_TOKEN_SECRET,
-    InMemorySecretStorage,
-    SecretStorage,
-    VSCodeSecretStorage,
-    getAccessToken,
-} from './secret-storage'
+import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -30,16 +24,11 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
     const localStorage = new LocalStorage(context.globalState)
     const rgPath = await getRgPath(context.extensionPath)
 
-    const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
-        const config = getConfiguration(vscode.workspace.getConfiguration())
-        return { ...config, accessToken: await getAccessToken(secretStorage) }
-    }
-
     const disposables: vscode.Disposable[] = []
 
     const { disposable, onConfigurationChange } = await register(
         context,
-        await getFullConfig(),
+        await getFullConfig(secretStorage),
         secretStorage,
         localStorage,
         rgPath
@@ -50,22 +39,12 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
     disposables.push(
         secretStorage.onDidChange(async key => {
             if (key === CODY_ACCESS_TOKEN_SECRET) {
-                onConfigurationChange(await getFullConfig())
+                onConfigurationChange(await getFullConfig(secretStorage))
             }
         }),
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody')) {
-                onConfigurationChange(await getFullConfig())
-            }
-            if (event.affectsConfiguration('cody.codebase')) {
-                const action = await vscode.window.showInformationMessage(
-                    'You must reload VS Code for Cody to pick up your new codebase.',
-                    'Reload VS Code',
-                    'Close'
-                )
-                if (action === 'Reload VS Code') {
-                    void vscode.commands.executeCommand('workbench.action.reloadWindow')
-                }
+                onConfigurationChange(await getFullConfig(secretStorage))
             }
         })
     )
@@ -128,28 +107,6 @@ const register = async (
     const config = getConfiguration(workspaceConfig)
 
     disposables.push(
-        // Register URI Handler to resolve token sending back from sourcegraph.com
-        vscode.window.registerUriHandler({
-            handleUri: async (uri: vscode.Uri) => {
-                await workspaceConfig.update('cody.serverEndpoint', DOTCOM_URL.href, vscode.ConfigurationTarget.Global)
-                const token = new URLSearchParams(uri.query).get('code')
-                if (token && token.length > 8) {
-                    await context.secrets.store(CODY_ACCESS_TOKEN_SECRET, token)
-                    const isAuthed = await isValidLogin({
-                        serverEndpoint: DOTCOM_URL.href,
-                        accessToken: token,
-                        customHeaders: config.customHeaders,
-                    })
-                    await chatProvider.sendLogin(isAuthed)
-                    logEvent(
-                        'CodyVSCodeExtension:codySetAccessToken:clicked',
-                        { serverEndpoint: config.serverEndpoint },
-                        { serverEndpoint: config.serverEndpoint }
-                    )
-                    void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
-                }
-            },
-        }),
         // Toggle Chat
         vscode.commands.registerCommand('cody.toggle-enabled', async () => {
             await workspaceConfig.update(
@@ -191,7 +148,29 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
             executeRecipe('improve-variable-names')
         ),
-        vscode.commands.registerCommand('cody.recipe.find-code-smells', async () => executeRecipe('find-code-smells'))
+        vscode.commands.registerCommand('cody.recipe.find-code-smells', async () => executeRecipe('find-code-smells')),
+        // Register URI Handler for resolving token sending back from sourcegraph.com
+        vscode.window.registerUriHandler({
+            handleUri: async (uri: vscode.Uri) => {
+                await workspaceConfig.update('cody.serverEndpoint', DOTCOM_URL.href, vscode.ConfigurationTarget.Global)
+                const token = new URLSearchParams(uri.query).get('code')
+                if (token && token.length > 8) {
+                    await context.secrets.store(CODY_ACCESS_TOKEN_SECRET, token)
+                    const isAuthed = await isValidLogin({
+                        serverEndpoint: DOTCOM_URL.href,
+                        accessToken: token,
+                        customHeaders: config.customHeaders,
+                    })
+                    await chatProvider.sendLogin(isAuthed)
+                    logEvent(
+                        'CodyVSCodeExtension:codySetAccessToken:clicked',
+                        { serverEndpoint: config.serverEndpoint },
+                        { serverEndpoint: config.serverEndpoint }
+                    )
+                    void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
+                }
+            },
+        })
     )
 
     if (initialConfig.experimentalSuggest) {
