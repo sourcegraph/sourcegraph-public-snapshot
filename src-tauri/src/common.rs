@@ -18,7 +18,7 @@ pub fn show_window(app: &AppHandle) {
 /// let url = "sourcegraph://user/admin";
 /// assert_eq!(extract_path_from_url(url), "/user/admin");
 /// ```
-pub fn extract_path_from_scheme_url(url: &str, scheme: &str) -> &str {
+pub fn extract_path_from_scheme_url<'a>(url: &'a str, scheme: &str) -> &'a str {
     &url[(scheme.len() + 2)..]
 }
 
