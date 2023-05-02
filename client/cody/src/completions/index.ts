@@ -11,7 +11,7 @@ import { History } from './history'
 import { CompletionProvider, EndOfLineCompletionProvider, MultilineCompletionProvider } from './provider'
 
 const LOG_INLINE = { type: 'inline' }
-const LOG_MULTILINE = { type: 'inline' }
+const LOG_MULTILINE = { type: 'multiline' }
 
 function lastNLines(text: string, n: number): string {
     const lines = text.split('\n')
