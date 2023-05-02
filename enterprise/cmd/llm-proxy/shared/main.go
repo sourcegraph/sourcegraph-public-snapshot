@@ -2,14 +2,18 @@ package shared
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -18,10 +22,7 @@ import (
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
-	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello world!"))
-	})
-
+	handler := newHandler(config)
 	handler = trace.HTTPMiddleware(obctx.Logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = actor.HTTPMiddleware(obctx.Logger, handler)
@@ -39,4 +40,39 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	goroutine.MonitorBackgroundRoutines(ctx, server)
 
 	return nil
+}
+
+func newHandler(config *Config) http.Handler {
+	r := mux.NewRouter()
+	s := r.PathPrefix("/v1").Subrouter()
+
+	s.Handle("/completions/anthropic",
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(fmt.Sprintf("failed to create request: %s", err)))
+				return
+			}
+
+			// Mimic headers set by the official Anthropic client:
+			// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
+			r.Header.Set("Cache-Control", "no-cache")
+			r.Header.Set("Accept", "application/json")
+			r.Header.Set("Content-Type", "application/json")
+			r.Header.Set("Client", "sourcegraph-llm-proxy/1.0")
+			r.Header.Set("X-API-Key", config.Anthropic.AccessToken)
+
+			resp, err := httpcli.ExternalDoer.Do(r)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(fmt.Sprintf("failed to make request to Anthropic: %s", err)))
+				return
+			}
+			defer func() { _ = resp.Body.Close() }()
+
+			io.Copy(w, resp.Body)
+		}),
+	).Methods(http.MethodPost)
+	return r
 }
