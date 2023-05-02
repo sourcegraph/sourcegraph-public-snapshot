@@ -518,12 +518,23 @@ func TestRepoHasFileContent(t *testing.T) {
 	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
 		if r, ok := unindexedCorpus[string(repo)]; ok {
 			for path, lines := range r {
+				if p.ExcludePattern == path {
+					continue
+				}
 				if len(p.IncludePatterns) == 0 || p.IncludePatterns[0] == path {
+					matchFound := false
 					for line := range lines {
 						if p.Pattern == line || p.Pattern == "" {
-							onMatches([]*protocol.FileMatch{{}})
+							matchFound = true
+							if !p.IsNegated {
+								onMatches([]*protocol.FileMatch{{}})
+							}
 						}
 					}
+					if !matchFound && p.IsNegated {
+						onMatches([]*protocol.FileMatch{{}})
+					}
+
 				}
 			}
 		}
@@ -578,9 +589,20 @@ func TestRepoHasFileContent(t *testing.T) {
 			mkHead(repoC),
 		},
 	}, {
-		name: "one negated unindexed path",
+		name: "outer negated, unindexed path",
 		filters: []query.RepoHasFileContentArgs{{
 			Path:    "pathC",
+			Negated: true,
+		}},
+		matchingRepos: nil,
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoD),
+			mkHead(repoE),
+		},
+	}, {
+		name: "outer negated, content",
+		filters: []query.RepoHasFileContentArgs{{
+			Content: "lineC",
 			Negated: true,
 		}},
 		matchingRepos: nil,
@@ -606,6 +628,50 @@ func TestRepoHasFileContent(t *testing.T) {
 		expected: []*search.RepositoryRevisions{
 			mkHead(repoC),
 		},
+	}, {
+		name: "negated path",
+		filters: []query.RepoHasFileContentArgs{{
+			Path:        "pathC",
+			PathNegated: true,
+		}},
+		matchingRepos: nil,
+		expected: []*search.RepositoryRevisions{
+			// Why is this not the same as negating the whole statement with a positive path?
+			// Negation inside the filter only includes repos that some corpus
+			// content defined, which repoE does not.
+			mkHead(repoD),
+		},
+	}, {
+		name: "negated content",
+		filters: []query.RepoHasFileContentArgs{{
+			Content:        "lineC",
+			ContentNegated: true,
+		}},
+		matchingRepos: nil,
+		expected: []*search.RepositoryRevisions{
+			// Why is this not the same as negating the whole statement with a positive content?
+			// Negation inside the filter only includes repos that some corpus
+			// content defined, which repoE does not.
+			mkHead(repoD),
+		},
+	}, {
+		name: "matching path, negated content",
+		filters: []query.RepoHasFileContentArgs{{
+			Path:           "pathC",
+			Content:        "lineC",
+			ContentNegated: true,
+		}},
+		matchingRepos: nil,
+		expected:      []*search.RepositoryRevisions{},
+	}, {
+		name: "negated path, matching content",
+		filters: []query.RepoHasFileContentArgs{{
+			Path:        "pathC",
+			PathNegated: true,
+			Content:     "lineC",
+		}},
+		matchingRepos: nil,
+		expected:      []*search.RepositoryRevisions{},
 	}}
 
 	for _, tc := range cases {

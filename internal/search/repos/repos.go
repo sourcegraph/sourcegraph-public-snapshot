@@ -721,7 +721,7 @@ func (r *Resolver) filterRepoHasFileContent(
 func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, args query.RepoHasFileContentArgs) (bool, error) {
 	patternInfo := search.TextPatternInfo{
 		Pattern:               args.Content,
-		IsNegated:             args.Negated,
+		IsNegated:             args.ContentNegated,
 		IsRegExp:              true,
 		IsCaseSensitive:       false,
 		FileMatchLimit:        1,
@@ -729,8 +729,12 @@ func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.Mi
 	}
 
 	if args.Path != "" {
-		patternInfo.IncludePatterns = []string{args.Path}
-		patternInfo.PatternMatchesPath = true
+		if args.PathNegated {
+			patternInfo.ExcludePattern = args.Path
+		} else {
+			patternInfo.IncludePatterns = []string{args.Path}
+			patternInfo.PatternMatchesPath = true
+		}
 	}
 
 	foundMatches := false
