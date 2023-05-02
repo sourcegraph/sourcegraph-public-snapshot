@@ -16,7 +16,7 @@ import { AnchorLink, Link, RouterLink } from '@sourcegraph/wildcard'
  * With the `shell-open` feature enabled in the Tauri app, `target="_blank"` links will automatically
  * open in the user's default browser; there is no need to call the Tauri API directly.
  */
-export const TauriLink = React.forwardRef(({ to, children, onClick, ...rest }, reference) => {
+export const TauriLink = React.forwardRef(({ to, children, ...rest }, reference) => {
     if (to && isAbsoluteUrl(to)) {
         return (
             <AnchorLink {...rest} to={to} ref={reference} target="_blank">
@@ -34,7 +34,7 @@ export const TauriLink = React.forwardRef(({ to, children, onClick, ...rest }, r
     }
 
     return (
-        <RouterLink to={to} ref={reference} onClick={onClick} {...rest}>
+        <RouterLink {...rest} to={to} ref={reference}>
             {children}
         </RouterLink>
     )
