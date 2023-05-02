@@ -1,8 +1,7 @@
 import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
-
-import { SURROUNDING_LINES } from '../editor/vscode-editor'
+import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 export class FileChatMessage implements vscode.Comment {
     private id = 0
@@ -83,6 +82,21 @@ export class FileChatProvider {
         return this.commentController
     }
 
+    public newThreads(humanInput: string): vscode.CommentReply | null {
+        const editor = vscode.window.activeTextEditor
+        if (!editor || !humanInput) {
+            return null
+        }
+        this.thread = this.commentController.createCommentThread(editor?.document.uri, editor.selection, [])
+        const threads: vscode.CommentReply = {
+            text: humanInput,
+            thread: this.thread,
+        }
+        this.threads = threads
+        this.editor = editor
+        return threads
+    }
+
     /**
      * List response from Human as comment
      */
@@ -124,7 +138,7 @@ export class FileChatProvider {
         )
         this.thread.comments = [...this.thread.comments, codyReply]
         this.thread.canReply = true
-        this.thread.collapsibleState = 0
+        this.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
         void vscode.commands.executeCommand('setContext', 'cody.replied', true)
     }
 
@@ -161,6 +175,9 @@ export class FileChatProvider {
     public async getEditor(): Promise<vscode.TextEditor | null> {
         if (!this.thread) {
             return null
+        }
+        if (this.editor) {
+            return this.editor
         }
         await vscode.window.showTextDocument(this.thread.uri)
         this.editor = vscode.window.activeTextEditor || null

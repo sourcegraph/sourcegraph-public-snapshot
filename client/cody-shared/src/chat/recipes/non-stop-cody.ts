@@ -2,7 +2,8 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
-import { MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
+import { FileChatProvider } from '../../editor'
+import { MAX_CURRENT_FILE_TOKENS, SURROUNDING_LINES } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
@@ -23,9 +24,9 @@ interface BatchState {
 export class NonStopCody implements Recipe {
     public id = 'non-stop-cody'
     private tick = 0
+    private trackingInProgress = false
     private decorations: Map<vscode.Uri, TrackedDecoration[]> = new Map()
-    private comments: vscode.CommentController
-    private thread?: vscode.CommentThread
+    private comments: FileChatProvider | null = null
 
     // TODO: Generalize this to having multiple in-flight at once.
     private batch?: BatchState
@@ -57,22 +58,22 @@ export class NonStopCody implements Recipe {
                 rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
             }),
         ]
-
-        this.comments = vscode.comments.createCommentController('cody', 'Cody')
-        this.comments.options = {
-            prompt: 'Hello, world',
-            placeHolder: 'Replace me',
-        }
     }
 
     private onAnimationTick(): void {
+        if (!this.trackingInProgress) {
+            this.fadeTimer = undefined
+            return
+        }
         // TODO: Make this animation tick per document
         if (this.fadeAnimation === this.fadeDecorations.length) {
             for (const editor of vscode.window.visibleTextEditors) {
                 this.decorations.delete(editor.document.uri)
                 editor.setDecorations(this.fadeDecorations.at(-1)!, [])
             }
-            clearInterval(this.fadeTimer!)
+            if (this.fadeTimer) {
+                clearInterval(this.fadeTimer)
+            }
             this.fadeTimer = undefined
             return
         }
@@ -88,8 +89,11 @@ export class NonStopCody implements Recipe {
     }
 
     private textDocumentChanged(event: vscode.TextDocumentChangeEvent): void {
+        // Stop tracking changes when no task has been initiated
+        if (!this.trackingInProgress) {
+            return
+        }
         // TODO: Experiment with a cooldown timer which commits changes when the user is idle.
-
         // TODO: Generalize this to tracking multiple ranges
         if (this.batch) {
             let range: vscode.Range | null = this.batch.range
@@ -128,6 +132,10 @@ export class NonStopCody implements Recipe {
     }
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        this.comments = context.editor.fileChatProvider || null
+        if (!this.comments) {
+            return null
+        }
         const editor = vscode.window.activeTextEditor
 
         if (!editor) {
@@ -136,33 +144,10 @@ export class NonStopCody implements Recipe {
             return null
         }
 
-        let resolvePrompt: (prompt: string) => void
-        const promptPromise: Promise<string> = new Promise(resolve => {
-            resolvePrompt = resolve
-        })
-
-        // TODO: Re-use a single QuickPick instead of creating one each time
-        const quickPick = vscode.window.createQuickPick()
-        quickPick.title = 'Cody: Fixup'
-        quickPick.placeholder = 'Cody, you should...'
-        // TODO: When Cody has diffs ready, include an item to commit the diffs first.
-        quickPick.onDidAccept(() => {
-            resolvePrompt(quickPick.value)
-            quickPick.dispose()
-        })
-        quickPick.onDidHide(() => {
-            // Note, this event happens after onDidAccept. In that case the
-            // Promise is already resolved and we do nothing.
-            resolvePrompt('')
-            quickPick.dispose()
-        })
-        quickPick.show()
-
-        const userPrompt = await promptPromise
-        if (!userPrompt) {
+        if (!humanChatInput) {
             return null
         }
-
+        this.trackingInProgress = true
         // const deco = {
         //     hoverMessage: 'Edited by Cody', // TODO: Put the prompt in here
         //     range: vscode.window.activeTextEditor!.selection,
@@ -185,24 +170,12 @@ export class NonStopCody implements Recipe {
 
         const selection = editor.selection
 
-        // Drop a comment in the document.
-        // TODO: Elaborate the comment UI to let people interact with queued tasks.
-        const thread = this.comments.createCommentThread(editor.document.uri, selection, [
-            {
-                body: userPrompt,
-                mode: vscode.CommentMode.Preview,
-                author: { name: 'You' },
-            },
-        ])
-        this.thread = thread
-        thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
-
         const providedCodeStart = selection.start.translate({
-            lineDelta: Math.max(-50, -selection.start.line),
+            lineDelta: Math.max(0 - SURROUNDING_LINES, -selection.start.line),
             characterDelta: -selection.start.character,
         })
         const providedCodeEnd = editor.document.validatePosition(
-            selection.end.translate({ lineDelta: 50, characterDelta: -selection.end.character })
+            selection.end.translate({ lineDelta: SURROUNDING_LINES, characterDelta: -selection.end.character })
         )
         const precedingText = editor.document.getText(new vscode.Range(providedCodeStart, editor.selection.start))
         const selectedText = editor.document.getText(selection)
@@ -227,7 +200,7 @@ export class NonStopCody implements Recipe {
                 }
                 // TODO: Consider handling content progressively
                 // TODO: Fix the Promise handling lint
-                handleResult(content).catch(console.error)
+                await handleResult(content)
             })
         )
 
@@ -253,7 +226,7 @@ Human: Great, thank you! This is part of the file ${
 <cody-replace>${truncateTextStart(
             precedingText,
             quarterFileContext
-        )}<cody-help prompt="${userPrompt}">${selectedText}</cody-help>${truncateText(
+        )}<cody-help prompt="${humanChatInput}">${selectedText}</cody-help>${truncateText(
             followingText,
             quarterFileContext
         )}</cody-replace>\n\n${context.responseMultiplexer.prompt()}`
@@ -265,9 +238,12 @@ Human: Great, thank you! This is part of the file ${
                 {
                     speaker: 'human',
                     text: prompt,
-                    displayText: 'Replace the instructions in the selection.',
+                    displayText: 'Update the selected code based on my instructions.',
                 },
-                { speaker: 'assistant' },
+                {
+                    speaker: 'assistant',
+                    prefix: 'Document has been updated based on your instruction.\n',
+                },
                 text ? this.getContextMessages(text, context.codebaseContext) : Promise.resolve([])
             )
         )
@@ -282,6 +258,7 @@ Human: Great, thank you! This is part of the file ${
     }
 
     private async handleResult(content: string): Promise<void> {
+        this.trackingInProgress = false
         // TODO: Handle multiple concurrent editors, don't use activeTextEditor here but make it part of the batch
         if (!this.batch) {
             return

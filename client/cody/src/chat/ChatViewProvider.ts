@@ -233,7 +233,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                 text = text.slice(textConsumed)
                 textConsumed += text.length
-                return this.multiplexer.publish(text)
+                void this.multiplexer.publish(text)
             },
             onComplete: () => this.multiplexer.notifyTurnComplete(),
             onError: (err, statusCode) => {
@@ -466,6 +466,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     /**
      * Handles in-file chat threads from editor
      */
+    public async nonStopCody(): Promise<void> {
+        const humanInput = await vscode.window.showInputBox()
+        const threads = this.editor.fileChatProvider.newThreads(humanInput || '')
+        if (!threads) {
+            return
+        }
+        await this.editor.fileChatProvider.chat(threads)
+        // await this.executeRecipe('fixup', `/fix ${threads.text}`, false)
+        // TODO: NON-STOP-CODY not working on big file
+        await this.executeRecipe('non-stop-cody', threads.text, false)
+    }
+
     public async fileChatAdd(threads: vscode.CommentReply): Promise<void> {
         await this.editor.fileChatProvider.chat(threads)
         void this.executeRecipe('file-chat', threads.text, false)

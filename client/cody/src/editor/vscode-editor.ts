@@ -6,11 +6,10 @@ import {
     ActiveTextEditorVisibleContent,
     Editor,
 } from '@sourcegraph/cody-shared/src/editor'
+import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { CodeLensProvider } from '../command/CodeLensProvider'
 import { FileChatProvider } from '../command/FileChatProvider'
-
-export const SURROUNDING_LINES = 50
 
 export class VSCodeEditor implements Editor {
     constructor(public fileChatProvider: FileChatProvider) {}
@@ -119,6 +118,7 @@ export class VSCodeEditor implements Editor {
         const activeEditor = this.getActiveTextEditorInstance() || (await this.fileChatProvider.getEditor())
         if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {
             // TODO: should return something indicating success or failure
+            console.error('Missing editor')
             return
         }
         let selection = activeEditor.selection
@@ -131,6 +131,7 @@ export class VSCodeEditor implements Editor {
             lens.ranges.push()
         }
         if (!selection) {
+            console.error('Missing selection')
             return
         }
         if (activeEditor.document.getText(selection) !== selectedText && !this.fileChatProvider.selectionRange) {
