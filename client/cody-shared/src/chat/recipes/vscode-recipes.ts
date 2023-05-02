@@ -9,6 +9,7 @@ import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
 import { ImproveVariableNames } from './improve-variable-names'
 import { NextQuestions } from './next-questions'
+import { NonStopCody } from './non-stop-cody'
 import { Recipe } from './recipe'
 import { TranslateToLanguage } from './translate'
 
@@ -40,6 +41,7 @@ function init(): void {
         new TranslateToLanguage(),
         new FindCodeSmells(),
         new NextQuestions(),
+        new NonStopCody(),
     ]
 
     for (const recipe of recipes) {

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<title>NST Merge Experiment</title>
+<style>
+#layout {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#layout > p {
+    flex: 0.33;
+    background: hsla(31, 15%, 50%, 0.1);
+    padding: 0.75em;
+    box-sizing: border-box;
+    margin: 0.25em;
+}
+
+#layout > #merged {
+    flex: 1;
+    font-family: monospace;
+}
+
+.robot {
+    background-color: aquamarine;
+}
+
+.human {
+    background-color: yellow;
+}
+
+.conflict {
+    color: yellow;
+    background: orangered;
+}
+</style>
+<input type="checkbox" checked id="linealgo"><label for="linealgo">Line algorithm</label>
+<div id="layout">
+
+<p>
+<label for="original">Original:</label><br>
+<textarea id="original" rows="20" cols="60">S
+f = (x) => {
+...2 * x;
+}</textarea>
+</p>
+
+<p>
+<label for="robot">Robot:</label><br>
+<textarea id="robot" rows="20" cols="60">S
+// Does stuff
+f = (x) => {
+...2 * x;
+}</textarea>
+</p>
+
+<p>
+<label for="human">Human:</label><br>
+<textarea id="human" rows="20" cols="60">S
+f = (x) => {
+...2 * x;
+}</textarea>
+</p>
+
+<pre id="merged">
+merged <span class="insertion">con-
+    tent</span> g<span class="conflict">oe</span>s <span class="deletion">here</span>
+</pre>
+
+</div>
+
+<script>
+
+function time(label, f) {
+    const start = performance.now();
+    const result = f();
+    const end = performance.now();
+    console.log(label, end - start, 'msec');
+    return result;
+}
+
+// More computationally intensive approaches may scale by first
+// working at the line level, and then working within a line.
+// It may be necessary to understand some structural edits like
+// "indent".
+
+const BIG = 1 << 10
+
+// Computes the longest common subsequence of strings a and b.
+// Returns a boolean program of |b|+1 rows and |a|+1 columns in
+// row-major format. The 0th row and column can be ignored. If
+// the program[i, j] is true then the longest common subsequence
+// of a and b uses b[i-1] and a[j-1].
+function longestCommonSubsequence(a, b) {
+    // TODO: Diff should be higher quality in cases like this:
+    //
+    // I(// This )S(f)I(u)S(n)I(ction)S( frozzle)I(s widgets)
+    // I(fn frozzle)...
+    //
+    // Here we have eaten into the subsequent line. It would be
+    // better to do:
+    //
+    // I(// This function frozzles widgets)
+    // S(fn frozzle)
+    //
+    // The former is prone to conflicts where one agent is editing the
+    // comment and the other is editing the function signature.
+    //
+    // Line-based diff does not have this problem.
+    //
+    // Character-based diff could do a clean up pass, trying to swap
+    // substrings of S(...) by peeling off I(...) which appear later.
+    //
+    // Or, more simply, could we add a penalty for switching from
+    // insertion to skipping? Not magic. May help locally.
+    //
+    // Or, can we compute in *two planes!* where one delays until a
+    // newline.
+
+    // Construct a dynamic program of edits.
+    const lenA = a.length;
+    const lenB = b.length;
+    const program = new Uint16Array((lenA + 1) * (lenB + 1));
+    // The cost of amortizing inserting whole line preferences.
+    const amortize = new Uint16Array((lenA + 1) * (lenB + 1));
+    // TODO: Use a cheaper representation than strings for the operations.
+    const ops = new Array((lenA + 1) * (lenB + 1));
+    ops[0] = '*';
+    // Top row: Delete all of the characters in A.
+    for (let i = 1; i <= lenA; i++) {
+        program[i] = i;
+        ops[i] = 'X';
+    }
+    // Left column: Insert all of the characters in B.
+    for (let i = 1; i <= lenB; i++) {
+        program[i * (lenA + 1)] = i;
+        ops[i * (lenA + 1)] = 'I';
+    }
+    let lineBreaksInB = [0];
+    for (let iB = 1; iB <= lenB; iB++) {
+        const chB = b[iB - 1];
+        if ((chB === '\r' && (iB === lenB || b[iB] !== '\n')) || chB === '\n') {
+            // We are at a newline.
+            lineBreaksInB.push(iB)
+        }
+        for (let iA = 1; iA <= lenA; iA++) {
+            const chA = a[iA - 1];
+            const costDeleteA = (amortize[(iB - 1) * (lenA + 1) + iA - 1] || amortize[(iB - 1) * (lenA + 1) + iA]) ? BIG : (program[iB * (lenA + 1) + iA - 1] + 1);
+            const costInsertB = (amortize[(iB - 1) * (lenA + 1) + iA - 1] || amortize[iB * (lenA + 1) + iA - 1]) ? BIG : (program[(iB - 1) * (lenA + 1) + iA] + 1);
+            const costSkipReplace = program[(iB - 1) * (lenA + 1) + iA - 1] + (chA == chB ? 0 : 1) + (amortize[(iB - 1) * (lenA + 1) + iA - 1] ? 1 : 0);
+            const cost = Math.min(costDeleteA, costInsertB, costSkipReplace);
+            program[iB * (lenA + 1) + iA] = cost;
+            ops[iB * (lenA + 1) + iA] = cost === costSkipReplace ? (chA === chB ? '-' : 'R') : (cost === costDeleteA ? 'X' : 'I');
+            amortize[iB * (lenA + 1) + iA] = Math.max(0, amortize[(iB - 1) * (lenA + 1) + iA - 1] - 1)
+
+            // Edits which insert a complete line like:
+            //
+            // > // This function recomputes bounds...
+            // function recompute(x) { return 2*x; }
+            //
+            // Produce unfortunate character-level diffs which eagerly consume
+            // part of the declaration:
+            //
+            // (insert: // This )(skip: function recompute)(insert: s bounds...
+            // function recompute)(skip: (x) { ...})
+            //
+            // If a concurrent editor renames the function then there's a
+            // conflict. Simply inserting the comment line is a better diff.
+            // To improve these diffs we treat newlines specially and if it is
+            // the same cost to insert whole lines, we prefer that.
+            //
+            // Worst case this is n^3 (n=number of lines) as the n*n pairs of
+            // newlines evaluate the n-1 previous newlines.
+            let bestLineInsertionCount = 0
+            let bestLineInsertionCost = cost
+            if (linealgo.checked && lineBreaksInB.at(-1) === iB && ((chA === '\r' && (iA === lenA || a[iA] !== '\n')) || chA === '\n')) {
+                // We are at a line break in A *and* a line break in B. Re-evaluate simply inserting the last 1..N lines of B.
+                let prefixLength = 0;
+                while (iA + prefixLength <= lenA && iB + prefixLength <= lenB && a[iA + prefixLength] === b[iB + prefixLength]) {
+                    // TODO: Does this need to stop at the next line break?
+                    prefixLength++
+                }
+                if (prefixLength) {
+                    let breakI
+                    let cumulativeCost
+                    // TODO: Consider limiting this to the previous N lines to stop going cubic.
+                    for (breakI = 2; breakI <= lineBreaksInB.length; breakI++) {
+                        // Cost of inserting those lines, discounting the saving we will make by inserting the prefix of the next line
+                        const lineInsertionCost = lineBreaksInB.at(-1) - lineBreaksInB.at(-breakI) - prefixLength
+                        cumulativeCost = program[lineBreaksInB.at(-breakI) * (lenA + 1) + iA] + lineInsertionCost
+                        if (cumulativeCost < bestLineInsertionCost) {
+                            bestLineInsertionCount = breakI - 1
+                            bestLineInsertionCost = cumulativeCost
+                        }
+                    }
+                    if (bestLineInsertionCount && cumulativeCost < program[iB * (lenA + 1) + iA]) {
+                        // Adjust the program to simply insert N lines.
+                        program[iB * (lenA + 1) + iA] = cumulativeCost
+                        amortize[iB * (lenA + 1) + iA] = prefixLength
+                        ops[iB * (lenA + 1) + iA] = {wormhole: true, insertLines: bestLineInsertionCount, offset: iB - lineBreaksInB.at(-bestLineInsertionCount-1)}
+                    }
+                }
+            }
+        }
+    }
+    dumpProgram(program, ops, amortize, a, b);
+    const use = new Uint8Array((lenA + 1) * (lenB + 1));
+    let i = lenA;
+    let j = lenB;
+    while (i != 0 || j != 0) {
+        const op = ops[j * (lenA + 1) + i];
+        switch (op) {
+        case '-':
+            use[j * (lenA + 1) + i] = 1;
+            i--;
+            j--;
+            break;
+        case 'R':
+            i--;
+            j--;
+            break;
+        case 'X':
+            i--;
+            break;
+        case 'I':
+            j--;
+            break;
+        default:
+            if (!op.wormhole) debugger;
+            // Use this newline.
+            use[j * (lenA + 1) + i] = 1;
+            // Skip forward N lines.
+            j -= op.offset
+            break;
+        }
+    }
+    // The total cost
+    // return program[program.length - 1];
+    return use;
+}
+
+function render(ch) {
+    return ch == '\n' ? '@' : ch
+}
+
+function dumpProgram(program, ops, amortize, a, b) {
+    const buffer = [];
+    buffer.push(`  ^${Array.prototype.map.call(a, render).join('')}\n`);
+    for (let iB = 0; iB <= b.length; iB++) {
+        buffer.push(`${iB == 0 ? '^' : render(b[iB-1])}|`)
+        for (let iA = 0; iA <= a.length; iA++) {
+            buffer.push(program[iB * (a.length + 1) + iA].toString(26).slice(0, 1))
+        }
+        buffer.push('\n')
+    }
+    buffer.push(`  ^${Array.prototype.map.call(a, render).join('')}\n`);
+    for (let iB = 0; iB <= b.length; iB++) {
+        buffer.push(`${iB == 0 ? '^' : render(b[iB-1])}|`)
+        for (let iA = 0; iA <= a.length; iA++) {
+            buffer.push(ops[iB * (a.length + 1) + iA])
+        }
+        buffer.push('\n')
+    }
+    buffer.push(`  ^${Array.prototype.map.call(a, render).join('')}\n`);
+    for (let iB = 0; iB <= b.length; iB++) {
+        buffer.push(`${iB == 0 ? '^' : render(b[iB-1])}|`)
+        for (let iA = 0; iA <= a.length; iA++) {
+            buffer.push(amortize[iB * (a.length + 1) + iA].toString(26).slice(0, 1))
+        }
+        buffer.push('\n')
+    }
+    console.log(buffer.join(''))
+}
+
+function dumpUse(use, a, b) {
+    const buffer = [];
+    buffer.push(`  ^${Array.prototype.map.call(a, render).join('')}\n`);
+    for (let iB = 0; iB <= b.length; iB++) {
+        buffer.push(`${iB == 0 ? '^' : render(b[iB-1])}|`)
+        for (let iA = 0; iA <= a.length; iA++) {
+            buffer.push(use[iB * (a.length + 1) + iA].toString())
+        }
+        buffer.push('\n')
+    }
+    console.log(buffer.join(''))
+}
+
+function stateChanged() {
+    const chunks = time('recompute', () => computeChunks(original.value, robot.value, human.value));
+    for (let chunk of chunks) {
+        console.log(chunk)
+    }
+    merged.textContent = '';
+    for (let chunk of chunks) {
+        let text;
+        let klass;
+        if (chunk[1] == chunk[2] && chunk[0] != chunk[1]) {
+            // Changed by robot
+            text = chunk[0];
+            klass = 'robot';
+        } else if (chunk[1] == chunk[0] && chunk[1] != chunk[2]) {
+            // Changed by human
+            text = chunk[2];
+            klass = 'human';
+        } else if (chunk[0] == chunk[2]) {
+            // Changed by both, to the same thing
+            text = chunk[0];
+            klass = '';
+        } else {
+            // Conflict!
+            text = `<${chunk[0]}/${chunk[2]}>`;
+            klass = 'conflict';
+        }
+        let node = document.createElement('span');
+        node.textContent = text;
+        if (klass) {
+            node.classList.toggle(klass);
+        }
+        merged.appendChild(node);
+    }
+}
+
+function computeChunks(original, a, b) {
+    console.log('Original/Robot')
+    const useA = longestCommonSubsequence(original, a);
+    dumpUse(useA, original, a);
+    console.log('Original/Human')
+    const useB = longestCommonSubsequence(original, b);
+    dumpUse(useB, original, b);
+    let chunks = [];
+    let lO = 0;
+    let lA = 0;
+    let lB = 0;
+    outer: while (true) {
+        for (let i = 1; lO + i <= original.length && (lA + i <= a.length || lB + i <= b.length); i++) {
+            if ((lA + i <= a.length && useA[(lA + i) * (original.length + 1) + lO + i]) &&
+                (lB + i <= b.length && useB[(lB + i) * (original.length + 1) + lO + i])) {
+                // Skipping stable pieces.
+                continue;
+            }
+            if (i > 1) {
+                // We found a stable chunk.
+                chunks.push([a.slice(lA, lA + i - 1), original.slice(lO, lO + i - 1), b.slice(lB, lB + i - 1)]);
+                lO += i - 1;
+                lA += i - 1;
+                lB += i - 1;
+                continue outer;
+            }
+            // i === 1
+            // Skipping unstable pieces.
+            for (let nextO = lO + 1; nextO <= original.length; nextO++) {
+                // Find an A
+                let nextA, nextB;
+                for (nextA = 1; nextA <= a.length; nextA++) {
+                    if (useA[nextA * (original.length + 1) + nextO]) {
+                        break;
+                    }
+                }
+                if (nextA > a.length) {
+                    continue;
+                }
+                // Find a B
+                for (nextB = 1; nextB <= b.length; nextB++) {
+                    if (useB[nextB * (original.length + 1) + nextO]) {
+                        break;
+                    }
+                }
+                if (nextB > b.length) {
+                    continue;
+                }
+                // Output an unstable chunk
+                chunks.push([a.slice(lA, nextA - 1), original.slice(lO, nextO - 1), b.slice(lB, nextB - 1)]);
+                lO = nextO - 1;
+                lA = nextA - 1;
+                lB = nextB - 1;
+                continue outer;
+            }
+            break outer;
+        }
+        break;
+    }
+    if (lO <= original.length || lA <= a.length || lB <= b.length) {
+        chunks.push([a.slice(lA), original.slice(lO), b.slice(lB)])
+    }
+    return chunks;
+}
+
+original.addEventListener('change', stateChanged);
+robot.addEventListener('change', stateChanged);
+human.addEventListener('change', stateChanged);
+linealgo.addEventListener('change', stateChanged);
+
+stateChanged();
+</script>
