@@ -25,10 +25,15 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 	})
 
 	hasDownloadedRepoEmbeddingIndex := false
-	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(mockRepoStore, mockRepoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-		hasDownloadedRepoEmbeddingIndex = true
-		return &embeddings.RepoEmbeddingIndex{}, nil
-	})
+	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(
+		mockRepoStore,
+		mockRepoEmbeddingJobsStore,
+		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+			hasDownloadedRepoEmbeddingIndex = true
+			return &embeddings.RepoEmbeddingIndex{}, nil
+		},
+		10*1024*1024,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,18 +85,23 @@ func TestConcurrentGetCachedRepoEmbeddingIndex(t *testing.T) {
 
 	var mu sync.Mutex
 	hasDownloadedRepoEmbeddingIndex := false
-	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(mockRepoStore, mockRepoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-		mu.Lock()
-		defer mu.Unlock()
+	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(
+		mockRepoStore,
+		mockRepoEmbeddingJobsStore,
+		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+			mu.Lock()
+			defer mu.Unlock()
 
-		if hasDownloadedRepoEmbeddingIndex {
-			t.Fatal("index already downloaded")
-		}
-		hasDownloadedRepoEmbeddingIndex = true
-		// Simulate the download time.
-		time.Sleep(time.Millisecond * 500)
-		return &embeddings.RepoEmbeddingIndex{}, nil
-	})
+			if hasDownloadedRepoEmbeddingIndex {
+				t.Fatal("index already downloaded")
+			}
+			hasDownloadedRepoEmbeddingIndex = true
+			// Simulate the download time.
+			time.Sleep(time.Millisecond * 500)
+			return &embeddings.RepoEmbeddingIndex{}, nil
+		},
+		10 * 1024 * 1024,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

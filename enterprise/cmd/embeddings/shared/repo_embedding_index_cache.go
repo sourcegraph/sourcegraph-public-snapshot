@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/dgraph-io/ristretto"
-	lru "github.com/hashicorp/golang-lru/v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -56,21 +55,44 @@ func (m *repoMutexMap) GetLock(repoID api.RepoID) *sync.Mutex {
 	return lock
 }
 
+type embeddingIndexCache struct {
+	cache *ristretto.Cache
+}
+
+func newEmbeddingsIndexCache(cacheSizeBytes int64) (embeddingIndexCache, error) {
+	rc, err := ristretto.NewCache(&ristretto.Config{
+		NumCounters: 1000,
+		MaxCost:     cacheSizeBytes,
+		BufferItems: 64,
+		Metrics:     false, // we have no way to collect metrics yet
+	})
+	if err != nil {
+		return embeddingIndexCache{}, err
+	}
+
+	return embeddingIndexCache{rc}, nil
+}
+
+func (c *embeddingIndexCache) Get(repo embeddings.RepoEmbeddingIndexName) (repoEmbeddingIndexCacheEntry, bool) {
+	v, ok := c.cache.Get(string(repo))
+	if !ok {
+		return repoEmbeddingIndexCacheEntry{}, false
+	}
+	return v.(repoEmbeddingIndexCacheEntry), true
+}
+
+func (c *embeddingIndexCache) Set(repo embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
+	c.cache.Set(string(repo), value, value.index.EstimateSize())
+	c.cache.Wait()
+}
+
 func getCachedRepoEmbeddingIndex(
 	repoStore database.RepoStore,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 	downloadRepoEmbeddingIndex downloadRepoEmbeddingIndexFn,
 	cacheSizeBytes int64,
 ) (getRepoEmbeddingIndexFn, error) {
-	cache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: 1000,
-		MaxCost:     cacheSizeBytes,
-		BufferItems: 64,
-		Metrics:     false, // we have no way to collect metrics yet
-		Cost: func(value interface{}) int64 {
-
-		},
-	})
+	cache, err := newEmbeddingsIndexCache(cacheSizeBytes)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating repo embedding index cache")
 	}
@@ -82,7 +104,7 @@ func getCachedRepoEmbeddingIndex(
 		if err != nil {
 			return nil, errors.Wrap(err, "downloading repo embedding index")
 		}
-		cache.Add(repoEmbeddingIndexName, repoEmbeddingIndexCacheEntry{index: embeddingIndex, finishedAt: *finishedAt})
+		cache.Set(repoEmbeddingIndexName, repoEmbeddingIndexCacheEntry{index: embeddingIndex, finishedAt: *finishedAt})
 		return embeddingIndex, nil
 	}
 
