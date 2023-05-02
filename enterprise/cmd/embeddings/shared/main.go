@@ -79,7 +79,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
 			return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(repoEmbeddingIndexName))
 		},
-		2*1024*1024*1024, // 2 GiB
+		config.EmbeddingsCacheSize,
 	)
 	if err != nil {
 		return err
