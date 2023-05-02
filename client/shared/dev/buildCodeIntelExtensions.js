@@ -14,7 +14,6 @@ const bundlesRepoName = 'sourcegraph-extensions-bundles'
  */
 function buildCodeIntelExtensions({ pathToExtensionBundles, revision }) {
   const pathToDistributionRevisionFile = path.join(pathToExtensionBundles, 'revision.txt')
-  console.log({ pathToExtensionBundles, revision, pathToDistributionRevisionFile })
 
   const currentRevision =
     fs.existsSync(pathToDistributionRevisionFile) && fs.readFileSync(pathToDistributionRevisionFile).toString()
