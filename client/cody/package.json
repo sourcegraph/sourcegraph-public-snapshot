@@ -201,7 +201,7 @@
     ],
     "submenus": [
       {
-        "label": "Ask Cody",
+        "label": "Cody: Recipes",
         "id": "cody.submenu"
       }
     ],
@@ -236,6 +236,14 @@
           "when": "cody.activated"
         },
         {
+          "command": "cody.focus",
+          "when": "!cody.activated"
+        },
+        {
+          "command": "cody.set-access-token",
+          "when": "false"
+        },
+        {
           "command": "cody.file.chat",
           "when": "false"
         },
@@ -244,15 +252,29 @@
           "when": "false"
         },
         {
-          "command": "cody.focus",
-          "title": "Cody: Sign In",
-          "when": "!cody.activated"
+          "command": "cody.file.delete",
+          "when": "false"
+        },
+        {
+          "command": "cody.file.load",
+          "when": "false"
         }
       ],
       "editor/context": [
         {
+          "command": "cody.focus",
+          "group": "cody",
+          "when": "!cody.activated"
+        },
+        {
+          "command": "cody.recipe.fixup",
+          "group": "cody",
+          "when": "cody.activated"
+        },
+        {
           "submenu": "cody.submenu",
-          "group": "7_modification"
+          "group": "cody",
+          "when": "cody.activated"
         }
       ],
       "cody.submenu": [
@@ -279,14 +301,6 @@
         {
           "command": "cody.recipe.translate-to-language",
           "when": "cody.activated"
-        },
-        {
-          "command": "cody.recipe.fixup",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.focus",
-          "when": "!cody.activated"
         }
       ],
       "view/title": [
@@ -366,8 +380,9 @@
           "type": "boolean",
           "default": false
         },
-        "cody.experimental.keys.anthropic": {
-          "type": "string"
+        "cody.experimental.fixupChat": {
+          "type": "boolean",
+          "default": false
         },
         "cody.customHeaders": {
           "type": "object",

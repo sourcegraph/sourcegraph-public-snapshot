@@ -49,6 +49,7 @@ type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'experimentalChatPredictions'
+    | 'experimentalFixupChat'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -263,9 +264,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             onComplete: () => this.multiplexer.notifyTurnComplete(),
             onError: (err, statusCode) => {
                 // Display error message as assistant response
-                this.transcript.addErrorAsAssistantResponse(
-                    `<div class="cody-chat-error"><span>Request failed: </span>${err}</div>`
-                )
+                this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     void this.sendLogin(false)
@@ -491,6 +490,32 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
+     * Handles in-file chat threads from editor
+     */
+    public async fileChatAdd(threads: vscode.CommentReply): Promise<void> {
+        await this.editor.fileChatProvider.chat(threads)
+        void this.executeRecipe('file-chat', threads.text, false)
+    }
+
+    public async fileChatFix(threads: vscode.CommentReply): Promise<void> {
+        await this.editor.fileChatProvider.chat(threads, true)
+        await this.executeRecipe('fixup', `/fix ${threads.text}`, false)
+    }
+
+    public fileChatDelete(thread: vscode.CommentThread): void {
+        this.editor.fileChatProvider.delete(thread)
+    }
+
+    private experimentalErrorMessage(): void {
+        if (!this.config.experimentalFixupChat) {
+            const errorText =
+                'This experimental feature requires the cody.experimental.fixupChat configuration set to true.'
+            this.transcript.addErrorAsAssistantResponse(errorText)
+        }
+        return
+    }
+
+    /**
      * Publish the current context status to the webview.
      */
     private publishContextStatus(): void {
@@ -622,23 +647,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         // Register webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
-    }
-
-    /**
-     * Handles in-file chat threads from editor
-     */
-    public async fileChatAdd(threads: vscode.CommentReply): Promise<void> {
-        await this.editor.fileChatProvider.chat(threads)
-        void this.executeRecipe('file-chat', threads.text, false)
-    }
-
-    public async fileChatFix(threads: vscode.CommentReply): Promise<void> {
-        await this.editor.fileChatProvider.chat(threads, true)
-        await this.executeRecipe('fixup', `/fix ${threads.text}`, false)
-    }
-
-    public fileChatDelete(thread: vscode.CommentThread): void {
-        this.editor.fileChatProvider.delete(thread)
     }
 
     /**

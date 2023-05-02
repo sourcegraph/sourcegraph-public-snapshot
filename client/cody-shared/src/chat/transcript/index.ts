@@ -80,12 +80,13 @@ export class Transcript {
         if (!lastMessage) {
             return
         }
+        const errorMsg = `<div class="cody-chat-error"><span>Request failed: </span>${errorText}</div>`
         // Adds error after Cody's response before it was interrupted
         const lastMessageText = lastMessage.getAssistantMessage().text
         lastMessage.setAssistantMessage({
             speaker: 'assistant',
             text: `${lastMessageText}\nFailed to generate the rest of the response due to server error.`,
-            displayText: `${lastMessageText}\n${errorText}`,
+            displayText: `${lastMessageText}\n${errorMsg}`,
         })
     }
 
