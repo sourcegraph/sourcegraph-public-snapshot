@@ -1,4 +1,4 @@
-/* eslint-disable no-sync @typescript-eslint/restrict-template-expressions */
+/* eslint-disable no-sync, @typescript-eslint/restrict-template-expressions */
 const fs = require('fs')
 const path = require('path')
 
