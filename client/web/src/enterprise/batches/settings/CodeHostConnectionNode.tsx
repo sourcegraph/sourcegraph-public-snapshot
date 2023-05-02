@@ -12,6 +12,7 @@ import {
     BatchChangesCodeHostFields,
     CheckBatchChangesCredentialResult,
     CheckBatchChangesCredentialVariables,
+    ExternalServiceKind,
     Scalars,
 } from '../../../graphql-operations'
 
@@ -71,6 +72,10 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     }, [refetchAll, buttonReference])
 
     const isEnabled = node.credential !== null && (userID === null || !node.credential.isSiteCredential)
+
+    const supportsSignedCommits =
+        node.externalServiceKind === ExternalServiceKind.GITHUB ||
+        node.externalServiceKind === ExternalServiceKind.GITLAB
 
     const headingAriaLabel = `Sourcegraph ${
         isEnabled ? 'has credentials configured' : 'does not have credentials configured'
@@ -193,7 +198,12 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                 />
             )}
             {openModal === 'view' && (
-                <ViewCredentialModal onClose={closeModal} codeHost={node} credential={node.credential!} />
+                <ViewCredentialModal
+                    onClose={closeModal}
+                    codeHost={node}
+                    credential={node.credential!}
+                    supportsSignedCommits={supportsSignedCommits}
+                />
             )}
             {openModal === 'add' && (
                 <AddCredentialModal
@@ -204,6 +214,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                     externalServiceURL={node.externalServiceURL}
                     requiresSSH={node.requiresSSH}
                     requiresUsername={node.requiresUsername}
+                    supportsSignedCommits={supportsSignedCommits}
                 />
             )}
         </>

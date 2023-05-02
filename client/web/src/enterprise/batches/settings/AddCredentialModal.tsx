@@ -36,6 +36,7 @@ export interface AddCredentialModalProps {
     externalServiceURL: string
     requiresSSH: boolean
     requiresUsername: boolean
+    supportsSignedCommits: boolean
 
     /** For testing only. */
     initialStep?: Step
@@ -99,6 +100,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
     externalServiceURL,
     requiresSSH,
     requiresUsername,
+    supportsSignedCommits,
     initialStep = 'add-token',
 }) => {
     const labelId = 'addCredential'
@@ -165,10 +167,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
         ]
     )
 
-    const signCommitsAvailable =
-        externalServiceKind === ExternalServiceKind.GITHUB || externalServiceKind === ExternalServiceKind.GITLAB
-
-    const signCommitsTooltip = !signCommitsAvailable
+    const signCommitsTooltip = !supportsSignedCommits
         ? 'Commit signing is not available on this code host type.'
         : requiresSSH
         ? 'Enable Batch Changes to sign commits with the same SSH key it generates to authenticate to your code host with.'
@@ -185,7 +184,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                     externalServiceKind={externalServiceKind}
                     externalServiceURL={externalServiceURL}
                 />
-                {(signCommitsAvailable || requiresSSH) && (
+                {(supportsSignedCommits || requiresSSH) && (
                     <div className="d-flex w-100 justify-content-between mb-4">
                         <div className="flex-grow-1 mr-2">
                             <Text className={classNames('mb-0 py-2', step === 'get-ssh-key' && 'text-muted')}>
@@ -266,7 +265,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                                         id="enable-sign-commits"
                                         checked={optInToCommitSigning}
                                         onChange={onChangeOptInToSigning}
-                                        disabled={!signCommitsAvailable}
+                                        disabled={!supportsSignedCommits}
                                         label="Sign commits on this code host"
                                     />
                                     <Tooltip content={signCommitsTooltip}>

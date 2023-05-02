@@ -14,13 +14,15 @@ import { ModalHeader } from './ModalHeader'
 interface ViewCredentialModalProps {
     codeHost: BatchChangesCodeHostFields
     credential: BatchChangesCredentialFields
+    supportsSignedCommits: boolean
 
     onClose: () => void
 }
 
 export const ViewCredentialModal: React.FunctionComponent<React.PropsWithChildren<ViewCredentialModalProps>> = ({
-    credential,
     codeHost,
+    credential,
+    supportsSignedCommits,
     onClose,
 }) => {
     const labelId = 'viewCredential'
@@ -33,7 +35,9 @@ export const ViewCredentialModal: React.FunctionComponent<React.PropsWithChildre
             />
 
             <H4>Personal access token</H4>
-            <Input className="form-group" value="PATs cannot be viewed after entering." disabled={true} />
+            {supportsSignedCommits && (
+                <Input className="form-group" value="PATs cannot be viewed after entering." disabled={true} />
+            )}
 
             {(codeHost.externalServiceKind === ExternalServiceKind.GITHUB ||
                 codeHost.externalServiceKind === ExternalServiceKind.GITLAB) && (

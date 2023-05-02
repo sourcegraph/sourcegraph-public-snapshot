@@ -22,7 +22,7 @@ const credential: BatchChangesCredentialFields = {
         'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 }
 
-export const View: Story = () => (
+export const ViewSupportedSignedCommits: Story = () => (
     <WebStory>
         {props => (
             <ViewCredentialModal
@@ -35,13 +35,34 @@ export const View: Story = () => (
                     requiresUsername: false,
                 }}
                 credential={credential}
+                supportsSignedCommits={true}
                 onClose={noop}
             />
         )}
     </WebStory>
 )
 
-View.parameters = {
+export const ViewUnsupportedSignedCommits: Story = () => (
+    <WebStory>
+        {props => (
+            <ViewCredentialModal
+                {...props}
+                codeHost={{
+                    credential,
+                    externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
+                    externalServiceURL: 'https://bitbucket.sgdev.org/',
+                    requiresSSH: true,
+                    requiresUsername: false,
+                }}
+                credential={credential}
+                supportsSignedCommits={false}
+                onClose={noop}
+            />
+        )}
+    </WebStory>
+)
+
+ViewSupportedSignedCommits.parameters = {
     chromatic: {
         // Delay screenshot taking, so the modal has opened by the time the screenshot is taken.
         delay: 2000,

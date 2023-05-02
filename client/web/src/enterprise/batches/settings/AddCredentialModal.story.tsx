@@ -26,6 +26,17 @@ const config: Meta = {
 
 export default config
 
+const result = {
+    data: {
+        createBatchChangesCredential: {
+            id: '123',
+            isSiteCredential: false,
+            sshPublicKey:
+                'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+        },
+    },
+}
+
 export const RequiresSSHstep1: Story = args => (
     <WebStory>
         {props => (
@@ -37,16 +48,7 @@ export const RequiresSSHstep1: Story = args => (
                                 query: getDocumentNode(CREATE_BATCH_CHANGES_CREDENTIAL),
                                 variables: MATCH_ANY_PARAMETERS,
                             },
-                            result: {
-                                data: {
-                                    createBatchChangesCredential: {
-                                        id: '123',
-                                        isSiteCredential: false,
-                                        sshPublicKey:
-                                            'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-                                    },
-                                },
-                            },
+                            result,
                             nMatches: Number.POSITIVE_INFINITY,
                         },
                     ])
@@ -59,6 +61,7 @@ export const RequiresSSHstep1: Story = args => (
                     externalServiceURL="https://github.com/"
                     requiresSSH={true}
                     requiresUsername={false}
+                    supportsSignedCommits={true}
                     afterCreate={noop}
                     onCancel={noop}
                 />
@@ -86,6 +89,7 @@ export const RequiresSSHstep2: Story = args => (
                 externalServiceURL="https://github.com/"
                 requiresSSH={true}
                 requiresUsername={false}
+                supportsSignedCommits={true}
                 afterCreate={noop}
                 onCancel={noop}
                 initialStep="get-ssh-key"
@@ -106,16 +110,32 @@ RequiresSSHstep2.storyName = 'Requires SSH - step 2'
 export const GitHub: Story = () => (
     <WebStory>
         {props => (
-            <AddCredentialModal
-                {...props}
-                userID="user-id-1"
-                externalServiceKind={ExternalServiceKind.GITHUB}
-                externalServiceURL="https://github.com/"
-                requiresSSH={false}
-                requiresUsername={false}
-                afterCreate={noop}
-                onCancel={noop}
-            />
+            <MockedTestProvider
+                link={
+                    new WildcardMockLink([
+                        {
+                            request: {
+                                query: getDocumentNode(CREATE_BATCH_CHANGES_CREDENTIAL),
+                                variables: MATCH_ANY_PARAMETERS,
+                            },
+                            result,
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
+                    ])
+                }
+            >
+                <AddCredentialModal
+                    {...props}
+                    userID="user-id-1"
+                    externalServiceKind={ExternalServiceKind.GITHUB}
+                    externalServiceURL="https://github.com/"
+                    requiresSSH={false}
+                    requiresUsername={false}
+                    supportsSignedCommits={true}
+                    afterCreate={noop}
+                    onCancel={noop}
+                />
+            </MockedTestProvider>
         )}
     </WebStory>
 )
@@ -125,16 +145,32 @@ GitHub.storyName = 'GitHub'
 export const GitLab: Story = () => (
     <WebStory>
         {props => (
-            <AddCredentialModal
-                {...props}
-                userID="user-id-1"
-                externalServiceKind={ExternalServiceKind.GITLAB}
-                externalServiceURL="https://gitlab.com/"
-                requiresSSH={false}
-                requiresUsername={false}
-                afterCreate={noop}
-                onCancel={noop}
-            />
+            <MockedTestProvider
+                link={
+                    new WildcardMockLink([
+                        {
+                            request: {
+                                query: getDocumentNode(CREATE_BATCH_CHANGES_CREDENTIAL),
+                                variables: MATCH_ANY_PARAMETERS,
+                            },
+                            result,
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
+                    ])
+                }
+            >
+                <AddCredentialModal
+                    {...props}
+                    userID="user-id-1"
+                    externalServiceKind={ExternalServiceKind.GITLAB}
+                    externalServiceURL="https://gitlab.com/"
+                    requiresSSH={false}
+                    requiresUsername={false}
+                    supportsSignedCommits={true}
+                    afterCreate={noop}
+                    onCancel={noop}
+                />
+            </MockedTestProvider>
         )}
     </WebStory>
 )
@@ -151,6 +187,7 @@ export const BitbucketServer: Story = () => (
                 externalServiceURL="https://bitbucket.sgdev.org/"
                 requiresSSH={false}
                 requiresUsername={false}
+                supportsSignedCommits={false}
                 afterCreate={noop}
                 onCancel={noop}
             />
@@ -168,6 +205,7 @@ export const BitbucketCloud: Story = () => (
                 externalServiceURL="https://bitbucket.org/"
                 requiresSSH={false}
                 requiresUsername={true}
+                supportsSignedCommits={false}
                 afterCreate={noop}
                 onCancel={noop}
             />
