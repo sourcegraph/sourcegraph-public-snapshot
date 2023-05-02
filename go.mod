@@ -9,6 +9,7 @@ require (
 	cloud.google.com/go/pubsub v1.27.1
 	cloud.google.com/go/secretmanager v1.9.0
 	cloud.google.com/go/storage v1.28.1
+	github.com/Khan/genqlient v0.5.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
@@ -199,6 +200,9 @@ require (
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	github.com/agnivade/levenshtein v1.1.1 // indirect
+	github.com/alexflint/go-arg v1.4.2 // indirect
+	github.com/alexflint/go-scalar v1.0.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.0.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.1.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.1 // indirect
@@ -231,6 +235,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
 	github.com/smartystreets/assertions v1.13.0 // indirect
+	github.com/vektah/gqlparser/v2 v2.4.5 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
