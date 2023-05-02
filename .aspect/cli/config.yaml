@@ -11,5 +11,5 @@ plugins:
     version: v0.0.1
     from: github.com/sourcegraph/aspect-cli-plugin-buildkite
     properties:
-    #   pretend: false
+      pretend: true
       buildkite_agent_path: "/usr/local/bin/buildkite-agent"
