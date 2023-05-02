@@ -3594,7 +3594,7 @@ packages:
   /@esbuild/android-arm64@0.16.17:
     resolution: {integrity: sha512-MIGl6p5sc3RDTLLkYL1MyL8BMRN4tLMRCn+yRJJmEDvYZ2M7tmAf80hx1kbNEUX2KJ50RRtxZ4JHLvCfuB6kBg==}
     engines: {node: '>=12'}
-    cpu: [arm64]
+    cpu: [arm]
     os: [android]
     requiresBuild: true
     dev: true
@@ -3603,7 +3603,7 @@ packages:
   /@esbuild/android-arm64@0.17.14:
     resolution: {integrity: sha512-eLOpPO1RvtsP71afiFTvS7tVFShJBCT0txiv/xjFBo5a7R7Gjw7X0IgIaFoLKhqXYAXhahoXm7qAmRXhY4guJg==}
     engines: {node: '>=12'}
-    cpu: [arm64]
+    cpu: [arm]
     os: [android]
     requiresBuild: true
     optional: true
@@ -3611,7 +3611,7 @@ packages:
   /@esbuild/android-arm@0.16.17:
     resolution: {integrity: sha512-N9x1CMXVhtWEAMS7pNNONyA14f71VPQN9Cnavj1XQh6T7bskqiLLrSca4O0Vr8Wdcga943eThxnVp3JLnBMYtw==}
     engines: {node: '>=12'}
-    cpu: [arm]
+    cpu: [arm64]
     os: [android]
     requiresBuild: true
     dev: true
@@ -3620,7 +3620,7 @@ packages:
   /@esbuild/android-arm@0.17.14:
     resolution: {integrity: sha512-0CnlwnjDU8cks0yJLXfkaU/uoLyRf9VZJs4p1PskBr2AlAHeEsFEwJEo0of/Z3g+ilw5mpyDwThlxzNEIxOE4g==}
     engines: {node: '>=12'}
-    cpu: [arm]
+    cpu: [arm64]
     os: [android]
     requiresBuild: true
     optional: true
@@ -3713,7 +3713,7 @@ packages:
   /@esbuild/linux-arm64@0.16.17:
     resolution: {integrity: sha512-7S8gJnSlqKGVJunnMCrXHU9Q8Q/tQIxk/xL8BqAP64wchPCTzuM6W3Ra8cIa1HIflAvDnNOt2jaL17vaW+1V0g==}
     engines: {node: '>=12'}
-    cpu: [arm64]
+    cpu: [arm]
     os: [linux]
     requiresBuild: true
     dev: true
@@ -3722,7 +3722,7 @@ packages:
   /@esbuild/linux-arm64@0.17.14:
     resolution: {integrity: sha512-FhAMNYOq3Iblcj9i+K0l1Fp/MHt+zBeRu/Qkf0LtrcFu3T45jcwB6A1iMsemQ42vR3GBhjNZJZTaCe3VFPbn9g==}
     engines: {node: '>=12'}
-    cpu: [arm64]
+    cpu: [arm]
     os: [linux]
     requiresBuild: true
     optional: true
@@ -3730,7 +3730,7 @@ packages:
   /@esbuild/linux-arm@0.16.17:
     resolution: {integrity: sha512-iihzrWbD4gIT7j3caMzKb/RsFFHCwqqbrbH9SqUSRrdXkXaygSZCZg1FybsZz57Ju7N/SHEgPyaR0LZ8Zbe9gQ==}
     engines: {node: '>=12'}
-    cpu: [arm]
+    cpu: [arm64]
     os: [linux]
     requiresBuild: true
     dev: true
@@ -3739,7 +3739,7 @@ packages:
   /@esbuild/linux-arm@0.17.14:
     resolution: {integrity: sha512-BNTl+wSJ1omsH8s3TkQmIIIQHwvwJrU9u1ggb9XU2KTVM4TmthRIVyxSp2qxROJHhZuW/r8fht46/QE8hU8Qvg==}
     engines: {node: '>=12'}
-    cpu: [arm]
+    cpu: [arm64]
     os: [linux]
     requiresBuild: true
     optional: true
@@ -7289,8 +7289,8 @@ packages:
     peerDependencies:
       sourcegraph: '*'
     dependencies:
-      sourcegraph: link:client/extension-api
-    dev: false
+      sourcegraph: 25.7.0(graphql@15.4.0)
+    dev: true
 
   /@sourcegraph/prettierrc@3.0.3:
     resolution: {integrity: sha512-FQ1/Ued4I02R0JkrHHofDN163juVxUnPALzfxPZrDZUHv+c3jHjfZhmTHEz+Wd+g3b7MFk0fkj36nZSnvPyU8A==}
@@ -23019,7 +23019,7 @@ packages:
       yargs: 17.7.1
     transitivePeerDependencies:
       - ts-node
-    dev: false
+    dev: true
 
   /postcss-cli@10.1.0(postcss@8.4.22)(ts-node@10.9.1):
     resolution: {integrity: sha512-Zu7PLORkE9YwNdvOeOVKPmWghprOtjFQU3srMUGbdz3pHJiFh7yZ4geiZFMkjMfB0mtTFR3h8RemR62rPkbOPA==}
@@ -23043,7 +23043,7 @@ packages:
       yargs: 17.7.1
     transitivePeerDependencies:
       - ts-node
-    dev: true
+    dev: false
 
   /postcss-colormin@4.0.3:
     resolution: {integrity: sha512-WyQFAdDZpExQh32j0U0feWisZ0dmOtPl44qYmJKkq9xFWY3p+4qnRzCHeNrkeRhwPHz9bQ3mo0/yVkaply0MNw==}
@@ -23137,7 +23137,7 @@ packages:
       postcss: 8.4.21
       ts-node: 10.9.1(@types/node@13.13.5)(typescript@5.0.2)
       yaml: 2.2.1
-    dev: false
+    dev: true
 
   /postcss-load-config@4.0.1(postcss@8.4.22)(ts-node@10.9.1):
     resolution: {integrity: sha512-vEJIc8RdiBRu3oRAI0ymerOn+7rPuMvRXslTvZUKZonDHFIczxztIyJ1urxM1x9JXEikvpWWTUUqal5j/8QgvA==}
@@ -23155,7 +23155,7 @@ packages:
       postcss: 8.4.22
       ts-node: 10.9.1(@types/node@13.13.5)(typescript@5.0.2)
       yaml: 2.2.1
-    dev: true
+    dev: false
 
   /postcss-loader@4.2.0(postcss@7.0.39)(webpack@5.75.0):
     resolution: {integrity: sha512-mqgScxHqbiz1yxbnNcPdKYo/6aVt+XExURmEbQlviFVWogDbM4AJ0A/B+ZBpYsJrTRxKw7HyRazg9x0Q9SWwLA==}
@@ -23661,7 +23661,7 @@ packages:
       svelte: ^3.2.0
     dependencies:
       prettier: 2.8.1
-      svelte: 3.57.0
+      svelte: 3.58.0
     dev: true
 
   /prettier-plugin-svelte@2.9.0(prettier@2.8.1)(svelte@3.58.0):
@@ -23671,7 +23671,7 @@ packages:
       svelte: ^3.2.0
     dependencies:
       prettier: 2.8.1
-      svelte: 3.58.0
+      svelte: 3.57.0
     dev: true
 
   /prettier@2.0.5:
