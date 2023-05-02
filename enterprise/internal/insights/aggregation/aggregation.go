@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -238,16 +239,12 @@ func (r *searchAggregationResults) ResultLimitHit(limit int) bool {
 }
 
 func repoIDs(results []result.Match) []api.RepoID {
-	ids := make(map[api.RepoID]struct{}, 5)
+	ids := collections.NewSet[api.RepoID]()
 	for _, r := range results {
-		ids[r.RepoName().ID] = struct{}{}
+		ids.Add(r.RepoName().ID)
 	}
 
-	res := make([]api.RepoID, 0, len(ids))
-	for id := range ids {
-		res = append(res, id)
-	}
-	return res
+	return ids.Values()
 }
 
 func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
