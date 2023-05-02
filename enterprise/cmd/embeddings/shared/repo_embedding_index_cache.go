@@ -90,17 +90,6 @@ func (c *embeddingsIndexCache) onEvict(_ embeddings.RepoEmbeddingIndexName, valu
 	c.remainingSizeBytes += value.index.EstimateSize()
 }
 
-type embeddingSingleflight struct {
-	sf singleflight.Group
-}
-
-func (e *embeddingSingleflight) Do(repoName api.RepoName, f func() (*embeddings.RepoEmbeddingIndex, error)) (*embeddings.RepoEmbeddingIndex, error) {
-	res, err, _ := e.sf.Do(string(repoName), func() (interface{}, error) {
-		return f()
-	})
-	return res.(*embeddings.RepoEmbeddingIndex), err
-}
-
 func NewCachedEmbeddingIndexGetter(
 	repoStore database.RepoStore,
 	repoEmbeddingJobStore repo.RepoEmbeddingJobsStore,
