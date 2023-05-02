@@ -65,6 +65,16 @@ func (s *gitHubAppsStore) getEncryptionKey() encryption.Key {
 	return keyring.Default().GitHubAppKey
 }
 
+var scanIDAndTimes = basestore.NewFirstScanner(func(s dbutil.Scanner) (*types.GitHubApp, error) {
+	var app types.GitHubApp
+
+	err := s.Scan(
+		&app.ID,
+		&app.CreatedAt,
+		&app.UpdatedAt)
+	return &app, err
+})
+
 // Create inserts a new GitHub App into the database.
 func (s *gitHubAppsStore) Create(ctx context.Context, app *types.GitHubApp) (int, error) {
 	key := s.getEncryptionKey()
