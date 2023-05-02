@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,7 +23,7 @@ import (
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
-	handler := newHandler(config)
+	handler := newHandler(obctx.Logger, config)
 	handler = trace.HTTPMiddleware(obctx.Logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = actor.HTTPMiddleware(obctx.Logger, handler)
@@ -42,7 +43,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	return nil
 }
 
-func newHandler(config *Config) http.Handler {
+func newHandler(logger log.Logger, config *Config) http.Handler {
 	r := mux.NewRouter()
 	s := r.PathPrefix("/v1").Subrouter()
 
@@ -51,7 +52,12 @@ func newHandler(config *Config) http.Handler {
 			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("failed to create request: %s", err)))
+				err = json.NewEncoder(w).Encode(map[string]string{
+					"error": fmt.Sprintf("failed to create request: %s", err),
+				})
+				if err != nil {
+					logger.Error("failed to write response", log.Error(err))
+				}
 				return
 			}
 
@@ -66,12 +72,17 @@ func newHandler(config *Config) http.Handler {
 			resp, err := httpcli.ExternalDoer.Do(r)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("failed to make request to Anthropic: %s", err)))
+				err = json.NewEncoder(w).Encode(map[string]string{
+					"error": fmt.Sprintf("failed to make request to Anthropic: %s", err),
+				})
+				if err != nil {
+					logger.Error("failed to write response", log.Error(err))
+				}
 				return
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			io.Copy(w, resp.Body)
+			_, _ = io.Copy(w, resp.Body)
 		}),
 	).Methods(http.MethodPost)
 	return r
