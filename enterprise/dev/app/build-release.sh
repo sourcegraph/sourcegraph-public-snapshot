@@ -41,7 +41,7 @@ bazel_build() {
 
     #--//:assets_bundle_type=enterprise
   out=$(bazel cquery //enterprise/cmd/sourcegraph:sourcegraph --output=files)
-  cp -vf $out .bin/sourcegraph-backend-aarch64-apple-darwin
+  cp -vf "${out}" .bin/sourcegraph-backend-aarch64-apple-darwin
 
 }
 
