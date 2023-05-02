@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dgraph-io/ristretto"
 	lru "github.com/hashicorp/golang-lru/v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -59,8 +60,17 @@ func getCachedRepoEmbeddingIndex(
 	repoStore database.RepoStore,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 	downloadRepoEmbeddingIndex downloadRepoEmbeddingIndexFn,
+	cacheSizeBytes int64,
 ) (getRepoEmbeddingIndexFn, error) {
-	cache, err := lru.New[embeddings.RepoEmbeddingIndexName, repoEmbeddingIndexCacheEntry](cacheSize)
+	cache, err := ristretto.NewCache(&ristretto.Config{
+		NumCounters: 1000,
+		MaxCost:     cacheSizeBytes,
+		BufferItems: 64,
+		Metrics:     false, // we have no way to collect metrics yet
+		Cost: func(value interface{}) int64 {
+
+		},
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "creating repo embedding index cache")
 	}
