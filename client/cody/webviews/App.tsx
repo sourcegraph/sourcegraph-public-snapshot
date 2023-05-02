@@ -22,6 +22,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [debugLog, setDebugLog] = useState(['No data yet'])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
+    const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [isValidLogin, setIsValidLogin] = useState<boolean>()
     const [formInput, setFormInput] = useState('')
@@ -29,6 +30,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
     const [errorMessage, setErrorMessage] = useState<string>('')
+    const [suggestions, setSuggestions] = useState<string[] | undefined>()
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -67,8 +69,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 case 'contextStatus':
                     setContextStatus(message.contextStatus)
                     break
+                case 'errors':
+                    setErrorMessage(message.errors)
+                    break
                 case 'view':
                     setView(message.messages)
+                    break
+                case 'suggestions':
+                    setSuggestions(message.suggestions)
                     break
             }
         })
@@ -110,13 +118,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     userHistory={userHistory}
                     setUserHistory={setUserHistory}
                     setInputHistory={setInputHistory}
+                    setView={setView}
                     vscodeAPI={vscodeAPI}
                 />
             )}
             {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
-            {view === 'settings' && (
-                <Settings setView={setView} onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />
-            )}
+            {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
             {view === 'chat' && errorMessage && (
                 <div className="error">
                     Error: {errorMessage}
@@ -128,6 +135,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {view === 'chat' && (
                 <Chat
                     messageInProgress={messageInProgress}
+                    messageBeingEdited={messageBeingEdited}
+                    setMessageBeingEdited={setMessageBeingEdited}
                     transcript={transcript}
                     contextStatus={contextStatus}
                     formInput={formInput}
@@ -135,6 +144,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     inputHistory={inputHistory}
                     setInputHistory={setInputHistory}
                     vscodeAPI={vscodeAPI}
+                    suggestions={suggestions}
+                    setSuggestions={setSuggestions}
                 />
             )}
         </div>

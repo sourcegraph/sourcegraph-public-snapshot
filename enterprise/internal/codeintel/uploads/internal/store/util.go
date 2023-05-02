@@ -70,7 +70,11 @@ WHERE r.state = 'queued'
 // visible from the given commit. This is done by removing the "shadowed" values created
 // by looking at a commit and it's ancestors visible commits.
 func makeVisibleUploadsQuery(repositoryID int, commit string) *sqlf.Query {
-	return sqlf.Sprintf(visibleUploadsQuery, makeVisibleUploadCandidatesQuery(repositoryID, commit))
+	return sqlf.Sprintf(
+		visibleUploadsQuery,
+		repositoryID, dbutil.CommitBytea(commit),
+		repositoryID, dbutil.CommitBytea(commit),
+	)
 }
 
 const visibleUploadsQuery = `
@@ -80,51 +84,37 @@ FROM (
 	SELECT
 		t.*,
 		row_number() OVER (PARTITION BY root, indexer ORDER BY distance) AS r
-	FROM (%s) t
+	FROM (
+		-- Select the set of uploads visible from the given commit. This is done by looking
+		-- at each commit's row in the lsif_nearest_uploads table, and the (adjusted) set of
+		-- uploads from each commit's nearest ancestor according to the data compressed in
+		-- the links table.
+		--
+		-- NB: A commit should be present in at most one of these tables.
+		SELECT
+			nu.repository_id,
+			upload_id::integer,
+			nu.commit_bytea,
+			u_distance::text::integer as distance
+		FROM lsif_nearest_uploads nu
+		CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
+		WHERE nu.repository_id = %s AND nu.commit_bytea = %s
+		UNION (
+			SELECT
+				nu.repository_id,
+				upload_id::integer,
+				ul.commit_bytea,
+				u_distance::text::integer + ul.distance as distance
+			FROM lsif_nearest_uploads_links ul
+			JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
+			CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
+			WHERE nu.repository_id = %s AND ul.commit_bytea = %s
+		)
+	) t
 	JOIN lsif_uploads u ON u.id = upload_id
 ) t
+-- Remove ranks > 1, as they are shadowed by another upload in the same output set
 WHERE t.r <= 1
-`
-
-// makeVisibleUploadCandidatesQuery returns a SQL query returning the set of uploads
-// visible from the given commits. This is done by looking at each commit's row in the
-// lsif_nearest_uploads, and the (adjusted) set of uploads visible from each commit's
-// nearest ancestor according to data compressed in the links table.
-//
-// NB: A commit should be present in at most one of these tables.
-func makeVisibleUploadCandidatesQuery(repositoryID int, commits ...string) *sqlf.Query {
-	if len(commits) == 0 {
-		panic("No commits supplied to makeVisibleUploadCandidatesQuery.")
-	}
-
-	commitQueries := make([]*sqlf.Query, 0, len(commits))
-	for _, commit := range commits {
-		commitQueries = append(commitQueries, sqlf.Sprintf("%s", dbutil.CommitBytea(commit)))
-	}
-
-	return sqlf.Sprintf(visibleUploadCandidatesQuery, repositoryID, sqlf.Join(commitQueries, ", "), repositoryID, sqlf.Join(commitQueries, ", "))
-}
-
-const visibleUploadCandidatesQuery = `
-SELECT
-	nu.repository_id,
-	upload_id::integer,
-	nu.commit_bytea,
-	u_distance::text::integer as distance
-FROM lsif_nearest_uploads nu
-CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
-WHERE nu.repository_id = %s AND nu.commit_bytea IN (%s)
-UNION (
-	SELECT
-		nu.repository_id,
-		upload_id::integer,
-		ul.commit_bytea,
-		u_distance::text::integer + ul.distance as distance
-	FROM lsif_nearest_uploads_links ul
-	JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
-	CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
-	WHERE nu.repository_id = %s AND ul.commit_bytea IN (%s)
-)
 `
 
 func intsToString(vs []int) string {

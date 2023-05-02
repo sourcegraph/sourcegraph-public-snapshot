@@ -17,8 +17,10 @@ export type WebviewMessage =
     | { command: 'settings'; serverEndpoint: string; accessToken: string }
     | { command: 'removeToken' }
     | { command: 'removeHistory' }
+    | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
+    | { command: 'edit'; text: string }
 
 /**
  * A message sent from the extension host to the webview.
@@ -32,6 +34,8 @@ export type ExtensionMessage =
     | { type: 'debug'; message: string }
     | { type: 'contextStatus'; contextStatus: ChatContextStatus }
     | { type: 'view'; messages: View }
+    | { type: 'errors'; errors: string }
+    | { type: 'suggestions'; suggestions: string[] }
 
 /**
  * The subset of configuration that is visible to the webview.

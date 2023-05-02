@@ -81,6 +81,11 @@ See
 the [example Role YAML](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/kubernetes/executor-batches.Role.yml)
 for details.
 
+### Docker Image
+
+The Executor Docker image is available on Docker Hub
+at [`sourcegraph/executor-kubernetes`](https://hub.docker.com/r/sourcegraph/executor-kubernetes/tags).
+
 ### Environment Variables
 
 The following are Environment Variables that are specific to the Kubernetes runtime. These environment variables can be
@@ -112,6 +117,11 @@ Environment.
 
 - Disable access to internal resources.
 - Disable access to `5.0.2.254` (AWS / GCP Instance Metadata Service).
+
+### Batch Changes
+
+To run [Batch Changes](../../batch_changes/index.md) on
+Kubernetes, [Native Server-Side Batch Changes](./native_server_side_batch_changes.md) must be enabled.
 
 ### Example Configuration YAML
 
