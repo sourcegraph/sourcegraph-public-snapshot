@@ -3732,8 +3732,17 @@ CREATE TABLE product_subscriptions (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     archived_at timestamp with time zone,
-    account_number text
+    account_number text,
+    llm_proxy_enabled boolean DEFAULT true NOT NULL,
+    llm_proxy_rate_limit integer,
+    llm_proxy_rate_interval_seconds integer
 );
+
+COMMENT ON COLUMN product_subscriptions.llm_proxy_enabled IS 'Whether or not this subscription has access to LLM-proxy';
+
+COMMENT ON COLUMN product_subscriptions.llm_proxy_rate_limit IS 'Custom requests per time interval allowed for LLM-proxy';
+
+COMMENT ON COLUMN product_subscriptions.llm_proxy_rate_interval_seconds IS 'Custom time interval over which the for LLM-proxy rate limit is applied';
 
 CREATE TABLE query_runner_state (
     query text,

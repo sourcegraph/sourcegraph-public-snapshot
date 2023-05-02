@@ -76,6 +76,7 @@ http_archive(
 
 http_archive(
     name = "io_tweag_rules_nixpkgs",
+    sha256 = "cb1030a6134f625e2d30d2a34dcfe7960157ae21ec8f20c2b1adb0665f789f50",
     strip_prefix = "rules_nixpkgs-4dddbafba508cd2dffd95b8562cab91c9336fe36",
     urls = ["https://github.com/tweag/rules_nixpkgs/archive/4dddbafba508cd2dffd95b8562cab91c9336fe36.tar.gz"],
 )
