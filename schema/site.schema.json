@@ -2332,8 +2332,7 @@
           "default": "anthropic",
           "enum": [
             "anthropic",
-            "openai",
-            "dotcom"
+            "openai"
           ]
         },
         "perUserDailyLimit": {
