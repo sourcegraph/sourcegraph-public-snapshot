@@ -8,7 +8,6 @@ waitout=$(mktemp || mktemp -t waitout_XXXXXXXX)
 stats=$(mktemp || mktemp -t resource_XXXXXXXX)
 
 # make sure to cleanup on exit
-#
 trap "[ -f \"${waitout}\" ] && rm -f \"${waitout}\";[ -f \"${stats}\" ] && rm -f \"${stats}\"" EXIT
 
 # launch p4-fusion in the background
@@ -35,7 +34,7 @@ wait "${spid}" >/dev/null 2>&1
 [ ${waitcode} -eq 0 ] || {
   # if the wait exit code indicates a problem,
   # check to see if the child process was killed
-  grep -qs "${fpid} Killed" "${waitout}" && {
+  grep -qs "Killed" "${waitout}" && {
     # get info if available from the sidecar process
     rusage=""
     [ -s "${stats}" ] && {
