@@ -2,6 +2,68 @@ module github.com/sourcegraph/sourcegraph
 
 go 1.19
 
+// Permanent replace directives
+// ============================
+// These entries indicate permanent replace directives due to significant changes from upstream
+// or intentional forks.
+replace (
+	// We maintain a potentially long-term fork of embedded-postgres for
+	// Sourcegraph App. We add features like unix sockets. If this replace
+	// directive still exists in 2024, lets consider hard forking.
+	github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230313141935-8f62b6947f2c
+	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
+	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
+	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
+	// We publish 'enterprise/dev/ci/images' as a package for import in other tooling.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images
+	// We publish 'lib' as a package for import in other tooling.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/lib => ./lib
+	// We publish 'monitoring' as a package for import in other tooling.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
+)
+
+// Temporary replace directives
+// ============================
+// These entries indicate temporary replace directives due to a pending pull request upstream
+// or issues with specific versions.
+replace (
+	// Pending: https://github.com/ghodss/yaml/pull/65
+	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
+	// Dependency declares incorrect, old version of redigo, so we must override it: https://github.com/boj/redistore/blob/master/go.mod
+	// Pending: https://github.com/boj/redistore/pull/64
+	github.com/gomodule/redigo => github.com/gomodule/redigo v1.8.9
+	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
+	// Pending upstream fixing CVE-2022-37315 https://github.com/graphql-go/graphql/issues/637
+	github.com/graphql-go/graphql => github.com/jamesdphillips/graphql-go v0.7.4-0.20220810211622-efd2a06de890
+	// As of https://github.com/grpc-ecosystem/go-grpc-middleware/blob/7ac0846398432dee083fd8bc4ad7abacf8147ff2/providers/openmetrics/go.mod#L7,
+	// the latest release of the gRPC Prometheus middleware depends on a version of go-grpc-middleware that is two years old, and
+	// is incompatible with the latest gRPC releases.
+	//
+	// The parent project is currently working around this by using a local replace directive in their go.mod file (which ensures
+	// that they always use the current version of go-grpc-middleware that they're developing). Until this issue is fixed,
+	// we'll need to ensure that we explicitly depend on the latest version of go-grpc-middleware (v2.0.0-rc.3) as of this writing.
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 => github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
+	// Pending a release cut of https://github.com/prometheus/alertmanager/pull/3010
+	github.com/prometheus/common => github.com/prometheus/common v0.32.1
+	// Pending: https://github.com/shurcooL/httpgzip/pull/9
+	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
+)
+
+// Status unclear replace directives
+// =================================
+// These entries indicate replace directives that are defined for unknown reasons.
+replace (
+	github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
+	github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
+	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
+	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
+	golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c
+)
+
 require (
 	cloud.google.com/go/kms v1.6.0
 	cloud.google.com/go/monitoring v1.12.0
@@ -475,66 +537,4 @@ require (
 	mvdan.cc/gofumpt v0.4.0 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
-)
-
-// Permanent replace directives
-// ============================
-// These entries indicate permanent replace directives due to significant changes from upstream
-// or intentional forks.
-replace (
-	// We maintain a potentially long-term fork of embedded-postgres for
-	// Sourcegraph App. We add features like unix sockets. If this replace
-	// directive still exists in 2024, lets consider hard forking.
-	github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230313141935-8f62b6947f2c
-	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
-	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
-	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
-	// We publish 'enterprise/dev/ci/images' as a package for import in other tooling.
-	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
-	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images
-	// We publish 'lib' as a package for import in other tooling.
-	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
-	github.com/sourcegraph/sourcegraph/lib => ./lib
-	// We publish 'monitoring' as a package for import in other tooling.
-	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
-	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
-)
-
-// Temporary replace directives
-// ============================
-// These entries indicate temporary replace directives due to a pending pull request upstream
-// or issues with specific versions.
-replace (
-	// Pending: https://github.com/ghodss/yaml/pull/65
-	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
-	// Dependency declares incorrect, old version of redigo, so we must override it: https://github.com/boj/redistore/blob/master/go.mod
-	// Pending: https://github.com/boj/redistore/pull/64
-	github.com/gomodule/redigo => github.com/gomodule/redigo v1.8.9
-	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).
-	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
-	// Pending upstream fixing CVE-2022-37315 https://github.com/graphql-go/graphql/issues/637
-	github.com/graphql-go/graphql => github.com/jamesdphillips/graphql-go v0.7.4-0.20220810211622-efd2a06de890
-	// As of https://github.com/grpc-ecosystem/go-grpc-middleware/blob/7ac0846398432dee083fd8bc4ad7abacf8147ff2/providers/openmetrics/go.mod#L7,
-	// the latest release of the gRPC Prometheus middleware depends on a version of go-grpc-middleware that is two years old, and
-	// is incompatible with the latest gRPC releases.
-	//
-	// The parent project is currently working around this by using a local replace directive in their go.mod file (which ensures
-	// that they always use the current version of go-grpc-middleware that they're developing). Until this issue is fixed,
-	// we'll need to ensure that we explicitly depend on the latest version of go-grpc-middleware (v2.0.0-rc.3) as of this writing.
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 => github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
-	// Pending a release cut of https://github.com/prometheus/alertmanager/pull/3010
-	github.com/prometheus/common => github.com/prometheus/common v0.32.1
-	// Pending: https://github.com/shurcooL/httpgzip/pull/9
-	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
-)
-
-// Status unclear replace directives
-// =================================
-// These entries indicate replace directives that are defined for unknown reasons.
-replace (
-	github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
-	github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
-	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
-	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
-	golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c
 )
