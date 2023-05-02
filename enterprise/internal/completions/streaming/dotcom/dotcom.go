@@ -1,4 +1,4 @@
-package passthrough
+package dotcom
 
 import (
 	"bytes"
@@ -14,34 +14,33 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var DONE_BYTES = []byte("done")
+var PROVIDER = "dotcom"
+var done_bytes = []byte("done")
 
-const API_URL = "https://sourcegraph.sourcegraph.com/.api/completions/stream"
+const api_url = "https://sourcegraph.com/.api/completions/stream"
 
-type passthroughClient struct {
+type dotcomClient struct {
 	cli         httpcli.Doer
 	accessToken string
 	model       string
-	url         string
 }
 
-func NewPassthoughClient(cli httpcli.Doer, url string, accessToken string, model string) types.CompletionsClient {
-	return &passthroughClient{
+func NewDotcomClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
+	return &dotcomClient{
 		cli:         cli,
 		accessToken: accessToken,
 		model:       model,
-		url:         url,
 	}
 }
 
-func (a *passthroughClient) Complete(
+func (a *dotcomClient) Complete(
 	ctx context.Context,
 	requestParams types.CodeCompletionRequestParameters,
 ) (*types.CodeCompletionResponse, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (a *passthroughClient) Stream(
+func (a *dotcomClient) Stream(
 	ctx context.Context,
 	requestParams types.ChatCompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
@@ -51,7 +50,7 @@ func (a *passthroughClient) Stream(
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", a.url, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", api_url, bytes.NewReader(reqBody))
 	if err != nil {
 		return err
 	}
@@ -72,7 +71,7 @@ func (a *passthroughClient) Stream(
 	for dec.Scan() {
 		eventBytes := dec.Event()
 		// Check if the stream is indicating it is done
-		if bytes.Equal(eventBytes, DONE_BYTES) {
+		if bytes.Equal(eventBytes, done_bytes) {
 			return nil
 		}
 

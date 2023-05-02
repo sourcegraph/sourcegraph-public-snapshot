@@ -12,16 +12,18 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/anthropic"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/openai"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/passthrough"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // MaxRequestDuration is the maximum amount of time a request can take before
@@ -45,19 +47,42 @@ func GetCompletionClient(provider string, accessToken string, model string) (typ
 		return anthropic.NewAnthropicClient(httpcli.ExternalDoer, accessToken, model), nil
 	case "openai":
 		return openai.NewOpenAIClient(httpcli.ExternalDoer, accessToken, model), nil
-	case "dotcom":
-		//TODO(chwarwick): Maybe this is "app" and url is configurable also figure out proper way to get access token.
-		return passthrough.NewPassthoughClient(httpcli.ExternalDoer, "https://sourcegraph.sourcegraph.com/.api/completions/stream", accessToken, model), nil
+	case dotcom.PROVIDER:
+		return dotcom.NewDotcomClient(httpcli.ExternalDoer, accessToken, model), nil
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}
+}
+
+func GetCompletionsConfig() *schema.Completions {
+	completionsConfig := conf.Get().Completions
+
+	// When the Completions is present always use it
+	if completionsConfig != nil {
+		return completionsConfig
+	}
+
+	// If App is running and there wasn't a completions config
+	// configure completions as a passthough to dotcom
+	if deploy.IsApp() {
+		appConfig := conf.Get().App
+		if appConfig == nil {
+			return nil
+		}
+		return &schema.Completions{
+			AccessToken: appConfig.DotcomAuthToken,
+			Enabled:     len(appConfig.DotcomAuthToken) > 0,
+			Provider:    dotcom.PROVIDER,
+		}
+	}
+	return nil
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), MaxRequestDuration)
 	defer cancel()
 
-	completionsConfig := conf.Get().Completions
+	completionsConfig := GetCompletionsConfig()
 	if completionsConfig == nil || !completionsConfig.Enabled {
 		http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
 		return
