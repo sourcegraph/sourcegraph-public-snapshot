@@ -213,6 +213,7 @@ go_library(
         "//cmd/frontend/graphqlbackend/externallink",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//cmd/frontend/hooks",
+        "//cmd/frontend/hubspot",
         "//cmd/frontend/hubspot/hubspotutil",
         "//cmd/frontend/internal/app/updatecheck",
         "//cmd/frontend/internal/auth/userpasswd",
@@ -493,7 +494,6 @@ go_test(
         "@com_github_sourcegraph_zoekt//web",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-        "@com_github_throttled_throttled_v2//:throttled",
         "@com_github_throttled_throttled_v2//store/memstore",
     ],
 )

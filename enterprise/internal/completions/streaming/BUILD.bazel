@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "streaming",
+    srcs = [
+        "codecompletion.go",
+        "limiter.go",
+        "observability.go",
+        "stream.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/completions/streaming/anthropic",
+        "//enterprise/internal/completions/streaming/openai",
+        "//enterprise/internal/completions/types",
+        "//internal/actor",
+        "//internal/auth",
+        "//internal/cody",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/honey",
+        "//internal/httpcli",
+        "//internal/redispool",
+        "//internal/requestclient",
+        "//internal/search/streaming/http",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

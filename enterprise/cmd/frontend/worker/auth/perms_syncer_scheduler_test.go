@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func addPerms(t *testing.T, s edb.PermsStore, userID, repoID int32) {
@@ -236,4 +237,84 @@ var now = timeutil.Now().UnixNano()
 
 func clock() time.Time {
 	return time.Unix(0, atomic.LoadInt64(&now))
+}
+
+func toIntPtr(n int) *int { return &n }
+
+func TestOldestUserPermissionsBatchSize(t *testing.T) {
+	t.Cleanup(func() { conf.Mock(nil) })
+
+	tests := []struct {
+		name      string
+		configure *int
+		want      int
+	}{
+		{
+			name: "default",
+			want: 10,
+		},
+		{
+			name:      "uses number from config",
+			configure: toIntPtr(5),
+			want:      5,
+		},
+		{
+			name:      "can be set to 0",
+			configure: toIntPtr(0),
+			want:      0,
+		},
+		{
+			name:      "negative numbers result in default",
+			configure: toIntPtr(-248),
+			want:      10,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+				PermissionsSyncOldestUsers: test.configure,
+			}})
+			require.Equal(t, oldestUserPermissionsBatchSize(), test.want)
+		})
+	}
+}
+
+func TestOldestRepoPermissionsBatchSize(t *testing.T) {
+	t.Cleanup(func() { conf.Mock(nil) })
+
+	tests := []struct {
+		name      string
+		configure *int
+		want      int
+	}{
+		{
+			name: "default",
+			want: 10,
+		},
+		{
+			name:      "uses number from config",
+			configure: toIntPtr(5),
+			want:      5,
+		},
+		{
+			name:      "can be set to 0",
+			configure: toIntPtr(0),
+			want:      0,
+		},
+		{
+			name:      "negative numbers result in default",
+			configure: toIntPtr(-248),
+			want:      10,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+				PermissionsSyncOldestRepos: test.configure,
+			}})
+			require.Equal(t, oldestRepoPermissionsBatchSize(), test.want)
+		})
+	}
 }

@@ -107,9 +107,9 @@ ts_project(
         "//:node_modules/util",
         "//:node_modules/uuid",
         "//client/shared:node_modules/@sourcegraph/build-config",
+        "//client/shared:node_modules/@sourcegraph/client-api",
         "//client/shared:node_modules/@sourcegraph/common",
         "//client/shared:node_modules/@sourcegraph/http-client",
-        "//client/shared:node_modules/sourcegraph",
         "//client/shared:shared_lib",
     ],
 )

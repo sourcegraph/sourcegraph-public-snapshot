@@ -91,6 +91,9 @@ type MockStore struct {
 	// VacuumStaleReferencesFunc is an instance of a mock function object
 	// controlling the behavior of the method VacuumStaleReferences.
 	VacuumStaleReferencesFunc *StoreVacuumStaleReferencesFunc
+	// WithTransactionFunc is an instance of a mock function object
+	// controlling the behavior of the method WithTransaction.
+	WithTransactionFunc *StoreWithTransactionFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -194,6 +197,11 @@ func NewMockStore() *MockStore {
 		},
 		VacuumStaleReferencesFunc: &StoreVacuumStaleReferencesFunc{
 			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
+				return
+			},
+		},
+		WithTransactionFunc: &StoreWithTransactionFunc{
+			defaultHook: func(context.Context, func(tx store.Store) error) (r0 error) {
 				return
 			},
 		},
@@ -304,6 +312,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.VacuumStaleReferences")
 			},
 		},
+		WithTransactionFunc: &StoreWithTransactionFunc{
+			defaultHook: func(context.Context, func(tx store.Store) error) error {
+				panic("unexpected invocation of MockStore.WithTransaction")
+			},
+		},
 	}
 }
 
@@ -370,6 +383,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		VacuumStaleReferencesFunc: &StoreVacuumStaleReferencesFunc{
 			defaultHook: i.VacuumStaleReferences,
+		},
+		WithTransactionFunc: &StoreWithTransactionFunc{
+			defaultHook: i.WithTransaction,
 		},
 	}
 }
@@ -2621,6 +2637,111 @@ func (c StoreVacuumStaleReferencesFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreVacuumStaleReferencesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// StoreWithTransactionFunc describes the behavior when the WithTransaction
+// method of the parent MockStore instance is invoked.
+type StoreWithTransactionFunc struct {
+	defaultHook func(context.Context, func(tx store.Store) error) error
+	hooks       []func(context.Context, func(tx store.Store) error) error
+	history     []StoreWithTransactionFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransaction delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) WithTransaction(v0 context.Context, v1 func(tx store.Store) error) error {
+	r0 := m.WithTransactionFunc.nextHook()(v0, v1)
+	m.WithTransactionFunc.appendCall(StoreWithTransactionFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransaction
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreWithTransactionFunc) SetDefaultHook(hook func(context.Context, func(tx store.Store) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransaction method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreWithTransactionFunc) PushHook(hook func(context.Context, func(tx store.Store) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreWithTransactionFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(tx store.Store) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreWithTransactionFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(tx store.Store) error) error {
+		return r0
+	})
+}
+
+func (f *StoreWithTransactionFunc) nextHook() func(context.Context, func(tx store.Store) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreWithTransactionFunc) appendCall(r0 StoreWithTransactionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreWithTransactionFuncCall objects
+// describing the invocations of this function.
+func (f *StoreWithTransactionFunc) History() []StoreWithTransactionFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreWithTransactionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreWithTransactionFuncCall is an object that describes an invocation of
+// method WithTransaction on an instance of MockStore.
+type StoreWithTransactionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(tx store.Store) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreWithTransactionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreWithTransactionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockSiteConfigQuerier is a mock implementation of the SiteConfigQuerier
