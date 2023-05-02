@@ -252,6 +252,7 @@ export class FileChatProvider {
         isWholeLine: true,
         borderWidth: '1px',
         borderStyle: 'solid',
+        before: { contentText: '✨ ' },
         backgroundColor: 'rgba(161, 18, 255, 0.33)',
         overviewRulerColor: 'rgba(161, 18, 255, 0.33)',
         overviewRulerLane: vscode.OverviewRulerLane.Right,

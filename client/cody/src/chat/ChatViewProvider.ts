@@ -1,4 +1,3 @@
-import { spawnSync } from 'child_process'
 import path from 'path'
 
 import * as vscode from 'vscode'
@@ -12,45 +11,20 @@ import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../webviews/NavBar'
 import { LocalStorage } from '../command/LocalStorageProvider'
 import { getFullConfig, updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
-import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
-import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, WebviewMessage } from './protocol'
-
-export async function isValidLogin(
-    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
-): Promise<boolean> {
-    const client = new SourcegraphGraphQLAPIClient(config)
-    const userId = await client.getCurrentUserId()
-    return !isError(userId)
-}
-
-type Config = Pick<
-    ConfigurationWithAccessToken,
-    | 'codebase'
-    | 'serverEndpoint'
-    | 'debug'
-    | 'customHeaders'
-    | 'accessToken'
-    | 'useContext'
-    | 'experimentalChatPredictions'
-    | 'experimentalFixupChat'
->
+import { Config, ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, WebviewMessage } from './protocol'
+import { getCodebaseContext, isValidLogin, fileExists } from './utils'
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private isMessageInProgress = false
@@ -674,100 +648,4 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         this.disposables = []
     }
-}
-
-function trimPrefix(text: string, prefix: string): string {
-    if (text.startsWith(prefix)) {
-        return text.slice(prefix.length)
-    }
-    return text
-}
-
-function trimSuffix(text: string, suffix: string): string {
-    if (text.endsWith(suffix)) {
-        return text.slice(0, -suffix.length)
-    }
-    return text
-}
-
-async function fileExists(filePath: string): Promise<boolean> {
-    const patterns = [filePath, '**/' + trimSuffix(trimPrefix(filePath, '/'), '/') + '/**']
-    if (!filePath.endsWith('/')) {
-        patterns.push('**/' + trimPrefix(filePath, '/') + '*')
-    }
-    for (const pattern of patterns) {
-        const files = await vscode.workspace.findFiles(pattern, null, 1)
-        if (files.length > 0) {
-            return true
-        }
-    }
-    return false
-}
-
-// Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
-// This should captures:
-// - "github:sourcegraph/sourcegraph" a common SSH host alias
-// - "https://github.com/sourcegraph/deploy-sourcegraph-k8s.git"
-// - "git@github.com:sourcegraph/sourcegraph.git"
-export function convertGitCloneURLToCodebaseName(cloneURL: string): string | null {
-    if (!cloneURL) {
-        console.error(`Unable to determine the git clone URL for this workspace.\ngit output: ${cloneURL}`)
-        return null
-    }
-    try {
-        const uri = new URL(cloneURL.replace('git@', ''))
-        // Handle common Git SSH URL format
-        const match = cloneURL.match(/git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?/)
-        if (cloneURL.startsWith('git@') && match) {
-            const host = match[1]
-            const owner = match[2]
-            const repo = match[3]
-            return `${host}/${owner}/${repo}`
-        }
-        // Handle GitHub URLs
-        if (uri.protocol.startsWith('github') || uri.href.startsWith('github')) {
-            return `github.com/${uri.pathname.replace('.git', '')}`
-        }
-        // Handle GitLab URLs
-        if (uri.protocol.startsWith('gitlab') || uri.href.startsWith('gitlab')) {
-            return `gitlab.com/${uri.pathname.replace('.git', '')}`
-        }
-        // Handle HTTPS URLs
-        if (uri.protocol.startsWith('http') && uri.hostname && uri.pathname) {
-            return `${uri.hostname}${uri.pathname.replace('.git', '')}`
-        }
-        // Generic URL
-        if (uri.hostname && uri.pathname) {
-            return `${uri.hostname}${uri.pathname.replace('.git', '')}`
-        }
-        return null
-    } catch (error) {
-        console.error(`Cody could not extract repo name from clone URL ${cloneURL}:`, error)
-        return null
-    }
-}
-
-async function getCodebaseContext(config: Config, rgPath: string, editor: Editor): Promise<CodebaseContext | null> {
-    const client = new SourcegraphGraphQLAPIClient(config)
-    const workspaceRoot = editor.getWorkspaceRootPath()
-    if (!workspaceRoot) {
-        return null
-    }
-    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
-    const gitOutput = gitCommand.stdout.toString().trim()
-    // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
-    if (!codebase) {
-        return null
-    }
-    // Check if repo is embedded in endpoint
-    const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
-    if (isError(repoId)) {
-        const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
-        console.info(infoMessage)
-        return null
-    }
-
-    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
-    return new CodebaseContext(config, codebase, embeddingsSearch, new LocalKeywordContextFetcher(rgPath, editor))
 }

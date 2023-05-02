@@ -1,8 +1,20 @@
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { View } from '../../webviews/NavBar'
+
+export type Config = Pick<
+    ConfigurationWithAccessToken,
+    | 'codebase'
+    | 'serverEndpoint'
+    | 'debug'
+    | 'customHeaders'
+    | 'accessToken'
+    | 'useContext'
+    | 'experimentalChatPredictions'
+    | 'experimentalFixupChat'
+>
 
 /**
  * A message sent from the webview to the extension host.

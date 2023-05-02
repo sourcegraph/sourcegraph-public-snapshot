@@ -2,8 +2,9 @@ import * as vscode from 'vscode'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
-import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
+import { ChatViewProvider } from './chat/ChatViewProvider'
 import { DOTCOM_URL } from './chat/protocol'
+import { isValidLogin } from './chat/utils'
 import { FileChatProvider } from './command/FileChatProvider'
 import { LocalStorage } from './command/LocalStorageProvider'
 import { CodyCompletionItemProvider } from './completions'
