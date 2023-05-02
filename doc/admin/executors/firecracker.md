@@ -12,7 +12,9 @@ See [this architecture diagram](./index.md#firecracker) detailing Firecracker is
 
 Using Firecracker is our **most secure** isolation method, but it is not a **necessary** isolation method. Most users will be fine running containers on the executor host, or deploying bundled executors via Kubernetes jobs. Firecracker isolation was created when our design constrains included multi-tenant environments, and is likely overkill for any on-premise Sourcegraph instance administrated by a single company.
 
-For companies with very high security consciousness, Firecracker isolation is still an option. See the following section for installation instructions as well as deployment caveats. Note that Firecracker relies on some specific kernel extensions to run, which are only available on some classes of compute on Cloud providers such as AWS and GCP.
+For companies with very high security consciousness, Firecracker isolation is still an option. See the [How to use](firecracker.md#how-to-use) for installation instructions and deployment caveats.
+
+> Note: Firecracker relies on some specific kernel extensions to run, which are only available on some classes of compute on Cloud providers such as AWS and GCP.
 
 ## How to use
 
@@ -22,4 +24,4 @@ See [deploying Executors binary](./deploy_executors_binary.md) for additional in
 
 ## Known caveats
 
-We configure iptables to prevent Firecracker-isolated processes from talking on local networks (providing network-level isolation). They can talk to DNS and Sourcegraph only, which prevents users from talking to a 10 range IP.
+We configure iptables to prevent Firecracker-isolated processes from talking on [Private IPv4 Addresses](https://en.wikipedia.org/wiki/Private_network#Private_IPv4_addresses) (providing network-level isolation). They can talk to DNS and Sourcegraph only, which prevents users from talking to a 10.x.x.x, 172.x.x.x, or 192.168.x.x range IP.
