@@ -60,7 +60,7 @@ go_test(
         "//schema",
         "@com_github_beevik_etree//:etree",
         "@com_github_crewjam_saml//:saml",
-        "@com_github_crewjam_saml//samlidp",
+        "@com_github_crewjam_saml_samlidp//:samlidp",
         "@com_github_russellhaering_gosaml2//:gosaml2",
         "@com_github_russellhaering_goxmldsig//:goxmldsig",
     ],

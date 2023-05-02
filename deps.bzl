@@ -1517,7 +1517,13 @@ def go_dependencies():
         sum = "h1:TYHggH/hwP7eArqiXSJUvtOPNzQDyQ7vwmwEqlFWhMc=",
         version = "v0.4.13",
     )
-
+    go_repository(
+        name = "com_github_crewjam_saml_samlidp",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/crewjam/saml/samlidp",
+        sum = "h1:13Ix7LoUJ0Yu5F+s6Aw8Afc8x+n98RSJNGHpxEbcYus=",
+        version = "v0.0.0-20221211125903-d951aa2d145a",
+    )
     go_repository(
         name = "com_github_cyphar_filepath_securejoin",
         build_file_proto_mode = "disable_global",
