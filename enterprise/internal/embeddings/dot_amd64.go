@@ -8,7 +8,7 @@ import (
 	"github.com/klauspost/cpuid/v2"
 )
 
-var haveArchDot = cpuid.CPU.Has(cpuid.AVX2) && os.Getenv("DISABLE_SIMD") == ""
+var haveArchDot = cpuid.CPU.Has(cpuid.AVX2) && os.Getenv("ENABLE_SIMD") != ""
 
 func archDot(a []int8, b []int8) int32 {
 	if len(a) != len(b) {
