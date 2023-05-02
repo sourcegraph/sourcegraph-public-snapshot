@@ -117,13 +117,10 @@ func (d ViewDescription) GetName() string       { return d.Name }
 type Normalizer[T any] interface{ Normalize() T }
 type PreComparisonNormalizer[T any] interface{ PreComparisonNormalize() T }
 
-var whitespacePattern = lazyregexp.New(`\s+`)
-
 func (d FunctionDescription) PreComparisonNormalize() FunctionDescription {
-	d.Definition = strings.TrimSpace(whitespacePattern.ReplaceAllString(d.Definition, " "))
+	d.Definition = normalizeFunction(d.Definition)
 	return d
 }
-
 func (d TableDescription) Normalize() TableDescription {
 	d.Comment = ""
 	return d
@@ -148,4 +145,15 @@ func PreComparisonNormalize[T any](v T) T {
 	}
 
 	return v
+}
+
+var whitespacePattern = lazyregexp.New(`\s+`)
+
+func normalizeFunction(definition string) string {
+	lines := strings.Split(definition, "\n")
+	for i, line := range lines {
+		lines[i] = strings.Split(line, "--")[0]
+	}
+
+	return strings.TrimSpace(whitespacePattern.ReplaceAllString(strings.Join(lines, "\n"), " "))
 }
