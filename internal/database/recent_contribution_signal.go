@@ -196,12 +196,19 @@ const insertRecentContributorSignalFmtstr = `
 	) VALUES (%s, %s, %s, %s)
 `
 
+const clearSignalsFmtstr = `
+    WITH rps AS (
+        SELECT id FROM repo_paths WHERE repo_id = %s
+    ) 
+    DELETE FROM %s 
+    WHERE changed_file_path_id IN (SELECT * FROM rps)
+`
+
 func (s *recentContributionSignalStore) ClearSignals(ctx context.Context, repoID api.RepoID) error {
 	tables := []string{"own_signal_recent_contribution", "own_aggregate_recent_contribution"}
-	q := "WITH rps as (select id from repo_paths where repo_id = %s) delete from %s where changed_file_path_id in (select * from rps);"
 
 	for _, table := range tables {
-		if err := s.Exec(ctx, sqlf.Sprintf(q, repoID, sqlf.Sprintf(table))); err != nil {
+		if err := s.Exec(ctx, sqlf.Sprintf(clearSignalsFmtstr, repoID, sqlf.Sprintf(table))); err != nil {
 			return errors.Wrapf(err, "table: %s", table)
 		}
 	}
