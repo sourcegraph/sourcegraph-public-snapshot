@@ -15,11 +15,13 @@ go_library(
         "//internal/debugserver",
         "//internal/env",
         "//internal/goroutine",
+        "//internal/httpcli",
         "//internal/httpserver",
         "//internal/instrumentation",
         "//internal/observation",
         "//internal/service",
         "//internal/trace",
+        "@com_github_gorilla_mux//:mux",
         "@com_github_sourcegraph_log//:log",
     ],
 )
