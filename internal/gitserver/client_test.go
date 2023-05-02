@@ -87,6 +87,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 	type test struct {
 		remote string
+		branch string
 		want   map[string]string
 		err    error
 	}
@@ -94,6 +95,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 	tests := map[api.RepoName]test{
 		"simple": {
 			remote: createSimpleGitRepo(t, root),
+			branch: "HEAD",
 			want: map[string]string{
 				"dir1/":      "",
 				"dir1/file1": "infile1",
@@ -102,6 +104,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 		},
 		"repo-with-dotgit-dir": {
 			remote: createRepoWithDotGitDir(t, root),
+			branch: "HEAD",
 			want: map[string]string{
 				"file1":            "hello\n",
 				".git/mydir/file2": "milton\n",
@@ -110,7 +113,12 @@ func TestClient_ArchiveReader(t *testing.T) {
 			},
 		},
 		"not-found": {
-			err: errors.New("repository does not exist: not-found"),
+			branch: "HEAD",
+			err:    errors.New("repository does not exist: not-found"),
+		},
+		"revision-not-found": {
+			branch: "nonexistent-revision",
+			err:    errors.New("repository does not exist: revision-not-found"),
 		},
 	}
 
@@ -151,7 +159,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 				}
 			}
 
-			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatZip})
+			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: test.branch, Format: gitserver.ArchiveFormatZip})
 			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}
