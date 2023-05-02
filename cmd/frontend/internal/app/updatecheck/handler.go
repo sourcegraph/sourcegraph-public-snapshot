@@ -473,7 +473,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		EverFindRefs:                  strconv.FormatBool(pr.EverFindRefs),
 		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
-		HasCodyEnabled:                codyFeatureFlag(),
+		HasCodyEnabled:                strconv.FormatBool(codyFeatureFlag()),
 		CodyUsage:                     codyUsage,
 	})
 }
@@ -772,8 +772,8 @@ func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
 func codyFeatureFlag() bool {
 	ctx := context.Background()
 	flags := featureflag.FromContext(ctx)
-	codyExperimental, err := flags.GetBoolOr("cody-experimental", true)
-	if err != nil {
+	codyExperimental, err := flags.GetBool("cody-experimental")
+	if !err {
 		return false
 	}
 
