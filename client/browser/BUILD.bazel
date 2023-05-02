@@ -365,12 +365,13 @@ build_code_intel_extensions(
 
 # Mirror `copyIntegrationAssets` from `client/browser/scripts/tasks.ts`
 copy_to_directory(
-    name = "integration-asssets",
+    name = "integration-assets",
     srcs = [
         "src/native-integration/extensionHostFrame.html",
         ":bundle",
         ":code-intel-extensions",
     ],
+    out = "integration-assets/extension",
     root_paths = [
         "client/browser/src/native-integration",
         "client/browser/bundle",
