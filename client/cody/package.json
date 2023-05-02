@@ -185,14 +185,20 @@
       },
       {
         "command": "cody.file.fix",
-        "title": "Fixup file",
+        "title": "Request Edit",
         "enablement": "!commentIsEmpty"
       },
       {
-        "command": "cody.file.done",
+        "command": "cody.file.delete",
         "title": "Cody: Remove chat",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(trash)"
+      },
+      {
+        "command": "cody.file.load",
+        "title": "Cody: Loading",
+        "enablement": "!commentThreadIsEmpty",
+        "icon": "$(sync~spin)"
       }
     ],
     "keybindings": [
@@ -314,19 +320,19 @@
 				{
 					"command": "cody.file.chat",
 					"group": "inline",
-          "when": "cody.activated"
-				},
-        {
-					"command": "cody.file.fix",
-					"group": "inline@1",
-          "when": "cody.activated"
+          "when": "cody.activated && commentController =~ /^cody-file/"
 				}
 			],
       "comments/commentThread/title": [
 				{
-					"command": "cody.file.done",
-					"group": "navigation",
-					"when": "cody.activated"
+					"command": "cody.file.delete",
+					"group": "inline@1",
+					"when": "cody.activated && commentController =~ /^cody-file/ && cody.replied && !commentThreadIsEmpty"
+				},
+        {
+					"command": "cody.file.load",
+					"group": "inline@2",
+					"when": "cody.activated && commentController =~ /^cody-file/ && !cody.replied && commentThread =~ /loading/"
 				}
 			]
     },

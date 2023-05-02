@@ -8,6 +8,7 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 
 import { FileChatProvider } from '../chat/FileChatProvider'
+import { CodeLensProvider } from '../command/CodeLensProvider'
 
 export const SURROUNDING_LINES = 50
 
@@ -45,7 +46,6 @@ export class VSCodeEditor implements Editor {
         if (!activeEditor && this.fileChatProvider.selection) {
             return this.fileChatProvider.selection
         }
-
         if (!activeEditor) {
             return null
         }
@@ -97,12 +97,10 @@ export class VSCodeEditor implements Editor {
         if (!activeEditor) {
             return null
         }
-
         const visibleRanges = activeEditor.visibleRanges
         if (visibleRanges.length === 0) {
             return null
         }
-
         const visibleRange = visibleRanges[0]
         const content = activeEditor.document.getText(
             new vscode.Range(
@@ -110,7 +108,6 @@ export class VSCodeEditor implements Editor {
                 new vscode.Position(visibleRange.end.line + 1, 0)
             )
         )
-
         return {
             fileName: vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath),
             content,
@@ -118,46 +115,54 @@ export class VSCodeEditor implements Editor {
     }
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
+        const startTime = performance.now()
         const activeEditor = this.getActiveTextEditorInstance() || (await this.fileChatProvider.getEditor())
         if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {
             // TODO: should return something indicating success or failure
             return
         }
         let selection = activeEditor.selection
+        const lens = new CodeLensProvider()
         if (this.fileChatProvider.selectionRange) {
             selection = new vscode.Selection(
                 this.fileChatProvider.selectionRange.start,
                 this.fileChatProvider.selectionRange.end
             )
+            lens.ranges.push()
         }
         if (!selection) {
             return
         }
-
-        if (activeEditor.document.getText(selection) !== selectedText) {
+        if (activeEditor.document.getText(selection) !== selectedText && !this.fileChatProvider.selectionRange) {
             // TODO: Be robust to this.
             await vscode.window.showErrorMessage(
                 'The selection changed while Cody was working. The text will not be edited.'
             )
             return
         }
-        const currentText = activeEditor.document.getText()
 
-        const newPos = new vscode.Position(selection.start.line, 0)
+        this.fileChatProvider.isInProgress = false
         await activeEditor.edit(edit => {
             edit.delete(this.fileChatProvider.selectionRange || selection)
-            edit.insert(newPos, replacement.trim())
+            edit.insert(
+                new vscode.Position(this.fileChatProvider.selectionRange?.start.line || selection.start.line, 0),
+                replacement.trimStart() + '\n'
+            )
             // edit.replace(this.fileChatProvider.selectionRange || selection, replacement)
         })
-        this.fileChatProvider.selectionRange = null
-        await this.showDiff(currentText, activeEditor.document.uri)
-        return
-    }
 
-    public async showDiff(original: string, updated: vscode.Uri): Promise<void> {
-        const oldDoc = await vscode.workspace.openTextDocument({ content: original })
-        // await vscode.window.showTextDocument(oldDoc, { viewColumn: vscode.ViewColumn.Beside })
-        await vscode.commands.executeCommand('vscode.diff', oldDoc.uri, updated, 'Diff by Cody')
+        const updatedLength = selectedText.split('\n').length - replacement.trim().split('\n').length
+        const doc = vscode.window.activeTextEditor?.document
+        if (doc) {
+            await lens.provideCodeLenses(doc, new vscode.CancellationTokenSource().token)
+            lens.set(selection.start.line, this.fileChatProvider)
+            vscode.languages.registerCodeLensProvider('*', lens)
+        }
+        await this.fileChatProvider.decorate(updatedLength)
+        // check performance time
+        const duration = performance.now() - startTime
+        console.info('Replacement duration:', duration)
+        return
     }
 
     public async showQuickPick(labels: string[]): Promise<string | undefined> {

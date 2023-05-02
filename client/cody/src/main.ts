@@ -161,7 +161,7 @@ const register = async (
         vscode.commands.registerCommand('cody.file.fix', (reply: vscode.CommentReply) =>
             chatProvider.fileChatFix(reply)
         ),
-        vscode.commands.registerCommand('cody.file.done', (thread: vscode.CommentThread) => {
+        vscode.commands.registerCommand('cody.file.delete', (thread: vscode.CommentThread) => {
             chatProvider.fileChatDelete(thread)
         }),
         // Toggle Chat

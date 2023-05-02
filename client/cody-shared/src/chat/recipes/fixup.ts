@@ -69,9 +69,13 @@ It is OK to provide some commentary before you tell me the replacement <selectio
                 {
                     speaker: 'human',
                     text: prompt,
-                    displayText: humanChatInput || 'Replace the instructions in the selection.',
+                    displayText: humanChatInput || 'Update the document based on my instruction.',
                 },
-                { speaker: 'assistant' },
+                {
+                    speaker: 'assistant',
+                    prefix: 'Document has been updated based on your instruction.\n',
+                    text: 'Document has been updated based on your instruction.\n',
+                },
                 this.getContextMessages(selection.selectedText, context.codebaseContext)
             )
         )
