@@ -99,84 +99,69 @@
       },
       {
         "command": "cody.recipe.explain-code",
-        "title": "Ask Cody: Explain Code in Detail",
-        "when": "cody.activated"
+        "title": "Ask Cody: Explain Code in Detail"
       },
       {
         "command": "cody.recipe.explain-code-high-level",
-        "title": "Ask Cody: Explain Code at a High Level",
-        "when": "cody.activated"
+        "title": "Ask Cody: Explain Code at a High Level"
       },
       {
         "command": "cody.recipe.generate-unit-test",
-        "title": "Ask Cody: Generate Unit Test",
-        "when": "cody.activated"
+        "title": "Ask Cody: Generate Unit Test"
       },
       {
         "command": "cody.recipe.generate-docstring",
-        "title": "Ask Cody: Generate Docstring",
-        "when": "cody.activated"
+        "title": "Ask Cody: Generate Docstring"
       },
       {
         "command": "cody.recipe.translate-to-language",
-        "title": "Ask Cody: Translate to Language",
-        "when": "cody.activated"
+        "title": "Ask Cody: Translate to Language"
       },
       {
         "command": "cody.recipe.git-history",
-        "title": "Ask Cody: Summarize Recent Code Changes",
-        "when": "cody.activated"
+        "title": "Ask Cody: Summarize Recent Code Changes"
       },
       {
         "command": "cody.recipe.improve-variable-names",
-        "title": "Ask Cody: Improve Variable Names",
-        "when": "cody.activated"
+        "title": "Ask Cody: Improve Variable Names"
       },
       {
         "command": "cody.recipe.fixup",
-        "title": "Cody: Fixup",
-        "when": "cody.activated"
+        "title": "Cody: Fixup"
       },
       {
         "command": "cody.set-access-token",
-        "title": "Cody: Set Access Token",
-        "when": "!cody.activated"
+        "title": "Cody: Set Access Token"
       },
       {
         "command": "cody.delete-access-token",
-        "title": "Cody: Delete Access Token",
-        "when": "cody.activated"
+        "title": "Cody: Sign out"
       },
       {
         "command": "cody.experimental.suggest",
-        "title": "Cody: View Suggestions",
-        "when": "cody.activated"
+        "title": "Cody: View Suggestions"
       },
       {
         "command": "cody.settings",
         "title": "Cody: Settings",
         "group": "Cody",
-        "icon": "$(gear)",
-        "when": "cody.activated"
+        "icon": "$(gear)"
       },
       {
         "command": "cody.focus",
-        "title": "Cody: Sign In to Use Cody",
-        "when": "!cody.activated"
+        "title": "Cody: Sign In"
       },
       {
         "command": "cody.interactive.clear",
         "title": "Cody: Clear & Restart Chat Session",
         "group": "Cody",
-        "icon": "$(clear-all)",
-        "when": "cody.activated"
+        "icon": "$(clear-all)"
       },
       {
         "command": "cody.history",
         "title": "Cody: Chat History",
         "group": "Cody",
-        "icon": "$(history)",
-        "when": "cody.activated"
+        "icon": "$(history)"
       }
     ],
     "keybindings": [
@@ -227,6 +212,15 @@
         {
           "command": "cody.recipe.fixup",
           "when": "cody.activated"
+        },
+        {
+          "command": "cody.set-access-token",
+          "when": "false"
+        },
+        {
+          "command": "cody.focus",
+          "title": "Cody: Sign In",
+          "when": "!cody.activated"
         }
       ],
       "editor/context": [

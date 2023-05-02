@@ -1,6 +1,12 @@
 import * as vscode from 'vscode'
 
-import type { ConfigurationUseContext, Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import type {
+    ConfigurationUseContext,
+    Configuration,
+    ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared/src/configuration'
+
+import { SecretStorage, getAccessToken } from './secret-storage'
 
 /**
  * All configuration values, with some sanitization performed.
@@ -38,4 +44,9 @@ const codyConfiguration = vscode.workspace.getConfiguration('cody')
 // Update user configurations in VS Code for Cody
 export async function updateConfiguration(configKey: string, configValue: string): Promise<void> {
     await codyConfiguration.update(configKey, configValue, vscode.ConfigurationTarget.Global)
+}
+
+export const getFullConfig = async (secretStorage: SecretStorage): Promise<ConfigurationWithAccessToken> => {
+    const config = getConfiguration(vscode.workspace.getConfiguration())
+    return { ...config, accessToken: await getAccessToken(secretStorage) }
 }
