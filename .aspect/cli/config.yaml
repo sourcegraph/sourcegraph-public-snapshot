@@ -10,3 +10,6 @@ plugins:
   - name: buildkite
     version: v0.0.1
     from: github.com/sourcegraph/aspect-cli-plugin-buildkite
+    properties:
+    #   pretend: false
+      buildkite_agent_path: "/usr/local/bin/buildkite-agent"
