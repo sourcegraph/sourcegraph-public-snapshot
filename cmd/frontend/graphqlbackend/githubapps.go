@@ -1,6 +1,11 @@
 package graphqlbackend
 
-import "context"
+import (
+	"context"
+
+	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+)
 
 // This file just contains stub GraphQL resolvers and data types for GitHub apps which merely
 // return an error if not running in enterprise mode. The actual resolvers can be found in
@@ -10,17 +15,15 @@ type GitHubAppsResolver interface {
 	// Queries
 
 	// Mutations
-	CreateGitHubApp(ctx context.Context, args *CreateGitHubAppArgs) (*int32, error)
+	DeleteGitHubApp(ctx context.Context, args *DeleteGitHubAppArgs) (*EmptyResponse, error)
 }
 
-type CreateGitHubAppInput struct {
-	AppID        int32  `json:"appID"`
-	BaseURL      string `json:"baseURL"`
-	ClientID     string `json:"clientID"`
-	ClientSecret string `json:"clientSecret"`
-	PrivateKey   string `json:"privateKey"`
+type DeleteGitHubAppArgs struct {
+	GitHubApp graphql.ID
 }
 
-type CreateGitHubAppArgs struct {
-	Input CreateGitHubAppInput `json:"input"`
+type GitHubAppsArgs struct {
+	graphqlutil.ConnectionArgs
+	After     *string
+	Namespace *graphql.ID
 }
