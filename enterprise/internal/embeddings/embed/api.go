@@ -130,3 +130,23 @@ func getEmbeddings(ctx context.Context, texts []string, config *schema.Embedding
 	}
 	return embeddings, nil
 }
+
+func NewFakeEmbeddingsClient(dims int) EmbeddingsClient {
+	return &fakeEmbeddingsClient{dims}
+}
+
+type fakeEmbeddingsClient struct {
+	dims int
+}
+
+func (c *fakeEmbeddingsClient) GetDimensions() (int, error) {
+	return c.dims, nil
+}
+
+// GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
+// In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
+// often hangs up when downloading large embedding responses.
+func (c *fakeEmbeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
+	size := c.dims * len(texts)
+	return make([]float32, size), nil
+}

@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -98,6 +99,27 @@ func (r *Resolver) RepoEmbeddingJobs(ctx context.Context, args graphqlbackend.Li
 
 func isRepoEmbeddingJobScheduledOrCompleted(job *repobg.RepoEmbeddingJob) bool {
 	return job != nil && (job.State == "completed" || job.State == "processing" || job.State == "queued")
+}
+
+func (r *Resolver) RepoEmbeddingDryRun(ctx context.Context, args graphqlbackend.RepoEmbeddingDryRunArgs) (graphqlbackend.RepoEmbeddingStatsResolver, error) {
+	if !conf.EmbeddingsEnabled() {
+		return nil, errors.New("embeddings are not configured or disabled")
+	}
+
+	// 🚨 SECURITY: Only site admins can perform dry runs for embedding jobs
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	dims := conf.Get().Embeddings.Dimensions
+	embeddingsClient := embed.NewFakeEmbeddingsClient(dims)
+	_, stats, err := embed.EmbedRepo(
+		ctx,
+		api.RepoName(args.RepoName),
+		api.CommitID(args.Revision),
+		embeddingsClient,
+		r.gitserverClient)
+	return &embeddingStatsResolver{stats}, err
 }
 
 func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args graphqlbackend.ScheduleRepositoriesForEmbeddingArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -204,4 +226,61 @@ func (r *embeddingsSearchResultResolver) EndLine(ctx context.Context) int32 {
 
 func (r *embeddingsSearchResultResolver) Content(ctx context.Context) string {
 	return r.result.Content
+}
+
+type embeddingStatsResolver struct {
+	result *embeddings.EmbedRepoStats
+}
+
+func (r *embeddingStatsResolver) CodeStats(ctx context.Context) graphqlbackend.RepoEmbeddingFileStatsResolver {
+	return &embeddingFileStatsResolver{r.result.CodeIndexStats}
+}
+
+func (r *embeddingStatsResolver) TextStats(ctx context.Context) graphqlbackend.RepoEmbeddingFileStatsResolver {
+	return &embeddingFileStatsResolver{r.result.TextIndexStats}
+}
+
+type embeddingFileStatsResolver struct {
+	result embeddings.EmbedFilesStats
+}
+
+func (r *embeddingFileStatsResolver) FileCount(ctx context.Context) int32 {
+	return int32(r.result.EmbeddedFileCount)
+}
+
+func (r *embeddingFileStatsResolver) ChunkCount(ctx context.Context) int32 {
+	return int32(r.result.EmbeddedChunkCount)
+}
+
+func (r *embeddingFileStatsResolver) Bytes(ctx context.Context) int32 {
+	return int32(r.result.EmbeddedBytes)
+}
+
+func (r *embeddingFileStatsResolver) SkippedCounts(ctx context.Context) []graphqlbackend.RepoEmbeddingStatsSkippedCountResolver {
+	skippedCounts := make([]graphqlbackend.RepoEmbeddingStatsSkippedCountResolver, 0, len(r.result.SkippedCounts))
+	for reason, count := range r.result.SkippedCounts {
+		skippedCounts = append(skippedCounts, embeddingStatsSkippedCountResolver{reason, int32(count)})
+	}
+	return skippedCounts
+}
+
+func (r *embeddingFileStatsResolver) SkippedByteCounts(ctx context.Context) []graphqlbackend.RepoEmbeddingStatsSkippedCountResolver {
+	skippedCounts := make([]graphqlbackend.RepoEmbeddingStatsSkippedCountResolver, 0, len(r.result.SkippedCounts))
+	for reason, count := range r.result.SkippedCounts {
+		skippedCounts = append(skippedCounts, embeddingStatsSkippedCountResolver{reason, int32(count)})
+	}
+	return skippedCounts
+}
+
+type embeddingStatsSkippedCountResolver struct {
+	reason string
+	count  int32
+}
+
+func (r embeddingStatsSkippedCountResolver) Reason(ctx context.Context) string {
+	return r.reason
+}
+
+func (r embeddingStatsSkippedCountResolver) Count(ctx context.Context) int32 {
+	return r.count
 }

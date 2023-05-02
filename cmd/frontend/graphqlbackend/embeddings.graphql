@@ -54,6 +54,20 @@ extend type Query {
         """
         before: String
     ): RepoEmbeddingJobsConnection!
+
+    """
+    Experimental: Performs a "dry run" of the embeddings job, and returns stats about what files were processed and skipped.
+    """
+    repoEmbeddingDryRun(
+        """
+        The repository name.
+        """
+        repoName: String!
+        """
+        The repository revision (as a 40-character SHA-1 hash).
+        """
+        revision: String!
+    ): RepoEmbeddingStats!
 }
 
 extend type Mutation {
@@ -193,4 +207,58 @@ type RepoEmbeddingJobsConnection implements Connection {
     Pagination information.
     """
     pageInfo: ConnectionPageInfo!
+}
+
+"""
+Stats about the repo embedding job dry run.
+"""
+type RepoEmbeddingStats {
+    """
+    The file stats for code embeddings.
+    """
+    codeStats: RepoEmbeddingFileStats!
+    """
+    The file stats for text embeddings.
+    """
+    textStats: RepoEmbeddingFileStats!
+}
+
+"""
+File stats about the repo embedding job dry run.
+"""
+type RepoEmbeddingFileStats {
+    """
+    The number of files processed.
+    """
+    fileCount: Int!
+    """
+    The number of file chunks processed.
+    """
+    chunkCount: Int!
+    """
+    The number of bytes processed.
+    """
+    bytes: Int!
+    """
+    The number of files that were skipped, grouped by reason.
+    """
+    skippedCounts: [RepoEmbeddingStatsSkippedCount!]!
+    """
+    The number of bytes that were skipped, grouped by reason.
+    """
+    skippedByteCounts: [RepoEmbeddingStatsSkippedCount!]!
+}
+
+"""
+Holds skipped counts and reasons.
+"""
+type RepoEmbeddingStatsSkippedCount {
+    """
+    The reason the file was skipped.
+    """
+    reason: String!
+    """
+    The number that was skipped (either files or bytes).
+    """
+    count: Int!
 }

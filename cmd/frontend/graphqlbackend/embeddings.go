@@ -14,6 +14,7 @@ type EmbeddingsResolver interface {
 	IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryInputArgs) (bool, error)
 	RepoEmbeddingJobs(ctx context.Context, args ListRepoEmbeddingJobsArgs) (*graphqlutil.ConnectionResolver[RepoEmbeddingJobResolver], error)
 
+	RepoEmbeddingDryRun(ctx context.Context, args RepoEmbeddingDryRunArgs) (RepoEmbeddingStatsResolver, error)
 	ScheduleRepositoriesForEmbedding(ctx context.Context, args ScheduleRepositoriesForEmbeddingArgs) (*EmptyResponse, error)
 	ScheduleContextDetectionForEmbedding(ctx context.Context) (*EmptyResponse, error)
 }
@@ -64,4 +65,27 @@ type RepoEmbeddingJobResolver interface {
 	Cancel() bool
 	Repo(ctx context.Context) (*RepositoryResolver, error)
 	Revision(ctx context.Context) (*GitCommitResolver, error)
+}
+
+type RepoEmbeddingDryRunArgs struct {
+	RepoName string
+	Revision string
+}
+
+type RepoEmbeddingStatsResolver interface {
+	CodeStats(ctx context.Context) RepoEmbeddingFileStatsResolver
+	TextStats(ctx context.Context) RepoEmbeddingFileStatsResolver
+}
+
+type RepoEmbeddingFileStatsResolver interface {
+	FileCount(ctx context.Context) int32
+	ChunkCount(ctx context.Context) int32
+	Bytes(ctx context.Context) int32
+	SkippedCounts(ctx context.Context) []RepoEmbeddingStatsSkippedCountResolver
+	SkippedByteCounts(ctx context.Context) []RepoEmbeddingStatsSkippedCountResolver
+}
+
+type RepoEmbeddingStatsSkippedCountResolver interface {
+	Reason(ctx context.Context) string
+	Count(ctx context.Context) int32
 }
