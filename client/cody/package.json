@@ -332,7 +332,7 @@
         {
 					"command": "cody.file.load",
 					"group": "inline@2",
-					"when": "cody.activated && commentController =~ /^cody-file/ && !cody.replied && commentThread =~ /loading/"
+					"when": "cody.activated && commentController =~ /^cody-file/ && !cody.replied && commentThreadIsEmpty"
 				}
 			]
     },

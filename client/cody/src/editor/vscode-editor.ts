@@ -7,8 +7,8 @@ import {
     Editor,
 } from '@sourcegraph/cody-shared/src/editor'
 
-import { FileChatProvider } from '../chat/FileChatProvider'
 import { CodeLensProvider } from '../command/CodeLensProvider'
+import { FileChatProvider } from '../command/FileChatProvider'
 
 export const SURROUNDING_LINES = 50
 

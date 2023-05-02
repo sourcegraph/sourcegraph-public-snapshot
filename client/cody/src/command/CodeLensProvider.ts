@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { FileChatProvider } from '../chat/FileChatProvider'
+import { FileChatProvider } from './FileChatProvider'
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
     public ranges: vscode.Range[] = []
@@ -40,30 +40,37 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         document: vscode.TextDocument,
         token: vscode.CancellationToken
     ): vscode.CodeLens[] | Thenable<vscode.CodeLens[]> {
-        const codeLenses: vscode.CodeLens[] = []
         if (!document || !token) {
-            return codeLenses
+            return []
         }
+        return this.fixupLenses()
+    }
+
+    private fixupLenses(): vscode.CodeLens[] {
+        const codeLenses: vscode.CodeLens[] = []
         for (const range of this.ranges) {
-            const codeLens = new vscode.CodeLens(range)
-            codeLens.command = {
+            const codeLensTitle = new vscode.CodeLens(range)
+            // Open Chat View
+            codeLensTitle.command = {
                 title: 'Edited by Cody',
                 tooltip: 'Click here to open chat view for details.',
                 command: 'cody.focus',
             }
-            const codeLens1 = new vscode.CodeLens(range)
-            codeLens1.command = {
+            // Run VS Code command to show diff for current file
+            const codeLensDiff = new vscode.CodeLens(range)
+            codeLensDiff.command = {
                 title: 'Show Diff',
                 tooltip: 'Open diff view.',
                 command: 'workbench.files.action.compareWithSaved',
             }
-            const codeLens2 = new vscode.CodeLens(range)
-            codeLens2.command = {
+            // Run VS Code command to save all files
+            const codeLensSave = new vscode.CodeLens(range)
+            codeLensSave.command = {
                 title: 'Accept',
                 tooltip: 'Accept and save all changes',
                 command: 'workbench.action.files.save',
             }
-            codeLenses.push(codeLens, codeLens1, codeLens2)
+            codeLenses.push(codeLensTitle, codeLensDiff, codeLensSave)
         }
         return codeLenses
     }
