@@ -40,11 +40,14 @@ Executor instances are capable of being deployed in a variety of ways. Each runt
 
 <!-- 
 Diagrams are at: https://app.excalidraw.com/s/4Dr1S6qmmY7/6WJFG2bwdx
+See handbook to where images are stored: https://handbook.sourcegraph.com/handbook/editing/handbook-images-video/#adding-images-to-google-cloud-storage
 -->
 
 ### Locally with src-cli
 
-<a href='src_local_arch.png' target='_blank'><img src="src_local_arch.png" alt="Executors architecture - local with src-cli"></a>
+<a href='https://storage.googleapis.com/sourcegraph-assets/executor_src_local_arch.png' target='_blank'>
+  <img src="https://storage.googleapis.com/sourcegraph-assets/executor_src_local_arch.png" alt="Executors architecture - local with src-cli">
+</a>
 
 1.  User run the `src` (e.g. `src batch`) command from the command line.
 2.  `src` calls the Sourcegraph API to clone a repository.
@@ -59,7 +62,9 @@ Diagrams are at: https://app.excalidraw.com/s/4Dr1S6qmmY7/6WJFG2bwdx
 
 ### Binary
 
-<a href='binary_arch.png' target='_blank'><img src="binary_arch.png" alt="Executors architecture - binary"></a>
+<a href='https://storage.googleapis.com/sourcegraph-assets/executor_binary_arch.png' target='_blank'>
+  <img src="https://storage.googleapis.com/sourcegraph-assets/executor_binary_arch.png" alt="Executors architecture - binary">
+</a>
 
 1.  The executor binary is installed to a machine.
     1.  Additional executables (e.g. Docker, `src`) are installed as well
@@ -80,7 +85,9 @@ Diagrams are at: https://app.excalidraw.com/s/4Dr1S6qmmY7/6WJFG2bwdx
 
 ### Firecracker
 
-<a href='firecracker_arch.png' target='_blank'><img src="firecracker_arch.png" alt="Executors architecture - firecracker"></a>
+<a href='https://storage.googleapis.com/sourcegraph-assets/executor_firecracker_arch.png' target='_blank'>
+  <img src="https://storage.googleapis.com/sourcegraph-assets/executor_firecracker_arch.png" alt="Executors architecture - firecracker">
+</a>
 
 1.  The executor binary is installed to a machine.
     1.  Additional executables (e.g. Docker, `src`) are installed as well
@@ -103,7 +110,9 @@ Diagrams are at: https://app.excalidraw.com/s/4Dr1S6qmmY7/6WJFG2bwdx
 
 ### Docker
 
-<a href='docker_arch.png' target='_blank'><img src="docker_arch.png" alt="Executors architecture - docker"></a>
+<a href='https://storage.googleapis.com/sourcegraph-assets/executor_docker_arch.png' target='_blank'>
+  <img src="https://storage.googleapis.com/sourcegraph-assets/executor_docker_arch.png" alt="Executors architecture - docker">
+</a>
 
 1.  The executor image is started as a Docker container on a machine
 2.  The executor pulls for available Jobs from a Sourcegraph API
@@ -129,7 +138,9 @@ Comment out until ready to advertise this
 
 <span class="badge badge-experimental">Experimental</span>
 
-<a href='kubernetes_native_arch.png' target='_blank'><img src="kubernetes_native_arch.png" alt="Executors architecture - native kubernetes"></a>
+<a href='https://storage.googleapis.com/sourcegraph-assets/executor_kubernetes_native_arch.png' target='_blank'>
+  <img src="https://storage.googleapis.com/sourcegraph-assets/executor_kubernetes_native_arch.png" alt="Executors architecture - native kubernetes">
+</a>
 
 1.  The executor image is started as a pod in a Kubernetes node
 2.  The executor pulls for available Jobs from a Sourcegraph API
@@ -149,7 +160,9 @@ Comment out until ready to advertise this
 
 <span class="badge badge-experimental">Experimental</span>
 
-<a href='kubernetes_dind_arch.png' target='_blank'><img src="kubernetes_dind_arch.png" alt="Executors architecture - docker in docker kubernetes"></a>
+<a href='https://storage.googleapis.com/sourcegraph-assets/executor_kubernetes_dind_arch.png' target='_blank'>
+  <img src="https://storage.googleapis.com/sourcegraph-assets/executor_kubernetes_dind_arch.png" alt="Executors architecture - docker in docker kubernetes">
+</a>
 
 1.  The executor image is started as a container in Kubernetes Pod
     1. The dind image is started as a sidecar container in the same Kubernetes Pod
