@@ -10,8 +10,6 @@
 
 Executors are Sourcegraph's solution for running untrusted code in a secure and controllable way.
 
-[What the heck is firecracker??](./firecracker.md)
-
 ## Installation
 
 To deploy executors to target your Sourcegraph instance, [follow our deployment guide](deploy_executors.md).
@@ -86,6 +84,8 @@ See handbook to where images are stored: https://handbook.sourcegraph.com/handbo
 10.  The executor calls a Sourcegraph API to that "complete" the Job.
 
 ### Firecracker
+
+> NOTE: [What the heck is firecracker, anyway](./firecracker.md)??
 
 <a href='https://storage.googleapis.com/sourcegraph-assets/executor_firecracker_arch.png' target='_blank'>
   <img src="https://storage.googleapis.com/sourcegraph-assets/executor_firecracker_arch.png" alt="Executors architecture - firecracker">
