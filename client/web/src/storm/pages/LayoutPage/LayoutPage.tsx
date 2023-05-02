@@ -10,6 +10,7 @@ import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
+import { useHistoryStack } from '../../../app/useHistoryStack'
 import { communitySearchContextsRoutes } from '../../../communitySearchContexts/routes'
 import { AppRouterContainer } from '../../../components/AppRouterContainer'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
@@ -124,6 +125,8 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
 
     useScrollToLocationHash(location)
 
+    const historyStack = useHistoryStack()
+
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
     // useEffect(() => setTosAccepted(!props.authenticatedUser || props.authenticatedUser.tosAccepted), [
@@ -210,6 +213,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                     showFeedbackModal={showFeedbackModal}
+                    historyStack={historyStack}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
@@ -226,13 +230,13 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     </AppRouterContainer>
 
                     {/**
-                     * The portal root is inside the suspense boundary so that it is hidden
-                     * when we navigate to the lazily loaded routes or other actions which trigger
-                     * the Suspense boundary to show the fallback UI. Existing children are not unmounted
-                     * until the promise is resolved.
-                     *
-                     * See: https://github.com/facebook/react/pull/15861
-                     */}
+                      * The portal root is inside the suspense boundary so that it is hidden
+                      * when we navigate to the lazily loaded routes or other actions which trigger
+                      * the Suspense boundary to show the fallback UI. Existing children are not unmounted
+                      * until the promise is resolved.
+                      *
+                      * See: https://github.com/facebook/react/pull/15861
+                      */}
                     <div id="references-panel-react-portal" />
                 </Suspense>
             </ErrorBoundary>
