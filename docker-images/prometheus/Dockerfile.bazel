@@ -70,7 +70,6 @@ RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/
 RUN mkdir -p /prometheus && chown -R sourcegraph:sourcegraph /prometheus
 RUN mkdir -p /alertmanager && chown -R sourcegraph:sourcegraph /alertmanager
 
-
 COPY ./prom-wrapper /bin/prom-wrapper
 COPY ./prometheus.sh /prometheus.sh
 COPY ./alertmanager.sh /alertmanager.sh
