@@ -1,6 +1,9 @@
 package server
 
 import (
+	"context"
+	"io"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -35,41 +38,8 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 		})
 	})
 
-	// TODO(camdencheek): set user agent from all grpc clients
-	execStatus, err := gs.Server.exec(ss.Context(), gs.Server.Logger, &internalReq, "unknown-grpc-client", w)
-	if err != nil {
-		if v := (&NotFoundError{}); errors.As(err, &v) {
-			s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.NotFoundPayload{
-				Repo:            req.GetRepo(),
-				CloneInProgress: v.Payload.CloneInProgress,
-				CloneProgress:   v.Payload.CloneProgress,
-			})
-			if err != nil {
-				gs.Server.Logger.Error("failed to marshal status", log.Error(err))
-				return err
-			}
-			return s.Err()
-
-		} else if errors.Is(err, ErrInvalidCommand) {
-			return status.New(codes.InvalidArgument, "invalid command").Err()
-		}
-
-		return err
-	}
-
-	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
-		s, err := status.New(codes.Unknown, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
-			StatusCode: int32(execStatus.ExitStatus),
-			Stderr:     execStatus.Stderr,
-		})
-		if err != nil {
-			gs.Server.Logger.Error("failed to marshal status", log.Error(err))
-			return err
-		}
-		return s.Err()
-	}
-
-	return nil
+	// TODO(mucles): set user agent from all grpc clients
+	return gs.doExec(ss.Context(), gs.Server.Logger, &internalReq, "unknown-grpc-client", w)
 }
 
 func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService_SearchServer) error {
@@ -143,11 +113,19 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 	})
 
 	// TODO(mucles): set user agent from all grpc clients
-	execStatus, err := gs.Server.exec(ss.Context(), gs.Server.Logger, execReq, "unknown-grpc-client", w)
+	return gs.doExec(ss.Context(), gs.Server.Logger, execReq, "unknown-grpc-client", w)
+
+}
+
+// doExec executes the given git command and streams the output to the given writer.
+//
+// Note: This function wraps the underlying exec implementation and returns grpc specific error handling.
+func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) error {
+	execStatus, err := gs.Server.exec(ctx, logger, req, userAgent, w)
 	if err != nil {
 		if v := (&NotFoundError{}); errors.As(err, &v) {
-			s, err := status.New(codes.NotFound, "not found").WithDetails(&proto.NotFoundPayload{
-				Repo:            req.GetRepo(),
+			s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.NotFoundPayload{
+				Repo:            string(req.Repo),
 				CloneInProgress: v.Payload.CloneInProgress,
 				CloneProgress:   v.Payload.CloneProgress,
 			})
@@ -176,4 +154,5 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		return s.Err()
 	}
 	return nil
+
 }
