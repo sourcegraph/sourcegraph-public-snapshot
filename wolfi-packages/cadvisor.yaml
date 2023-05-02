@@ -49,7 +49,6 @@ pipeline:
       strip-components: 0
   - runs: |
       pwd
-      ls -al
       export DBG="-g -Wall"
       make -e -C libpfm-4.11.0
       make install -C libpfm-4.11.0
@@ -65,14 +64,11 @@ pipeline:
   - runs: |
       cd /cadvisor
       GO_FLAGS="-tags=libfpm,netgo" ./build/build.sh
-      ls -al
-      ls -al ./_output/
 
   # Package libpfm and cadvisor
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/bin/
       mkdir -p ${{targets.destdir}}/usr/local/lib/
-      chmod +x /cadvisor/_output/cadvisor
       cp /cadvisor/_output/cadvisor ${{targets.destdir}}/usr/bin/cadvisor
       cp /usr/local/lib/libpfm.so* ${{targets.destdir}}/usr/local/lib/
 
