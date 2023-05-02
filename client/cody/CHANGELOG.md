@@ -7,10 +7,15 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 ### Added
 
 - New Recipe: `File Chat` that allows users to interact with Cody in the editor view.
+- Updating `cody.codebase` does not require reloading VS Code
 
 ### Fixed
 
+- Fixes an issue where code blocks were unexpectedly escaped [pull/51247](https://github.com/sourcegraph/sourcegraph/pull/51247)
+
 ### Changed
+
+- Replace `Cody: Set Access Token` command with `Cody: Sign in`
 
 ## [0.0.9]
 

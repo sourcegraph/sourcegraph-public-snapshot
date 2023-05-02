@@ -34,11 +34,11 @@ func TestCreateGitHubApp(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	err := store.Create(ctx, app)
+	id, err := store.Create(ctx, app)
 	require.NoError(t, err)
 
 	var createdApp types.GitHubApp
-	query := sqlf.Sprintf(`SELECT app_id, name, slug, base_url, client_id, client_secret, private_key, encryption_key_id, logo FROM github_apps WHERE app_id=%s`, app.AppID)
+	query := sqlf.Sprintf(`SELECT app_id, name, slug, base_url, client_id, client_secret, private_key, encryption_key_id, logo FROM github_apps WHERE id=%s`, id)
 	err = store.QueryRow(ctx, query).Scan(
 		&createdApp.AppID,
 		&createdApp.Name,
@@ -64,7 +64,6 @@ func TestDeleteGitHubApp(t *testing.T) {
 	ctx := context.Background()
 
 	app := &types.GitHubApp{
-		ID:           1,
 		Name:         "Test App",
 		Slug:         "test-app",
 		ClientID:     "abc123",
@@ -72,20 +71,20 @@ func TestDeleteGitHubApp(t *testing.T) {
 		PrivateKey:   "private-key",
 	}
 
-	err := store.Create(ctx, app)
+	id, err := store.Create(ctx, app)
 	require.NoError(t, err)
 
-	err = store.Delete(ctx, app.ID)
+	err = store.Delete(ctx, id)
 	require.NoError(t, err)
 
-	query := sqlf.Sprintf(`SELECT * FROM github_apps WHERE id=%s`, app.ID)
+	query := sqlf.Sprintf(`SELECT * FROM github_apps WHERE id=%s`, id)
 	row, err := store.Query(ctx, query)
 	require.NoError(t, err)
 	// expect false since the query should not return any results
 	require.False(t, row.Next())
 
 	// deleting non-existent should not return error
-	err = store.Delete(ctx, app.ID)
+	err = store.Delete(ctx, id)
 	require.NoError(t, err)
 }
 
@@ -108,10 +107,10 @@ func TestUpdateGitHubApp(t *testing.T) {
 		PrivateKey:   "private-key",
 	}
 
-	err := store.Create(ctx, app)
+	id, err := store.Create(ctx, app)
 	require.NoError(t, err)
 
-	app, err = store.GetByID(ctx, 1)
+	app, err = store.GetByID(ctx, id)
 	require.NoError(t, err)
 
 	updated := &types.GitHubApp{
@@ -174,12 +173,12 @@ func TestGetByID(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	err := store.Create(ctx, app1)
+	id1, err := store.Create(ctx, app1)
 	require.NoError(t, err)
-	err = store.Create(ctx, app2)
+	id2, err := store.Create(ctx, app2)
 	require.NoError(t, err)
 
-	fetched, err := store.GetByID(ctx, 1)
+	fetched, err := store.GetByID(ctx, id1)
 	require.NoError(t, err)
 	require.Equal(t, app1.AppID, fetched.AppID)
 	require.Equal(t, app1.Name, fetched.Name)
@@ -192,12 +191,12 @@ func TestGetByID(t *testing.T) {
 	require.NotZero(t, fetched.CreatedAt)
 	require.NotZero(t, fetched.UpdatedAt)
 
-	fetched, err = store.GetByID(ctx, 2)
+	fetched, err = store.GetByID(ctx, id2)
 	require.NoError(t, err)
 	require.Equal(t, app2.AppID, fetched.AppID)
 
 	// does not exist
-	_, err = store.GetByID(ctx, 3)
+	_, err = store.GetByID(ctx, 42)
 	require.Error(t, err)
 }
 
@@ -232,9 +231,9 @@ func TestGetByAppID(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	err := store.Create(ctx, app1)
+	_, err := store.Create(ctx, app1)
 	require.NoError(t, err)
-	err = store.Create(ctx, app2)
+	_, err = store.Create(ctx, app2)
 	require.NoError(t, err)
 
 	fetched, err := store.GetByAppID(ctx, 1234, "https://github.com")
@@ -291,9 +290,9 @@ func TestGetBySlug(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	err := store.Create(ctx, app1)
+	_, err := store.Create(ctx, app1)
 	require.NoError(t, err)
-	err = store.Create(ctx, app2)
+	_, err = store.Create(ctx, app2)
 	require.NoError(t, err)
 
 	fetched, err := store.GetBySlug(ctx, "test-app", "https://github.com")

@@ -23,7 +23,7 @@ def webpack_web_app(name, **kwargs):
         # https://docs.aspect.build/rules/aspect_bazel_lib/docs/copy_to_directory/#root_paths
         root_paths = ["ui/assets", "client/web/%s" % bundle_name],
         srcs = ["//ui/assets/img:img", ":%s" % bundle_name],
-        visibility = ["//visibility:public"]
+        visibility = ["//visibility:public"],
     )
 
 def webpack_devserver(name, **kwargs):

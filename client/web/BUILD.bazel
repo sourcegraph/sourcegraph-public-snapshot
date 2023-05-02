@@ -275,6 +275,7 @@ ts_project(
         "src/components/externalAccounts/externalAccounts.ts",
         "src/components/externalServices/AddExternalServicePage.tsx",
         "src/components/externalServices/AddExternalServicesPage.tsx",
+        "src/components/externalServices/AddGitHubAppPage.tsx",
         "src/components/externalServices/ExternalServiceCard.tsx",
         "src/components/externalServices/ExternalServiceEditPage.tsx",
         "src/components/externalServices/ExternalServiceEditingDisabledAlert.tsx",
@@ -1022,7 +1023,6 @@ ts_project(
         "src/insights/types.ts",
         "src/insights/utils/use-series-toggle.ts",
         "src/jscontext.ts",
-        "src/lsif/html.ts",
         "src/main.tsx",
         "src/marketing/backend.ts",
         "src/marketing/components/SurveyRatingRadio.tsx",
@@ -1186,7 +1186,6 @@ ts_project(
         "src/repo/blob/BlobPage.tsx",
         "src/repo/blob/CodeMirrorBlob.tsx",
         "src/repo/blob/GoToRawAction.tsx",
-        "src/repo/blob/LegacyBlob.tsx",
         "src/repo/blob/RenderedFile.tsx",
         "src/repo/blob/RenderedNotebookMarkdown.tsx",
         "src/repo/blob/actions/ToggleHistoryPanel.tsx",
@@ -1616,7 +1615,7 @@ ts_project(
         ":module_style_typings",
         ":node_modules/@sourcegraph/branded",
         ":node_modules/@sourcegraph/client-api",  #keep
-        ":node_modules/@sourcegraph/codeintellify",
+        ":node_modules/@sourcegraph/codeintellify",  #keep
         ":node_modules/@sourcegraph/cody-shared",
         ":node_modules/@sourcegraph/cody-ui",
         ":node_modules/@sourcegraph/common",
@@ -1657,7 +1656,6 @@ ts_project(
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/d3-time-format",
-        "//:node_modules/@types/escape-html",
         "//:node_modules/@types/history",
         "//:node_modules/@types/js-cookie",
         "//:node_modules/@types/js-yaml",
@@ -1685,7 +1683,6 @@ ts_project(
         "//:node_modules/copy-to-clipboard",
         "//:node_modules/d3-time-format",
         "//:node_modules/date-fns",
-        "//:node_modules/escape-html",
         "//:node_modules/fast-json-stable-stringify",
         "//:node_modules/focus-visible",
         "//:node_modules/fzf",
@@ -1722,7 +1719,6 @@ ts_project(
         "//:node_modules/ts-key-enum",
         "//:node_modules/use-callback-ref",
         "//:node_modules/use-debounce",
-        "//:node_modules/use-deep-compare-effect",
         "//:node_modules/use-resize-observer",
         "//:node_modules/utility-types",  #keep
         "//:node_modules/uuid",
@@ -1977,6 +1973,7 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
             "NODE_ENV": "production" if prod else "development",
         },
         output_dir = True,
+        visibility = ["//ui/assets:__subpackages__"],
         webpack_config = "webpack.bazel.config.js",
         deps = WEBPACK_CONFIG_DEPS,
     )
@@ -2005,11 +2002,12 @@ webpack_bundle(
         "WEBPACK_USE_NAMED_CHUNKS": "false",
     },
     output_dir = True,
+    visibility = ["//ui/assets:__subpackages__"],
     webpack_config = "webpack.bazel.config.js",
     deps = WEBPACK_CONFIG_DEPS,
 )
 
-# Used for integartion tests and has bigger bundle size
+# Used for integration tests and has bigger bundle size
 # because of the inlined source-maps.
 webpack_web_app(
     name = "app-enterprise",
@@ -2027,7 +2025,7 @@ webpack_web_app(
         "INTEGRATION_TESTS": "true",
     },
     output_dir = True,
-    visibility = ["//client/web:__subpackages__"],
+    visibility = ["//visibility:public"],
     webpack_config = "webpack.bazel.config.js",
     deps = WEBPACK_CONFIG_DEPS,
 )
