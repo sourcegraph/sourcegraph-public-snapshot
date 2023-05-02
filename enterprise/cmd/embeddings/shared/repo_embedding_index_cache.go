@@ -138,17 +138,18 @@ func getCachedRepoEmbeddingIndex(
 			repoEmbeddingIndexName := embeddings.GetRepoEmbeddingIndexName(repoName)
 
 			cacheEntry, ok := cache.Get(repoEmbeddingIndexName)
-			// Check if the index is in the cache.
-			if ok {
-				// Check if we have a newer finished embedding job. If so, download the new index, cache it, and return it instead.
-				if lastFinishedRepoEmbeddingJob.FinishedAt.After(cacheEntry.finishedAt) {
-					return getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)
-				}
-				// Otherwise, return the cached index.
-				return cacheEntry.index, nil
+			if !ok {
+				// We do not have the index in the cache. Download and cache it.
+				return getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)
 			}
-			// We do not have the index in the cache. Download and cache it.
-			return getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)
+
+			// Check if we have a newer finished embedding job. If so, download the new index, cache it, and return it instead.
+			if lastFinishedRepoEmbeddingJob.FinishedAt.After(cacheEntry.finishedAt) {
+				return getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)
+			}
+
+			// Otherwise, return the cached index.
+			return cacheEntry.index, nil
 		})
 	}, nil
 }
