@@ -72,7 +72,8 @@ let
 
     cargoSha256 = "sha256-3zFqJrxkHM8MbYkEoThzOJGeFXj9ggTaI+zIL+Hy44I=";
   };
-in pkgs.mkShell {
+in
+pkgs.mkShell {
   name = "sourcegraph-dev";
 
   # The packages in the `buildInputs` list will be added to the PATH in our shell
