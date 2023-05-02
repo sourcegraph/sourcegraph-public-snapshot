@@ -77,6 +77,7 @@ COPY ./alertmanager.sh /alertmanager.sh
 
 # Copy config
 COPY sg_config_prometheus /sg_config_prometheus/
+RUN chmod -R 0777 /sg_config_prometheus/
 
 ENTRYPOINT ["/bin/prom-wrapper"]
 # Note that upstream's 'VOLUME' directive was deliberately removed. Including it makes it impossible
