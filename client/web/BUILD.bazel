@@ -1827,6 +1827,7 @@ ts_project(
         "src/search/results/StreamingSearchResults.test.tsx",
         "src/search/results/export/searchResultsExport.test.ts",
         "src/search/results/sidebar/Revisions.test.tsx",
+        "src/site-admin/SiteAdminFeatureFlagsPage.test.ts",
         "src/site-admin/SiteAdminMigrationsPage.test.ts",
         "src/site-admin/init/SiteInitPage.test.tsx",
         "src/site-admin/outbound-webhooks/mocks.ts",
