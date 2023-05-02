@@ -239,11 +239,13 @@ func setupAppDir(root string, defaultDirFn func() (string, error)) (string, erro
 		return "", err
 	}
 
-	folder = AppDirectory
+	dir := AppDirectory
 	if version.IsDev(version.Version()) {
-		folder = fmt.Sprintf("%s-dev", folder)
+		dir = fmt.Sprintf("%s-dev", dir)
 	}
-	return folder, os.MkdirAll(folder, 0700)
+
+	path := filepath.Join(base, dir)
+	return path, os.MkdirAll(path, 0700)
 }
 
 // setDefaultEnv will set the environment variable if it is not set.
