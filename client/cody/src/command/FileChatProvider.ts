@@ -8,6 +8,7 @@ export class FileChatMessage implements vscode.Comment {
     private id = 0
     public label: string | undefined
     public markdownBody: string | vscode.MarkdownString
+
     constructor(
         public body: string | vscode.MarkdownString,
         public mode: vscode.CommentMode,
@@ -21,41 +22,41 @@ export class FileChatMessage implements vscode.Comment {
 }
 
 export class FileChatProvider {
-    private commentController: vscode.CommentController
+    private readonly codyIcon: vscode.Uri = this.getIconPath('cody')
+    private readonly userIcon: vscode.Uri = this.getIconPath('user')
+
+    private readonly id = 'cody-file-chat'
+    private readonly label = 'Cody: File Chat'
+    private readonly threadLabel = 'Ask Cody...'
     private options = {
         prompt: 'Click here to ask Cody.',
         placeHolder:
             'Ask Cody a question, or start with /fix to have it perform edits. e.g. “How could you rewrite this in less lines?” or “/fix make the logo bigger”.',
     }
 
-    private readonly id = 'cody-file-chat'
-    private readonly label = 'Cody: File Chat'
-    private readonly threadLabel = 'Ask Cody...'
+    private commentController: vscode.CommentController
 
-    private codyIcon: vscode.Uri
-    private userIcon: vscode.Uri
     public threads: vscode.CommentReply | null = null
     public thread: vscode.CommentThread | null = null
     public editor: vscode.TextEditor | null = null
     public selection: ActiveTextEditorSelection | null = null
     public selectionRange: vscode.Range | null = null
 
+    // Status trackers
     public addedLines = 0
     public isInProgress = false
 
     constructor(private extensionPath: string) {
+        // Init
         this.commentController = vscode.comments.createCommentController(this.id, this.label)
-        // A `CommentingRangeProvider` controls where gutter decorations that allow adding comments are shown
+        this.commentController.options = this.options
         this.commentController.commentingRangeProvider = {
             provideCommentingRanges: (document: vscode.TextDocument) => {
                 const lineCount = document.lineCount
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
             },
         }
-        this.commentController.options = this.options
-        this.codyIcon = this.getIconPath('cody')
-        this.userIcon = this.getIconPath('user')
-
+        // Track and update line of changes when the task for the current selected range is being processed
         vscode.workspace.onDidChangeTextDocument(e => {
             if (!this.isInProgress || !this.selectionRange) {
                 return
@@ -82,7 +83,9 @@ export class FileChatProvider {
         return this.commentController
     }
 
-    // Add response from Human
+    /**
+     * List response from Human as comment
+     */
     public async chat(threads: vscode.CommentReply, isFixMode: boolean = false): Promise<void> {
         this.isInProgress = true
         this.addedLines = 0
@@ -105,7 +108,9 @@ export class FileChatProvider {
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
 
-    // Add response from Cody
+    /**
+     * List response from Cody as comment
+     */
     public reply(text: string): void {
         if (!this.thread) {
             return
@@ -123,6 +128,9 @@ export class FileChatProvider {
         void vscode.commands.executeCommand('setContext', 'cody.replied', true)
     }
 
+    /**
+     * Remove comment thread / conversation
+     */
     public delete(thread: vscode.CommentThread): void {
         this.removeDecorate()
         thread.dispose()
@@ -136,6 +144,9 @@ export class FileChatProvider {
         this.thread = null
     }
 
+    /**
+     * Turns string into Markdown string
+     */
     private markdown(text: string): vscode.MarkdownString {
         const markdownText = new vscode.MarkdownString(text)
         markdownText.isTrusted = true
@@ -143,6 +154,10 @@ export class FileChatProvider {
         return markdownText
     }
 
+    /**
+     * When a comment thread is open, the Editor will be switched to the comment input editor.
+     * Get the current editor using the comment thread uri instead
+     */
     public async getEditor(): Promise<vscode.TextEditor | null> {
         if (!this.thread) {
             return null
@@ -152,6 +167,10 @@ export class FileChatProvider {
         return this.editor
     }
 
+    /**
+     * Get current selected lines from the comment thread.
+     * Add an extra line to the end line to prevent empty selection on single line selection
+     */
     public async getSelection(isFixMode: boolean): Promise<ActiveTextEditorSelection | null> {
         if (!this.thread) {
             return null
@@ -184,6 +203,9 @@ export class FileChatProvider {
         return selection
     }
 
+    /**
+     * Highlights line where the codes updated by Cody are located.
+     */
     public async decorate(updatedLength: number): Promise<void> {
         if (!this.thread) {
             return
@@ -212,6 +234,9 @@ export class FileChatProvider {
         vscode.window.activeTextEditor?.setDecorations(this.decorationType, decorations)
     }
 
+    /**
+     * Remove all decorations on save / accept button click
+     */
     public removeDecorate(): void {
         if (!this.thread) {
             return
@@ -220,6 +245,9 @@ export class FileChatProvider {
         editor?.setDecorations(this.decorationType, [])
     }
 
+    /**
+     * Define styles
+     */
     private decorationType = vscode.window.createTextEditorDecorationType({
         isWholeLine: true,
         borderWidth: '1px',
@@ -235,6 +263,9 @@ export class FileChatProvider {
         },
     })
 
+    /**
+     * Generate icon path for each speaker
+     */
     private getIconPath(speaker: string): vscode.Uri {
         const extensionPath = vscode.Uri.file(this.extensionPath)
         const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')

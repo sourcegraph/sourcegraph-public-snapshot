@@ -4,10 +4,11 @@ import { FileChatProvider } from './FileChatProvider'
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
     public ranges: vscode.Range[] = []
-    private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
-    public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event
     private static lenes: CodeLensProvider
     private fileChatProvider: FileChatProvider | null = null
+
+    private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
+    public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event
 
     constructor() {
         vscode.workspace.onDidChangeConfiguration(() => {
