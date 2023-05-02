@@ -1,3 +1,4 @@
+use crate::common::show_window;
 use tauri::api::shell;
 use tauri::{
     AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
@@ -30,14 +31,6 @@ fn create_system_tray_menu() -> SystemTrayMenu {
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(CustomMenuItem::new("restart".to_string(), "Restart"))
         .add_item(CustomMenuItem::new("quit".to_string(), "Quit").accelerator("CmdOrCtrl+Q"))
-}
-
-fn show_window(app: &AppHandle) {
-    let window = app.get_window("main").unwrap();
-    if !window.is_visible().unwrap() {
-        window.show().unwrap()
-    }
-    window.set_focus().unwrap()
 }
 
 pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
