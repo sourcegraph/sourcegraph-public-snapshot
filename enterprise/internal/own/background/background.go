@@ -40,7 +40,7 @@ var IndexJobTypes = []IndexJobType{{
 	RefreshInterval: time.Minute * 5,
 }}
 
-type JobTypeId int
+type JobTypeID int
 
 const (
 	_ JobTypeId = iota
@@ -194,7 +194,7 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 	case RecentContributors:
 		delegate = handleRecentContributors
 	default:
-		return errors.New("unsupported own index job type")
+		return errcode.MakeNonRetryable(errors.New("unsupported own index job type"))
 	}
 
 	return delegate(ctx, lgr, api.RepoID(record.RepoId), h.db)
