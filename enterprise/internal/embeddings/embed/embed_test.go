@@ -101,8 +101,17 @@ func TestEmbedRepo(t *testing.T) {
 
 	excludedGlobPatterns := GetDefaultExcludedFilePathPatterns()
 
+	opts := EmbedRepoOpts{
+		RepoName:          repoName,
+		Revision:          revision,
+		ExcludePatterns:   excludedGlobPatterns,
+		SplitOptions:      splitOptions,
+		MaxCodeEmbeddings: 100000,
+		MaxTextEmbeddings: 100000,
+	}
+
 	t.Run("no files", func(t *testing.T) {
-		index, stats, err := EmbedRepo(ctx, repoName, revision, excludedGlobPatterns, client, splitOptions, newReadLister(), getDocumentRanks)
+		index, stats, err := EmbedRepo(ctx, client, newReadLister(), getDocumentRanks, opts)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 0)
@@ -126,7 +135,7 @@ func TestEmbedRepo(t *testing.T) {
 	})
 
 	t.Run("code files only", func(t *testing.T) {
-		index, stats, err := EmbedRepo(ctx, repoName, revision, excludedGlobPatterns, client, splitOptions, newReadLister("a.go"), getDocumentRanks)
+		index, stats, err := EmbedRepo(ctx, client, newReadLister("a.go"), getDocumentRanks, opts)
 		require.NoError(t, err)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 		require.Len(t, index.CodeIndex.Embeddings, 6)
@@ -155,7 +164,7 @@ func TestEmbedRepo(t *testing.T) {
 	})
 
 	t.Run("text files only", func(t *testing.T) {
-		index, stats, err := EmbedRepo(ctx, repoName, revision, excludedGlobPatterns, client, splitOptions, newReadLister("b.md"), getDocumentRanks)
+		index, stats, err := EmbedRepo(ctx, client, newReadLister("b.md"), getDocumentRanks, opts)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 6)
@@ -185,7 +194,7 @@ func TestEmbedRepo(t *testing.T) {
 
 	t.Run("mixed code and text files", func(t *testing.T) {
 		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
-		index, stats, err := EmbedRepo(ctx, repoName, revision, excludedGlobPatterns, client, splitOptions, rl, getDocumentRanks)
+		index, stats, err := EmbedRepo(ctx, client, rl, getDocumentRanks, opts)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 15)
 		require.Len(t, index.CodeIndex.RowMetadata, 5)
@@ -226,6 +235,21 @@ func TestEmbedRepo(t *testing.T) {
 		stats.CodeIndexStats.Duration = 0
 		stats.TextIndexStats.Duration = 0
 		require.Equal(t, expectedStats, stats)
+	})
+
+	t.Run("embeddings limited", func(t *testing.T) {
+		optsCopy := opts
+		optsCopy.MaxCodeEmbeddings = 3
+		optsCopy.MaxTextEmbeddings = 1
+
+		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
+		index, _, err := EmbedRepo(ctx, client, rl, getDocumentRanks, optsCopy)
+		require.NoError(t, err)
+
+		// a.md has 2 chunks, c.java has 3 chunks
+		require.Len(t, index.CodeIndex.Embeddings, index.CodeIndex.ColumnDimension*5)
+		// b.md has 2 chunks
+		require.Len(t, index.TextIndex.Embeddings, index.CodeIndex.ColumnDimension*2)
 	})
 }
 

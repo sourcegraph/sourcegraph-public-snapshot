@@ -608,6 +608,10 @@ type Embeddings struct {
 	Enabled bool `json:"enabled"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// MaxCodeEmbeddingsPerRepo description: The maximum number of embeddings for code files to generate per repo
+	MaxCodeEmbeddingsPerRepo int `json:"maxCodeEmbeddingsPerRepo,omitempty"`
+	// MaxTextEmbeddingsPerRepo description: The maximum number of embeddings for text files to generate per repo
+	MaxTextEmbeddingsPerRepo int `json:"maxTextEmbeddingsPerRepo,omitempty"`
 	// Model description: The model used for embedding.
 	Model string `json:"model"`
 	// Url description: The url to the external embedding API service.
