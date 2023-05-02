@@ -23,7 +23,7 @@ func dotArch(a []int8, b []int8) int32 {
 		return 0
 	}
 
-	return int32(avx2Dot(a, b))
+	return int32(dotAVX2(a, b))
 }
 
 func dotAVX2(a, b []int8) int64
