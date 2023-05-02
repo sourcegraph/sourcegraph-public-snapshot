@@ -1348,14 +1348,18 @@ func (x *CommitMatch) GetModifiedFiles() []string {
 	return nil
 }
 
+// ArchiveOptions contains options for the Archive func.
 type ArchiveRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Repo      string   `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
-	Treeish   string   `protobuf:"bytes,2,opt,name=treeish,proto3" json:"treeish,omitempty"`
-	Format    string   `protobuf:"bytes,3,opt,name=format,proto3" json:"format,omitempty"`
+	Repo string `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
+	// the tree or commit to produce an archive for
+	Treeish string `protobuf:"bytes,2,opt,name=treeish,proto3" json:"treeish,omitempty"`
+	// format of the resulting archive (usually "tar" or "zip")
+	Format string `protobuf:"bytes,3,opt,name=format,proto3" json:"format,omitempty"`
+	// if nonempty, only include these pathspecs.
 	Pathspecs []string `protobuf:"bytes,4,rep,name=pathspecs,proto3" json:"pathspecs,omitempty"`
 }
 

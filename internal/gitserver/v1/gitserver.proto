@@ -194,10 +194,14 @@ message CommitMatch {
   repeated string modified_files = 9;
 }
 
+// ArchiveOptions contains options for the Archive func.
 message ArchiveRequest {
   string repo = 1;
+  // the tree or commit to produce an archive for
   string treeish = 2;
+  // format of the resulting archive (usually "tar" or "zip")
   string format = 3;
+  // if nonempty, only include these pathspecs.
   repeated string pathspecs = 4;
 }
 
