@@ -324,6 +324,9 @@ func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, 
 	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
 }
 
+// CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
+// is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
+// into component parts separately.
 func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error) {
 	args := []string{"log", "--pretty=format:%H<!>%ae<!>%an<!>%ad", "--name-only", "--topo-order", "--no-merges"}
 	if !after.IsZero() {
@@ -354,11 +357,6 @@ func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, af
 		sha, authorEmail, authorName, timestamp := parts[0], parts[1], parts[2], parts[3]
 		t, err := parseTimestamp(timestamp)
 		if err != nil {
-			fmt.Println(parts)
-			command := strings.Join(args, " ")
-			fmt.Println(command)
-			fmt.Println(fmt.Sprintf("repo_name: %s", repo))
-
 			return nil, errors.Wrapf(err, "parseTimestamp %s", timestamp)
 		}
 		ls = append(ls, CommitLog{
@@ -376,7 +374,7 @@ func parseTimestamp(timestamp string) (time.Time, error) {
 	layout := "Mon Jan 2 15:04:05 2006 -0700"
 	t, err := time.Parse(layout, timestamp)
 	if err != nil {
-		return time.Now(), err // Handle error and fallback to other timestamp format
+		return time.Time{}, err
 	}
 	return t, nil
 }
