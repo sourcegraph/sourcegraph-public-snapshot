@@ -995,11 +995,11 @@ type CodyUsageStatistics struct {
 // BigQuery, which requires the input match its schema exactly.
 type CodyUsagePeriod struct {
 	StartTime              time.Time
-	TotalUsers             int32
-	TotalRequest           int32
-	CodeGenerationRequests int32
-	ExplanationRequests    int32
-	InvalidRequests        int32
+	TotalUsers             *CodyCountStatistics
+	TotalRequests          *CodyCountStatistics
+	CodeGenerationRequests *CodyCountStatistics
+	ExplanationRequests    *CodyCountStatistics
+	InvalidRequests        *CodyCountStatistics
 }
 
 // CodyAggregatedEvent represents the total requests, unique users, code
@@ -1028,8 +1028,8 @@ type CodyAggregatedEvent struct {
 }
 
 type CodyCountStatistics struct {
-	UserCount *int32
-	//EventsCount *int32 //for future event counting
+	UserCount   *int32
+	EventsCount *int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
