@@ -30,4 +30,4 @@ ENTRYPOINT ["/usr/bin/cadvisor", "-logtostderr", \
     "-event_storage_event_limit=default=0", \
     "-v=3", \
     "-event_storage_age_limit=default=0", \
-    "-containerd /var/run/containerd/containerd.sock"]
+    "-containerd=/var/run/containerd/containerd.sock"]
