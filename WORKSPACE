@@ -98,6 +98,18 @@ http_archive(
     ],
 )
 
+# hermetic_cc_toolchain setup ================================
+HERMETIC_CC_TOOLCHAIN_VERSION = "v1.0.1"
+http_archive(
+    name = "bazel-zig-cc",
+    sha256 = "e9f82bfb74b3df5ca0e67f4d4989e7f1f7ce3386c295fd7fda881ab91f83e509",
+    strip_prefix = "bazel-zig-cc-{}".format(HERMETIC_CC_TOOLCHAIN_VERSION),
+    urls = [
+        "https://mirror.bazel.build/github.com/uber/bazel-zig-cc/releases/download/{0}/{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
+        "https://github.com/uber/hermetic_cc_toolchain/releases/download/{0}/{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
+    ],
+)
+
 # rules_js setup ================================
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
@@ -276,21 +288,20 @@ load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
 
-BAZEL_ZIG_CC_VERSION = "v1.0.1"
-
-http_archive(
-    name = "bazel-zig-cc",
-    sha256 = "e9f82bfb74b3df5ca0e67f4d4989e7f1f7ce3386c295fd7fda881ab91f83e509",
-    strip_prefix = "bazel-zig-cc-{}".format(BAZEL_ZIG_CC_VERSION),
-    urls = [
-        "https://mirror.bazel.build/github.com/uber/bazel-zig-cc/releases/download/{0}/{0}.tar.gz".format(BAZEL_ZIG_CC_VERSION),
-        "https://github.com/uber/bazel-zig-cc/releases/download/{0}/{0}.tar.gz".format(BAZEL_ZIG_CC_VERSION),
-    ],
-)
+# Hermetic cc toolchain
 
 load("@bazel-zig-cc//toolchain:defs.bzl", zig_toolchains = "toolchains")
 
 zig_toolchains()
+
+register_toolchains(
+    # if no `--platform` is specified, these toolchains will be used for
+    # (linux,darwin,windows)x(amd64,arm64)
+    "@zig_sdk//toolchain:linux_amd64_gnu.2.19",
+    "@zig_sdk//toolchain:linux_arm64_gnu.2.28",
+    "@zig_sdk//toolchain:darwin_amd64",
+    "@zig_sdk//toolchain:darwin_arm64",
+)
 
 load("//dev/backcompat:defs.bzl", "back_compat_defs")
 
