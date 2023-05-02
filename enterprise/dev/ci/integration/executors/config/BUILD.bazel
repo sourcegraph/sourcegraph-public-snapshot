@@ -1,5 +1,5 @@
 filegroup(
     name = "config",
-    srcs = glob(["config/*.json"]),
+    srcs = glob(["*.json"]),
     visibility = ["//enterprise/dev/ci/integration/executors:__subpackages__"],
 )

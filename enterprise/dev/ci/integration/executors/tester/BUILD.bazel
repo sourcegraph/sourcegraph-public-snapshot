@@ -32,7 +32,7 @@ go_library(
 
 go_binary(
     name = "tester",
-    data = ["//enterprise/dev/ci/integration/executors:config"],
+    data = ["//enterprise/dev/ci/integration/executors/config:config"],
     embed = [":tester_lib"],
     visibility = ["//visibility:public"],
 )

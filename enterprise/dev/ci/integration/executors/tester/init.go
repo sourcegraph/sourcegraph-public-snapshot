@@ -45,9 +45,9 @@ func initAndAuthenticate() (*gqltestutil.Client, error) {
 }
 
 func ensureRepos(client *gqltestutil.Client) error {
-	c, err := os.ReadFile("config/repos.json")
+	c, err := os.ReadFile("repos.json")
 	if err != nil {
-		return errors.Wrap(err, "failed to open config/repos.json")
+		return errors.Wrap(err, "failed to open repos.json")
 	}
 
 	var svcs []ExternalSvc
