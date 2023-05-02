@@ -69,7 +69,6 @@ USER root
 RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/sourcegraph sourcegraph
 RUN mkdir -p /prometheus && chown -R sourcegraph:sourcegraph /prometheus
 RUN mkdir -p /alertmanager && chown -R sourcegraph:sourcegraph /alertmanager
-USER sourcegraph
 
 COPY ./prom-wrapper /bin/prom-wrapper
 COPY ./prometheus.sh /prometheus.sh
@@ -77,6 +76,9 @@ COPY ./alertmanager.sh /alertmanager.sh
 
 # Copy config
 COPY sg_config_prometheus /sg_config_prometheus/
+RUN chmod -R 0777 /sg_config_prometheus/
+
+USER sourcegraph
 
 ENTRYPOINT ["/bin/prom-wrapper"]
 # Note that upstream's 'VOLUME' directive was deliberately removed. Including it makes it impossible
