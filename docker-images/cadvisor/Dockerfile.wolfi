@@ -28,4 +28,5 @@ ENTRYPOINT ["/usr/bin/cadvisor", "-logtostderr", \
     "-housekeeping_interval=10s", \
     "-max_housekeeping_interval=15s", \
     "-event_storage_event_limit=default=0", \
+    "-v=3", \
     "-event_storage_age_limit=default=0"]
