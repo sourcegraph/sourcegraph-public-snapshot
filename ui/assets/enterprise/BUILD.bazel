@@ -23,5 +23,6 @@ copy_to_directory(
     out = "dist",
     replace_prefixes = {
         "client/web/bundle-enterprise": "",
+        "ui/assets/img": "img",
     },
 )
