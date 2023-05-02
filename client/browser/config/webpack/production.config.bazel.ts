@@ -1,7 +1,7 @@
 import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
 
-import { config as baseConfig } from './base.config'
+import { config as baseConfig } from './base.config.bazel'
 import { generateBundleUID } from './utils'
 
 const { plugins, ...base } = baseConfig
@@ -43,3 +43,6 @@ export const config: webpack.Configuration = {
         ]
     ),
 }
+
+// eslint-disable-next-line import/no-default-export
+export default config
