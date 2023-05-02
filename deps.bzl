@@ -5748,7 +5748,13 @@ def go_dependencies():
         sum = "h1:B4Y0XJQiPjpwYmkH55aratKX1VfR+JRqzmDKyZbC99o=",
         version = "v3.1.2",
     )
-
+    go_repository(
+        name = "com_github_rafaeljusto_redigomock",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/rafaeljusto/redigomock",
+        sum = "h1:d7uo5MVINMxnRr20MxbgDkmZ8QRfevjOVgEa4n0OZyY=",
+        version = "v2.4.0+incompatible",
+    )
     go_repository(
         name = "com_github_rainycape_unidecode",
         build_file_proto_mode = "disable_global",
