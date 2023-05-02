@@ -27,15 +27,16 @@ let
   #
   # Additionally bazel seems to break when CC and CXX is set to a nix managed
   # compiler on darwin. So the script unsets those.
-  bazel-wrapper = pkgs.writeShellScriptBin "bazel" (if pkgs.hostPlatform.isMacOS then ''
-    unset CC CXX
-    exec ${pkgs.bazelisk}/bin/bazelisk "$@"
-  '' else ''
-    if [ "$1" == "configure" ]; then
+  bazel-wrapper = pkgs.writeShellScriptBin "bazel"
+    (if pkgs.hostPlatform.isMacOS then ''
+      unset CC CXX
       exec ${pkgs.bazelisk}/bin/bazelisk "$@"
-    fi
-    exec ${bazel-static}/bin/bazel "$@"
-  '');
+    '' else ''
+      if [ "$1" == "configure" ]; then
+        exec ${pkgs.bazelisk}/bin/bazelisk "$@"
+      fi
+      exec ${bazel-static}/bin/bazel "$@"
+    '');
   bazel-static = pkgs.bazel_6.overrideAttrs (oldAttrs: {
     preBuildPhase = oldAttrs.preBuildPhase + ''
       export BAZEL_LINKLIBS=-l%:libstdc++.a:-lm
@@ -44,7 +45,10 @@ let
   });
   bazel-watcher = pkgs.writeShellScriptBin "ibazel" ''
     exec ${pkgs.bazel-watcher}/bin/ibazel \
-      ${pkgs.lib.optionalString pkgs.hostPlatform.isLinux "-bazel_path=${bazel-static}/bin/bazel"} "$@"
+      ${
+        pkgs.lib.optionalString pkgs.hostPlatform.isLinux
+        "-bazel_path=${bazel-static}/bin/bazel"
+      } "$@"
   '';
   # custom cargo-bazel so we can pass down LD_LIBRARY_PATH, see definition of LD_LIBRARY_PATH below
   # for more info.
@@ -54,9 +58,8 @@ let
     sourceRoot = "source/crate_universe";
     doCheck = false;
 
-    buildInputs = [ ] ++ pkgs.lib.optional pkgs.hostPlatform.isMacOS [
-      pkgs.darwin.Security
-    ];
+    buildInputs = [ ]
+      ++ pkgs.lib.optional pkgs.hostPlatform.isMacOS [ pkgs.darwin.Security ];
 
     src = pkgs.fetchFromGitHub {
       owner = "bazelbuild";
@@ -65,14 +68,11 @@ let
       sha256 = "sha256-+tYfw12oELy+x7V8jtGWK0EiNElTwOteO6aUEMlWXio=";
     };
 
-    patches = [
-      ./dev/nix/001-rules-rust-cargo-bazel-env.patch
-    ];
+    patches = [ ./dev/nix/001-rules-rust-cargo-bazel-env.patch ];
 
     cargoSha256 = "sha256-3zFqJrxkHM8MbYkEoThzOJGeFXj9ggTaI+zIL+Hy44I=";
   };
-in
-pkgs.mkShell {
+in pkgs.mkShell {
   name = "sourcegraph-dev";
 
   # The packages in the `buildInputs` list will be added to the PATH in our shell
@@ -107,7 +107,8 @@ pkgs.mkShell {
       version = "7.28.0";
       src = fetchurl {
         url = "https://registry.npmjs.org/pnpm/-/pnpm-7.28.0.tgz";
-        sha512 = "sha512-nbuY07S2519jEjaV9KLjSFmOwh0b6KIViIdc/RCJkgco8SZa2+ikQQe4N3CfNn5By5BH0dKVbZ8Ox1Mw8wItSA==";
+        sha512 =
+          "sha512-nbuY07S2519jEjaV9KLjSFmOwh0b6KIViIdc/RCJkgco8SZa2+ikQQe4N3CfNn5By5BH0dKVbZ8Ox1Mw8wItSA==";
       };
     })
     nodePackages.typescript
@@ -145,7 +146,8 @@ pkgs.mkShell {
 
   # Needed for rules_rust provisioned rust tools when running `bazel(isk) configure`, still need
   # nixpkgs_rust_configure for actual compilation step
-  LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib pkgs.zlib ];
+  LD_LIBRARY_PATH =
+    pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib pkgs.zlib ];
 
   # Tell rules_rust to use our custom cargo-bazel.
   CARGO_BAZEL_GENERATOR_URL = "file://${cargo-bazel}/bin/cargo-bazel";
