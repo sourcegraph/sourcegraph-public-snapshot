@@ -23,7 +23,7 @@ You can find the Tauri frontend shell at `client/app-shell` and to build it you 
 
 ### Sourcegraph backend
 
-The Sourcegraph backend or as it was previously known "single binary", contains all the Sourcegraph services but in one binary! To build it:
+The Sourcegraph backend, or "single binary" as it was previously known, contains all the Sourcegraph services but in one binary! To build it:
 
 1. `pnpm build-web` - the Sourcegraph web app gets embedded into the frontend service binary, so we need to build it otherwise the frontend is going to have some old client web app (or nothing!)
 2. ```
