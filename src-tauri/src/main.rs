@@ -9,6 +9,7 @@ use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 mod tray;
 use std::sync::RwLock;
 use tauri::Manager;
+use tauri_utils::config::RemoteDomainAccessScope;
 
 // The URL to open the frontend on, if launched with a scheme url.
 static LAUNCH_PATH: RwLock<String> = RwLock::new(String::new());
@@ -53,6 +54,20 @@ fn main() {
     }
 
     let tray = tray::create_system_tray();
+
+    let scope = RemoteDomainAccessScope {
+        scheme: Some("http".to_string()),
+        domain: "localhost".to_string(),
+        windows: vec!["main".to_string()],
+        plugins: vec![],
+        enable_tauri_api: true,
+    };
+    let mut context = tauri::generate_context!();
+    context
+        .config_mut()
+        .tauri
+        .security
+        .dangerous_remote_domain_ipc_access = vec![scope];
 
     tauri::Builder::default()
         .system_tray(tray)
@@ -108,7 +123,7 @@ fn main() {
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
         .invoke_handler(tauri::generate_handler![get_launch_path])
-        .run(tauri::generate_context!())
+        .run(context)
         .expect("error while running tauri application");
 }
 
