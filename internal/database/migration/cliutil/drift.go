@@ -59,7 +59,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 
 		parsedVersion, patch, ok := oobmigration.NewVersionAndPatchFromString(version)
 		// if not parsable into a structured version, then it may be a revhash
-		if ok {
+		if ok && parsedVersion.GitTagWithPatch(patch) != version {
 			out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleGrey, "Parsed %q from version flag value %q", parsedVersion.GitTagWithPatch(patch), version))
 			version = parsedVersion.GitTagWithPatch(patch)
 		}
