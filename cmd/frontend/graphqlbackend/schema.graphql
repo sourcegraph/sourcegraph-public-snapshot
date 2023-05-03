@@ -4914,7 +4914,7 @@ type GitCommit implements Node {
     """
     The perforce changelist ID if this git commit was originally converted from a perforce depot.
     """
-    perforceChangelistID: String
+    perforceChangelist: PerforceChangelist
     """
     This commit's author.
     """
@@ -10003,4 +10003,14 @@ type CodeIntelCommit {
     The repository that contains this commit.
     """
     repository: CodeIntelRepository!
+}
+
+"""
+A Perforce changelist.
+"""
+type PerforceChangelist  {
+  """
+  The changelist ID.
+  """
+  cid: String!
 }

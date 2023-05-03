@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -129,22 +128,13 @@ func (r *GitCommitResolver) AbbreviatedOID() string {
 	return string(r.oid)[:7]
 }
 
-func (r *GitCommitResolver) PerforceChangelistID(ctx context.Context) (*string, error) {
-	if !r.repoResolver.IsPerforceDepot() {
-		return nil, nil
-	}
-
+func (r *GitCommitResolver) PerforceChangelist(ctx context.Context) (*PerforceChangelistResolver, error) {
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	changelistID, err := getP4ChangelistID(commit.Message.Body())
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to generate perforceChangelistID")
-	}
-
-	return &changelistID, nil
+	return toPerforceChangelistResolver(r.repoResolver, commit.Message.Body())
 }
 
 func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
@@ -458,28 +448,4 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 	repoUrl := *r.repoResolver.RepoMatch.URL()
 	repoUrl.Path += "@" + string(r.oid)
 	return &repoUrl
-}
-
-var p4FusionCommitSubjectPattern = lazyregexp.New(`^(\d+) - (.*)$`)
-
-func parseP4FusionCommitSubject(subject string) (string, error) {
-	matches := p4FusionCommitSubjectPattern.FindStringSubmatch(subject)
-	if len(matches) != 3 {
-		return "", errors.Newf("failed to parse commit subject %q for commit converted by p4-fusion", subject)
-	}
-	return matches[2], nil
-}
-
-// Either git-p4 or p4-fusion could be used to convert a perforce depot to a git repo. In which case the
-// [git-p4: depot-paths = "//test-perms/": change = 83725]
-// [p4-fusion: depot-paths = "//test-perms/": change = 80972]
-var gitP4Pattern = lazyregexp.New(`\[(?:git-p4|p4-fusion): depot-paths = "(.*?)"\: change = (\d+)\]`)
-
-func getP4ChangelistID(body string) (string, error) {
-	matches := gitP4Pattern.FindStringSubmatch(body)
-	if len(matches) != 3 {
-		return "", errors.Newf("failed to retrieve changelist ID from commit body: %q", body)
-	}
-
-	return matches[2], nil
 }

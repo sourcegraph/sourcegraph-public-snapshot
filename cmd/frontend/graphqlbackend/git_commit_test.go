@@ -134,6 +134,11 @@ func TestGitCommitResolver(t *testing.T) {
 				if !reflect.DeepEqual(have, tc.want) {
 					t.Errorf("\nhave: %s\nwant: %s", spew.Sprint(have), spew.Sprint(tc.want))
 				}
+
+				pf, err := r.PerforceChangelist(context.Background())
+				require.NoError(t, err)
+				require.Nil(t, pf)
+
 			})
 		}
 	})
@@ -162,10 +167,11 @@ func TestGitCommitResolver(t *testing.T) {
 
 		require.True(t, commitResolver.repoResolver.IsPerforceDepot())
 
-		cid, err := commitResolver.PerforceChangelistID(context.Background())
+		pf, err := commitResolver.PerforceChangelist(context.Background())
 		require.NoError(t, err)
+		require.NotNil(t, pf)
 
-		require.Equal(t, "123", *cid)
+		require.Equal(t, "123", pf.cid)
 		subject, err := commitResolver.Subject(context.Background())
 		require.NoError(t, err)
 		require.Equal(t, "subject: Changes things", subject)
@@ -195,10 +201,11 @@ func TestGitCommitResolver(t *testing.T) {
 
 		require.True(t, commitResolver.repoResolver.IsPerforceDepot())
 
-		cid, err := commitResolver.PerforceChangelistID(context.Background())
+		pf, err := commitResolver.PerforceChangelist(context.Background())
 		require.NoError(t, err)
+		require.NotNil(t, pf)
 
-		require.Equal(t, "123", *cid)
+		require.Equal(t, "123", pf.cid)
 		subject, err := commitResolver.Subject(context.Background())
 		require.NoError(t, err)
 		require.Equal(t, "subject: Changes things", subject)
@@ -363,6 +370,9 @@ func TestGitCommitAncestors(t *testing.T) {
 						  id
 						  oid
 						  abbreviatedOID
+						  perforceChangelist {
+							cid
+						  }
 						}
 						pageInfo {
 						  endCursor
@@ -582,79 +592,90 @@ func TestGitCommitAncestors(t *testing.T) {
 	})
 }
 
-func TestGetP4ChangelistID(t *testing.T) {
-	testCases := []struct {
-		input                string
-		expectedChangeListID string
-	}{
-		{
-			input:                `[git-p4: depot-paths = "//test-perms/": change = 83725]`,
-			expectedChangeListID: "83725",
+func TestGitCommitPerforceChangelist(t *testing.T) {
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(
+		&types.Repo{
+			ID:   2,
+			Name: "github.com/gorilla/mux",
+			ExternalRepo: api.ExternalRepoSpec{
+				ServiceType: extsvc.TypePerforce,
+			},
 		},
-		{
-			input:                `[p4-fusion: depot-paths = "//test-perms/": change = 80972]`,
-			expectedChangeListID: "80972",
-		},
-		{
-			input:                "invalid string",
-			expectedChangeListID: "",
-		},
-		{
-			input:                "",
-			expectedChangeListID: "",
-		},
+		nil,
+	)
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		return api.CommitID(rev), nil
 	}
 
-	for _, tc := range testCases {
-		result, err := getP4ChangelistID(tc.input)
-		if tc.expectedChangeListID != "" {
-			require.NoError(t, err)
-		} else {
-			require.Error(t, err)
-		}
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
 
-		if !reflect.DeepEqual(result, tc.expectedChangeListID) {
-			t.Errorf("getP4ChangelistID failed (%q) => got %q, want %q", tc.input, result, tc.expectedChangeListID)
-		}
-	}
-}
+	client := gitserver.NewMockClient()
 
-func TestParseP4FusionCommitSubject(t *testing.T) {
-	testCases := []struct {
-		input           string
-		expectedSubject string
-		expectedErr     string
-	}{
-		{
-			input:           "83732 - adding sourcegraph repos",
-			expectedSubject: "adding sourcegraph repos",
-		},
-		{
-			input:           "abc1234 - updating config",
-			expectedSubject: "",
-			expectedErr:     `failed to parse commit subject "abc1234 - updating config" for commit converted by p4-fusion`,
-		},
-		{
-			input:           "- fixing bug",
-			expectedSubject: "",
-			expectedErr:     `failed to parse commit subject "- fixing bug" for commit converted by p4-fusion`,
-		},
-		{
-			input:           "fixing bug",
-			expectedSubject: "",
-			expectedErr:     `failed to parse commit subject "fixing bug" for commit converted by p4-fusion`,
-		},
+	// git-p4 commit.
+	c1 := gitdomain.Commit{
+		ID: api.CommitID("aabbc12345"),
+		Message: gitdomain.Message(`87654 - adding sourcegraph repos
+[git-p4: depot-paths = "//test-perms/": change = 87654]`),
 	}
 
-	for _, tc := range testCases {
-		subject, err := parseP4FusionCommitSubject(tc.input)
-		if err != nil && err.Error() != tc.expectedErr {
-			t.Errorf("Expected error %q, got %q", err.Error(), tc.expectedErr)
-		}
-
-		if subject != tc.expectedSubject {
-			t.Errorf("Expected subject %q, got %q", tc.expectedSubject, subject)
-		}
-
+	// p4-fusion commit.
+	c2 := gitdomain.Commit{
+		ID: api.CommitID("ccdde12345"),
+		Message: gitdomain.Message(`87655 - testing sourcegraph repos
+[p4-fusion: depot-paths = "//test-perms/": change = 87655]`),
 	}
+
+	client.CommitsFunc.SetDefaultReturn([]*gitdomain.Commit{&c1, &c2}, nil)
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Query: `
+				{
+				  repository(name: "github.com/gorilla/mux") {
+					commit(rev: "aabbc12345") {
+					  ancestors(first: 10) {
+						nodes {
+						  id
+                          oid
+						  perforceChangelist {
+							cid
+						  }
+						}
+					  }
+					}
+				  }
+				}`,
+			ExpectedResult: `
+				{
+				  "repository": {
+					"commit": {
+					  "ancestors": {
+						"nodes": [
+						  {
+							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiYWFiYmMxMjM0NSJ9",
+							"oid": "aabbc12345",
+							"perforceChangelist": {
+							  "cid": "87654"
+							}
+						  },
+						  {
+							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiY2NkZGUxMjM0NSJ9",
+							"oid": "ccdde12345",
+							"perforceChangelist": {
+							  "cid": "87655"
+							}
+						  }
+		  				]
+					  }
+					}
+				  }
+				}`,
+		},
+	})
 }
