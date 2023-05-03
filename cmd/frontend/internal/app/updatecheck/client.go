@@ -471,12 +471,6 @@ func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (
 	}
 	r.ActiveToday = usersActiveTodayCount > 0
 
-	// 	codyUsersActiveTodayCount, err := getCodyUsersActiveTodayCount(ctx, db)
-	// 	if err != nil {
-	// 		logFunc("getCodyUsersActiveTodayCount failed", log.Error(err))
-	// 	}
-	// 	r.CodyActiveToday = codyUsersActiveTodayCount > 0
-
 	contents, err := json.Marshal(r)
 	if err != nil {
 		return nil, err
