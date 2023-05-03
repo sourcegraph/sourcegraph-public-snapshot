@@ -1468,8 +1468,7 @@ func (l *eventLogStore) aggregatedSearchEvents(ctx context.Context, queryString 
 var aggregatedCodyUsageEventsQuery = `
 WITH events AS (
   SELECT
-    json.key::text,
-    json.value::text,
+    name AS key,
     ` + aggregatedUserIDQueryFragment + ` AS user_id,
     ` + makeDateTruncExpression("month", "timestamp") + ` as month,
     ` + makeDateTruncExpression("week", "timestamp") + ` as week,
@@ -1479,10 +1478,8 @@ WITH events AS (
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   WHERE
-    timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `
-    AND name like '%CodyVSCodeExtension%'
-    OR name like '%CodyInstalled%'
-    OR name like '%Cody%'
+    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+    AND lower(name) like '%cody%'
 ),
 code_generation_keys AS (
   SELECT * FROM unnest(ARRAY[
@@ -1493,7 +1490,8 @@ code_generation_keys AS (
     'CodyVSCodeExtension:recipe:generate-unit-test:executed',
     'CodyVSCodeExtension:recipe:rewrite-functional:executed',
     'CodyVSCodeExtension:recipe:code-refactor:executed',
-    'CodyVSCodeExtension:recipe:fixup:executed'
+    'CodyVSCodeExtension:recipe:fixup:executed',
+	'CodyVSCodeExtension:recipe:translate-to-language:executed'
   ]) AS key
 ),
 explanation_keys AS (
