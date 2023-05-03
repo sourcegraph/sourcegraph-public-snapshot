@@ -77,7 +77,8 @@ pkgs.mkShell {
 
   # The packages in the `buildInputs` list will be added to the PATH in our shell
   nativeBuildInputs = with pkgs; [
-    rnix-lsp
+    # nix language server
+    nil
 
     # Our core DB.
     postgresql_13

@@ -1417,7 +1417,6 @@ commandsets:
       - tauri
     env:
       DISABLE_CODE_INSIGHTS: false
-      SOURCEGRAPH_APP: 1
 
 tests:
   # These can be run with `sg test [name]`

@@ -10,6 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -21,8 +22,9 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		Required: true,
 	}
 	versionFlag := &cli.StringFlag{
-		Name:     "version",
-		Usage:    "The target schema version. Must be resolvable as a git revlike on the Sourcegraph repository.",
+		Name: "version",
+		Usage: "The target schema version. Can be a version (e.g. 5.0.2) or resolvable as a git revlike on the Sourcegraph repository " +
+			"(e.g. a branch, tag or commit hash).",
 		Required: false,
 	}
 	fileFlag := &cli.StringFlag{
@@ -55,32 +57,28 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			return errors.New("the flags -version or -file are mutually exclusive")
 		}
 
-		// Note: Error is correctly checked here; we want to use the return value
-		// `patch` below but only if we can best-effort fetch it. We want to allow
-		// the user to skip erroring here if they are explicitly skipping this
-		// version check.
-		inferredVersion, ok, err := func() (string, bool, error) {
-			v, patch, ok, err := GetServiceVersion(ctx, r)
-			if err != nil || !ok {
-				return "", false, err
-			}
+		parsedVersion, patch, ok := oobmigration.NewVersionAndPatchFromString(version)
+		// if not parsable into a structured version, then it may be a revhash
+		if ok && parsedVersion.GitTagWithPatch(patch) != version {
+			out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleGrey, "Parsed %q from version flag value %q", parsedVersion.GitTagWithPatch(patch), version))
+			version = parsedVersion.GitTagWithPatch(patch)
+		}
 
-			return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, patch), true, nil
-		}()
 		if !skipVersionCheck {
+			inferred, patch, ok, err := GetServiceVersion(ctx, r)
 			if err != nil {
 				return err
 			}
 			if !ok {
-				err := errors.Newf("version assertion failed: unknown version != %q", version)
+				err := fmt.Sprintf("version assertion failed: unknown version != %q", version)
 				return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
 			}
 
 			if version == "" {
-				version = inferredVersion
+				version = inferred.GitTagWithPatch(patch)
 				out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Checking drift against version %q", version))
-			} else if version != inferredVersion {
-				err := errors.Newf("version assertion failed: %q != %q", inferredVersion, version)
+			} else if version != inferred.GitTagWithPatch(patch) {
+				err := fmt.Sprintf("version assertion failed: %q != %q", inferred, version)
 				return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
 			}
 		} else if version == "" && file == "" {

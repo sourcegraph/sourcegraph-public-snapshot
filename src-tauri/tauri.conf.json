@@ -12,7 +12,6 @@
   "tauri": {
     "allowlist": {
       "shell": {
-        "open": true,
         "sidecar": true,
         "scope": [
           {
@@ -69,8 +68,7 @@
         "height": 768,
         "resizable": true,
         "title": "Sourcegraph",
-        "width": 1024,
-        "titleBarStyle": "Overlay"
+        "width": 1024
       }
     ]
   }

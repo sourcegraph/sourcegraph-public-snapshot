@@ -7,6 +7,7 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { Grid, H3 } from '@sourcegraph/wildcard'
 
+import { HistoryStack } from '../app/useHistoryStack'
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 
@@ -38,6 +39,7 @@ const defaultProps: GlobalNavbarProps = {
     codeMonitoringEnabled: true,
     ownEnabled: true,
     showFeedbackModal: () => undefined,
+    historyStack: {} as HistoryStack,
 }
 
 const allNavItemsProps: Partial<GlobalNavbarProps> = {
