@@ -27,7 +27,7 @@ import {
     SettingsSubjectCommonFields,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
-import { WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
+import { setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
 import { ComponentsComposer } from './components/ComponentsComposer'
@@ -88,6 +88,8 @@ export interface DynamicSourcegraphWebAppContext {
 const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
+
+setLinkComponent(RouterLink)
 
 const suspenseCache = new SuspenseCache()
 
