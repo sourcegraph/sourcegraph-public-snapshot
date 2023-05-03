@@ -42,11 +42,11 @@ func NewWithService(db database.DB, gitserver gitserver.Client, ownService own.S
 }
 
 var (
-	_ graphqlbackend.OwnResolver                      = &ownResolver{}
-	_ graphqlbackend.OwnershipReasonResolver          = &ownershipReasonResolver{}
-	_ graphqlbackend.GitCommitOwnershipSignalResolver = &gitCommitOwnershipSignalResolver{}
-	_ graphqlbackend.SimpleOwnReasonResolver          = &gitCommitOwnershipSignalResolver{}
-	_ graphqlbackend.SimpleOwnReasonResolver          = &codeownersFileEntryResolver{}
+	_ graphqlbackend.OwnResolver                              = &ownResolver{}
+	_ graphqlbackend.OwnershipReasonResolver                  = &ownershipReasonResolver{}
+	_ graphqlbackend.RecentContributorOwnershipSignalResolver = &recentContributorOwnershipSignal{}
+	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentContributorOwnershipSignal{}
+	_ graphqlbackend.SimpleOwnReasonResolver                  = &codeownersFileEntryResolver{}
 )
 
 type ownResolver struct {
@@ -85,8 +85,8 @@ func (o *ownershipReasonResolver) ToCodeownersFileEntry() (graphqlbackend.Codeow
 	return nil, false
 }
 
-func (o *ownershipReasonResolver) ToGitCommitOwnershipSignal() (graphqlbackend.GitCommitOwnershipSignalResolver, bool) {
-	if res, ok := o.resolver.(*gitCommitOwnershipSignalResolver); ok {
+func (o *ownershipReasonResolver) ToRecentContributorOwnershipSignal() (graphqlbackend.RecentContributorOwnershipSignalResolver, bool) {
+	if res, ok := o.resolver.(*recentContributorOwnershipSignal); ok {
 		return res, true
 	}
 	return nil, false
@@ -126,81 +126,65 @@ func (r *ownResolver) GitBlobOwnership(
 	if rs == nil {
 		return &ownershipConnectionResolver{db: r.db}, nil
 	}
+
+	var total int
+	var next *string
+
+	var ownerships []graphqlbackend.OwnershipResolver
+	var resolvedOwners []codeowners.ResolvedOwner
+
 	rule := rs.Match(blob.Path())
 	// No match found.
-	if rule == nil {
-		return &ownershipConnectionResolver{db: r.db}, nil
-	}
-	owners := rule.GetOwner()
-	sort.Slice(owners, func(i, j int) bool {
-		iText := ownerText(owners[i])
-		jText := ownerText(owners[j])
-		return iText < jText
-	})
-	total := len(owners)
-	for cursor != "" && len(owners) > 0 && ownerText(owners[0]) != cursor {
-		owners = owners[1:]
-	}
-	var next *string
-	if args.First != nil && len(owners) > int(*args.First) {
-		cursor := ownerText(owners[*args.First])
-		next = &cursor
-		owners = owners[:*args.First]
-	}
-	resolvedOwners, err := ownService.ResolveOwnersWithType(ctx, owners)
-	if err != nil {
-		return nil, err
-	}
-	ownerships := make([]graphqlbackend.OwnershipResolver, 0, len(resolvedOwners))
-	for _, ro := range resolvedOwners {
-
-		res := &codeownersFileEntryResolver{
-			db:              r.db,
-			gitserverClient: r.gitserver,
-			source:          rs.GetSource(),
-			repo:            blob.Repository(),
-			matchLineNumber: rule.GetLineNumber(),
-		}
-
-		reasons := []graphqlbackend.OwnershipReasonResolver{
-			&ownershipReasonResolver{res},
-			// &ownershipReasonResolver{&gitCommitOwnershipSignalResolver{repo: repoID, rev: commitID.Short(), path: blob.Path(), repoName: repoName}},
-		}
-
-		ownerships = append(ownerships, &ownershipResolver{
-			db:            r.db,
-			resolvedOwner: ro,
-			reasons:       reasons,
+	if rule != nil {
+		owners := rule.GetOwner()
+		sort.Slice(owners, func(i, j int) bool {
+			iText := ownerText(owners[i])
+			jText := ownerText(owners[j])
+			return iText < jText
 		})
-	}
+		total = len(owners)
+		for cursor != "" && len(owners) > 0 && ownerText(owners[0]) != cursor {
+			owners = owners[1:]
+		}
+		if args.First != nil && len(owners) > int(*args.First) {
+			cursor := ownerText(owners[*args.First])
+			next = &cursor
+			owners = owners[:*args.First]
+		}
+		resolvedOwners, err = ownService.ResolveOwnersWithType(ctx, owners)
+		if err != nil {
+			return nil, err
+		}
+		ownerships = make([]graphqlbackend.OwnershipResolver, 0, len(resolvedOwners))
+		for _, ro := range resolvedOwners {
 
-	name, email, count, err := computeCommitOwner(blob.Path(), commitID.Short(), repoName)
-	if err != nil {
-		return nil, err
-	}
+			res := &codeownersFileEntryResolver{
+				db:              r.db,
+				gitserverClient: r.gitserver,
+				source:          rs.GetSource(),
+				repo:            blob.Repository(),
+				matchLineNumber: rule.GetLineNumber(),
+			}
 
-	contribResolver := &ownershipResolver{
-		db: r.db,
-		resolvedOwner: &codeowners.Person{
-			User:         nil,
-			PrimaryEmail: nil,
-			Handle:       name,
-			Email:        email,
-		},
-		reasons: []graphqlbackend.OwnershipReasonResolver{&ownershipReasonResolver{&gitCommitOwnershipSignalResolver{total: count}}},
-	}
+			reasons := []graphqlbackend.OwnershipReasonResolver{
+				&ownershipReasonResolver{res},
+			}
 
-	user, err := identifyUser(r.db, email)
-	if err == nil {
-		// if we don't get an error (meaning we can match) we will add it to the resolver
-		contribResolver.resolvedOwner = &codeowners.Person{
-			User:   user,
-			Handle: name,
-			Email:  email,
+			ownerships = append(ownerships, &ownershipResolver{
+				db:            r.db,
+				resolvedOwner: ro,
+				reasons:       reasons,
+			})
 		}
 	}
 
-	ownerships = append(ownerships, contribResolver)
+	contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), repoID)
+	if err != nil {
+		return nil, err
+	}
+	for _, resolver := range contribResolvers {
+		ownerships = append(ownerships, resolver)
+	}
 
 	return &ownershipConnectionResolver{
 		db:             r.db,
@@ -357,69 +341,48 @@ func areOwnEndpointsAvailable(ctx context.Context) error {
 	return nil
 }
 
-type gitCommitOwnershipSignalResolver struct {
+type recentContributorOwnershipSignal struct {
 	total int32
 }
 
-func (g *gitCommitOwnershipSignalResolver) Title() (string, error) {
-	return "TOP CONTRIBUTOR", nil
+func (g *recentContributorOwnershipSignal) Title() (string, error) {
+	return "RECENT CONTRIBUTOR", nil
 }
 
-func (g *gitCommitOwnershipSignalResolver) Description() (string, error) {
+func (g *recentContributorOwnershipSignal) Description() (string, error) {
 	return "Owner is associated because they are the top committer in the file", nil
 }
 
-func (g *gitCommitOwnershipSignalResolver) TotalCount() (int32, error) {
-	return g.total, nil
-}
-
-func (g *gitCommitOwnershipSignalResolver) RecentCount() (int32, error) {
-	return 0, nil
-}
-
-func computeCommitOwner(path string, rev string, repoName api.RepoName) (name string, email string, total int32, err error) {
+func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
 	fmt.Println("asdfasdf")
-	// commits, err := gitserver.NewClient().Commits(context.Background(), authz.DefaultSubRepoPermsChecker, repoName, gitserver.CommitsOptions{
-	// 	Path:  path,
-	// 	Range: rev,
-	// })
-	// if err != nil {
-	// 	return "", 0, err
-	// }
-	//
-	// counts := make(map[string]int)
-	// for _, commit := range commits {
-	// 	counts[commit.Author.Name]++
-	// }
-	//
-	// max := ""
-	// maxVal := 0
-	// for key, val := range counts {
-	// 	if val > maxVal {
-	// 		max = key
-	// 		maxVal = val
-	// 	}
-	// }
 
-	contribs, err := gitserver.NewClient().ContributorCount(context.Background(), repoName, gitserver.ContributorOptions{
-		Path:  path,
-		Range: rev,
-	})
-
-	if len(contribs) == 0 {
-		return "", "", 0, nil
+	recentAuthors, err := db.RecentContributionSignals().FindRecentAuthors(ctx, repoID, path)
+	if err != nil {
+		return nil, errors.Wrap(err, "FindRecentAuthors")
 	}
+	fmt.Printf("path: %s, repoID: %d\n", path, repoID)
+	fmt.Println(recentAuthors)
 
-	var max int
-	for i := range contribs {
-		if contribs[i].Count > contribs[max].Count {
-			max = i
+	for _, author := range recentAuthors {
+		res := ownershipResolver{
+			db: db,
+			resolvedOwner: &codeowners.Person{
+				Handle: author.AuthorName,
+				Email:  author.AuthorEmail,
+			},
+			reasons: []graphqlbackend.OwnershipReasonResolver{&ownershipReasonResolver{&recentContributorOwnershipSignal{}}},
 		}
+		user, err := identifyUser(db, author.AuthorEmail)
+		if err == nil {
+			// if we don't get an error (meaning we can match) we will add it to the resolver
+			res.resolvedOwner = &codeowners.Person{
+				User: user,
+			}
+		}
+		results = append(results, &res)
 	}
 
-	top := contribs[max]
-
-	return top.Name, top.Email, top.Count, nil
+	return results, nil
 }
 
 func identifyUser(db database.DB, email string) (*types.User, error) {

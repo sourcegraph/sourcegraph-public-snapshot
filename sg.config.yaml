@@ -1131,7 +1131,7 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
+#      - symbols
       - caddy
       - docsite
       - syntax-highlighter
@@ -1141,6 +1141,8 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - blobstore
+    env:
+      WORKER_JOB_BLOCKLIST: "own-repo-indexing-queue"
 
   enterprise-e2e:
     <<: *enterprise_set

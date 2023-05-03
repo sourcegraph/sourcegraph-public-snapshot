@@ -60,7 +60,7 @@ type OwnerResolver interface {
 type OwnershipReasonResolver interface {
 	SimpleOwnReasonResolver
 	ToCodeownersFileEntry() (CodeownersFileEntryResolver, bool)
-	ToGitCommitOwnershipSignal() (GitCommitOwnershipSignalResolver, bool)
+	ToRecentContributorOwnershipSignal() (RecentContributorOwnershipSignalResolver, bool)
 }
 
 type SimpleOwnReasonResolver interface {
@@ -75,9 +75,7 @@ type CodeownersFileEntryResolver interface {
 	RuleLineMatch(context.Context) (int32, error)
 }
 
-type GitCommitOwnershipSignalResolver interface {
-	TotalCount() (int32, error)
-	RecentCount() (int32, error)
+type RecentContributorOwnershipSignalResolver interface {
 	Title() (string, error)
 	Description() (string, error)
 }

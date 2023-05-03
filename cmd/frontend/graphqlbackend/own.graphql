@@ -92,10 +92,7 @@ get more details on the ownership determination.
 """
 #union OwnershipReason = CodeownersFileEntry | GitCommitOwnershipSignal
 
-type GitCommitOwnershipSignal implements OwnershipReason {
-    totalCount: Int!
-    recentCount: Int!
-
+type RecentContributorOwnershipSignal implements OwnershipReason {
     title: String!
     description: String!
 }
