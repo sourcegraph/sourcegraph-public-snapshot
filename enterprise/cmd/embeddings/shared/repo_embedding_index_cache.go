@@ -52,14 +52,16 @@ func (m *repoMutexMap) GetLock(repoID api.RepoID) *sync.Mutex {
 	return lock
 }
 
-// embeddingIndexCache is a thin wrapper around a ristretto cache
-// that adds well-typed Get and Set methods to the cache.
-type embeddingIndexCache struct {
+// embeddingsIndexCache is a thin wrapper around a ristretto cache
+// that adds well-typed Get and Set methods to the cache. It is
+// memory-bounded, which is useful for embeddings indexes because
+// they can have dramatically different sizes.
+type embeddingsIndexCache struct {
 	cache *ristretto.Cache
 }
 
 // newEmbeddingsIndexCache creates a cache with reasonable settings for an embeddings cache
-func newEmbeddingsIndexCache(cacheSizeBytes int64) (embeddingIndexCache, error) {
+func newEmbeddingsIndexCache(cacheSizeBytes int64) (embeddingsIndexCache, error) {
 	rc, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1000,
 		MaxCost:     cacheSizeBytes,
@@ -67,13 +69,13 @@ func newEmbeddingsIndexCache(cacheSizeBytes int64) (embeddingIndexCache, error) 
 		Metrics:     false, // we have no way to collect metrics yet
 	})
 	if err != nil {
-		return embeddingIndexCache{}, err
+		return embeddingsIndexCache{}, err
 	}
 
-	return embeddingIndexCache{rc}, nil
+	return embeddingsIndexCache{rc}, nil
 }
 
-func (c *embeddingIndexCache) Get(repo embeddings.RepoEmbeddingIndexName) (repoEmbeddingIndexCacheEntry, bool) {
+func (c *embeddingsIndexCache) Get(repo embeddings.RepoEmbeddingIndexName) (repoEmbeddingIndexCacheEntry, bool) {
 	v, ok := c.cache.Get(string(repo))
 	if !ok {
 		return repoEmbeddingIndexCacheEntry{}, false
@@ -81,7 +83,7 @@ func (c *embeddingIndexCache) Get(repo embeddings.RepoEmbeddingIndexName) (repoE
 	return v.(repoEmbeddingIndexCacheEntry), true
 }
 
-func (c *embeddingIndexCache) Set(repo embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
+func (c *embeddingsIndexCache) Set(repo embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
 	c.cache.Set(string(repo), value, value.index.EstimateSize())
 
 	// Since this isn't a performance hotspot, always wait for the
