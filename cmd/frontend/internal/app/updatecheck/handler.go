@@ -733,7 +733,7 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 	return json.Marshal(singlePeriodUsage)
 }
 
-// reserializeSearchUsage will reserialize a code intel usage statistics
+// reserializeCodyUsage will reserialize a cody usage statistics
 // struct with only the first period in each period type. This reduces the
 // complexity required in the BigQuery schema and downstream ETL transform
 // logic.
