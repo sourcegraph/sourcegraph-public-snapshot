@@ -47,11 +47,10 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" && "${pr_number}" != "false" ]
     --url "${github_pr_comments_api_url}" \
     --user "apikey:${github_api_key}" \
     --header 'Accept: application/vnd.github.v3+json' \
-    --header 'Content-Type: application/json' | jq '.[] | select(.body | contains("## App preview")) | .id')
+    --header 'Content-Type: application/json' | jq '.[] | select(.body | contains("📖 [Storybook live preview]")) | .id')
 
   app_preview_comment_body=$(printf '%s\n' \
-    "## App preview" \
-    "- [Storybook](${chromatic_storybook_url})" | jq -Rs .)
+    "📖 [Storybook live preview](${chromatic_storybook_url})" | jq -Rs .)
 
   if [[ -z "${app_preview_comment_id}" ]]; then
     echo "Adding new App preview comment to PR #${pr_number} in ${owner_and_repo}"
