@@ -1643,7 +1643,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Log which which actor is accessing the repo.
+	// Log which actor is accessing the repo.
 	args := req.Args
 	cmd := ""
 	if len(req.Args) > 0 {

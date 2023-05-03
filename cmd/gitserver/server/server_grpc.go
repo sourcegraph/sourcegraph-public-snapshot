@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -33,6 +34,19 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 			Data: p,
 		})
 	})
+
+	// Log which actor is accessing the repo.
+	args := req.GetArgs()
+	cmd := ""
+	if len(req.GetArgs()) > 0 {
+		cmd = req.GetArgs()[0]
+		args = args[1:]
+	}
+
+	accesslog.Record(ss.Context(), req.GetRepo(),
+		log.String("cmd", cmd),
+		log.Strings("args", args),
+	)
 
 	// TODO(camdencheek): set user agent from all grpc clients
 	execStatus, err := gs.Server.exec(ss.Context(), gs.Server.Logger, &internalReq, "unknown-grpc-client", w)
