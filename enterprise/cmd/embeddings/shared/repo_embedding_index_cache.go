@@ -52,10 +52,13 @@ func (m *repoMutexMap) GetLock(repoID api.RepoID) *sync.Mutex {
 	return lock
 }
 
+// embeddingIndexCache is a thin wrapper around a ristretto cache
+// that adds well-typed Get and Set methods to the cache.
 type embeddingIndexCache struct {
 	cache *ristretto.Cache
 }
 
+// newEmbeddingsIndexCache creates a cache with reasonable settings for an embeddings cache
 func newEmbeddingsIndexCache(cacheSizeBytes int64) (embeddingIndexCache, error) {
 	rc, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1000,
@@ -80,6 +83,10 @@ func (c *embeddingIndexCache) Get(repo embeddings.RepoEmbeddingIndexName) (repoE
 
 func (c *embeddingIndexCache) Set(repo embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
 	c.cache.Set(string(repo), value, value.index.EstimateSize())
+
+	// Since this isn't a performance hotspot, always wait for the
+	// cached value to propagate. This makes testing easier and
+	// ensures we never refetch unnecessarily.
 	c.cache.Wait()
 }
 
