@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -12,10 +11,12 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -28,17 +29,24 @@ import (
 
 type IndexJobType struct {
 	Name            string
-	Id              int
+	Id              JobTypeID
 	IndexInterval   time.Duration
 	RefreshInterval time.Duration
 }
 
 var IndexJobTypes = []IndexJobType{{
 	Name:            "recent-contributors",
-	Id:              1,
+	Id:              RecentContributors,
 	IndexInterval:   time.Hour * 24,
 	RefreshInterval: time.Minute * 5,
 }}
+
+type JobTypeID int
+
+const (
+	_ JobTypeID = iota
+	RecentContributors
+)
 
 func featureFlagName(jobType IndexJobType) string {
 	return fmt.Sprintf("own-background-index-repo-%s", jobType.Name)
@@ -148,6 +156,7 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 	task := handler{
 		workerStore: workerStore,
 		limiter:     limiter,
+		db:          db,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*Job](&task), workerutil.WorkerOptions{
@@ -169,19 +178,30 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 }
 
 type handler struct {
+	db          database.DB
 	workerStore dbworkerstore.Store[*Job]
 	limiter     *ratelimit.InstrumentedLimiter
+	op          *observation.Operation
 }
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record *Job) error {
+func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error {
 	err := h.limiter.Wait(ctx)
 	if err != nil {
 		return errors.Wrap(err, "limiter.Wait")
 	}
-	jsonify, _ := json.Marshal(record)
-	logger.Info(fmt.Sprintf("Hello from the own background processor: %v", string(jsonify)))
-	return nil
+
+	var delegate signalIndexFunc
+	switch JobTypeID(record.JobType) {
+	case RecentContributors:
+		delegate = handleRecentContributors
+	default:
+		return errcode.MakeNonRetryable(errors.New("unsupported own index job type"))
+	}
+
+	return delegate(ctx, lgr, api.RepoID(record.RepoId), h.db)
 }
+
+type signalIndexFunc func(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB) error
 
 func janitorFunc(db database.DB, retention time.Duration) func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error) {
 	return func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error) {
