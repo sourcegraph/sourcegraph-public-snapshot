@@ -319,6 +319,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 'navbar'
                             )}
                             size="sm"
+                            target="_blank"
                             onClick={() =>
                                 eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBarSourcegraphApp' })
                             }
