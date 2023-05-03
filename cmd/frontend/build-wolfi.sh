@@ -8,7 +8,23 @@ OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
   rm -rf "$OUTPUT"
 }
+
+# TODO: Remove, override to fix frontend on branch
+DOCKER_BAZEL=true
+
 trap cleanup EXIT
+if [[ "$DOCKER_BAZEL" == "true" ]]; then
+  ./dev/ci/bazel.sh build //cmd/frontend
+  out=$(./dev/ci/bazel.sh cquery //cmd/frontend --output=files)
+  cp "$out" "$OUTPUT"
+
+  docker build -f cmd/frontend/Dockerfile.wolfi -t "$IMAGE" "$OUTPUT" \
+    --progress=plain \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION
+  exit $?
+fi
 
 # Environment for building linux binaries
 export GO111MODULE=on
