@@ -1419,6 +1419,14 @@ commandsets:
       DISABLE_CODE_INSIGHTS: false
       SOURCEGRAPH_APP: 1
 
+  llm-proxy:
+    checks:
+      - redis
+    commands:
+      - llm-proxy
+    env:
+      LLM_PROXY_ANTHROPIC_ACCESS_TOKEN: foobar
+
 tests:
   # These can be run with `sg test [name]`
   backend:
