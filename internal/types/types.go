@@ -1002,6 +1002,11 @@ type CodyUsagePeriod struct {
 	InvalidRequests        *CodyCountStatistics
 }
 
+type CodyCountStatistics struct {
+	UserCount   *int32
+	EventsCount *int32
+}
+
 // CodyAggregatedEvent represents the total requests, unique users, code
 // generation requests, explanation requests, and invalid requests over
 // the current month, week, and day for a single search event.
@@ -1025,11 +1030,6 @@ type CodyAggregatedEvent struct {
 	InvalidMonth        int32
 	InvalidWeek         int32
 	InvalidDay          int32
-}
-
-type CodyCountStatistics struct {
-	UserCount   *int32
-	EventsCount *int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change

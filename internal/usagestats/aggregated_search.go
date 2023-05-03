@@ -56,10 +56,9 @@ func GetAggregatedCodyStats(ctx context.Context, db database.DB) (*types.CodyUsa
 // the target DB schema.
 func groupAggregatedCodyStats(events []types.CodyAggregatedEvent) *types.CodyUsageStatistics {
 	codyUsageStats := &types.CodyUsageStatistics{
-		TotalInstalls: 0,
-		Daily:         []*types.CodyUsagePeriod{newCodyEventPeriod()},
-		Weekly:        []*types.CodyUsagePeriod{newCodyEventPeriod()},
-		Monthly:       []*types.CodyUsagePeriod{newCodyEventPeriod()},
+		Daily:   []*types.CodyUsagePeriod{newCodyEventPeriod()},
+		Weekly:  []*types.CodyUsagePeriod{newCodyEventPeriod()},
+		Monthly: []*types.CodyUsagePeriod{newCodyEventPeriod()},
 	}
 
 	// Iterate over events, updating codyUsageStats for each event
@@ -103,22 +102,13 @@ var searchFilterCountExtractors = map[string]func(p *types.SearchUsagePeriod) *t
 	"count_only_patterns_three_or_more": func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OnlyPatternsThreeOrMore },
 }
 
-var codyEventCountExtractors = map[string]func(p *types.CodyUsagePeriod) *types.CodyCountStatistics{
-	"CodyVSCodeExtension:recipe:rewrite-to-functional:executed":   func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:improve-variable-names:executed":  func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:replace:executed":                 func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:generate-docstring:executed":      func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:generate-unit-test:executed":      func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:rewrite-functional:executed":      func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:code-refactor:executed":           func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:fixup:executed":                   func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:explain-code-high-level:executed": func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:explain-code-detailed:executed":   func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:find-code-smells:executed":        func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:git-history:executed":             func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:rate-code:executed":               func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:chat-question:executed":           func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.TotalRequests },
-	"CodyVSCodeExtension:recipe:translate-to-language:executed":   func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.TotalRequests },
+// utility functions that resolve a CodyCountStatistics value for a given event name for some CodyUsagePeriod.
+var CodyCountStatistics = map[string]func(p *types.CodyUsagePeriod) *types.CodyCountStatistics{
+	"total_users":              func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.TotalUsers },
+	"total_requests":           func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.TotalRequests },
+	"code_generation_requests": func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
+	"explanation_requests":     func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.ExplanationRequests },
+	"invalid_requests":         func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.InvalidRequests },
 }
 
 // populateSearchEventStatistics is a side-effecting function that populates the
@@ -169,7 +159,7 @@ func populateSearchEventStatistics(event types.SearchAggregatedEvent, statistics
 }
 
 func populateCodyCountStatistics(event types.CodyAggregatedEvent, statistics *types.CodyUsageStatistics) {
-	extractor, ok := codyEventCountExtractors[event.Name]
+	extractor, ok := CodyCountStatistics[event.Name]
 	if !ok {
 		return
 	}
