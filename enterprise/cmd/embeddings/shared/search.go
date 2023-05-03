@@ -116,6 +116,8 @@ func filterAndHydrateContent(
 		}
 
 		filtered = append(filtered, embeddings.EmbeddingSearchResult{
+			RepoName: repoName,
+			Revision: revision,
 			RepoEmbeddingRowMetadata: embeddings.RepoEmbeddingRowMetadata{
 				FileName:  result.FileName,
 				StartLine: startLine,

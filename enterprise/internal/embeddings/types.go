@@ -51,6 +51,8 @@ type EmbeddingSearchResults struct {
 }
 
 type EmbeddingSearchResult struct {
+	RepoName api.RepoName
+	Revision api.CommitID
 	RepoEmbeddingRowMetadata
 	Content string `json:"content"`
 	// Experimental: Clients should not rely on any particular format of debug
