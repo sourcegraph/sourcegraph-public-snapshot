@@ -243,17 +243,6 @@ func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context, db database.
 	return json.Marshal(codeIntelUsage)
 }
 
-func getAndMarshalAggregatedCodyUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalAggregatedCodyUsageJSON")(&err)
-
-	codyUsage, err := usagestats.GetAggregatedCodyStats(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-
-	return json.Marshal(codyUsage)
-}
-
 func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedSearchUsageJSON")(&err)
 
@@ -366,7 +355,7 @@ func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json
 func getAndMarshalCodyUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodyUsageJSON")(&err)
 
-	codyUsage, err := usagestats.GetAggregatedSearchStats(ctx, db) //TODO: fix
+	codyUsage, err := usagestats.GetAggregatedCodyStats(ctx, db)
 	if err != nil {
 		return nil, err
 	}
