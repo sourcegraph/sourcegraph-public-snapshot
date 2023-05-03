@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//cmd/symbols/fetcher",
         "//cmd/symbols/types",
+        "//internal/conf",
         "//internal/metrics",
         "//internal/observation",
         "//internal/search",
