@@ -69,7 +69,7 @@ func (o *ownershipReasonResolver) Title() (string, error) {
 }
 
 func (o *ownershipReasonResolver) Description() (string, error) {
-	return o.Description()
+	return o.resolver.Description()
 }
 
 func (o *ownershipReasonResolver) ToCodeownersFileEntry() (graphqlbackend.CodeownersFileEntryResolver, bool) {
