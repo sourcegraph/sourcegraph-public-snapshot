@@ -13,7 +13,9 @@ ts_config(
     deps = [
         "//:tsconfig",
         "//client/cody-shared:tsconfig",
+        "//client/cody-ui:tsconfig",
         "//client/common:tsconfig",
+        "//client/wildcard:tsconfig",
     ],
 )
 
