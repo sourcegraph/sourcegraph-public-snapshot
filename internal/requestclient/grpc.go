@@ -51,6 +51,8 @@ func StreamServerInterceptor(srv any, ss grpc.ServerStream, _ *grpc.StreamServer
 	})
 }
 
+// customContextServerStream is a wrapper around grpc.ServerStream that returns a custom context
+// from the Context method.
 type customContextServerStream struct {
 	grpc.ServerStream
 	customContext context.Context
