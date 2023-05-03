@@ -138,7 +138,6 @@ ts_project(
         "src/api/ApiConsole.tsx",
         "src/api/ApiConsoleToolbar.tsx",
         "src/api/NoApiConsole.tsx",
-        "src/app/TauriLink.tsx",
         "src/app/TauriTitleBar.tsx",
         "src/app/useHistoryStack.tsx",
         "src/auth.ts",
