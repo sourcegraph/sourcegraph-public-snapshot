@@ -66,6 +66,9 @@ type Config struct {
 	KubernetesJobRetryBackoffLimit                 int
 	KubernetesJobRetryBackoffDuration              time.Duration
 	KubernetesKeepJobs                             bool
+	KubernetesSecurityContextRunAsUser             int
+	KubernetesSecurityContextRunAsGroup            int
+	KubernetesSecurityContextFSGroup               int
 
 	dockerAuthConfigStr                                          string
 	dockerAuthConfigUnmarshalError                               error
@@ -125,6 +128,9 @@ func (c *Config) Load() {
 	c.KubernetesJobRetryBackoffLimit = c.GetInt("KUBERNETES_JOB_RETRY_BACKOFF_LIMIT", "600", "The number of retries before giving up on a Kubernetes job.")
 	c.KubernetesJobRetryBackoffDuration = c.GetInterval("KUBERNETES_JOB_RETRY_BACKOFF_DURATION", "100ms", "The duration to wait before retrying a Kubernetes job.")
 	c.KubernetesKeepJobs = c.GetBool("KUBERNETES_KEEP_JOBS", "false", "If true, Kubernetes jobs will not be deleted after they complete. Useful for debugging.")
+	c.KubernetesSecurityContextRunAsUser = c.GetInt("KUBERNETES_RUN_AS_USER", "-1", "The user ID to run Kubernetes jobs as.")
+	c.KubernetesSecurityContextRunAsGroup = c.GetInt("KUBERNETES_RUN_AS_GROUP", "-1", "The group ID to run Kubernetes jobs as.")
+	c.KubernetesSecurityContextFSGroup = c.GetInt("KUBERNETES_FS_GROUP", "1000", "The group ID to run all containers in the Kubernetes jobs as. Defaults to 1000, the group ID of the docker group in the executor container.")
 
 	if c.dockerAuthConfigStr != "" {
 		c.dockerAuthConfigUnmarshalError = json.Unmarshal([]byte(c.dockerAuthConfigStr), &c.DockerAuthConfig)
@@ -171,6 +177,14 @@ func (c *Config) Validate() error {
 
 	if c.dockerAuthConfigUnmarshalError != nil {
 		c.AddError(errors.Wrap(c.dockerAuthConfigUnmarshalError, "invalid EXECUTOR_DOCKER_AUTH_CONFIG, failed to parse"))
+	}
+
+	if c.kubernetesNodeRequiredAffinityMatchExpressionsUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesNodeRequiredAffinityMatchExpressionsUnmarshalError, "invalid EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS, failed to parse"))
+	}
+
+	if c.kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError, "invalid EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS, failed to parse"))
 	}
 
 	if c.UseFirecracker {
