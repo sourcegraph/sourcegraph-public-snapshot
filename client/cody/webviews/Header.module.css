@@ -14,6 +14,13 @@
     align-items: center;
 }
 
+/* We can hide the 'Sourcegraph' logo they're wanting a skinny pane */
+@media screen and (max-width: 350px) {
+    .header-container-right {
+        display: none;
+    }
+}
+
 .header-container-right svg {
     opacity: 0.4;
 }
