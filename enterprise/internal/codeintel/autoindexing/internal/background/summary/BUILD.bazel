@@ -15,6 +15,7 @@ go_library(
         "//enterprise/internal/codeintel/autoindexing/internal/store",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/actor",
+        "//internal/conf",
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",

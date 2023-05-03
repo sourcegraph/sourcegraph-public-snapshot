@@ -53,6 +53,11 @@ describe('SiteAdminProductSubscriptionPage', () => {
                                 pageInfo: { hasNextPage: false },
                             },
                             activeLicense: null,
+                            llmProxyAccess: {
+                                __typename: 'LLMProxyAccess',
+                                enabled: false,
+                                rateLimit: null,
+                            },
                         })
                     }
                     _queryProductLicenses={() =>

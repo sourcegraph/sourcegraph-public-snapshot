@@ -1559,6 +1559,23 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
+# Table "public.github_app_installs"
+```
+     Column      |           Type           | Collation | Nullable |                     Default                     
+-----------------+--------------------------+-----------+----------+-------------------------------------------------
+ id              | integer                  |           | not null | nextval('github_app_installs_id_seq'::regclass)
+ app_id          | integer                  |           | not null | 
+ installation_id | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+Indexes:
+    "github_app_installs_pkey" PRIMARY KEY, btree (id)
+    "app_id_idx" btree (app_id)
+    "installation_id_idx" btree (installation_id)
+Foreign-key constraints:
+    "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
+
+```
+
 # Table "public.github_apps"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -1578,6 +1595,8 @@ Referenced by:
 Indexes:
     "github_apps_pkey" PRIMARY KEY, btree (id)
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
+Referenced by:
+    TABLE "github_app_installs" CONSTRAINT "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
 
 ```
 
@@ -3001,15 +3020,18 @@ Foreign-key constraints:
 
 # Table "public.product_subscriptions"
 ```
-         Column          |           Type           | Collation | Nullable | Default 
--------------------------+--------------------------+-----------+----------+---------
- id                      | uuid                     |           | not null | 
- user_id                 | integer                  |           | not null | 
- billing_subscription_id | text                     |           |          | 
- created_at              | timestamp with time zone |           | not null | now()
- updated_at              | timestamp with time zone |           | not null | now()
- archived_at             | timestamp with time zone |           |          | 
- account_number          | text                     |           |          | 
+             Column              |           Type           | Collation | Nullable | Default 
+---------------------------------+--------------------------+-----------+----------+---------
+ id                              | uuid                     |           | not null | 
+ user_id                         | integer                  |           | not null | 
+ billing_subscription_id         | text                     |           |          | 
+ created_at                      | timestamp with time zone |           | not null | now()
+ updated_at                      | timestamp with time zone |           | not null | now()
+ archived_at                     | timestamp with time zone |           |          | 
+ account_number                  | text                     |           |          | 
+ llm_proxy_enabled               | boolean                  |           | not null | true
+ llm_proxy_rate_limit            | integer                  |           |          | 
+ llm_proxy_rate_interval_seconds | integer                  |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -3018,6 +3040,12 @@ Referenced by:
     TABLE "product_licenses" CONSTRAINT "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
 ```
+
+**llm_proxy_enabled**: Whether or not this subscription has access to LLM-proxy
+
+**llm_proxy_rate_interval_seconds**: Custom time interval over which the for LLM-proxy rate limit is applied
+
+**llm_proxy_rate_limit**: Custom requests per time interval allowed for LLM-proxy
 
 # Table "public.query_runner_state"
 ```
