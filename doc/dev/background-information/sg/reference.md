@@ -654,8 +654,8 @@ Arguments: `<name>`
 
 Flags:
 
-* `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--schema, --db="<value>"`: The target database `schema` to modify (default: frontend)
 
 ### sg migration revert
 
@@ -689,12 +689,12 @@ $ sg migration up [-db=<schema>]
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: "all")
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--privileged-hash="<value>"`: Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Multiple privileged hash flags (for distinct schemas) may be supplied. Future (distinct) up operations will require a unique hash.
+* `--schema, --db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Possible values are 'frontend', 'codeintel', 'codeinsights' and 'all'. (default: "all")
 * `--skip-oobmigration-validation`: Do not attempt to validate the progress of out-of-band migrations.
 * `--skip-upgrade-validation`: Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
@@ -715,12 +715,12 @@ $ sg migration upto -db=<schema> -target=<target>,<target>,...
 
 Flags:
 
-* `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--privileged-hash="<value>"`: Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Future (distinct) upto operations will require a unique hash.
+* `--schema, --db="<value>"`: The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 
@@ -740,8 +740,8 @@ $ sg migration undo -db=<schema>
 
 Flags:
 
-* `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--schema, --db="<value>"`: The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 
 ### sg migration downto
 
@@ -759,12 +759,12 @@ $ sg migration downto -db=<schema> -target=<target>,<target>,...
 
 Flags:
 
-* `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--privileged-hash="<value>"`: Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Future (distinct) downto operations will require a unique hash.
+* `--schema, --db="<value>"`: The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 * `--target="<value>"`: The migration to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 
@@ -781,8 +781,8 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: "all")
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--schema, --db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Possible values are 'frontend', 'codeintel', 'codeinsights' and 'all'. (default: "all")
 * `--skip-out-of-band-migrations`: Do not attempt to validate out-of-band migration status.
 
 ### sg migration describe
@@ -798,12 +798,12 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target `schema` to describe.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--force`: Force write the file if it already exists.
 * `--format="<value>"`: The target output format.
 * `--no-color`: If writing to stdout, disable output colorization.
 * `--out="<value>"`: The file to write to. If not supplied, stdout is used.
+* `--schema, --db="<value>"`: The target `schema` to describe. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 
 ### sg migration drift
 
@@ -840,8 +840,8 @@ $ sg migration add-log -db=<schema> -version=<version> [-up=true|false]
 
 Flags:
 
-* `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--schema, --db="<value>"`: The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 * `--up`: The migration direction.
 * `--version="<value>"`: The migration `version` to log. (default: 0)
 
@@ -875,10 +875,10 @@ Arguments: `<current-release>`
 
 Flags:
 
-* `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
 * `--in-timescaledb-container`: Launch TimescaleDB in a Docker container for squashing; do not use the host
+* `--schema, --db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--skip-data`: Skip writing data rows into the squashed migration
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 
@@ -895,10 +895,10 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
 * `--in-timescaledb-container`: Launch TimescaleDB in a Docker container for squashing; do not use the host
+* `--schema, --db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--skip-data`: Skip writing data rows into the squashed migration
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 * `-f="<value>"`: The output filepath
@@ -916,8 +916,8 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--schema, --db="<value>"`: The target database `schema` to modify (default: frontend)
 * `-f="<value>"`: The output filepath
 
 ### sg migration rewrite
@@ -933,9 +933,9 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--rev="<value>"`: The target revision
+* `--schema, --db="<value>"`: The target database `schema` to modify (default: frontend)
 
 ## sg insights
 
