@@ -11,6 +11,7 @@ import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
 import LanguagePythonIcon from 'mdi-react/LanguagePythonIcon'
 import LanguageRubyIcon from 'mdi-react/LanguageRubyIcon'
 import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
+import AzureDevOpsIcon from 'mdi-react/MicrosoftAzureDevopsIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
 import { hasProperty } from '@sourcegraph/common'
@@ -43,7 +44,6 @@ import {
 } from '../../graphql-operations'
 import { EditorAction } from '../../settings/EditorActionsGroup'
 
-import { AzureDevOpsIcon } from './AzureDevOpsIcon'
 import { GerritIcon } from './GerritIcon'
 
 /**
