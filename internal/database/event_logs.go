@@ -34,6 +34,9 @@ type EventLogStore interface {
 	// AggregatedCodeIntelInvestigationEvents calculates CodeIntelAggregatedInvestigationEvent for each unique investigation type.
 	AggregatedCodeIntelInvestigationEvents(ctx context.Context) ([]types.CodeIntelAggregatedInvestigationEvent, error)
 
+	// AggregatedCodyEvents calculates CodyAggregatedEvent for each every unique event type related to Cody.
+	AggregatedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregatedEvent, error)
+
 	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
 
@@ -1355,6 +1358,60 @@ GROUP BY name, current_week
 ORDER BY name;
 `
 
+func (l *eventLogStore) AggregatedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregatedEvent, error) {
+	codyEvents, err := l.aggregatedCodyEvents(ctx, aggregatedCodyUsageEventsQuery, now)
+	if err != nil {
+		return nil, err
+	}
+	return codyEvents, nil
+}
+
+func (l *eventLogStore) aggregatedCodyEvents(ctx context.Context, queryString string, now time.Time) (events []types.CodyAggregatedEvent, err error) {
+	query := sqlf.Sprintf(queryString, now, now, now, now)
+
+	rows, err := l.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var event types.CodyAggregatedEvent
+		err := rows.Scan(
+			&event.Name,
+			&event.Month,
+			&event.Week,
+			&event.Day,
+			&event.TotalMonth,
+			&event.TotalWeek,
+			&event.TotalDay,
+			&event.UniquesMonth,
+			&event.UniquesWeek,
+			&event.UniquesDay,
+			&event.CodeGenerationMonth,
+			&event.CodeGenerationWeek,
+			&event.CodeGenerationDay,
+			&event.ExplanationMonth,
+			&event.ExplanationWeek,
+			&event.ExplanationDay,
+			&event.InvalidMonth,
+			&event.InvalidWeek,
+			&event.InvalidDay,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}
+
 func (l *eventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {
 	latencyEvents, err := l.aggregatedSearchEvents(ctx, aggregatedSearchLatencyEventsQuery, now)
 	if err != nil {
@@ -1407,6 +1464,76 @@ func (l *eventLogStore) aggregatedSearchEvents(ctx context.Context, queryString 
 
 	return events, nil
 }
+
+var aggregatedCodyUsageEventsQuery = `
+WITH events AS (
+  SELECT
+    name AS key,
+    ` + aggregatedUserIDQueryFragment + ` AS user_id,
+    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
+    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
+    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
+    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
+    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
+    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
+  FROM event_logs
+  WHERE
+    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+    AND lower(name) like '%%cody%%'
+),
+code_generation_keys AS (
+  SELECT * FROM unnest(ARRAY[
+    'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
+    'CodyVSCodeExtension:recipe:improve-variable-names:executed',
+    'CodyVSCodeExtension:recipe:replace:executed',
+    'CodyVSCodeExtension:recipe:generate-docstring:executed',
+    'CodyVSCodeExtension:recipe:generate-unit-test:executed',
+    'CodyVSCodeExtension:recipe:rewrite-functional:executed',
+    'CodyVSCodeExtension:recipe:code-refactor:executed',
+    'CodyVSCodeExtension:recipe:fixup:executed',
+	'CodyVSCodeExtension:recipe:translate-to-language:executed'
+  ]) AS key
+),
+explanation_keys AS (
+  SELECT * FROM unnest(ARRAY[
+    'CodyVSCodeExtension:recipe:explain-code-high-level:executed',
+    'CodyVSCodeExtension:recipe:explain-code-detailed:executed',
+    'CodyVSCodeExtension:recipe:find-code-smells:executed',
+    'CodyVSCodeExtension:recipe:git-history:executed',
+    'CodyVSCodeExtension:recipe:rate-code:executed'
+  ]) AS key
+)
+SELECT
+  key,
+  current_month,
+  current_week,
+  current_day,
+  SUM(case when month = current_month then 1 else 0 end) AS total_month,
+  SUM(case when week = current_week then 1 else 0 end) AS total_week,
+  SUM(case when day = current_day then 1 else 0 end) AS total_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  SUM(case when month = current_month and key in
+  	(SELECT * FROM code_generation_keys)
+  	then 1 else 0 end) as code_generation_month,
+  SUM(case when week = current_week and key in
+  	(SELECT * FROM explanation_keys)
+	then 1 else 0 end) as code_generation_week,
+  SUM(case when day = current_day and key in (SELECT * FROM code_generation_keys)
+	then 1 else 0 end) as code_generation_day,
+  SUM(case when month = current_month and key in (SELECT * FROM explanation_keys)
+	then 1 else 0 end) as explanation_month,
+  SUM(case when week = current_week and key in (SELECT * FROM explanation_keys)
+	then 1 else 0 end) as explanation_week,
+  SUM(case when day = current_day and key in (SELECT * FROM explanation_keys)
+	then 1 else 0 end) as explanation_day,
+	0 as invalid_month,
+	0 as invalid_week,
+	0 as invalid_day
+FROM events
+GROUP BY key, current_month, current_week, current_day
+`
 
 var searchLatencyEventNames = []string{
 	"'search.latencies.literal'",
