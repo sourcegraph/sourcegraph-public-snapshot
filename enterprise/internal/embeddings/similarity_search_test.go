@@ -151,6 +151,9 @@ func BenchmarkSimilaritySearch(b *testing.B) {
 			for n := 0; n < b.N; n++ {
 				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers}, SearchOptions{})
 			}
+			m := float64(numRows) * float64(b.N) / b.Elapsed().Seconds()
+			b.ReportMetric(m, "embeddings/s")
+			b.ReportMetric(m/float64(numWorkers), "embeddings/s/worker")
 		})
 	}
 }
