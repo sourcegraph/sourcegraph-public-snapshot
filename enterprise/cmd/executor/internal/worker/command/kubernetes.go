@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -207,8 +208,12 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					NodeName:      options.NodeName,
-					NodeSelector:  options.NodeSelector,
+					NodeName:     options.NodeName,
+					NodeSelector: options.NodeSelector,
+					SecurityContext: &corev1.PodSecurityContext{
+						// This corresponds to the GID of the "sourcegraph" user that is used to run the Docker image
+						FSGroup: pointer.Int64(1000),
+					},
 					Affinity:      affinity,
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
