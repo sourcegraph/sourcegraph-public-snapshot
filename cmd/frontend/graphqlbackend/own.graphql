@@ -87,29 +87,17 @@ enum OwnershipReasonType {
     GIT_COMMITS
 }
 
+union OwnershipReason = CodeownersFileEntry | RecentContributorOwnershipSignal
+
 """
 A signal derived from recent code contributors
 """
-type RecentContributorOwnershipSignal implements OwnershipReason {
+type RecentContributorOwnershipSignal {
     """
     Descriptive title to display in the UI for the determination.
     """
     title: String!
 
-    """
-    More detailed description to display in the UI for the determination.
-    """
-    description: String!
-}
-
-"""
-Why an entity was determined an owner
-"""
-interface OwnershipReason {
-    """
-    Descriptive title to display in the UI for the determination.
-    """
-    title: String!
     """
     More detailed description to display in the UI for the determination.
     """
@@ -119,7 +107,7 @@ interface OwnershipReason {
 """
 The entity is an owner because they were mentioned on a codeowners file.
 """
-type CodeownersFileEntry implements OwnershipReason {
+type CodeownersFileEntry {
     """
     Descriptive title to display in the UI for the determination.
     """
