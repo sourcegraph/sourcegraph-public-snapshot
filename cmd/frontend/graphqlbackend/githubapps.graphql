@@ -17,7 +17,13 @@ extend type Query {
 A list of GitHub Apps.
 """
 type GitHubAppConnection {
+    """
+    A list of GitHub Apps.
+    """
     nodes: [GitHubApp!]!
+    """
+    The total count of GitHub Apps in the connection.
+    """
     totalCount: Int!
 }
 
