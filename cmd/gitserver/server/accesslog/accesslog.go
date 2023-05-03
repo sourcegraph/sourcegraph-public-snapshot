@@ -48,7 +48,7 @@ func fromContext(ctx context.Context) *paramsContext {
 	return pc
 }
 
-// accessLogger handles HTTP requests and, if logEnabled, logs accesses.
+// accessLogger watches the site configuration and logs accesses (if enabled).
 type accessLogger struct {
 	logger log.Logger
 
@@ -151,25 +151,8 @@ func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, ne
 	}
 }
 
-// GRPCMethodFilter is a function that returns true if the given method should be logged.
-type GRPCMethodFilter func(method string) bool
-
-// AllowAllGRPCMethodsFilter is a GRPCMethodFilter that returns true for all methods.
-func AllowAllGRPCMethodsFilter(_ string) bool { return true }
-
-// AllowListGRPCMethodsFilter is a GRPCMethodFilter that returns true for only methods in the allowList.
-func AllowListGRPCMethodsFilter(allowList []string) GRPCMethodFilter {
-	allMethods := make(map[string]struct{}, len(allowList))
-	for _, m := range allowList {
-		allMethods[m] = struct{}{}
-	}
-
-	return func(method string) bool {
-		_, ok := allMethods[method]
-		return ok
-	}
-}
-
+// UnaryServerInterceptor returns a grpc.UnaryServerInterceptor that will extract actor information and params collected by Record that has
+// been stored in the context in order to log a trace of the access.
 func UnaryServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteConfig) grpc.UnaryServerInterceptor {
 	a := newAccessLogger(logger, watcher)
 
@@ -182,6 +165,8 @@ func UnaryServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteCo
 	}
 }
 
+// StreamServerInterceptor returns a grpc.StreamServerInterceptor that will extract actor information and params collected by Record that has
+// been stored in the context in order to log a trace of the access.
 func StreamServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteConfig) grpc.StreamServerInterceptor {
 	a := newAccessLogger(logger, watcher)
 
@@ -196,6 +181,7 @@ func StreamServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteC
 	}
 }
 
+// wrappedServerStream wraps grpc.ServerStream to override the Context method.
 type wrappedServerStream struct {
 	grpc.ServerStream
 	ctx context.Context

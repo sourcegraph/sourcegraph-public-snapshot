@@ -146,26 +146,6 @@ func TestHTTPMiddleware(t *testing.T) {
 	})
 }
 
-func TestGRPCMethodFilter(t *testing.T) {
-	t.Run("allow all", func(t *testing.T) {
-		if !AllowAllGRPCMethodsFilter("someMethod") {
-			t.Error("AllowAllGRPCMethodsFilter should allow all methods")
-		}
-	})
-
-	t.Run("allow list", func(t *testing.T) {
-		allowList := []string{"foo", "bar"}
-		allowListFilter := AllowListGRPCMethodsFilter(allowList)
-
-		if !allowListFilter("foo") {
-			t.Error("AllowListGRPCMethodsFilter should allow listed methods")
-		}
-		if allowListFilter("baz") {
-			t.Error("AllowListGRPCMethodsFilter should not allow unlisted methods")
-		}
-	})
-}
-
 func TestAccessLogGRPC(t *testing.T) {
 	var (
 		fakeIP             = "192.168.1.1"
