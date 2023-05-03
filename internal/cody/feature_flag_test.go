@@ -46,6 +46,37 @@ func TestIsCodyEnabled(t *testing.T) {
 			t.Error("Expected IsCodyEnabled to return true for authenticated actor")
 		}
 	})
+	t.Run("Disabled completions", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				Completions: &schema.Completions{
+					Enabled: false,
+				},
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+		if IsCodyEnabled(ctx) {
+			t.Error("Expected IsCodyEnabled to return false when completions are disabled")
+		}
+	})
+
+	t.Run("No completions config", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+		if IsCodyEnabled(ctx) {
+			t.Error("Expected IsCodyEnabled to return false when completions are not configured")
+		}
+	})
 
 	t.Run("CodyRestrictUsersFeatureFlag", func(t *testing.T) {
 		t.Run("feature flag disabled", func(t *testing.T) {
@@ -101,36 +132,5 @@ func TestIsCodyEnabled(t *testing.T) {
 			}
 		})
 
-		t.Run("Disabled completions", func(t *testing.T) {
-			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					Completions: &schema.Completions{
-						Enabled: false,
-					},
-				},
-			})
-			t.Cleanup(func() {
-				conf.Mock(nil)
-			})
-			ctx := context.Background()
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-			if !IsCodyEnabled(ctx) {
-				t.Error("Expected IsCodyEnabled to return false when completions are disabled")
-			}
-		})
-
-		t.Run("No completions config", func(t *testing.T) {
-			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{},
-			})
-			t.Cleanup(func() {
-				conf.Mock(nil)
-			})
-			ctx := context.Background()
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-			if !IsCodyEnabled(ctx) {
-				t.Error("Expected IsCodyEnabled to return false when completions are not configured")
-			}
-		})
 	})
 }
