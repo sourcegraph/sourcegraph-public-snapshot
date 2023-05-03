@@ -93,7 +93,7 @@ func TestDot(t *testing.T) {
 }
 
 func FuzzDot(f *testing.F) {
-	if !haveArchDot {
+	if !haveDotArch {
 		f.Skip("skipping test because arch-specific dot product is disabled")
 	}
 

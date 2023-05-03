@@ -5,7 +5,7 @@ package embeddings
 //
 // Precondition: len(a) == len(b)
 func Dot(a, b []int8) int32 {
-	if haveArchDot {
+	if haveDotArch {
 		return dotArch(a, b)
 	}
 	return dotPortable(a, b)
