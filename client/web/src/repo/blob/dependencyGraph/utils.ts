@@ -19,10 +19,65 @@ export function getTreeData(path: string): any {
         return null
     }
 
+    return getResults(
+        uniqBy(document.occurrences, o => o.symbol),
+        path
+    )
+
     return buildDependencyTreeData(
         uniqBy(document.occurrences, o => o.symbol),
         path
     )
+}
+
+type Result = { package: string; module: string; symbols: string[] }
+
+function getResults(occurrences: SCIPDocument['occurrences'], path: string): any {
+    const map = new Map<string, Result>()
+    const nodes = []
+    const links = []
+
+    for (const { symbol } of occurrences) {
+        const parsedSymbol = parseSymbol(symbol)
+        if (parsedSymbol instanceof Error) {
+            continue
+        }
+
+        const fileName = parsedSymbol.descriptors
+            .filter(d => d.suffix === Descriptor_Suffix.Namespace)
+            .map(d => d.name)
+            .join('/')
+
+        let symbolNameParts = []
+        const descriptors = parsedSymbol.descriptors.filter(d =>
+            [
+                Descriptor_Suffix.Namespace,
+                Descriptor_Suffix.Meta,
+                Descriptor_Suffix.Local,
+                Descriptor_Suffix.Macro,
+            ].every(s => d.suffix !== s)
+        )
+        for (let i = 0; i < descriptors.length; i++) {
+            if (descriptors[i].name) {
+                symbolNameParts.push(descriptors[i].name)
+            }
+        }
+        if (symbolNameParts.length === 0) continue
+
+        const key = `${parsedSymbol.package?.name}/${fileName}`
+        let item = map.get(key)
+        if (!item) {
+            item = { package: parsedSymbol.package?.name || '', module: fileName, symbols: [] }
+            map.set(key, item)
+            nodes.push({ data: { id: fileName, label: key } })
+            if (fileName !== path) {
+                links.push({ data: { source: fileName, target: path } })
+            }
+        }
+        item.symbols.push(symbolNameParts.join('.'))
+    }
+
+    return [...nodes, ...links]
 }
 
 type NestedObject = {

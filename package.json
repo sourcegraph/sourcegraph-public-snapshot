@@ -474,6 +474,7 @@
     "react-spring": "^9.4.2",
     "react-sticky-box": "1.0.2",
     "react-visibility-sensor": "^5.1.1",
+    "reactflow": "^11.7.0",
     "recharts": "^1.8.5",
     "regexpp": "^3.1.0",
     "resize-observer-polyfill": "^1.5.1",

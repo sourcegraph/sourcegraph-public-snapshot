@@ -286,6 +286,12 @@ const config = {
         use: getCSSLoaders(styleLoader, getBasicCSSLoader()),
       },
       {
+        test: /\.css$/,
+        include: [path.resolve(__dirname, 'src/repo/blob/dependencyGraph')],
+        exclude: /\.module\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+      {
         test: /\.module\.css$/,
         include: [path.resolve(__dirname, '../cody-ui')],
         use: getCSSLoaders(styleLoader, getCSSModulesLoader({ sourceMap: IS_DEVELOPMENT })),
