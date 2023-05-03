@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,17 +16,32 @@ import (
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
 )
 
-type AppCmdState struct {
-	Cmd     *exec.Cmd
-	OutPipe io.ReadCloser
-	ErrPipe io.ReadCloser
+var AppBinaryPath string
+
+type App struct {
+	Cmd    *exec.Cmd
+	stdOut io.ReadCloser
+	stdErr io.ReadCloser
 }
 
-var appCmd *AppCmdState = nil
+func (app *App) StdOut() (string, error) {
+	data, err := io.ReadAll(app.stdOut)
+	return string(data), err
+}
 
-func startApp(path string) (*AppCmdState, error) {
-	args := "--cacheDir cache --configDir config"
-	cmd := exec.Command(path, strings.Split(args, " ")...)
+func (app *App) StdErr() (string, error) {
+	data, err := io.ReadAll(app.stdErr)
+	return string(data), err
+}
+
+var appCmd *App = nil
+
+func startApp(ctx context.Context, path string) (*App, error) {
+	testDir := bazel.TestTmpDir()
+
+	args := fmt.Sprintf("--cacheDir %s --configDir %s", testDir, testDir)
+	cmd := exec.CommandContext(ctx, path, strings.Split(args, " ")...)
+	cmd.Env = append(cmd.Env, "USE_EMBEDDED_POSTGRESQL=1")
 	outPipe, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
@@ -39,20 +55,21 @@ func startApp(path string) (*AppCmdState, error) {
 		return nil, err
 	}
 
-	return &AppCmdState{
-		Cmd:     cmd,
-		OutPipe: outPipe,
-		ErrPipe: errPipe,
+	return &App{
+		Cmd:    cmd,
+		stdOut: outPipe,
+		stdErr: errPipe,
 	}, nil
 }
 
-func curl() (string, error) {
-	cmd := exec.Command("curl", "-v", "http://localhost:3080")
-	out, err := cmd.CombinedOutput()
-	return string(out), err
+func debugf(t *testing.T, msg string, parts ...any) {
+	if os.Getenv("DEBUG") != "1" {
+		return
+	}
+	t.Logf(msg, parts...)
 }
 
-func appIsAvailable(t *testing.T, timeout time.Duration) error {
+func waitTillAvailable(t *testing.T, timeout time.Duration) error {
 	t.Helper()
 	ticker := time.NewTicker(1 * time.Second)
 	timer := time.NewTimer(timeout)
@@ -62,22 +79,18 @@ func appIsAvailable(t *testing.T, timeout time.Duration) error {
 		select {
 		case <-ticker.C:
 			{
-				t.Logf("Checking if app is up")
+				debugf(t, "Checking if app is up")
 				resp, err := http.Get("http://localhost:3080/")
 
 				if err == nil && resp.StatusCode == 200 {
+					debugf(t, "status code 200 app is up")
 					return nil
 				} else if err != nil {
-					t.Logf("check err: %s", err)
+					debugf(t, "check err: %s", err)
 					lastErr = err
 				}
 				if resp != nil {
-					t.Logf("status code: %d", resp.StatusCode)
-				}
-				if o, err := curl(); err != nil {
-					t.Logf("curl err: %s - %s", err, o)
-				} else {
-					t.Logf("curl: %s", o)
+					debugf(t, "status code: %d", resp.StatusCode)
 				}
 			}
 		case <-timer.C:
@@ -107,42 +120,50 @@ func TestMain(m *testing.M) {
 			appPath = p
 		}
 	}
-	cmd, err := startApp(appPath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to sourcegraph binary: %s", err)
-		os.Exit(1)
-	}
-	appCmd = cmd
+
+	AppBinaryPath = appPath
 	exit := m.Run()
-	fmt.Printf("Wait: %s", cmd.Cmd.Wait())
 	os.Exit(exit)
 }
 
 func TestTauriSigninURL(t *testing.T) {
-
-	if err := appIsAvailable(t, 10*time.Second); err != nil {
-		t.Logf("app failed to start up in 30 seconds: %v", err)
-	}
-	// now that the app is up, the tauri url should have been printed
-	data, err := io.ReadAll(appCmd.ErrPipe)
+	cmd, err := startApp(context.Background(), AppBinaryPath)
 	if err != nil {
-		t.Fatal("failed to read app output", err)
+		t.Fatalf("failed to start sourcegraph binary: %s", err)
+	}
+	if err := waitTillAvailable(t, 30*time.Second); err != nil {
+		debugf(t, "app failed to start up in 30 seconds: %v", err)
+	}
+	// Kill the app since we don't want it to continually output things
+	cmd.Cmd.Process.Kill()
+	// Since the app was up, the tauri signin url should have been printed
+	stdOut, err := cmd.StdOut()
+	if err != nil {
+		t.Fatalf("failed to read command standard out: %s", err)
+	}
+	stdErr, err := cmd.StdErr()
+	if err != nil {
+		t.Fatalf("failed to read command standard err: %s", err)
 	}
 
 	var signInURL string
-	r := bufio.NewReader(bytes.NewBuffer(data))
+	r := bufio.NewReader(bytes.NewBufferString(stdErr))
 	for {
 		line, err := r.ReadString('\n')
-		t.Logf("Line=%s", line)
+		debugf(t, "Out=%s", line)
 		if err == io.EOF {
 			break
 		} else if err != nil {
 			t.Fatalf("failed while reading the output of app: %s", err)
+			break
 		}
 		if strings.Contains(line, "tauri:sign-in-url") {
 			signInURL = line
+			break
 		}
 	}
 
-	t.Fatalf("Found signin url: %s", signInURL)
+	if signInURL == "" {
+		t.Fatalf("tauri:sign-in-url not found after 30 secs of app startup\nStdOut:%s", stdOut)
+	}
 }

@@ -21,6 +21,8 @@ import (
 )
 
 var useEmbeddedPostgreSQL = env.MustGetBool("USE_EMBEDDED_POSTGRESQL", true, "use an embedded PostgreSQL server (to use an existing PostgreSQL server and database, set the PG* env vars)")
+var socketDir = os.Getenv("SRC_APP_DB_SOCKET_DIR")
+var startTimeout = 60 * time.Second
 
 type postgresqlEnvVars struct {
 	PGPORT, PGHOST, PGUSER, PGPASSWORD, PGDATABASE, PGSSLMODE, PGDATASOURCE string
@@ -80,12 +82,20 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEn
 	}
 
 	// Note: on macOS unix socket paths must be <103 bytes, so we place them in the home directory.
-	current, err := user.Current()
-	if err != nil {
-		return nil, errors.Wrap(err, "user.Current")
+	unixSocketDir := ""
+	if len(socketDir) != 0 {
+		unixSocketDir = filepath.Join(socketDir, ".sourcegraph-psql")
+	} else {
+		current, err := user.Current()
+		if err != nil {
+			return nil, errors.Wrap(err, "user.Current")
+		}
+		unixSocketDir = filepath.Join(current.HomeDir, ".sourcegraph-psql")
 	}
-	unixSocketDir := filepath.Join(current.HomeDir, ".sourcegraph-psql")
-	err = os.MkdirAll(unixSocketDir, os.ModePerm)
+
+	logger.Debug("database unix socket directory", log.String(unixSocketDir, "unixSocketDir"))
+
+	err := os.MkdirAll(unixSocketDir, os.ModePerm)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating unix socket dir")
 	}
@@ -101,7 +111,7 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEn
 	}
 
 	db := embeddedpostgres.NewDatabase(
-		embeddedpostgres.DefaultConfig().
+		embeddedpostgres.DefaultConfig().StartTimeout(startTimeout).
 			Version(embeddedpostgres.V14).
 			BinariesPath(filepath.Join(pgRootDir, "bin")).
 			DataPath(filepath.Join(pgRootDir, "data")).
