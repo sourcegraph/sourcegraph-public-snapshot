@@ -350,18 +350,14 @@ func (g *recentContributorOwnershipSignal) Title() (string, error) {
 }
 
 func (g *recentContributorOwnershipSignal) Description() (string, error) {
-	return "Owner is associated because they are the top committer in the file", nil
+	return "Owner is associated because they are the a recent contributor in the file", nil
 }
 
 func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
-	fmt.Println("asdfasdf")
-
 	recentAuthors, err := db.RecentContributionSignals().FindRecentAuthors(ctx, repoID, path)
 	if err != nil {
 		return nil, errors.Wrap(err, "FindRecentAuthors")
 	}
-	fmt.Printf("path: %s, repoID: %d\n", path, repoID)
-	fmt.Println(recentAuthors)
 
 	for _, author := range recentAuthors {
 		res := ownershipResolver{
@@ -374,14 +370,13 @@ func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, p
 		}
 		user, err := identifyUser(db, author.AuthorEmail)
 		if err == nil {
-			// if we don't get an error (meaning we can match) we will add it to the resolver
+			// if we don't get an error (meaning we can match) we will add it to the resolver, otherwise use the contributor data
 			res.resolvedOwner = &codeowners.Person{
 				User: user,
 			}
 		}
 		results = append(results, &res)
 	}
-
 	return results, nil
 }
 
