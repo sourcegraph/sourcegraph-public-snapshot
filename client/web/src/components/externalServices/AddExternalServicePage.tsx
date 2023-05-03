@@ -1,12 +1,13 @@
 import { FC, useEffect, useCallback, useState } from 'react'
 
+import { FetchResult } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
 
 import { logger, renderMarkdown } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Container, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
-import { AddExternalServiceInput } from '../../graphql-operations'
+import { AddExternalServiceInput, AddExternalServiceResult } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 import { PageTitle } from '../PageTitle'
 
@@ -63,11 +64,11 @@ export const AddExternalServicePage: FC<Props> = ({
         useAddExternalService()
 
     const onSubmit = useCallback(
-        (event?: React.FormEvent<HTMLFormElement>): void => {
+        async (event?: React.FormEvent<HTMLFormElement>): Promise<FetchResult<AddExternalServiceResult>> => {
             if (event) {
                 event.preventDefault()
             }
-            addExternalService({
+            return addExternalService({
                 variables: {
                     input: { ...getExternalServiceInput() },
                 },
@@ -81,7 +82,7 @@ export const AddExternalServicePage: FC<Props> = ({
                 },
             })
         },
-        [addExternalService, telemetryService, getExternalServiceInput]
+        [addExternalService, telemetryService, getExternalServiceInput, client, navigate]
     )
     const createdExternalService = addExternalServiceResult?.addExternalService
 
