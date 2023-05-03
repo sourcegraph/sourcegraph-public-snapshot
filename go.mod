@@ -2,6 +2,68 @@ module github.com/sourcegraph/sourcegraph
 
 go 1.19
 
+// Permanent replace directives
+// ============================
+// These entries indicate permanent replace directives due to significant changes from upstream
+// or intentional forks.
+replace (
+	// We maintain a potentially long-term fork of embedded-postgres for
+	// Sourcegraph App. We add features like unix sockets. If this replace
+	// directive still exists in 2024, lets consider hard forking.
+	github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230313141935-8f62b6947f2c
+	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
+	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
+	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
+	// We publish 'enterprise/dev/ci/images' as a package for import in other tooling.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images
+	// We publish 'lib' as a package for import in other tooling.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/lib => ./lib
+	// We publish 'monitoring' as a package for import in other tooling.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
+)
+
+// Temporary replace directives
+// ============================
+// These entries indicate temporary replace directives due to a pending pull request upstream
+// or issues with specific versions.
+replace (
+	// Pending: https://github.com/ghodss/yaml/pull/65
+	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
+	// Dependency declares incorrect, old version of redigo, so we must override it: https://github.com/boj/redistore/blob/master/go.mod
+	// Pending: https://github.com/boj/redistore/pull/64
+	github.com/gomodule/redigo => github.com/gomodule/redigo v1.8.9
+	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
+	// Pending upstream fixing CVE-2022-37315 https://github.com/graphql-go/graphql/issues/637
+	github.com/graphql-go/graphql => github.com/jamesdphillips/graphql-go v0.7.4-0.20220810211622-efd2a06de890
+	// As of https://github.com/grpc-ecosystem/go-grpc-middleware/blob/7ac0846398432dee083fd8bc4ad7abacf8147ff2/providers/openmetrics/go.mod#L7,
+	// the latest release of the gRPC Prometheus middleware depends on a version of go-grpc-middleware that is two years old, and
+	// is incompatible with the latest gRPC releases.
+	//
+	// The parent project is currently working around this by using a local replace directive in their go.mod file (which ensures
+	// that they always use the current version of go-grpc-middleware that they're developing). Until this issue is fixed,
+	// we'll need to ensure that we explicitly depend on the latest version of go-grpc-middleware (v2.0.0-rc.3) as of this writing.
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 => github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
+	// Pending a release cut of https://github.com/prometheus/alertmanager/pull/3010
+	github.com/prometheus/common => github.com/prometheus/common v0.32.1
+	// Pending: https://github.com/shurcooL/httpgzip/pull/9
+	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
+)
+
+// Status unclear replace directives
+// =================================
+// These entries indicate replace directives that are defined for unknown reasons.
+replace (
+	github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
+	github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
+	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
+	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
+	golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c
+)
+
 require (
 	cloud.google.com/go/kms v1.6.0
 	cloud.google.com/go/monitoring v1.12.0
@@ -9,6 +71,7 @@ require (
 	cloud.google.com/go/pubsub v1.27.1
 	cloud.google.com/go/secretmanager v1.9.0
 	cloud.google.com/go/storage v1.28.1
+	github.com/Khan/genqlient v0.5.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
@@ -91,6 +154,7 @@ require (
 	github.com/keegancsmith/rpc v1.3.0
 	github.com/keegancsmith/sqlf v1.1.1
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
+	github.com/klauspost/cpuid/v2 v2.2.4
 	github.com/kljensen/snowball v0.6.0
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
@@ -112,7 +176,7 @@ require (
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.39.0
 	github.com/qustavo/sqlhooks/v2 v2.1.0
-	github.com/rafaeljusto/redigomock v2.4.0+incompatible
+	github.com/rafaeljusto/redigomock/v3 v3.1.2
 	github.com/rjeczalik/notify v0.9.3
 	github.com/russellhaering/gosaml2 v0.9.1
 	github.com/russellhaering/goxmldsig v1.3.0
@@ -246,70 +310,12 @@ require (
 )
 
 require (
-	code.gitea.io/gitea v1.18.0
-	cuelang.org/go v0.4.3
-	github.com/Khan/genqlient v0.5.0
-	github.com/alecthomas/chroma/v2 v2.4.0
-	github.com/becheran/wildmatch-go v1.0.0
-	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
-	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
-	github.com/coreos/go-iptables v0.6.0
-	github.com/di-wu/xsd-datetime v1.0.0
-	github.com/elimity-com/scim v0.0.0-20220121082953-15165b1a61c8
-	github.com/fergusstrange/embedded-postgres v1.19.0
-	github.com/frankban/quicktest v1.14.3
-	github.com/fullstorydev/grpcui v1.3.1
-	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/google/go-github/v47 v47.1.0
-	github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2 v2.0.0-rc.3
-	github.com/hashicorp/go-version v1.6.0
-	github.com/hexops/autogold/v2 v2.1.0
-	github.com/k3a/html2text v1.1.0
-	github.com/klauspost/cpuid/v2 v2.2.4
-	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
-	github.com/pandatix/go-cvss v0.5.2
-	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
-	github.com/scim2/filter-parser/v2 v2.2.0
-	github.com/sourcegraph/conc v0.2.0
-	github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67
-	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/weaviate/weaviate v1.18.3
-	github.com/weaviate/weaviate-go-client/v4 v4.7.1
-	github.com/wk8/go-ordered-map/v2 v2.1.5
-	github.com/xanzy/go-gitlab v0.80.0
-	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
-	go.bobheadxi.dev/streamline v1.2.2
-	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
-	gotest.tools v2.2.0+incompatible
-)
-
-replace (
-	// We maintain a potentially long-term fork of embedded-postgres for
-	// Sourcegraph App. We add features like unix sockets. If this replace
-	// directive still exists in 2024, lets consider hard forking.
-	github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230313141935-8f62b6947f2c
-
-	// As of https://github.com/grpc-ecosystem/go-grpc-middleware/blob/7ac0846398432dee083fd8bc4ad7abacf8147ff2/providers/openmetrics/go.mod#L7,
-	// the latest release of the gRPC Prometheus middleware depends on a version of go-grpc-middleware that is two years old, and
-	// is incompatible with the latest gRPC releases.
-	//
-	// The parent project is currently working around this by using a local replace directive in their go.mod file (which ensures
-	// that they always use the current version of go-grpc-middleware that they're developing). Until this issue is fixed,
-	// we'll need to ensure that we explicitly depend on the latest version of go-grpc-middleware (v2.0.0-rc.3) as of this writing.
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 => github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
-
-)
-
-require (
-	github.com/sourcegraph/zoekt v0.0.0-20230503105159-f818d968ddad
-	github.com/stretchr/objx v0.5.0 // indirect
-)
-
-require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go v0.109.0 // indirect
 	cloud.google.com/go/compute v1.18.0 // indirect
 	cloud.google.com/go/iam v0.8.0 // indirect
+	code.gitea.io/gitea v1.18.0
+	cuelang.org/go v0.4.3
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
@@ -319,6 +325,7 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
+	github.com/alecthomas/chroma/v2 v2.4.0
 	github.com/alecthomas/kingpin v2.2.6+incompatible // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
@@ -336,10 +343,13 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.12.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.18.3 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
+	github.com/becheran/wildmatch-go v1.0.0
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.5.0
 	github.com/bmatcuk/doublestar v1.3.4
+	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/bufbuild/buf v1.4.0 // indirect
+	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/certifi/gocertifi v0.0.0-20210507211836-431795d63e8d // indirect
@@ -348,8 +358,10 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.3
 	github.com/containerd/typeurl v1.0.2 // indirect
+	github.com/coreos/go-iptables v0.6.0
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/dave/jennifer v1.5.0 // indirect
+	github.com/di-wu/xsd-datetime v1.0.0
 	github.com/djherbis/buffer v1.2.0 // indirect
 	github.com/djherbis/nio/v3 v3.0.1 // indirect
 	github.com/dlclark/regexp2 v1.8.0 // indirect
@@ -357,12 +369,16 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.0
+	github.com/elimity-com/scim v0.0.0-20220121082953-15165b1a61c8
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.9.1 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/facebookgo/limitgroup v0.0.0-20150612190941-6abd8d71ec01 // indirect
 	github.com/facebookgo/muster v0.0.0-20150708232844-fd3d7953fd52 // indirect
+	github.com/fergusstrange/embedded-postgres v1.19.0
+	github.com/frankban/quicktest v1.14.3
+	github.com/fullstorydev/grpcui v1.3.1
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
@@ -384,10 +400,12 @@ require (
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-github/v41 v41.0.0
+	github.com/google/go-github/v47 v47.1.0
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.0
@@ -395,9 +413,12 @@ require (
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2 v2.0.0-rc.3
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.2 // indirect
+	github.com/hashicorp/go-version v1.6.0
+	github.com/hexops/autogold/v2 v2.1.0
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
@@ -418,6 +439,7 @@ require (
 	github.com/jonboulle/clockwork v0.3.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
+	github.com/k3a/html2text v1.1.0
 	github.com/karlseguin/typed v1.1.8 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/compress v1.15.15 // indirect
@@ -450,6 +472,8 @@ require (
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
+	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
+	github.com/pandatix/go-cvss v0.5.2
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.6.0 // indirect
@@ -465,25 +489,39 @@ require (
 	github.com/rs/cors v1.8.3 // indirect
 	github.com/rs/xid v1.4.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
+	github.com/scim2/filter-parser/v2 v2.2.0
 	github.com/snabb/diagio v1.0.0 // indirect
+	github.com/sourcegraph/conc v0.2.0
+	github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67
+	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
+	github.com/sourcegraph/zoekt v0.0.0-20230503105159-f818d968ddad
 	github.com/spf13/cobra v1.6.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
+	github.com/weaviate/weaviate v1.18.3
+	github.com/weaviate/weaviate-go-client/v4 v4.7.1
+	github.com/wk8/go-ordered-map/v2 v2.1.5
+	github.com/xanzy/go-gitlab v0.80.0
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
 	github.com/yuin/goldmark v1.5.2
 	github.com/yuin/goldmark-emoji v1.0.1 // indirect
+	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
+	go.bobheadxi.dev/streamline v1.2.2
 	go.mongodb.org/mongo-driver v1.11.3 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/collector/pdata v1.0.0-rc5 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.13.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
+	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
 	golang.org/x/mod v0.8.0
 	golang.org/x/term v0.5.0 // indirect
 	golang.org/x/text v0.7.0
@@ -494,56 +532,10 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
+	gotest.tools v2.2.0+incompatible
 	k8s.io/klog/v2 v2.80.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	mvdan.cc/gofumpt v0.4.0 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
-)
-
-// Permanent replace directives
-// ============================
-// These entries indicate permanent replace directives due to significant changes from upstream
-// or intentional forks.
-replace (
-	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
-	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
-	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
-	// We publish 'enterprise/dev/ci/images' as a package for import in other tooling.
-	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
-	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images => ./enterprise/dev/ci/images
-	// We publish 'lib' as a package for import in other tooling.
-	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
-	github.com/sourcegraph/sourcegraph/lib => ./lib
-	// We publish 'monitoring' as a package for import in other tooling.
-	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
-	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
-)
-
-// Temporary replace directives
-// ============================
-// These entries indicate temporary replace directives due to a pending pull request upstream
-// or issues with specific versions.
-replace (
-	// Pending: https://github.com/ghodss/yaml/pull/65
-	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
-	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).
-	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
-	// Pending upstream fixing CVE-2022-37315 https://github.com/graphql-go/graphql/issues/637
-	github.com/graphql-go/graphql => github.com/jamesdphillips/graphql-go v0.7.4-0.20220810211622-efd2a06de890
-	// Pending a release cut of https://github.com/prometheus/alertmanager/pull/3010
-	github.com/prometheus/common => github.com/prometheus/common v0.32.1
-	// Pending: https://github.com/shurcooL/httpgzip/pull/9
-	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
-)
-
-// Status unclear replace directives
-// =================================
-// These entries indicate replace directives that are defined for unknown reasons.
-replace (
-	github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
-	github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
-	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
-	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
-	golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c
 )
