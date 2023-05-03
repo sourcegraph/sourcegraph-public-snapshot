@@ -46,6 +46,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 				_, _ = w.Write([]byte("healthz: ok"))
 				return
 			}
+
+			// Default service handler
 			handler.ServeHTTP(w, r)
 		}),
 	})
