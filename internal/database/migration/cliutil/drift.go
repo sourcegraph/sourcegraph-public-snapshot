@@ -22,8 +22,9 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		Required: true,
 	}
 	versionFlag := &cli.StringFlag{
-		Name:     "version",
-		Usage:    "The target schema version. Must be resolvable as a git revlike  on the Sourcegraph repository.",
+		Name: "version",
+		Usage: "The target schema version. Can be a version (e.g. 5.0.2) or resolvable as a git revlike on the Sourcegraph repository " +
+			"(e.g. a branch, tag or commit hash).",
 		Required: false,
 	}
 	fileFlag := &cli.StringFlag{
