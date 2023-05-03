@@ -11585,7 +11585,6 @@ func (c EventLogStoreAggregatedCodeIntelInvestigationEventsFuncCall) Results() [
 // EventLogStoreAggregatedCodyEventsFunc describes the behavior when the
 // AggregatedCodyEvents method of the parent MockEventLogStore instance is
 // invoked.
-
 type EventLogStoreAggregatedCodyEventsFunc struct {
 	defaultHook func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)
 	hooks       []func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)
@@ -11593,18 +11592,17 @@ type EventLogStoreAggregatedCodyEventsFunc struct {
 	mutex       sync.Mutex
 }
 
-
-// AggregatedCodyEvents delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
+// AggregatedCodyEvents delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
 func (m *MockEventLogStore) AggregatedCodyEvents(v0 context.Context, v1 time.Time) ([]types.CodyAggregatedEvent, error) {
 	r0, r1 := m.AggregatedCodyEventsFunc.nextHook()(v0, v1)
 	m.AggregatedCodyEventsFunc.appendCall(EventLogStoreAggregatedCodyEventsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the
-// AggregatedCodyEvents method of the parent MockEventLogStore instance is
-// invoked and the hook queue is empty.
+// SetDefaultHook sets function that is called when the AggregatedCodyEvents
+// method of the parent MockEventLogStore instance is invoked and the hook
+// queue is empty.
 func (f *EventLogStoreAggregatedCodyEventsFunc) SetDefaultHook(hook func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)) {
 	f.defaultHook = hook
 }
@@ -11665,8 +11663,8 @@ func (f *EventLogStoreAggregatedCodyEventsFunc) History() []EventLogStoreAggrega
 	return history
 }
 
-// EventLogStoreAggregatedCodyEventsFuncCall is an object that describes
-// an invocation of method AggregatedCodyEvents on an instance of
+// EventLogStoreAggregatedCodyEventsFuncCall is an object that describes an
+// invocation of method AggregatedCodyEvents on an instance of
 // MockEventLogStore.
 type EventLogStoreAggregatedCodyEventsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
