@@ -99,10 +99,12 @@ type RecentContributorOwnershipSignal implements OwnershipReason {
     """
     More detailed description to display in the UI for the determination.
     """
-
     description: String!
 }
 
+"""
+Why an entity was determined an owner
+"""
 interface OwnershipReason {
     """
     Descriptive title to display in the UI for the determination.
