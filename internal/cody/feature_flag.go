@@ -19,7 +19,7 @@ func IsCodyEnabled(ctx context.Context) bool {
 	}
 
 	if deploy.IsApp() {
-		return isCodyEnabledInApp(ctx)
+		return isCodyEnabledInApp()
 	}
 
 	return isCodyEnabled(ctx)
@@ -53,7 +53,7 @@ func isCodyEnabled(ctx context.Context) bool {
 // If Completions are configured and enabled, cody is enabled.
 // If the App user's dotcom auth token is present, cody is enabled.
 // In all other cases Cody is disabled.
-func isCodyEnabledInApp(ctx context.Context) bool {
+func isCodyEnabledInApp() bool {
 	completionsConfig := conf.Get().Completions
 	appConfig := conf.Get().App
 	if completionsConfig != nil && completionsConfig.Enabled {
