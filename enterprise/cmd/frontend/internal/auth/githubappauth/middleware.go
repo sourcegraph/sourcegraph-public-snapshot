@@ -224,7 +224,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			}
 
 			// TODO: redirect to github app configuration page once it's ready
-			http.Redirect(w, req, fmt.Sprintf("/site-admin/external-services/new-gh-app?id=%d&installation_id=%d", app.ID, installationID), http.StatusFound)
+			http.Redirect(w, req, fmt.Sprintf("/site-admin/github-apps/%d?installation_id=%d", app.ID, installationID), http.StatusFound)
 			// return
 		} else {
 			http.Error(w, fmt.Sprintf("Bad request; unsupported setup action: %s", action), http.StatusBadRequest)
