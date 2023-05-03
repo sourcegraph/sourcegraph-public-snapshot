@@ -169,12 +169,12 @@ func populateSearchEventStatistics(event types.SearchAggregatedEvent, statistics
 }
 
 func populateCodyCountStatistics(event types.CodyAggregatedEvent, statistics *types.CodyUsageStatistics) {
-	extractor, ok := CodyCountStatistics[event.Name]
+	extractor, ok := codyEventCountExtractors[event.Name]
 	if !ok {
 		return
 	}
 
-	statistics.Monthly[0].StartTime = event.Month //double check this logic
+	statistics.Monthly[0].StartTime = event.Month
 	month := extractor(statistics.Monthly[0])
 	month.EventsCount = &event.TotalMonth
 	month.UserCount = &event.UniquesMonth
