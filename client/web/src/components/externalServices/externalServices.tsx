@@ -43,6 +43,7 @@ import {
 } from '../../graphql-operations'
 import { EditorAction } from '../../settings/EditorActionsGroup'
 
+import { AzureDevOpsIcon } from './AzureDevOpsIcon'
 import { GerritIcon } from './GerritIcon'
 
 /**
@@ -1301,7 +1302,7 @@ const GERRIT: AddExternalServiceOptions = {
 const AZUREDEVOPS: AddExternalServiceOptions = {
     kind: ExternalServiceKind.AZUREDEVOPS,
     title: 'Azure DevOps',
-    icon: GitIcon,
+    icon: AzureDevOpsIcon,
     jsonSchema: azureDevOpsSchemaJSON,
     defaultDisplayName: 'Azure DevOps',
     defaultConfig: `{
