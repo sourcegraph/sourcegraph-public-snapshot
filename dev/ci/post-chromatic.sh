@@ -65,13 +65,6 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" && "${pr_number}" != "false" ]
   else
     echo "Updating App preview comment (id: ${app_preview_comment_id}) in PR #${pr_number} in ${owner_and_repo}"
 
-    # Check if Storybook link exists for adding new link or replacing existing one
-    if [[ "$app_preview_comment_body" =~ \[Storybook\]\(https:\/\/[[:alnum:]]*\-[[:alnum:]]*\.chromatic\.com\) ]]; then
-      app_preview_comment_body=$(echo "$app_preview_comment_body" | sed -e "s|\[Storybook\](https:\/\/[[:alnum:]]*\-[[:alnum:]]*\.chromatic\.com)|[Storybook](${chromatic_storybook_url})|" | jq -Rs .)
-    else
-      app_preview_comment_body=$(echo "$app_preview_comment_body" | sed -e "s|\[[[:alpha:]]*\](https:\/\/.*.onrender.com)|&\n- [Storybook](${chromatic_storybook_url})|" | jq -Rs .)
-    fi
-
     curl -sSf -o /dev/null --request PATCH \
       --url "https://api.github.com/repos/${owner_and_repo}/issues/comments/${app_preview_comment_id}" \
       --user "apikey:${github_api_key}" \
