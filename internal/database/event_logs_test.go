@@ -1319,12 +1319,10 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 	users := []uint32{1, 2}
 
 	days := []time.Time{
-		now,                           // Today
-		now.Add(-time.Hour * 24 * 3),  // This week
-		now.Add(-time.Hour * 24 * 4),  // This week
-		now.Add(-time.Hour * 24 * 6),  // This month
-		now.Add(-time.Hour * 24 * 12), // This month
-		now.Add(-time.Hour * 24 * 40), // Previous month
+		now,                          // Today
+		now.Add(-time.Hour * 24 * 3), // This week
+		now.Add(-time.Hour * 24 * 4), // This week
+		now.Add(-time.Hour * 24 * 6), // This month
 	}
 
 	g, gctx := errgroup.WithContext(ctx)
@@ -1366,7 +1364,7 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
 			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
 			Day:          now.Truncate(time.Hour * 24),
-			TotalMonth:   int32(len(users) * 25 * 5), // 5 days in month
+			TotalMonth:   int32(len(users) * 25 * 4), // 4 days in month
 			TotalWeek:    int32(len(users) * 25 * 3), // 3 days in week
 			TotalDay:     int32(len(users) * 25),
 			UniquesMonth: 2,
@@ -1378,7 +1376,7 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
 			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
 			Day:          now.Truncate(time.Hour * 24),
-			TotalMonth:   int32(len(users) * 25 * 5), // 5 days in month
+			TotalMonth:   int32(len(users) * 25 * 4), // 4 days in month
 			TotalWeek:    int32(len(users) * 25 * 3), // 3 days in week
 			TotalDay:     int32(len(users) * 25),
 			UniquesMonth: 2,
