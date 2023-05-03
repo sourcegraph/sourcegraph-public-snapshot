@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - '**.go'
+      - '**/scip-go.yml'
 
 jobs:
   scip-go:
@@ -20,6 +21,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Set directory to safe for git
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
       - name: Get src-cli
         run: |
           curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
@@ -30,27 +34,23 @@ jobs:
         working-directory: ${{ matrix.root }}
         run: scip-go --no-animation
 
-      - name: TODO
-        working-directory: ${{ matrix.root }}
-        run: git config --global --add safe.directory /__w/sourcegraph/sourcegraph
-
       # Upload scip-go data to Dotcom, S2, Dogfood, and Demo instances
       - name: Upload scip-go dump to Dotcom
         working-directory: ${{ matrix.root }}
         run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
         env:
           SRC_ENDPOINT: https://sourcegraph.com/
-      - name: Upload lsif-go dump to S2
+      - name: Upload scip-go dump to S2
         working-directory: ${{ matrix.root }}
         run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
         env:
           SRC_ENDPOINT: https://sourcegraph.sourcegraph.com/
-      - name: Upload lsif-go dump to Dogfood
+      - name: Upload scip-go dump to Dogfood
         working-directory: ${{ matrix.root }}
         run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
-      - name: Upload lsif-go dump to Demo
+      - name: Upload scip-go dump to Demo
         working-directory: ${{ matrix.root }}
         run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
         env:

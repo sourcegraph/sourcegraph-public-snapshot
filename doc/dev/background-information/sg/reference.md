@@ -822,7 +822,7 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--file="<value>"`: The target schema description file.
 * `--skip-version-check`: Skip validation of the instance's current version.
-* `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the Sourcegraph repository.
+* `--version="<value>"`: The target schema version. Can be a version (e.g. 5.0.2) or resolvable as a git revlike on the Sourcegraph repository (e.g. a branch, tag or commit hash).
 
 ### sg migration add-log
 

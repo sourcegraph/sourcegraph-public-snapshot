@@ -1518,12 +1518,14 @@ def go_dependencies():
         version = "v0.4.13",
     )
     go_repository(
+        # This is no longer used but we keep it for backwards compatability
+        # tests while on 5.0.x.
         name = "com_github_crewjam_saml_samlidp",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/crewjam/saml/samlidp",
         sum = "h1:13Ix7LoUJ0Yu5F+s6Aw8Afc8x+n98RSJNGHpxEbcYus=",
         version = "v0.0.0-20221211125903-d951aa2d145a",
-    )
+    )  # keep
     go_repository(
         name = "com_github_cyphar_filepath_securejoin",
         build_file_proto_mode = "disable_global",
@@ -4332,8 +4334,8 @@ def go_dependencies():
         name = "com_github_klauspost_cpuid_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/klauspost/cpuid/v2",
-        sum = "h1:t0wUqjowdm8ezddV5k0tLWVklVuvLJpoHeb4WBdydm0=",
-        version = "v2.1.1",
+        sum = "h1:acbojRNwl3o09bUq+yDCtZFc1aiwaAAxtcn8YkZXnvk=",
+        version = "v2.2.4",
     )
 
     go_repository(
@@ -6265,8 +6267,8 @@ def go_dependencies():
             "//third_party/com_github_sourcegraph_zoekt:zoekt_webserver.patch",
             "//third_party/com_github_sourcegraph_zoekt:zoekt_indexserver.patch",
         ],
-        sum = "h1:moc3LRc+FZ6RmjMjpsuJy8siNO2gWJxzD1p5eYr4SE8=",
-        version = "v0.0.0-20230405161007-b247fb51dece",
+        sum = "h1:lCxBFbLdzt0m789CNyYWEqPURhta69aRA9ixPyWilvI=",
+        version = "v0.0.0-20230503105159-f818d968ddad",
     )
 
     go_repository(
