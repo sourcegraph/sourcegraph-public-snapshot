@@ -2070,6 +2070,16 @@
           "items": {
             "type": "string"
           }
+        },
+        "maxCodeEmbeddingsPerRepo": {
+          "description": "The maximum number of embeddings for code files to generate per repo",
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxTextEmbeddingsPerRepo": {
+          "description": "The maximum number of embeddings for text files to generate per repo",
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -2095,7 +2105,7 @@
           "type": "string",
           "description": "The external completions provider.",
           "default": "anthropic",
-          "enum": ["anthropic"]
+          "enum": ["anthropic", "openai"]
         }
       }
     }

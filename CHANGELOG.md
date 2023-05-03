@@ -18,6 +18,15 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 -
+- Executors natively support Kubernetes environments. [#49236](https://github.com/sourcegraph/sourcegraph/pull/49236)
+- Documentation for GitHub fine-grained access tokens. [#50274](https://github.com/sourcegraph/sourcegraph/pull/50274)
+- Code Insight dashboards retain size and order of the cards. [#50301](https://github.com/sourcegraph/sourcegraph/pull/50301)
+- The LLM completions endpoint is now exposed through a GraphQL query in addition to the streaming endpoint [#50455](https://github.com/sourcegraph/sourcegraph/pull/50455)
+- Permissions center statistics pane is added. Stats include numbers of queued jobs, users/repos with failed jobs, no permissions, and outdated permissions. [#50535](https://github.com/sourcegraph/sourcegraph/pull/50535)
+- SCIM user provisioning support for Deactivate/Reactivation of users. [#50533](https://github.com/sourcegraph/sourcegraph/pull/50533)
+- Cody aggregated pings. [#50835](https://github.com/sourcegraph/sourcegraph/pull/50835)
+- Login form can now be configured with ordering and limit of auth providers. [See docs](https://docs.sourcegraph.com/admin/auth/login_form). [#50586](https://github.com/sourcegraph/sourcegraph/pull/50586), [50284](https://github.com/sourcegraph/sourcegraph/pull/50284) and [#50705](https://github.com/sourcegraph/sourcegraph/pull/50705)
+- When creating a new batch change, spaces are automatically replaced with dashes in the name field. [#50825](https://github.com/sourcegraph/sourcegraph/pull/50825) and [51071](https://github.com/sourcegraph/sourcegraph/pull/51071)
 
 ### Changed
 
@@ -26,6 +35,15 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 -
+- GitHub `repositoryQuery` searches now respect date ranges and use API requests more efficiently. #[49969](https://github.com/sourcegraph/sourcegraph/pull/49969)
+- Fixed an issue where search based references were not displayed in the references panel. [#50157](https://github.com/sourcegraph/sourcegraph/pull/50157)
+- Symbol suggestions only insert `type:symbol` filters when necessary. [#50183](https://github.com/sourcegraph/sourcegraph/pull/50183)
+- Bitbucket Server adding an error log if there is no account match for the user. #[51030](https://github.com/sourcegraph/sourcegraph/pull/51030)
+- Removed an incorrect beta label on the Search Context creation page [#51188](https://github.com/sourcegraph/sourcegraph/pull/51188)
+- Multi-version upgrades to version `5.0.2` in a fully airgapped environment will not work without the command `--skip-drift-check`. [#51164](https://github.com/sourcegraph/sourcegraph/pull/51164)
+- Editing search context with special characters such as `/` resulted in http 404 error. [#51196](https://github.com/sourcegraph/sourcegraph/pull/51196)
+- Could not set "permissions.syncOldestUsers" or "permissions.syncOldestRepos" to zero. [#51255](https://github.com/sourcegraph/sourcegraph/pull/51255)
+- Fixed an issue where a Code Insights query with structural search type received 0 search results for the latest commit of any matching repo. [#51076](https://github.com/sourcegraph/sourcegraph/pull/51076)
 
 ### Removed
 

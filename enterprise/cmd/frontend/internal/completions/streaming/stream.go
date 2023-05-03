@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/anthropic"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming/openai"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -34,6 +35,8 @@ func getCompletionStreamClient(provider string, accessToken string, model string
 	switch provider {
 	case "anthropic":
 		return anthropic.NewAnthropicCompletionStreamClient(httpcli.ExternalDoer, accessToken, model), nil
+	case "openai":
+		return openai.NewOpenAIChatCompletionsStreamClient(httpcli.ExternalDoer, accessToken, model), nil
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}

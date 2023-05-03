@@ -3,22 +3,19 @@ package repo
 import (
 	"context"
 
-	"github.com/grafana/regexp"
-
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type handler struct {
@@ -29,16 +26,15 @@ type handler struct {
 
 var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
 
-var matchEverythingRegexp = regexp.MustCompile(``)
-
-const maxFileSize = 1000000 // 1MB
-
 // The threshold to embed the entire file is slightly larger than the chunk threshold to
 // avoid splitting small files unnecessarily.
 const (
 	embedEntireFileTokensThreshold          = 384
 	embeddingChunkTokensThreshold           = 256
 	embeddingChunkEarlySplitTokensThreshold = embeddingChunkTokensThreshold - 32
+
+	defaultMaxCodeEmbeddingsPerRepo = 3_072_000
+	defaultMaxTextEmbeddingsPerRepo = 512_000
 )
 
 var splitOptions = split.SplitOptions{
@@ -57,35 +53,78 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
-	validFiles, err := h.gitserverClient.ListFiles(ctx, nil, repo.Name, record.Revision, &protocol.ListFilesOpts{
-		IncludeDirs:      false,
-		MaxFileSizeBytes: maxFileSize,
-	})
-	if err != nil {
-		return err
-	}
-
 	embeddingsClient := embed.NewEmbeddingsClient()
+	fetcher := &revisionFetcher{
+		repo:      repo.Name,
+		revision:  record.Revision,
+		gitserver: h.gitserverClient,
+	}
 
 	config := conf.Get().Embeddings
 	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
 	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(config.ExcludedFilePathPatterns)...)
 
-	repoEmbeddingIndex, err := embed.EmbedRepo(
+	opts := embed.EmbedRepoOpts{
+		RepoName:          repo.Name,
+		Revision:          record.Revision,
+		ExcludePatterns:   excludedGlobPatterns,
+		SplitOptions:      splitOptions,
+		MaxCodeEmbeddings: defaultTo(config.MaxCodeEmbeddingsPerRepo, defaultMaxCodeEmbeddingsPerRepo),
+		MaxTextEmbeddings: defaultTo(config.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo),
+	}
+
+	repoEmbeddingIndex, stats, err := embed.EmbedRepo(
 		ctx,
-		repo.Name,
-		record.Revision,
-		validFiles,
-		excludedGlobPatterns,
 		embeddingsClient,
-		splitOptions,
-		func(fileName string) ([]byte, error) {
-			return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
-		},
+		fetcher,
+		getDocumentRanks,
+		opts,
 	)
 	if err != nil {
 		return err
 	}
 
+	logger.Info(
+		"finished generating repo embeddings",
+		log.String("repoName", string(repo.Name)),
+		log.String("revision", string(record.Revision)),
+		log.Object("stats", stats.ToFields()...),
+	)
+
 	return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
+}
+
+func defaultTo(input, def int) int {
+	if input == 0 {
+		return def
+	}
+	return input
+}
+
+type revisionFetcher struct {
+	repo      api.RepoName
+	revision  api.CommitID
+	gitserver gitserver.Client
+}
+
+func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, error) {
+	return r.gitserver.ReadFile(ctx, nil, r.repo, r.revision, fileName)
+}
+
+func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
+	fileInfos, err := r.gitserver.ReadDir(ctx, nil, r.repo, r.revision, "", true)
+	if err != nil {
+		return nil, err
+	}
+
+	entries := make([]embed.FileEntry, 0, len(fileInfos))
+	for _, fileInfo := range fileInfos {
+		if !fileInfo.IsDir() {
+			entries = append(entries, embed.FileEntry{
+				Name: fileInfo.Name(),
+				Size: fileInfo.Size(),
+			})
+		}
+	}
+	return entries, nil
 }
