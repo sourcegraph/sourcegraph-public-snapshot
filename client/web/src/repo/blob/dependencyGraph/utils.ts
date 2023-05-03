@@ -1,5 +1,6 @@
 // SCIP index as object for https://sourcegraph.com/github.com/codecov/sourcegraph-codecov@92d2f701f935b7ce3c3504ab893f808643e6eb24/-/blob/src/insights.ts
 import { uniqBy } from 'lodash'
+import { MarkerType } from 'reactflow'
 
 import scipIndex from './index.json'
 import { Descriptor_Suffix, parseSymbol, SCIPDocument } from './SymbolParser'
@@ -69,15 +70,23 @@ function getResults(occurrences: SCIPDocument['occurrences'], path: string): any
         if (!item) {
             item = { package: parsedSymbol.package?.name || '', module: fileName, symbols: [] }
             map.set(key, item)
-            nodes.push({ data: { id: fileName, label: key } })
+            nodes.push({ id: fileName, data: { label: key }, position: { x: 0, y: 0 } })
             if (fileName !== path) {
-                links.push({ data: { source: fileName, target: path } })
+                links.push({
+                    id: fileName + path,
+                    source: fileName,
+                    target: path,
+                    type: 'floating',
+                    markerEnd: {
+                        type: MarkerType.Arrow,
+                    },
+                })
             }
         }
         item.symbols.push(symbolNameParts.join('.'))
     }
 
-    return [...nodes, ...links]
+    return { nodes, links }
 }
 
 type NestedObject = {

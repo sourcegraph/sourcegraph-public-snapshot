@@ -68,3 +68,5 @@ It should import all component stylesheets.
 :root {
     --max-homepage-container-width: 65rem;
 }
+
+@import 'reactflow/dist/style.css';
