@@ -10924,6 +10924,9 @@ type MockEventLogStore struct {
 	// ListAllFunc is an instance of a mock function object controlling the
 	// behavior of the method ListAll.
 	ListAllFunc *EventLogStoreListAllFunc
+	// ListEventsByNameFunc is an instance of a mock function object
+	// controlling the behavior of the method ListEventsByName.
+	ListEventsByNameFunc *EventLogStoreListEventsByNameFunc
 	// ListExportableEventsFunc is an instance of a mock function object
 	// controlling the behavior of the method ListExportableEvents.
 	ListExportableEventsFunc *EventLogStoreListExportableEventsFunc
@@ -11091,6 +11094,11 @@ func NewMockEventLogStore() *MockEventLogStore {
 		},
 		ListAllFunc: &EventLogStoreListAllFunc{
 			defaultHook: func(context.Context, EventLogsListOptions) (r0 []*Event, r1 error) {
+				return
+			},
+		},
+		ListEventsByNameFunc: &EventLogStoreListEventsByNameFunc{
+			defaultHook: func(context.Context, string, int, int) (r0 []*Event, r1 error) {
 				return
 			},
 		},
@@ -11286,6 +11294,11 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.ListAll")
 			},
 		},
+		ListEventsByNameFunc: &EventLogStoreListEventsByNameFunc{
+			defaultHook: func(context.Context, string, int, int) ([]*Event, error) {
+				panic("unexpected invocation of MockEventLogStore.ListEventsByName")
+			},
+		},
 		ListExportableEventsFunc: &EventLogStoreListExportableEventsFunc{
 			defaultHook: func(context.Context, int, int) ([]*Event, error) {
 				panic("unexpected invocation of MockEventLogStore.ListExportableEvents")
@@ -11426,6 +11439,9 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		},
 		ListAllFunc: &EventLogStoreListAllFunc{
 			defaultHook: i.ListAll,
+		},
+		ListEventsByNameFunc: &EventLogStoreListEventsByNameFunc{
+			defaultHook: i.ListEventsByName,
 		},
 		ListExportableEventsFunc: &EventLogStoreListExportableEventsFunc{
 			defaultHook: i.ListExportableEvents,
@@ -14338,6 +14354,122 @@ func (c EventLogStoreListAllFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreListAllFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EventLogStoreListEventsByNameFunc describes the behavior when the
+// ListEventsByName method of the parent MockEventLogStore instance is
+// invoked.
+type EventLogStoreListEventsByNameFunc struct {
+	defaultHook func(context.Context, string, int, int) ([]*Event, error)
+	hooks       []func(context.Context, string, int, int) ([]*Event, error)
+	history     []EventLogStoreListEventsByNameFuncCall
+	mutex       sync.Mutex
+}
+
+// ListEventsByName delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEventLogStore) ListEventsByName(v0 context.Context, v1 string, v2 int, v3 int) ([]*Event, error) {
+	r0, r1 := m.ListEventsByNameFunc.nextHook()(v0, v1, v2, v3)
+	m.ListEventsByNameFunc.appendCall(EventLogStoreListEventsByNameFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListEventsByName
+// method of the parent MockEventLogStore instance is invoked and the hook
+// queue is empty.
+func (f *EventLogStoreListEventsByNameFunc) SetDefaultHook(hook func(context.Context, string, int, int) ([]*Event, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListEventsByName method of the parent MockEventLogStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *EventLogStoreListEventsByNameFunc) PushHook(hook func(context.Context, string, int, int) ([]*Event, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EventLogStoreListEventsByNameFunc) SetDefaultReturn(r0 []*Event, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, int, int) ([]*Event, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EventLogStoreListEventsByNameFunc) PushReturn(r0 []*Event, r1 error) {
+	f.PushHook(func(context.Context, string, int, int) ([]*Event, error) {
+		return r0, r1
+	})
+}
+
+func (f *EventLogStoreListEventsByNameFunc) nextHook() func(context.Context, string, int, int) ([]*Event, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EventLogStoreListEventsByNameFunc) appendCall(r0 EventLogStoreListEventsByNameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EventLogStoreListEventsByNameFuncCall
+// objects describing the invocations of this function.
+func (f *EventLogStoreListEventsByNameFunc) History() []EventLogStoreListEventsByNameFuncCall {
+	f.mutex.Lock()
+	history := make([]EventLogStoreListEventsByNameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EventLogStoreListEventsByNameFuncCall is an object that describes an
+// invocation of method ListEventsByName on an instance of
+// MockEventLogStore.
+type EventLogStoreListEventsByNameFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*Event
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EventLogStoreListEventsByNameFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EventLogStoreListEventsByNameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
