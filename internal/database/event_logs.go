@@ -1479,7 +1479,7 @@ WITH events AS (
   FROM event_logs
   WHERE
     timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
-    AND LOWER(name) like '%''cody''%'
+    AND lower(name) like lower('%Cody%')
 ),
 code_generation_keys AS (
   SELECT * FROM unnest(ARRAY[
