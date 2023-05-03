@@ -63,12 +63,13 @@ func GetCompletionsConfig() *schema.Completions {
 	}
 
 	// If App is running and there wasn't a completions config
-	// configure completions as a passthough to dotcom
+	// user a provider that sends the request to dotcom
 	if deploy.IsApp() {
 		appConfig := conf.Get().App
 		if appConfig == nil {
 			return nil
 		}
+		// Only the Provider, Access Token and Enabled required to forward the request to dotcom
 		return &schema.Completions{
 			AccessToken: appConfig.DotcomAuthToken,
 			Enabled:     len(appConfig.DotcomAuthToken) > 0,
