@@ -50,7 +50,7 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" && "${pr_number}" != "false" ]
     --header 'Content-Type: application/json' | jq '.[] | select(.body | contains("## App preview")) | .id')
 
   app_preview_comment_body=$(printf '%s\n' \
-    "## App preview:" \
+    "## App preview" \
     "- [Storybook](${chromatic_storybook_url})" | jq -Rs .)
 
   if [[ -z "${app_preview_comment_id}" ]]; then
