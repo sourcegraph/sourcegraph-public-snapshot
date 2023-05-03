@@ -20,7 +20,7 @@ cleanup() {
   docker-compose down --volumes --timeout 30 # seconds
   docker volume rm executors-e2e || true
   popd 1>/dev/null
-  rm -rf "${TMP_WORK_DIR}"
+  sudo rm -rf "${TMP_WORK_DIR}"
 }
 trap cleanup EXIT
 
@@ -45,7 +45,7 @@ echo "--- :terminal: Start server with executor"
 pushd "enterprise/dev/ci/integration/executors" 1>/dev/null
 
 # Temporary workaround, see https://github.com/sourcegraph/sourcegraph/issues/44816
-envsubst >"${TMP_WORK_DIR}/site-config.json" <./config/site-config.json
+envsubst >"${TMP_WORK_DIR}/site-config.json" <./tester/config/site-config.json
 docker volume create executors-e2e
 docker container create --name temp -v executors-e2e:/data busybox
 docker cp "${TMP_WORK_DIR}/site-config.json" temp:/data
