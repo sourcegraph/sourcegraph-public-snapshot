@@ -21,6 +21,7 @@ import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
 import styles from './SearchPageContent.module.scss'
+import { CodySignUpCtaSection } from './CodySignUpCtaSection'
 
 interface SearchPageContentProps {
     shouldShowAddCodeHostWidget?: boolean
@@ -86,6 +87,10 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                 ) : (
                     <>
                         <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
+                        {isSourcegraphDotCom && !authenticatedUser && (
+                            <CodySignUpCtaSection className="mx-auto my-5" />
+                        )}
+                        {/* todo: clarify whether to remove this section or not? */}
                         {!window.context?.codyEnabled && !authenticatedUser && isSourcegraphDotCom && (
                             <div className="d-flex justify-content-center mt-4">
                                 <Text className="text-muted">
