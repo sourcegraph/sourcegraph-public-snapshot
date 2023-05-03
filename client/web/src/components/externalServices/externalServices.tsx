@@ -11,6 +11,7 @@ import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
 import LanguagePythonIcon from 'mdi-react/LanguagePythonIcon'
 import LanguageRubyIcon from 'mdi-react/LanguageRubyIcon'
 import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
+import AzureDevOpsIcon from 'mdi-react/MicrosoftAzureDevopsIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
 import { hasProperty } from '@sourcegraph/common'
@@ -1303,7 +1304,7 @@ const GERRIT: AddExternalServiceOptions = {
 const AZUREDEVOPS: AddExternalServiceOptions = {
     kind: ExternalServiceKind.AZUREDEVOPS,
     title: 'Azure DevOps',
-    icon: GitIcon,
+    icon: AzureDevOpsIcon,
     jsonSchema: azureDevOpsSchemaJSON,
     defaultDisplayName: 'Azure DevOps',
     defaultConfig: `{
