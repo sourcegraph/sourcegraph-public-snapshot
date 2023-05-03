@@ -196,15 +196,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.BackendIntegrationTests:
 		ops.Append(
-			bazelBuildCandidateDockerImage("server", c.Version, c.candidateImageTag(), c.RunType),
-			backendIntegrationTests(c.candidateImageTag()))
-
-		// always include very backend-oriented changes in this set of tests
-		testDiff := c.Diff | changed.DatabaseSchema | changed.Go
-		ops.Merge(CoreTestOperations(
-			testDiff,
-			CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion},
-		))
+			bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType),
+			backendIntegrationTests(c.candidateImageTag()),
+			bazelConfigure(),
+			bazelTest("//..."))
 
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
