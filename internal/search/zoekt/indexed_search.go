@@ -45,11 +45,9 @@ type IndexedRepoRevs struct {
 	branchRepos map[string]*zoektquery.BranchRepos
 }
 
-// GetRepoRevsFromBranchRepos creates a copy of RepoRevs and replaces revision values that are not defined branches in
-// Zoekt. Make a best effort to replace the revision with confirmed branches in Zoekt which are available in branchRepos.
-// Replacement is required typically because the revision is a commit that resolves to the latest indexed commit
-// for a branch in Zoekt but the branch name in Zoekt (either "HEAD" or a value defined in experimentalFeatures.search.index.branches)
-// is a values that is not the commit.
+// GetRepoRevsFromBranchRepos updates RepoRevs by replacing revision values that are not defined branches in
+// Zoekt and replaces with a known indexed branch.
+// This is used for structural search querying revisions of RepositoryRevisions that are indexed but not the branch name.
 func (rb *IndexedRepoRevs) GetRepoRevsFromBranchRepos() map[api.RepoID]*search.RepositoryRevisions {
 	repoRevs := make(map[api.RepoID]*search.RepositoryRevisions, len(rb.RepoRevs))
 
