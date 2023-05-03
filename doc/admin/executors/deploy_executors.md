@@ -220,7 +220,10 @@ If your environment makes use of custom certificates, you can add them to one of
 ### Adding certificates to a binary deployment
 > NOTE: see the [troubleshooting guide](./executors_troubleshooting.md#connecting-to-cloud-provider-executor-instances) for instructions on how to connect to cloud provider VMs.
         
-After successfully [deploying binaries](./deploy_executors_binary.md), copy your certificates to `/etc/ssl/certs`. Next, run `executor run` on the VM in order to restart the executor service.
+After successfully [deploying binaries](./deploy_executors_binary.md), follow these steps: 
+1. Copy your certificates to `/etc/ssl/certs`. 
+1. If you are using systemd, run `systemctl restart executor`. If not, proceed to the next step. 
+1. Run `executor run` on the VM in order to restart the executor service.
 
 ### Adding certificates to a Kubernetes deployment using manifests
 
