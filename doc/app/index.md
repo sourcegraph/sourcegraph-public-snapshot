@@ -141,3 +141,6 @@ rm -rf $XDG_CONFIG_HOME/sourcegraph-sp
 rm -rf $HOME/.cache/sourcegraph-sp
 rm -rf $HOME/.config/sourcegraph-sp
 ```
+
+## Troubleshooting
+See [App troubleshooting guide](troubleshooting.md)
