@@ -65,17 +65,11 @@ type ownershipReasonResolver struct {
 }
 
 func (o *ownershipReasonResolver) Title() (string, error) {
-	if res, ok := o.resolver.(graphqlbackend.SimpleOwnReasonResolver); ok {
-		return res.Title()
-	}
-	return "", errors.New("invalid resolver")
+	return o.resolver.Title()
 }
 
 func (o *ownershipReasonResolver) Description() (string, error) {
-	if res, ok := o.resolver.(graphqlbackend.SimpleOwnReasonResolver); ok {
-		return res.Description()
-	}
-	return "", errors.New("invalid resolver")
+	return o.Description()
 }
 
 func (o *ownershipReasonResolver) ToCodeownersFileEntry() (graphqlbackend.CodeownersFileEntryResolver, bool) {
