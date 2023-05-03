@@ -42,7 +42,7 @@ exports[`ExternalServiceForm create GitHub 1`] = `
       class="btn btnPrimary test-add-external-service-button"
       type="submit"
     >
-      Add repositories
+      Add connection
     </button>
   </form>
 </DocumentFragment>
@@ -90,7 +90,7 @@ exports[`ExternalServiceForm edit GitHub 1`] = `
       class="btn btnPrimary test-add-external-service-button"
       type="submit"
     >
-      Add repositories
+      Add connection
     </button>
   </form>
 </DocumentFragment>
@@ -146,7 +146,7 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
         data-loading-spinner="true"
         role="img"
       />
-      Add repositories
+      Add connection
     </button>
   </form>
 </DocumentFragment>
