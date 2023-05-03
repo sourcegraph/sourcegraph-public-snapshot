@@ -39,6 +39,7 @@ go_test(
         "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/database",
         "//enterprise/internal/github_apps/store",
+        "//enterprise/internal/github_apps/types",
         "//internal/actor",
         "//internal/database",
         "//internal/gitserver",
