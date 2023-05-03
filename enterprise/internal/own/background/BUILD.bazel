@@ -11,6 +11,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/shared/background",
+        "//internal/actor",
         "//internal/api",
         "//internal/conf",
         "//internal/database",
@@ -49,7 +50,11 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//cmd/frontend/globals",
+        "//enterprise/internal/database",
+        "//internal/actor",
         "//internal/api",
+        "//internal/authz",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
