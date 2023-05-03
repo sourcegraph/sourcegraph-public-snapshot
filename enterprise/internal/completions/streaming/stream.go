@@ -63,7 +63,7 @@ func GetCompletionsConfig() *schema.Completions {
 	}
 
 	// If App is running and there wasn't a completions config
-	// user a provider that sends the request to dotcom
+	// use a provider that sends the request to dotcom
 	if deploy.IsApp() {
 		appConfig := conf.Get().App
 		if appConfig == nil {
