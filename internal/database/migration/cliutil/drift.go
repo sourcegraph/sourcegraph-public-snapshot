@@ -14,6 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+var dbNameToSchema = map[string]string{
+	"pgsql":           "frontend",
+	"codeintel-db":    "codeintel",
+	"codeinsights-db": "codeinsights",
+}
+
 func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, expectedSchemaFactories ...ExpectedSchemaFactory) *cli.Command {
 	schemaNameFlag := &cli.StringFlag{
 		Name:     "schema",
@@ -42,6 +48,13 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		version := versionFlag.Get(cmd)
 		file := fileFlag.Get(cmd)
 		skipVersionCheck := skipVersionCheckFlag.Get(cmd)
+
+		// users might input the name of the service e.g. pgsql instead of frontend, so we
+		// translate to what it actually should be
+		if translated, ok := dbNameToSchema[schemaName]; ok {
+			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleGrey, "Translating container/service name %q to schema name %s", schemaName, translated))
+			schemaName = translated
+		}
 
 		r, err := factory([]string{schemaName})
 		if err != nil {
