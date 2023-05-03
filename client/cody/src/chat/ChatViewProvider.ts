@@ -206,7 +206,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.cancelCompletion()
 
         let text = ''
-
+        void vscode.commands.executeCommand('setContext', 'cody.replied.pending', true)
         this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
             onResponse: (content: string) => {
                 text += content
@@ -246,6 +246,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
                 this.onCompletionEnd()
                 console.error(`Completion request failed: ${err}`)
+                void vscode.commands.executeCommand('setContext', 'cody.replied.pending', false)
             },
         })
     }
@@ -260,15 +261,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.cancelCompletionCallback = null
         this.sendTranscript()
         void this.saveTranscriptToChatHistory()
+        void vscode.commands.executeCommand('setContext', 'cody.replied.pending', false)
     }
 
     private async onHumanMessageSubmitted(text: string): Promise<void> {
         this.inputHistory.push(text)
-
         if (this.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
         await this.executeRecipe('chat-question', text)
+        void vscode.commands.executeCommand('setContext', 'cody.replied.pending', true)
     }
 
     private async updateCodebaseContext(): Promise<void> {
@@ -377,7 +379,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                 text = text.slice(textConsumed)
                 textConsumed += text.length
-                return multiplexer.publish(text)
+                void multiplexer.publish(text)
             },
             onComplete: () => multiplexer.notifyTurnComplete(),
             onError: (error, statusCode) => {
@@ -464,41 +466,36 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
-     * Handles in-file chat threads from editor
+     * Handles Non-stop Cody
      */
     public async nonStopCody(): Promise<void> {
+        if (!this.config.experimentalNonStop) {
+            this.experimentalErrorMessage('cody.experimental.nonStop')
+            return
+        }
         const humanInput = await vscode.window.showInputBox()
         const threads = this.editor.fileChatProvider.newThreads(humanInput || '')
         if (!threads) {
             return
         }
         await this.editor.fileChatProvider.chat(threads)
-        // await this.executeRecipe('fixup', `/fix ${threads.text}`, false)
         // TODO: NON-STOP-CODY not working on big file
         await this.executeRecipe('non-stop-cody', threads.text, false)
     }
 
-    public async fileChatAdd(threads: vscode.CommentReply): Promise<void> {
-        await this.editor.fileChatProvider.chat(threads)
-        void this.executeRecipe('file-chat', threads.text, false)
-    }
-
-    public async fileChatFix(threads: vscode.CommentReply): Promise<void> {
-        await this.editor.fileChatProvider.chat(threads, true)
-        await this.executeRecipe('fixup', `/fix ${threads.text}`, false)
+    /**
+     * Handles in-file chat (comments) threads from editor
+     */
+    public async fileChat(threads: vscode.CommentReply, fixMode: boolean): Promise<void> {
+        if (threads.text.startsWith('/fix ') || threads.text.startsWith('/f ')) {
+            fixMode = true
+        }
+        await this.editor.fileChatProvider.chat(threads, fixMode)
+        void this.executeRecipe(fixMode ? 'fixup' : 'file-chat', threads.text, false)
     }
 
     public fileChatDelete(thread: vscode.CommentThread): void {
         this.editor.fileChatProvider.delete(thread)
-    }
-
-    private experimentalErrorMessage(): void {
-        if (!this.config.experimentalFixupChat) {
-            const errorText =
-                'This experimental feature requires the cody.experimental.fixupChat configuration set to true.'
-            this.transcript.addErrorAsAssistantResponse(errorText)
-        }
-        return
     }
 
     /**
@@ -575,6 +572,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 logEvent(`CodyVSCodeExtension:${value}:clicked`)
                 break
         }
+    }
+
+    /**
+     * Display error message in Chat UI regarding missing experimental flags
+     */
+    public experimentalErrorMessage(flag: string): void {
+        const errorText = `This experimental feature requires the ${flag} configuration set to true.`
+        this.sendErrorToWebview(errorText)
     }
 
     /**

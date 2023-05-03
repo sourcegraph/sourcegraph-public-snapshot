@@ -131,8 +131,7 @@
       },
       {
         "command": "cody.recipe.non-stop-cody",
-        "title": "Cody: Non-stop Fixup",
-        "when": "cody.activated"
+        "title": "Cody: Non-stop Fixup"
       },
       {
         "command": "cody.set-access-token",
@@ -205,7 +204,7 @@
         "command": "cody.recipe.non-stop-cody",
         "key": "ctrl+alt+/",
         "mac": "ctrl+alt+/",
-        "when": "cody.activated && editorTextFocus && !editorReadonly"
+        "when": "cody.activated && editorTextFocus && !editorReadonly && cody.experimental.nonStop.enabled"
       }
     ],
     "submenus": [
@@ -254,7 +253,7 @@
         },
         {
           "command": "cody.recipe.non-stop-cody",
-          "when": "cody.activated"
+          "when": "cody.activated && cody.experimental.nonStop.enabled"
         },
         {
           "command": "cody.file.chat",
@@ -349,7 +348,7 @@
         {
 					"command": "cody.file.load",
 					"group": "inline@2",
-					"when": "cody.activated && commentController =~ /^cody-file/ && !cody.replied"
+					"when": "cody.activated && commentController =~ /^cody-file/ && cody.replied.pending"
 				}
 			]
     },
@@ -393,7 +392,7 @@
           "type": "boolean",
           "default": false
         },
-        "cody.experimental.fixupChat": {
+        "cody.experimental.nonStop": {
           "type": "boolean",
           "default": false
         },

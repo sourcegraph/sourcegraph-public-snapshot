@@ -13,7 +13,7 @@ export type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'experimentalChatPredictions'
-    | 'experimentalFixupChat'
+    | 'experimentalNonStop'
 >
 
 /**

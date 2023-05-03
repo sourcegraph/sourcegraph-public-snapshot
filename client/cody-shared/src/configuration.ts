@@ -8,7 +8,7 @@ export interface Configuration {
     useContext: ConfigurationUseContext
     experimentalSuggest: boolean
     experimentalChatPredictions: boolean
-    experimentalFixupChat: boolean
+    experimentalNonStop: boolean
     customHeaders: Record<string, string>
 }
 

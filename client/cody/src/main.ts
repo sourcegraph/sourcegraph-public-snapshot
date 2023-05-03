@@ -5,6 +5,7 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { DOTCOM_URL } from './chat/protocol'
 import { isValidLogin } from './chat/utils'
+import { CodyContentProvider } from './command/ContentProvider'
 import { FileChatProvider } from './command/FileChatProvider'
 import { LocalStorage } from './command/LocalStorageProvider'
 import { CodyCompletionItemProvider } from './completions'
@@ -70,8 +71,12 @@ const register = async (
     await updateEventLogger(initialConfig, localStorage)
 
     // File Chat Provider
-    const fileChatProvider = new FileChatProvider(context.extensionPath)
-    disposables.push(fileChatProvider.get())
+    const fixupContentProvider = new CodyContentProvider()
+    const fileChatProvider = new FileChatProvider(context.extensionPath, fixupContentProvider)
+    disposables.push(
+        vscode.workspace.registerTextDocumentContentProvider('codyDoc', fixupContentProvider),
+        fileChatProvider.get()
+    )
 
     const editor = new VSCodeEditor(fileChatProvider)
 
@@ -115,10 +120,10 @@ const register = async (
     disposables.push(
         // File Chat Provider
         vscode.commands.registerCommand('cody.file.chat', (reply: vscode.CommentReply) =>
-            chatProvider.fileChatAdd(reply)
+            chatProvider.fileChat(reply, false)
         ),
         vscode.commands.registerCommand('cody.file.fix', (reply: vscode.CommentReply) =>
-            chatProvider.fileChatFix(reply)
+            chatProvider.fileChat(reply, true)
         ),
         vscode.commands.registerCommand('cody.file.delete', (thread: vscode.CommentThread) => {
             chatProvider.fileChatDelete(thread)
@@ -203,6 +208,10 @@ const register = async (
             }),
             vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
         )
+    }
+
+    if (initialConfig.experimentalNonStop) {
+        void vscode.commands.executeCommand('setContext', 'cody.experimental.nonStop.enabled', true)
     }
 
     return {

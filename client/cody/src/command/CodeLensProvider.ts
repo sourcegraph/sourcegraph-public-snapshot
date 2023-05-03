@@ -44,10 +44,12 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         if (!document || !token) {
             return []
         }
-        return this.fixupLenses()
+        return this.fixupLenses(document)
     }
 
-    private fixupLenses(): vscode.CodeLens[] {
+    private fixupLenses(document: vscode.TextDocument): vscode.CodeLens[] {
+        const uri = vscode.Uri.parse('codyDoc:' + document.uri.path)
+
         const codeLenses: vscode.CodeLens[] = []
         for (const range of this.ranges) {
             const codeLensTitle = new vscode.CodeLens(range)
@@ -62,7 +64,8 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
             codeLensDiff.command = {
                 title: 'Show Diff',
                 tooltip: 'Open diff view.',
-                command: 'workbench.files.action.compareWithSaved',
+                command: 'vscode.diff',
+                arguments: [uri, document.uri, 'Diff by Cody'],
             }
             // Run VS Code command to save all files
             const codeLensSave = new vscode.CodeLens(range)

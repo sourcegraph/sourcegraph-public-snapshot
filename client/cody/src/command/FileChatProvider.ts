@@ -3,6 +3,8 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
+import { CodyContentProvider } from './ContentProvider'
+
 export class FileChatMessage implements vscode.Comment {
     private id = 0
     public label: string | undefined
@@ -34,7 +36,6 @@ export class FileChatProvider {
     }
 
     private commentController: vscode.CommentController
-
     public threads: vscode.CommentReply | null = null
     public thread: vscode.CommentThread | null = null
     public editor: vscode.TextEditor | null = null
@@ -45,7 +46,7 @@ export class FileChatProvider {
     public addedLines = 0
     public isInProgress = false
 
-    constructor(private extensionPath: string) {
+    constructor(private extensionPath: string, private contentProvider: CodyContentProvider) {
         // Init
         this.commentController = vscode.comments.createCommentController(this.id, this.label)
         this.commentController.options = this.options
@@ -119,6 +120,12 @@ export class FileChatProvider {
         this.threads = threads
         this.thread = thread
         this.selection = await this.getSelection(isFixMode)
+
+        // store current working docs for showing diff after fixup
+        if (isFixMode) {
+            const activeDocument = await vscode.workspace.openTextDocument(this.thread.uri)
+            this.contentProvider.set(this.thread.uri, activeDocument.getText())
+        }
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
 
@@ -141,7 +148,6 @@ export class FileChatProvider {
         this.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
         void vscode.commands.executeCommand('setContext', 'cody.replied', true)
     }
-
     /**
      * Remove comment thread / conversation
      */
@@ -193,6 +199,7 @@ export class FileChatProvider {
             return null
         }
         const activeDocument = await vscode.workspace.openTextDocument(this.thread.uri)
+
         const lineLength = activeDocument.lineAt(this.thread.range.end.line).text.length
         const endPostFix = new vscode.Position(this.thread.range.end.line, lineLength)
         const endPostAsk = new vscode.Position(this.thread.range.end.line + 1, 0)
@@ -228,9 +235,10 @@ export class FileChatProvider {
             return
         }
         const doc = vscode.window.activeTextEditor?.document
-        if (doc?.fileName.startsWith('/commentinput')) {
+        if (doc?.uri.toString().startsWith('/commentinput')) {
             return
         }
+        this.addedLines = updatedLength
         const currentFile = doc || (await vscode.workspace.openTextDocument(this.thread?.uri))
         if (!currentFile) {
             return
@@ -240,10 +248,13 @@ export class FileChatProvider {
         if (this.selectionRange) {
             const start = new vscode.Position(this.selectionRange.start.line, 0)
             const end = new vscode.Position(this.selectionRange.end.line - updatedLength + 1, 0)
+            const newRange = new vscode.Range(start, end)
             decorations.push({
-                range: new vscode.Range(start, end),
+                range: newRange,
                 hoverMessage: mdText,
             })
+            this.selectionRange = newRange
+            this.thread.range = newRange
         }
         if (this.thread && this.thread.uri.toString() === '') {
             await vscode.window.showTextDocument(this.thread.uri)
@@ -260,6 +271,8 @@ export class FileChatProvider {
         }
         const editor = vscode.window.activeTextEditor
         editor?.setDecorations(this.decorationType, [])
+        this.contentProvider.delete(this.thread.uri)
+        this.addedLines = 0
     }
 
     /**

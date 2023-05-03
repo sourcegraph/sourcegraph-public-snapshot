@@ -149,7 +149,6 @@ export class VSCodeEditor implements Editor {
                 new vscode.Position(this.fileChatProvider.selectionRange?.start.line || selection.start.line, 0),
                 replacement.trimStart() + '\n'
             )
-            // edit.replace(this.fileChatProvider.selectionRange || selection, replacement)
         })
 
         const updatedLength = selectedText.split('\n').length - replacement.trim().split('\n').length
@@ -160,6 +159,7 @@ export class VSCodeEditor implements Editor {
             vscode.languages.registerCodeLensProvider('*', lens)
         }
         await this.fileChatProvider.decorate(updatedLength)
+
         // check performance time
         const duration = performance.now() - startTime
         console.info('Replacement duration:', duration)

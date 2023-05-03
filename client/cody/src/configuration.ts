@@ -20,7 +20,7 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
         experimentalSuggest: config.get('cody.experimental.suggestions', false),
         experimentalChatPredictions: config.get('cody.experimental.chatPredictions', false),
-        experimentalFixupChat: config.get('cody.experimental.fixupChat', false),
+        experimentalNonStop: config.get('cody.experimental.nonStop', false),
         customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
     }
 }
