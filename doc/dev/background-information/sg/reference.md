@@ -43,6 +43,7 @@ Available comamndsets in `sg.config.yaml`:
 * enterprise-codeintel-bazel
 * enterprise-e2e
 * iam
+* llm-proxy
 * monitoring
 * monitoring-alerts
 * oss
