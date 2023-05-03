@@ -34,7 +34,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/server",
     visibility = ["//visibility:public"],
     deps = [
-        "//cmd/gitserver/server/internal/accesslog",
+        "//cmd/gitserver/server/accesslog",
         "//cmd/gitserver/server/internal/cacert",
         "//internal/actor",
         "//internal/api",

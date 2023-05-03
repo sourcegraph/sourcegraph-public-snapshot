@@ -12,6 +12,7 @@ go_library(
         "//internal/actor",
         "//internal/env",
         "//internal/grpc",
+        "//internal/requestclient",
         "//internal/trace/policy",
         "//internal/ttlcache",
         "//lib/errors",
