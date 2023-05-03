@@ -10008,9 +10008,9 @@ type CodeIntelCommit {
 """
 A Perforce changelist.
 """
-type PerforceChangelist  {
-  """
-  The changelist ID.
-  """
-  cid: String!
+type PerforceChangelist {
+    """
+    The changelist ID.
+    """
+    cid: String!
 }
