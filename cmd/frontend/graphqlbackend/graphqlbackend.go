@@ -38,13 +38,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var (
-	graphqlFieldHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_graphql_field_seconds",
-		Help:    "GraphQL field resolver latencies in seconds.",
-		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-	}, []string{"type", "field", "error", "source", "request_name"})
-)
+var graphqlFieldHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_graphql_field_seconds",
+	Help:    "GraphQL field resolver latencies in seconds.",
+	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+}, []string{"type", "field", "error", "source", "request_name"})
 
 // Note: we have both pointer and value receivers on this type, and we are fine with that.
 type requestTracer struct {
@@ -489,6 +487,12 @@ func NewSchema(
 		}
 	}
 
+	if gitHubApps := optional.GitHubAppsResolver; gitHubApps != nil {
+		EnterpriseResolvers.gitHubAppsResolver = gitHubApps
+		resolver.GitHubAppsResolver = gitHubApps
+		schemas = append(schemas, gitHubAppsSchema)
+	}
+
 	if license := optional.LicenseResolver; license != nil {
 		EnterpriseResolvers.licenseResolver = license
 		resolver.LicenseResolver = license
@@ -635,6 +639,7 @@ type OptionalResolver struct {
 	OwnResolver
 	AppResolver
 	CompletionsResolver
+	GitHubAppsResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -744,6 +749,7 @@ var EnterpriseResolvers = struct {
 	rbacResolver                RBACResolver
 	ownResolver                 OwnResolver
 	completionsResolver         CompletionsResolver
+	gitHubAppsResolver          GitHubAppsResolver
 }{}
 
 // Root returns a new schemaResolver.
@@ -758,7 +764,8 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	CloneURL *string
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
-}) (*RepositoryResolver, error) {
+},
+) (*RepositoryResolver, error) {
 	// Deprecated query by "URI"
 	if args.URI != nil && args.Name == nil {
 		args.Name = args.URI
@@ -777,7 +784,8 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 // in the database, and then starts a repo clone.
 func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	Repo graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	var repoID api.RepoID
 	if err := relay.UnmarshalSpec(args.Repo, &repoID); err != nil {
 		return nil, err
@@ -803,7 +811,8 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 // in the database.
 func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *struct {
 	Repo graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	var repoID api.RepoID
 	if err := relay.UnmarshalSpec(args.Repo, &repoID); err != nil {
 		return nil, err
@@ -914,7 +923,8 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 	Name *string
 	// TODO(chris): Remove URI in favor of Name.
 	URI *string
-}) (*phabricatorRepoResolver, error) {
+},
+) (*phabricatorRepoResolver, error) {
 	if args.Name != nil {
 		args.URI = args.Name
 	}
@@ -935,7 +945,8 @@ func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error)
 func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
 	IDs     []graphql.ID
 	Seconds int32
-}) (bool, error) {
+},
+) (bool, error) {
 	if len(args.IDs) == 0 {
 		return false, errors.New("no ids supplied")
 	}

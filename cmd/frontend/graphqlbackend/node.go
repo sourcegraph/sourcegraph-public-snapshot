@@ -366,3 +366,8 @@ func (r *NodeResolver) ToCodeownersIngestedFile() (CodeownersIngestedFileResolve
 	n, ok := r.Node.(CodeownersIngestedFileResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToGitHubApp() (GitHubAppResolver, bool) {
+	n, ok := r.Node.(GitHubAppResolver)
+	return n, ok
+}

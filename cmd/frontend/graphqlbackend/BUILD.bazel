@@ -75,6 +75,7 @@ go_library(
         "git_tree.go",
         "git_tree_entry.go",
         "git_tree_submodule.go",
+        "githubapps.go",
         "graphqlbackend.go",
         "highlight.go",
         "hunk.go",
@@ -201,6 +202,7 @@ go_library(
         "codeintel.sentinel.graphql",
         "codeintel.graphql",
         "completions.graphql",
+        "githubapps.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [
