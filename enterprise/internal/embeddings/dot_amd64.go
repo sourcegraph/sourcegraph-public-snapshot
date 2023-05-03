@@ -11,10 +11,10 @@ import (
 var (
 	simdEnabled = env.MustGetBool("ENABLE_EMBEDDINGS_SEARCH_SIMD", false, "Enable SIMD dot product for embeddings search")
 	hasAVX2     = cpuid.CPU.Has(cpuid.AVX2)
-	haveArchDot = simdEnabled && hasAVX2
+	haveDotArch = simdEnabled && hasAVX2
 )
 
-func archDot(a []int8, b []int8) int32 {
+func dotArch(a []int8, b []int8) int32 {
 	if len(a) != len(b) {
 		panic("mismatched lengths")
 	}
@@ -23,7 +23,7 @@ func archDot(a []int8, b []int8) int32 {
 		return 0
 	}
 
-	return int32(avx2Dot(a, b))
+	return int32(dotAVX2(a, b))
 }
 
-func avx2Dot(a, b []int8) int64
+func dotAVX2(a, b []int8) int64
