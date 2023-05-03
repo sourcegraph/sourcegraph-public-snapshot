@@ -1317,7 +1317,6 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 	codyEventNames := []string{"CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
 		"CodyVSCodeExtension:recipe:explain-code-high-level:executed"}
 	users := []uint32{1, 2}
-	durations := []int{40, 65, 72}
 
 	days := []time.Time{
 		now,                           // Today
