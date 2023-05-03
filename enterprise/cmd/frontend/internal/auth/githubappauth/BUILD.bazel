@@ -1,20 +1,51 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "githubappauth",
-    srcs = ["middleware.go"],
+    srcs = [
+        "init.go",
+        "middleware.go",
+        "resolver.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githubappauth",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
+        "//cmd/frontend/enterprise",
+        "//cmd/frontend/graphqlbackend",
+        "//enterprise/internal/codeintel",
         "//enterprise/internal/database",
         "//enterprise/internal/github_apps/types",
         "//internal/auth",
+        "//internal/conf/conftypes",
         "//internal/database",
+        "//internal/observation",
         "//internal/rcache",
         "//internal/trace",
         "//lib/errors",
         "@com_github_gorilla_mux//:mux",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "githubappauth_test",
+    srcs = ["resolver_test.go"],
+    embed = [":githubappauth"],
+    deps = [
+        "//cmd/frontend/graphqlbackend",
+        "//enterprise/internal/database",
+        "//enterprise/internal/github_apps/store",
+        "//enterprise/internal/github_apps/types",
+        "//internal/actor",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/types",
+        "@com_github_graph_gophers_graphql_go//errors",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
     ],
 )

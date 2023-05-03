@@ -87,7 +87,7 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
-            label: 'Manage code hosts',
+            label: 'Code host connections',
             to: '/site-admin/external-services',
         },
         {

@@ -41,12 +41,15 @@ All notable changes to Sourcegraph are documented in this file.
 - Multi-version upgrades to version `5.0.2` in a fully airgapped environment will not work without the command `--skip-drift-check`. [#51164](https://github.com/sourcegraph/sourcegraph/pull/51164)
 - Editing search context with special characters such as `/` resulted in http 404 error. [#51196](https://github.com/sourcegraph/sourcegraph/pull/51196)
 - Could not set "permissions.syncOldestUsers" or "permissions.syncOldestRepos" to zero. [#51255](https://github.com/sourcegraph/sourcegraph/pull/51255)
+- Fixed an issue where a Code Insights query with structural search type received 0 search results for the latest commit of any matching repo. [#51076](https://github.com/sourcegraph/sourcegraph/pull/51076)
+- Significantly improved performance and reduced memory usage of the embeeddings service. [#50953](https://github.com/sourcegraph/sourcegraph/pull/50953), [#51372](https://github.com/sourcegraph/sourcegraph/pull/51372)
 
 ### Removed
 
 - User tags are removed in favor of the newer feature flags functionality. [#49318](https://github.com/sourcegraph/sourcegraph/pull/49318)
 - Previously deprecated site config `experimentalFeatures.bitbucketServerFastPerm` has been removed. [#50707](https://github.com/sourcegraph/sourcegraph/pull/50707)
 - Unused site-config field `api.rateLimit` has been removed. [#51087](https://github.com/sourcegraph/sourcegraph/pull/51087)
+- Legacy (table-based) blob viewer. [#50915](https://github.com/sourcegraph/sourcegraph/pull/50915)
 
 ## 5.0.2
 

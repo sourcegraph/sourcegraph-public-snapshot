@@ -199,6 +199,9 @@ require (
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	github.com/agnivade/levenshtein v1.1.1 // indirect
+	github.com/alexflint/go-arg v1.4.2 // indirect
+	github.com/alexflint/go-scalar v1.0.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.0.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.1.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.1 // indirect
@@ -231,6 +234,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
 	github.com/smartystreets/assertions v1.13.0 // indirect
+	github.com/vektah/gqlparser/v2 v2.4.5 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
@@ -244,6 +248,7 @@ require (
 require (
 	code.gitea.io/gitea v1.18.0
 	cuelang.org/go v0.4.3
+	github.com/Khan/genqlient v0.5.0
 	github.com/alecthomas/chroma/v2 v2.4.0
 	github.com/becheran/wildmatch-go v1.0.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
@@ -260,6 +265,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hexops/autogold/v2 v2.1.0
 	github.com/k3a/html2text v1.1.0
+	github.com/klauspost/cpuid/v2 v2.2.4
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
 	github.com/pandatix/go-cvss v0.5.2
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
@@ -295,7 +301,7 @@ replace (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20230405161007-b247fb51dece
+	github.com/sourcegraph/zoekt v0.0.0-20230503105159-f818d968ddad
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 
