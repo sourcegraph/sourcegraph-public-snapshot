@@ -1,10 +1,9 @@
-import { QueryTuple, MutationTuple, MutationHookOptions } from '@apollo/client'
+import { QueryTuple, MutationTuple } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors, useMutation, useLazyQuery } from '@sourcegraph/http-client'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {

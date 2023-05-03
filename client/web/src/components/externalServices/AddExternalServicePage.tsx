@@ -1,17 +1,16 @@
 import { FC, useEffect, useCallback, useState } from 'react'
 
-import { useApolloClient } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
 
-import { asError, isErrorLike, logger, renderMarkdown } from '@sourcegraph/common'
+import { logger, renderMarkdown } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Container, ErrorMessage, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
+import { Alert, Container, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
-import { ExternalServiceFields, AddExternalServiceInput } from '../../graphql-operations'
+import { AddExternalServiceInput } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 import { PageTitle } from '../PageTitle'
 
-import { addExternalService, useAddExternalService } from './backend'
+import { useAddExternalService } from './backend'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { AddExternalServiceOptions } from './externalServices'
@@ -91,11 +90,6 @@ export const AddExternalServicePage: FC<Props> = ({
             <PageTitle title="Add code host connection" />
             <H2>Add code host connection</H2>
             <Container>
-                {error && (
-                    <Alert className="compact" variant="danger">
-                        <ErrorMessage error={error} />
-                    </Alert>
-                )}
                 {createdExternalService?.warning ? (
                     <div>
                         <div className="mb-3">
@@ -120,7 +114,7 @@ export const AddExternalServicePage: FC<Props> = ({
                         <div className="mb-4">{externalService.instructions}</div>
                         <ExternalServiceForm
                             telemetryService={telemetryService}
-                            error={isErrorLike(isCreating) ? isCreating : undefined}
+                            error={error}
                             input={getExternalServiceInput()}
                             editorActions={externalService.editorActions}
                             jsonSchema={externalService.jsonSchema}
