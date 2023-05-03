@@ -10,6 +10,8 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -111,4 +113,42 @@ func TestGetVCSSyncer(t *testing.T) {
 	if !ok {
 		t.Fatalf("Want *server.PerforceDepotSyncer, got %T", s)
 	}
+}
+
+func TestMethodSpecificStreamInterceptor(t *testing.T) {
+	called := false
+	next := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		called = true
+		return nil
+	}
+
+	noopHandler := func(srv any, ss grpc.ServerStream) error { return nil }
+
+	interceptor := methodSpecificStreamInterceptor("allowedMethod", next)
+	err := interceptor(nil, nil, &grpc.StreamServerInfo{FullMethod: "otherMethod"}, noopHandler)
+	require.NoError(t, err)
+	require.False(t, called)
+
+	err = interceptor(nil, nil, &grpc.StreamServerInfo{FullMethod: "allowedMethod"}, noopHandler)
+	require.NoError(t, err)
+	require.True(t, called)
+}
+
+func TestMethodSpecificUnaryInterceptor(t *testing.T) {
+	called := false
+	next := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		called = true
+		return nil, nil
+	}
+
+	noopHandler := func(ctx context.Context, req any) (any, error) { return nil, nil }
+
+	interceptor := methodSpecificUnaryInterceptor("allowedMethod", next)
+	_, err := interceptor(nil, nil, &grpc.UnaryServerInfo{FullMethod: "otherMethod"}, noopHandler)
+	require.NoError(t, err)
+	require.False(t, called)
+
+	_, err = interceptor(nil, nil, &grpc.UnaryServerInfo{FullMethod: "allowedMethod"}, noopHandler)
+	require.NoError(t, err)
+	require.True(t, called)
 }

@@ -151,13 +151,19 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	configurationWatcher := conf.DefaultClient()
-	additionalServerOptions := []grpc.ServerOption{
-		grpc.ChainStreamInterceptor(
-			accesslog.StreamServerInterceptor(logger, configurationWatcher, allowedAccessLogMethods),
-		),
-		grpc.ChainUnaryInterceptor(
-			accesslog.UnaryServerInterceptor(logger, configurationWatcher, allowedAccessLogMethods),
-		),
+
+	var additionalServerOptions []grpc.ServerOption
+
+	for method, scopedLogger := range map[string]log.Logger{
+		proto.GitserverService_Exec_FullMethodName: logger.Scoped("exec.accesslog", "exec endpoint access log"),
+	} {
+		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
+		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)
+
+		additionalServerOptions = append(additionalServerOptions,
+			grpc.ChainStreamInterceptor(methodSpecificStreamInterceptor(method, streamInterceptor)),
+			grpc.ChainUnaryInterceptor(methodSpecificUnaryInterceptor(method, unaryInterceptor)),
+		)
 	}
 
 	grpcServer := defaults.NewServer(logger, additionalServerOptions...)
@@ -552,11 +558,28 @@ func getAddr() string {
 	return addr
 }
 
-func allowedAccessLogMethods(method string) bool {
-	switch method {
-	case proto.GitserverService_Search_FullMethodName, proto.GitserverService_Exec_FullMethodName:
-		return true
-	default:
-		return false
+// methodSpecificStreamInterceptor returns a gRPC stream server interceptor that only calls the next interceptor if the method matches.
+//
+// The returned interceptor will call next if the invoked gRPC method matches the method parameter. Otherwise, it will call handler directly.
+func methodSpecificStreamInterceptor(method string, next grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		if method != info.FullMethod {
+			return handler(srv, ss)
+		}
+
+		return next(srv, ss, info, handler)
+	}
+}
+
+// methodSpecificUnaryInterceptor returns a gRPC unary server interceptor that only calls the next interceptor if the method matches.
+//
+// The returned interceptor will call next if the invoked gRPC method matches the method parameter. Otherwise, it will call handler directly.
+func methodSpecificUnaryInterceptor(method string, next grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		if method != info.FullMethod {
+			return handler(ctx, req)
+		}
+
+		return next(ctx, req, info, handler)
 	}
 }

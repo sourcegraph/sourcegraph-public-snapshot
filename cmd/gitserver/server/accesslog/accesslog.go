@@ -170,15 +170,10 @@ func AllowListGRPCMethodsFilter(allowList []string) GRPCMethodFilter {
 	}
 }
 
-func UnaryServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteConfig, filter GRPCMethodFilter) grpc.UnaryServerInterceptor {
+func UnaryServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteConfig) grpc.UnaryServerInterceptor {
 	a := newAccessLogger(logger, watcher)
 
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		// If the filter returns false, we don't want to log this method.
-		if !filter(info.FullMethod) {
-			return handler(ctx, req)
-		}
-
 		ctx = withContext(ctx, &paramsContext{})
 		resp, err = handler(ctx, req)
 
@@ -187,15 +182,10 @@ func UnaryServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteCo
 	}
 }
 
-func StreamServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteConfig, filter GRPCMethodFilter) grpc.StreamServerInterceptor {
+func StreamServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteConfig) grpc.StreamServerInterceptor {
 	a := newAccessLogger(logger, watcher)
 
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		// If the filter returns false, we don't want to log this method.
-		if !filter(info.FullMethod) {
-			return handler(srv, ss)
-		}
-
 		ctx := withContext(ss.Context(), &paramsContext{})
 
 		ss = &wrappedServerStream{ServerStream: ss, ctx: ctx}

@@ -170,8 +170,6 @@ func TestAccessLogGRPC(t *testing.T) {
 	var (
 		fakeIP             = "192.168.1.1"
 		fakeRepositoryName = "github.com/foo/bar"
-
-		allowAllFilter = func(string) bool { return true }
 	)
 
 	t.Run("basic recording and audit fields", func(t *testing.T) {
@@ -183,7 +181,7 @@ func TestAccessLogGRPC(t *testing.T) {
 
 			interceptor := chainUnaryInterceptors(
 				mockClientUnaryInterceptor(client),
-				UnaryServerInterceptor(logger, configuration, allowAllFilter),
+				UnaryServerInterceptor(logger, configuration),
 			)
 
 			handlerCalled := false
@@ -230,7 +228,7 @@ func TestAccessLogGRPC(t *testing.T) {
 
 			streamInterceptor := chainStreamInterceptors(
 				mockClientStreamInterceptor(client),
-				StreamServerInterceptor(logger, configuration, allowAllFilter),
+				StreamServerInterceptor(logger, configuration),
 			)
 
 			handlerCalled := false
@@ -282,7 +280,7 @@ func TestAccessLogGRPC(t *testing.T) {
 
 			interceptor := chainUnaryInterceptors(
 				mockClientUnaryInterceptor(client),
-				UnaryServerInterceptor(logger, configuration, allowAllFilter),
+				UnaryServerInterceptor(logger, configuration),
 			)
 
 			handlerCalled := false
@@ -318,7 +316,7 @@ func TestAccessLogGRPC(t *testing.T) {
 
 		streamInterceptor := chainStreamInterceptors(
 			mockClientStreamInterceptor(client),
-			StreamServerInterceptor(logger, configuration, allowAllFilter),
+			StreamServerInterceptor(logger, configuration),
 		)
 
 		handlerCalled := false
@@ -356,7 +354,7 @@ func TestAccessLogGRPC(t *testing.T) {
 
 			interceptor := chainUnaryInterceptors(
 				mockClientUnaryInterceptor(client),
-				UnaryServerInterceptor(logger, configuration, allowAllFilter),
+				UnaryServerInterceptor(logger, configuration),
 			)
 
 			handlerCalled := false
@@ -410,7 +408,7 @@ func TestAccessLogGRPC(t *testing.T) {
 
 			interceptor := chainStreamInterceptors(
 				mockClientStreamInterceptor(client),
-				StreamServerInterceptor(logger, configuration, allowAllFilter),
+				StreamServerInterceptor(logger, configuration),
 			)
 
 			handlerCalled := false
