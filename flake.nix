@@ -25,5 +25,12 @@
         (import ./dev/nix/p4-fusion.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; })
         (import ./dev/nix/comby.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; })
       ];
+
+      # We copy-paste each supported OS to help up Noah's PR count.
+      formatter = {
+        x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
+        x86_64-darwin = nixpkgs.legacyPackages.x84_64-darwin.nixpkgs-fmt;
+        aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixpkgs-fmt;
+      };
     };
 }
