@@ -12,6 +12,16 @@ import (
 
 func TestIsCodyEnabled(t *testing.T) {
 	t.Run("Unauthenticated user", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				Completions: &schema.Completions{
+					Enabled: true,
+				},
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 0})
 		if IsCodyEnabled(ctx) {
@@ -20,6 +30,16 @@ func TestIsCodyEnabled(t *testing.T) {
 	})
 
 	t.Run("Authenticated user", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				Completions: &schema.Completions{
+					Enabled: true,
+				},
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 		if !IsCodyEnabled(ctx) {
@@ -33,6 +53,9 @@ func TestIsCodyEnabled(t *testing.T) {
 				SiteConfiguration: schema.SiteConfiguration{
 					ExperimentalFeatures: &schema.ExperimentalFeatures{
 						CodyRestrictUsersFeatureFlag: true,
+					},
+					Completions: &schema.Completions{
+						Enabled: true,
 					},
 				},
 			})
@@ -57,6 +80,9 @@ func TestIsCodyEnabled(t *testing.T) {
 					ExperimentalFeatures: &schema.ExperimentalFeatures{
 						CodyRestrictUsersFeatureFlag: true,
 					},
+					Completions: &schema.Completions{
+						Enabled: true,
+					},
 				},
 			})
 			t.Cleanup(func() {
@@ -72,6 +98,38 @@ func TestIsCodyEnabled(t *testing.T) {
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 			if !IsCodyEnabled(ctx) {
 				t.Error("Expected IsCodyEnabled to return true when cody-experimental feature flag is enabled")
+			}
+		})
+
+		t.Run("Disabled completions", func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					Completions: &schema.Completions{
+						Enabled: false,
+					},
+				},
+			})
+			t.Cleanup(func() {
+				conf.Mock(nil)
+			})
+			ctx := context.Background()
+			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+			if !IsCodyEnabled(ctx) {
+				t.Error("Expected IsCodyEnabled to return false when completions are disabled")
+			}
+		})
+
+		t.Run("No completions config", func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{},
+			})
+			t.Cleanup(func() {
+				conf.Mock(nil)
+			})
+			ctx := context.Background()
+			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+			if !IsCodyEnabled(ctx) {
+				t.Error("Expected IsCodyEnabled to return false when completions are not configured")
 			}
 		})
 	})
