@@ -11,35 +11,40 @@ export class FileChat implements Recipe {
     public id = 'file-chat'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        if (humanChatInput.startsWith('/fix')) {
+        const selection = context.editor.getActiveTextEditorSelection()
+        if (!humanChatInput || !selection) {
+            await context.editor.showWarningMessage('Failed to start file-chat.')
+            return null
+        }
+        // Check if this is a fix-up request
+        if (humanChatInput.startsWith('/fix ') || humanChatInput.startsWith('/f ')) {
             return new Fixup().getInteraction(humanChatInput, context)
         }
 
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
-        const selection = context.editor.getActiveTextEditorSelection()
-        if (!truncatedText || !selection) {
-            await context.editor.showWarningMessage('Failed to start chat.')
-            return null
-        }
-
         const MAX_RECIPE_CONTENT_TOKENS = MAX_RECIPE_INPUT_TOKENS + MAX_RECIPE_SURROUNDING_TOKENS * 2
-        const truncatedFile = truncateText(selection.selectedText, MAX_RECIPE_CONTENT_TOKENS)
+        const truncatedFile = truncateText(
+            selection.precedingText + selection.selectedText + selection.followingText,
+            MAX_RECIPE_CONTENT_TOKENS
+        )
+        const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_CONTENT_TOKENS)
 
-        const linePrompt = `I am current looking at this part of the file:\n\`\`\`\n${selection.selectedText}\n\`\`\`\n`
-        const contentPrompt = `Here is the code from the file (path: ${selection.fileName}) I am working on:\n\`\`\`\n${truncatedFile}\n\`\`\`\n`
-        const prompt =
-            contentPrompt +
-            linePrompt +
-            `\nAnswer my (follow-up) questions based on the shared code: \n${truncatedText}\n`
+        // Prompt for Cody
+        const promptText = FileChat.prompt
+            .replace('{humanInput}', truncatedText)
+            .replace('{selected}', truncatedSelectedText)
+            .replace('{content}', truncatedFile)
+            .replace('{fileName}', selection.fileName)
+
+        // Text display in UI fpr human
+        const displayText = humanChatInput + FileChat.displayPrompt.replace('{selectedText}', selection.selectedText)
 
         return Promise.resolve(
             new Interaction(
                 {
                     speaker: 'human',
-                    text: prompt,
-                    displayText:
-                        humanChatInput +
-                        `\n\nQuestions based on the code below:\n\`\`\`\n${selection.selectedText}\n\`\`\`\n`,
+                    text: promptText,
+                    displayText,
                 },
                 { speaker: 'assistant' },
                 this.getContextMessages(selection.selectedText, context.codebaseContext)
@@ -54,4 +59,32 @@ export class FileChat implements Recipe {
         })
         return contextMessages
     }
+
+    // Prompt Templates
+    public static readonly prompt = `
+    Here's the code from file {filenName}:
+    \`\`\`
+    {content}
+    \`\`\`
+
+    I have questions about this part of the file:
+    \`\`\`
+    {selectedText}
+    \`\`\`
+
+    As my coding assistant, please help me with my questions:
+    {humanInput}
+
+    ## Instruction
+    - Do not enclose your answer with tags.
+    - Do not remove code that might be being used by the other part of the code that was not shared.
+    - Your answers and suggestions should based on the provided context only.
+    - You may make references to other part of the shared code.
+    - Do not suggest code that are not related to any of the shared context.
+    - Do not suggest anything that would break the working code.
+    `
+
+    public static readonly displayPrompt = `
+    \nQuestions based on the code below:\n\`\`\`\n{selectedText}\n\`\`\`\n
+    `
 }

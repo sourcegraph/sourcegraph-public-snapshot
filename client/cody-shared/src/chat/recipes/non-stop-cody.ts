@@ -23,41 +23,38 @@ interface BatchState {
 // TODO(dpc): This is similar to Cody: Fixup so if it works well, integrate them.
 export class NonStopCody implements Recipe {
     public id = 'non-stop-cody'
-    private tick = 0
-    private trackingInProgress = false
-    private decorations: Map<vscode.Uri, TrackedDecoration[]> = new Map()
-    private comments: FileChatProvider | null = null
 
     // TODO: Generalize this to having multiple in-flight at once.
     private batch?: BatchState
+    private trackingInProgress = false
+    private comments: FileChatProvider | null = null
 
-    private fadeDecorations: vscode.TextEditorDecorationType[]
+    private decorations: Map<vscode.Uri, TrackedDecoration[]> = new Map()
     private fadeAnimation = 0
     private fadeTimer: NodeJS.Timeout | undefined = undefined
+    private fadeDecorations: vscode.TextEditorDecorationType[] = [
+        vscode.window.createTextEditorDecorationType({
+            backgroundColor: '#0ca67888', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
+            rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+            // TODO: Gutter icon w/ Cody branding could be cool
+        }),
+        vscode.window.createTextEditorDecorationType({
+            backgroundColor: '#0ca67855', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
+            rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+        }),
+        vscode.window.createTextEditorDecorationType({
+            backgroundColor: '#0ca67822', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
+            rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+        }),
+        vscode.window.createTextEditorDecorationType({
+            backgroundColor: '#0ca67811', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
+            rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+        }),
+    ]
 
     constructor() {
         // TODO: Dispose the subscription. Array of disposables?
         const subscription = vscode.workspace.onDidChangeTextDocument(this.textDocumentChanged.bind(this))
-
-        this.fadeDecorations = [
-            vscode.window.createTextEditorDecorationType({
-                backgroundColor: '#0ca67888', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
-                rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-                // TODO: Gutter icon w/ Cody branding could be cool
-            }),
-            vscode.window.createTextEditorDecorationType({
-                backgroundColor: '#0ca67855', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
-                rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-            }),
-            vscode.window.createTextEditorDecorationType({
-                backgroundColor: '#0ca67822', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
-                rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-            }),
-            vscode.window.createTextEditorDecorationType({
-                backgroundColor: '#0ca67811', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
-                rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-            }),
-        ]
     }
 
     private onAnimationTick(): void {
@@ -69,7 +66,7 @@ export class NonStopCody implements Recipe {
         if (this.fadeAnimation === this.fadeDecorations.length) {
             for (const editor of vscode.window.visibleTextEditors) {
                 this.decorations.delete(editor.document.uri)
-                editor.setDecorations(this.fadeDecorations.at(-1)!, [])
+                editor.setDecorations(this.fadeDecorations[this.fadeDecorations.length - 1], [])
             }
             if (this.fadeTimer) {
                 clearInterval(this.fadeTimer)
@@ -199,7 +196,6 @@ export class NonStopCody implements Recipe {
                     return
                 }
                 // TODO: Consider handling content progressively
-                // TODO: Fix the Promise handling lint
                 await handleResult(content)
             })
         )
@@ -214,30 +210,22 @@ export class NonStopCody implements Recipe {
             return null
         }
 
-        // TODO: This hardcodes the Anthropic "Assistant:", "Human:" prompts. Need to generalize this.
-        const prompt = `I need your help to improve some code. The area I need help with is highlighted with <cody-help> tags. You are helping me work on that part. Follow the instructions in the prompt attribute and produce a rewritten replacement. You should remove the <cody-help> tags from your replacement. Put the replacement in <cody-replace> tags. I need only the replacement, no other commentary about it. Do not write anything after the closing </cody-replace> tag. If you are adding code, I need you to repeat several lines of my code before and after your new code so I understand where to insert your new code.
+        // Prompt for Cody
+        const promptText = NonStopCody.prompt
+            .replace('{responseMultiplexerPrompt', context.responseMultiplexer.prompt())
+            .replace('{truncateFollowingText}', truncateText(followingText, quarterFileContext))
+            .replace('{selectedText}', selectedText)
+            .replace('{humanInput}', humanChatInput)
+            .replace('{truncateTextStart}', truncateTextStart(precedingText, quarterFileContext))
+            .replace('{fileName}', editor.document.fileName)
 
-Assistant: OK, I understand. I will follow the prompts to improve the code, and only reply with code in <cody-replace> tags. The last thing I write will be the closing </cody-replace> tag.
-
-Human: Great, thank you! This is part of the file ${
-            editor.document.fileName
-        }. The area I need help with is highlighted with <cody-help> tags. Again, I only need the replacement in <cody-replace> tags.
-
-<cody-replace>${truncateTextStart(
-            precedingText,
-            quarterFileContext
-        )}<cody-help prompt="${humanChatInput}">${selectedText}</cody-help>${truncateText(
-            followingText,
-            quarterFileContext
-        )}</cody-replace>\n\n${context.responseMultiplexer.prompt()}`
         // TODO: Move the prompt suffix from the recipe to the chat view. It may have other subscribers.
-
-        const text = selectedText || precedingText + followingText
+        const text = selectedText || precedingText + selectedText + followingText
         return Promise.resolve(
             new Interaction(
                 {
                     speaker: 'human',
-                    text: prompt,
+                    text: promptText,
                     displayText: 'Update the selected code based on my instructions.',
                 },
                 {
@@ -263,9 +251,9 @@ Human: Great, thank you! This is part of the file ${
         if (!this.batch) {
             return
         }
+
         const editedText = this.batch.editor.document.getText(this.batch.range)
         const diff = computeDiff(this.batch.original, content, editedText, this.batch.range.start)
-
         if (!diff.clean) {
             await vscode.window.showErrorMessage('Cody: Diff does not apply cleanly')
             // TODO: Handle this by scheduling another spin, invoking diff mode, etc.
@@ -274,7 +262,6 @@ Human: Great, thank you! This is part of the file ${
         }
 
         // TODO: Animate diff availability
-
         const success = await this.batch.editor.edit(
             editBuilder => {
                 for (const edit of diff.edits) {
@@ -303,15 +290,36 @@ Human: Great, thank you! This is part of the file ${
             }
             decorations.push(deco)
         }
+
         vscode.window.activeTextEditor?.setDecorations(this.fadeDecorations[0], decorations)
         this.fadeAnimation = 0
+
         if (typeof this.fadeTimer !== 'undefined') {
             clearInterval(this.fadeTimer)
         }
+
         this.fadeTimer = setInterval(this.onAnimationTick.bind(this), 1500)
 
         await vscode.window.showInformationMessage(
             `Cody done, generated ${content.length} characters; edit: ${success}`
         )
     }
+
+    // TODO: This hardcodes the Anthropic "Assistant:", "Human:" prompts. Need to generalize this.
+    public static readonly prompt = `
+    I need your help to improve some code.
+    The area I need help with is highlighted with <cody-help> tags. You are helping me work on that part.
+    Follow the instructions in the prompt attribute and produce a rewritten replacement.
+    You should remove the <cody-help> tags from your replacement. Put the replacement in <cody-replace> tags.
+    I need only the replacement, no other commentary about it. Do not write anything after the closing </cody-replace> tag.
+    If you are adding code, I need you to repeat several lines of my code before and after your new code so I understand where to insert your new code.
+
+    Assistant: OK, I understand. I will follow the prompts to improve the code, and only reply with code in <cody-replace> tags. The last thing I write will be the closing </cody-replace> tag.
+
+    Human: Great, thank you! This is part of the file {fileName}. The area I need help with is highlighted with <cody-help> tags.
+    Again, I only need the replacement in <cody-replace> tags.
+
+    <cody-replace>{truncateTextStart}<cody-help prompt="{humanInput}">{selectedText}</cody-help>{truncateFollowingText}</cody-replace>
+
+    {responseMultiplexerPrompt}`
 }
