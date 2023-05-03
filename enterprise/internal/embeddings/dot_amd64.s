@@ -1,6 +1,6 @@
 #include "textflag.h"
 
-TEXT ·avx2Dot(SB), NOSPLIT, $0-54
+TEXT ·avx2Dot(SB), NOSPLIT, $0-56
 	MOVQ a_base+0(FP), AX
 	MOVQ b_base+24(FP), BX
 	MOVQ a_len+8(FP), DX
