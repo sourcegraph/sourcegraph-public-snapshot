@@ -44,8 +44,15 @@ spec:
               # Since the host is 'host.docker.internal', this needs to be true.
             - name: EXECUTOR_DOCKER_ADD_HOST_GATEWAY
               value: "true"
+            # Ensure that the job pods are scheduled on the same node as the executor pod.
+            - name: EXECUTOR_KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
             # Useful for debugging.
 #            - name: KUBERNETES_KEEP_JOBS
+#              value: "true"
+#            - name: EXECUTOR_KEEP_WORKSPACES
 #              value: "true"
           volumeMounts:
             - mountPath: /data
