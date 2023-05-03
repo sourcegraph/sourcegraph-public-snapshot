@@ -259,8 +259,8 @@ Also add this snippet to `spec.template.spec.containers.volumeMounts` of each ex
 Next, apply the updated YAML manifests. Once the executors have rolled out, they should be picking up your custom certificates.
 
 ### Adding certificates to a Kubernetes deployment using Helm
-
-Using custom certificates with a Helm deployment is not yet supported.
+        
+You may follow the same instructions for the manifest deployment to set custom certificates.
 
 ### Adding certificates to a Docker Compose deployment
 
