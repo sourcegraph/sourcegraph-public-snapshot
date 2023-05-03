@@ -39,7 +39,7 @@ export default config
 
 export const Simple: Story = (args = {}) => (
     <Button variant={args.variant} size={args.size} disabled={args.disabled} outline={args.outline}>
-        HELLO WORLD!
+        Click me!
     </Button>
 )
 Simple.argTypes = {
@@ -67,7 +67,7 @@ Simple.argTypes = {
 
 export const AllButtons: Story = () => (
     <div className="pb-3">
-        <H1>HELLO WORLD</H1>
+        <H1>Buttons</H1>
         <H2>Variants</H2>
         <ButtonVariants variants={BUTTON_VARIANTS} />
         <H2>Outline</H2>
