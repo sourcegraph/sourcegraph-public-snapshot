@@ -21,7 +21,6 @@ export type FeatureFlagName =
     | 'search-ownership'
     | 'search-ranking'
     | 'blob-page-switch-areas-shortcuts'
-    | 'app-connect-dotcom'
     | 'sentinel'
     | 'clone-progress-logging'
     | 'sourcegraph-operator-site-admin-hide-maintenance'
