@@ -1,4 +1,4 @@
-import { QueryTuple, MutationTuple } from '@apollo/client'
+import { QueryTuple, MutationTuple, MutationHookOptions } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -48,34 +48,18 @@ export const externalServiceFragment = gql`
     }
 `
 
-export async function addExternalService(
-    variables: AddExternalServiceVariables,
-    eventLogger: TelemetryService
-): Promise<AddExternalServiceResult['addExternalService']> {
-    return requestGraphQL<AddExternalServiceResult, AddExternalServiceVariables>(
-        gql`
-            mutation AddExternalService($input: AddExternalServiceInput!) {
-                addExternalService(input: $input) {
-                    ...ExternalServiceFields
-                }
-            }
+export const ADD_EXTERNAL_SERVICE = gql`
+    mutation AddExternalService($input: AddExternalServiceInput!) {
+        addExternalService(input: $input) {
+            ...ExternalServiceFields
+        }
+    }
 
-            ${externalServiceFragment}
-        `,
-        variables
-    )
-        .pipe(
-            map(({ data, errors }) => {
-                if (!data?.addExternalService || (errors && errors.length > 0)) {
-                    eventLogger.log('AddExternalServiceFailed')
-                    throw createAggregateError(errors)
-                }
-                eventLogger.log('AddExternalServiceSucceeded')
-                return data.addExternalService
-            })
-        )
-        .toPromise()
-}
+    ${externalServiceFragment}
+`
+
+export const useAddExternalService = (): MutationTuple<AddExternalServiceResult, AddExternalServiceVariables> =>
+    useMutation<AddExternalServiceResult, AddExternalServiceVariables>(ADD_EXTERNAL_SERVICE)
 
 export const UPDATE_EXTERNAL_SERVICE = gql`
     mutation UpdateExternalService($input: UpdateExternalServiceInput!) {

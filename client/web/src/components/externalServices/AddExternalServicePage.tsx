@@ -5,13 +5,13 @@ import { useNavigate } from 'react-router-dom'
 
 import { asError, isErrorLike, logger, renderMarkdown } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Container, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
+import { Alert, Container, ErrorMessage, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, AddExternalServiceInput } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 import { PageTitle } from '../PageTitle'
 
-import { addExternalService } from './backend'
+import { addExternalService, useAddExternalService } from './backend'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { AddExternalServiceOptions } from './externalServices'
@@ -60,40 +60,42 @@ export const AddExternalServicePage: FC<Props> = ({
         [setDisplayName, setConfig]
     )
 
-    const [isCreating, setIsCreating] = useState<boolean | Error>(false)
-    const [createdExternalService, setCreatedExternalService] = useState<ExternalServiceFields>()
+    const [addExternalService, { data: addExternalServiceResult, loading: isCreating, error, client }] =
+        useAddExternalService()
+
     const onSubmit = useCallback(
-        async (event?: React.FormEvent<HTMLFormElement>): Promise<void> => {
+        (event?: React.FormEvent<HTMLFormElement>): void => {
             if (event) {
                 event.preventDefault()
             }
-            setIsCreating(true)
-            try {
-                const service = await addExternalService({ input: { ...getExternalServiceInput() } }, telemetryService)
-                setIsCreating(false)
-                setCreatedExternalService(service)
-            } catch (error) {
-                setIsCreating(asError(error))
-            }
+            addExternalService({
+                variables: {
+                    input: { ...getExternalServiceInput() },
+                },
+                onCompleted: data => {
+                    telemetryService.log('AddExternalServiceSucceeded')
+                    refreshSiteFlags(client).catch((error: Error) => logger.error(error))
+                    navigate(`/site-admin/external-services/${data.addExternalService.id}`)
+                },
+                onError: () => {
+                    telemetryService.log('AddExternalServiceFailed')
+                },
+            })
         },
-        [getExternalServiceInput, telemetryService]
+        [addExternalService, telemetryService, getExternalServiceInput]
     )
-
-    const client = useApolloClient()
-    useEffect(() => {
-        if (createdExternalService && !isErrorLike(createdExternalService)) {
-            // Refresh site flags so that global site alerts
-            // reflect the latest configuration.
-            refreshSiteFlags(client).catch((error: Error) => logger.error(error))
-            navigate(`/site-admin/external-services/${createdExternalService.id}`)
-        }
-    }, [client, createdExternalService, navigate])
+    const createdExternalService = addExternalServiceResult?.addExternalService
 
     return (
         <>
-            <PageTitle title="Add repositories" />
-            <H2>Add repositories</H2>
+            <PageTitle title="Add code host connection" />
+            <H2>Add code host connection</H2>
             <Container>
+                {error && (
+                    <Alert className="compact" variant="danger">
+                        <ErrorMessage error={error} />
+                    </Alert>
+                )}
                 {createdExternalService?.warning ? (
                     <div>
                         <div className="mb-3">
