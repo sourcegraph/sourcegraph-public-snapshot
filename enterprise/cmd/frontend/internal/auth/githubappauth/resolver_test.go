@@ -3,6 +3,7 @@ package githubapp
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -13,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
-	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -27,9 +27,10 @@ func userCtx(userID int32) context.Context {
 	return actor.WithActor(ctx, a)
 }
 
-func TestResolver_CreateGitHubApp(t *testing.T) {
+func TestResolver_DeleteGitHubApp(t *testing.T) {
 	logger := logtest.Scoped(t)
 	id := 1
+	graphqlID := MarshalGitHubAppID(int64(id))
 
 	userStore := database.NewMockUserStore()
 	userStore.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
@@ -44,14 +45,11 @@ func TestResolver_CreateGitHubApp(t *testing.T) {
 	})
 
 	gitHubAppsStore := store.NewStrictMockGitHubAppsStore()
-	gitHubAppsStore.CreateFunc.SetDefaultHook(func(ctx context.Context, app *ghtypes.GitHubApp) (int, error) {
-		if app == nil {
-			return 0, errors.New("app is nil")
+	gitHubAppsStore.DeleteFunc.SetDefaultHook(func(ctx context.Context, app int) error {
+		if app != id {
+			return errors.New(fmt.Sprintf("app with id %d does not exist", id))
 		}
-		o := *app
-		o.ID = id
-		id++
-		return o.ID, nil
+		return nil
 	})
 
 	db := edb.NewStrictMockEnterpriseDB()
@@ -69,41 +67,35 @@ func TestResolver_CreateGitHubApp(t *testing.T) {
 		Schema:  schema,
 		Context: adminCtx,
 		Query: `
-			mutation CreateGitHubApp($input: CreateGitHubAppInput!) {
-				createGitHubApp(input: $input)
+			mutation DeleteGitHubApp($gitHubApp: ID!) {
+				deleteGitHubApp(gitHubApp: $gitHubApp) {
+					alwaysNil
+				}
 			}`,
 		ExpectedResult: `{
-			"createGitHubApp": 1
+			"deleteGitHubApp": {
+				"alwaysNil": null
+			}
 		}`,
 		Variables: map[string]any{
-			"input": map[string]any{
-				"appID":        123,
-				"baseURL":      "https://github.com",
-				"clientID":     "client-id",
-				"clientSecret": "client-secret",
-				"privateKey":   "private-key",
-			},
+			"gitHubApp": string(graphqlID),
 		},
 	}, {
 		Schema:  schema,
 		Context: userCtx,
 		Query: `
-			mutation CreateGitHubApp($input: CreateGitHubAppInput!) {
-				createGitHubApp(input: $input)
+			mutation DeleteGitHubApp($gitHubApp: ID!) {
+				deleteGitHubApp(gitHubApp: $gitHubApp) {
+					alwaysNil
+				}
 			}`,
-		ExpectedResult: `{"createGitHubApp":null}`,
+		ExpectedResult: `{"deleteGitHubApp": null}`,
 		ExpectedErrors: []*gqlerrors.QueryError{{
 			Message: "must be site admin",
-			Path:    []any{string("createGitHubApp")},
+			Path:    []any{string("deleteGitHubApp")},
 		}},
 		Variables: map[string]any{
-			"input": map[string]any{
-				"appID":        123,
-				"baseURL":      "https://github.com",
-				"clientID":     "client-id",
-				"clientSecret": "client-secret",
-				"privateKey":   "private-key",
-			},
+			"gitHubApp": string(graphqlID),
 		},
 	}})
 }
