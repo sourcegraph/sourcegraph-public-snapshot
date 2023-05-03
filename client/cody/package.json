@@ -313,10 +313,6 @@
           ],
           "default": "embeddings"
         },
-        "cody.experimental.suggestions": {
-          "type": "boolean",
-          "default": false
-        },
         "cody.experimental.chatPredictions": {
           "type": "boolean",
           "default": false
