@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 
 go_library(
     name = "sourcegraph_lib",
@@ -49,4 +49,18 @@ go_binary(
     #     "github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType": "app",
     # },
     visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sourcegraph_test",
+    srcs = ["integration_test.go"],
+    embed = [":sourcegraph_lib"],
+    deps = ["@io_bazel_rules_go//go/tools/bazel:go_default_library"],
+    timeout = "moderate",
+    args = ["$(location :sourcegraph)"],
+    data = [":sourcegraph"],
+    env = {
+        "BAZEL": "true",
+    },
+    tags = [ "requires-network" ],
 )
