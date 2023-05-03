@@ -25,12 +25,22 @@ type repoData interface {
 	IsIndexed() bool
 }
 
-type IndexedMap map[api.RepoID]*search.RepositoryRevisions
+type IndexedMap map[api.RepoID]*zoektutil.RepositoryRevisionBranches
 
 func (m IndexedMap) AsList() []*search.RepositoryRevisions {
 	reposList := make([]*search.RepositoryRevisions, 0, len(m))
 	for _, repo := range m {
-		reposList = append(reposList, repo)
+		cp := repo.Copy()
+		revOverrides := make([]string, 0, len(cp.Revs))
+		for _, rev := range cp.Revs {
+			indexedBranch := rev
+			if branchOverride, ok := repo.RevBranchOverride[rev]; ok {
+				indexedBranch = branchOverride
+			}
+			revOverrides = append(revOverrides, indexedBranch)
+		}
+		cp.Revs = revOverrides
+		reposList = append(reposList, cp)
 	}
 	return reposList
 }

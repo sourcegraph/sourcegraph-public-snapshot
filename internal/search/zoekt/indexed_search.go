@@ -38,11 +38,20 @@ import (
 type IndexedRepoRevs struct {
 	// RepoRevs is the Sourcegraph representation of a the list of repoRevs
 	// repository and revisions to search.
-	RepoRevs map[api.RepoID]*search.RepositoryRevisions
+	RepoRevs map[api.RepoID]*RepositoryRevisionBranches
 
 	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
 	// marshal and send to zoekt
 	branchRepos map[string]*zoektquery.BranchRepos
+}
+
+type RepositoryRevisionBranches struct {
+	*search.RepositoryRevisions
+
+	// RevBranchOverride is used to map a commit SHA to a branch name in zoekt which is not the commit SHA.
+	// This is used for structural search jobs that do utilize the revision and repo name only instead of
+	// a zoektquery.BranchRepos (e.g. returned by IndexedRepoRevs.BranchRepos())
+	RevBranchOverride map[string]string
 }
 
 // add will add reporev and repo to the list of repository and branches to
@@ -64,6 +73,8 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	reporev = reporev.Copy()
 	indexed := reporev.Revs[:0]
 
+	revBranchOverride := make(map[string]string)
+
 	for _, inputRev := range reporev.Revs {
 		found := false
 		rev := inputRev
@@ -80,6 +91,10 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 			// Check if rev is an abbrev commit SHA
 			if len(rev) >= 4 && strings.HasPrefix(branch.Version, rev) {
 				branches = append(branches, branch.Name)
+
+				// Any branch whose version is the given commit SHA can be used to override
+				revBranchOverride[rev] = branch.Name
+
 				found = true
 				break
 			}
@@ -95,7 +110,9 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	// We found indexed branches! Track them.
 	if len(indexed) > 0 {
 		reporev.Revs = indexed
-		rb.RepoRevs[reporev.Repo.ID] = reporev
+		repoRevBranches := &RepositoryRevisionBranches{RepositoryRevisions: reporev, RevBranchOverride: revBranchOverride}
+
+		rb.RepoRevs[reporev.Repo.ID] = repoRevBranches
 		for _, branch := range branches {
 			br, ok := rb.branchRepos[branch]
 			if !ok {
@@ -611,7 +628,7 @@ func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs [
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = &IndexedRepoRevs{
-		RepoRevs:    make(map[api.RepoID]*search.RepositoryRevisions, len(revs)),
+		RepoRevs:    make(map[api.RepoID]*RepositoryRevisionBranches, len(revs)),
 		branchRepos: make(map[string]*zoektquery.BranchRepos, 1),
 	}
 	unindexed = make([]*search.RepositoryRevisions, 0)
