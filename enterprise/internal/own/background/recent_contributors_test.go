@@ -12,7 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	database2 "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -104,6 +108,46 @@ func Test_RecentContributorIndexFromGitserver(t *testing.T) {
 			assert.Equal(t, want, got)
 		})
 	}
+}
+
+func Test_RecentContributorIndex_CanSeePrivateRepos(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database2.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	ctx := context.Background()
+
+	err := db.Repos().Create(ctx, &types.Repo{
+		ID:      1,
+		Name:    "own/repo1",
+		Private: true,
+	})
+	require.NoError(t, err)
+
+	userWithAccess, err := db.Users().Create(ctx, database.NewUser{Username: "user1234"})
+	require.NoError(t, err)
+
+	userNoAccess, err := db.Users().Create(ctx, database.NewUser{Username: "user-no-access"})
+	require.NoError(t, err)
+
+	globals.PermissionsUserMapping().Enabled = true // this is required otherwise setting the permissions won't do anything
+	_, err = db.Perms().SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: userWithAccess.ID}}, authz.SourceAPI)
+	require.NoError(t, err)
+
+	client := gitserver.NewMockClient()
+	indexer := newRecentContributorsIndexer(client, db, logger)
+
+	t.Run("non-internal user", func(t *testing.T) {
+		// this is kind of an unrelated test just to provide a baseline that there is actually a difference when
+		// we use the internal context. Otherwise, we could accidentally break this and not know it.
+		newCtx := actor.WithActor(ctx, actor.FromUser(userNoAccess.ID)) // just to make sure this is a different user
+		err := indexer.indexRepo(newCtx, api.RepoID(1))
+		assert.ErrorContains(t, err, "repo not found: id=1")
+	})
+
+	t.Run("internal user", func(t *testing.T) {
+		newCtx := actor.WithInternalActor(ctx)
+		err := indexer.indexRepo(newCtx, api.RepoID(1))
+		assert.NoError(t, err)
+	})
 }
 
 func fakeCommitsToLog(commits []fakeCommit) (results []gitserver.CommitLog) {
