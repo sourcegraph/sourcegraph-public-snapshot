@@ -2341,6 +2341,23 @@ COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
 
+CREATE TABLE github_app_installs (
+    id integer NOT NULL,
+    app_id integer NOT NULL,
+    installation_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE github_app_installs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE github_app_installs_id_seq OWNED BY github_app_installs.id;
+
 CREATE TABLE github_apps (
     id integer NOT NULL,
     app_id integer NOT NULL,
@@ -4634,6 +4651,8 @@ ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SE
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
 
+ALTER TABLE ONLY github_app_installs ALTER COLUMN id SET DEFAULT nextval('github_app_installs_id_seq'::regclass);
+
 ALTER TABLE ONLY github_apps ALTER COLUMN id SET DEFAULT nextval('github_apps_id_seq'::regclass);
 
 ALTER TABLE ONLY gitserver_relocator_jobs ALTER COLUMN id SET DEFAULT nextval('gitserver_relocator_jobs_id_seq'::regclass);
@@ -4955,6 +4974,9 @@ ALTER TABLE ONLY feature_flag_overrides
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
 
+ALTER TABLE ONLY github_app_installs
+    ADD CONSTRAINT github_app_installs_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_pkey PRIMARY KEY (id);
 
@@ -5249,6 +5271,8 @@ CREATE INDEX access_requests_status ON access_requests USING btree (status);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
+CREATE INDEX app_id_idx ON github_app_installs USING btree (app_id);
+
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
 
 CREATE INDEX batch_changes_namespace_user_id ON batch_changes USING btree (namespace_user_id);
@@ -5478,6 +5502,8 @@ CREATE INDEX insights_query_runner_jobs_processable_priority_id ON insights_quer
 CREATE INDEX insights_query_runner_jobs_series_id_state ON insights_query_runner_jobs USING btree (series_id, state);
 
 CREATE INDEX insights_query_runner_jobs_state_btree ON insights_query_runner_jobs USING btree (state);
+
+CREATE INDEX installation_id_idx ON github_app_installs USING btree (installation_id);
 
 CREATE UNIQUE INDEX kind_cloud_default ON external_services USING btree (kind, cloud_default) WHERE ((cloud_default = true) AND (deleted_at IS NULL));
 
@@ -6046,6 +6072,9 @@ ALTER TABLE ONLY vulnerability_affected_symbols
 
 ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY github_app_installs
+    ADD CONSTRAINT github_app_installs_app_id_fkey FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
