@@ -236,7 +236,7 @@ func (m mockStream) GetServerMessage() any {
 	return <-m.sentFromServer
 }
 
-//	GetClientMessage returns next message sent from the client to the
+// GetClientMessage returns next message sent from the client to the
 //
 // server.
 func (m mockStream) GetClientMessage() any {
