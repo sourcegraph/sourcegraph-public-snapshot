@@ -1,6 +1,8 @@
 #include "textflag.h"
 
-TEXT ·avx2Dot(SB), NOSPLIT, $0-56
+TEXT ·dotAVX2(SB), NOSPLIT, $0-56
+	// Offsets based on slice header offsets.
+	// To check, use `GOARCH=amd64 go vet`
 	MOVQ a_base+0(FP), AX
 	MOVQ b_base+24(FP), BX
 	MOVQ a_len+8(FP), DX

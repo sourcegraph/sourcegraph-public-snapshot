@@ -1,8 +1,12 @@
 package embeddings
 
+// Dot computes the dot product of the two vectors:
+// sum_i(a_i * b_i) for i in [0, len(a)).
+//
+// Precondition: len(a) == len(b)
 func Dot(a, b []int8) int32 {
-	if haveArchDot {
-		return archDot(a, b)
+	if haveDotArch {
+		return dotArch(a, b)
 	}
 	return dotPortable(a, b)
 }
