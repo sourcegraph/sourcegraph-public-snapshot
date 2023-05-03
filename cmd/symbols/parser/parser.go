@@ -155,7 +155,6 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 
 	default:
 		source = Universal
-		break
 	}
 
 	parser, err := p.parserFromPool(ctx, source)
