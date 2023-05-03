@@ -1361,6 +1361,76 @@ func TestEventLogs_ListAll(t *testing.T) {
 	}
 }
 
+func TestEventLogs_ListEventsByName(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	t.Parallel()
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	now := time.Now()
+
+	startDate, _ := calcStartDate(now, Daily, 3)
+
+	events := []*Event{
+		{
+			UserID:    1,
+			Name:      "SearchResultsQueried",
+			URL:       "http://sourcegraph.com",
+			Source:    "test",
+			Timestamp: startDate,
+		}, {
+			UserID:    2,
+			Name:      "SearchResultsQueried",
+			URL:       "http://sourcegraph.com",
+			Source:    "test",
+			Timestamp: startDate,
+		},
+		{
+			UserID:    3,
+			Name:      "SearchResultsQueried",
+			URL:       "http://sourcegraph.com",
+			Source:    "test",
+			Timestamp: startDate,
+		},
+		{
+			UserID:    1337,
+			Name:      "ViewRepository",
+			URL:       "http://sourcegraph.com",
+			Source:    "test",
+			Timestamp: startDate,
+		}}
+
+	for _, event := range events {
+		if err := db.EventLogs().Insert(ctx, event); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	t.Run("listed one ViewRepository event", func(t *testing.T) {
+		have, err := db.EventLogs().ListEventsByName(ctx, "ViewRepository", 0, 1)
+		require.NoError(t, err)
+		require.Len(t, have, 1)
+		require.Equal(t, uint32(1337), have[0].UserID)
+	})
+
+	t.Run("listed zero events because of after parameter", func(t *testing.T) {
+		have, err := db.EventLogs().ListEventsByName(ctx, "ViewRepository", 4, 1)
+		require.NoError(t, err)
+		require.Empty(t, have)
+	})
+
+	t.Run("listed two SearchResultsQueried events because of after parameter", func(t *testing.T) {
+		have, err := db.EventLogs().ListEventsByName(ctx, "SearchResultsQueried", 1, 3)
+		require.NoError(t, err)
+		require.Len(t, have, 2)
+		require.Equal(t, uint32(2), have[0].UserID)
+		require.Equal(t, uint32(3), have[1].UserID)
+	})
+}
+
 func TestEventLogs_LatestPing(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

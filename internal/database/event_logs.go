@@ -112,7 +112,10 @@ type EventLogStore interface {
 	// ListAll gets all event logs in descending order of timestamp.
 	ListAll(ctx context.Context, opt EventLogsListOptions) ([]*Event, error)
 
-	// ListExportableEvents gets all event logs that are allowed to be exported.
+	// ListEventsByName gets a `limit` number of events of a certain type/name with ID more than `after`.
+	ListEventsByName(ctx context.Context, name string, after, limit int) ([]*Event, error)
+
+	// ListExportableEvents gets a batch of event logs that are allowed to be exported.
 	ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error)
 
 	ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error)
@@ -344,6 +347,11 @@ func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) (
 		conds = append(conds, sqlf.Sprintf("name = %s", opt.EventName))
 	}
 	return l.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY timestamp DESC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
+}
+
+func (l *eventLogStore) ListEventsByName(ctx context.Context, name string, after, limit int) ([]*Event, error) {
+	suffix := "WHERE event_logs.id > %d AND name = %s ORDER BY event_logs.id LIMIT %d"
+	return l.getBySQL(ctx, sqlf.Sprintf(suffix, after, name, limit))
 }
 
 func (l *eventLogStore) ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error) {
