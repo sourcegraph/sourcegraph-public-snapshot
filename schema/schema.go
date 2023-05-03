@@ -608,6 +608,10 @@ type Embeddings struct {
 	Enabled bool `json:"enabled"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// MaxCodeEmbeddingsPerRepo description: The maximum number of embeddings for code files to generate per repo
+	MaxCodeEmbeddingsPerRepo int `json:"maxCodeEmbeddingsPerRepo,omitempty"`
+	// MaxTextEmbeddingsPerRepo description: The maximum number of embeddings for text files to generate per repo
+	MaxTextEmbeddingsPerRepo int `json:"maxTextEmbeddingsPerRepo,omitempty"`
 	// Model description: The model used for embedding.
 	Model string `json:"model"`
 	// Url description: The url to the external embedding API service.
@@ -2022,7 +2026,7 @@ type Settings struct {
 	Notices []*Notice `json:"notices,omitempty"`
 	// OpenInEditor description: Group of settings related to opening files in an editor.
 	OpenInEditor *SettingsOpenInEditor `json:"openInEditor,omitempty"`
-	// OrgsAllMembersBatchChangesAdmin description: Enables/Disables org-level admin access for Batch Changes to all members of an org
+	// OrgsAllMembersBatchChangesAdmin description: If enabled, all members of the org will be treated as admins (e.g. can edit, apply, delete) for all batch changes created in that org.
 	OrgsAllMembersBatchChangesAdmin *bool `json:"orgs.allMembersBatchChangesAdmin,omitempty"`
 	// PerforceCodeHostToSwarmMap description: Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like "perforce.company.com:1666". Values should look like "https://swarm.company.com/", with a slash at the end.
 	PerforceCodeHostToSwarmMap map[string]string `json:"perforce.codeHostToSwarmMap,omitempty"`
