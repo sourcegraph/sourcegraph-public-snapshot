@@ -68,7 +68,7 @@ v4.2.0 v4.2.1
 v4.3.0 v4.3.1
 v4.4.0 v4.4.1 v4.4.2
 v4.5.0 v4.5.1
-v5.0.0 v5.0.1 v5.0.2)
+v5.0.0 v5.0.1 v5.0.2 5.0.3)
 
 for version in "${git_versions[@]}"; do
   echo "Persisting schemas for ${version} from Git..."
