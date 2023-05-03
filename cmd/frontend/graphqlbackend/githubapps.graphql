@@ -5,3 +5,23 @@ extend type Mutation {
     """
     deleteGitHubApp(gitHubApp: ID!): EmptyResponse
 }
+
+extend type Query {
+    gitHubApps(): GitHubAppConnection!
+}
+
+type GitHubAppConnection {
+    nodes: [GitHubApp!]!
+    totalCount: Int!
+}
+
+type GitHubApp implements Node {
+    id: ID!
+    appID: Int!
+    name: String!
+    slug: String!
+    baseURL: String!
+    appURL: String!
+    clientID: String!
+    logo: String!
+}

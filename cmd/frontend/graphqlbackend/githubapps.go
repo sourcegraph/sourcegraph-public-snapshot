@@ -13,9 +13,26 @@ import (
 
 type GitHubAppsResolver interface {
 	// Queries
+	GitHubApps(ctx context.Context) (GitHubAppConnectionResolver, error)
 
 	// Mutations
 	DeleteGitHubApp(ctx context.Context, args *DeleteGitHubAppArgs) (*EmptyResponse, error)
+}
+
+type GitHubAppConnectionResolver interface {
+	Nodes(ctx context.Context) []GitHubAppResolver
+	TotalCount(ctx context.Context) int32
+}
+
+type GitHubAppResolver interface {
+	ID() graphql.ID
+	AppID() int32
+	Name() string
+	Slug() string
+	BaseURL() string
+	AppURL() string
+	ClientID() string
+	Logo() string
 }
 
 type DeleteGitHubAppArgs struct {

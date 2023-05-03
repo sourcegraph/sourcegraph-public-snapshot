@@ -61,26 +61,81 @@ func (r *resolver) DeleteGitHubApp(ctx context.Context, args *graphqlbackend.Del
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-type gitHubAppResolver struct {
-	// cache results because they are used by multiple fields
-	once       sync.Once
-	gitHubApps []*types.GitHubApp
-	err        error
-	db         edb.EnterpriseDB
+func NewGitHubAppResolver(app *types.GitHubApp) *gitHubAppResolver {
+	return &gitHubAppResolver{app: app}
 }
 
-func (r *resolver) GitHubApps(ctx context.Context, args *graphqlbackend.GitHubAppsArgs) (*gitHubAppResolver, error) {
+func (r *resolver) GitHubApps(ctx context.Context) (graphqlbackend.GitHubAppConnectionResolver, error) {
 	// 🚨 SECURITY: Check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	return &gitHubAppResolver{db: r.db}, nil
+	apps, err := r.db.GitHubApps().List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]graphqlbackend.GitHubAppResolver, len(apps))
+	for i := range apps {
+		resolvers[i] = NewGitHubAppResolver(apps[i])
+	}
+
+	gitHubAppConnection := &gitHubAppConnectionResolver{
+		resolvers:  resolvers,
+		totalCount: len(resolvers),
+	}
+
+	return gitHubAppConnection, nil
 }
 
-func (r *gitHubAppResolver) compute(ctx context.Context) ([]*types.GitHubApp, error) {
-	r.once.Do(func() {
-		r.gitHubApps, r.err = r.db.GitHubApps().List(ctx)
-	})
-	return r.gitHubApps, r.err
+type gitHubAppConnectionResolver struct {
+	resolvers  []graphqlbackend.GitHubAppResolver
+	totalCount int
+}
+
+func (r *gitHubAppConnectionResolver) Nodes(ctx context.Context) []graphqlbackend.GitHubAppResolver {
+	return r.resolvers
+}
+
+func (r *gitHubAppConnectionResolver) TotalCount(ctx context.Context) int32 {
+	return int32(r.totalCount)
+}
+
+type gitHubAppResolver struct {
+	// cache results because they are used by multiple fields
+	once sync.Once
+	app  *types.GitHubApp
+}
+
+func (r *gitHubAppResolver) ID() graphql.ID {
+	return MarshalGitHubAppID(int64(r.app.ID))
+}
+
+func (r *gitHubAppResolver) AppID() int32 {
+	return int32(r.app.AppID)
+}
+
+func (r *gitHubAppResolver) Name() string {
+	return r.app.Name
+}
+
+func (r *gitHubAppResolver) Slug() string {
+	return r.app.Slug
+}
+
+func (r *gitHubAppResolver) BaseURL() string {
+	return r.app.BaseURL
+}
+
+func (r *gitHubAppResolver) AppURL() string {
+	return r.app.AppURL
+}
+
+func (r *gitHubAppResolver) ClientID() string {
+	return r.app.ClientID
+}
+
+func (r *gitHubAppResolver) Logo() string {
+	return r.app.Logo
 }
