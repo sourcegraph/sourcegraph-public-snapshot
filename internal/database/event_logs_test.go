@@ -1360,30 +1360,38 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 
 	expectedEvents := []types.CodyAggregatedEvent{
 		{
-			Name:         "CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
-			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-			Day:          now.Truncate(time.Hour * 24),
-			TotalMonth:   int32(len(users) * 25 * 4), // 4 days in month
-			TotalWeek:    int32(len(users) * 25 * 3), // 3 days in week
-			TotalDay:     int32(len(users) * 25),
-			UniquesMonth: 2,
-			UniquesWeek:  2,
-			UniquesDay:   2,
+			Name:               "CodyVSCodeExtension:recipe:explain-code-high-level:executed",
+			Month:              time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:               now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Day:                now.Truncate(time.Hour * 24),
+			TotalMonth:         200,
+			TotalWeek:          150,
+			TotalDay:           50,
+			UniquesMonth:       2,
+			UniquesWeek:        2,
+			UniquesDay:         2,
+			CodeGenerationWeek: 150,
+			CodeGenerationDay:  0,
+			ExplanationMonth:   200,
+			ExplanationWeek:    150,
+			ExplanationDay:     50,
 		},
 		{
-			Name:         "CodyVSCodeExtension:recipe:explain-code-high-level:executed",
-			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-			Day:          now.Truncate(time.Hour * 24),
-			TotalMonth:   int32(len(users) * 25 * 4), // 4 days in month
-			TotalWeek:    int32(len(users) * 25 * 3), // 3 days in week
-			TotalDay:     int32(len(users) * 25),
-			UniquesMonth: 2,
-			UniquesWeek:  2,
-			UniquesDay:   2,
+			Name:                "CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
+			Month:               time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:                now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Day:                 now.Truncate(time.Hour * 24),
+			TotalMonth:          200,
+			TotalWeek:           150,
+			TotalDay:            50,
+			UniquesMonth:        2,
+			UniquesWeek:         2,
+			UniquesDay:          2,
+			CodeGenerationMonth: 200,
+			CodeGenerationDay:   50,
 		},
 	}
+
 	if diff := cmp.Diff(expectedEvents, events); diff != "" {
 		t.Fatal(diff)
 	}

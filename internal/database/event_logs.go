@@ -1479,7 +1479,7 @@ WITH events AS (
   FROM event_logs
   WHERE
     timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
-    AND lower(name) like '%''cody''%'
+    AND lower(name) like '%%cody%%'
 ),
 code_generation_keys AS (
   SELECT * FROM unnest(ARRAY[
@@ -1508,26 +1508,26 @@ SELECT
   current_month,
   current_week,
   current_day,
-  SUM(case when month = current_month then value::int else 0 end) AS total_month,
-  SUM(case when week = current_week then value::int else 0 end) AS total_week,
-  SUM(case when day = current_day then value::int else 0 end) AS total_day,
+  SUM(case when month = current_month then 1 else 0 end) AS total_month,
+  SUM(case when week = current_week then 1 else 0 end) AS total_week,
+  SUM(case when day = current_day then 1 else 0 end) AS total_day,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
   COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
   SUM(case when month = current_month and key in
   	(SELECT * FROM code_generation_keys)
-  	then value::int else 0 end) as code_generation_month,
+  	then 1 else 0 end) as code_generation_month,
   SUM(case when week = current_week and key in
   	(SELECT * FROM explanation_keys)
-	then value::int else 0 end) as code_generation_week,
+	then 1 else 0 end) as code_generation_week,
   SUM(case when day = current_day and key in (SELECT * FROM code_generation_keys)
-	then value::int else 0 end) as code_generation_day,
+	then 1 else 0 end) as code_generation_day,
   SUM(case when month = current_month and key in (SELECT * FROM explanation_keys)
-	then value::int else 0 end) as explanation_month,
+	then 1 else 0 end) as explanation_month,
   SUM(case when week = current_week and key in (SELECT * FROM explanation_keys)
-	then value::int else 0 end) as explanation_week,
+	then 1 else 0 end) as explanation_week,
   SUM(case when day = current_day and key in (SELECT * FROM explanation_keys)
-	then value::int else 0 end) as explanation_day,
+	then 1 else 0 end) as explanation_day,
 	0 as invalid_month,
 	0 as invalid_week,
 	0 as invalid_day
