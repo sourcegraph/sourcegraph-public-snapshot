@@ -7,7 +7,7 @@ extend type Mutation {
 }
 
 extend type Query {
-    gitHubApps(): GitHubAppConnection!
+    gitHubApps: GitHubAppConnection!
 }
 
 type GitHubAppConnection {
