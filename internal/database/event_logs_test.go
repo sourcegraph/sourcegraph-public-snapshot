@@ -1300,6 +1300,98 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 	}
 }
 
+func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	t.Parallel()
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// be a consistent value so that the tests don't fail when someone runs it at some particular
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
+	codyEventNames := []string{"CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
+		"CodyVSCodeExtension:recipe:explain-code-high-level:executed"}
+	users := []uint32{1, 2}
+	durations := []int{40, 65, 72}
+
+	days := []time.Time{
+		now,                           // Today
+		now.Add(-time.Hour * 24 * 3),  // This week
+		now.Add(-time.Hour * 24 * 4),  // This week
+		now.Add(-time.Hour * 24 * 6),  // This month
+		now.Add(-time.Hour * 24 * 12), // This month
+		now.Add(-time.Hour * 24 * 40), // Previous month
+	}
+
+	g, gctx := errgroup.WithContext(ctx)
+
+	// add some Cody events
+	for _, user := range users {
+		for _, name := range codyEventNames {
+			for _, day := range days {
+				for i := 0; i < 25; i++ {
+					e := &Event{
+						UserID: user,
+						Name:   name,
+						URL:    "http://sourcegraph.com",
+						Source: "test",
+						// Jitter current time +/- 30 minutes
+						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+					}
+
+					g.Go(func() error {
+						return db.EventLogs().Insert(gctx, e)
+					})
+				}
+			}
+		}
+	}
+
+	if err := g.Wait(); err != nil {
+		t.Fatal(err)
+	}
+
+	events, err := db.EventLogs().AggregatedCodyEvents(ctx, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedEvents := []types.CodyAggregatedEvent{
+		{
+			Name:         "CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
+			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+			Day:          now.Truncate(time.Hour * 24),
+			TotalMonth:   int32(len(users) * 25 * 5), // 5 days in month
+			TotalWeek:    int32(len(users) * 25 * 3), // 3 days in week
+			TotalDay:     int32(len(users) * 25),
+			UniquesMonth: 2,
+			UniquesWeek:  2,
+			UniquesDay:   2,
+		},
+		{
+			Name:         "CodyVSCodeExtension:recipe:explain-code-high-level:executed",
+			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+			Day:          now.Truncate(time.Hour * 24),
+			TotalMonth:   int32(len(users) * 25 * 5), // 5 days in month
+			TotalWeek:    int32(len(users) * 25 * 3), // 3 days in week
+			TotalDay:     int32(len(users) * 25),
+			UniquesMonth: 2,
+			UniquesWeek:  2,
+			UniquesDay:   2,
+		},
+	}
+	if diff := cmp.Diff(expectedEvents, events); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestEventLogs_ListAll(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
