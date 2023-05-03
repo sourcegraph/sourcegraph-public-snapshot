@@ -2,7 +2,6 @@ package githubapp
 
 import (
 	"context"
-	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -27,10 +26,12 @@ type resolver struct {
 
 const gitHubAppIDKind = "GitHubApp"
 
+// MarshalGitHubAppID converts a GitHub App ID (database ID) to a GraphQL ID.
 func MarshalGitHubAppID(id int64) graphql.ID {
 	return relay.MarshalID(gitHubAppIDKind, id)
 }
 
+// UnmarshalGitHubAppID converts a GitHub App GraphQL ID into a database ID.
 func UnmarshalGitHubAppID(id graphql.ID) (gitHubAppID int64, err error) {
 	if kind := relay.UnmarshalKind(id); kind != gitHubAppIDKind {
 		err = errors.Errorf("expected graph ID to have kind %q; got %q", gitHubAppIDKind, kind)
@@ -61,10 +62,6 @@ func (r *resolver) DeleteGitHubApp(ctx context.Context, args *graphqlbackend.Del
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func NewGitHubAppResolver(app *types.GitHubApp) *gitHubAppResolver {
-	return &gitHubAppResolver{app: app}
-}
-
 func (r *resolver) GitHubApps(ctx context.Context) (graphqlbackend.GitHubAppConnectionResolver, error) {
 	// 🚨 SECURITY: Check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -89,6 +86,11 @@ func (r *resolver) GitHubApps(ctx context.Context) (graphqlbackend.GitHubAppConn
 	return gitHubAppConnection, nil
 }
 
+// NewGitHubAppResolver creates a new GitHubAppResolver from a GitHubApp.
+func NewGitHubAppResolver(app *types.GitHubApp) *gitHubAppResolver {
+	return &gitHubAppResolver{app: app}
+}
+
 type gitHubAppConnectionResolver struct {
 	resolvers  []graphqlbackend.GitHubAppResolver
 	totalCount int
@@ -102,10 +104,9 @@ func (r *gitHubAppConnectionResolver) TotalCount(ctx context.Context) int32 {
 	return int32(r.totalCount)
 }
 
+// gitHubAppResolver is a GraphQL node resolver for GitHubApps.
 type gitHubAppResolver struct {
-	// cache results because they are used by multiple fields
-	once sync.Once
-	app  *types.GitHubApp
+	app *types.GitHubApp
 }
 
 func (r *gitHubAppResolver) ID() graphql.ID {
