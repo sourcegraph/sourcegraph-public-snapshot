@@ -86,7 +86,7 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 			return nil
 		}
 
-		srs := make([]embeddings.EmbeddingSearchResult, 0, len(code))
+		srs := make([]embeddings.SimilaritySearchResult, 0, len(code))
 		revision := ""
 		for _, c := range code {
 			cMap := c.(map[string]any)
@@ -100,7 +100,7 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 				}
 			}
 
-			srs = append(srs, embeddings.EmbeddingSearchResult{
+			srs = append(srs, embeddings.SimilaritySearchResult{
 				RepoEmbeddingRowMetadata: embeddings.RepoEmbeddingRowMetadata{
 					FileName:  fileName,
 					StartLine: int(cMap["start_line"].(float64)),
@@ -115,7 +115,7 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 			commit = api.CommitID("HEAD")
 		}
 
-		return filterAndHydrateContent(ctx, w.logger, params.RepoName, commit, w.readFile, srs)
+		return filterAndHydrateContent(ctx, w.logger, params.RepoName, commit, w.readFile, false, srs)
 	}
 
 	// We partition the indexes by type and repository. Each class in
