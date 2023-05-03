@@ -42,7 +42,7 @@ import {
     useSessionStorage,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import { authenticatedUser, AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
@@ -77,6 +77,7 @@ import { GoToRawAction } from './GoToRawAction'
 import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
+import { TryCodyWidget } from './TryCodyWidget'
 
 import styles from './BlobPage.module.scss'
 
@@ -343,6 +344,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
+            {!!props.isSourcegraphDotCom && !!props.authenticatedUser && <TryCodyWidget className="mb-4" />}
             {window.context.isAuthenticatedUser && (
                 <RepoHeaderContributionPortal
                     position="right"

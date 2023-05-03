@@ -75,6 +75,7 @@ export interface TemporarySettingsSchema {
     'setup.activeStepId': string
     'own.panelExplanationHidden': boolean
     'cody.showSidebar': boolean
+    'try-cody-widget-dismissed': boolean
 }
 
 /**

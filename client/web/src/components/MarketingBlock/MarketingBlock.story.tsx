@@ -28,3 +28,5 @@ export const Basic = (): JSX.Element => (
         </div>
     </MarketingBlock>
 )
+
+// todo: add story for variant="thin"
