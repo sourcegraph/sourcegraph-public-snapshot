@@ -57,6 +57,9 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     if (id) {
         const externalService = allExternalServices[id]
         if (externalService) {
+            if (externalService.addForm) {
+                return externalService.addForm
+            }
             return (
                 <AddExternalServicePage
                     telemetryService={telemetryService}
@@ -178,6 +181,10 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
 }
 
 function getAddURL(id: string): string {
+    if (id === 'ghapp') {
+        return '../new-gh-app'
+    }
+
     const parameters = new URLSearchParams()
     parameters.append('id', id)
     return `?${parameters.toString()}`
