@@ -16,9 +16,10 @@ import (
 
 func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, expectedSchemaFactories ...ExpectedSchemaFactory) *cli.Command {
 	schemaNameFlag := &cli.StringFlag{
-		Name:     "db",
-		Usage:    "The target `schema` to compare.",
+		Name:     "schema",
+		Usage:    "The target `schema` to compare. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
 		Required: true,
+		Aliases:  []string{"db"},
 	}
 	versionFlag := &cli.StringFlag{
 		Name:     "version",
