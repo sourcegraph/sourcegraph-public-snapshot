@@ -17,6 +17,8 @@
         }
       );
 
+      formatter = genAttrs defaultSystems (system: nixpkgs.legacyPackages.${system}.nixpkgs-fmt);
+
       # Pin a specific version of universal-ctags to the same version as in cmd/symbols/ctags-install-alpine.sh.
       overlays.ctags = (import ./dev/nix/ctags.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; }).overlay;
 
