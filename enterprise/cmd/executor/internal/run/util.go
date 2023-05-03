@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
@@ -190,7 +191,15 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 	if c.KubernetesResourceRequestCPU != "" {
 		resourceRequest.CPU = resource.MustParse(c.KubernetesResourceRequestCPU)
 	}
-
+	var runAsUser *int64
+	if c.KubernetesSecurityContextRunAsUser > 0 {
+		runAsUser = pointer.Int64(int64(c.KubernetesSecurityContextRunAsUser))
+	}
+	var runAsGroup *int64
+	if c.KubernetesSecurityContextRunAsGroup > 0 {
+		runAsGroup = pointer.Int64(int64(c.KubernetesSecurityContextRunAsGroup))
+	}
+	fsGroup := pointer.Int64(int64(c.KubernetesSecurityContextFSGroup))
 	return runner.KubernetesOptions{
 		Enabled:    config.IsKubernetes(),
 		ConfigPath: c.KubernetesConfigPath,
@@ -210,6 +219,11 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 				Backoff:  c.KubernetesJobRetryBackoffDuration,
 			},
 			KeepJobs: c.KubernetesKeepJobs,
+			SecurityContext: command.KubernetesSecurityContext{
+				RunAsUser:  runAsUser,
+				RunAsGroup: runAsGroup,
+				FSGroup:    fsGroup,
+			},
 		},
 	}
 }

@@ -22,6 +22,7 @@ import (
 	"k8s.io/client-go/rest"
 	fakerest "k8s.io/client-go/rest/fake"
 	k8stesting "k8s.io/client-go/testing"
+	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -334,6 +335,9 @@ func TestNewKubernetesJob(t *testing.T) {
 			CPU:    resource.MustParse("1"),
 			Memory: resource.MustParse("1Gi"),
 		},
+		SecurityContext: command.KubernetesSecurityContext{
+			FSGroup: pointer.Int64(1000),
+		},
 	}
 	job := command.NewKubernetesJob("my-job", "my-image:latest", spec, "/my/path", options)
 
@@ -365,4 +369,8 @@ func TestNewKubernetesJob(t *testing.T) {
 	require.Len(t, job.Spec.Template.Spec.Volumes, 1)
 	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Volumes[0].Name)
 	assert.Equal(t, "my-pvc", job.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName)
+
+	assert.Nil(t, job.Spec.Template.Spec.SecurityContext.RunAsUser)
+	assert.Nil(t, job.Spec.Template.Spec.SecurityContext.RunAsGroup)
+	assert.Equal(t, int64(1000), *job.Spec.Template.Spec.SecurityContext.FSGroup)
 }

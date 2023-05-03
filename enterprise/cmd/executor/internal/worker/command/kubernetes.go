@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -45,6 +44,7 @@ type KubernetesContainerOptions struct {
 	ResourceRequest       KubernetesResource
 	Retry                 KubernetesRetry
 	KeepJobs              bool
+	SecurityContext       KubernetesSecurityContext
 }
 
 // KubernetesNodeAffinity contains the Kubernetes node affinity for a Job.
@@ -57,6 +57,12 @@ type KubernetesNodeAffinity struct {
 type KubernetesResource struct {
 	CPU    resource.Quantity
 	Memory resource.Quantity
+}
+
+type KubernetesSecurityContext struct {
+	RunAsUser  *int64
+	RunAsGroup *int64
+	FSGroup    *int64
 }
 
 // KubernetesCommand interacts with the Kubernetes API.
@@ -211,8 +217,9 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 					NodeName:     options.NodeName,
 					NodeSelector: options.NodeSelector,
 					SecurityContext: &corev1.PodSecurityContext{
-						// This corresponds to the GID of the "sourcegraph" user that is used to run the Docker image
-						FSGroup: pointer.Int64(1000),
+						RunAsUser:  options.SecurityContext.RunAsUser,
+						RunAsGroup: options.SecurityContext.RunAsGroup,
+						FSGroup:    options.SecurityContext.FSGroup,
 					},
 					Affinity:      affinity,
 					RestartPolicy: corev1.RestartPolicyNever,
