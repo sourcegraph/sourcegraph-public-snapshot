@@ -24,7 +24,6 @@ importers:
       '@babel/preset-react': ^7.18.6
       '@babel/preset-typescript': ^7.18.6
       '@babel/runtime': ^7.20.6
-      '@bessonovs/set-project-references': ^0.0.10
       '@codemirror/autocomplete': ^6.1.0
       '@codemirror/commands': ^6.0.1
       '@codemirror/lang-json': ^6.0.0
@@ -576,7 +575,6 @@ importers:
       '@babel/preset-react': 7.18.6_@babel+core@7.21.0
       '@babel/preset-typescript': 7.18.6_@babel+core@7.21.0
       '@babel/runtime': 7.20.6
-      '@bessonovs/set-project-references': 0.0.10
       '@gql2ts/types': 1.9.0_graphql@15.4.0
       '@graphql-codegen/cli': 2.16.1_wvr4tcj3yy43frn5aamadtycji
       '@graphql-codegen/typescript': 2.8.5_graphql@15.4.0
@@ -2815,18 +2813,6 @@ packages:
 
   /@bcoe/v8-coverage/0.2.3:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
-    dev: true
-
-  /@bessonovs/set-project-references/0.0.10:
-    resolution: {integrity: sha512-71bvk1OBynDxi+DdmJoMLrw3hg/DUv8dYR3VQ+pQAvdEdWZMyPDwNMrzhQ2q5zm8SzOe7ph77m2X7Vh2Acer+w==}
-    hasBin: true
-    dependencies:
-      commander: 7.2.0
-      comment-json: 4.1.0
-      detect-indent: 6.0.0
-      glob: 7.1.7
-      js-yaml: 4.1.0
-      lodash: 4.17.21
     dev: true
 
   /@braintree/sanitize-url/3.1.0:
@@ -10642,10 +10628,6 @@ packages:
       kind-of: 5.1.0
     dev: true
 
-  /array-timsort/1.0.3:
-    resolution: {integrity: sha512-/+3GRL7dDAGEfM6TseQk/U+mi18TU2Ms9I3UlLdUMhz2hbvGNTKdj9xniwXfUqgYhHxRx0+8UnKkvlNwVU+cWQ==}
-    dev: true
-
   /array-union/1.0.2:
     resolution: {integrity: sha512-Dxr6QJj/RdU/hCaBjOfxW+q6lyuVE6JFWIrAUpuOOhoJJoQ99cUn3igRaHVB5P9WrgFVN0FfArM3x0cueOU8ng==}
     engines: {node: '>=0.10.0'}
@@ -12400,17 +12382,6 @@ packages:
     resolution: {integrity: sha512-KRs7WVDKg86PWiuAqhDrAQnTXZKraVcCc6vFdL14qrZ/DcWwuRo7VoiYXalXO7S5GKpqYiVEwCbgFDfxNHKJBQ==}
     engines: {node: ^12.20.0 || >=14}
 
-  /comment-json/4.1.0:
-    resolution: {integrity: sha512-WEghmVYaNq9NlWbrkzQTSsya9ycLyxJxpTQfZEan6a5Jomnjw18zS3Podf8q1Zf9BvonvQd/+Z7Z39L7KKzzdQ==}
-    engines: {node: '>= 6'}
-    dependencies:
-      array-timsort: 1.0.3
-      core-util-is: 1.0.2
-      esprima: 4.0.1
-      has-own-prop: 2.0.0
-      repeat-string: 1.6.1
-    dev: true
-
   /comment-parser/0.7.6:
     resolution: {integrity: sha512-GKNxVA7/iuTnAqGADlTWX4tkhzxZKXp5fLJqKTlQLHkE65XDUKutZ3BHaJC5IGcper2tT3QRD1xr4o3jNpgXXg==}
     engines: {node: '>= 6.0.0'}
@@ -12867,7 +12838,7 @@ packages:
       postcss-modules-values: 4.0.0_postcss@8.4.22
       postcss-value-parser: 4.2.0
       semver: 7.3.8
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /css-minimizer-webpack-plugin/4.2.2_zj7shrtzhjuywytipisjis56au:
     resolution: {integrity: sha512-s3Of/4jKfw1Hj9CxEO1E5oXhQAxlayuHO2y/ML+C6I9sQ7FdzfEV6QgMLN3vI+qFsjJGIAFLKtQK7t8BOXAIyA==}
@@ -13956,11 +13927,6 @@ packages:
   /detect-indent/5.0.0:
     resolution: {integrity: sha512-rlpvsxUtM0PQvy9iZe640/IWwWYyBsTApREbA1pHOpmOUIl9MkP/U4z7vTtg4Oaojvqhxt7sdufnT0EzGaR31g==}
     engines: {node: '>=4'}
-    dev: true
-
-  /detect-indent/6.0.0:
-    resolution: {integrity: sha512-oSyFlqaTHCItVRGK5RmrmjB+CmaMOW7IaNA/kdxqhoa6d17j/5ce9O9eWXmV/KEdRwqpQA+Vqe8a8Bsybu4YnA==}
-    engines: {node: '>=8'}
     dev: true
 
   /detect-indent/6.1.0:
@@ -16828,11 +16794,6 @@ packages:
     engines: {node: '>=0.10.0'}
     dependencies:
       is-glob: 3.1.0
-    dev: true
-
-  /has-own-prop/2.0.0:
-    resolution: {integrity: sha512-Pq0h+hvsVm6dDEa8x82GnLSYHOzNDt7f0ddFa3FqcQlgzEiptPqL+XrOJNavjOzSYiYWIrgeVYYgGlLmnxwilQ==}
-    engines: {node: '>=8'}
     dev: true
 
   /has-property-descriptors/1.0.0:
@@ -22531,7 +22492,7 @@ packages:
       klona: 2.0.5
       postcss: 8.4.22
       semver: 7.3.8
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /postcss-media-query-parser/0.2.3:
     resolution: {integrity: sha512-3sOlxmbKcSHMjlUXQZKQ06jOswE7oVkXPxmZdoB1r5l0q6gTFTQSHxNxOrCccElbW7dxNytifNEo8qidX2Vsig==}
@@ -24754,7 +24715,7 @@ packages:
       klona: 2.0.5
       neo-async: 2.6.2
       sass: 1.32.4
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /sass/1.32.4:
     resolution: {integrity: sha512-N0BT0PI/t3+gD8jKa83zJJUb7ssfQnRRfqN+GIErokW6U4guBpfYl8qYB+OFLEho+QvnV5ZH1R9qhUC/Z2Ch9w==}
@@ -25938,7 +25899,7 @@ packages:
     peerDependencies:
       webpack: ^5.0.0
     dependencies:
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /style-mod/4.0.0:
     resolution: {integrity: sha512-OPhtyEjyyN9x3nhPsu76f52yUGXiZcgvsrFVtvTkyGRQJ0XK+GPc6ov1z+lRpbeabka+MYEQxOYRnt5nF30aMw==}
@@ -26477,7 +26438,7 @@ packages:
       schema-utils: 3.1.1
       serialize-javascript: 6.0.0
       terser: 5.16.9
-      webpack: 5.75.0_esbuild@0.17.14
+      webpack: 5.75.0_pdcrf7mb3dfag2zju4x4octu4a
 
   /terser/4.8.1:
     resolution: {integrity: sha512-4GnLC0x667eJG0ewJTa6z/yXrbLGv80D9Ru6HIpCQmO+Q4PfEtBFi0ObSckqwL6VyQv/7ENJieXHo2ANmdQwgw==}
@@ -28265,6 +28226,7 @@ packages:
       - '@swc/core'
       - esbuild
       - uglify-js
+    dev: false
 
   /webpack/5.75.0_pdcrf7mb3dfag2zju4x4octu4a:
     resolution: {integrity: sha512-piaIaoVJlqMsPtX/+3KTTO6jfvrSYgauFVdt8cr9LTHKmcq/AMd4mhzsiP7ZF/PGRNPGA8336jldh9l2Kt2ogQ==}
