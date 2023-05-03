@@ -128,7 +128,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         // selected completion info is present (so something is selected from the completions
         // dropdown list based on the lang server) and the returned completion range does not
         // contain the same selection.
-        if (/[A-Za-z]$/.test(precedingLine) || context.selectedCompletionInfo) {
+        if (context.selectedCompletionInfo || /[A-Za-z]$/.test(precedingLine)) {
             return []
         }
 
