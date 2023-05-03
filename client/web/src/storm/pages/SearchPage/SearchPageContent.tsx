@@ -66,7 +66,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
             <BrandLogo className={styles.logo} isLightTheme={isLightTheme} variant="logo" />
             {isSourcegraphDotCom && (
                 <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">
-                    Searching millions of public repositories
+                    Code search and an AI assistant with the context of the code graph.
                 </div>
             )}
 
