@@ -33,23 +33,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	server := httpserver.NewFromAddr(config.Address, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// For cluster liveness and readiness probes
-			if r.URL.Path == "/healthz" {
-				if err := healthz(r.Context()); err != nil {
-					w.WriteHeader(http.StatusServiceUnavailable)
-					_, _ = w.Write([]byte("healthz: " + err.Error()))
-					return
-				}
-
-				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte("healthz: ok"))
-				return
-			}
-
-			// Default service handler
-			handler.ServeHTTP(w, r)
-		}),
+		Handler:      handler,
 	})
 
 	// Mark health server as ready and go!
@@ -63,9 +47,23 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 func newHandler(logger log.Logger, config *Config) http.Handler {
 	r := mux.NewRouter()
-	s := r.PathPrefix("/v1").Subrouter()
 
-	s.Handle("/completions/anthropic",
+	// For cluster liveness and readiness probes
+	r.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		if err := healthz(r.Context()); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte("healthz: " + err.Error()))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("healthz: ok"))
+		return
+	})
+
+	// V1 service routes
+	v1router := r.PathPrefix("/v1").Subrouter()
+	v1router.Handle("/completions/anthropic",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
 			if err != nil {
@@ -103,6 +101,7 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 			_, _ = io.Copy(w, resp.Body)
 		}),
 	).Methods(http.MethodPost)
+
 	return r
 }
 
