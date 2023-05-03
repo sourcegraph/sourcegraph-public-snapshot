@@ -664,6 +664,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "github_app_installs_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "github_apps_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -11648,6 +11657,106 @@
           "RefTableName": "",
           "IsDeferrable": false,
           "ConstraintDefinition": "CHECK (1 =\nCASE\n    WHEN flag_type = 'rollout'::feature_flag_type AND rollout IS NULL THEN 0\n    WHEN flag_type \u003c\u003e 'rollout'::feature_flag_type AND rollout IS NOT NULL THEN 0\n    ELSE 1\nEND)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "github_app_installs",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "app_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('github_app_installs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "installation_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "github_app_installs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX github_app_installs_pkey ON github_app_installs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "app_id_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX app_id_idx ON github_app_installs USING btree (app_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "installation_id_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX installation_id_idx ON github_app_installs USING btree (installation_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "github_app_installs_app_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "github_apps",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []
