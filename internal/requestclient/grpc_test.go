@@ -121,7 +121,7 @@ func TestInterceptors(t *testing.T) {
 
 				srv := struct{}{}
 
-				ss := NewMockStream(ctx)
+				ss := newMockStream(ctx)
 				info := &grpc.StreamServerInfo{}
 
 				err := StreamServerInterceptor(srv, ss, info, handler)
@@ -191,7 +191,7 @@ type mockStream struct {
 	receivedFromClient chan any
 }
 
-func NewMockStream(ctx context.Context) *mockStream {
+func newMockStream(ctx context.Context) *mockStream {
 	return &mockStream{
 		ctx:                ctx,
 		sentFromServer:     make(chan any, 1),

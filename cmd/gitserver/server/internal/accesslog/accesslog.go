@@ -183,7 +183,6 @@ func UnaryServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteCo
 		resp, err = handler(ctx, req)
 
 		a.maybeLog(ctx)
-
 		return resp, err
 	}
 }
@@ -199,9 +198,19 @@ func StreamServerInterceptor(logger log.Logger, watcher conftypes.WatchableSiteC
 
 		ctx := withContext(ss.Context(), &paramsContext{})
 
+		ss = &wrappedServerStream{ServerStream: ss, ctx: ctx}
 		err := handler(srv, ss)
-		a.maybeLog(ctx)
 
+		a.maybeLog(ctx)
 		return err
 	}
+}
+
+type wrappedServerStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (w *wrappedServerStream) Context() context.Context {
+	return w.ctx
 }

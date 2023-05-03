@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
@@ -165,51 +166,371 @@ func TestGRPCMethodFilter(t *testing.T) {
 	})
 }
 
-//type accessLogRunFunc func(t *testing.T, logger *logtest.Recorder, watcher *accessLogConf, filter GRPCMethodFilter)
-
 func TestAccessLogGRPC(t *testing.T) {
-	t.Run("unary", func(t *testing.T) {
+	var (
+		fakeIP             = "192.168.1.1"
+		fakeRepositoryName = "github.com/foo/bar"
 
+		allowAllFilter = func(string) bool { return true }
+	)
+
+	t.Run("basic recording and audit fields", func(t *testing.T) {
+		t.Run("unary", func(t *testing.T) {
+			logger, exportLogs := logtest.Captured(t)
+
+			configuration := &accessLogConf{}
+			client := &requestclient.Client{IP: fakeIP}
+
+			interceptor := chainUnaryInterceptors(
+				mockClientUnaryInterceptor(client),
+				UnaryServerInterceptor(logger, configuration, allowAllFilter),
+			)
+
+			handlerCalled := false
+			handler := func(ctx context.Context, req any) (any, error) {
+				Record(ctx, fakeRepositoryName, log.String("foo", "bar"))
+				handlerCalled = true
+
+				return req, nil
+			}
+
+			req := struct{}{}
+			info := &grpc.UnaryServerInfo{}
+			_, err := interceptor(context.Background(), req, info, handler)
+			if err != nil {
+				t.Fatalf("failed to call interceptor: %v", err)
+			}
+
+			if !handlerCalled {
+				t.Fatal("handler not called")
+			}
+
+			logs := exportLogs()
+
+			require.Len(t, logs, 2)
+			assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
+			assert.Contains(t, logs[1].Message, accessEventMessage)
+			assert.Equal(t, fakeRepositoryName, logs[1].Fields["params"].(map[string]any)["repo"])
+
+			auditFields := logs[1].Fields["audit"].(map[string]interface{})
+			assert.Equal(t, "gitserver", auditFields["entity"])
+			assert.NotEmpty(t, auditFields["auditId"])
+
+			actorFields := auditFields["actor"].(map[string]interface{})
+			assert.Equal(t, "unknown", actorFields["actorUID"])
+			assert.Equal(t, fakeIP, actorFields["ip"])
+			assert.Equal(t, "", actorFields["X-Forwarded-For"])
+		})
+
+		t.Run("stream", func(t *testing.T) {
+			logger, exportLogs := logtest.Captured(t)
+
+			configuration := &accessLogConf{}
+			client := &requestclient.Client{IP: fakeIP}
+
+			streamInterceptor := chainStreamInterceptors(
+				mockClientStreamInterceptor(client),
+				StreamServerInterceptor(logger, configuration, allowAllFilter),
+			)
+
+			handlerCalled := false
+			handler := func(srv interface{}, stream grpc.ServerStream) error {
+				ctx := stream.Context()
+
+				Record(ctx, fakeRepositoryName, log.String("foo", "bar"))
+				handlerCalled = true
+				return nil
+			}
+
+			srv := struct{}{}
+			ss := &testServerStream{ctx: context.Background()}
+			info := &grpc.StreamServerInfo{}
+
+			err := streamInterceptor(srv, ss, info, handler)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !handlerCalled {
+				t.Fatal("handler not called")
+			}
+
+			logs := exportLogs()
+
+			require.Len(t, logs, 2)
+			assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
+			assert.Contains(t, logs[1].Message, accessEventMessage)
+			assert.Equal(t, fakeRepositoryName, logs[1].Fields["params"].(map[string]any)["repo"])
+
+			auditFields := logs[1].Fields["audit"].(map[string]interface{})
+			assert.Equal(t, "gitserver", auditFields["entity"])
+			assert.NotEmpty(t, auditFields["auditId"])
+
+			actorFields := auditFields["actor"].(map[string]interface{})
+			assert.Equal(t, "unknown", actorFields["actorUID"])
+			assert.Equal(t, fakeIP, actorFields["ip"])
+			assert.Equal(t, "", actorFields["X-Forwarded-For"])
+		})
+	})
+
+	t.Run("handler, no recording", func(t *testing.T) {
+		t.Run("unary", func(t *testing.T) {
+			logger, exportLogs := logtest.Captured(t)
+
+			configuration := &accessLogConf{}
+			client := &requestclient.Client{IP: fakeIP}
+
+			interceptor := chainUnaryInterceptors(
+				mockClientUnaryInterceptor(client),
+				UnaryServerInterceptor(logger, configuration, allowAllFilter),
+			)
+
+			handlerCalled := false
+			handler := func(ctx context.Context, req any) (any, error) {
+				handlerCalled = true
+				return req, nil
+			}
+
+			req := struct{}{}
+			info := &grpc.UnaryServerInfo{}
+			_, err := interceptor(context.Background(), req, info, handler)
+			if err != nil {
+				t.Fatalf("failed to call interceptor: %v", err)
+			}
+
+			if !handlerCalled {
+				t.Fatal("handler not called")
+			}
+
+			logs := exportLogs()
+
+			// Should have handled but not logged
+			require.Len(t, logs, 1)
+			assert.NotEqual(t, accessEventMessage, logs[0].Message)
+		})
+	})
+
+	t.Run("stream", func(t *testing.T) {
 		logger, exportLogs := logtest.Captured(t)
 
-		watcher := &accessLogConf{}
-		filter := AllowAllGRPCMethodsFilter
+		configuration := &accessLogConf{}
+		client := &requestclient.Client{IP: fakeIP}
 
-		interceptor := UnaryServerInterceptor(logger, watcher, filter)
-		ctx := context.Background()
+		streamInterceptor := chainStreamInterceptors(
+			mockClientStreamInterceptor(client),
+			StreamServerInterceptor(logger, configuration, allowAllFilter),
+		)
 
-		req := "request"
-		info := &grpc.UnaryServerInfo{
-			FullMethod: "testmethod",
-		}
 		handlerCalled := false
-		handler := func(ctx context.Context, req any) (any, error) {
-			Record(ctx, "testRepo", log.String("foo", "bar"))
-
+		handler := func(srv interface{}, stream grpc.ServerStream) error {
 			handlerCalled = true
-			return "response", nil
+			return nil
 		}
 
-		resp, err := interceptor(ctx, req, info, handler)
+		srv := struct{}{}
+		ss := &testServerStream{ctx: context.Background()}
+		info := &grpc.StreamServerInfo{}
+
+		err := streamInterceptor(srv, ss, info, handler)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("failed to call interceptor: %v", err)
 		}
 
 		if !handlerCalled {
 			t.Fatal("handler not called")
 		}
 
-		if resp != "response" {
-			t.Errorf("got resp %v, want %v", resp, "response")
-		}
-
 		logs := exportLogs()
 
-		t.Log(logs)
-		t.Fatalf("lol")
+		// Should have handled but not logged
+		require.Len(t, logs, 1)
+		assert.NotEqual(t, accessEventMessage, logs[0].Message)
+	})
 
-		require.Len(t, logs, 2)
-		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
-		assert.Contains(t, logs[1].Message, accessEventMessage)
+	t.Run("disabled, then enabled", func(t *testing.T) {
+		t.Run("unary", func(t *testing.T) {
+			logger, exportLogs := logtest.Captured(t)
+
+			configuration := &accessLogConf{disabled: true}
+			client := &requestclient.Client{IP: fakeIP}
+
+			interceptor := chainUnaryInterceptors(
+				mockClientUnaryInterceptor(client),
+				UnaryServerInterceptor(logger, configuration, allowAllFilter),
+			)
+
+			handlerCalled := false
+			handler := func(ctx context.Context, req any) (any, error) {
+				Record(ctx, fakeRepositoryName, log.String("foo", "bar"))
+				handlerCalled = true
+
+				return req, nil
+			}
+
+			req := struct{}{}
+			info := &grpc.UnaryServerInfo{}
+			_, err := interceptor(context.Background(), req, info, handler)
+			if err != nil {
+				t.Fatalf("failed to call interceptor: %v", err)
+			}
+
+			if !handlerCalled {
+				t.Fatal("handler not called")
+			}
+
+			// Disabled, should have been handled but without a log message
+			logs := exportLogs()
+			require.Len(t, logs, 0)
+
+			// Now we re-enable
+			handlerCalled = false
+			configuration.disabled = false
+			configuration.callback()
+			_, err = interceptor(context.Background(), req, info, handler)
+			if err != nil {
+				t.Fatalf("failed to call interceptor: %v", err)
+			}
+
+			if !handlerCalled {
+				t.Fatal("handler not called")
+			}
+
+			// Enabled, should have handled AND generated a log message
+			logs = exportLogs()
+			require.Len(t, logs, 2)
+			assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
+			assert.Contains(t, logs[1].Message, accessEventMessage)
+		})
+
+		t.Run("stream", func(t *testing.T) {
+			logger, exportLogs := logtest.Captured(t)
+
+			configuration := &accessLogConf{disabled: true}
+			client := &requestclient.Client{IP: fakeIP}
+
+			interceptor := chainStreamInterceptors(
+				mockClientStreamInterceptor(client),
+				StreamServerInterceptor(logger, configuration, allowAllFilter),
+			)
+
+			handlerCalled := false
+			handler := func(srv interface{}, stream grpc.ServerStream) error {
+				ctx := stream.Context()
+
+				Record(ctx, fakeRepositoryName, log.String("foo", "bar"))
+				handlerCalled = true
+				return nil
+			}
+
+			srv := struct{}{}
+			ss := &testServerStream{ctx: context.Background()}
+			info := &grpc.StreamServerInfo{}
+
+			err := interceptor(srv, ss, info, handler)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !handlerCalled {
+				t.Fatal("handler not called")
+			}
+
+			// Disabled, should have been handled but without a log message
+			logs := exportLogs()
+			require.Len(t, logs, 0)
+
+			// Now we re-enable
+			handlerCalled = false
+			configuration.disabled = false
+			configuration.callback()
+			err = interceptor(srv, ss, info, handler)
+			if err != nil {
+				t.Fatalf("failed to call interceptor: %v", err)
+			}
+
+			if !handlerCalled {
+				t.Fatal("handler not called")
+			}
+
+			// Enabled, should have handled AND generated a log message
+			logs = exportLogs()
+			require.Len(t, logs, 2)
+			assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
+			assert.Contains(t, logs[1].Message, accessEventMessage)
+		})
 	})
 }
+
+func mockClientUnaryInterceptor(client *requestclient.Client) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+		ctx = requestclient.WithClient(ctx, client)
+		return handler(ctx, req)
+	}
+}
+
+func mockClientStreamInterceptor(client *requestclient.Client) grpc.StreamServerInterceptor {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		ctx := requestclient.WithClient(ss.Context(), client)
+		return handler(srv, &wrappedServerStream{ss, ctx})
+	}
+}
+
+func chainUnaryInterceptors(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+		if len(interceptors) == 0 {
+			return handler(ctx, req)
+		}
+
+		return interceptors[0](ctx, req, info, func(ctx context.Context, req any) (any, error) {
+			return chainUnaryInterceptors(interceptors[1:]...)(ctx, req, info, handler)
+		})
+	}
+}
+
+func chainStreamInterceptors(interceptors ...grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		if len(interceptors) == 0 {
+			return handler(srv, ss)
+		}
+
+		return interceptors[0](srv, ss, info, func(srv any, ss grpc.ServerStream) error {
+			return chainStreamInterceptors(interceptors[1:]...)(srv, ss, info, handler)
+		})
+	}
+}
+
+// testServerStream is a mock implementation of grpc.ServerStream for testing.
+type testServerStream struct {
+	ctx context.Context
+}
+
+func (m *testServerStream) SetHeader(metadata.MD) error {
+	// No-op for testing
+	return nil
+}
+
+func (m *testServerStream) SendHeader(metadata.MD) error {
+	// No-op for testing
+	return nil
+
+}
+
+func (m *testServerStream) SetTrailer(metadata.MD) {
+	// No-op for testing
+}
+
+func (m *testServerStream) Context() context.Context {
+	return m.ctx
+}
+
+func (m *testServerStream) SendMsg(any) error {
+	// No-op for testing
+	return nil
+}
+
+func (m *testServerStream) RecvMsg(any) error {
+	// No-op for testing
+	return nil
+}
+
+var _ grpc.ServerStream = &testServerStream{}
