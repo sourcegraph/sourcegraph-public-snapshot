@@ -17,8 +17,10 @@ import (
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -148,7 +150,18 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 	}
 
-	grpcServer := defaults.NewServer(logger)
+	configurationWatcher := conf.DefaultClient()
+	additionalServerOptions := []grpc.ServerOption{
+		grpc.ChainStreamInterceptor(
+			accesslog.StreamServerInterceptor(logger, configurationWatcher, allowedAccessLogMethods),
+		),
+		grpc.ChainUnaryInterceptor(
+			accesslog.UnaryServerInterceptor(logger, configurationWatcher, allowedAccessLogMethods),
+		),
+	}
+
+	grpcServer := defaults.NewServer(logger, additionalServerOptions...)
+
 	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{
 		Server: &gitserver,
 	})
@@ -537,4 +550,13 @@ func getAddr() string {
 		addr = net.JoinHostPort(host, port)
 	}
 	return addr
+}
+
+func allowedAccessLogMethods(method string) bool {
+	switch method {
+	case proto.GitserverService_Search_FullMethodName, proto.GitserverService_Exec_FullMethodName:
+		return true
+	default:
+		return false
+	}
 }
