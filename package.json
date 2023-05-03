@@ -8,7 +8,7 @@
   },
   "engines": {
     "node": "^v16.18.1",
-    "pnpm": "^7.28.0"
+    "pnpm": "^8.0.0"
   },
   "scripts": {
     "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write",
