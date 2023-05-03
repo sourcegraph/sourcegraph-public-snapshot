@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
@@ -87,6 +88,7 @@ func ServerOptions(logger log.Logger) []grpc.ServerOption {
 		grpc.ChainStreamInterceptor(
 			internalgrpc.NewStreamPanicCatcher(logger),
 			grpc_prometheus.StreamServerInterceptor(metrics),
+			requestclient.StreamServerInterceptor,
 			internalgrpc.StreamServerPropagator(actor.ActorPropagator{}),
 			internalgrpc.StreamServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.StreamServerInterceptor(),
@@ -94,6 +96,7 @@ func ServerOptions(logger log.Logger) []grpc.ServerOption {
 		grpc.ChainUnaryInterceptor(
 			internalgrpc.NewUnaryPanicCatcher(logger),
 			grpc_prometheus.UnaryServerInterceptor(metrics),
+			requestclient.UnaryServerInterceptor,
 			internalgrpc.UnaryServerPropagator(actor.ActorPropagator{}),
 			internalgrpc.UnaryServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.UnaryServerInterceptor(),
