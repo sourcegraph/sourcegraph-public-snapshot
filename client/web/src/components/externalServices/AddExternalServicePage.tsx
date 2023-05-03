@@ -38,6 +38,7 @@ export const AddExternalServicePage: FC<Props> = ({
     const [config, setConfig] = useState(externalService.defaultConfig)
     const [displayName, setDisplayName] = useState(externalService.defaultDisplayName)
     const navigate = useNavigate()
+    const { Instructions } = externalService
 
     useEffect(() => {
         telemetryService.logPageView('AddExternalService')
@@ -111,8 +112,14 @@ export const AddExternalServicePage: FC<Props> = ({
                         <div className="mb-3">
                             <ExternalServiceCard {...externalService} />
                         </div>
-                        <H3>Instructions:</H3>
-                        <div className="mb-4">{externalService.instructions}</div>
+                        {Instructions && (
+                            <>
+                                <H3>Instructions:</H3>
+                                <div className="mb-4">
+                                    <Instructions />
+                                </div>
+                            </>
+                        )}
                         <ExternalServiceForm
                             telemetryService={telemetryService}
                             error={error}

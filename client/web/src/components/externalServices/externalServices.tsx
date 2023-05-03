@@ -70,7 +70,7 @@ export interface AddExternalServiceOptions {
     /**
      * Instructions that will appear on the add / edit page
      */
-    instructions?: React.ReactNode | string
+    Instructions?: React.FunctionComponent
 
     /**
      * The JSON schema of the external service configuration
@@ -143,7 +143,7 @@ const Value: React.FunctionComponent<{ children: React.ReactNode | string | stri
     <Code className="hljs-attr">{props.children}</Code>
 )
 
-const githubInstructions = (isEnterprise: boolean): React.ReactNode => (
+const GitHubInstructions: React.FunctionComponent<{ isEnterprise: boolean }> = ({ isEnterprise }) => (
     <div>
         <ol>
             {isEnterprise && (
@@ -197,7 +197,7 @@ const githubInstructions = (isEnterprise: boolean): React.ReactNode => (
     </div>
 )
 
-const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
+const GitLabInstructions: React.FunctionComponent<{ isSelfManaged: boolean }> = ({ isSelfManaged }) => (
     <div>
         <ol>
             {isSelfManaged && (
@@ -542,7 +542,7 @@ const GITHUB_DOTCOM: AddExternalServiceOptions = {
     icon: GithubIcon,
     jsonSchema: githubSchemaJSON,
     editorActions: githubEditorActions(false),
-    instructions: githubInstructions(false),
+    Instructions: () => <GitHubInstructions isEnterprise={false} />,
     defaultDisplayName: 'GitHub',
     defaultConfig: `{
   "url": "https://github.com",
@@ -559,7 +559,7 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
   "orgs": []
 }`,
     editorActions: githubEditorActions(true),
-    instructions: githubInstructions(true),
+    Instructions: () => <GitHubInstructions isEnterprise={true} />,
 }
 const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.AWSCODECOMMIT,
@@ -576,7 +576,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     "password": "<password>"
   }
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -731,7 +731,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             },
         },
     ],
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -783,7 +783,7 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
     "all"
   ]
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -946,12 +946,12 @@ const GITLAB_DOTCOM: AddExternalServiceOptions = {
   ]
 }`,
     editorActions: gitlabEditorActions(false),
-    instructions: gitlabInstructions(false),
+    Instructions: () => <GitLabInstructions isSelfManaged={false} />,
 }
 const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
     ...GITLAB_DOTCOM,
     title: 'GitLab Self-Managed',
-    instructions: gitlabInstructions(true),
+    Instructions: () => <GitLabInstructions isSelfManaged={true} />,
     editorActions: gitlabEditorActions(true),
     defaultConfig: `{
   "url": "https://gitlab.example.com",
@@ -975,7 +975,7 @@ const SRC_SERVE_GIT: AddExternalServiceOptions = {
   // Do not change this. Sourcegraph uses this as a signal that url is 'src serve'.
   "repos": ["src-serve"]
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <Text>
                 In the configuration below, set <Field>url</Field> to be the URL of src serve-git.
@@ -1011,7 +1011,7 @@ const GITOLITE: AddExternalServiceOptions = {
   "host": "git@gitolite.example.com",
   "prefix": "gitolite.example.com/"
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -1126,7 +1126,7 @@ const GENERIC_GIT: AddExternalServiceOptions = {
   "url": "https://git.example.com",
   "repos": []
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -1179,7 +1179,7 @@ const PERFORCE: AddExternalServiceOptions = {
   "p4.passwd": "<ticket value>",
   "depots": []
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -1234,7 +1234,7 @@ const JVM_PACKAGES: AddExternalServiceOptions = {
     "dependencies": []
   }
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -1265,7 +1265,7 @@ const PAGURE: AddExternalServiceOptions = {
     defaultConfig: `{
   "url": "https://pagure.example.com",
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -1286,7 +1286,7 @@ const GERRIT: AddExternalServiceOptions = {
     defaultConfig: `{
   "url": "https://gerrit.example.com"
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -1312,7 +1312,7 @@ const AZUREDEVOPS: AddExternalServiceOptions = {
   "orgs": [],
   "projects": []
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -1351,7 +1351,7 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
   "registry": "https://registry.npmjs.org",
   "dependencies": []
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -1376,7 +1376,7 @@ const NPM_PACKAGES: AddExternalServiceOptions = {
     editorActions: [],
 }
 
-const GO_MODULES = {
+const GO_MODULES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GOMODULES,
     title: 'Go Dependencies',
     icon: LanguageGoIcon,
@@ -1386,7 +1386,7 @@ const GO_MODULES = {
   "urls": ["https://proxy.golang.org"],
   "dependencies": []
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -1407,7 +1407,7 @@ const GO_MODULES = {
     editorActions: [],
 }
 
-const PYTHON_PACKAGES = {
+const PYTHON_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.PYTHONPACKAGES,
     title: 'Python Dependencies',
     icon: LanguagePythonIcon,
@@ -1417,7 +1417,7 @@ const PYTHON_PACKAGES = {
   "urls": ["https://pypi.org/simple"],
   "dependencies": []
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -1439,7 +1439,7 @@ const PYTHON_PACKAGES = {
     editorActions: [],
 }
 
-const RUST_PACKAGES = {
+const RUST_PACKAGES: AddExternalServiceOptions = {
     kind: ExternalServiceKind.RUSTPACKAGES,
     title: 'Rust Dependencies',
     icon: LanguageRustIcon,
@@ -1448,7 +1448,7 @@ const RUST_PACKAGES = {
     defaultConfig: `{
   "dependencies": []
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
@@ -1473,7 +1473,7 @@ const RUBY_PACKAGES: AddExternalServiceOptions = {
   "repository": "https://rubygems.org/",
   "dependencies": ["shopify_api@12.0.0"]
 }`,
-    instructions: (
+    Instructions: () => (
         <div>
             <ol>
                 <li>
