@@ -86,14 +86,20 @@ enum OwnershipReasonType {
     CODEOWNERS_FILE_ENTRY
     GIT_COMMITS
 }
-"""
-Union of all possible types of ownership reasons. Use the individual subtypes to
-get more details on the ownership determination.
-"""
-#union OwnershipReason = CodeownersFileEntry | GitCommitOwnershipSignal
 
+"""
+A signal derived from recent code contributors
+"""
 type RecentContributorOwnershipSignal implements OwnershipReason {
+    """
+    Descriptive title to display in the UI for the determination.
+    """
     title: String!
+
+    """
+    More detailed description to display in the UI for the determination.
+    """
+
     description: String!
 }
 
