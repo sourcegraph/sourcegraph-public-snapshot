@@ -105,10 +105,43 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU                     | N/A               | The minimum CPU resource for Kubernetes Jobs.                                                                                          |
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY                  | `12Gi`            | The minimum memory resource for Kubernetes Jobs.                                                                                       |
 | KUBERNETES_JOB_RETRY_BACKOFF_LIMIT                           | `600`             | The number of attempts to try when checking if a Job has completed.                                                                    |
-| KUBERNETES_JOB_RETRY_BACKOFF_DURATION                        | `100ms`           | The duration of the backoff when checking if a Job has completed.                                                                      |
+| KUBERNETES_JOB_RETRY_BACKOFF_DURATION                        | `100ms`           | The duration of the backoff when checking if a Job has completed.                                               `                       |
+| KUBERNETES_RUN_AS_USER                                       | N/A               | The user ID to run Kubernetes jobs as.                                                                                                 |
+| KUBERNETES_RUN_AS_GROUP                                      | N/A               | The group ID to run Kubernetes jobs as.                                                                                                |
+| KUBERNETES_FS_GROUP                                          | `1000`            | The group ID to run all containers in the Kubernetes jobs as.                                                                          |
 | KUBERNETES_KEEP_JOBS                                         | `false`           | If true, Kubernetes jobs will not be deleted after they complete. Useful for debugging.                                                |
 
 See other possible Environment Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables).
+
+> Note: `externalUrl` must be set in the Site configuration for Executors to work correctly.
+
+### Job Scheduling
+
+Executors deployed on Kubernetes require Jobs to be scheduled on the same Node as the Executor. This is to ensure that
+Jobs are able to access the same Persistence Volume as the Executor.
+
+To ensure that Jobs are scheduled on the same Node as the Executor, the following environment variables can be set,
+
+- `EXECUTOR_KUBERNETES_NODE_NAME`
+- `EXECUTOR_KUBERNETES_NODE_SELECTOR`
+- `EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS`
+- `EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS`
+
+#### Node Name
+
+Using the [Downward API](https://kubernetes.io/docs/concepts/workloads/pods/downward-api/#downwardapi-fieldRef), the 
+property `spec.nodeName` can be used to set the `EXECUTOR_KUBERNETES_NODE_NAME` environment variable.
+
+```yaml
+    - name: EXECUTOR_KUBERNETES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+```
+
+This ensures that the Job is scheduled on the same Node as the Executor.
+
+However, if the node does not have enough resources to run the Job, the Job will not be scheduled.
 
 ### Firewall Rules
 
