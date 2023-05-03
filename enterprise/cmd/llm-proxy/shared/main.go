@@ -38,12 +38,12 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			if r.URL.Path == "/healthz" {
 				if err := healthz(r.Context()); err != nil {
 					w.WriteHeader(http.StatusServiceUnavailable)
-					_, _ = w.Write([]byte(err.Error()))
+					_, _ = w.Write([]byte("healthz: " + err.Error()))
 					return
 				}
 
 				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte("ok"))
+				_, _ = w.Write([]byte("healthz: ok"))
 				return
 			}
 			handler.ServeHTTP(w, r)
