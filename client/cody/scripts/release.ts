@@ -3,7 +3,7 @@ import childProcess from 'child_process'
 
 import * as semver from 'semver'
 
-import { version } from '../package.json'
+const { version } = require('../package.json')
 
 /**
  * This script is used by the CI to publish the extension to the VS Code Marketplace. It is
