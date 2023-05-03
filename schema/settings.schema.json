@@ -510,7 +510,7 @@
       "default": {}
     },
     "orgs.allMembersBatchChangesAdmin": {
-      "description": "Enables/Disables org-level admin access for Batch Changes to all members of an org",
+      "description": "If enabled, all members of the org will be treated as admins (e.g. can edit, apply, delete) for all batch changes created in that org.",
       "type": "boolean",
       "default": false,
       "!go": {

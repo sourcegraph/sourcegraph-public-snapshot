@@ -2026,7 +2026,7 @@ type Settings struct {
 	Notices []*Notice `json:"notices,omitempty"`
 	// OpenInEditor description: Group of settings related to opening files in an editor.
 	OpenInEditor *SettingsOpenInEditor `json:"openInEditor,omitempty"`
-	// OrgsAllMembersBatchChangesAdmin description: Enables/Disables org-level admin access for Batch Changes to all members of an org
+	// OrgsAllMembersBatchChangesAdmin description: If enabled, all members of the org will be treated as admins (e.g. can edit, apply, delete) for all batch changes created in that org.
 	OrgsAllMembersBatchChangesAdmin *bool `json:"orgs.allMembersBatchChangesAdmin,omitempty"`
 	// PerforceCodeHostToSwarmMap description: Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like "perforce.company.com:1666". Values should look like "https://swarm.company.com/", with a slash at the end.
 	PerforceCodeHostToSwarmMap map[string]string `json:"perforce.codeHostToSwarmMap,omitempty"`
