@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2064,SC2207,SC2009
 
+humanize() {
+  local num=${1}
+  [[ ${num} =~ ^[0-9][0-9]*$ ]] && num=$(bc <<<"scale=2;${num}/1024/1024")m
+  printf -- '%s' "${num}"
+  return 0
+}
+
 # read resource usage statistics for a process
 # several times a second until it terminates
 # at which point, output the most recent stats on stdout
@@ -16,22 +23,23 @@ cmd="${2}"
 unset rss vsz etime time
 
 while true; do
-  # Alpine has a very limited `ps`
+  # Alpine has a rather limited `ps`
   # it does not limit output to just one process, even when specifying a pid
   # so we need to filter the output by pid
-  a=($(ps -o pid -o rss -o vsz -o etime -o time -o comm "${pid}" | grep "^ *${pid} " | tail -1))
-  # if there is no output, the process is no longer running, so stop monitoring
-  [ ${#a[@]} -eq 0 ] && break
-  # double-check the process for the given command to make sure it's not another process that's been given the same pid
-  # unlikely, but let's put in the effort
-  # Alpine seems to limit the number of characters in the comm field to 15
-  # NOTE: this breaks for commands that have spaces in the first 15 characters
-  [[ "${cmd:0:15}" = "${a[5]:0:15}" ]] || break
-  rss=${a[1]}
-  vsz=${a[2]}
-  etime=${a[3]}
-  time=${a[4]}
+  x="$(ps -o pid,stat,rss,vsz,etime,time,comm,args "${pid}" | grep "^ *${pid} " | grep "${cmd}" | tail -1)"
+  [ -z "${x}" ] && break
+  IFS=" " read -r -a a <<<"$x"
+  # drop out of here if the process has died or become a zombie - no coming back from the dead
+  [[ "${a[1]}" =~ ^[ZXx] ]] && break
+  # only collect stats for processes that are active (running, sleeping, disk sleep, which is waiting for I/O to complete)
+  # but don't stop until it is really is dead
+  [[ "${a[1]}" =~ ^[RSD] ]] && {
+    rss=${a[2]}
+    vsz=${a[3]}
+    etime=${a[4]}
+    time=${a[5]}
+  }
   sleep 0.2
 done
 
-printf '%s %s %s %s' "${rss}" "${vsz}" "${etime}" "${time}"
+printf '%s %s %s %s' "$(humanize "${rss}")" "$(humanize "${vsz}")" "${etime}" "${time}"
