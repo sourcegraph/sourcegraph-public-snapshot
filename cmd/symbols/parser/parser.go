@@ -2,7 +2,6 @@ package parser
 
 import (
 	"context"
-	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -145,8 +144,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 
 	var source CtagsSource
 
-	// TODO(SuperAuguste): actually map files/extensions to languages rather
-	switch p.parserPool.symbolsSource[filepath.Ext(parseRequest.Path)] {
+	switch p.parserPool.symbolsSource[GetLanguageFromPath(parseRequest.Path)] {
 	case "off":
 		return nil
 
