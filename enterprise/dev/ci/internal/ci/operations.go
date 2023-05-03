@@ -503,7 +503,7 @@ func addGoBuild(pipeline *bk.Pipeline) {
 
 // Adds backend integration tests step.
 //
-// Runtime: ~11m
+// Runtime: ~5m
 func backendIntegrationTests(candidateImageTag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		for _, enableGRPC := range []bool{true, false} {
