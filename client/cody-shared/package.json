@@ -20,5 +20,8 @@
   "dependencies": {
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/http-client": "workspace:*"
+  },
+  "devDependencies": {
+    "jest-environment-jsdom-sixteen": "^2.0.0"
   }
 }

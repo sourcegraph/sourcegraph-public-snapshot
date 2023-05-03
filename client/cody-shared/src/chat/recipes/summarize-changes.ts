@@ -65,67 +65,6 @@ export class SummarizeChanges implements Recipe {
         })
         scopePicker.hide()
 
-        // // invoke `git symbolic-ref refs/remotes/origin/HEAD` to get name of default branch
-        // const defaultBranchName = spawnSync('git', ['symbolic-ref', 'refs/remotes/origin/HEAD'])
-
-        // Human: Write the git command that prints the commits on branch "origin/main" in the time range "1 day ago" and covers changes to the directory "foo". Put the command in between <cmd></cmd> tags like this:
-
-        // <cmd>
-        // git ...
-        // </cmd>
-
-        // Assistant:  <cmd>
-        // git log --since="1 day ago" -- foo origin/main
-
-        console.log('#', timeRange, scope)
-        let gitLLMOut = ''
-        await new Promise<void>((resolve, reject) => {
-            console.log(context.chatClient)
-            context.chatClient.chat(
-                [
-                    {
-                        speaker: 'human',
-                        text: `Write the git command that prints the commits on branch "origin/main" in the time range "${timeRange}" and covers changes to the directory ${scope}. Put the command in between <cmd></cmd> tags like this:\n<cmd>\ngit ...\n</cmd>`,
-                    },
-                    {
-                        speaker: 'assistant',
-                        text: '',
-                    },
-                ],
-                {
-                    onChange: (text: string) => {
-                        gitLLMOut = text
-                    },
-                    onComplete: () => {
-                        resolve()
-                    },
-                    onError: (message: string, statusCode?: number) => {
-                        reject(`error: ${message}, statusCode: ${statusCode}`)
-                    },
-                }
-            )
-        })
-        gitLLMOut = gitLLMOut.trim()
-        if (!gitLLMOut.endsWith('</cmd>') || !gitLLMOut.startsWith('<cmd>')) {
-            vscode.window.showErrorMessage('bad command output:', gitLLMOut)
-            return null
-        }
-        const gitCmd = gitLLMOut.substring('<cmd>'.length, -'</cmd>'.length).trim()
-
-        // TODO: some validation of git command
-
-        // execute gitCmd to get list of commits
-        const gitCommitsOut = spawnSync('git', gitCmd.split(' '))
-
-        // generate git command to get commits
-
-        // group commits by author
-
-        // for each author
-        // for each commit for that author
-        // for each file in the commit, summarize the change
-        // recursively pop back up and summarize each level based on the summaries returned
-
         return null
     }
 }

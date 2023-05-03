@@ -1,6 +1,9 @@
 import { spawn } from 'child_process'
 
-import { CommitNode, Summarizer, parseFileDiffs } from './summarizer'
+import { SourcegraphBrowserCompletionsClient } from '../../sourcegraph-api/completions/browserClient'
+import { ChatClient } from '../chat'
+
+import { CommitNode, parseFileDiffs } from './summarizer'
 
 function firstLastLineSummarize(text: string): Promise<string> {
     const lines = text.split('\n').filter(line => line.length > 0)
@@ -12,14 +15,18 @@ function firstLastLineSummarize(text: string): Promise<string> {
 
 describe('summarizer', () => {
     it('summarizes text', async () => {
+        jest.setTimeout(10000000)
         // git log --after="1 week ago" -p --pretty=format:'<commit>%H</commit><authorName>%an</authorName><authorEmail>$ae</authorEmail><message>%B</message>'
         const child = spawn(
             'git',
             [
                 'log',
-                '--after=1 day ago',
+                '--after=2 days ago',
                 '-p',
                 '--pretty=format:<commitMetadata><commit>%H</commit><authorName>%an</authorName><authorEmail>%ae</authorEmail><message>%B</message></commitMetadata>',
+                'origin/main',
+                '--',
+                './',
             ],
             { cwd: '/home/beyang/src/github.com/sourcegraph/sourcegraph' }
         )
@@ -39,8 +46,40 @@ describe('summarizer', () => {
         })
         const nodes = CommitNode.fromText(out)
 
+        const completionsClient = new SourcegraphBrowserCompletionsClient({
+            serverEndpoint: 'https://sourcegraph.com',
+            accessToken: 'sgp_4973ca15878c144c3166805d5dc6471577ec5a2f',
+            debug: false,
+            customHeaders: {},
+        })
         const summaries = await Promise.all(nodes.map(node => node.getSummary(firstLastLineSummarize)))
-        console.log('# summaries', summaries.join('\n\n'))
+        console.log('# summaries', summaries)
+
+        // const llmClient = new ChatClient(completionsClient)
+        // const llmSummarize = (text: string): Promise<string> => {
+        //     return new Promise((resolve, reject) => {
+        //         let summary = ''
+        //         llmClient.chat(
+        //             [
+        //                 {
+        //                     speaker: 'human',
+        //                     text: `Summarize this:\n${text}`,
+        //                 },
+        //             ],
+        //             {
+        //                 onChange: (text: string) => {
+        //                     summary += text
+        //                 },
+        //                 onComplete: () => resolve(summary),
+        //                 onError: (message: string, statusCode?: number) =>
+        //                     reject(`error ${statusCode && `(${statusCode})`}: ${message}`),
+        //             }
+        //         )
+        //     })
+        // }
+
+        // const summaries = await Promise.all(nodes.map(node => node.getSummary(llmSummarize)))
+        // console.log('# summaries', summaries.join('\n\n'))
     })
 
     it('parses file diffs', () => {
