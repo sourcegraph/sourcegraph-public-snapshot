@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"path"
 	"time"
 
@@ -17,6 +16,8 @@ import (
 type RecentContributionSignalStore interface {
 	AddCommit(ctx context.Context, commit Commit) error
 	FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentContributorSummary, error)
+	ClearSignals(ctx context.Context, repoID api.RepoID) error
+	WithTransact(context.Context, func(store RecentContributionSignalStore) error) error
 }
 
 func RecentContributionSignalStoreWith(other basestore.ShareableStore) RecentContributionSignalStore {
@@ -42,11 +43,17 @@ type recentContributionSignalStore struct {
 	*basestore.Store
 }
 
+func (s *recentContributionSignalStore) WithTransact(ctx context.Context, f func(store RecentContributionSignalStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(RecentContributionSignalStoreWith(tx))
+	})
+}
+
 func (s *recentContributionSignalStore) With(other basestore.ShareableStore) *recentContributionSignalStore {
 	return &recentContributionSignalStore{Store: s.Store.With(other)}
 }
 
-func (s *recentContributionSignalStore) Transact(ctx context.Context) (*recentContributionSignalStore, error) {
+func (s *recentContributionSignalStore) transact(ctx context.Context) (*recentContributionSignalStore, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &recentContributionSignalStore{Store: txBase}, err
 }
@@ -189,6 +196,25 @@ const insertRecentContributorSignalFmtstr = `
 	) VALUES (%s, %s, %s, %s)
 `
 
+const clearSignalsFmtstr = `
+    WITH rps AS (
+        SELECT id FROM repo_paths WHERE repo_id = %s
+    ) 
+    DELETE FROM %s 
+    WHERE changed_file_path_id IN (SELECT * FROM rps)
+`
+
+func (s *recentContributionSignalStore) ClearSignals(ctx context.Context, repoID api.RepoID) error {
+	tables := []string{"own_signal_recent_contribution", "own_aggregate_recent_contribution"}
+
+	for _, table := range tables {
+		if err := s.Exec(ctx, sqlf.Sprintf(clearSignalsFmtstr, repoID, sqlf.Sprintf(table))); err != nil {
+			return errors.Wrapf(err, "table: %s", table)
+		}
+	}
+	return nil
+}
+
 // AddCommit inserts a recent contribution signal for each file changed by given commit.
 //
 // As per schema, `commit_id` is the git sha stored as bytea.
@@ -197,23 +223,16 @@ const insertRecentContributorSignalFmtstr = `
 // for each new signal appearing in `own_signal_recent_contribution` by using
 // a trigger: `update_own_aggregate_recent_contribution`.
 func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Commit) (err error) {
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
 	// Get or create commit author:
-	authorID, err := tx.ensureAuthor(ctx, commit)
+	authorID, err := s.ensureAuthor(ctx, commit)
 	if err != nil {
 		return errors.Wrap(err, "cannot insert commit author")
 	}
 	// Get or create necessary repo paths:
-	pathIDs, err := tx.ensureRepoPaths(ctx, commit)
+	pathIDs, err := s.ensureRepoPaths(ctx, commit)
 	if err != nil {
 		return errors.Wrap(err, "cannot insert repo paths")
 	}
-	fmt.Printf("commit: %s\n", commit.CommitSHA)
 	// Insert individual signals into own_signal_recent_contribution:
 	for _, pathID := range pathIDs {
 		q := sqlf.Sprintf(insertRecentContributorSignalFmtstr,
@@ -222,7 +241,7 @@ func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Co
 			commit.Timestamp,
 			dbutil.CommitBytea(commit.CommitSHA),
 		)
-		err = tx.Exec(ctx, q)
+		err = s.Exec(ctx, q)
 		if err != nil {
 			return err
 		}

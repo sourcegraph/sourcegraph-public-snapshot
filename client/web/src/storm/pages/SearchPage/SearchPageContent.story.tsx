@@ -1,5 +1,7 @@
 import { Meta, Story } from '@storybook/react'
 
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+
 import { WebStory } from '../../../components/WebStory'
 
 import { SearchPageContent } from './SearchPageContent'
@@ -20,7 +22,9 @@ const config: Meta = {
 export default config
 
 export const CloudAuthedHome: Story = () => (
-    <WebStory legacyLayoutContext={{ isSourcegraphDotCom: true }}>
+    <WebStory
+        legacyLayoutContext={{ isSourcegraphDotCom: true, authenticatedUser: { id: 'userID' } as AuthenticatedUser }}
+    >
         {() => <SearchPageContent shouldShowAddCodeHostWidget={false} />}
     </WebStory>
 )
