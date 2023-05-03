@@ -21408,6 +21408,52 @@
       "Triggers": []
     },
     {
+      "Name": "repo_life_cycle",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "logs",
+          "Index": 2,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "repo_life_cycle_repo_id_unique",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_life_cycle_repo_id_unique ON repo_life_cycle USING btree (repo_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "repo_paths",
       "Comment": "",
       "Columns": [

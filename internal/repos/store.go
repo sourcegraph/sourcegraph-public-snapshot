@@ -26,6 +26,10 @@ import (
 type Store interface {
 	// RepoStore returns a database.RepoStore using the same database handle.
 	RepoStore() database.RepoStore
+
+	// RepoStoreLifeCycleStore returns a database.RepoStore using the same database handle.
+	RepoLifeCycleStore() database.RepoLifeCycleStore
+
 	// GitserverReposStore returns a database.GitserverReposStore using the same
 	// database handle.
 	GitserverReposStore() database.GitserverRepoStore
@@ -118,6 +122,10 @@ func NewStore(logger log.Logger, db database.DB) Store {
 
 func (s *store) RepoStore() database.RepoStore {
 	return database.ReposWith(s.Logger, s)
+}
+
+func (s *store) RepoLifeCycleStore() database.RepoLifeCycleStore {
+	return database.RepoLifeCycleWith(s.Logger, s)
 }
 
 func (s *store) GitserverReposStore() database.GitserverRepoStore {

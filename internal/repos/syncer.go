@@ -325,6 +325,13 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 	if background && repo != nil {
 		logger.Debug("starting background sync in goroutine")
 		go func() {
+			event := database.RepoLifeCycleEventBackgroundSyncStarted
+			if err := s.Store.RepoLifeCycleStore().Upsert(ctx, repo.ID, event); err != nil {
+				s.ObsvCtx.Logger.Error(
+					"failed to record repo lifecycle event",
+					log.String("event", string(event)),
+					log.Error(err))
+			}
 			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 			defer cancel()
 
@@ -342,6 +349,14 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 	}
 
 	logger.Debug("starting foreground sync")
+	event := database.RepoLifeCycleEventForegroundSyncStarted
+	if err := s.Store.RepoLifeCycleStore().Upsert(ctx, repo.ID, event); err != nil {
+		s.ObsvCtx.Logger.Error(
+			"failed to record repo lifecycle event",
+			log.String("event", string(event)),
+			log.Error(err))
+	}
+
 	updatedRepo, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
@@ -782,6 +797,15 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		// We fallthrough to the next case after removing the conflicting repo in order to update
 		// the winner (i.e. existing). This works because we mutate stored to contain it, which the case expects.
 		stored = types.Repos{existing}
+
+		if err := s.Store.RepoLifeCycleStore().Upsert(
+			ctx,
+			existing.ID,
+			database.RepoLifeCycleEventAddedFromCodeHostSync,
+		); err != nil {
+			s.ObsvCtx.Logger.Error("failed to record repo lifecycle event", log.Error(err))
+		}
+
 		s.ObsvCtx.Logger.Debug("retrieved stored repo, falling through", log.String("stored", fmt.Sprintf("%v", stored)))
 		fallthrough
 	case 1: // Existing repo, update.
@@ -803,6 +827,15 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 		*sourced = *stored[0]
 		d.Modified = append(d.Modified, RepoModified{Repo: stored[0], Modified: modified})
+
+		if err := s.Store.RepoLifeCycleStore().Upsert(
+			ctx,
+			stored[0].ID,
+			database.RepoLifeCycleEventMetadataUpdated,
+		); err != nil {
+			s.ObsvCtx.Logger.Error("failed to record repo lifecycle event", log.Error(err))
+		}
+
 		s.ObsvCtx.Logger.Debug("appended to modified repos")
 	case 0: // New repo, create.
 		s.ObsvCtx.Logger.Debug("new repo")

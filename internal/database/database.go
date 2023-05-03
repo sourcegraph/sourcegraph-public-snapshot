@@ -46,6 +46,7 @@ type DB interface {
 	Phabricator() PhabricatorStore
 	RedisKeyValue() RedisKeyValueStore
 	Repos() RepoStore
+	RepoLifeCycleStore() RepoLifeCycleStore
 	RepoKVPs() RepoKVPStore
 	RolePermissions() RolePermissionStore
 	Roles() RoleStore
@@ -222,6 +223,10 @@ func (d *db) RedisKeyValue() RedisKeyValueStore {
 
 func (d *db) Repos() RepoStore {
 	return ReposWith(d.logger, d.Store)
+}
+
+func (d *db) RepoLifeCycleStore() RepoLifeCycleStore {
+	return RepoLifeCycleWith(d.logger, d.Store)
 }
 
 func (d *db) RepoKVPs() RepoKVPStore {

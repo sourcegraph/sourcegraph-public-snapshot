@@ -3218,6 +3218,17 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.repo_life_cycle"
+```
+ Column  |  Type   | Collation | Nullable | Default 
+---------+---------+-----------+----------+---------
+ repo_id | integer |           | not null | 
+ logs    | jsonb   |           | not null | 
+Indexes:
+    "repo_life_cycle_repo_id_unique" UNIQUE, btree (repo_id)
+
+```
+
 # Table "public.repo_paths"
 ```
     Column     |  Type   | Collation | Nullable |                Default                 

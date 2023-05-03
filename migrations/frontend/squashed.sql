@@ -3923,6 +3923,11 @@ CREATE TABLE repo_kvps (
     value text
 );
 
+CREATE TABLE repo_life_cycle (
+    repo_id integer NOT NULL,
+    logs jsonb NOT NULL
+);
+
 CREATE TABLE repo_paths (
     id integer NOT NULL,
     repo_id integer NOT NULL,
@@ -5630,6 +5635,8 @@ CREATE INDEX repo_fork ON repo USING btree (fork);
 CREATE INDEX repo_hashed_name_idx ON repo USING btree (sha256((lower((name)::text))::bytea)) WHERE (deleted_at IS NULL);
 
 CREATE INDEX repo_is_not_blocked_idx ON repo USING btree (((blocked IS NULL)));
+
+CREATE UNIQUE INDEX repo_life_cycle_repo_id_unique ON repo_life_cycle USING btree (repo_id);
 
 CREATE INDEX repo_metadata_gin_idx ON repo USING gin (metadata);
 

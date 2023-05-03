@@ -7948,6 +7948,9 @@ type MockEnterpriseDB struct {
 	// RepoKVPsFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoKVPs.
 	RepoKVPsFunc *EnterpriseDBRepoKVPsFunc
+	// RepoLifeCycleStoreFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoLifeCycleStore.
+	RepoLifeCycleStoreFunc *EnterpriseDBRepoLifeCycleStoreFunc
 	// RepoStatisticsFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoStatistics.
 	RepoStatisticsFunc *EnterpriseDBRepoStatisticsFunc
@@ -8191,6 +8194,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		RepoKVPsFunc: &EnterpriseDBRepoKVPsFunc{
 			defaultHook: func() (r0 database.RepoKVPStore) {
+				return
+			},
+		},
+		RepoLifeCycleStoreFunc: &EnterpriseDBRepoLifeCycleStoreFunc{
+			defaultHook: func() (r0 database.RepoLifeCycleStore) {
 				return
 			},
 		},
@@ -8481,6 +8489,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.RepoKVPs")
 			},
 		},
+		RepoLifeCycleStoreFunc: &EnterpriseDBRepoLifeCycleStoreFunc{
+			defaultHook: func() database.RepoLifeCycleStore {
+				panic("unexpected invocation of MockEnterpriseDB.RepoLifeCycleStore")
+			},
+		},
 		RepoStatisticsFunc: &EnterpriseDBRepoStatisticsFunc{
 			defaultHook: func() database.RepoStatisticsStore {
 				panic("unexpected invocation of MockEnterpriseDB.RepoStatistics")
@@ -8696,6 +8709,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		RepoKVPsFunc: &EnterpriseDBRepoKVPsFunc{
 			defaultHook: i.RepoKVPs,
+		},
+		RepoLifeCycleStoreFunc: &EnterpriseDBRepoLifeCycleStoreFunc{
+			defaultHook: i.RepoLifeCycleStore,
 		},
 		RepoStatisticsFunc: &EnterpriseDBRepoStatisticsFunc{
 			defaultHook: i.RepoStatistics,
@@ -12412,6 +12428,107 @@ func (c EnterpriseDBRepoKVPsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBRepoKVPsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBRepoLifeCycleStoreFunc describes the behavior when the
+// RepoLifeCycleStore method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBRepoLifeCycleStoreFunc struct {
+	defaultHook func() database.RepoLifeCycleStore
+	hooks       []func() database.RepoLifeCycleStore
+	history     []EnterpriseDBRepoLifeCycleStoreFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoLifeCycleStore delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) RepoLifeCycleStore() database.RepoLifeCycleStore {
+	r0 := m.RepoLifeCycleStoreFunc.nextHook()()
+	m.RepoLifeCycleStoreFunc.appendCall(EnterpriseDBRepoLifeCycleStoreFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RepoLifeCycleStore
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBRepoLifeCycleStoreFunc) SetDefaultHook(hook func() database.RepoLifeCycleStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoLifeCycleStore method of the parent MockEnterpriseDB instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *EnterpriseDBRepoLifeCycleStoreFunc) PushHook(hook func() database.RepoLifeCycleStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBRepoLifeCycleStoreFunc) SetDefaultReturn(r0 database.RepoLifeCycleStore) {
+	f.SetDefaultHook(func() database.RepoLifeCycleStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBRepoLifeCycleStoreFunc) PushReturn(r0 database.RepoLifeCycleStore) {
+	f.PushHook(func() database.RepoLifeCycleStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBRepoLifeCycleStoreFunc) nextHook() func() database.RepoLifeCycleStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBRepoLifeCycleStoreFunc) appendCall(r0 EnterpriseDBRepoLifeCycleStoreFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBRepoLifeCycleStoreFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBRepoLifeCycleStoreFunc) History() []EnterpriseDBRepoLifeCycleStoreFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBRepoLifeCycleStoreFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBRepoLifeCycleStoreFuncCall is an object that describes an
+// invocation of method RepoLifeCycleStore on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBRepoLifeCycleStoreFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.RepoLifeCycleStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBRepoLifeCycleStoreFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBRepoLifeCycleStoreFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

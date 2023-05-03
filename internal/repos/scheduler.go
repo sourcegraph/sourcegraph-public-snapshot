@@ -212,6 +212,14 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				defer cancel()
 				defer s.updateQueue.remove(repo, true)
 
+				event := database.RepoLifeCycleEventUpdateStarted
+				if err := s.db.RepoLifeCycleStore().Upsert(ctx, repo.ID, event); err != nil {
+					s.logger.Error(
+						"failed to record repo lifecycle event",
+						log.String("event", string(event)),
+						log.Error(err))
+				}
+
 				// This is a blocking call since the repo will be cloned synchronously by gitserver
 				// if it doesn't exist or update it if it does. The timeout of this request depends
 				// on the value of conf.GitLongCommandTimeout() or if the passed context has a set
