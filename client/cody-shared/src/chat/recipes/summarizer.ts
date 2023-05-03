@@ -1,13 +1,12 @@
 interface SummaryNode {
-    getSourceIdentifier(): string
-    getText(): Promise<string>
-    getReferences(): { name: string; node: SummaryNode }[]
+    getSummary(summarize: (text: string) => Promise<string>): Promise<string>
 }
 
 interface Commit {
     authorName: string
     authorEmail: string
     hash: string
+    message: string
     rawDiff: string
     diff: FileDiff[]
 }
@@ -18,80 +17,63 @@ interface FileDiff {
     diff: string
 }
 
+export class FileDiffNode implements SummaryNode {
+    constructor(private diff: FileDiff) {}
+    async getSummary(summarize: (text: string) => Promise<string>): Promise<string> {
+        if (this.diff.oldFilename === this.diff.newFilename) {
+            return summarize(`${this.diff.oldFilename}:\n${this.diff.diff.trim()}`)
+        }
+        const filenameText = `${this.diff.oldFilename} became ${this.diff.newFilename}`
+        if (this.diff.diff.trim().length === 0) {
+            return filenameText
+        }
+        return `${filenameText}:\n${this.diff.diff.trim()}`
+    }
+}
+
 export class CommitNode implements SummaryNode {
     constructor(private commit: Commit) {}
 
     public static fromText(text: string): CommitNode[] {
         const commits: Commit[] = []
-        const lines = text.split('\n')
-        let commit: Commit | undefined
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i]
-            console.log(`<line>${line}</line>`)
-            if (line.startsWith('<commit>')) {
-                if (commit) {
-                    commit.diff = parseFileDiffs(commit.rawDiff)
-                    commits.push(commit)
-                }
-                commit = {
-                    authorEmail: textBetween(line, '<authorEmail>', '</authorEmail>'),
-                    authorName: textBetween(line, 'authorName>', '</authorName>'),
-                    hash: textBetween(line, '<commit>', '</commit>'),
-                    rawDiff: '',
-                    diff: [],
-                }
-                continue
+
+        while (text.length > 0) {
+            const [commitMetadataText, diffIndex] = textBetween(text, '<commitMetadata>', '</commitMetadata>')
+            text = text.substring(diffIndex)
+            let diffEndIndex = text.indexOf('<commitMetadata>')
+            if (diffEndIndex === -1) {
+                diffEndIndex = text.length
             }
-            if (!commit) {
-                continue
-            }
-            commit.rawDiff += line + '\n'
-        }
-        if (commit) {
-            commit.diff = parseFileDiffs(commit.rawDiff)
-            commits.push(commit)
+            const diffText = text.substring(0, diffEndIndex)
+            text = text.substring(diffEndIndex)
+            commits.push({
+                authorEmail: textBetween(commitMetadataText, '<authorEmail>', '</authorEmail>')[0],
+                authorName: textBetween(commitMetadataText, '<authorName>', '</authorName>')[0],
+                hash: textBetween(commitMetadataText, '<commit>', '</commit>')[0],
+                message: textBetween(commitMetadataText, '<message>', '</message>')[0],
+                rawDiff: diffText,
+                diff: parseFileDiffs(diffText),
+            })
         }
         return commits.map(commit => new CommitNode(commit))
     }
 
-    // public static fromText(text: string): CommitNode[] {
-    //     const commitNodes: CommitNode[] = []
-    //     const lines = text.split('\n')
-    //     for (const line of lines) {
-    //         const fields = line.split('\t')
-    //         if (fields.length !== 3) {
-    //             console.error(`ignoring line because did not find 3 fields: ${line}`)
-    //             continue
-    //         }
-    //         const [authorName, authorEmail, commitHash] = fields
-    //         commitNodes.push(new CommitNode(authorName, authorEmail, commitHash))
-    //     }
-    //     return commitNodes
-    // }
+    async getSummary(summarize: (text: string) => Promise<string>): Promise<string> {
+        const fileSummaries = await Promise.all(
+            this.commit.diff.map(fileDiff => new FileDiffNode(fileDiff).getSummary(summarize))
+        )
 
-    getSourceIdentifier(): string {
-        return this.commit.hash
-    }
-    getText(): Promise<string> {
-        throw new Error('Method not implemented.')
-    }
-    getReferences(): { name: string; node: SummaryNode }[] {
-        throw new Error('Method not implemented.')
-    }
-
-    private fetchCommitInfo() {
-        // commit message
-        // file diffs
+        return summarize(`${this.commit.message}\n\n${fileSummaries.join('\n\n')}`)
     }
 }
 
-function textBetween(text: string, startTag: string, endTag: string): string {
+function textBetween(text: string, startTag: string, endTag: string): [string, number] {
     const start = text.indexOf(startTag) + startTag.length
     const end = text.indexOf(endTag, start)
     if (start === -1 || end === -1) {
-        return ''
+        return ['', -1]
     }
-    return text.slice(start, end)
+    return [text.slice(start, end), end]
 }
 
 // Parse a raw diff like this:
@@ -148,26 +130,31 @@ export function parseFileDiffs(rawDiff: string): FileDiff[] {
     return fileDiffs
 }
 
-export class Summarizer {
-    constructor(private nodes: SummaryNode[], private summarize: (text: string) => Promise<string>) {}
-    getSummary(): string {
-        return ''
-    }
+// export class Summarizer {
+//     constructor(private nodes: SummaryNode[], private summarize: (text: string) => Promise<string>) {}
 
-    private async getSummaryHelper(node: SummaryNode): Promise<string> {
-        const refs = node.getReferences()
-        if (refs.length === 0) {
-            return node.getText()
-        }
-        const summaries = await Promise.all(
-            refs.map(async ref => ({
-                summary: await this.getSummaryHelper(ref.node),
-                name: ref.name,
-            }))
-        )
-        const summariesText = summaries.map(({ summary, name }) => `${name}: ${summary}`)
-        const nodeText = await node.getText()
-        const fullText = `${nodeText}\n\n${summariesText.join('\n\n')}`
-        return this.summarize(fullText)
-    }
-}
+//     async getSummary(): Promise<string> {
+//         const nodeSummaries = await Promise.all(this.nodes.map(node => this.getSummaryHelper(node)))
+//         return nodeSummaries.join('\n')
+//     }
+
+//     private async getSummaryHelper(node: SummaryNode): Promise<string> {
+//         const refs = node.getReferences()
+//         // Base case
+//         if (refs.length === 0) {
+//             return this.summarize(node.getText())
+//         }
+
+//         // Recursive case
+//         const summaries = await Promise.all(
+//             refs.map(async ref => ({
+//                 summary: await this.getSummaryHelper(ref.node),
+//                 name: ref.name,
+//             }))
+//         )
+//         const summariesText = summaries.map(({ summary, name }) => `${name}: ${summary}`)
+//         const nodeText = node.getText()
+//         const fullText = `${nodeText}\n\n${summariesText.join('\n\n')}`
+//         return this.summarize(fullText)
+//     }
+// }

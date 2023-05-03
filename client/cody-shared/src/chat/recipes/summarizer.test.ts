@@ -2,6 +2,14 @@ import { spawn } from 'child_process'
 
 import { CommitNode, Summarizer, parseFileDiffs } from './summarizer'
 
+function firstLastLineSummarize(text: string): Promise<string> {
+    const lines = text.split('\n').filter(line => line.length > 0)
+    if (lines.length === 0) {
+        return Promise.resolve('')
+    }
+    return Promise.resolve(lines[0] + '\n' + lines[lines.length - 1])
+}
+
 describe('summarizer', () => {
     it('summarizes text', async () => {
         // git log --after="1 week ago" -p --pretty=format:'<commit>%H</commit><authorName>%an</authorName><authorEmail>$ae</authorEmail><message>%B</message>'
@@ -11,7 +19,7 @@ describe('summarizer', () => {
                 'log',
                 '--after=1 day ago',
                 '-p',
-                '--pretty=format:<commit>%H</commit><authorName>%an</authorName><authorEmail>%ae</authorEmail><message>%B</message>',
+                '--pretty=format:<commitMetadata><commit>%H</commit><authorName>%an</authorName><authorEmail>%ae</authorEmail><message>%B</message></commitMetadata>',
             ],
             { cwd: '/home/beyang/src/github.com/sourcegraph/sourcegraph' }
         )
@@ -29,14 +37,12 @@ describe('summarizer', () => {
                 }
             })
         })
-        // console.log('# out:', out)
         const nodes = CommitNode.fromText(out)
-        console.log('# nodes', nodes)
 
-        const summarizer = new Summarizer(nodes)
-
-        // NEXT: write a LLM summarize function, pass it to Summarizer constructor
+        const summaries = await Promise.all(nodes.map(node => node.getSummary(firstLastLineSummarize)))
+        console.log('# summaries', summaries.join('\n\n'))
     })
+
     it('parses file diffs', () => {
         const rawDiff = `diff --git a/client/cody-shared/src/chat/recipes/summarizer.test.ts b/client/cody-shared/src/chat/recipes/summarizer.test.ts
 index a5aa8fd8d7..6d0fcc83fe 100644
