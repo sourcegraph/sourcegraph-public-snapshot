@@ -22,9 +22,8 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		Required: true,
 	}
 	versionFlag := &cli.StringFlag{
-		Name: "version",
-		Usage: "The target schema version. Must be resolvable as a git revlike  on the Sourcegraph repository." +
-			" Will be inferred from the instance if -skip-version-check is not also passed.",
+		Name:     "version",
+		Usage:    "The target schema version. Must be resolvable as a git revlike  on the Sourcegraph repository.",
 		Required: false,
 	}
 	fileFlag := &cli.StringFlag{
@@ -77,11 +76,9 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			if version == "" {
 				version = inferred.GitTagWithPatch(patch)
 				out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Checking drift against version %q", version))
-			} else {
-				if version != inferred.GitTagWithPatch(patch) {
-					err := fmt.Sprintf("version assertion failed: %q != %q", inferred, version)
-					return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
-				}
+			} else if version != inferred.GitTagWithPatch(patch) {
+				err := fmt.Sprintf("version assertion failed: %q != %q", inferred, version)
+				return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
 			}
 		} else if version == "" && file == "" {
 			return errors.New("-skip-version-check was supplied without -version or -file")
