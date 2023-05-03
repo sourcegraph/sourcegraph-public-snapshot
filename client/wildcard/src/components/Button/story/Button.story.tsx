@@ -67,7 +67,7 @@ Simple.argTypes = {
 
 export const AllButtons: Story = () => (
     <div className="pb-3">
-        <H1>Buttons</H1>
+        <H1>HELLO WORLD</H1>
         <H2>Variants</H2>
         <ButtonVariants variants={BUTTON_VARIANTS} />
         <H2>Outline</H2>

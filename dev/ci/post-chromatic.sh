@@ -51,7 +51,7 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" && "${pr_number}" != "false" ]
 
   app_preview_comment_body=$(printf '%s\n' \
     "## App preview:" \
-    "- [Storybook](${chromatic_storybook_url}/search)" | jq -Rs .)
+    "- [Storybook](${chromatic_storybook_url})" | jq -Rs .)
 
   if [[ -z "${app_preview_comment_id}" ]]; then
     echo "Adding new App preview comment to PR #${pr_number} in ${owner_and_repo}"
