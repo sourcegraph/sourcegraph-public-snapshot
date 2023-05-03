@@ -20,7 +20,7 @@ cleanup() {
   docker-compose down --volumes --timeout 30 # seconds
   docker volume rm executors-e2e || true
   popd 1>/dev/null
-  sudo rm -rf "${TMP_WORK_DIR}"
+  rm -rf "${TMP_WORK_DIR}"
 }
 trap cleanup EXIT
 
