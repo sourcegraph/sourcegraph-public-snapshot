@@ -196,8 +196,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.BackendIntegrationTests:
 		ops.Append(
-			bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType),
-			backendIntegrationTests(c.candidateImageTag()),
+			bazelBuildCandidateDockerImage("server", c.Version, c.candidateImageTag(), c.RunType),
+			backendIntegrationTests(c.candidateImageTag(), "server"),
 			bazelConfigure(),
 			bazelTest("//..."))
 
@@ -393,7 +393,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Integration tests
 		ops.Merge(operations.NewNamedSet("Integration tests",
-			backendIntegrationTests(c.candidateImageTag()),
+			backendIntegrationTests(c.candidateImageTag(), "symbols"),
 			codeIntelQA(c.candidateImageTag()),
 		))
 		// End-to-end tests

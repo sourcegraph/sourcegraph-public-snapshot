@@ -504,7 +504,7 @@ func addGoBuild(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 //
 // Runtime: ~5m
-func backendIntegrationTests(candidateImageTag string) operations.Operation {
+func backendIntegrationTests(candidateImageTag string, imageDep string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		for _, enableGRPC := range []bool{true, false} {
 			description := ":chains: Backend integration tests"
@@ -514,7 +514,7 @@ func backendIntegrationTests(candidateImageTag string) operations.Operation {
 			pipeline.AddStep(
 				description,
 				// Run tests against the candidate server image
-				bk.DependsOn(candidateImageStepKey("symbols")),
+				bk.DependsOn(candidateImageStepKey(imageDep)),
 				bk.Env("IMAGE",
 					images.DevRegistryImage("server", candidateImageTag)),
 				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
