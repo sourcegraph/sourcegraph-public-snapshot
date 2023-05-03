@@ -18,8 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
@@ -31,7 +33,21 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	server := httpserver.NewFromAddr(config.Address, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      handler,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// For cluster liveness and readiness probes
+			if r.URL.Path == "/healthz" {
+				if err := healthz(r.Context()); err != nil {
+					w.WriteHeader(http.StatusServiceUnavailable)
+					_, _ = w.Write([]byte(err.Error()))
+					return
+				}
+
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte("ok"))
+				return
+			}
+			handler.ServeHTTP(w, r)
+		}),
 	})
 
 	// Mark health server as ready and go!
@@ -86,4 +102,25 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 		}),
 	).Methods(http.MethodPost)
 	return r
+}
+
+func healthz(ctx context.Context) error {
+	// Check redis health
+	rpool, ok := redispool.Cache.Pool()
+	if !ok {
+		return errors.New("redis: not available")
+	}
+	rconn, err := rpool.GetContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "redis: failed to get conn")
+	}
+	data, err := rconn.Do("PING")
+	if err != nil {
+		return errors.Wrap(err, "redis: failed to ping")
+	}
+	if data != "PONG" {
+		return errors.New("redis: failed to ping: no pong received")
+	}
+
+	return nil
 }
