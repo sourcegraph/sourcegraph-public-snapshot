@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react'
 import { TextFieldType } from '@vscode/webview-ui-toolkit/dist/text-field'
 import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 
 import styles from './Login.module.css'
@@ -75,8 +75,8 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 <h2 className={styles.sectionHeader}>Everyone Else</h2>
                 <div className={styles.wrapper}>
                     <p className={styles.linkToForm}>
-                        <a href="https://docs.google.com/forms/d/e/1FAIpQLScSI06yGMls-V1FALvFyURi8U9bKRTSKPworBhzZEHDQvo0HQ/viewform">
-                            Fill out this form to request access.
+                        <a href="https://discord.gg/sourcegraph-969688426372825169">
+                            Join our Discord to request access.
                         </a>
                     </p>
                     <a href="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY">
@@ -90,7 +90,10 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                     </a>
                 </div>
             </section>
-            <div className={styles.terms} dangerouslySetInnerHTML={{ __html: renderMarkdown(CODY_TERMS_MARKDOWN) }} />
+            <div
+                className={styles.terms}
+                dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(CODY_TERMS_MARKDOWN) }}
+            />
         </div>
     )
 }

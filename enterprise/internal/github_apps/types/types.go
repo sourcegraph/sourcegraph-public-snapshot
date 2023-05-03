@@ -9,6 +9,7 @@ type GitHubApp struct {
 	Name          string
 	Slug          string
 	BaseURL       string
+	AppURL        string
 	ClientID      string
 	ClientSecret  string
 	PrivateKey    string
