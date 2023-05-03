@@ -3,6 +3,7 @@ import childProcess from 'child_process'
 
 import * as semver from 'semver'
 
+// eslint-disable-next-line  @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
 const { version } = require('../package.json')
 
 /**
