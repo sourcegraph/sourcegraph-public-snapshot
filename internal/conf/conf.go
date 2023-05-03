@@ -217,6 +217,9 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 	}
 
 	siteConfigEscapeHatchPath = os.ExpandEnv(siteConfigEscapeHatchPath)
+	if deploy.IsApp() {
+		siteConfigEscapeHatchPath = os.Getenv("SITE_CONFIG_FILE")
+	}
 
 	var (
 		ctx                                        = context.Background()
@@ -294,6 +297,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 					time.Sleep(1 * time.Second)
 					continue
 				}
+				lastKnownDBContents = newDBConfig.Site
 				lastKnownFileContents = newDBConfig.Site
 				lastKnownConfigID = newDBConfig.ID
 			}
