@@ -384,6 +384,21 @@ commands:
       - enterprise/cmd/embeddings
       - enterprise/internal/embeddings
 
+  llm-proxy:
+    cmd: |
+      .bin/llm-proxy
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      go build -gcflags="$GCFLAGS" -o .bin/llm-proxy github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy
+    checkBinary: .bin/llm-proxy
+    watch:
+      - lib
+      - internal
+      - enterprise/cmd/llm-proxy
+
   searcher:
     cmd: .bin/searcher
     install: |
@@ -876,6 +891,10 @@ commands:
       - internal
       - lib
       - schema
+
+  tauri:
+    description: App shell (Tauri)
+    cmd: pnpm tauri dev --config src-tauri/tauri.dev.conf.json
 
   sourcegraph-oss:
     description: Single program (Go static binary) distribution, OSS variant
@@ -1395,6 +1414,7 @@ commandsets:
       - docsite
       - web
       - caddy
+      - tauri
     env:
       DISABLE_CODE_INSIGHTS: false
 

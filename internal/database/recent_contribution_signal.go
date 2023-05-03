@@ -1,0 +1,269 @@
+package database
+
+import (
+	"context"
+	"fmt"
+	"path"
+	"time"
+
+	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
+
+type RecentContributionSignalStore interface {
+	AddCommit(ctx context.Context, commit Commit) error
+	FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentContributorSummary, error)
+}
+
+func RecentContributionSignalStoreWith(other basestore.ShareableStore) RecentContributionSignalStore {
+	return &recentContributionSignalStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+type Commit struct {
+	RepoID       api.RepoID
+	AuthorName   string
+	AuthorEmail  string
+	Timestamp    time.Time
+	CommitSHA    string
+	FilesChanged []string
+}
+
+type RecentContributorSummary struct {
+	AuthorName        string
+	AuthorEmail       string
+	ContributionCount int
+}
+
+type recentContributionSignalStore struct {
+	*basestore.Store
+}
+
+func (s *recentContributionSignalStore) With(other basestore.ShareableStore) *recentContributionSignalStore {
+	return &recentContributionSignalStore{Store: s.Store.With(other)}
+}
+
+func (s *recentContributionSignalStore) Transact(ctx context.Context) (*recentContributionSignalStore, error) {
+	txBase, err := s.Store.Transact(ctx)
+	return &recentContributionSignalStore{Store: txBase}, err
+}
+
+const commitAuthorInsertFmtstr = `
+	WITH already_exists (id) AS (
+		SELECT id
+		FROM commit_authors
+		WHERE name = %s
+		AND email = %s
+	),
+	need_to_insert (id) AS (
+		INSERT INTO commit_authors (name, email)
+		VALUES (%s, %s)
+		ON CONFLICT (name, email) DO NOTHING
+		RETURNING id
+	)
+	SELECT id FROM already_exists
+	UNION ALL
+	SELECT id FROM need_to_insert
+`
+
+// ensureAuthor makes sure the that commit author designated by name and email
+// exists in the `commit_authors` table, and returns its ID.
+func (s *recentContributionSignalStore) ensureAuthor(ctx context.Context, commit Commit) (int, error) {
+	db := s.Store
+	var authorID int
+	if err := db.QueryRow(
+		ctx,
+		sqlf.Sprintf(
+			commitAuthorInsertFmtstr,
+			commit.AuthorName,
+			commit.AuthorEmail,
+			commit.AuthorName,
+			commit.AuthorEmail,
+		),
+	).Scan(&authorID); err != nil {
+		return 0, err
+	}
+	return authorID, nil
+}
+
+const pathInsertFmtstr = `
+	WITH already_exists (id) AS (
+		SELECT id
+		FROM repo_paths
+		WHERE repo_id = %s
+		AND absolute_path = %s
+	),
+	need_to_insert (id) AS (
+		INSERT INTO repo_paths (repo_id, absolute_path, parent_id)
+		VALUES (%s, %s, %s)
+		ON CONFLICT (repo_id, absolute_path) DO NOTHING
+		RETURNING id
+	)
+	SELECT id FROM already_exists
+	UNION ALL
+	SELECT id FROM need_to_insert
+`
+
+// ensureRepoPaths takes paths of files changed in the given commit
+// and makes sure they all exist in the database (alongside with their ancestor paths)
+// as per the schema.
+//
+// The operation makes a number of queries to the database that is comparable
+// to the size of the given file tree. In other words, every directory mentioned
+// in the `commit.FilesChanged` (including parents and ancestors) will be queried
+// or inserted with a single query (no repetitions though).
+// Optimizing this into fewer queries seems to make the implementation very hard to read.
+//
+// The result int slice is guaranteed to be in order corresponding to the order
+// of `commit.FilesChanged`.
+func (s *recentContributionSignalStore) ensureRepoPaths(ctx context.Context, commit Commit) ([]int, error) {
+	db := s.Store
+	// compute all the ancestor paths for all changed files in a commit
+	var paths []string
+	for _, file := range commit.FilesChanged {
+		for p := file; p != "."; p = path.Dir(p) {
+			paths = append(paths, p)
+		}
+	}
+	// add empty string which references the repo root directory
+	paths = append(paths, "")
+	// reverse paths so we start at the root
+	for i := 0; i < len(paths)/2; i++ {
+		j := len(paths) - i - 1
+		paths[i], paths[j] = paths[j], paths[i]
+	}
+	// remove duplicates from paths, to avoid extra query,
+	// especially if many files within the same directory structure
+	// are referenced
+	seen := make(map[string]bool)
+	j := 0
+	for i := 0; i < len(paths); i++ {
+		if !seen[paths[i]] {
+			seen[paths[i]] = true
+			paths[j] = paths[i]
+			j++
+		}
+	}
+	paths = paths[:j]
+	// insert all directories one query each and note the IDs
+	ids := map[string]int{}
+	for _, p := range paths {
+		var parentID *int
+		parent := path.Dir(p)
+		if parent == "." {
+			parent = ""
+		}
+		if id, ok := ids[parent]; p != "" && ok {
+			parentID = &id
+		} else if p != "" {
+			return nil, errors.Newf("cannot find parent id of %q: this is a bug", p)
+		}
+		r := db.QueryRow(ctx, sqlf.Sprintf(pathInsertFmtstr, commit.RepoID, p, commit.RepoID, p, parentID))
+		var id int
+		if err := r.Scan(&id); err != nil {
+			return nil, errors.Wrapf(err, "failed to insert or retrieve %q", p)
+		}
+		ids[p] = id
+	}
+	// return the IDs of inserted files changed, in order of `commit.FilesChanged`
+	fIDs := make([]int, len(commit.FilesChanged))
+	for i, f := range commit.FilesChanged {
+		id, ok := ids[f]
+		if !ok {
+			return nil, errors.Newf("cannot find id of %q which should have been inserted, this is a bug", f)
+		}
+		fIDs[i] = id
+	}
+	return fIDs, nil
+}
+
+const insertRecentContributorSignalFmtstr = `
+	INSERT INTO own_signal_recent_contribution (
+		commit_author_id,
+		changed_file_path_id,
+		commit_timestamp,
+		commit_id
+	) VALUES (%s, %s, %s, %s)
+`
+
+// AddCommit inserts a recent contribution signal for each file changed by given commit.
+//
+// As per schema, `commit_id` is the git sha stored as bytea.
+// This is used for the purpose of removing old recent contributor signals.
+// The aggregate signals in `own_aggregate_recent_contribution` are updated atomically
+// for each new signal appearing in `own_signal_recent_contribution` by using
+// a trigger: `update_own_aggregate_recent_contribution`.
+func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Commit) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Get or create commit author:
+	authorID, err := tx.ensureAuthor(ctx, commit)
+	if err != nil {
+		return errors.Wrap(err, "cannot insert commit author")
+	}
+	// Get or create necessary repo paths:
+	pathIDs, err := tx.ensureRepoPaths(ctx, commit)
+	if err != nil {
+		return errors.Wrap(err, "cannot insert repo paths")
+	}
+	fmt.Printf("commit: %s\n", commit.CommitSHA)
+	// Insert individual signals into own_signal_recent_contribution:
+	for _, pathID := range pathIDs {
+		q := sqlf.Sprintf(insertRecentContributorSignalFmtstr,
+			authorID,
+			pathID,
+			commit.Timestamp,
+			dbutil.CommitBytea(commit.CommitSHA),
+		)
+		err = tx.Exec(ctx, q)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+const findRecentContributorsFmtstr = `
+	SELECT a.name, a.email, g.contributions_count
+	FROM commit_authors AS a
+	INNER JOIN own_aggregate_recent_contribution AS g
+	ON a.id = g.commit_author_id
+	INNER JOIN repo_paths AS p
+	ON p.id = g.changed_file_path_id
+	WHERE p.repo_id = %s
+	AND p.absolute_path = %s
+	ORDER BY 3 DESC
+`
+
+// FindRecentAuthors returns all recent authors for given `repoID` and `path`.
+// Since the recent contributor signal aggregate is computed within `AddCommit`
+// This just looks up `own_aggregate_recent_contribution` associated with given
+// repo and path, and pulls all the related authors.
+// Notes:
+// - `path` has not forward slash at the beginning, example: "dir1/dir2/file.go", "file2.go".
+// - Empty string `path` designates repo root (so all contributions for the whole repo).
+// - TODO: Need to support limit & offset here.
+func (s *recentContributionSignalStore) FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentContributorSummary, error) {
+	q := sqlf.Sprintf(findRecentContributorsFmtstr, repoID, path)
+
+	contributionsScanner := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (RecentContributorSummary, error) {
+		var rcs RecentContributorSummary
+		if err := scanner.Scan(&rcs.AuthorName, &rcs.AuthorEmail, &rcs.ContributionCount); err != nil {
+			return RecentContributorSummary{}, err
+		}
+		return rcs, nil
+	})
+
+	contributions, err := contributionsScanner(s.Query(ctx, q))
+	if err != nil {
+		return nil, err
+	}
+	return contributions, nil
+}

@@ -11,6 +11,7 @@ require (
 	github.com/timakin/bodyclose v0.0.0-20221125081123-e39cf3fc478e
 	golang.org/x/tools v0.7.0
 	honnef.co/go/tools v0.4.3
+	mvdan.cc/unparam v0.0.0-20230312165513-e84e2d14e3b8
 )
 
 require (

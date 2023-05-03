@@ -1002,6 +1002,22 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.commit_authors"
+```
+ Column |  Type   | Collation | Nullable |                  Default                   
+--------+---------+-----------+----------+--------------------------------------------
+ id     | integer |           | not null | nextval('commit_authors_id_seq'::regclass)
+ email  | text    |           | not null | 
+ name   | text    |           | not null | 
+Indexes:
+    "commit_authors_pkey" PRIMARY KEY, btree (id)
+    "commit_authors_email_name" UNIQUE, btree (email, name)
+Referenced by:
+    TABLE "own_aggregate_recent_contribution" CONSTRAINT "own_aggregate_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)
+    TABLE "own_signal_recent_contribution" CONSTRAINT "own_signal_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)
+
+```
+
 # Table "public.configuration_policies_audit_logs"
 ```
        Column       |           Type           | Collation | Nullable |                          Default                           
@@ -1542,6 +1558,47 @@ Referenced by:
 **bool_value**: Bool value only defined when flag_type is bool
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
+
+# Table "public.github_app_installs"
+```
+     Column      |           Type           | Collation | Nullable |                     Default                     
+-----------------+--------------------------+-----------+----------+-------------------------------------------------
+ id              | integer                  |           | not null | nextval('github_app_installs_id_seq'::regclass)
+ app_id          | integer                  |           | not null | 
+ installation_id | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+Indexes:
+    "github_app_installs_pkey" PRIMARY KEY, btree (id)
+    "app_id_idx" btree (app_id)
+    "installation_id_idx" btree (installation_id)
+Foreign-key constraints:
+    "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
+
+```
+
+# Table "public.github_apps"
+```
+      Column       |           Type           | Collation | Nullable |                 Default                 
+-------------------+--------------------------+-----------+----------+-----------------------------------------
+ id                | integer                  |           | not null | nextval('github_apps_id_seq'::regclass)
+ app_id            | integer                  |           | not null | 
+ name              | text                     |           | not null | 
+ slug              | text                     |           | not null | 
+ base_url          | text                     |           | not null | 
+ client_id         | text                     |           | not null | 
+ client_secret     | text                     |           | not null | 
+ private_key       | text                     |           | not null | 
+ encryption_key_id | text                     |           | not null | 
+ logo              | text                     |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+Indexes:
+    "github_apps_pkey" PRIMARY KEY, btree (id)
+    "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
+Referenced by:
+    TABLE "github_app_installs" CONSTRAINT "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
+
+```
 
 # Table "public.gitserver_relocator_jobs"
 ```
@@ -2744,6 +2801,70 @@ Referenced by:
 
 ```
 
+# Table "public.own_aggregate_recent_contribution"
+```
+        Column        |  Type   | Collation | Nullable |                            Default                            
+----------------------+---------+-----------+----------+---------------------------------------------------------------
+ id                   | integer |           | not null | nextval('own_aggregate_recent_contribution_id_seq'::regclass)
+ commit_author_id     | integer |           | not null | 
+ changed_file_path_id | integer |           | not null | 
+ contributions_count  | integer |           |          | 0
+Indexes:
+    "own_aggregate_recent_contribution_pkey" PRIMARY KEY, btree (id)
+    "own_aggregate_recent_contribution_file_author" UNIQUE, btree (changed_file_path_id, commit_author_id)
+Foreign-key constraints:
+    "own_aggregate_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
+    "own_aggregate_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)
+
+```
+
+# Table "public.own_background_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                     Default                     
+-------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                | integer                  |           | not null | nextval('own_background_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ repo_id           | integer                  |           | not null | 
+ job_type          | integer                  |           | not null | 
+Indexes:
+    "own_background_jobs_pkey" PRIMARY KEY, btree (id)
+    "own_background_jobs_repo_id_idx" btree (repo_id)
+    "own_background_jobs_state_idx" btree (state)
+
+```
+
+# Table "public.own_signal_recent_contribution"
+```
+        Column        |            Type             | Collation | Nullable |                          Default                           
+----------------------+-----------------------------+-----------+----------+------------------------------------------------------------
+ id                   | integer                     |           | not null | nextval('own_signal_recent_contribution_id_seq'::regclass)
+ commit_author_id     | integer                     |           | not null | 
+ changed_file_path_id | integer                     |           | not null | 
+ commit_timestamp     | timestamp without time zone |           | not null | 
+ commit_id            | bytea                       |           | not null | 
+Indexes:
+    "own_signal_recent_contribution_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "own_signal_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
+    "own_signal_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)
+Triggers:
+    update_own_aggregate_recent_contribution AFTER INSERT ON own_signal_recent_contribution FOR EACH ROW EXECUTE FUNCTION update_own_aggregate_recent_contribution()
+
+```
+
+One entry per file changed in every commit that classifies as a contribution signal.
+
 # Table "public.package_repo_filters"
 ```
    Column   |           Type           | Collation | Nullable |                     Default                      
@@ -2887,6 +3008,7 @@ Indexes:
  license_tags            | text[]                   |           |          | 
  license_user_count      | integer                  |           |          | 
  license_expires_at      | timestamp with time zone |           |          | 
+ access_token_enabled    | boolean                  |           | not null | false
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -2894,17 +3016,22 @@ Foreign-key constraints:
 
 ```
 
+**access_token_enabled**: Whether this license key can be used as an access token to authenticate API requests
+
 # Table "public.product_subscriptions"
 ```
-         Column          |           Type           | Collation | Nullable | Default 
--------------------------+--------------------------+-----------+----------+---------
- id                      | uuid                     |           | not null | 
- user_id                 | integer                  |           | not null | 
- billing_subscription_id | text                     |           |          | 
- created_at              | timestamp with time zone |           | not null | now()
- updated_at              | timestamp with time zone |           | not null | now()
- archived_at             | timestamp with time zone |           |          | 
- account_number          | text                     |           |          | 
+             Column              |           Type           | Collation | Nullable | Default 
+---------------------------------+--------------------------+-----------+----------+---------
+ id                              | uuid                     |           | not null | 
+ user_id                         | integer                  |           | not null | 
+ billing_subscription_id         | text                     |           |          | 
+ created_at                      | timestamp with time zone |           | not null | now()
+ updated_at                      | timestamp with time zone |           | not null | now()
+ archived_at                     | timestamp with time zone |           |          | 
+ account_number                  | text                     |           |          | 
+ llm_proxy_enabled               | boolean                  |           | not null | true
+ llm_proxy_rate_limit            | integer                  |           |          | 
+ llm_proxy_rate_interval_seconds | integer                  |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -2913,6 +3040,12 @@ Referenced by:
     TABLE "product_licenses" CONSTRAINT "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
 ```
+
+**llm_proxy_enabled**: Whether or not this subscription has access to LLM-proxy
+
+**llm_proxy_rate_interval_seconds**: Custom time interval over which the for LLM-proxy rate limit is applied
+
+**llm_proxy_rate_limit**: Custom requests per time interval allowed for LLM-proxy
 
 # Table "public.query_runner_state"
 ```
@@ -3049,6 +3182,7 @@ Referenced by:
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "repo_paths" CONSTRAINT "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -3102,6 +3236,29 @@ Foreign-key constraints:
     "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
+
+# Table "public.repo_paths"
+```
+    Column     |  Type   | Collation | Nullable |                Default                 
+---------------+---------+-----------+----------+----------------------------------------
+ id            | integer |           | not null | nextval('repo_paths_id_seq'::regclass)
+ repo_id       | integer |           | not null | 
+ absolute_path | text    |           | not null | 
+ parent_id     | integer |           |          | 
+Indexes:
+    "repo_paths_pkey" PRIMARY KEY, btree (id)
+    "repo_paths_index_absolute_path" UNIQUE, btree (repo_id, absolute_path)
+Foreign-key constraints:
+    "repo_paths_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES repo_paths(id)
+    "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "own_aggregate_recent_contribution" CONSTRAINT "own_aggregate_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
+    TABLE "own_signal_recent_contribution" CONSTRAINT "own_signal_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
+    TABLE "repo_paths" CONSTRAINT "repo_paths_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES repo_paths(id)
+
+```
+
+**absolute_path**: Absolute path does not start or end with forward slash. Example: &#34;a/b/c&#34;. Root directory is empty path &#34;&#34;.
 
 # Table "public.repo_pending_permissions"
 ```
@@ -3663,6 +3820,7 @@ Foreign-key constraints:
  invalidated_sessions_at | timestamp with time zone |           | not null | now()
  tos_accepted            | boolean                  |           | not null | false
  searchable              | boolean                  |           | not null | true
+ completions_quota       | integer                  |           |          | 
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL

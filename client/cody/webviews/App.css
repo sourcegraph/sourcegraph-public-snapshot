@@ -25,3 +25,24 @@ button {
     overflow: auto;
     flex: 1;
 }
+
+.error {
+    flex-direction: row;
+    display: flex;
+    padding: 0.5rem 1rem;
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-inputValidation-errorBackground);
+    align-items: center;
+    min-height: 2rem;
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: none;
+    border: none;
+    color: var(--vscode-input-foreground);
+    cursor: pointer;
+}

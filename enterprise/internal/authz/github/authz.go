@@ -3,12 +3,10 @@ package github
 import (
 	"fmt"
 	"net/url"
-	"strconv"
 	"time"
 
 	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -120,23 +118,6 @@ func newAuthzProvider(
 		return nil, errors.Errorf("could not parse URL for GitHub instance %q: %s", c.Url, err)
 	}
 
-	if c.GithubAppInstallationID != "" {
-		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
-		if err != nil {
-			return nil, errors.Wrap(err, "parse installation ID")
-		}
-
-		config, err := conf.GitHubAppConfig()
-		if err != nil {
-			return nil, err
-		}
-		if !config.Configured() {
-			return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph is not enabled")
-		}
-
-		return newAppProvider(db, c.ExternalService, c.GitHubConnection.URN, baseURL, config.AppID, config.PrivateKey, installationID, nil)
-	}
-
 	// Disable by default for now
 	if c.Authorization.GroupsCacheTTL <= 0 {
 		c.Authorization.GroupsCacheTTL = -1
@@ -147,6 +128,7 @@ func newAuthzProvider(
 		GitHubURL:      baseURL,
 		BaseToken:      c.Token,
 		GroupsCacheTTL: ttl,
+		DB:             db,
 	}), nil
 }
 

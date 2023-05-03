@@ -35,7 +35,6 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const isLightTheme = useIsLightTheme()
     const [experimentalQueryInput] = useExperimentalQueryInput()
     const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
-    const [codySearchEnabled] = useFeatureFlag('cody-experimental')
     const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
 
     /** The value entered by the user in the query input */
@@ -87,19 +86,19 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                 ) : (
                     <>
                         <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
-                        {codySearchEnabled && (
+                        {!window.context?.codyEnabled && !authenticatedUser && isSourcegraphDotCom && (
                             <div className="d-flex justify-content-center mt-4">
                                 <Text className="text-muted">
                                     <Badge variant="merged">Experimental</Badge>{' '}
                                     <Link
-                                        to="/search/cody"
+                                        to="/sign-in?returnTo=/search"
                                         onClick={() =>
-                                            telemetryService.log('ClickedOnTryCodySearchCTA', {
+                                            telemetryService.log('ClickedOnSignupToTryCodySearchCTA', {
                                                 location: 'SearchPage',
                                             })
                                         }
                                     >
-                                        Ask Cody to contruct a query from natural language <CodyIcon />{' '}
+                                        Sign in to try our new AI coding assistant, Cody <CodyIcon />{' '}
                                         <Icon svgPath={mdiArrowRight} aria-hidden={true} />
                                     </Link>
                                 </Text>

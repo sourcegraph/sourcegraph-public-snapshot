@@ -54,18 +54,6 @@ type AWSKMSEncryptionKey struct {
 	Type            string `json:"type"`
 }
 
-// ApiRatelimit description: Configuration for API rate limiting
-type ApiRatelimit struct {
-	// Enabled description: Whether API rate limiting is enabled
-	Enabled bool `json:"enabled"`
-	// Overrides description: An array of rate limit overrides
-	Overrides []*Overrides `json:"overrides,omitempty"`
-	// PerIP description: Limit granted per IP per hour, only applied to anonymous users
-	PerIP int `json:"perIP"`
-	// PerUser description: Limit granted per user per hour
-	PerUser int `json:"perUser"`
-}
-
 // App description: Configuration options for App only.
 type App struct {
 	// DotcomAuthToken description: Authentication token for Sourcegraph.com. If present, indicates that the App account is connected to a Sourcegraph.com account.
@@ -564,6 +552,8 @@ type Completions struct {
 	Enabled bool `json:"enabled"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model"`
+	// PerUserDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
+	PerUserDailyLimit int `json:"perUserDailyLimit,omitempty"`
 	// Provider description: The external completions provider.
 	Provider string `json:"provider"`
 }
@@ -618,6 +608,10 @@ type Embeddings struct {
 	Enabled bool `json:"enabled"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// MaxCodeEmbeddingsPerRepo description: The maximum number of embeddings for code files to generate per repo
+	MaxCodeEmbeddingsPerRepo int `json:"maxCodeEmbeddingsPerRepo,omitempty"`
+	// MaxTextEmbeddingsPerRepo description: The maximum number of embeddings for text files to generate per repo
+	MaxTextEmbeddingsPerRepo int `json:"maxTextEmbeddingsPerRepo,omitempty"`
 	// Model description: The model used for embedding.
 	Model string `json:"model"`
 	// Url description: The url to the external embedding API service.
@@ -676,6 +670,7 @@ type EncryptionKeys struct {
 	EnableCache            bool           `json:"enableCache,omitempty"`
 	ExecutorSecretKey      *EncryptionKey `json:"executorSecretKey,omitempty"`
 	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
+	GitHubAppKey           *EncryptionKey `json:"gitHubAppKey,omitempty"`
 	OutboundWebhookKey     *EncryptionKey `json:"outboundWebhookKey,omitempty"`
 	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 	WebhookKey             *EncryptionKey `json:"webhookKey,omitempty"`
@@ -988,7 +983,7 @@ type GitCommitDescription struct {
 	Version int `json:"version,omitempty"`
 }
 
-// GitHubApp description: The config options for Sourcegraph GitHub App.
+// GitHubApp description: DEPRECATED: The config options for Sourcegraph GitHub App.
 type GitHubApp struct {
 	// AppID description: The app ID of the GitHub App for Sourcegraph.
 	AppID string `json:"appID,omitempty"`
@@ -1000,6 +995,16 @@ type GitHubApp struct {
 	PrivateKey string `json:"privateKey,omitempty"`
 	// Slug description: The slug of the GitHub App for Sourcegraph.
 	Slug string `json:"slug,omitempty"`
+}
+
+// GitHubAppDetails description: If non-null, this is a GitHub App connection with some additional properties.
+type GitHubAppDetails struct {
+	// AppID description: The ID of the GitHub App.
+	AppID int `json:"appID,omitempty"`
+	// BaseURL description: The base URL of the GitHub App.
+	BaseURL string `json:"baseURL,omitempty"`
+	// InstallationID description: The installation ID of this connection.
+	InstallationID int `json:"installationID,omitempty"`
 }
 
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
@@ -1047,13 +1052,15 @@ type GitHubConnection struct {
 	//
 	// Note: ID is the GitHub GraphQL ID, not the GitHub database ID. eg: "curl https://api.github.com/repos/vuejs/vue | jq .node_id"
 	Exclude []*ExcludedGitHubRepo `json:"exclude,omitempty"`
+	// GitHubAppDetails description: If non-null, this is a GitHub App connection with some additional properties.
+	GitHubAppDetails *GitHubAppDetails `json:"gitHubAppDetails,omitempty"`
 	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.
 	//
 	// If "http", Sourcegraph will access GitHub repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).
 	//
 	// If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
-	// GithubAppInstallationID description: The installation ID of the GitHub App.
+	// GithubAppInstallationID description: DEPRECATED: The installation ID of the GitHub App.
 	GithubAppInstallationID string `json:"githubAppInstallationID,omitempty"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. GitHub repositories can no longer be enabled or disabled explicitly. Configure repositories to be mirrored via "repos", "exclude" and "repositoryQuery" instead.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
@@ -1631,12 +1638,6 @@ type OutputVariable struct {
 	// Value description: The value of the output, which can be a template string.
 	Value string `json:"value"`
 }
-type Overrides struct {
-	// Key description: The key that we want to override for example a username
-	Key string `json:"key,omitempty"`
-	// Limit description: The limit per hour, 'unlimited' or 'blocked'
-	Limit any `json:"limit,omitempty"`
-}
 
 // PagureConnection description: Configuration for a connection to Pagure.
 type PagureConnection struct {
@@ -2025,6 +2026,8 @@ type Settings struct {
 	Notices []*Notice `json:"notices,omitempty"`
 	// OpenInEditor description: Group of settings related to opening files in an editor.
 	OpenInEditor *SettingsOpenInEditor `json:"openInEditor,omitempty"`
+	// OrgsAllMembersBatchChangesAdmin description: If enabled, all members of the org will be treated as admins (e.g. can edit, apply, delete) for all batch changes created in that org.
+	OrgsAllMembersBatchChangesAdmin *bool `json:"orgs.allMembersBatchChangesAdmin,omitempty"`
 	// PerforceCodeHostToSwarmMap description: Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like "perforce.company.com:1666". Values should look like "https://swarm.company.com/", with a slash at the end.
 	PerforceCodeHostToSwarmMap map[string]string `json:"perforce.codeHostToSwarmMap,omitempty"`
 	// Quicklinks description: DEPRECATED: This setting will be removed in a future version of Sourcegraph.
@@ -2101,6 +2104,7 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "motd")
 	delete(m, "notices")
 	delete(m, "openInEditor")
+	delete(m, "orgs.allMembersBatchChangesAdmin")
 	delete(m, "perforce.codeHostToSwarmMap")
 	delete(m, "quicklinks")
 	delete(m, "search.contextLines")
@@ -2135,8 +2139,6 @@ type SettingsExperimentalFeatures struct {
 	CodeInsightsRepoUI *string `json:"codeInsightsRepoUI,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
 	CodeMonitoringWebHooks *bool `json:"codeMonitoringWebHooks,omitempty"`
-	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
-	EnableCodeMirrorFileView *bool `json:"enableCodeMirrorFileView,omitempty"`
 	// EnableLazyBlobSyntaxHighlighting description: Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
 	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
@@ -2214,7 +2216,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeInsightsCompute")
 	delete(m, "codeInsightsRepoUI")
 	delete(m, "codeMonitoringWebHooks")
-	delete(m, "enableCodeMirrorFileView")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
 	delete(m, "enableLazyFileResultSyntaxHighlighting")
 	delete(m, "enableSearchFilePrefetch")
@@ -2275,8 +2276,6 @@ type SettingsOpenInEditor struct {
 type SiteConfiguration struct {
 	// RedirectUnsupportedBrowser description: Prompts user to install new browser for non es5
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
-	// ApiRatelimit description: Configuration for API rate limiting
-	ApiRatelimit *ApiRatelimit `json:"api.ratelimit,omitempty"`
 	// App description: Configuration options for App only.
 	App *App `json:"app,omitempty"`
 	// AuthAccessRequest description: The config options for access requests
@@ -2412,7 +2411,7 @@ type SiteConfiguration struct {
 	ExternalURL string `json:"externalURL,omitempty"`
 	// GitCloneURLToRepositoryName description: JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
-	// GitHubApp description: The config options for Sourcegraph GitHub App.
+	// GitHubApp description: DEPRECATED: The config options for Sourcegraph GitHub App.
 	GitHubApp *GitHubApp `json:"gitHubApp,omitempty"`
 	// GitLongCommandTimeout description: Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.
 	GitLongCommandTimeout int `json:"gitLongCommandTimeout,omitempty"`
@@ -2482,6 +2481,12 @@ type SiteConfiguration struct {
 	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
 	// OutboundRequestLogLimit description: The maximum number of outbound requests to retain. This is a global limit across all outbound requests. If the limit is exceeded, older items will be deleted. If the limit is 0, no outbound requests are logged.
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit,omitempty"`
+	// OwnBackgroundRepoIndexConcurrencyLimit description: The max number of concurrent Own jobs that will run per worker node.
+	OwnBackgroundRepoIndexConcurrencyLimit int `json:"own.background.repoIndexConcurrencyLimit,omitempty"`
+	// OwnBackgroundRepoIndexRateBurstLimit description: The maximum per second burst of repositories for Own jobs per worker node. Generally this value should not be less than the max concurrency.
+	OwnBackgroundRepoIndexRateBurstLimit int `json:"own.background.repoIndexRateBurstLimit,omitempty"`
+	// OwnBackgroundRepoIndexRateLimit description: The maximum per second rate of repositories for Own jobs per worker node.
+	OwnBackgroundRepoIndexRateLimit int `json:"own.background.repoIndexRateLimit,omitempty"`
 	// OwnBestEffortTeamMatching description: The Own service will attempt to match a Team by the last part of its handle if it contains a slash and no match is found for its full handle.
 	OwnBestEffortTeamMatching *bool `json:"own.bestEffortTeamMatching,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
@@ -2491,9 +2496,9 @@ type SiteConfiguration struct {
 	// PermissionsSyncJobsHistorySize description: The number of last repo/user permission jobs to keep for history.
 	PermissionsSyncJobsHistorySize *int `json:"permissions.syncJobsHistorySize,omitempty"`
 	// PermissionsSyncOldestRepos description: Number of repo permissions to schedule for syncing in single scheduler iteration.
-	PermissionsSyncOldestRepos int `json:"permissions.syncOldestRepos,omitempty"`
+	PermissionsSyncOldestRepos *int `json:"permissions.syncOldestRepos,omitempty"`
 	// PermissionsSyncOldestUsers description: Number of user permissions to schedule for syncing in single scheduler iteration.
-	PermissionsSyncOldestUsers int `json:"permissions.syncOldestUsers,omitempty"`
+	PermissionsSyncOldestUsers *int `json:"permissions.syncOldestUsers,omitempty"`
 	// PermissionsSyncReposBackoffSeconds description: Don't sync a repo's permissions if it has synced within the last n seconds.
 	PermissionsSyncReposBackoffSeconds int `json:"permissions.syncReposBackoffSeconds,omitempty"`
 	// PermissionsSyncScheduleInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
@@ -2564,7 +2569,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "RedirectUnsupportedBrowser")
-	delete(m, "api.ratelimit")
 	delete(m, "app")
 	delete(m, "auth.accessRequest")
 	delete(m, "auth.accessTokens")
@@ -2660,6 +2664,9 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "observability.tracing")
 	delete(m, "organizationInvitations")
 	delete(m, "outboundRequestLogLimit")
+	delete(m, "own.background.repoIndexConcurrencyLimit")
+	delete(m, "own.background.repoIndexRateBurstLimit")
+	delete(m, "own.background.repoIndexRateLimit")
 	delete(m, "own.bestEffortTeamMatching")
 	delete(m, "parentSourcegraph")
 	delete(m, "permissions.syncJobCleanupInterval")

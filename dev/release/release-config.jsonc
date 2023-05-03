@@ -20,13 +20,13 @@
       "captainGitHubUsername": "coury-clark",
       "captainSlackUsername": "coury"
     },
-    "5.0.1": {
-      "codeFreezeDate": "2023-03-29T10:00:00.000-07:00",
-      "securityApprovalDate": "2023-03-29T10:00:00.000-07:00",
-      "releaseDate": "2023-04-05T10:00:00.000-07:00",
-      "current": "5.0.1",
-      "captainGitHubUsername": "coury-clark",
-      "captainSlackUsername": "coury"
+    "5.0.3": {
+      "codeFreezeDate": "2023-04-26T10:00:00.000-07:00",
+      "securityApprovalDate": "2023-04-26T10:00:00.000-07:00",
+      "releaseDate": "2023-05-03T10:00:00.000-07:00",
+      "current": "5.0.3",
+      "captainGitHubUsername": "unknwon",
+      "captainSlackUsername": "joe"
     }
   },
   "dryRun": {
@@ -37,12 +37,12 @@
     "slack": false
   },
   "in_progress": {
-    "captainGitHubUsername": "coury-clark",
-    "captainSlackUsername": "coury",
+    "captainGitHubUsername": "unknwon",
+    "captainSlackUsername": "joe",
     "releases": [
       {
-        "version": "5.0.1",
-        "previous": "5.0.0"
+        "version": "5.0.3",
+        "previous": "5.0.2"
       }
     ]
   }

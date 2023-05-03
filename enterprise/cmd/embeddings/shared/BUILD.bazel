@@ -11,6 +11,7 @@ go_library(
         "repo_embedding_index_cache.go",
         "search.go",
         "service.go",
+        "weaviate.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/shared",
     visibility = ["//visibility:public"],
@@ -32,6 +33,7 @@ go_library(
         "//internal/debugserver",
         "//internal/env",
         "//internal/errcode",
+        "//internal/featureflag",
         "//internal/gitserver",
         "//internal/goroutine",
         "//internal/honey",
@@ -45,6 +47,9 @@ go_library(
         "//lib/errors",
         "@com_github_hashicorp_golang_lru_v2//:golang-lru",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_weaviate_weaviate//entities/models",
+        "@com_github_weaviate_weaviate_go_client_v4//weaviate",
+        "@com_github_weaviate_weaviate_go_client_v4//weaviate/graphql",
     ],
 )
 

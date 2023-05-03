@@ -24,7 +24,6 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { EditorHint, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
@@ -37,7 +36,6 @@ import { CodyChat } from '../cody/CodyChat'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
@@ -46,6 +44,7 @@ import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useNavbarQueryState } from '../stores'
 import { useChatStore } from '../stores/codyChat'
+import { useCodySidebarStore } from '../stores/codySidebar'
 import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -189,11 +188,14 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         )
     )
 
-    const [isCodyEnabled] = useFeatureFlag('cody-experimental')
-    useChatStore(isCodyEnabled, repoName)
-
     const focusCodyShortcut = useKeyboardShortcut('focusCody')
-    const [isCodySidebarOpen, setCodySidebarOpen] = useTemporarySetting('cody.showSidebar', false)
+    const {
+        isOpen: isCodySidebarOpen,
+        setIsOpen: setIsCodySidebarOpen,
+        onResize: onCodySidebarResize,
+    } = useCodySidebarStore()
+    // TODO: This hook call is used to initialize the chat store with the right repo name.
+    useChatStore({ codebase: repoName, setIsCodySidebarOpen })
 
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
@@ -345,13 +347,13 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     return (
         <>
-            {isCodyEnabled &&
+            {window.context?.codyEnabled &&
                 focusCodyShortcut?.keybindings.map((keybinding, index) => (
                     <Shortcut
                         key={index}
                         {...keybinding}
                         onMatch={() => {
-                            setCodySidebarOpen(true)
+                            setIsCodySidebarOpen(true)
                         }}
                     />
                 ))}
@@ -369,7 +371,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         telemetryService={props.telemetryService}
                     />
 
-                    {isCodyEnabled ? (
+                    {window.context?.codyEnabled ? (
                         <RepoHeaderContributionPortal
                             position="right"
                             priority={1}
@@ -384,7 +386,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                                 repo,
                                                 path: filePath,
                                             })
-                                            setCodySidebarOpen(true)
+                                            setIsCodySidebarOpen(true)
                                         }}
                                     />
                                 ) : null
@@ -485,16 +487,18 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     </Suspense>
                 </div>
 
-                {isCodyEnabled && isCodySidebarOpen && (
+                {window.context?.codyEnabled && isCodySidebarOpen && (
                     <Panel
+                        className="cody-sidebar-panel"
                         position="right"
                         ariaLabel="Cody sidebar"
                         maxSize={CODY_SIDEBAR_SIZES.max}
                         minSize={CODY_SIDEBAR_SIZES.min}
                         defaultSize={CODY_SIDEBAR_SIZES.default}
                         storageKey="size-cache-cody-sidebar"
+                        onResize={onCodySidebarResize}
                     >
-                        <CodyChat onClose={() => setCodySidebarOpen(false)} />
+                        <CodyChat onClose={() => setIsCodySidebarOpen(false)} />
                     </Panel>
                 )}
             </div>

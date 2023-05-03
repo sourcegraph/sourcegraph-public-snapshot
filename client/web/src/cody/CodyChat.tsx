@@ -1,19 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiClose, mdiSend, mdiArrowDown, mdiReload } from '@mdi/js'
+import { mdiClose, mdiSend, mdiArrowDown, mdiReload, mdiPencil, mdiHistory } from '@mdi/js'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { Chat, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
+import { Chat, ChatUISubmitButtonProps, ChatUITextAreaProps, EditButtonProps } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
-import { useQuery } from '@sourcegraph/http-client'
-import { Button, ErrorAlert, Icon, LoadingSpinner, Text, TextArea, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, TextArea, Tooltip } from '@sourcegraph/wildcard'
 
-import { RepoEmbeddingExistsQueryResult, RepoEmbeddingExistsQueryVariables } from '../graphql-operations'
-import { REPO_EMBEDDING_EXISTS_QUERY } from '../repo/repoRevisionSidebar/cody/backend'
 import { useChatStoreState } from '../stores/codyChat'
+
+import { ChatHistory } from './ChatHistory'
 
 import styles from './CodyChat.module.scss'
 
@@ -24,13 +23,25 @@ interface CodyChatProps {
 }
 
 export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
-    const { onReset, onSubmit, messageInProgress, transcript, repo } = useChatStoreState()
+    const {
+        reset,
+        submitMessage,
+        editMessage,
+        messageInProgress,
+        transcript,
+        getChatContext,
+        transcriptHistory,
+        loadTranscriptFromHistory,
+        clearHistory,
+    } = useChatStoreState()
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
     const [formInput, setFormInput] = useState('')
+    const [showHistory, setShowHistory] = useState(false)
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
     const [showScrollDownButton, setShowScrollDownButton] = useState(false)
+    const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
 
     const handleScroll = useCallback(() => {
         if (codySidebarRef.current) {
@@ -51,6 +62,11 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
         }
     }
 
+    const onReset = useCallback(() => {
+        reset()
+        setShowHistory(false)
+    }, [reset, setShowHistory])
+
     useEffect(() => {
         const sidebar = codySidebarRef.current
         if (sidebar && shouldScrollToBottom) {
@@ -58,55 +74,56 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
         }
     }, [transcript, shouldScrollToBottom, messageInProgress])
 
-    const {
-        data: embeddingExistsData,
-        loading: embeddingExistsLoading,
-        error: embeddingExistsError,
-    } = useQuery<RepoEmbeddingExistsQueryResult, RepoEmbeddingExistsQueryVariables>(REPO_EMBEDDING_EXISTS_QUERY, {
-        variables: { repoName: repo },
-    })
-
-    const shouldShowResetButton =
-        !embeddingExistsLoading && !embeddingExistsError && embeddingExistsData?.repository?.embeddingExists
-
     return (
         <div className={styles.mainWrapper}>
             <div className={styles.codySidebar} ref={codySidebarRef} onScroll={handleScroll}>
                 <div className={styles.codySidebarHeader}>
-                    {shouldShowResetButton && (
-                        <div>
-                            <Tooltip content="Start a new conversation">
-                                <Button variant="icon" aria-label="Start a new conversation" onClick={onReset}>
-                                    <Icon aria-hidden={true} svgPath={mdiReload} />
-                                </Button>
-                            </Tooltip>
-                        </div>
-                    )}
+                    <div>
+                        <Tooltip content="Start a new conversation">
+                            <Button variant="icon" aria-label="Start a new conversation" onClick={onReset}>
+                                <Icon aria-hidden={true} svgPath={mdiReload} />
+                            </Button>
+                        </Tooltip>
+                    </div>
                     <div>
                         <CodyLogo />
                         Ask Cody
                     </div>
-                    <div>
+                    <div className="d-flex">
+                        <Tooltip content="Chat history">
+                            <Button
+                                variant="icon"
+                                className="mr-2"
+                                aria-label="Chat history"
+                                onClick={() => setShowHistory(showing => !showing)}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiHistory} />
+                            </Button>
+                        </Tooltip>
                         <Button variant="icon" aria-label="Close" onClick={onClose}>
                             <Icon aria-hidden={true} svgPath={mdiClose} />
                         </Button>
                     </div>
                 </div>
-                {embeddingExistsLoading ? (
-                    <LoadingSpinner className="m-3" />
-                ) : embeddingExistsError ? (
-                    <ErrorAlert error={embeddingExistsError} className="m-3" />
-                ) : !embeddingExistsData?.repository?.embeddingExists ? (
-                    <Text className="m-3">Repository embeddings are not available.</Text>
+                {showHistory ? (
+                    <ChatHistory
+                        transcriptHistory={transcriptHistory}
+                        loadTranscript={loadTranscriptFromHistory}
+                        closeHistory={() => setShowHistory(false)}
+                        clearHistory={clearHistory}
+                    />
                 ) : (
                     <Chat
                         messageInProgress={messageInProgress}
+                        messageBeingEdited={messageBeingEdited}
+                        setMessageBeingEdited={setMessageBeingEdited}
                         transcript={transcript}
                         formInput={formInput}
                         setFormInput={setFormInput}
                         inputHistory={inputHistory}
                         setInputHistory={setInputHistory}
-                        onSubmit={onSubmit}
+                        onSubmit={submitMessage}
+                        contextStatus={getChatContext()}
                         submitButtonComponent={SubmitButton}
                         fileLinkComponent={FileLink}
                         className={styles.container}
@@ -116,6 +133,8 @@ export const CodyChat = ({ onClose }: CodyChatProps): JSX.Element => {
                         transcriptItemParticipantClassName="text-muted"
                         inputRowClassName={styles.inputRow}
                         chatInputClassName={styles.chatInput}
+                        EditButtonContainer={EditButton}
+                        editButtonOnSubmit={editMessage}
                         textAreaComponent={AutoResizableTextArea}
                         codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
                         transcriptActionClassName={styles.transcriptAction}
@@ -132,6 +151,26 @@ const ScrollDownButton = ({ onClick }: { onClick: () => void }): JSX.Element => 
         <Button className={styles.scrollButton} onClick={onClick}>
             <Icon aria-label="Scroll down" svgPath={mdiArrowDown} />
         </Button>
+    </div>
+)
+
+const EditButton: React.FunctionComponent<EditButtonProps> = ({
+    className,
+    messageBeingEdited,
+    setMessageBeingEdited,
+}) => (
+    <div className={className}>
+        <button
+            className={classNames(className, styles.editButton)}
+            type="button"
+            onClick={() => setMessageBeingEdited(!messageBeingEdited)}
+        >
+            {messageBeingEdited ? (
+                <Icon aria-label="Close" svgPath={mdiClose} />
+            ) : (
+                <Icon aria-label="Edit" svgPath={mdiPencil} />
+            )}
+        </button>
     </div>
 )
 

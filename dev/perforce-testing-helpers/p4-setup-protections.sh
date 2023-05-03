@@ -7,8 +7,8 @@ export TEMPLATES="${SCRIPT_ROOT}/templates"
 
 set -euo pipefail
 
-export P4USER="${P4USER:-"admin"}"                   # the name of the Perforce superuser that the script will use to create the depot
-export P4PORT="${P4PORT:-"perforce.sgdev.org:1666"}" # the address of the Perforce server to connect to
+export P4USER="${P4USER:-"admin"}"                         # the name of the Perforce superuser that the script will use to create the depot
+export P4PORT="${P4PORT:-"perforce-tests.sgdev.org:1666"}" # the address of the Perforce server to connect to
 
 export P4_TEST_USERNAME="${P4_TEST_USERNAME:-"test-perforce"}"           # the username of the fake user that the script will create for integration testing purposes
 export P4_TEST_EMAIL="${P4_TEST_EMAIL:-"test-perforce@sourcegraph.com"}" # the email address of the fake user that the script will create for integration testing purposes

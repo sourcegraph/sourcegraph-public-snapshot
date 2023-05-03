@@ -28,7 +28,7 @@
 .submit-button {
     position: absolute;
     right: 0;
-    bottom: 0;
+    bottom: 0.125rem;
     fill: currentColor;
     opacity: 0.8;
     margin: 0.25rem;
@@ -41,4 +41,11 @@
 
 .submit-button:hover {
     opacity: 1;
+}
+
+.suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
 }

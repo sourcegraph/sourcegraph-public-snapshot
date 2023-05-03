@@ -1,7 +1,13 @@
 import * as uuid from 'uuid'
+import * as vscode from 'vscode'
 
-import { version as packageVersion } from '../../package.json'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+
+function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): string {
+    return config.get<string>('cody.serverEndpoint', '')
+}
+
+const config = vscode.workspace.getConfiguration()
 
 const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 
@@ -11,7 +17,8 @@ interface StorageProvider {
 }
 
 export class EventLogger {
-    private version = packageVersion
+    private serverEndpoint = _getServerEndpointFromConfig(config)
+    private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
 
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient, private uid: string) {}
 
@@ -41,14 +48,22 @@ export class EventLogger {
         if (this.uid === null) {
             return
         }
-        const argument = { ...eventProperties, version: this.version }
-        const publicArgument = { ...publicProperties, version: this.version }
+        const argument = {
+            ...eventProperties,
+            serverEndpoint: this.serverEndpoint,
+            extensionDetails: this.extensionDetails,
+        }
+        const publicArgument = {
+            ...publicProperties,
+            serverEndpoint: this.serverEndpoint,
+            extensionDetails: this.extensionDetails,
+        }
 
         try {
             await this.gqlAPIClient.logEvent({
                 event: eventName,
                 userCookieID: this.uid,
-                source: 'CODY',
+                source: 'IDEEXTENSION',
                 url: '',
                 argument: JSON.stringify(argument),
                 publicArgument: JSON.stringify(publicArgument),

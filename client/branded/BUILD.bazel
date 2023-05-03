@@ -74,6 +74,7 @@ ts_project(
         "src/search-ui/components/QueryExamples.constants.ts",
         "src/search-ui/components/QueryExamples.tsx",
         "src/search-ui/components/RepoFileLink.tsx",
+        "src/search-ui/components/RepoMetadata.tsx",
         "src/search-ui/components/RepoSearchResult.tsx",
         "src/search-ui/components/ResultContainer.tsx",
         "src/search-ui/components/SearchResultStar.tsx",

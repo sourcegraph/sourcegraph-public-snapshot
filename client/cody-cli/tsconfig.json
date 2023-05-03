@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "sourceRoot": "src",
+    "rootDir": ".",
+    "outDir": "./out",
+    "baseUrl": "./src",
+  },
+  "include": ["src", "package.json", ".eslintrc.js", "jest.config.js"],
+  "exclude": ["out", "dist"],
+  "references": [
+    {
+      "path": "../cody-shared",
+    },
+    {
+      "path": "../common",
+    },
+  ],
+}

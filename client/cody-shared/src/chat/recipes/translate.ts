@@ -6,9 +6,9 @@ import { languageMarkdownID, languageNames } from './langs'
 import { Recipe, RecipeContext } from './recipe'
 
 export class TranslateToLanguage implements Recipe {
-    public getID(): string {
-        return 'translate-to-language'
-    }
+    public id = 'translate-to-language'
+
+    public static options = languageNames
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
