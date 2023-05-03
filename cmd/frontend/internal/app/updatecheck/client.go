@@ -145,11 +145,6 @@ func getUsersActiveTodayCount(ctx context.Context, db database.DB) (_ int, err e
 	return usagestats.GetUsersActiveTodayCount(ctx, db)
 }
 
-// func getCodyUsersActiveTodayCount(ctx context.Context, db database.DB) (_ int, err error) {
-// 	defer recordOperation("getCodyUsersActiveTodayCount")(&err)
-// 	return usagestats.GetCodyUsersActiveTodayCount(ctx, db)
-// }
-
 func getInitialSiteAdminInfo(ctx context.Context, db database.DB) (_ string, _ bool, err error) {
 	defer recordOperation("getInitialSiteAdminInfo")(&err)
 	return db.UserEmails().GetInitialSiteAdminInfo(ctx)
