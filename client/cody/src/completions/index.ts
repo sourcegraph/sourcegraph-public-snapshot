@@ -123,6 +123,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         let waitMs: number
         const completers: CompletionProvider[] = []
+
+        // VS Code does not show completions if we are in the process of writing a word or if a
+        // selected completion info is present (so something is selected from the completions
+        // dropdown list based on the lang server) and the returned completion range does not
+        // contain the same selection.
+        if (/[A-Za-z]$/.test(precedingLine) || context.selectedCompletionInfo) {
+            return []
+        }
+
         if (precedingLine.trim() === '') {
             // Start of line: medium debounce
             waitMs = 500
