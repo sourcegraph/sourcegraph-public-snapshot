@@ -312,7 +312,7 @@ func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traver
 
 	var a, b int
 	err = s.withTransaction(ctx, func(tx *store) error {
-		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
+		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads (via graph traversal)")
 		defer unset(ctx)
 		scannedCount, repositories, err := scanCountsWithTotalCount(tx.db.Query(ctx, sqlf.Sprintf(
 			softDeleteExpiredUploadsViaTraversalQuery,
