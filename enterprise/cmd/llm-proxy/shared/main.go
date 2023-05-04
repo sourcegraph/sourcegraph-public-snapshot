@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,12 +18,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
-	handler := newHandler(config)
+	// Enable tracing, at this point tracing wouldn't have been enabled yet because
+	// we run LLM-proxy without conf which means Sourcegraph tracing is not enabled.
+	shutdownTracing, err := maybeEnableTracing(ctx, obctx.Logger.Scoped("tracing", "tracing configuration"))
+	if err != nil {
+		return errors.Wrap(err, "maybeEnableTracing")
+	}
+	defer shutdownTracing()
+
+	handler := newHandler(obctx.Logger, config)
 	handler = trace.HTTPMiddleware(obctx.Logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = actor.HTTPMiddleware(obctx.Logger, handler)
@@ -42,16 +54,43 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	return nil
 }
 
-func newHandler(config *Config) http.Handler {
+func newHandler(logger log.Logger, config *Config) http.Handler {
 	r := mux.NewRouter()
-	s := r.PathPrefix("/v1").Subrouter()
 
-	s.Handle("/completions/anthropic",
+	// For cluster liveness and readiness probes
+	healthzLogger := logger.Scoped("healthz", "healthz checks")
+	r.HandleFunc("/-/healthz", func(w http.ResponseWriter, r *http.Request) {
+		if err := healthz(r.Context()); err != nil {
+			healthzLogger.Error("check failed", log.Error(err))
+
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("healthz: " + err.Error()))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("healthz: ok"))
+		return
+	})
+	r.HandleFunc("/-/__version", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(version.Version()))
+		return
+	})
+
+	// V1 service routes
+	v1router := r.PathPrefix("/v1").Subrouter()
+	v1router.Handle("/completions/anthropic",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("failed to create request: %s", err)))
+				err = json.NewEncoder(w).Encode(map[string]string{
+					"error": fmt.Sprintf("failed to create request: %s", err),
+				})
+				if err != nil {
+					logger.Error("failed to write response", log.Error(err))
+				}
 				return
 			}
 
@@ -66,13 +105,40 @@ func newHandler(config *Config) http.Handler {
 			resp, err := httpcli.ExternalDoer.Do(r)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(fmt.Sprintf("failed to make request to Anthropic: %s", err)))
+				err = json.NewEncoder(w).Encode(map[string]string{
+					"error": fmt.Sprintf("failed to make request to Anthropic: %s", err),
+				})
+				if err != nil {
+					logger.Error("failed to write response", log.Error(err))
+				}
 				return
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			io.Copy(w, resp.Body)
+			_, _ = io.Copy(w, resp.Body)
 		}),
 	).Methods(http.MethodPost)
+
 	return r
+}
+
+func healthz(ctx context.Context) error {
+	// Check redis health
+	rpool, ok := redispool.Cache.Pool()
+	if !ok {
+		return errors.New("redis: not available")
+	}
+	rconn, err := rpool.GetContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "redis: failed to get conn")
+	}
+	data, err := rconn.Do("PING")
+	if err != nil {
+		return errors.Wrap(err, "redis: failed to ping")
+	}
+	if data != "PONG" {
+		return errors.New("redis: failed to ping: no pong received")
+	}
+
+	return nil
 }

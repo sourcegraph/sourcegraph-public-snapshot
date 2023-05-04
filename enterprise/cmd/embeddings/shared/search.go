@@ -46,14 +46,8 @@ func searchRepoEmbeddingIndex(
 		UseDocumentRanks: params.UseDocumentRanks,
 	}
 
-	var codeResults, textResults []embeddings.EmbeddingSearchResult
-	if params.CodeResultsCount > 0 && len(embeddingIndex.CodeIndex.Embeddings) > 0 {
-		codeResults = searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount, opts)
-	}
-
-	if params.TextResultsCount > 0 && len(embeddingIndex.TextIndex.Embeddings) > 0 {
-		textResults = searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount, opts)
-	}
+	codeResults := searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount, opts)
+	textResults := searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount, opts)
 
 	return &embeddings.EmbeddingSearchResults{CodeResults: codeResults, TextResults: textResults}, nil
 }

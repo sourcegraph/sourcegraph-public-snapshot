@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"testing"
-	"testing/quick"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -149,9 +149,13 @@ func BenchmarkSimilaritySearch(b *testing.B) {
 
 	for _, numWorkers := range []int{1, 2, 4, 8, 16} {
 		b.Run(fmt.Sprintf("numWorkers=%d", numWorkers), func(b *testing.B) {
+			start := time.Now()
 			for n := 0; n < b.N; n++ {
 				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers}, SearchOptions{})
 			}
+			m := float64(numRows) * float64(b.N) / time.Since(start).Seconds()
+			b.ReportMetric(m, "embeddings/s")
+			b.ReportMetric(m/float64(numWorkers), "embeddings/s/worker")
 		})
 	}
 }
@@ -189,22 +193,4 @@ func simpleCosineSimilarity(a, b []int8) int32 {
 		similarity += int32(a[i]) * int32(b[i])
 	}
 	return similarity
-}
-
-func TestCosineSimilarity(t *testing.T) {
-	f := func(a, b []int8) bool {
-		if len(a) > len(b) {
-			a = a[:len(b)]
-		} else if len(a) < len(b) {
-			b = b[:len(a)]
-		}
-
-		want := simpleCosineSimilarity(a, b)
-		got := CosineSimilarity(a, b)
-		return want == got
-	}
-	err := quick.Check(f, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
 }

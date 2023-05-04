@@ -73,9 +73,14 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repoName, revision, fileName)
 	}
 
-	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(repoStore, repoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-		return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(repoEmbeddingIndexName))
-	})
+	indexGetter, err := NewCachedEmbeddingIndexGetter(
+		repoStore,
+		repoEmbeddingJobsStore,
+		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+			return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(repoEmbeddingIndexName))
+		},
+		config.EmbeddingsCacheSize,
+	)
 	if err != nil {
 		return err
 	}
@@ -95,7 +100,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndex(uploadStore)
 
 	// Create HTTP server
-	handler := NewHandler(logger, readFile, getRepoEmbeddingIndex, getQueryEmbedding, weaviate, getContextDetectionEmbeddingIndex)
+	handler := NewHandler(logger, readFile, indexGetter.Get, getQueryEmbedding, weaviate, getContextDetectionEmbeddingIndex)
 	handler = handlePanic(logger, handler)
 	handler = featureflag.Middleware(db.FeatureFlags(), handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())

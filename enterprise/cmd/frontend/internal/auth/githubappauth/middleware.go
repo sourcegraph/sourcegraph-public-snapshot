@@ -202,7 +202,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, "Bad request, cannot parse appID", http.StatusBadRequest)
 		}
 
-		installationID, err := strconv.ParseInt(instID, 10, 64)
+		installationID, err := strconv.Atoi(instID)
 		if err != nil {
 			http.Error(w, "Bad request, cannot parse installation_id", http.StatusBadRequest)
 			return
@@ -210,14 +210,21 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 		action := query.Get("setup_action")
 		if action == "install" {
-			app, err := db.GitHubApps().GetByID(req.Context(), id)
+			ctx := req.Context()
+			app, err := db.GitHubApps().GetByID(ctx, id)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Unexpected error while fetching github app data: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
 
+			err = db.GitHubApps().Install(ctx, id, installationID)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Unexpected error while installing github app: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+
 			// TODO: redirect to github app configuration page once it's ready
-			http.Redirect(w, req, fmt.Sprintf("/site-admin/external-services/new-gh-app?id=%d&installation_id=%d", app.ID, installationID), http.StatusFound)
+			http.Redirect(w, req, fmt.Sprintf("/site-admin/github-apps/%s?installation_id=%d", MarshalGitHubAppID(int64(app.ID)), installationID), http.StatusFound)
 			// return
 		} else {
 			http.Error(w, fmt.Sprintf("Bad request; unsupported setup action: %s", action), http.StatusBadRequest)
@@ -282,6 +289,6 @@ func createGitHubApp(conversionURL string) (*types.GitHubApp, error) {
 		PrivateKey:   response.PEM,
 		BaseURL:      htmlURL.Scheme + "://" + htmlURL.Host,
 		AppURL:       htmlURL.String(),
-		// logo: https://github.com/identicons/app/app/milan-test-app-manifest
+		Logo:         fmt.Sprintf("%s://%s/identicons/app/app/%s", htmlURL.Scheme, htmlURL.Host, response.Slug),
 	}, nil
 }

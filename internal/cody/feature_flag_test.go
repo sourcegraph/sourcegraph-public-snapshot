@@ -6,12 +6,23 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestIsCodyEnabled(t *testing.T) {
 	t.Run("Unauthenticated user", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				Completions: &schema.Completions{
+					Enabled: true,
+				},
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 0})
 		if IsCodyEnabled(ctx) {
@@ -20,10 +31,51 @@ func TestIsCodyEnabled(t *testing.T) {
 	})
 
 	t.Run("Authenticated user", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				Completions: &schema.Completions{
+					Enabled: true,
+				},
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 		if !IsCodyEnabled(ctx) {
 			t.Error("Expected IsCodyEnabled to return true for authenticated actor")
+		}
+	})
+	t.Run("Disabled completions", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				Completions: &schema.Completions{
+					Enabled: false,
+				},
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+		if IsCodyEnabled(ctx) {
+			t.Error("Expected IsCodyEnabled to return false when completions are disabled")
+		}
+	})
+
+	t.Run("No completions config", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+		if IsCodyEnabled(ctx) {
+			t.Error("Expected IsCodyEnabled to return false when completions are not configured")
 		}
 	})
 
@@ -33,6 +85,9 @@ func TestIsCodyEnabled(t *testing.T) {
 				SiteConfiguration: schema.SiteConfiguration{
 					ExperimentalFeatures: &schema.ExperimentalFeatures{
 						CodyRestrictUsersFeatureFlag: true,
+					},
+					Completions: &schema.Completions{
+						Enabled: true,
 					},
 				},
 			})
@@ -57,6 +112,9 @@ func TestIsCodyEnabled(t *testing.T) {
 					ExperimentalFeatures: &schema.ExperimentalFeatures{
 						CodyRestrictUsersFeatureFlag: true,
 					},
+					Completions: &schema.Completions{
+						Enabled: true,
+					},
 				},
 			})
 			t.Cleanup(func() {
@@ -74,5 +132,110 @@ func TestIsCodyEnabled(t *testing.T) {
 				t.Error("Expected IsCodyEnabled to return true when cody-experimental feature flag is enabled")
 			}
 		})
+
+	})
+
+	t.Run("CodyEnabledInApp", func(t *testing.T) {
+		t.Run("Completions configured", func(t *testing.T) {
+			deploy.Mock(deploy.App)
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					Completions: &schema.Completions{
+						Enabled: true,
+					},
+				},
+			})
+			t.Cleanup(func() {
+				conf.Mock(nil)
+				deploy.Mock(deploy.Kubernetes)
+			})
+
+			ctx := context.Background()
+			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+			if !IsCodyEnabled(ctx) {
+				t.Error("Expected IsCodyEnabled to return true in App when completions are configured")
+			}
+		})
+
+		t.Run("Dotcom Token present", func(t *testing.T) {
+			deploy.Mock(deploy.App)
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					App: &schema.App{
+						DotcomAuthToken: "TOKEN",
+					},
+				},
+			})
+			t.Cleanup(func() {
+				conf.Mock(nil)
+				deploy.Mock(deploy.Kubernetes)
+			})
+
+			ctx := context.Background()
+			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+			if !IsCodyEnabled(ctx) {
+				t.Error("Expected IsCodyEnabled to return true in App when dotcom token is present")
+			}
+		})
+
+		t.Run("No configuration", func(t *testing.T) {
+			deploy.Mock(deploy.App)
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{},
+			})
+			t.Cleanup(func() {
+				conf.Mock(nil)
+				deploy.Mock(deploy.Kubernetes)
+			})
+
+			ctx := context.Background()
+			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+			if IsCodyEnabled(ctx) {
+				t.Error("Expected IsCodyEnabled to return false in App when no dotcom token or completions configuration is present")
+			}
+		})
+
+		t.Run("Disabled completions", func(t *testing.T) {
+			deploy.Mock(deploy.App)
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					Completions: &schema.Completions{
+						Enabled: false,
+					},
+				},
+			})
+			t.Cleanup(func() {
+				conf.Mock(nil)
+				deploy.Mock(deploy.Kubernetes)
+			})
+
+			ctx := context.Background()
+			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+			if IsCodyEnabled(ctx) {
+				t.Error("Expected IsCodyEnabled to return false in App completions configuration and disabled")
+			}
+		})
+
+		t.Run("Empty dotcom token", func(t *testing.T) {
+			deploy.Mock(deploy.App)
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					App: &schema.App{
+						DotcomAuthToken: "",
+					},
+				},
+			})
+			t.Cleanup(func() {
+				conf.Mock(nil)
+				deploy.Mock(deploy.Kubernetes)
+			})
+
+			ctx := context.Background()
+			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+			if IsCodyEnabled(ctx) {
+				t.Error("Expected IsCodyEnabled to return false in App when no dotcom token is present")
+			}
+		})
+
 	})
 }
