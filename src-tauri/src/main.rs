@@ -7,6 +7,7 @@
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
 mod common;
+mod cody;
 mod tray;
 use common::{extract_path_from_scheme_url, show_window};
 use std::sync::RwLock;
@@ -62,11 +63,15 @@ fn main() {
     tauri::Builder::default()
         .system_tray(tray)
         .on_system_tray_event(tray::on_system_tray_event)
+        .on_system_tray_event(|app, event| {
+            tauri_plugin_positioner::on_tray_event(app, &event);
+        })
         .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
-                // Ensure the app stays open after the last window is closed.
-                event.window().hide().unwrap();
-                api.prevent_close();
+                if event.window().label() == "main" {
+                    event.window().hide().unwrap();
+                    api.prevent_close();
+                }
             }
             _ => {}
         })
@@ -79,11 +84,15 @@ fn main() {
                 .level(log::LevelFilter::Info)
                 .build(),
         )
+        .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
             start_embedded_services();
 
-            // Register handler for sourcegraph:// scheme urls.
+            // Cody system tray window.
             let handle = app.handle();
+            cody::init_cody_window(&handle);
+
+            // Register handler for sourcegraph:// scheme urls.
             tauri_plugin_deep_link::register(SCHEME, move |request| {
                 let path: &str = extract_path_from_scheme_url(&request, SCHEME);
 
@@ -102,7 +111,7 @@ fn main() {
                     .unwrap()
                     .eval(&format!("window.location.href = '{}'", path))
                     .unwrap();
-                show_window(&handle);
+                show_window(&handle, "main");
             })
             .unwrap();
 
@@ -116,7 +125,6 @@ fn main() {
                     set_launch_path(url)
                 }
             }
-
             Ok(())
         })
         // Define a handler so that invoke("get_launch_scheme_url") can be

@@ -33,6 +33,7 @@ const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
 const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
+const CodyStandalonePage = lazyComponent(() => import('./cody/CodyStandalonePage'), 'CodyStandalonePage')
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
 const PassThroughToServer: React.FC = () => {
@@ -154,6 +155,10 @@ export const routes: RouteObject[] = [
         // detect if we're inside the repo container reliably inside the Layout, we
         // expose this information in the handle object instead.
         handle: { isRepoContainer: true },
+    },
+    {
+        path: PageRoutes.CodyStandalone,
+        element: <CodyStandalonePage />,
     },
 ]
 
