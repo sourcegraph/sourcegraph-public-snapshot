@@ -1,12 +1,14 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H4, Icon, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
+import { EventName } from '../../util/constants'
 
 import styles from './TryCodyWidget.module.scss'
 
@@ -207,19 +209,53 @@ const CodyPopupSVG: React.FC = () => (
     </svg>
 )
 
-export const TryCodyWidget: React.FC<{ className?: string }> = ({ className }) => {
+const AUTO_DISMISS_ON_EVENTS = new Set([
+    EventName.CODY_SIDEBAR_CHAT_OPENED,
+    EventName.CODY_SIDEBAR_EDIT,
+    EventName.CODY_SIDEBAR_RECIPE,
+    EventName.CODY_SIDEBAR_RECIPE_EXECUTED,
+    EventName.CODY_SIDEBAR_SUBMIT,
+])
+
+function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']): {
+    isDismissed: boolean | undefined
+    onDismiss: () => void
+} {
     const [isDismissed, setIsDismissed] = useTemporarySetting('try-cody-widget-dismissed', false)
 
     const onDismiss = useCallback(() => {
         setIsDismissed(true)
     }, [setIsDismissed])
 
+    // Listen for telemetry events to auto dismiss the widget
+    useEffect(() => {
+        if (isDismissed) {
+            return
+        }
+
+        return telemetryService.addEventLogListener?.(eventName => {
+            if (AUTO_DISMISS_ON_EVENTS.has(eventName as EventName)) {
+                onDismiss()
+            }
+        })
+    }, [telemetryService, isDismissed, onDismiss])
+
+    return { isDismissed, onDismiss }
+}
+
+export const TryCodyWidget: React.FC<TelemetryProps & { className?: string }> = ({ className, telemetryService }) => {
+    const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService)
+
     if (isDismissed) {
         return null
     }
 
     return (
-        <MarketingBlock contentClassName="d-flex position-relative py-3 overflow-auto" wrapperClassName={className} variant="thin">
+        <MarketingBlock
+            contentClassName="d-flex position-relative py-3 overflow-auto"
+            wrapperClassName={className}
+            variant="thin"
+        >
             <div>
                 <GlowingCodySVG />
             </div>

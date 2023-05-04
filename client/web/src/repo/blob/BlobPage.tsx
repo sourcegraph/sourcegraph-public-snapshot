@@ -344,7 +344,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
-            {!!props.isSourcegraphDotCom && !!props.authenticatedUser && <TryCodyWidget className="mb-4" />}
+            {!!props.isSourcegraphDotCom && !!props.authenticatedUser && (
+                <TryCodyWidget className="mb-4" telemetryService={props.telemetryService} />
+            )}
             {window.context.isAuthenticatedUser && (
                 <RepoHeaderContributionPortal
                     position="right"
