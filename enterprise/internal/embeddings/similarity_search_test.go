@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -148,9 +149,13 @@ func BenchmarkSimilaritySearch(b *testing.B) {
 
 	for _, numWorkers := range []int{1, 2, 4, 8, 16} {
 		b.Run(fmt.Sprintf("numWorkers=%d", numWorkers), func(b *testing.B) {
+			start := time.Now()
 			for n := 0; n < b.N; n++ {
 				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers}, SearchOptions{})
 			}
+			m := float64(numRows) * float64(b.N) / time.Since(start).Seconds()
+			b.ReportMetric(m, "embeddings/s")
+			b.ReportMetric(m/float64(numWorkers), "embeddings/s/worker")
 		})
 	}
 }
