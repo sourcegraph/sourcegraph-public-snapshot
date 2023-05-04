@@ -38,7 +38,7 @@ export const FETCH_OWNERS = gql`
         }
         ruleLineMatch
     }
-    
+
     fragment RecentContributorOwnershipSignalFields on RecentContributorOwnershipSignal {
         title
         description
@@ -56,7 +56,7 @@ export const FETCH_OWNERS = gql`
                                 }
                                 reasons {
                                     ...CodeownersFileEntryFields
-                                    ... RecentContributorOwnershipSignalFields
+                                    ...RecentContributorOwnershipSignalFields
                                 }
                             }
                         }

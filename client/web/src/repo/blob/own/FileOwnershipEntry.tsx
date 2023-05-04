@@ -10,7 +10,7 @@ import { Badge, Button, ButtonLink, Icon, Link, Tooltip } from '@sourcegraph/wil
 import {
     CodeownersFileEntryFields,
     OwnerFields,
-    RecentContributorOwnershipSignalFields
+    RecentContributorOwnershipSignalFields,
 } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
 
@@ -18,10 +18,10 @@ import styles from './FileOwnershipEntry.module.scss'
 
 interface Props {
     owner: OwnerFields
-    reasons: TestTest[]
+    reasons: OwnershipReason[]
 }
 
-type TestTest = CodeownersFileEntryFields | RecentContributorOwnershipSignalFields
+type OwnershipReason = CodeownersFileEntryFields | RecentContributorOwnershipSignalFields
 
 export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
