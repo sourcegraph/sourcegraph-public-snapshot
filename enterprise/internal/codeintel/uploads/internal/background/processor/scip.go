@@ -191,29 +191,7 @@ loop:
 // store at upload time, as a hint to the total buffer size we'll be returning. If this value
 // is undersized, the standard slice resizing behavior (symmetric to io.ReadAll) is used.
 func readIndex(r io.Reader, n int64) (*scip.Index, error) {
-	if n == 0 {
-		n = 512
-	}
-
-	ReadAll := func(r io.Reader) ([]byte, error) {
-		b := make([]byte, 0, n)
-		for {
-			if len(b) == cap(b) {
-				// Add more capacity (let append pick how much).
-				b = append(b, 0)[:len(b)]
-			}
-			n, err := r.Read(b[len(b):cap(b)])
-			b = b[:len(b)+n]
-			if err != nil {
-				if err == io.EOF {
-					err = nil
-				}
-				return b, err
-			}
-		}
-	}
-
-	content, err := ReadAll(r)
+	content, err := readAllWithSizeHint(r, n)
 	if err != nil {
 		return nil, err
 	}
@@ -224,6 +202,31 @@ func readIndex(r io.Reader, n int64) (*scip.Index, error) {
 	}
 
 	return &index, nil
+}
+
+// Copied from io.ReadAll, but uses the given initial size for the buffer to
+// attempt to reduce temporary slice allocations during large reads. If the
+// given size is zero, then this function has the same behavior as io.ReadAll.
+func readAllWithSizeHint(r io.Reader, n int64) ([]byte, error) {
+	if n == 0 {
+		n = 512
+	}
+
+	b := make([]byte, 0, n)
+	for {
+		if len(b) == cap(b) {
+			// Add more capacity (let append pick how much).
+			b = append(b, 0)[:len(b)]
+		}
+		n, err := r.Read(b[len(b):cap(b)])
+		b = b[:len(b)+n]
+		if err != nil {
+			if err == io.EOF {
+				err = nil
+			}
+			return b, err
+		}
+	}
 }
 
 // ignorePaths returns a set consisting of the relative paths of documents in the give
