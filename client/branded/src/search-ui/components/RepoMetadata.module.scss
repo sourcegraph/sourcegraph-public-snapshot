@@ -2,18 +2,6 @@
     gap: 0.5rem;
 }
 
-.text {
-    color: var(--body-color);
-}
-
-.button,
-.text {
-    font-size: 0.75rem;
-}
-
-.container.small {
-    .button,
-    .text {
-        font-size: 0.625rem;
-    }
+.highlight {
+    color: var(--search-filter-keyword-color);
 }

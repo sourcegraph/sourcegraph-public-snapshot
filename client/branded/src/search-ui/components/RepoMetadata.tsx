@@ -16,47 +16,79 @@ export interface RepoMetadataItem {
     value?: string | null
 }
 
-const MetaContainer: React.FC<React.PropsWithChildren<{ to?: string }>> = ({ children, to }) => (
-    <Code className={styles.text}>{to ? <Link to={to}>{children}</Link> : children}</Code>
+const MetaContent: React.FC<{ meta: RepoMetadataItem; highlight?: boolean }> = ({ meta, highlight }) => (
+    <Code>
+        <span aria-label="Repository metadata key" className={classNames({ [styles.highlight]: highlight })}>
+            {meta.key}
+        </span>
+        {meta.value ? (
+            <span aria-label="Repository metadata value">:{meta.value}</span>
+        ) : (
+            <VisuallyHidden>No metadata value</VisuallyHidden>
+        )}
+    </Code>
 )
 
 interface MetaProps {
     meta: RepoMetadataItem
     buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
     queryState?: QueryState
+    onDelete?: (item: RepoMetadataItem) => void
+    small?: boolean
 }
 
-const Meta: React.FC<MetaProps> = ({ meta: { key, value }, queryState, buildSearchURLQueryFromQueryState }) => {
+const Meta: React.FC<MetaProps> = ({ meta, queryState, buildSearchURLQueryFromQueryState, onDelete, small }) => {
     const filterLink = useMemo(() => {
         if (!queryState || !buildSearchURLQueryFromQueryState) {
             return undefined
         }
 
-        const query = appendFilter(queryState.query, 'repo', value ? `has(${key}:${value})` : `has.key(${key})`)
+        const query = appendFilter(
+            queryState.query,
+            'repo',
+            meta.value ? `has(${meta.key}:${meta.value})` : `has.key(${meta.key})`
+        )
 
         const searchParams = buildSearchURLQueryFromQueryState({ query })
         return `/search?${searchParams}`
-    }, [buildSearchURLQueryFromQueryState, key, value, queryState])
+    }, [buildSearchURLQueryFromQueryState, meta.key, meta.value, queryState])
+
+    if (onDelete) {
+        return (
+            <Tooltip content="Delete metadata">
+                <Badge
+                    variant="secondary"
+                    small={small}
+                    as={Button}
+                    onClick={() => onDelete(meta)}
+                    aria-label="Delete metadata"
+                >
+                    <Icon svgPath={mdiDelete} aria-hidden={true} className="mr-1" />
+                    <MetaContent meta={meta} />
+                </Badge>
+            </Tooltip>
+        )
+    }
+
+    if (filterLink) {
+        return (
+            <Badge variant="secondary" small={small} as={Link} to={filterLink}>
+                <MetaContent meta={meta} highlight={true} />
+            </Badge>
+        )
+    }
 
     return (
-        <MetaContainer to={filterLink}>
-            <span aria-label="Repository metadata key">
-                {key}
-            </span>
-            {value ? (
-                <span aria-label="Repository metadata value" className={styles.text}>:{value}</span>
-            ) : (
-                <VisuallyHidden>No metadata value</VisuallyHidden>
-            )}
-        </MetaContainer>
+        <Badge variant="secondary" small={small}>
+            <MetaContent meta={meta} />
+        </Badge>
     )
 }
 
-interface RepoMetadataProps extends Pick<MetaProps, 'buildSearchURLQueryFromQueryState' | 'queryState'> {
+interface RepoMetadataProps
+    extends Pick<MetaProps, 'buildSearchURLQueryFromQueryState' | 'queryState' | 'onDelete' | 'small'> {
     items: RepoMetadataItem[]
     className?: string
-    onDelete?: (item: RepoMetadataItem) => void
-    small?: boolean
 }
 
 export const RepoMetadata: React.FC<RepoMetadataProps> = ({
@@ -73,36 +105,16 @@ export const RepoMetadata: React.FC<RepoMetadataProps> = ({
     }
 
     return (
-        <ul
-            className={classNames(styles.container, 'd-flex align-items-start flex-wrap m-0 list-unstyled', className, {
-                [styles.small]: small,
-            })}
-        >
+        <ul className={classNames(styles.container, 'd-flex align-items-start flex-wrap m-0 list-unstyled', className)}>
             {sortedItems.map(item => (
                 <li key={`${item.key}:${item.value}`}>
-                    {onDelete ? (
-                        <Tooltip content="Delete metadata">
-                            <Button
-                                className={styles.button}
-                                variant="secondary"
-                                outline={true}
-                                size="sm"
-                                aria-label="Delete metadata"
-                                onClick={() => onDelete(item)}
-                            >
-                                <Icon svgPath={mdiDelete} aria-hidden={true} className="mr-1" />
-                                <Meta meta={item} />
-                            </Button>
-                        </Tooltip>
-                    ) : (
-                        <Badge key={`${item.key}:${item.value}`} className="d-flex">
-                            <Meta
-                                meta={item}
-                                queryState={queryState}
-                                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                            />
-                        </Badge>
-                    )}
+                    <Meta
+                        small={small}
+                        meta={item}
+                        onDelete={onDelete}
+                        queryState={queryState}
+                        buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                    />
                 </li>
             ))}
         </ul>
