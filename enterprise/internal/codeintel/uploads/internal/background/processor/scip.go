@@ -191,7 +191,29 @@ loop:
 // store at upload time, as a hint to the total buffer size we'll be returning. If this value
 // is undersized, the standard slice resizing behavior (symmetric to io.ReadAll) is used.
 func readIndex(r io.Reader, n int64) (*scip.Index, error) {
-	content, err := io.ReadAll(r)
+	if n == 0 {
+		n = 512
+	}
+
+	ReadAll := func(r io.Reader) ([]byte, error) {
+		b := make([]byte, 0, n)
+		for {
+			if len(b) == cap(b) {
+				// Add more capacity (let append pick how much).
+				b = append(b, 0)[:len(b)]
+			}
+			n, err := r.Read(b[len(b):cap(b)])
+			b = b[:len(b)+n]
+			if err != nil {
+				if err == io.EOF {
+					err = nil
+				}
+				return b, err
+			}
+		}
+	}
+
+	content, err := ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
