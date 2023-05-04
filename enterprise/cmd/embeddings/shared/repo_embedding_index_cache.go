@@ -55,6 +55,11 @@ func (m *repoMutexMap) GetLock(repoID api.RepoID) *sync.Mutex {
 // embeddingsIndexCache is a thin wrapper around an LRU cache that is
 // memory-bounded, which is useful for embeddings indexes because they can have
 // dramatically different sizes.
+//
+// Note that this is just an LRU cache with a bounded in-memory size.
+// A query that hits a large number of repos will fill the cache with
+// those repos, which may not be desirable if we are doing many global
+// searches.
 type embeddingsIndexCache struct {
 	mu                 sync.Mutex
 	cache              *lru.Cache[embeddings.RepoEmbeddingIndexName, repoEmbeddingIndexCacheEntry]
