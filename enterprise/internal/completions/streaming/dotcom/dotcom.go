@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var PROVIDER = "dotcom"
+var ProviderName = "dotcom"
 var done_bytes = []byte("done")
 
 const api_url = "https://sourcegraph.com/.api/completions/stream"
@@ -25,7 +25,7 @@ type dotcomClient struct {
 	model       string
 }
 
-func NewDotcomClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
 	return &dotcomClient{
 		cli:         cli,
 		accessToken: accessToken,
@@ -45,7 +45,6 @@ func (a *dotcomClient) Stream(
 	requestParams types.ChatCompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
-
 	reqBody, err := json.Marshal(requestParams)
 	if err != nil {
 		return err

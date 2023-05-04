@@ -47,8 +47,8 @@ func GetCompletionClient(provider string, accessToken string, model string) (typ
 		return anthropic.NewAnthropicClient(httpcli.ExternalDoer, accessToken, model), nil
 	case "openai":
 		return openai.NewOpenAIClient(httpcli.ExternalDoer, accessToken, model), nil
-	case dotcom.PROVIDER:
-		return dotcom.NewDotcomClient(httpcli.ExternalDoer, accessToken, model), nil
+	case dotcom.ProviderName:
+		return dotcom.NewClient(httpcli.ExternalDoer, accessToken, model), nil
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}
@@ -73,7 +73,7 @@ func GetCompletionsConfig() *schema.Completions {
 		return &schema.Completions{
 			AccessToken: appConfig.DotcomAuthToken,
 			Enabled:     len(appConfig.DotcomAuthToken) > 0,
-			Provider:    dotcom.PROVIDER,
+			Provider:    dotcom.ProviderName,
 		}
 	}
 	return nil
