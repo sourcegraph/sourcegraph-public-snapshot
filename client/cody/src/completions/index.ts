@@ -91,7 +91,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const { prefix, prevLine: precedingLine } = docContext
+        const { prefix, suffix, prevLine: precedingLine } = docContext
 
         const cachedCompletions = inlineCompletionsCache.get(prefix)
         if (cachedCompletions) {
@@ -106,6 +106,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.responseTokens,
             [],
             prefix,
+            suffix,
             '\n'
         )
         const emptyPromptLength = completionNoSnippets.emptyPromptLength()
@@ -142,6 +143,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     this.responseTokens,
                     similarCode,
                     prefix,
+                    suffix,
                     '',
                     2 // tries
                 )
@@ -159,6 +161,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     this.responseTokens,
                     similarCode,
                     prefix,
+                    suffix,
                     '',
                     2 // tries
                 ),
@@ -170,6 +173,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     this.responseTokens,
                     similarCode,
                     prefix,
+                    suffix,
                     '\n', // force a new line in the case we are at end of line
                     1 // tries
                 )
@@ -230,7 +234,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             console.error('not showing completions, no currently open doc')
             return
         }
-        const { prefix } = docContext
+        const { prefix, suffix } = docContext
 
         const remainingChars = this.tokToChar(this.promptTokens)
 
@@ -240,6 +244,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.responseTokens,
             [],
             prefix,
+            suffix,
             ''
         )
         const emptyPromptLength = completionNoSnippets.emptyPromptLength()
@@ -261,6 +266,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.responseTokens,
             similarCode,
             prefix,
+            suffix,
             ''
         )
 
