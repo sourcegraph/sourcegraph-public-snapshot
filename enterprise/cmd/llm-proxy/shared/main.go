@@ -180,7 +180,8 @@ func authenticate(logger log.Logger, cache httpcache.Cache, dotComClient graphql
 			resp, err := dotcom.CheckAccessToken(r.Context(), dotComClient, token)
 			if err != nil {
 				responseJSONError(logger, w, http.StatusUnauthorized,
-					errors.Errorf("failed to check access token: %s", err))
+					errors.Errorf("failed to check access token: %s", err),
+				)
 				return
 			}
 
