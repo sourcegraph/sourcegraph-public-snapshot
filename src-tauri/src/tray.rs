@@ -41,7 +41,7 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
             "open" => show_window(app, "main"),
             "cody" => {
                 let win = app.get_window("cody").unwrap();
-                win.move_window(Position::TrayBottomLeft);
+                win.move_window(Position::TrayBottomLeft).unwrap();
                 show_window(app, "cody")
             }
             "settings" => {

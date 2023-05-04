@@ -165,7 +165,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME
             )}
         >
-            {props.isSourcegraphApp && !isCodyStandalonePage && <TauriTitleBar historyStack={historyStack} />}
             {showHelpShortcut?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={showKeyboardShortcutsHelp} />
             ))}

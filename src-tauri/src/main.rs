@@ -49,7 +49,7 @@ fn main() {
     let scope = RemoteDomainAccessScope {
         scheme: Some("http".to_string()),
         domain: "localhost".to_string(),
-        windows: vec!["main".to_string()],
+        windows: vec!["main".to_string(), "cody".to_string()],
         plugins: vec![],
         enable_tauri_api: true,
     };
