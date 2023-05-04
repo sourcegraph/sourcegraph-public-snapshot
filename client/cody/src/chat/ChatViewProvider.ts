@@ -155,11 +155,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendChatHistory()
                 break
             case 'submit':
-                await this.onHumanMessageSubmitted(message.text)
+                await this.onHumanMessageSubmitted(message.text, message.submitType)
                 break
             case 'edit':
                 this.transcript.removeLastInteraction()
-                await this.onHumanMessageSubmitted(message.text)
+                await this.onHumanMessageSubmitted(message.text, 'user')
                 break
             case 'executeRecipe':
                 await this.executeRecipe(message.recipe)
@@ -287,7 +287,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         void this.saveTranscriptToChatHistory()
     }
 
-    private async onHumanMessageSubmitted(text: string): Promise<void> {
+    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
+        if (submitType === 'suggestion') {
+            logEvent('CodyVSCodeExtension:chatPredictions:used')
+        }
         this.inputHistory.push(text)
 
         if (this.config.experimentalChatPredictions) {

@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
+- Adds usage metrics to the experimental chat predictions feature [pull/51474](https://github.com/sourcegraph/sourcegraph/pull/51474)
+
 ### Fixed
 
 ### Changed

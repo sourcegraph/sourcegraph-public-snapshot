@@ -12,7 +12,7 @@ export type WebviewMessage =
           command: 'initialized'
       }
     | { command: 'event'; event: string; value: string }
-    | { command: 'submit'; text: string }
+    | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
     | { command: 'executeRecipe'; recipe: string }
     | { command: 'settings'; serverEndpoint: string; accessToken: string }
     | { command: 'removeToken' }
