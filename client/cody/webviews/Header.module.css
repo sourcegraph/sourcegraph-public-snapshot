@@ -3,46 +3,17 @@
     justify-content: space-between;
     font-family: var(--vscode-font-family);
     border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border);
-    padding: 1.25rem;
-    /* 20px */
+    padding: 12px 20px;
     color: var(--vscode-sideBarTitle-foreground);
 }
-
-.header-container-left,
-.header-container-right {
-    display: flex;
-    align-items: center;
-}
-
-/* We can hide the 'Sourcegraph' logo they're wanting a skinny pane */
-@media screen and (max-width: 350px) {
-    .header-container-right {
-        display: none;
-    }
-}
-
-.header-container-right svg {
-    opacity: 0.4;
-}
-
 
 .reset-conversation {
     margin: 0;
     cursor: pointer;
 }
 
-.header-title>span {
-    margin-right: 0.5rem !important;
-}
-
-.header-tag-beta {
-    opacity: 0.3;
-}
-
-.header-logo {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    margin-right: 0.7rem;
+@media screen and (max-width: 300px) {
+    .header-tag-beta {
+        display: none;
+    }
 }
