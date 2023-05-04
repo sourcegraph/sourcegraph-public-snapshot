@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -12,6 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var eventUnmarshalErrorCounter = promauto.NewCounter(prometheus.CounterOpts{
+	Namespace: "src",
+	Name:      "own_event_logs_processing_errors_total",
+	Help:      "Number of errors during event logs processing for Sourcegraph Own",
+})
 
 type RecentViewSignalStore interface {
 	Insert(ctx context.Context, userID int32, repoPathID, count int) error
@@ -41,8 +49,15 @@ type recentViewSignalStore struct {
 	Logger log.Logger
 }
 
+// repoMetadata is a struct with all necessary data related to repo which is
+// needed for signal creation.
 type repoMetadata struct {
-	repoID   api.RepoID
+	// repoID is an ID of the repo in the DB.
+	repoID api.RepoID
+	// pathToID is a map of actual absolute file path to its ID in `repo_paths`
+	// table. This map is written twice in `BuildAggregateFromEvents` because pathID
+	// is calculated after all the paths (i.e. keys of this map) are gathered and put
+	// into this map.
 	pathToID map[string]int
 }
 
@@ -66,8 +81,7 @@ const insertRecentViewSignalFmtstr = `
 
 func (s *recentViewSignalStore) Insert(ctx context.Context, userID int32, repoPathID, count int) error {
 	q := sqlf.Sprintf(insertRecentViewSignalFmtstr, userID, repoPathID, count)
-	_, err := s.ExecResult(ctx, q)
-	return err
+	return s.Exec(ctx, q)
 }
 
 const bulkInsertRecentViewSignalsFmtstr = `
@@ -77,18 +91,28 @@ const bulkInsertRecentViewSignalsFmtstr = `
 	SET views_count = EXCLUDED.views_count
 `
 
+// InsertPaths inserts paths and view counts for a given `userID`. This function
+// has a hard limit of 5000 entries to be inserted. If more than 5000 paths are
+// provided, this function will only add the first 5000 values read from the map
+// (i.e. 5000 random paths) without any errors.
 func (s *recentViewSignalStore) InsertPaths(ctx context.Context, userID int32, repoPathIDToCount map[int]int) error {
 	pathsNumber := len(repoPathIDToCount)
 	if pathsNumber == 0 {
 		return nil
 	}
+	if pathsNumber > 5000 {
+		pathsNumber = 5000
+	}
 	values := make([]*sqlf.Query, 0, pathsNumber)
 	for pathID, count := range repoPathIDToCount {
+		if pathsNumber == 0 {
+			break
+		}
 		values = append(values, sqlf.Sprintf("(%s, %s, %s)", userID, pathID, count))
+		pathsNumber--
 	}
 	q := sqlf.Sprintf(bulkInsertRecentViewSignalsFmtstr, sqlf.Join(values, ","))
-	_, err := s.ExecResult(ctx, q)
-	return err
+	return s.Exec(ctx, q)
 }
 
 // TODO(sashaostrikov): update query with opts
@@ -96,7 +120,6 @@ const listRecentViewSignalsFmtstr = `
 	SELECT viewer_id, viewed_file_path_id, views_count
 	FROM own_aggregate_recent_view
 	ORDER BY id
-	LIMIT 1000
 `
 
 func (s *recentViewSignalStore) List(ctx context.Context, _ ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
@@ -114,31 +137,43 @@ func (s *recentViewSignalStore) List(ctx context.Context, _ ListRecentViewSignal
 	return viewsScanner(s.Query(ctx, q))
 }
 
+// BuildAggregateFromEvents builds recent view signals from provided "ViewBlob"
+// events. One signal has a userID, repoPathID and a count. This data is derived
+// from the event, please refer to inline comments for more implementation
+// details.
+//
 // TODO(sashaostrikov): BuildAggregateFromEvents should be called from worker,
 // which queries events like so:
 //
-//	db := NewDBWith(s.Logger, s)
-//	events, err := db.EventLogs().ListEventsByName(ctx, viewBlobEventType, after, limit)
+// db := NewDBWith(s.Logger, s)
+// events, err := db.EventLogs().ListEventsByName(ctx, viewBlobEventType, after, limit)
 func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, events []*Event) error {
 	// Map of repo name to repo ID and paths+repoPathIDs of files specified in
-	// "ViewBlob" events.
+	// "ViewBlob" events. Used to aggregate all the paths for a single repo to then
+	// call `ensureRepoPaths` and receive all path IDs necessary to store the
+	// signals.
 	repoNameToMetadata := make(map[string]repoMetadata)
 	// Map of userID specified in a "ViewBlob" event to the map of visited path to
-	// count of "ViewBlob"s for this path.
+	// count of "ViewBlob"s for this path. Used to aggregate counts of path visits
+	// for specific users and then insert this structured data into
+	// `own_aggregate_recent_view` table.
 	userToCountByPath := make(map[uint32]map[repoPathAndName]int)
 	// Not found repos set, so we don't spam the DB with bad SQL queries more than once.
 	notFoundRepos := make(map[string]struct{})
 
-	// For each event we parse its data and fill the maps.
+	// Iterating over each event only once and gathering data for both
+	// `repoNameToMetadata` and `userToCountByPath` at the same time.
 	db := NewDBWith(s.Logger, s)
 	for _, event := range events {
+		// Checking if the event has a repo name and a path. If it is not the case, we
+		// cannot proceed with given event and skip it.
 		var r repoPathAndName
 		err := json.Unmarshal(event.PublicArgument, &r)
 		if err != nil {
-			s.Logger.Error("unmarshalling repo path and name", log.Error(err))
+			eventUnmarshalErrorCounter.Inc()
 			continue
 		}
-		// Incrementing the count for a user and path.
+		// Incrementing the count for a user and path in a "compute if absent" way.
 		countByPath, found := userToCountByPath[event.UserID]
 		if !found {
 			userToCountByPath[event.UserID] = make(map[repoPathAndName]int)
@@ -147,25 +182,35 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 		countByPath[r] = countByPath[r] + 1
 		// Finding and updating repo metadata, once per every path rep repo.
 		if _, found := repoNameToMetadata[r.RepoName]; !found {
+			// If the repo is not present in `repoNameToMetadata`, we need to query it from
+			// the DB.
 			repo, err := db.Repos().GetByName(ctx, api.RepoName(r.RepoName))
 			if err != nil {
 				if errcode.IsNotFound(err) {
 					notFoundRepos[r.RepoName] = struct{}{}
 				} else {
-					s.Logger.Error("unmarshalling repo path and name", log.Error(err))
+					return errors.Wrap(err, "error during fetching the repository")
 				}
 				continue
 			}
+			// For each repo we need to initialize a map of path to pathID. PathID is
+			// initially set to 0, because we will know the real ID only after
+			// `ensureRepoPaths` call.
 			paths := make(map[string]int)
 			paths[r.FilePath] = 0
 			repoNameToMetadata[r.RepoName] = repoMetadata{repoID: repo.ID, pathToID: paths}
 		}
-		// Filling a repo with paths.
+		// At this point repoMetadata is initialized, and we only need to add current
+		// file path to it.
 		repoNameToMetadata[r.RepoName].pathToID[r.FilePath] = 0
 	}
 
 	// Ensuring paths for every repo.
 	for _, repoMetadata := range repoNameToMetadata {
+		// `ensureRepoPaths` accepts a repoID (we have it) and a slice of paths we want
+		// to ensure. For the sake of constant-time path lookups we have a map of paths,
+		// that's why we need to convert it to slice here in order to pass to
+		// `ensureRepoPaths`.
 		paths := make([]string, 0, len(repoMetadata.pathToID))
 		for path := range repoMetadata.pathToID {
 			paths = append(paths, path)
@@ -175,14 +220,16 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 			return errors.Wrap(err, "cannot insert repo paths")
 		}
 		// Populate pathID for every path. `ensureRepoPaths` returns paths in the same
-		// order, we can rely on that.
+		// order as we passed them as an input, we can rely on that.
 		for idx, path := range paths {
 			repoMetadata.pathToID[path] = repoPathIDs[idx]
 		}
 	}
 
+	// Now that we have all the necessary data, we go on and create signals.
 	for userID, pathAndCount := range userToCountByPath {
-		// Make a map of pathID to count.
+		// Make a map of pathID->count from 2 maps that we have: path->count and
+		// path->pathID.
 		repoPathIDToCount := make(map[int]int)
 		for rpn, count := range pathAndCount {
 			if pathID, found := repoNameToMetadata[rpn.RepoName].pathToID[rpn.FilePath]; found {
@@ -196,6 +243,5 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 			return err
 		}
 	}
-
 	return nil
 }

@@ -1328,62 +1328,8 @@ func TestEventLogs_ListAll(t *testing.T) {
 			Timestamp: startDate,
 		},
 		{
-			UserID:    2,
+			UserID:    42,
 			Name:      "ViewRepository",
-			URL:       "http://sourcegraph.com",
-			Source:    "test",
-			Timestamp: startDate,
-		},
-		{
-			UserID:    2,
-			Name:      "SearchResultsQueried",
-			URL:       "http://sourcegraph.com",
-			Source:    "test",
-			Timestamp: startDate,
-		}}
-
-	for _, event := range events {
-		if err := db.EventLogs().Insert(ctx, event); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	searchResultQueriedEvent := "SearchResultsQueried"
-	have, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{EventName: &searchResultQueriedEvent})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := 2
-
-	if diff := cmp.Diff(want, len(have)); diff != "" {
-		t.Error(diff)
-	}
-}
-
-func TestEventLogs_ListEventsByName(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	logger := logtest.Scoped(t)
-	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-
-	now := time.Now()
-
-	startDate, _ := calcStartDate(now, Daily, 3)
-
-	events := []*Event{
-		{
-			UserID:    1,
-			Name:      "SearchResultsQueried",
-			URL:       "http://sourcegraph.com",
-			Source:    "test",
-			Timestamp: startDate,
-		}, {
-			UserID:    2,
-			Name:      "SearchResultsQueried",
 			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
@@ -1394,13 +1340,6 @@ func TestEventLogs_ListEventsByName(t *testing.T) {
 			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
-		},
-		{
-			UserID:    1337,
-			Name:      "ViewRepository",
-			URL:       "http://sourcegraph.com",
-			Source:    "test",
-			Timestamp: startDate,
 		}}
 
 	for _, event := range events {
@@ -1409,25 +1348,33 @@ func TestEventLogs_ListEventsByName(t *testing.T) {
 		}
 	}
 
-	t.Run("listed one ViewRepository event", func(t *testing.T) {
-		have, err := db.EventLogs().ListEventsByName(ctx, "ViewRepository", 0, 1)
+	t.Run("listed all SearchResultsQueried events", func(t *testing.T) {
+		have, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{EventName: strptr("SearchResultsQueried")})
 		require.NoError(t, err)
-		require.Len(t, have, 1)
-		require.Equal(t, uint32(1337), have[0].UserID)
+		assert.Len(t, have, 2)
+	})
+
+	t.Run("listed one ViewRepository event", func(t *testing.T) {
+		opts := EventLogsListOptions{EventName: strptr("ViewRepository"), LimitOffset: &LimitOffset{Limit: 1}}
+		have, err := db.EventLogs().ListAll(ctx, opts)
+		require.NoError(t, err)
+		assert.Len(t, have, 1)
+		assert.Equal(t, uint32(42), have[0].UserID)
 	})
 
 	t.Run("listed zero events because of after parameter", func(t *testing.T) {
-		have, err := db.EventLogs().ListEventsByName(ctx, "ViewRepository", 4, 1)
+		opts := EventLogsListOptions{EventName: strptr("ViewRepository"), AfterID: 3}
+		have, err := db.EventLogs().ListAll(ctx, opts)
 		require.NoError(t, err)
 		require.Empty(t, have)
 	})
 
-	t.Run("listed two SearchResultsQueried events because of after parameter", func(t *testing.T) {
-		have, err := db.EventLogs().ListEventsByName(ctx, "SearchResultsQueried", 1, 3)
+	t.Run("listed one SearchResultsQueried event because of after parameter", func(t *testing.T) {
+		opts := EventLogsListOptions{EventName: strptr("SearchResultsQueried"), AfterID: 1}
+		have, err := db.EventLogs().ListAll(ctx, opts)
 		require.NoError(t, err)
-		require.Len(t, have, 2)
-		require.Equal(t, uint32(2), have[0].UserID)
-		require.Equal(t, uint32(3), have[1].UserID)
+		assert.Len(t, have, 1)
+		assert.Equal(t, uint32(3), have[0].UserID)
 	})
 }
 
