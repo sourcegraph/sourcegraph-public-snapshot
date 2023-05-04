@@ -27,7 +27,7 @@ func TestCorrelateSCIP(t *testing.T) {
 	}
 
 	// Correlate and consume channels from returned object
-	correlatedSCIPData, err := correlateSCIP(ctx, r, "", func(ctx context.Context, dirnames []string) (map[string][]string, error) {
+	correlatedSCIPData, err := correlateSCIP(ctx, r, 0, "", func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		return scipDirectoryChildren, nil
 	})
 	if err != nil {
