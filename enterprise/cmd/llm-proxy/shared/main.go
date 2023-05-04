@@ -21,10 +21,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
+	shutdownTracing, err := maybeEnableTracing(ctx, obctx.Logger.Scoped("tracing", "tracing configuration"))
+	if err != nil {
+		return errors.Wrap(err, "maybeEnableTracing")
+	}
+	defer shutdownTracing()
+
 	handler := newHandler(obctx.Logger, config)
 	handler = trace.HTTPMiddleware(obctx.Logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
@@ -49,15 +56,23 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 	r := mux.NewRouter()
 
 	// For cluster liveness and readiness probes
+	healthzLogger := logger.Scoped("healthz", "healthz checks")
 	r.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := healthz(r.Context()); err != nil {
-			w.WriteHeader(http.StatusServiceUnavailable)
+			healthzLogger.Error("check failed", log.Error(err))
+
+			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte("healthz: " + err.Error()))
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("healthz: ok"))
+		return
+	})
+	r.HandleFunc("/__version", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(version.Version()))
 		return
 	})
 
