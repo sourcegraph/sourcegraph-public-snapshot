@@ -174,7 +174,7 @@ func TestGitCommitResolver(t *testing.T) {
 		source, err := commitResolver.repoResolver.SourceType(ctx)
 		require.NoError(t, err)
 
-		require.Equal(t, PerforceDepotSourceType, source)
+		require.Equal(t, PerforceDepotSourceType, *source)
 
 		pf, err := commitResolver.PerforceChangelist(ctx)
 		require.NoError(t, err)
