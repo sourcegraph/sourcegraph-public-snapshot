@@ -324,6 +324,7 @@ export const useChatStore = ({
             useContext: 'embeddings',
             codebase,
             accessToken: null,
+            customHeaders: window.context.xhrHeaders,
         }),
         [codebase]
     )
