@@ -80,6 +80,5 @@ func TestParseP4FusionCommitSubject(t *testing.T) {
 		if subject != tc.expectedSubject {
 			t.Errorf("Expected subject %q, got %q", tc.expectedSubject, subject)
 		}
-
 	}
 }

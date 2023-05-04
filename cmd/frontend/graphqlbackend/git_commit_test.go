@@ -607,16 +607,6 @@ func TestGitCommitAncestors(t *testing.T) {
 
 func TestGitCommitPerforceChangelist(t *testing.T) {
 	repos := database.NewMockRepoStore()
-	repos.GetFunc.SetDefaultReturn(
-		&types.Repo{
-			ID:   2,
-			Name: "github.com/gorilla/mux",
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceType: extsvc.TypePerforce,
-			},
-		},
-		nil,
-	)
 
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
@@ -629,66 +619,133 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 
 	client := gitserver.NewMockClient()
 
-	// git-p4 commit.
-	c1 := gitdomain.Commit{
-		ID: api.CommitID("aabbc12345"),
-		Message: gitdomain.Message(`87654 - adding sourcegraph repos
-[git-p4: depot-paths = "//test-perms/": change = 87654]`),
-	}
+	t.Run("git repo", func(t *testing.T) {
+		repos.GetFunc.SetDefaultReturn(
+			&types.Repo{
+				ID:   2,
+				Name: "github.com/gorilla/mux",
+				ExternalRepo: api.ExternalRepoSpec{
+					ServiceType: extsvc.TypeGitHub,
+				},
+			},
+			nil,
+		)
 
-	// p4-fusion commit.
-	c2 := gitdomain.Commit{
-		ID: api.CommitID("ccdde12345"),
-		Message: gitdomain.Message(`87655 - testing sourcegraph repos
-[p4-fusion: depot-paths = "//test-perms/": change = 87655]`),
-	}
+		c1 := gitdomain.Commit{
+			ID:      api.CommitID("aabbc12345"),
+			Message: gitdomain.Message(`adding sourcegraph repos`),
+		}
 
-	client.CommitsFunc.SetDefaultReturn([]*gitdomain.Commit{&c1, &c2}, nil)
+		client.CommitsFunc.SetDefaultReturn([]*gitdomain.Commit{&c1}, nil)
 
-	RunTests(t, []*Test{
-		{
+		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
 			Query: `
 				{
 				  repository(name: "github.com/gorilla/mux") {
-					commit(rev: "aabbc12345") {
-					  ancestors(first: 10) {
-						nodes {
-						  id
-						  oid
-						  perforceChangelist {
-							cid
-						  }
+						commit(rev: "aabbc12345") {
+							ancestors(first: 10) {
+								nodes {
+									id
+									oid
+									perforceChangelist {
+										cid
+									}
+								}
+							}
 						}
-					  }
-					}
 				  }
 				}`,
 			ExpectedResult: `
 				{
 				  "repository": {
-					"commit": {
-					  "ancestors": {
-						"nodes": [
-						  {
-							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiYWFiYmMxMjM0NSJ9",
-							"oid": "aabbc12345",
-							"perforceChangelist": {
-							  "cid": "87654"
+						"commit": {
+							"ancestors": {
+								"nodes": [
+									{
+										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiYWFiYmMxMjM0NSJ9",
+										"oid": "aabbc12345",
+										"perforceChangelist": null
+									}
+								]
 							}
-						  },
-						  {
-							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiY2NkZGUxMjM0NSJ9",
-							"oid": "ccdde12345",
-							"perforceChangelist": {
-							  "cid": "87655"
-							}
-						  }
-		  				]
-					  }
-					}
+						}
 				  }
 				}`,
-		},
+		})
+	})
+
+	t.Run("perforce depot", func(t *testing.T) {
+		repos.GetFunc.SetDefaultReturn(
+			&types.Repo{
+				ID:   2,
+				Name: "github.com/gorilla/mux",
+				ExternalRepo: api.ExternalRepoSpec{
+					ServiceType: extsvc.TypePerforce,
+				},
+			},
+			nil,
+		)
+
+		// git-p4 commit.
+		c1 := gitdomain.Commit{
+			ID: api.CommitID("aabbc12345"),
+			Message: gitdomain.Message(`87654 - adding sourcegraph repos
+[git-p4: depot-paths = "//test-perms/": change = 87654]`),
+		}
+
+		// p4-fusion commit.
+		c2 := gitdomain.Commit{
+			ID: api.CommitID("ccdde12345"),
+			Message: gitdomain.Message(`87655 - testing sourcegraph repos
+[p4-fusion: depot-paths = "//test-perms/": change = 87655]`),
+		}
+
+		client.CommitsFunc.SetDefaultReturn([]*gitdomain.Commit{&c1, &c2}, nil)
+
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Query: `
+				{
+				  repository(name: "github.com/gorilla/mux") {
+						commit(rev: "aabbc12345") {
+							ancestors(first: 10) {
+								nodes {
+									id
+									oid
+									perforceChangelist {
+										cid
+									}
+								}
+							}
+						}
+				  }
+				}`,
+			ExpectedResult: `
+				{
+				  "repository": {
+						"commit": {
+							"ancestors": {
+								"nodes": [
+									{
+										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiYWFiYmMxMjM0NSJ9",
+										"oid": "aabbc12345",
+										"perforceChangelist": {
+											"cid": "87654"
+										}
+									},
+									{
+										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiY2NkZGUxMjM0NSJ9",
+										"oid": "ccdde12345",
+										"perforceChangelist": {
+											"cid": "87655"
+										}
+									}
+								]
+							}
+						}
+				  }
+				}`,
+		})
 	})
 }
