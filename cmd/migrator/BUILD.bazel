@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_cross_binary")
 
 go_library(
     name = "migrator_lib",
@@ -22,3 +22,10 @@ go_binary(
     embed = [":migrator_lib"],
     visibility = ["//visibility:public"],
 )
+
+# go_cross_binary(
+#   name = "migrator_linux_amd64",
+#   platform = "@zig_sdk//platform:linux_amd64",
+#   target = "migrator",
+#   visibility = ["//visibility:public"],
+# )

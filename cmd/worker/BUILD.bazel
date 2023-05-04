@@ -32,6 +32,7 @@ go_cross_binary(
 pkg_tar(
     name = "tar",
     srcs = [":worker_linux_amd64"],
+    remap_paths = { "/worker_linux_amd64": "/worker" },
 )
 
 oci_image(

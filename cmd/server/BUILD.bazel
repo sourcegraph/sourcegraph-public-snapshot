@@ -1,4 +1,7 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_cross_binary")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("macro.bzl", "container_dependencies", "dependencies_tars")
 
 go_library(
     name = "server_lib",
@@ -15,4 +18,62 @@ go_binary(
     name = "server",
     embed = [":server_lib"],
     visibility = ["//visibility:public"],
+)
+
+go_cross_binary(
+  name = "server_linux_amd64",
+  platform = "@zig_sdk//platform:linux_amd64",
+  target = "server",
+)
+
+pkg_tar(
+    name = "tar",
+    srcs = [":server_linux_amd64"],
+    remap_paths = { "/server_linux_amd64": "/server" }
+)
+
+DEPS = [
+  "//cmd/frontend",
+  "//cmd/github-proxy",
+  "//cmd/gitserver",
+  "//cmd/migrator",
+  "//cmd/repo-updater",
+  "//cmd/searcher",
+  "//cmd/symbols",
+  "//cmd/worker",
+  "//cmd/blobstore", # TODO wolfi package it
+]
+
+ZOEKT_DEPS = [
+  "@com_github_sourcegraph_zoekt//cmd/zoekt-archive-index",
+  "@com_github_sourcegraph_zoekt//cmd/zoekt-git-index",
+  "@com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver",
+  "@com_github_sourcegraph_zoekt//cmd/zoekt-webserver",
+]
+
+# Declares rules for building go_cross_binary + pkg_tar for each dep in DEPS
+container_dependencies(DEPS)
+container_dependencies(ZOEKT_DEPS)
+
+    go_cross_binary(
+    name = platformed_name,
+    platform = "@zig_sdk//platform:linux_amd64",
+    target = target,
+    )
+
+# Tip: to view exactly what gets built here, you can run:
+#   bazel cquery '//cmd/server:image' --output build
+oci_image(
+    name = "image",
+    architecture = "amd64",
+    base = "@wolfi_server_base",
+    tars = dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS) + [":tar"],
+    entrypoint = ["/server"],
+    os = "linux",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repotags = ["server:candidate"]
 )
