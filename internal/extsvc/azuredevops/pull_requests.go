@@ -38,12 +38,6 @@ func (c *client) AbandonPullRequest(ctx context.Context, args PullRequestCommonA
 // CreatePullRequest creates a new PR with the specified properties, returns the newly created PR.
 // NOTE: this API needs repository ID specified not repository Name in OrgProjectRepoArgs.
 func (c *client) CreatePullRequest(ctx context.Context, args OrgProjectRepoArgs, input CreatePullRequestInput) (PullRequest, error) {
-	if conf.Get().BatchChangesAutoDeleteBranch {
-		input.CompletionOptions = &PullRequestCompletionOptions{
-			DeleteSourceBranch: true,
-		}
-	}
-
 	data, err := json.Marshal(&input)
 	if err != nil {
 		return PullRequest{}, errors.Wrap(err, "marshalling request")
