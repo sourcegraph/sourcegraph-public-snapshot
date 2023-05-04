@@ -16,6 +16,9 @@ dir $data
 logfile $data/redis.log
 loglevel warning
 
+# listen on localhost to avoid firewall popups
+bind 127.0.0.1 ::1
+
 # run in background
 daemonize yes
 
