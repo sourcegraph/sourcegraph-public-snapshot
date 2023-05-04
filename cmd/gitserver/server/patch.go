@@ -217,7 +217,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		committerEmail = authorEmail
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "commit", "-m", message)
+	cmd = exec.CommandContext(ctx, "git", "commit", "-m", fmt.Sprintf("%q", message))
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), []string{
 		tmpGitPathEnv,

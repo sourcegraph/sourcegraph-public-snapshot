@@ -726,7 +726,7 @@ cc @${release.captainGitHubUsername}
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
                             updateUpgradeGuides(release.previous.version, release.version.version),
-                            `comby -in-place 'git_versions=(:[1])' 'git_versions=(:[1] ${release.version.version})' cmd/migrator/build.sh`,
+                            `comby -in-place 'git_versions=(:[1])' 'git_versions=(:[1] v${release.version.version})' cmd/migrator/build.sh`,
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -937,7 +937,9 @@ Batch change: ${batchChangeURL}`,
                     )
                 } catch (error) {
                     console.error(error)
-                    console.error(`Failed to create tag ${tag} on ${repo}@${release.branch}`)
+                    console.error(
+                        `Failed to create tag ${repoConfig.tagPattern} on ${repoConfig.repo}@${release.branch}`
+                    )
                     failed = true
                 }
             }

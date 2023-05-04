@@ -12,14 +12,23 @@
   "tauri": {
     "allowlist": {
       "shell": {
+        "open": true,
         "sidecar": true,
         "scope": [
           {
             "name": "../.bin/sourcegraph-backend",
             "sidecar": true
           }
-        ]
+        ],
+        "open": "^https?:|com.sourcegraph.app/.*.log$"
+      },
+      "window": {
+        "startDragging": true
       }
+    },
+    "systemTray": {
+      "iconPath": "icons/tray.ico",
+      "iconAsTemplate": true
     },
     "bundle": {
       "active": true,

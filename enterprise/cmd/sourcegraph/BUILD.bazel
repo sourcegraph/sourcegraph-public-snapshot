@@ -5,6 +5,11 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph",
     visibility = ["//visibility:private"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType": "app",
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "5.0.2",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
     deps = [
         "//cmd/blobstore/shared",
         "//cmd/github-proxy/shared",
@@ -20,11 +25,28 @@ go_library(
         "//enterprise/cmd/worker/shared",
         "//internal/service",
         "//internal/service/servegit",
+        "//ui/assets",
+        "//ui/assets/enterprise",
     ],
 )
 
 go_binary(
     name = "sourcegraph",
     embed = [":sourcegraph_lib"],
+    # -trimpath removes useless information like e.g. /Users/stephen/stephen@sourcegraph.com/
+    # prefixes from import paths in stack traces
+    gc_goopts = ["-trimpath"],
+
+    # The options below reduce the final binary size considerably.
+    #
+    # -s strips debug symbols (not needed for stack traces)
+    # -w strips the DWARF debug symbol table (not needed for stack traces)
+    gc_linkopts = [
+        "-s",
+        "-w",
+    ],
+    # x_defs = {
+    #     "github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType": "app",
+    # },
     visibility = ["//visibility:public"],
 )

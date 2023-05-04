@@ -1245,6 +1245,22 @@ Contains state for the periodic telemetry job that scrapes events if enabled.
 
 **bookmark_id**: Bookmarks the maximum most recent successful event_logs.id that was scraped
 
+# Table "public.event_logs_scrape_state_own"
+```
+   Column    |  Type   | Collation | Nullable |                         Default                         
+-------------+---------+-----------+----------+---------------------------------------------------------
+ id          | integer |           | not null | nextval('event_logs_scrape_state_own_id_seq'::regclass)
+ bookmark_id | integer |           | not null | 
+ job_type    | integer |           | not null | 
+Indexes:
+    "event_logs_scrape_state_own_pk" PRIMARY KEY, btree (id)
+
+```
+
+Contains state for own jobs that scrape events if enabled.
+
+**bookmark_id**: Bookmarks the maximum most recent successful event_logs.id that was scraped
+
 # Table "public.executor_heartbeats"
 ```
       Column      |           Type           | Collation | Nullable |                     Default                     
@@ -1559,6 +1575,23 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
+# Table "public.github_app_installs"
+```
+     Column      |           Type           | Collation | Nullable |                     Default                     
+-----------------+--------------------------+-----------+----------+-------------------------------------------------
+ id              | integer                  |           | not null | nextval('github_app_installs_id_seq'::regclass)
+ app_id          | integer                  |           | not null | 
+ installation_id | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+Indexes:
+    "github_app_installs_pkey" PRIMARY KEY, btree (id)
+    "app_id_idx" btree (app_id)
+    "installation_id_idx" btree (installation_id)
+Foreign-key constraints:
+    "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
+
+```
+
 # Table "public.github_apps"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -1578,6 +1611,8 @@ Referenced by:
 Indexes:
     "github_apps_pkey" PRIMARY KEY, btree (id)
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
+Referenced by:
+    TABLE "github_app_installs" CONSTRAINT "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
 
 ```
 
@@ -2799,6 +2834,25 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.own_aggregate_recent_view"
+```
+       Column        |  Type   | Collation | Nullable |                        Default                        
+---------------------+---------+-----------+----------+-------------------------------------------------------
+ id                  | integer |           | not null | nextval('own_aggregate_recent_view_id_seq'::regclass)
+ viewer_id           | integer |           | not null | 
+ viewed_file_path_id | integer |           | not null | 
+ views_count         | integer |           |          | 0
+Indexes:
+    "own_aggregate_recent_view_pkey" PRIMARY KEY, btree (id)
+    "own_aggregate_recent_view_viewer" UNIQUE, btree (viewed_file_path_id, viewer_id)
+Foreign-key constraints:
+    "own_aggregate_recent_view_viewed_file_path_id_fkey" FOREIGN KEY (viewed_file_path_id) REFERENCES repo_paths(id)
+    "own_aggregate_recent_view_viewer_id_fkey" FOREIGN KEY (viewer_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+One entry contains a number of views of a single file by a given viewer.
+
 # Table "public.own_background_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                     Default                     
@@ -2989,6 +3043,7 @@ Indexes:
  license_tags            | text[]                   |           |          | 
  license_user_count      | integer                  |           |          | 
  license_expires_at      | timestamp with time zone |           |          | 
+ access_token_enabled    | boolean                  |           | not null | false
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -2996,17 +3051,22 @@ Foreign-key constraints:
 
 ```
 
+**access_token_enabled**: Whether this license key can be used as an access token to authenticate API requests
+
 # Table "public.product_subscriptions"
 ```
-         Column          |           Type           | Collation | Nullable | Default 
--------------------------+--------------------------+-----------+----------+---------
- id                      | uuid                     |           | not null | 
- user_id                 | integer                  |           | not null | 
- billing_subscription_id | text                     |           |          | 
- created_at              | timestamp with time zone |           | not null | now()
- updated_at              | timestamp with time zone |           | not null | now()
- archived_at             | timestamp with time zone |           |          | 
- account_number          | text                     |           |          | 
+             Column              |           Type           | Collation | Nullable | Default 
+---------------------------------+--------------------------+-----------+----------+---------
+ id                              | uuid                     |           | not null | 
+ user_id                         | integer                  |           | not null | 
+ billing_subscription_id         | text                     |           |          | 
+ created_at                      | timestamp with time zone |           | not null | now()
+ updated_at                      | timestamp with time zone |           | not null | now()
+ archived_at                     | timestamp with time zone |           |          | 
+ account_number                  | text                     |           |          | 
+ llm_proxy_enabled               | boolean                  |           | not null | true
+ llm_proxy_rate_limit            | integer                  |           |          | 
+ llm_proxy_rate_interval_seconds | integer                  |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -3015,6 +3075,12 @@ Referenced by:
     TABLE "product_licenses" CONSTRAINT "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
 ```
+
+**llm_proxy_enabled**: Whether or not this subscription has access to LLM-proxy
+
+**llm_proxy_rate_interval_seconds**: Custom time interval over which the for LLM-proxy rate limit is applied
+
+**llm_proxy_rate_limit**: Custom requests per time interval allowed for LLM-proxy
 
 # Table "public.query_runner_state"
 ```
@@ -3222,6 +3288,7 @@ Foreign-key constraints:
     "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "own_aggregate_recent_contribution" CONSTRAINT "own_aggregate_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
+    TABLE "own_aggregate_recent_view" CONSTRAINT "own_aggregate_recent_view_viewed_file_path_id_fkey" FOREIGN KEY (viewed_file_path_id) REFERENCES repo_paths(id)
     TABLE "own_signal_recent_contribution" CONSTRAINT "own_signal_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
     TABLE "repo_paths" CONSTRAINT "repo_paths_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES repo_paths(id)
 
@@ -3845,6 +3912,7 @@ Referenced by:
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "outbound_webhooks" CONSTRAINT "outbound_webhooks_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
     TABLE "outbound_webhooks" CONSTRAINT "outbound_webhooks_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "own_aggregate_recent_view" CONSTRAINT "own_aggregate_recent_view_viewer_id_fkey" FOREIGN KEY (viewer_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_triggered_by_user_id_fkey" FOREIGN KEY (triggered_by_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "product_subscriptions" CONSTRAINT "product_subscriptions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)

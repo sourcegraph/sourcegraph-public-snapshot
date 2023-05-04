@@ -1,4 +1,5 @@
 import { ChatQuestion } from './chat-question'
+import { ContextSearch } from './context-search'
 import { ExplainCodeDetailed } from './explain-code-detailed'
 import { ExplainCodeHighLevel } from './explain-code-high-level'
 import { FindCodeSmells } from './find-code-smells'
@@ -7,6 +8,7 @@ import { GenerateDocstring } from './generate-docstring'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
 import { ImproveVariableNames } from './improve-variable-names'
+import { NextQuestions } from './next-questions'
 import { Recipe } from './recipe'
 import { TranslateToLanguage } from './translate'
 
@@ -36,6 +38,8 @@ function init(): void {
         new Fixup(),
         new TranslateToLanguage(),
         new FindCodeSmells(),
+        new NextQuestions(),
+        new ContextSearch(),
     ]
 
     for (const recipe of recipes) {

@@ -1,6 +1,5 @@
 .outer-container {
     background-color: var(--vscode-sideBar-background);
-    border-top: 1px solid var(--vscode-sideBarSectionHeader-border);
     width: 100%;
     height: 100%;
     display: flex;
@@ -29,12 +28,9 @@ button {
 .error {
     flex-direction: row;
     display: flex;
-    margin: 0.5em;
-    padding: 1rem;
+    padding: 0.5rem 1rem;
     color: var(--vscode-input-foreground);
     background-color: var(--vscode-inputValidation-errorBackground);
-    border: 2px solid var(--vscode-inputValidation-errorBorder);
-    justify-content: space-between;
     align-items: center;
     min-height: 2rem;
     position: relative;
