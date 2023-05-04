@@ -12,9 +12,10 @@ import (
 
 func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool) *cli.Command {
 	schemaNameFlag := &cli.StringFlag{
-		Name:     "db",
-		Usage:    "The target `schema` to modify.",
+		Name:     "schema",
+		Usage:    "The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
 		Required: true,
+		Aliases:  []string{"db"},
 	}
 	targetFlag := &cli.StringSliceFlag{
 		Name:     "target",
@@ -56,7 +57,7 @@ func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 		return runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
-					SchemaName:     schemaNameFlag.Get(cmd),
+					SchemaName:     TranslateSchemaNames(schemaNameFlag.Get(cmd), out),
 					Type:           runner.MigrationOperationTypeTargetedUp,
 					TargetVersions: versions,
 				},
@@ -77,7 +78,7 @@ func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 			return flagHelp(out, "supply a target via -target")
 		}
 
-		r, err := setupRunner(factory, schemaNameFlag.Get(cmd))
+		r, err := setupRunner(factory, TranslateSchemaNames(schemaNameFlag.Get(cmd), out))
 		if err != nil {
 			return err
 		}

@@ -12,9 +12,10 @@ import (
 
 func Describe(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
 	schemaNameFlag := &cli.StringFlag{
-		Name:     "db",
-		Usage:    "The target `schema` to describe.",
+		Name:     "schema",
+		Usage:    "The target `schema` to describe. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
 		Required: true,
+		Aliases:  []string{"db"},
 	}
 	formatFlag := &cli.StringFlag{
 		Name:     "format",
@@ -49,7 +50,7 @@ func Describe(commandName string, factory RunnerFactory, outFactory OutputFactor
 			return flagHelp(out, "unrecognized format %q (must be json or psql)", formatFlag.Get(cmd))
 		}
 
-		schemaName := schemaNameFlag.Get(cmd)
+		schemaName := TranslateSchemaNames(schemaNameFlag.Get(cmd), out)
 		store, err := setupStore(ctx, factory, schemaName)
 		if err != nil {
 			return err

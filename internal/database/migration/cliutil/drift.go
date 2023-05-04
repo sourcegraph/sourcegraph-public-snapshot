@@ -17,9 +17,10 @@ import (
 
 func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, expectedSchemaFactories ...ExpectedSchemaFactory) *cli.Command {
 	schemaNameFlag := &cli.StringFlag{
-		Name:     "db",
-		Usage:    "The target `schema` to compare.",
+		Name:     "schema",
+		Usage:    "The target `schema` to compare. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
 		Required: true,
+		Aliases:  []string{"db"},
 	}
 	versionFlag := &cli.StringFlag{
 		Name: "version",
@@ -39,7 +40,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		schemaName := schemaNameFlag.Get(cmd)
+		schemaName := TranslateSchemaNames(schemaNameFlag.Get(cmd), out)
 		version := versionFlag.Get(cmd)
 		file := fileFlag.Get(cmd)
 		skipVersionCheck := skipVersionCheckFlag.Get(cmd)
