@@ -77,7 +77,8 @@ pkgs.mkShell {
 
   # The packages in the `buildInputs` list will be added to the PATH in our shell
   nativeBuildInputs = with pkgs; [
-    rnix-lsp
+    # nix language server
+    nil
 
     # Our core DB.
     postgresql_13
@@ -153,5 +154,6 @@ pkgs.mkShell {
   # bazel complains when the bazel version differs even by a patch version to whats defined in .bazelversion,
   # so we tell it to h*ck off here.
   # https://sourcegraph.com/github.com/bazelbuild/bazel@1a4da7f331c753c92e2c91efcad434dc29d10d43/-/blob/scripts/packages/bazel.sh?L23-28
-  USE_BAZEL_VERSION = pkgs.bazel_6.version;
+  USE_BAZEL_VERSION =
+    if pkgs.hostPlatform.isMacOS then "" else pkgs.bazel_6.version;
 }

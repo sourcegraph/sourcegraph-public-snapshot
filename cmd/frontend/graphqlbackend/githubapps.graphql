@@ -1,0 +1,66 @@
+extend type Mutation {
+    """
+    Delete a GitHub App. The GitHub App, along with all of its associated code host connections and
+    authentication provider, will be deleted.
+    """
+    deleteGitHubApp(gitHubApp: ID!): EmptyResponse
+}
+
+extend type Query {
+    """
+    All configured GitHub Apps.
+    """
+    gitHubApps: GitHubAppConnection!
+}
+
+"""
+A list of GitHub Apps.
+"""
+type GitHubAppConnection {
+    """
+    A list of GitHub Apps.
+    """
+    nodes: [GitHubApp!]!
+    """
+    The total count of GitHub Apps in the connection.
+    """
+    totalCount: Int!
+}
+
+"""
+A GitHub App configuration.
+"""
+type GitHubApp implements Node {
+    """
+    Unique ID of the GitHub App
+    """
+    id: ID!
+    """
+    The GitHub App ID
+    """
+    appID: Int!
+    """
+    The name of the GitHub App
+    """
+    name: String!
+    """
+    The slug of the GitHub App
+    """
+    slug: String!
+    """
+    The base URL of the GitHub App
+    """
+    baseURL: String!
+    """
+    The URL of the GitHub App page
+    """
+    appURL: String!
+    """
+    The client ID of the GitHub App
+    """
+    clientID: String!
+    """
+    The logo URL of the GitHub App
+    """
+    logo: String!
+}

@@ -33,6 +33,7 @@ export const AppUserConnectDotComAccount: React.FC = () => {
         <MenuLink
             as={Link}
             to={`https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=APP&destination=${destination}`}
+            target="_blank"
         >
             Connect to Sourcegraph.com
         </MenuLink>
