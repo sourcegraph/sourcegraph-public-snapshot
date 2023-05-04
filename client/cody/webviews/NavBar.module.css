@@ -1,14 +1,15 @@
 .tab-menu-container {
-    width: 100%;
     flex-direction: row;
     display: flex;
-    margin: 0;
-    padding: 0.5em 0;
     border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border);
     background-color: var(--vscode-tab-inactiveBackground);
-    justify-content: space-between;
-    align-items: center;
-    height: 2rem;
+}
+
+.tab-menu-group {
+    display: flex;
+    flex-direction: row;
+    padding-left: 8px;
+    margin-bottom: -1px;
 }
 
 .tab-btn {
@@ -17,21 +18,20 @@
     background-color: transparent;
     color: var(--vscode-tab-inactiveForeground);
     border: none;
+    padding: 0 8px;
 }
 
-.tab-btn-selected {
+.tab-btn span {
+    display: inline-block;
+    padding: 10px 2px;
+    border-bottom: 1px solid transparent;
+}
+
+.tab-btn:hover {
     color: var(--vscode-tab-activeForeground);
-    font-weight: bold;
 }
 
-.tab-menu-group {
-    display: flex;
-    gap: 2rem;
-    flex-direction: row;
-    padding: 0px 1rem;
-}
-
-.reset-conversation > svg {
-    width: calc(var(--vscode-font-size) * 1.5);
-    height: calc(var(--vscode-font-size) * 1.5);
+.tab-btn .tab-btn-selected {
+    color: var(--vscode-tab-activeForeground);
+    border-bottom-color: var(--vscode-tab-activeBorderTop);
 }
