@@ -149,7 +149,7 @@ const register = async (
             executeRecipe('improve-variable-names')
         ),
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
-        vscode.commands.registerCommand('cody.recipe.fuzzy-search', () => executeRecipe('fuzzy-search')),
+        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
         // Register URI Handler for resolving token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {

@@ -81,8 +81,8 @@ export class MockEditor implements Editor {
         return this.mocks.showWarningMessage?.(message) ?? Promise.resolve()
     }
 
-    public showInputBox(): Promise<string | undefined> {
-        return this.mocks.showInputBox?.() ?? Promise.resolve(undefined)
+    public showInputBox(prompt?: string): Promise<string | undefined> {
+        return this.mocks.showInputBox?.(prompt) ?? Promise.resolve(undefined)
     }
 }
 

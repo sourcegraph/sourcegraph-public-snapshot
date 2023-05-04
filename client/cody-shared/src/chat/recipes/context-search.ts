@@ -1,3 +1,5 @@
+import * as vscode from 'vscode'
+
 import { CodebaseContext } from '../../codebase-context'
 import { MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
@@ -7,7 +9,7 @@ import { getFileExtension } from './helpers'
 import { Recipe, RecipeContext } from './recipe'
 
 /*
-This class implements the fuzzy-search recipe.
+This class implements the context-search recipe.
 
 Parameters:
 - humanChatInput: The input from the human. If empty, a prompt will be shown to enter a search query.
@@ -23,16 +25,16 @@ Functionality:
 - Sanitizes the content by removing newlines, tabs and backticks before displaying.
 */
 
-export class FuzzySearch implements Recipe {
-    public id = 'fuzzy-search'
+export class ContextSearch implements Recipe {
+    public id = 'context-search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const query = humanChatInput || (await context.editor.showInputBox()) || ''
+        const query = humanChatInput || (await context.editor.showInputBox('Enter your search query here...')) || ''
         if (!query) {
             return null
         }
         const truncatedText = truncateText(query.replace('/search ', '').replace('/s ', ''), MAX_HUMAN_INPUT_TOKENS)
-
+        const wsRootPath = context.editor.getWorkspaceRootPath()
         return new Interaction(
             {
                 speaker: 'human',
@@ -42,24 +44,36 @@ export class FuzzySearch implements Recipe {
             {
                 speaker: 'assistant',
                 text: '',
-                displayText: await this.displaySearchResults(truncatedText, context.codebaseContext),
+                displayText: await this.displaySearchResults(truncatedText, context.codebaseContext, wsRootPath),
             },
             new Promise(resolve => resolve([]))
         )
     }
 
-    private async displaySearchResults(text: string, codebaseContext: CodebaseContext): Promise<string> {
+    private async displaySearchResults(
+        text: string,
+        codebaseContext: CodebaseContext,
+        wsRootPath: string | null
+    ): Promise<string> {
         const resultContext = await codebaseContext.getSearchResults(text, {
             numCodeResults: 12,
             numTextResults: 3,
         })
-        const rootPath = resultContext.endpoint
+        const endpointUri = resultContext.endpoint
 
         let snippets = `Here are the code snippets for: ${text}\n\n`
         for (const file of resultContext.results) {
             const fileContent = this.sanitizeContent(file.content)
             const extension = getFileExtension(file.fileName)
-            const uri = new URL(`/search?q=context:global+file:${file.fileName}`, rootPath).href
+            let uri = new URL(`/search?q=context:global+file:${file.fileName}`, endpointUri).href
+
+            // TODO: Open file in editor (the uri is currently being stripped by the chat component)
+            // This current does not work hence the wsRootPath === uri
+            if (wsRootPath === uri) {
+                const vsceUri = vscode.Uri.parse('vscode://file:' + wsRootPath + '/' + file.fileName).toString()
+                uri = new URL(vsceUri).href
+            }
+
             snippets +=
                 fileContent && fileContent.length > 5
                     ? `File Name: [_${file.fileName}_](${uri})\n\`\`\`${extension}\n${fileContent}\n\`\`\`\n\n`

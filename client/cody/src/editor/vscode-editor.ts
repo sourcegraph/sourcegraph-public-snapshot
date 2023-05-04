@@ -143,7 +143,9 @@ export class VSCodeEditor implements Editor {
         await vscode.window.showWarningMessage(message)
     }
 
-    public async showInputBox(): Promise<string | undefined> {
-        return vscode.window.showInputBox()
+    public async showInputBox(prompt?: string): Promise<string | undefined> {
+        return vscode.window.showInputBox({
+            placeHolder: prompt || 'Enter here...',
+        })
     }
 }

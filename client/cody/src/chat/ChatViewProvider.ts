@@ -307,7 +307,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 break
             case '/search':
             case '/s':
-                await this.executeRecipe('fuzzy-search', text)
+                await this.executeRecipe('context-search', text)
                 break
             default:
                 return this.executeRecipe('chat-question', text)
@@ -364,20 +364,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.transcript.addInteraction(interaction)
 
         this.showTab('chat')
-        this.sendTranscript()
 
         // Check whether or not to connect to LLM backend for responses
-        // Ex: performing fuzzy search does not require responses from LLM backend
+        // Ex: performing fuzzy / context-search does not require responses from LLM backend
         const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
+
         switch (recipeId) {
-            case 'fuzzy-search':
-                this.isMessageInProgress = false
-                this.cancelCompletion()
-                this.sendTranscript()
-                await this.saveChatHistory()
+            case 'context-search':
+                this.onCompletionEnd()
                 break
             default:
+                this.sendTranscript()
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
+                await this.saveTranscriptToChatHistory()
         }
 
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)

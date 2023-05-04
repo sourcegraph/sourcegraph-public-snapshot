@@ -130,7 +130,7 @@
         "title": "Cody: Fixup"
       },
       {
-        "command": "cody.recipe.fuzzy-search",
+        "command": "cody.recipe.context-search",
         "title": "Ask Cody: Codebase Context Search"
       },
       {
@@ -194,7 +194,7 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.fuzzy-search",
+          "command": "cody.recipe.context-search",
           "when": "cody.activated"
         },
         {
