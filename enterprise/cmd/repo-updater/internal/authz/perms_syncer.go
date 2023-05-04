@@ -1343,17 +1343,19 @@ func scheduleInterval() time.Duration {
 }
 
 func oldestUserPermissionsBatchSize() int {
-	batchSize := conf.Get().PermissionsSyncOldestUsers
-	if batchSize <= 0 {
-		return 10
+	batchSize := 10
+	c := conf.Get().PermissionsSyncOldestUsers
+	if c != nil && *c >= 0 {
+		batchSize = *c
 	}
 	return batchSize
 }
 
 func oldestRepoPermissionsBatchSize() int {
-	batchSize := conf.Get().PermissionsSyncOldestRepos
-	if batchSize <= 0 {
-		return 10
+	batchSize := 10
+	c := conf.Get().PermissionsSyncOldestRepos
+	if c != nil && *c >= 0 {
+		batchSize = *c
 	}
 	return batchSize
 }
