@@ -428,7 +428,8 @@ func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation 
 
 			candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
 			candidateImages = append(candidateImages, candidateImage)
-			cmds = append(cmds, bk.Cmd(fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " "))))
+			fmt.Println(imgs)
+			// cmds = append(cmds, bk.Cmd(fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " "))))
 		}
 		cmds = append(cmds, bk.Cmd(fmt.Sprintf("parallel docker pull ::: %s", strings.Join(candidateImages, " "))))
 		pipeline.AddStep(":docker: :truck: Publish images", cmds...)
