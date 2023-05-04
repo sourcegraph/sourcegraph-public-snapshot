@@ -17,6 +17,7 @@ export abstract class CompletionProvider {
         protected responseTokens: number,
         protected snippets: ReferenceSnippet[],
         protected prefix: string,
+        protected suffix: string,
         protected injectPrefix: string,
         protected defaultN: number = 1
     ) {}
@@ -36,6 +37,40 @@ export abstract class CompletionProvider {
         const referenceSnippetMessages: Message[] = []
 
         let remainingChars = this.promptChars - this.emptyPromptLength()
+
+        if (this.suffix.length > 0) {
+            let suffix = ''
+            // We throw away the first 5 lines of the suffix to avoid the LLM to
+            // just continue the completion by appending the suffix.
+            const suffixLines = this.suffix.split('\n')
+            if (suffixLines.length > 5) {
+                suffix = suffixLines.slice(5).join('\n')
+            }
+
+            if (suffix.length > 0) {
+                const suffixContext: Message[] = [
+                    {
+                        role: 'human',
+                        text:
+                            'Add the following code snippet to your knowledge base:\n' +
+                            '```' +
+                            `\n${suffix}\n` +
+                            '```',
+                    },
+                    {
+                        role: 'ai',
+                        text: 'Okay, I have added it to my knowledge base.',
+                    },
+                ]
+
+                const numSnippetChars = messagesToText(suffixContext).length + 1
+                if (numSnippetChars <= remainingChars) {
+                    referenceSnippetMessages.push(...suffixContext)
+                    remainingChars -= numSnippetChars
+                }
+            }
+        }
+
         for (const snippet of this.snippets) {
             const snippetMessages: Message[] = [
                 {
@@ -109,11 +144,19 @@ export class MultilineCompletionProvider extends CompletionProvider {
     }
 
     private postProcess(completion: string): string {
+        let suggestion = completion
         const endBlockIndex = completion.indexOf('```')
         if (endBlockIndex !== -1) {
-            return completion.slice(0, endBlockIndex).trimEnd()
+            suggestion = completion.slice(0, endBlockIndex)
         }
-        return completion.trimEnd()
+
+        // Remove trailing whitespace before newlines
+        suggestion = suggestion
+            .split('\n')
+            .map(line => line.trimEnd())
+            .join('\n')
+
+        return sliceUntilFirstNLinesOfSuffixMatch(suggestion, this.suffix, 5)
     }
 
     public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {
@@ -261,4 +304,45 @@ async function batchCompletions(
         responses.push(client.complete(params, abortSignal))
     }
     return Promise.all(responses)
+}
+
+/**
+ * This function slices the suggestion string until the first n lines match the suffix string.
+ *
+ * It splits suggestion and suffix into lines, then iterates over the lines of suffix. For each line
+ * of suffix, it checks if the next n lines of suggestion match. If so, it returns the first part of
+ * suggestion up to those matching lines. If no match is found after iterating all lines of suffix,
+ * the full suggestion is returned.
+ *
+ * For example, with:
+ * suggestion = "foo\nbar\nbaz\nqux\nquux"
+ * suffix = "baz\nqux\nquux"
+ * n = 3
+ *
+ * It would return: "foo\nbar"
+ *
+ * Because the first 3 lines of suggestion ("baz\nqux\nquux") match suffix.
+ */
+export function sliceUntilFirstNLinesOfSuffixMatch(suggestion: string, suffix: string, n: number): string {
+    const suggestionLines = suggestion.split('\n')
+    const suffixLines = suffix.split('\n')
+
+    for (let i = 0; i < suffixLines.length; i++) {
+        let matchedLines = 0
+        for (let j = 0; j < suggestionLines.length; j++) {
+            if (suffixLines.length < i + matchedLines) {
+                continue
+            }
+            if (suffixLines[i + matchedLines] === suggestionLines[j]) {
+                matchedLines += 1
+            } else {
+                matchedLines = 0
+            }
+            if (matchedLines >= n) {
+                return suggestionLines.slice(0, j - n + 1).join('\n')
+            }
+        }
+    }
+
+    return suggestion
 }

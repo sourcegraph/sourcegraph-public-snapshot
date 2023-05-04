@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/conf",
+        "//internal/conf/deploy",
         "//internal/featureflag",
     ],
 )
@@ -19,6 +20,7 @@ go_test(
     deps = [
         "//internal/actor",
         "//internal/conf",
+        "//internal/conf/deploy",
         "//internal/featureflag",
         "//schema",
     ],

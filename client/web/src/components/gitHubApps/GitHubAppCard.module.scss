@@ -1,0 +1,23 @@
+.list-node {
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.5rem 0;
+
+    &:first-of-type {
+        padding-top: 0;
+    }
+    &:last-of-type {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+}
+
+.logo {
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+    height: 40px;
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+    width: 40px;
+    border-radius: 100%;
+}

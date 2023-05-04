@@ -20,12 +20,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
+	// Enable tracing, at this point tracing wouldn't have been enabled yet because
+	// we run LLM-proxy without conf which means Sourcegraph tracing is not enabled.
+	shutdownTracing, err := maybeEnableTracing(ctx, obctx.Logger.Scoped("tracing", "tracing configuration"))
+	if err != nil {
+		return errors.Wrap(err, "maybeEnableTracing")
+	}
+	defer shutdownTracing()
+
 	handler := newHandler(obctx.Logger, config)
 	handler = authenticate(obctx.Logger, config.Dotcom.AccessToken, handler)
 	handler = trace.HTTPMiddleware(obctx.Logger, handler, conf.DefaultClient())
@@ -58,9 +68,31 @@ func responseJSONError(logger log.Logger, w http.ResponseWriter, code int, err e
 
 func newHandler(logger log.Logger, config *Config) http.Handler {
 	r := mux.NewRouter()
-	s := r.PathPrefix("/v1").Subrouter()
 
-	s.Handle("/completions/anthropic",
+	// For cluster liveness and readiness probes
+	healthzLogger := logger.Scoped("healthz", "healthz checks")
+	r.HandleFunc("/-/healthz", func(w http.ResponseWriter, r *http.Request) {
+		if err := healthz(r.Context()); err != nil {
+			healthzLogger.Error("check failed", log.Error(err))
+
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("healthz: " + err.Error()))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("healthz: ok"))
+		return
+	})
+	r.HandleFunc("/-/__version", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(version.Version()))
+		return
+	})
+
+	// V1 service routes
+	v1router := r.PathPrefix("/v1").Subrouter()
+	v1router.Handle("/completions/anthropic",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
 			if err != nil {
@@ -86,12 +118,13 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 			_, _ = io.Copy(w, resp.Body)
 		}),
 	).Methods(http.MethodPost)
+
 	return r
 }
 
 func authenticate(logger log.Logger, dotcomAccessToken string, next http.Handler) http.Handler {
 	dotcomClient := dotcom.NewClient(dotcomAccessToken)
-	tokenCache := rcache.New("llm-proxy-token")
+	tokenCache := rcache.New("llm-proxy-tokens")
 	getSubscriptionFromCache := func(token string) (_ *actor.Subscription, hit bool) {
 		data, hit := tokenCache.Get(token)
 		if !hit {
@@ -142,4 +175,25 @@ func authenticate(logger log.Logger, dotcomAccessToken string, next http.Handler
 		r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{Subscription: subscription}))
 		next.ServeHTTP(w, r)
 	})
+}
+
+func healthz(ctx context.Context) error {
+	// Check redis health
+	rpool, ok := redispool.Cache.Pool()
+	if !ok {
+		return errors.New("redis: not available")
+	}
+	rconn, err := rpool.GetContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "redis: failed to get conn")
+	}
+	data, err := rconn.Do("PING")
+	if err != nil {
+		return errors.Wrap(err, "redis: failed to ping")
+	}
+	if data != "PONG" {
+		return errors.New("redis: failed to ping: no pong received")
+	}
+
+	return nil
 }

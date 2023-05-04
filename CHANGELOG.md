@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 - SCIM user provisioning support for Deactivate/Reactivation of users. [#50533](https://github.com/sourcegraph/sourcegraph/pull/50533)
 - Login form can now be configured with ordering and limit of auth providers. [See docs](https://docs.sourcegraph.com/admin/auth/login_form). [#50586](https://github.com/sourcegraph/sourcegraph/pull/50586), [50284](https://github.com/sourcegraph/sourcegraph/pull/50284) and [#50705](https://github.com/sourcegraph/sourcegraph/pull/50705)
 - When creating a new batch change, spaces are automatically replaced with dashes in the name field. [#50825](https://github.com/sourcegraph/sourcegraph/pull/50825) and [51071](https://github.com/sourcegraph/sourcegraph/pull/51071)
+- Support for custom HTML injection behind an environment variable (`ENABLE_INJECT_HTML`). This allows users to enable or disable HTML customization as needed, which is now disabled by default. [#51400](https://github.com/sourcegraph/sourcegraph/pull/51400)
 
 ### Changed
 
@@ -36,11 +37,10 @@ All notable changes to Sourcegraph are documented in this file.
 - GitHub `repositoryQuery` searches now respect date ranges and use API requests more efficiently. #[49969](https://github.com/sourcegraph/sourcegraph/pull/49969)
 - Fixed an issue where search based references were not displayed in the references panel. [#50157](https://github.com/sourcegraph/sourcegraph/pull/50157)
 - Symbol suggestions only insert `type:symbol` filters when necessary. [#50183](https://github.com/sourcegraph/sourcegraph/pull/50183)
-- Bitbucket Server adding an error log if there is no account match for the user. #[51030](https://github.com/sourcegraph/sourcegraph/pull/51030)
 - Removed an incorrect beta label on the Search Context creation page [#51188](https://github.com/sourcegraph/sourcegraph/pull/51188)
 - Multi-version upgrades to version `5.0.2` in a fully airgapped environment will not work without the command `--skip-drift-check`. [#51164](https://github.com/sourcegraph/sourcegraph/pull/51164)
-- Editing search context with special characters such as `/` resulted in http 404 error. [#51196](https://github.com/sourcegraph/sourcegraph/pull/51196)
 - Could not set "permissions.syncOldestUsers" or "permissions.syncOldestRepos" to zero. [#51255](https://github.com/sourcegraph/sourcegraph/pull/51255)
+- GitLab code host connections will disable repo-centric repository permission syncs when the authentication provider is set as "oauth". This prevents repo-centric permission sync from getting incorrect data. [#51452](https://github.com/sourcegraph/sourcegraph/pull/51452)
 
 ### Removed
 
@@ -48,6 +48,19 @@ All notable changes to Sourcegraph are documented in this file.
 - Previously deprecated site config `experimentalFeatures.bitbucketServerFastPerm` has been removed. [#50707](https://github.com/sourcegraph/sourcegraph/pull/50707)
 - Unused site-config field `api.rateLimit` has been removed. [#51087](https://github.com/sourcegraph/sourcegraph/pull/51087)
 - Legacy (table-based) blob viewer. [#50915](https://github.com/sourcegraph/sourcegraph/pull/50915)
+
+## 5.0.3
+
+### Added
+
+- Cody aggregated pings. [#50835](https://github.com/sourcegraph/sourcegraph/pull/50835)
+
+### Fixed
+
+- Bitbucket Server adding an error log if there is no account match for the user. #[51030](https://github.com/sourcegraph/sourcegraph/pull/51030)
+- Editing search context with special characters such as `/` resulted in http 404 error. [#51196](https://github.com/sourcegraph/sourcegraph/pull/51196)
+- Significantly improved performance and reduced memory usage of the embeeddings service. [#50953](https://github.com/sourcegraph/sourcegraph/pull/50953), [#51372](https://github.com/sourcegraph/sourcegraph/pull/51372)
+- Fixed an issue where a Code Insights query with structural search type received 0 search results for the latest commit of any matching repo. [#51076](https://github.com/sourcegraph/sourcegraph/pull/51076)
 
 ## 5.0.2
 

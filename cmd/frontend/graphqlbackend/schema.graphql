@@ -3424,6 +3424,15 @@ type RepositoryConnection {
 }
 
 """
+All possible types of currently supported repositories, even though they may be stored
+as a git repository on disk.
+"""
+enum RepositoryType {
+    GIT_REPOSITORY
+    PERFORCE_DEPOT
+}
+
+"""
 A repository is a Git source control repository that is mirrored from some origin code host.
 """
 type Repository implements Node & GenericSearchResultInterface {
@@ -3444,6 +3453,10 @@ type Repository implements Node & GenericSearchResultInterface {
     DEPRECATED: Use name.
     """
     uri: String! @deprecated(reason: "Use name.")
+    """
+    The source of this repository from where it was imported / converted.
+    """
+    sourceType: RepositoryType!
     """
     The repository's description.
     """
@@ -4906,6 +4919,10 @@ type GitCommit implements Node {
     The abbreviated form of this commit's OID.
     """
     abbreviatedOID: String!
+    """
+    The perforce changelist ID if this git commit was originally converted from a perforce depot.
+    """
+    perforceChangelist: PerforceChangelist
     """
     This commit's author.
     """
@@ -9994,4 +10011,14 @@ type CodeIntelCommit {
     The repository that contains this commit.
     """
     repository: CodeIntelRepository!
+}
+
+"""
+A Perforce changelist.
+"""
+type PerforceChangelist {
+    """
+    The changelist ID.
+    """
+    cid: String!
 }

@@ -19,6 +19,10 @@ func (index *EmbeddingIndex) Row(n int) []int8 {
 	return index.Embeddings[n*index.ColumnDimension : (n+1)*index.ColumnDimension]
 }
 
+func (index *EmbeddingIndex) EstimateSize() int64 {
+	return int64(len(index.Embeddings) + len(index.RowMetadata)*(16+8+8) + len(index.Ranks)*4)
+}
+
 type RepoEmbeddingRowMetadata struct {
 	FileName  string `json:"fileName"`
 	StartLine int    `json:"startLine"`
@@ -30,6 +34,10 @@ type RepoEmbeddingIndex struct {
 	Revision  api.CommitID
 	CodeIndex EmbeddingIndex
 	TextIndex EmbeddingIndex
+}
+
+func (i *RepoEmbeddingIndex) EstimateSize() int64 {
+	return i.CodeIndex.EstimateSize() + i.TextIndex.EstimateSize()
 }
 
 type ContextDetectionEmbeddingIndex struct {
