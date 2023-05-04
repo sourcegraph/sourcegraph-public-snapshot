@@ -147,7 +147,11 @@ func TestGitCommitResolver(t *testing.T) {
 					t.Errorf("\nhave: %s\nwant: %s", spew.Sprint(have), spew.Sprint(tc.want))
 				}
 
-				pf, err := r.PerforceChangelist(context.Background())
+				source, err := r.repoResolver.SourceType(ctx)
+				require.NoError(t, err)
+				require.Equal(t, GitRepositorySourceType, *source)
+
+				pf, err := r.PerforceChangelist(ctx)
 				require.NoError(t, err)
 				require.Nil(t, pf)
 			})

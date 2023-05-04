@@ -143,12 +143,12 @@ func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
 }
 
 func (r *RepositoryResolver) SourceType(ctx context.Context) (*SourceType, error) {
-	_, err := r.repo(ctx)
+	repo, err := r.repo(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve innerRepo")
 	}
 
-	if r.innerRepo.ExternalRepo.ServiceType == extsvc.TypePerforce {
+	if repo.ExternalRepo.ServiceType == extsvc.TypePerforce {
 		return &PerforceDepotSourceType, nil
 	}
 
