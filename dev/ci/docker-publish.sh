@@ -15,7 +15,7 @@
 #    us.gcr.io/sourcegraph-dev/searcher:71747_2020-08-25_358c739 \
 #    us.gcr.io/sourcegraph-dev/searcher:insiders
 
-set -e
+set -ex
 
 src="$1"
 
@@ -26,7 +26,7 @@ shift
 for dst in "$@"; do
   echo "--- pushing $dst"
   docker tag "$src" "$dst"
-  docker push "$dst"
+  docker push "$dst" &
 done
 
 echo "+++ summary"
