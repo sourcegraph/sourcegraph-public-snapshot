@@ -67,17 +67,15 @@ type embeddingsIndexCache struct {
 	remainingSizeBytes int64
 }
 
-// The default maximum number of entries in the embeddings cache.
-const defaultMaxCacheEntries = 4 * 1024
-
 // newEmbeddingsIndexCache creates a cache with reasonable settings for an embeddings cache
-func newEmbeddingsIndexCache(maxSizeBytes int64, maxEntries int) (_ *embeddingsIndexCache, err error) {
+func newEmbeddingsIndexCache(maxSizeBytes int64) (_ *embeddingsIndexCache, err error) {
 	c := &embeddingsIndexCache{
 		maxSizeBytes:       maxSizeBytes,
 		remainingSizeBytes: maxSizeBytes,
 	}
 
-	c.cache, err = lru.NewWithEvict(maxEntries, c.onEvict)
+	// arbitrarily large LRU cache because we want to evict based on size, not count
+	c.cache, err = lru.NewWithEvict(999_999_999, c.onEvict)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +125,7 @@ func getCachedRepoEmbeddingIndex(
 	downloadRepoEmbeddingIndex downloadRepoEmbeddingIndexFn,
 	cacheSizeBytes int64,
 ) (getRepoEmbeddingIndexFn, error) {
-	cache, err := newEmbeddingsIndexCache(cacheSizeBytes, defaultMaxCacheEntries)
+	cache, err := newEmbeddingsIndexCache(cacheSizeBytes)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating repo embedding index cache")
 	}

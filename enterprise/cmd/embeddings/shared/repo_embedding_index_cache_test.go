@@ -104,7 +104,7 @@ func Test_embeddingsIndexCache(t *testing.T) {
 		}
 	}
 
-	c, err := newEmbeddingsIndexCache(1024, 2)
+	c, err := newEmbeddingsIndexCache(1024)
 	require.NoError(t, err)
 
 	tooBig := entryWithSize(2048)
