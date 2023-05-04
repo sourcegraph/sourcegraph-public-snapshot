@@ -7925,6 +7925,11 @@ def go_dependencies():
         importpath = "cloud.google.com/go/trace",
         sum = "h1:GFPLxbp5/FzdgTzor3nlNYNxMd6hLmzkE7sA9F0qQcA=",
         version = "v1.8.0",
+        build_directives = [
+            # @go_googleapis is the modern version of @org_golang_google_genproto
+            # use @go_googleapis to avoid dependency conflicts between the two
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
+        ],
     )
     go_repository(
         name = "com_google_cloud_go_translate",
