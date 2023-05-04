@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dotcom",
+    srcs = ["dotcom.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/dotcom",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/completions/types",
+        "//internal/httpcli",
+        "//internal/search/streaming/http",
+        "//lib/errors",
+    ],
+)
