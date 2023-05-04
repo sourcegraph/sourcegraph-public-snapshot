@@ -8,13 +8,13 @@ Cody uses a combination of Sourcegraph's code graph and Large Language Models (L
 
 ## Get Cody
 
-- **Sourcegraph Enterprise customers:** Contact your Sourcegraph technical advisor or [request enterprise access](https://sourcegraph.typeform.com/to/pIXTgwrd) to use Cody on your existing Sourcegraph instance.
-- **Everyone:** Cody for open source code is now available to all users with a Sourcegraph.com account. If you don't yet have a Sourcegraph.com account, you can [create one for free](https://sourcegraph.com/sign-up).
+- **Sourcegraph Enterprise customers:** Contact your Sourcegraph technical advisor or [request enterprise access](https://about.sourcegraph.com/cody) to use Cody on your existing Sourcegraph instance.
+- **Everyone:** Cody for open source code is available to all users with a Sourcegraph.com account. If you don't yet have a Sourcegraph.com account, you can [create one for free](https://sourcegraph.com/sign-up).
 
-Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and in Sourcegraph itself.
+Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and in the Sourcegraph web interface.
 
 <div class="cta-group">
-<a class="btn btn-primary" href="quickstart">★ VS Code extension quickstart</a>
+<a class="btn btn-primary" href="quickstart">★ Cody quickstart</a>
 <a class="btn" href="explanations/use_cases">Cody use cases</a>
 <a class="btn" href="faq">FAQ</a>
 <a class="btn" href="https://discord.com/servers/sourcegraph-969688426372825169">Join our Discord</a>
@@ -75,4 +75,5 @@ See [Cody troubleshooting guide](troubleshooting.md).
 
 - [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
 - [Enabling Cody for open source Sourcegraph.com users](explanations/enabling_cody.md)
+- [Installing the Cody VS Code extension](explanations/installing_vs_code.md)
 - [Configuring code graph context](explanations/code_graph_context.md)

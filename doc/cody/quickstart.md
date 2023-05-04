@@ -1,70 +1,27 @@
 # Quickstart for Cody in VS Code
 
-Get started with the Cody VS Code extension and start using Cody recipes in under 10 minutes.
+This guide provides recommendations for first things to try once you have Cody up and running. 
 
-If you haven't yet enabled Cody for your Sourcegraph instance, go here first:
+If you haven't yet enabled Cody for your Sourcegraph instance or installed the VS Code extension, go here first:
 
 - [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
 - [Enabling Cody for Sourcegraph.com users](explanations/enabling_cody.md)
+- [Installing Cody for VS Code](explanations/installing_vs_code.md)
 
 ## Introduction
 
-In this guide, you will:
+Once you have access to Cody, we recommend:
 
-- Install the VS Code extension
-- Connect the extension to your Sourcegraph Enterprise instance or Sourcegraph.com account
-- Generate a unit test for your code
-- Have Cody summarize recent changes to your code
+- Trying the `Generate a unit test` recipe
+- Trying the `Summarize recent code changes` recipe
+- Asking Cody to pull information from documentation
+- Asking Cody to write context-aware code
 
-## Requirements
-
-- A Sourcegraph instance with Cody enabled on it OR a Sourcegraph.com account with Cody enabled on it.
-
-If you haven't yet done this, see Step 1 on the following pages:
-
-- [Enabling Cody for Sourcegraph Enterprise](explanations/enabling_cody_enterprise.md)
-- [Enabling Cody for Sourcegraph.com](explanations/enabling_cody.md)
-
-## Install the VS Code extension
-
-The first thing you need to do is install the VS Code extension. You can do this in 2 ways:
-
-- Click the Extensions icon on the VS Code activity bar
-- Search for "Sourcegraph Cody"
-- Install the extension directly to VS Code
-
-Or:
-
-- [Download and install the extension from the VS Code marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-
-## Generate an access token from your Sourcegraph instance
-
-Next, you must generate an access token so that Cody can talk to your Sourcegraph instance. You'll add this to your extension in the next step.
-
-**For Sourcegraph Enterprise users:**
-
-Log in to your Sourcegraph instance and go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). From here, generate a new access token.
-
-**For Sourcegraph.com users:**
-
-Log in to Sourcegraph.com and go to the [Access tokens page](https://sourcegraph.com/user/settings/tokens). Generate a new access token.
-
-## Configure your extension settings
-
-When you first install the Cody extension, you will see this screen:
-
-  <img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
-
-In the `Access Token` field, paste in your access token from the previous step.
-
-In the `Sourcegraph Instance` field, paste in the URL of your Sourcegraph instance.
-
-- For Sourcegraph Enterprise, this is your own instance's URL.
-- For Sourcegraph.com, this is `https://sourcegraph.com`
-
-## Generate a unit test
+## Getting started with the Cody extension and recipes
 
 The Cody icon should now appear in the activity bar in VS Code. Clicking the icon will open the Cody side panel. The `Chat` tab can be used to ask Cody questions and paste in snippets of code, and the `Recipes` tab can be used to run premade functions over whatever code you currently have highlighted.
+
+## Generate a unit test
 
 As one recipe example, let's generate a unit test:
 
@@ -85,6 +42,26 @@ Imagine you've stepped away from a project for the last week. Let's see what's c
 3. A dropdown will appear. Click `Last week`
 4. Cody will provide a summary of changes to your codebase that occurred in that time period
 
+## Ask Cody to pull reference documentation
+
+Cody can also directly reference documentation. If Cody has context of a codebase, and docs are committed within that codebase, Cody can search through the text of docs to understand documentation and quickly pull out information so that you don't have to search for it yourself.
+
+In the `Chat` tab of the VS Code extension, you can ask Cody examples like:
+
+- "What happens when Service X runs out of memory?"
+- "Where can I find a list of all experimental features and their feature flags?"
+- "How is the changelog generated?"
+
+## Ask Cody to write context-aware code
+
+One of Cody's strengths is writing code, especially boilerplate code or simple code that requires general awareness of the broader codebase.
+
+One great example of this is writing an API call. Once Cody has context of a codebase, including existing API schemas within that codebase, you can ask Cody to write code for API calls.
+
+For example, ask Cody:
+
+- "Write an API call to retrieve user permissions data"
+
 ## Try other recipes and Cody chat
 
 Cody can do many other things, including:
@@ -94,9 +71,3 @@ Cody can do many other things, including:
 3. Translate code to different languages
 4. Answer general questions about your code
 5. Suggest bugfixes and changes to code snippets
-
-To see this in action, try asking Codying a question in the chat sidebar such as "Are there any bugs in this code snippet?"
-
-## Congratulations!
-
-**You're now up-and-running with your very own AI code asisstant!** 🎉

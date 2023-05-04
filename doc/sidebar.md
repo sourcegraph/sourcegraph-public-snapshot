@@ -72,7 +72,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Contributing](dev/contributing.md)
 - [Dotcom](dotcom/index.md)
 - [Cody (beta)](cody/index.md)
-  - Quickstart
+  - [Quickstart](cody/quickstart.md)
   - [Explanations](cody/explanations/index.md)
   - [FAQ](cody/faq.md)
 - [App (experimental)](app/index.md)
