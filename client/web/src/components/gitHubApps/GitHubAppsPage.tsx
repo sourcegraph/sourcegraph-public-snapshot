@@ -6,7 +6,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { ButtonLink, Container, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { GitHubAppsResult, GitHubAppsVariables } from '../../graphql-operations'
-import { ConnectionContainer, ConnectionError, ConnectionLoading, ConnectionList } from '../FilteredConnection/ui'
+import { ConnectionContainer, ConnectionLoading, ConnectionList } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
 import { GITHUB_APPS_QUERY } from './backend'
@@ -36,7 +36,7 @@ export const GitHubAppsPage: React.FC = () => {
             {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} />}
             <Container className="mb-3 mt-3 p-3">
                 <ConnectionContainer>
-                    {error && <ConnectionError errors={error} />}
+                    {error && <ErrorAlert error={error} />}
                     {loading && !data && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="GitHub Apps">
                         {gitHubApps?.map(app => (
