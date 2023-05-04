@@ -955,6 +955,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 		}
 
 		candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
+		fmt.Println(candidateImage)
 		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " "))
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :truck: %s", app),
