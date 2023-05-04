@@ -115,7 +115,7 @@ type EventLogStore interface {
 	// ListAll gets all event logs in descending order of timestamp.
 	ListAll(ctx context.Context, opt EventLogsListOptions) ([]*Event, error)
 
-	// ListExportableEvents gets all event logs that are allowed to be exported.
+	// ListExportableEvents gets a batch of event logs that are allowed to be exported.
 	ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error)
 
 	ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error)
@@ -332,14 +332,17 @@ func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (
 type EventLogsListOptions struct {
 	// UserID specifies the user whose events should be included.
 	UserID int32
-
 	*LimitOffset
-
 	EventName *string
+	// AfterID specifies a minimum event ID of listed events.
+	AfterID int
 }
 
 func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*Event, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if opt.AfterID > 0 {
+		conds = append(conds, sqlf.Sprintf("id > %d", opt.AfterID))
+	}
 	if opt.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id = %d", opt.UserID))
 	}
