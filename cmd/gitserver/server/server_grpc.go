@@ -82,16 +82,16 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 	// 	log.Strings("path", req.Pathspecs),
 	// )
 
-	if err := checkSpecArgSafety(req.Treeish); err != nil {
+	if err := checkSpecArgSafety(req.GetTreeish()); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if req.Repo == "" || req.Format == "" {
+	if req.GetRepo() == "" || req.GetFormat() == "" {
 		return status.Error(codes.InvalidArgument, "empty repo or format")
 	}
 
 	execReq := &protocol.ExecRequest{
-		Repo: api.RepoName(req.Repo),
+		Repo: api.RepoName(req.GetRepo()),
 		Args: []string{
 			"archive",
 			"--worktree-attributes",
@@ -103,8 +103,8 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		execReq.Args = append(execReq.Args, "-0")
 	}
 
-	execReq.Args = append(execReq.Args, req.Treeish, "--")
-	execReq.Args = append(execReq.Args, req.Pathspecs...)
+	execReq.Args = append(execReq.Args, req.GetTreeish(), "--")
+	execReq.Args = append(execReq.Args, req.GetPathspecs()...)
 
 	w := streamio.NewWriter(func(p []byte) error {
 		return ss.Send(&proto.ArchiveResponse{
