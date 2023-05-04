@@ -9,9 +9,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type dbLLMProxyAccess struct {
+	Enabled             bool
+	RateLimit           *int32
+	RateIntervalSeconds *int32
+}
 
 // dbSubscription describes an product subscription row in the product_subscriptions DB
 // table.
@@ -22,6 +29,7 @@ type dbSubscription struct {
 	CreatedAt             time.Time
 	ArchivedAt            *time.Time
 	AccountNumber         *string
+	LLMProxyAccess        dbLLMProxyAccess
 }
 
 var emailQueries = sqlf.Sprintf(`all_primary_emails AS (
@@ -124,7 +132,10 @@ SELECT
 	billing_subscription_id,
 	product_subscriptions.created_at,
 	product_subscriptions.archived_at,
-	product_subscriptions.account_number
+	product_subscriptions.account_number,
+	product_subscriptions.llm_proxy_enabled,
+	product_subscriptions.llm_proxy_rate_limit,
+	product_subscriptions.llm_proxy_rate_interval_seconds
 FROM product_subscriptions
 LEFT OUTER JOIN users ON product_subscriptions.user_id = users.id
 LEFT OUTER JOIN primary_emails ON users.id = primary_emails.user_id
@@ -145,7 +156,17 @@ ORDER BY archived_at DESC NULLS FIRST, created_at DESC
 	var results []*dbSubscription
 	for rows.Next() {
 		var v dbSubscription
-		if err := rows.Scan(&v.ID, &v.UserID, &v.BillingSubscriptionID, &v.CreatedAt, &v.ArchivedAt, &v.AccountNumber); err != nil {
+		if err := rows.Scan(
+			&v.ID,
+			&v.UserID,
+			&v.BillingSubscriptionID,
+			&v.CreatedAt,
+			&v.ArchivedAt,
+			&v.AccountNumber,
+			&v.LLMProxyAccess.Enabled,
+			&v.LLMProxyAccess.RateLimit,
+			&v.LLMProxyAccess.RateIntervalSeconds,
+		); err != nil {
 			return nil, err
 		}
 		results = append(results, &v)
@@ -174,6 +195,7 @@ WHERE (%s)`, emailQueries, sqlf.Join(opt.sqlConditions(), ") AND ("))
 // value is nil, the field remains unchanged in the database.
 type dbSubscriptionUpdate struct {
 	billingSubscriptionID *sql.NullString
+	llmProxyAccess        *graphqlbackend.UpdateLLMProxyAccessInput
 }
 
 // Update updates a product subscription.
@@ -184,8 +206,26 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 	if v := update.billingSubscriptionID; v != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("billing_subscription_id=%s", *v))
 	}
+	if access := update.llmProxyAccess; access != nil {
+		if v := access.Enabled; v != nil {
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_enabled=%s", *v))
+		}
+		if v := access.RateLimit; v != nil {
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_rate_limit=%s", sql.NullInt64{
+				Int64: int64(*v),
+				Valid: *v != 0,
+			}))
+		}
+		if v := access.RateLimitIntervalSeconds; v != nil {
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_rate_interval_seconds=%s", sql.NullInt64{
+				Int64: int64(*v),
+				Valid: *v != 0,
+			}))
+		}
+	}
 
-	query := sqlf.Sprintf("UPDATE product_subscriptions SET %s WHERE id=%s", sqlf.Join(fieldUpdates, ", "), id)
+	query := sqlf.Sprintf("UPDATE product_subscriptions SET %s WHERE id=%s",
+		sqlf.Join(fieldUpdates, ", "), id)
 	res, err := s.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		return err

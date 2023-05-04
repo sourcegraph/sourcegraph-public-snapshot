@@ -10,8 +10,8 @@
 ### Prerequisites
 
 - Sourcegraph 5.0.1 or above
-- An Anthropic API key, that you can get from your Technical Advisor or Customer Engineer
-- (Optionally) An OpenAI API key for embeddings (to power code graph context)
+- An Anthropic or OpenAI API key (we can help you get one, see below)
+- Optionally: An OpenAI API key for embeddings to power code graph context
 
 There are two steps required to enable Cody on your enterprise instance:
 
@@ -23,7 +23,7 @@ There are two steps required to enable Cody on your enterprise instance:
 Note that this requires site-admin privileges.
 
 1. Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). In particular, code snippets will be sent to a third-party language model provider when you use the Cody extension.
-2. To turn Cody on, you will need to set an access token for Sourcegraph to authentify with the third-party large language model provider (currently Anthropic but we may use different or several models over time). Reach out to your Sourcegraph Technical Advisor or Customer Engineer to get a key. They will create a key for you using the [anthropic console](https://console.anthropic.com/account/keys).
+2. To turn Cody on, you will need to set an access token for Sourcegraph to authenticate with the third-party large language model provider. Currently, this can be Anthropic or OpenAI. Reach out to your Sourcegraph Technical Advisor or Customer Engineer to get an Anthropic key through Sourcegraph with our zero-retention policy. Alternatively, you can create your own key with Anthropic [here](https://console.anthropic.com/account/keys) or with OpenAI [here](https://beta.openai.com/account/api-keys).
 3. Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
 
     ```json
@@ -31,9 +31,9 @@ Note that this requires site-admin privileges.
       // [...]
       "completions": {
         "enabled": true,
-        "accessToken": "<token>",
-        "model": "claude-v1",
-        "provider": "anthropic"
+        "provider": "anthropic", // or "openai" if you use OpenAI
+        "model": "claude-v1", // or one of the models listed [here](https://platform.openai.com/docs/models) if you use OpenAI
+        "accessToken": "<key>"
       }
     }
     ```
@@ -106,3 +106,17 @@ The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the C
 ## Turning Cody off
 
 To turn Cody off, set `embeddings` and `completions` site-admin settings to `enabled:false` (or remove them altogether).
+
+## Turning Cody on, only for some users
+
+To turn Cody on only for some users, for example when rolling out a Cody POC, follow all the steps in [Step 1: Enable Cody on your Sourcegraph instance](#step-1-enable-cody-on-your-sourcegraph-instance). Then use the feature flag `cody-experimental` to turn Cody on selectively for some users.
+To do so:
+
+1. Go to `site-admin/feature-flags`
+2. Add a feature flag called `cody-experimental`. Select the `boolean` type and set it to `false`.
+3. Once added, click on the feature flag and use **add overrides** to pick users that will have access to Cody.
+
+<img width="979" alt="Add overides" src="https://user-images.githubusercontent.com/25070988/235454594-9f1a6b27-6882-44d9-be32-258d6c244880.png">
+
+
+
