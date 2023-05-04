@@ -19,6 +19,7 @@ go_library(
         "//internal/auth",
         "//internal/conf/conftypes",
         "//internal/database",
+        "//internal/gqlutil",
         "//internal/observation",
         "//internal/rcache",
         "//internal/trace",

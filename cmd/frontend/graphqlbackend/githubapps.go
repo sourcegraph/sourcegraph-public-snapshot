@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 // This file just contains stub GraphQL resolvers and data types for GitHub apps which merely
@@ -33,6 +35,8 @@ type GitHubAppResolver interface {
 	AppURL() string
 	ClientID() string
 	Logo() string
+	CreatedAt() gqlutil.DateTime
+	UpdatedAt() gqlutil.DateTime
 }
 
 type DeleteGitHubAppArgs struct {

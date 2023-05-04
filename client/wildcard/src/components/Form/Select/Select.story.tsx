@@ -36,6 +36,7 @@ const BaseSelect = (props: { id: string } & Pick<SelectProps, 'isCustomStyle' | 
         <Select
             label="What is your favorite fruit?"
             message="I am a message"
+            description="I am a description"
             value={selected}
             onChange={handleChange}
             {...props}
