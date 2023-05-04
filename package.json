@@ -494,7 +494,7 @@
     "yaml-ast-parser": "^0.0.43",
     "zustand": "^3.6.9"
   },
-  "packageManager": "pnpm@7.28.0",
+  "packageManager": "pnpm@8.1.0",
   "pnpm": {
     "packageExtensions": {
       "cpu-features": {

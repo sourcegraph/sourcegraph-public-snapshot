@@ -33,7 +33,7 @@ var checks = map[string]check.CheckFunc{
 	"caddy-trusted":         checkCaddyTrusted,
 	"asdf":                  check.CommandOutputContains("asdf", "version"),
 	"git":                   check.Combine(check.InPath("git"), checkGitVersion(">= 2.34.1")),
-	"pnpm":                  check.Combine(check.InPath("pnpm"), checkPnpmVersion(">= 7.28.0")),
+	"pnpm":                  check.Combine(check.InPath("pnpm"), checkPnpmVersion(">= 8.1.0")),
 	"go":                    check.Combine(check.InPath("go"), checkGoVersion("~> 1.19.8")),
 	"node":                  check.Combine(check.InPath("node"), check.CommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar")),
 	"rust":                  check.Combine(check.InPath("cargo"), check.CommandOutputContains(`cargo version`, "1.58.0")),

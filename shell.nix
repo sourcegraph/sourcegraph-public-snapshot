@@ -105,9 +105,9 @@ pkgs.mkShell {
     # Web tools. Need node 16.7 so we use unstable. Yarn should also be built against it.
     nodejs-16_x
     (nodejs-16_x.pkgs.pnpm.override {
-      version = "7.28.0";
+      version = "8.1.0";
       src = fetchurl {
-        url = "https://registry.npmjs.org/pnpm/-/pnpm-7.28.0.tgz";
+        url = "https://registry.npmjs.org/pnpm/-/pnpm-8.1.0.tgz";
         sha512 = "sha512-nbuY07S2519jEjaV9KLjSFmOwh0b6KIViIdc/RCJkgco8SZa2+ikQQe4N3CfNn5By5BH0dKVbZ8Ox1Mw8wItSA==";
       };
     })
