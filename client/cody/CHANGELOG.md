@@ -16,6 +16,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 ### Changed
 
 - Replace `Cody: Set Access Token` command with `Cody: Sign in`
+- Various improvements to the experimental completions feature
 
 ## [0.0.9]
 

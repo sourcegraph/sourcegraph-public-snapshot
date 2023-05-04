@@ -198,3 +198,79 @@ For Google Container Registry, [follow this guide](https://cloud.google.com/cont
 ### Configuring the auth config for use in executors
 
 Now that the config has been obtained, it can be used for the `EXECUTOR_DOCKER_AUTH_CONFIG` environment variable (and terraform variable `docker_auth_config`) or you can create an [executor secret](executor_secrets.md#creating-a-new-secret) called `DOCKER_AUTH_CONFIG`. Global executor secrets will be available to every execution, while user and organization level executor secrets will only be available to the namespaces executions.
+
+## Using custom certificates with executors 
+
+By default, executors will search for certificates in the following files and directories:
+
+| Directory or file                                   | Distribution              |
+|-----------------------------------------------------|---------------------------|
+| `/etc/ssl/certs/ca-certificates.crt`                | Debian/Ubuntu/Gentoo etc. |
+| `/etc/pki/tls/certs/ca-bundle.crt`                  | Fedora/RHEL 6             |
+| `/etc/ssl/ca-bundle.pem`                            | OpenSUSE                  |
+| `/etc/pki/tls/cacert.pem`                           | OpenELEC                  |
+| `/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem` | CentOS/RHEL 7             |
+| `/etc/ssl/cert.pem`                                 | Alpine Linux              |
+| `/etc/ssl/certs`                                    | SLES10/SLES11             |
+| `/etc/pki/tls/certs`                                | Fedora/RHEL               |   
+| `/system/etc/security/cacerts`                      | Android                   |
+
+If your environment makes use of custom certificates, you can add them to one of these locations in order for executors to pick them up.
+        
+### Adding certificates to a binary deployment
+> NOTE: see the [troubleshooting guide](./executors_troubleshooting.md#connecting-to-cloud-provider-executor-instances) for instructions on how to connect to cloud provider VMs.
+        
+After successfully [deploying binaries](./deploy_executors_binary.md), follow these steps: 
+1. Copy your certificates to `/etc/ssl/certs`. 
+1. If you are using systemd, run `systemctl restart executor`. If not, proceed to the next step. 
+1. Run `executor run` on the VM in order to restart the executor service.
+
+### Adding certificates to a Kubernetes deployment using manifests
+
+First, add the certificate data as a secret in your preferred namespace:
+```shell
+SECRET_NAME=custom-certs
+CERT_PATH=/path/to/cert.pem 
+kubectl create secret generic $SECRET_NAME --from-file=customcert.crt=$CERT_PATH
+```
+
+Or as a declarative manifest:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: custom-certs
+data:
+  customcert.crt: $(base64 -i /path/to/cert.pem)
+type: Opaque
+```
+
+Next, mount the secret in the executor deployment. Add the following snippet to `spec.template.spec.volumes` of each executor deployment:
+```yaml
+- name: custom-certs
+  secret:
+    secretName: custom-certs
+```
+
+Also add this snippet to `spec.template.spec.containers.volumeMounts` of each executor deployment (specifically, the executor container, in case you inject any sidecars):
+```yaml
+- mountPath: /etc/ssl/certs
+  name: custom-certs
+  readOnly: true
+```
+
+Next, apply the updated YAML manifests. Once the executors have rolled out, they should be picking up your custom certificates.
+
+### Adding certificates to a Kubernetes deployment using Helm
+        
+You may follow the same instructions for the manifest deployment to set custom certificates.
+
+### Adding certificates to a Docker Compose deployment
+
+First, ensure that the certificate file is present on the host machine. Next, add the volume to the [executor compose file](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-docker/-/blob/docker-compose/executors/executor.docker-compose.yaml?L26-30):
+
+```yaml
+- '/path/to/certs:/etc/ssl/certs'
+```
+
+Next, restart the deployment with `docker-compose down` and `docker-compose up -d`.

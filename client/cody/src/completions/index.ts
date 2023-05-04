@@ -91,7 +91,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const { prefix, prevLine: precedingLine } = docContext
+        const { prefix, suffix, prevLine: precedingLine } = docContext
 
         const cachedCompletions = inlineCompletionsCache.get(prefix)
         if (cachedCompletions) {
@@ -106,6 +106,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.responseTokens,
             [],
             prefix,
+            suffix,
             '\n'
         )
         const emptyPromptLength = completionNoSnippets.emptyPromptLength()
@@ -123,6 +124,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         let waitMs: number
         const completers: CompletionProvider[] = []
+
+        // VS Code does not show completions if we are in the process of writing a word or if a
+        // selected completion info is present (so something is selected from the completions
+        // dropdown list based on the lang server) and the returned completion range does not
+        // contain the same selection.
+        if (context.selectedCompletionInfo || /[A-Za-z]$/.test(precedingLine)) {
+            return []
+        }
+
         if (precedingLine.trim() === '') {
             // Start of line: medium debounce
             waitMs = 500
@@ -133,6 +143,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     this.responseTokens,
                     similarCode,
                     prefix,
+                    suffix,
                     '',
                     2 // tries
                 )
@@ -150,6 +161,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     this.responseTokens,
                     similarCode,
                     prefix,
+                    suffix,
                     '',
                     2 // tries
                 ),
@@ -161,6 +173,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     this.responseTokens,
                     similarCode,
                     prefix,
+                    suffix,
                     '\n', // force a new line in the case we are at end of line
                     1 // tries
                 )
@@ -221,7 +234,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             console.error('not showing completions, no currently open doc')
             return
         }
-        const { prefix } = docContext
+        const { prefix, suffix } = docContext
 
         const remainingChars = this.tokToChar(this.promptTokens)
 
@@ -231,6 +244,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.responseTokens,
             [],
             prefix,
+            suffix,
             ''
         )
         const emptyPromptLength = completionNoSnippets.emptyPromptLength()
@@ -252,6 +266,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.responseTokens,
             similarCode,
             prefix,
+            suffix,
             ''
         )
 
