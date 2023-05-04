@@ -9066,9 +9066,8 @@ def go_dependencies():
         name = "org_golang_x_oauth2",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/oauth2",
-        replace = "github.com/sourcegraph/oauth2",
-        sum = "h1:HGa4iJr6MGKnB5qbU7tI511NdGuHUHnNCqP67G6KmfE=",
-        version = "v0.0.0-20210825125341-77c1d99ece3c",
+        sum = "h1:qe6s0zUXlPX80/dITx3440hWZ7GwMwgDDyrSGTPJG/g=",
+        version = "v0.7.0",
     )
 
     go_repository(

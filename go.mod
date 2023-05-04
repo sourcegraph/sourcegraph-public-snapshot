@@ -61,7 +61,6 @@ replace (
 	github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
-	golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c
 )
 
 require (
