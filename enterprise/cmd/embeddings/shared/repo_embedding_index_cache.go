@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/hashicorp/golang-lru/v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -13,10 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 )
-
-var cacheSize = env.MustGetInt("EMBEDDINGS_REPO_INDEX_CACHE_SIZE", 5, "Number of repository embedding indexes to cache in memory.")
 
 type downloadRepoEmbeddingIndexFn func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error)
 
@@ -55,12 +52,80 @@ func (m *repoMutexMap) GetLock(repoID api.RepoID) *sync.Mutex {
 	return lock
 }
 
+// embeddingsIndexCache is a thin wrapper around an LRU cache that is
+// memory-bounded, which is useful for embeddings indexes because they can have
+// dramatically different sizes.
+//
+// Note that this is just an LRU cache with a bounded in-memory size.
+// A query that hits a large number of repos will fill the cache with
+// those repos, which may not be desirable if we are doing many global
+// searches.
+type embeddingsIndexCache struct {
+	mu                 sync.Mutex
+	cache              *lru.Cache[embeddings.RepoEmbeddingIndexName, repoEmbeddingIndexCacheEntry]
+	maxSizeBytes       int64
+	remainingSizeBytes int64
+}
+
+// newEmbeddingsIndexCache creates a cache with reasonable settings for an embeddings cache
+func newEmbeddingsIndexCache(maxSizeBytes int64) (_ *embeddingsIndexCache, err error) {
+	c := &embeddingsIndexCache{
+		maxSizeBytes:       maxSizeBytes,
+		remainingSizeBytes: maxSizeBytes,
+	}
+
+	// arbitrarily large LRU cache because we want to evict based on size, not count
+	c.cache, err = lru.NewWithEvict(999_999_999, c.onEvict)
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
+func (c *embeddingsIndexCache) Get(repo embeddings.RepoEmbeddingIndexName) (repoEmbeddingIndexCacheEntry, bool) {
+	return c.cache.Get(repo)
+}
+
+func (c *embeddingsIndexCache) Add(repo embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
+	size := value.index.EstimateSize()
+	if size > c.maxSizeBytes {
+		// Return early if the index could never fit in the cache.
+		// We don't want to dump the cache just to not be able to fit it.
+		return
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Evict entries until there is space
+	for c.remainingSizeBytes < size {
+		_, _, ok := c.cache.RemoveOldest()
+		if !ok {
+			// Since we already checked that the entry can fit in the cache,
+			// this should never happen since the cache should never be empty
+			// and not fit the entry.
+			return
+		}
+	}
+
+	// Reserve space for the entry and add it to the cache
+	c.remainingSizeBytes -= size
+	c.cache.Add(repo, value)
+}
+
+// onEvict must only be called while the index mutex is held
+func (c *embeddingsIndexCache) onEvict(_ embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
+	c.remainingSizeBytes += value.index.EstimateSize()
+}
+
 func getCachedRepoEmbeddingIndex(
 	repoStore database.RepoStore,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 	downloadRepoEmbeddingIndex downloadRepoEmbeddingIndexFn,
+	cacheSizeBytes int64,
 ) (getRepoEmbeddingIndexFn, error) {
-	cache, err := lru.New[embeddings.RepoEmbeddingIndexName, repoEmbeddingIndexCacheEntry](cacheSize)
+	cache, err := newEmbeddingsIndexCache(cacheSizeBytes)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating repo embedding index cache")
 	}

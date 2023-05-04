@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
@@ -24,11 +25,28 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 		return &repo.RepoEmbeddingJob{FinishedAt: &finishedAt}, nil
 	})
 
+	cacheSize := 10 * 1024 * 1024
 	hasDownloadedRepoEmbeddingIndex := false
-	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(mockRepoStore, mockRepoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-		hasDownloadedRepoEmbeddingIndex = true
-		return &embeddings.RepoEmbeddingIndex{}, nil
-	})
+	downloadLargeCount := 0
+	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(
+		mockRepoStore,
+		mockRepoEmbeddingJobsStore,
+		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+			switch repoEmbeddingIndexName {
+			case embeddings.GetRepoEmbeddingIndexName("a"):
+				hasDownloadedRepoEmbeddingIndex = true
+				return &embeddings.RepoEmbeddingIndex{}, nil
+			default:
+				downloadLargeCount += 1
+				return &embeddings.RepoEmbeddingIndex{
+					CodeIndex: embeddings.EmbeddingIndex{
+						Embeddings: make([]int8, cacheSize*10), // too large to fit in cache
+					},
+				}, nil
+			}
+		},
+		int64(cacheSize),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,6 +81,50 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 	if !hasDownloadedRepoEmbeddingIndex {
 		t.Fatal("expected to download the index after a newer embedding job is completed")
 	}
+
+	_, err = getRepoEmbeddingIndex(ctx, api.RepoName("toolarge"))
+	require.NoError(t, err)
+	require.Equal(t, 1, downloadLargeCount)
+
+	// Fetching a second time should trigger a second download since it's
+	// too large to fit in the cache
+	_, err = getRepoEmbeddingIndex(ctx, api.RepoName("toolarge"))
+	require.NoError(t, err)
+	require.Equal(t, 2, downloadLargeCount)
+}
+
+func Test_embeddingsIndexCache(t *testing.T) {
+	entryWithSize := func(size int) repoEmbeddingIndexCacheEntry {
+		return repoEmbeddingIndexCacheEntry{
+			index: &embeddings.RepoEmbeddingIndex{
+				CodeIndex: embeddings.EmbeddingIndex{
+					Embeddings: make([]int8, size),
+				},
+			},
+		}
+	}
+
+	c, err := newEmbeddingsIndexCache(1024)
+	require.NoError(t, err)
+
+	tooBig := entryWithSize(2048)
+	fitsOne := entryWithSize(700)
+
+	c.Add("a", tooBig)
+	_, ok := c.Get("a")
+	require.False(t, ok, "a cache entry that is too large should enter the cache")
+
+	c.Add("fitsOne", fitsOne)
+	_, ok = c.Get("fitsOne")
+	require.True(t, ok, "a cache entry that fits should always get added to the cache")
+
+	c.Add("fitsOneAgain", fitsOne)
+	_, ok = c.Get("fitsOneAgain")
+	require.True(t, ok, "a cache entry should evict other cache entries until it fits")
+
+	_, ok = c.Get("fitsOne")
+	require.False(t, ok, "after being evicted, a cache entry should not exist")
+
 }
 
 func TestConcurrentGetCachedRepoEmbeddingIndex(t *testing.T) {
@@ -80,18 +142,23 @@ func TestConcurrentGetCachedRepoEmbeddingIndex(t *testing.T) {
 
 	var mu sync.Mutex
 	hasDownloadedRepoEmbeddingIndex := false
-	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(mockRepoStore, mockRepoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-		mu.Lock()
-		defer mu.Unlock()
+	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(
+		mockRepoStore,
+		mockRepoEmbeddingJobsStore,
+		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+			mu.Lock()
+			defer mu.Unlock()
 
-		if hasDownloadedRepoEmbeddingIndex {
-			t.Fatal("index already downloaded")
-		}
-		hasDownloadedRepoEmbeddingIndex = true
-		// Simulate the download time.
-		time.Sleep(time.Millisecond * 500)
-		return &embeddings.RepoEmbeddingIndex{}, nil
-	})
+			if hasDownloadedRepoEmbeddingIndex {
+				t.Fatal("index already downloaded")
+			}
+			hasDownloadedRepoEmbeddingIndex = true
+			// Simulate the download time.
+			time.Sleep(time.Millisecond * 500)
+			return &embeddings.RepoEmbeddingIndex{}, nil
+		},
+		10*1024*1024,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
