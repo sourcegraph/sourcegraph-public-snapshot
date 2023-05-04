@@ -7,6 +7,7 @@ const DEFAULT_WEB_CONFIGURATION: WebConfiguration = {
     serverEndpoint: 'https://sourcegraph.com',
     accessToken: null,
     useContext: 'embeddings',
+    customHeaders: {},
 }
 
 export type WebConfiguration = ClientInit['config']
