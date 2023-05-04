@@ -850,7 +850,6 @@ def go_dependencies():
         sum = "h1:DDGfHa7BWjL4YnC6+E63dPcxHo2sUxDIu8g3QgEJdRY=",
         version = "v0.0.0-20160611221934-b7ed37b82869",
     )
-
     go_repository(
         name = "com_github_boj_redistore",
         build_file_proto_mode = "disable_global",
@@ -3066,8 +3065,9 @@ def go_dependencies():
         name = "com_github_gomodule_redigo",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/gomodule/redigo",
-        sum = "h1:K/R+8tc58AaqLkqG2Ol3Qk+DR/TlNuhuh457pBFPtt0=",
-        version = "v2.0.0+incompatible",
+        replace = "github.com/gomodule/redigo",
+        sum = "h1:Sl3u+2BI/kk+VEatbj0scLdrFhjPmbxOc1myhDP41ws=",
+        version = "v1.8.9",
     )
     go_repository(
         name = "com_github_google_btree",
@@ -5744,13 +5744,19 @@ def go_dependencies():
         version = "v2.1.0",
     )
     go_repository(
+        name = "com_github_rafaeljusto_redigomock_v3",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/rafaeljusto/redigomock/v3",
+        sum = "h1:B4Y0XJQiPjpwYmkH55aratKX1VfR+JRqzmDKyZbC99o=",
+        version = "v3.1.2",
+    )
+    go_repository(
         name = "com_github_rafaeljusto_redigomock",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/rafaeljusto/redigomock",
         sum = "h1:d7uo5MVINMxnRr20MxbgDkmZ8QRfevjOVgEa4n0OZyY=",
         version = "v2.4.0+incompatible",
     )
-
     go_repository(
         name = "com_github_rainycape_unidecode",
         build_file_proto_mode = "disable_global",

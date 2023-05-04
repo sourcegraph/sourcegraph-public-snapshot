@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	logger "github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -15,8 +16,12 @@ import (
 )
 
 func handleRecentContributors(ctx context.Context, lgr logger.Logger, repoId api.RepoID, db database.DB) error {
+	// 🚨 SECURITY: we use the internal actor because the background indexer is not associated with any user, and needs
+	// to see all repos and files
+	internalCtx := actor.WithInternalActor(ctx)
+
 	indexer := newRecentContributorsIndexer(gitserver.NewClient(), db, lgr)
-	return indexer.indexRepo(ctx, repoId)
+	return indexer.indexRepo(internalCtx, repoId)
 }
 
 type recentContributorsIndexer struct {

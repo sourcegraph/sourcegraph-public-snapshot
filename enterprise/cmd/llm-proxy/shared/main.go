@@ -18,8 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
@@ -45,9 +47,23 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 func newHandler(logger log.Logger, config *Config) http.Handler {
 	r := mux.NewRouter()
-	s := r.PathPrefix("/v1").Subrouter()
 
-	s.Handle("/completions/anthropic",
+	// For cluster liveness and readiness probes
+	r.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		if err := healthz(r.Context()); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte("healthz: " + err.Error()))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("healthz: ok"))
+		return
+	})
+
+	// V1 service routes
+	v1router := r.PathPrefix("/v1").Subrouter()
+	v1router.Handle("/completions/anthropic",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
 			if err != nil {
@@ -85,5 +101,27 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 			_, _ = io.Copy(w, resp.Body)
 		}),
 	).Methods(http.MethodPost)
+
 	return r
+}
+
+func healthz(ctx context.Context) error {
+	// Check redis health
+	rpool, ok := redispool.Cache.Pool()
+	if !ok {
+		return errors.New("redis: not available")
+	}
+	rconn, err := rpool.GetContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "redis: failed to get conn")
+	}
+	data, err := rconn.Do("PING")
+	if err != nil {
+		return errors.Wrap(err, "redis: failed to ping")
+	}
+	if data != "PONG" {
+		return errors.New("redis: failed to ping: no pong received")
+	}
+
+	return nil
 }

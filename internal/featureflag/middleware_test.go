@@ -8,7 +8,7 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/gomodule/redigo/redis"
-	"github.com/rafaeljusto/redigomock"
+	"github.com/rafaeljusto/redigomock/v3"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
