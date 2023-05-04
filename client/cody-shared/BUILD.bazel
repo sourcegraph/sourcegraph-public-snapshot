@@ -28,6 +28,7 @@ ts_project(
         "src/chat/preamble.ts",
         "src/chat/recipes/browser-recipes.ts",
         "src/chat/recipes/chat-question.ts",
+        "src/chat/recipes/context-search.ts",
         "src/chat/recipes/explain-code-detailed.ts",
         "src/chat/recipes/explain-code-high-level.ts",
         "src/chat/recipes/find-code-smells.ts",

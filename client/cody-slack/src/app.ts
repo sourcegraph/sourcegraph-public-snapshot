@@ -9,7 +9,11 @@ const { PORT } = ENVIRONMENT_CONFIG
 // Main function to start the bot
 async function startBot() {
     // Create a context for the codebase using the default app settings
-    const codebaseContext = await createCodebaseContext(DEFAULT_APP_SETTINGS.codebase, DEFAULT_APP_SETTINGS.contextType)
+    const codebaseContext = await createCodebaseContext(
+        DEFAULT_APP_SETTINGS.codebase,
+        DEFAULT_APP_SETTINGS.contextType,
+        DEFAULT_APP_SETTINGS.serverEndpoint
+    )
 
     // Listen for mentions in the Slack app
     app.event<'app_mention'>('app_mention', async ({ event }) => {

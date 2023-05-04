@@ -130,6 +130,10 @@
         "title": "Cody: Fixup"
       },
       {
+        "command": "cody.recipe.context-search",
+        "title": "Ask Cody: Codebase Context Search"
+      },
+      {
         "command": "cody.set-access-token",
         "title": "Cody: Set Access Token"
       },
@@ -187,6 +191,10 @@
       "commandPalette": [
         {
           "command": "cody.recipe.explain-code",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.context-search",
           "when": "cody.activated"
         },
         {
