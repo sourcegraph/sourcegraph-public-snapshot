@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 import { EventName } from '../../../util/constants'
@@ -96,14 +96,14 @@ export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }
 
     return (
         <div className={classNames('d-flex position-relative pt-4', className, styles.container)}>
-            <div className="p-2">
+            <div>
                 <MeetCodySVG />
             </div>
             <MarketingBlock
                 wrapperClassName="d-flex"
                 contentClassName={classNames('flex-grow-1 d-flex flex-column justify-content-between p-4', styles.card)}
             >
-                <H3 className="d-flex align-items-center">
+                <H2 className="d-flex align-items-center">
                     <Icon
                         svgPath={mdiMicrosoftVisualStudioCode}
                         aria-hidden={true}
@@ -111,7 +111,7 @@ export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }
                         size="md"
                     />
                     Install Cody for VS Code
-                </H3>
+                </H2>
                 <Text>
                     Cody for VS Code provides the power of LLMs to help you generate and fix code, right where you
                     commit.
@@ -138,7 +138,7 @@ export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }
                 </Text>
             </MarketingBlock>
             <div className="d-flex flex-column justify-content-center p-4">
-                <H3>Try Cody AI on public code</H3>
+                <H2>Try Cody AI on public code</H2>
                 <Text>
                     Cody for Sourcegraph.com explains, generates, and translates code, right in the web interface.
                 </Text>

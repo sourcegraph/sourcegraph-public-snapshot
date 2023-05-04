@@ -4,7 +4,7 @@ import { mdiChevronRight, mdiMicrosoftVisualStudioCode } from '@mdi/js'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ButtonLink, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { ButtonLink, H2, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 import { EventName } from '../../../util/constants'
@@ -124,7 +124,7 @@ export const TryCodySignUpCtaSection: React.FC<TelemetryProps & { className?: st
                 wrapperClassName="d-flex"
                 contentClassName={classNames('flex-grow-1 d-flex flex-column justify-content-between p-4', styles.card)}
             >
-                <H3>Get free access</H3>
+                <H2>Get free access</H2>
                 <Text>
                     Cody combines an LLM with the context of Sourcegraph’s code graph on public code or your code at
                     work. Use Cody with:
