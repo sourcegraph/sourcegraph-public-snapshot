@@ -28,6 +28,7 @@ ts_project(
         "src/chat/preamble.ts",
         "src/chat/recipes/browser-recipes.ts",
         "src/chat/recipes/chat-question.ts",
+        "src/chat/recipes/concurrent-editing.ts",
         "src/chat/recipes/explain-code-detailed.ts",
         "src/chat/recipes/explain-code-high-level.ts",
         "src/chat/recipes/file-chat.ts",
@@ -42,6 +43,7 @@ ts_project(
         "src/chat/recipes/next-questions.ts",
         "src/chat/recipes/non-stop-cody.ts",
         "src/chat/recipes/recipe.ts",
+        "src/chat/recipes/tracked-range.ts",
         "src/chat/recipes/translate.ts",
         "src/chat/recipes/vscode-recipes.ts",
         "src/chat/transcript/index.ts",
@@ -106,6 +108,7 @@ ts_project(
     srcs = [
         "src/chat/bot-response-multiplexer.test.ts",
         "src/chat/markdown.test.ts",
+        "src/chat/recipes/tracked-range.test.ts",
         "src/chat/transcript/transcript.test.ts",
         "src/hallucinations-detector/index.test.ts",
         "src/sourcegraph-api/utils.test.ts",

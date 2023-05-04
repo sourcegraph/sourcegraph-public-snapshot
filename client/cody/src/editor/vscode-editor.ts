@@ -152,12 +152,12 @@ export class VSCodeEditor implements Editor {
             )
         })
 
-        const updatedLength = selectedText.split('\n').length - replacement.trim().split('\n').length
-        this.fileChatProvider.addedLines = updatedLength
+        const lineCountDiff = selectedText.split('\n').length - replacement.trim().split('\n').length
+        this.fileChatProvider.addedLines = lineCountDiff
         const doc = vscode.window.activeTextEditor?.document
         if (doc) {
             await lens.provideCodeLenses(doc, new vscode.CancellationTokenSource().token)
-            lens.set(selection.start.line, this.fileChatProvider, updatedLength)
+            lens.set(selection.start.line, this.fileChatProvider, lineCountDiff)
             vscode.languages.registerCodeLensProvider('*', lens)
         }
 

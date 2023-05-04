@@ -1,6 +1,6 @@
 // Debugging helpers
 
-function time<T>(label: string, f: () => T): T {
+export function time<T>(label: string, f: () => T): T {
     const start = performance.now()
     const result = f()
     const end = performance.now()
@@ -12,7 +12,7 @@ function render(ch: string): string {
     return ch === '\n' ? '@' : ch
 }
 
-function dumpProgram(program: Uint16Array, ops: Op[], a: string, b: string): void {
+export function dumpProgram(program: Uint16Array, ops: Op[], a: string, b: string): void {
     const buffer = []
     buffer.push(`  ^${Array.prototype.map.call(a, render).join('')}\n`)
     for (let iB = 0; iB <= b.length; iB++) {
@@ -33,7 +33,7 @@ function dumpProgram(program: Uint16Array, ops: Op[], a: string, b: string): voi
     console.log(buffer.join(''))
 }
 
-function dumpUse(use: Uint8Array, a: string, b: string): void {
+export function dumpUse(use: Uint8Array, a: string, b: string): void {
     const buffer = []
     buffer.push(`  ^${Array.prototype.map.call(a, render).join('')}\n`)
     for (let iB = 0; iB <= b.length; iB++) {
