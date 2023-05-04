@@ -131,8 +131,8 @@ export const TryCodySignUpCtaSection: React.FC<{ className?: string }> = ({ clas
                 </Text>
             </ul>
             <div className="mb-2">
-                <ButtonLink to="/sign-up" variant="merged">
-                    Sign up to gain access <Icon svgPath={mdiChevronRight} aria-hidden={true} />
+                <ButtonLink to="/sign-up" variant="merged" className="d-inline-flex align-items-center">
+                    Sign up to gain access <Icon svgPath={mdiChevronRight} aria-hidden={true} size="md" />
                 </ButtonLink>
             </div>
             <Link to="/help/cody/quickstart" target="_blank" rel="noopener">
