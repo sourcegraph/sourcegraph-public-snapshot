@@ -1,4 +1,4 @@
-.header-container {
+.container {
     display: flex;
     justify-content: space-between;
     font-family: var(--vscode-font-family);
@@ -7,13 +7,18 @@
     color: var(--vscode-sideBarTitle-foreground);
 }
 
-.reset-conversation {
-    margin: 0;
-    cursor: pointer;
+.logo {
+    /* Slight optical fix to ensure it aligns with standard padding */
+    margin-left: -3px;
 }
 
-@media screen and (max-width: 300px) {
-    .header-tag-beta {
+.logo svg {
+    /* Resize it down from 24px to 20px height (1rem) */
+    transform: scale(calc(20/24));
+}
+
+@media screen and (max-width: 250px) {
+    .tag {
         display: none;
     }
 }
