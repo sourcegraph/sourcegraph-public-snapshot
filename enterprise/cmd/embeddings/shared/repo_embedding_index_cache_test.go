@@ -93,6 +93,40 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 	require.Equal(t, 2, downloadLargeCount)
 }
 
+func Test_embeddingsIndexCache(t *testing.T) {
+	entryWithSize := func(size int) repoEmbeddingIndexCacheEntry {
+		return repoEmbeddingIndexCacheEntry{
+			index: &embeddings.RepoEmbeddingIndex{
+				CodeIndex: embeddings.EmbeddingIndex{
+					Embeddings: make([]int8, size),
+				},
+			},
+		}
+	}
+
+	c, err := newEmbeddingsIndexCache(1024, 2)
+	require.NoError(t, err)
+
+	tooBig := entryWithSize(2048)
+	fitsOne := entryWithSize(700)
+
+	c.Add("a", tooBig)
+	_, ok := c.Get("a")
+	require.False(t, ok, "a cache entry that is too large should enter the cache")
+
+	c.Add("fitsOne", fitsOne)
+	_, ok = c.Get("fitsOne")
+	require.True(t, ok, "a cache entry that fits should always get added to the cache")
+
+	c.Add("fitsOneAgain", fitsOne)
+	_, ok = c.Get("fitsOneAgain")
+	require.True(t, ok, "a cache entry should evict other cache entries until it fits")
+
+	_, ok = c.Get("fitsOne")
+	require.False(t, ok, "after being evicted, a cache entry should not exist")
+
+}
+
 func TestConcurrentGetCachedRepoEmbeddingIndex(t *testing.T) {
 	t.Parallel()
 

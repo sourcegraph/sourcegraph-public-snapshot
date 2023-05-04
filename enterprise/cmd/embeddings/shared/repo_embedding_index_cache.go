@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dgraph-io/ristretto"
+	"github.com/hashicorp/golang-lru/v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -52,44 +52,68 @@ func (m *repoMutexMap) GetLock(repoID api.RepoID) *sync.Mutex {
 	return lock
 }
 
-// embeddingsIndexCache is a thin wrapper around a ristretto cache
-// that adds well-typed Get and Set methods to the cache. It is
-// memory-bounded, which is useful for embeddings indexes because
-// they can have dramatically different sizes.
+// embeddingsIndexCache is a thin wrapper around an LRU cache that is
+// memory-bounded, which is useful for embeddings indexes because they can have
+// dramatically different sizes.
 type embeddingsIndexCache struct {
-	cache *ristretto.Cache
+	mu                 sync.Mutex
+	cache              *lru.Cache[embeddings.RepoEmbeddingIndexName, repoEmbeddingIndexCacheEntry]
+	maxSizeBytes       int64
+	remainingSizeBytes int64
 }
 
+// The default maximum number of entries in the embeddings cache.
+const defaultMaxCacheEntries = 4 * 1024
+
 // newEmbeddingsIndexCache creates a cache with reasonable settings for an embeddings cache
-func newEmbeddingsIndexCache(cacheSizeBytes int64) (embeddingsIndexCache, error) {
-	rc, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: 1000,
-		MaxCost:     cacheSizeBytes,
-		BufferItems: 64,
-		Metrics:     false, // we have no way to collect metrics yet
-	})
-	if err != nil {
-		return embeddingsIndexCache{}, err
+func newEmbeddingsIndexCache(maxSizeBytes int64, maxEntries int) (_ *embeddingsIndexCache, err error) {
+	c := &embeddingsIndexCache{
+		maxSizeBytes:       maxSizeBytes,
+		remainingSizeBytes: maxSizeBytes,
 	}
 
-	return embeddingsIndexCache{rc}, nil
+	c.cache, err = lru.NewWithEvict(maxEntries, c.onEvict)
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
 }
 
 func (c *embeddingsIndexCache) Get(repo embeddings.RepoEmbeddingIndexName) (repoEmbeddingIndexCacheEntry, bool) {
-	v, ok := c.cache.Get(string(repo))
-	if !ok {
-		return repoEmbeddingIndexCacheEntry{}, false
-	}
-	return v.(repoEmbeddingIndexCacheEntry), true
+	return c.cache.Get(repo)
 }
 
-func (c *embeddingsIndexCache) Set(repo embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
-	c.cache.Set(string(repo), value, value.index.EstimateSize())
+func (c *embeddingsIndexCache) Add(repo embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
+	size := value.index.EstimateSize()
+	if size > c.maxSizeBytes {
+		// Return early if the index could never fit in the cache.
+		// We don't want to dump the cache just to not be able to fit it.
+		return
+	}
 
-	// Since this isn't a performance hotspot, always wait for the
-	// cached value to propagate. This makes testing easier and
-	// ensures we never refetch unnecessarily.
-	c.cache.Wait()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Evict entries until there is space
+	for c.remainingSizeBytes < size {
+		_, _, ok := c.cache.RemoveOldest()
+		if !ok {
+			// Since we already checked that the entry can fit in the cache,
+			// this should never happen since the cache should never be empty
+			// and not fit the entry.
+			return
+		}
+	}
+
+	// Reserve space for the entry and add it to the cache
+	c.remainingSizeBytes -= size
+	c.cache.Add(repo, value)
+}
+
+// onEvict must only be called while the index mutex is held
+func (c *embeddingsIndexCache) onEvict(_ embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
+	c.remainingSizeBytes += value.index.EstimateSize()
 }
 
 func getCachedRepoEmbeddingIndex(
@@ -98,7 +122,7 @@ func getCachedRepoEmbeddingIndex(
 	downloadRepoEmbeddingIndex downloadRepoEmbeddingIndexFn,
 	cacheSizeBytes int64,
 ) (getRepoEmbeddingIndexFn, error) {
-	cache, err := newEmbeddingsIndexCache(cacheSizeBytes)
+	cache, err := newEmbeddingsIndexCache(cacheSizeBytes, defaultMaxCacheEntries)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating repo embedding index cache")
 	}
@@ -110,7 +134,7 @@ func getCachedRepoEmbeddingIndex(
 		if err != nil {
 			return nil, errors.Wrap(err, "downloading repo embedding index")
 		}
-		cache.Set(repoEmbeddingIndexName, repoEmbeddingIndexCacheEntry{index: embeddingIndex, finishedAt: *finishedAt})
+		cache.Add(repoEmbeddingIndexName, repoEmbeddingIndexCacheEntry{index: embeddingIndex, finishedAt: *finishedAt})
 		return embeddingIndex, nil
 	}
 
