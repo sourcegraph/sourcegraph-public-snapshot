@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Link, H3, ButtonLink } from '@sourcegraph/wildcard'
+import { Link, H3 } from '@sourcegraph/wildcard'
 
 import styles from './GitHubAppCard.module.scss'
 
@@ -13,8 +13,8 @@ interface GitHubApp {
     appURL: string
     name: string
     logo?: string
-    createdAt: Date
-    updatedAt: Date
+    createdAt: string
+    updatedAt: string
 }
 
 interface GitHubAppCardProps {
@@ -25,7 +25,7 @@ interface GitHubAppCardProps {
 export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, className = '' }) => {
     return (
         <Link
-            className={classNames('d-flex align-items-center p-2 text-body text-decoration-none', className)}
+            className={classNames('d-flex align-items-center p-2 text-body text-decoration-none', className ?? '')}
             to={`./${app.id}`}
         >
             <img className={classNames('mr-3', styles.logo)} src={app.logo} alt="app logo" aria-hidden={true} />

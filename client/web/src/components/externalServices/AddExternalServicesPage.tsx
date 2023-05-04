@@ -57,9 +57,6 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     if (id) {
         const externalService = allExternalServices[id]
         if (externalService) {
-            if (externalService.addForm) {
-                return externalService.addForm
-            }
             return (
                 <AddExternalServicePage
                     telemetryService={telemetryService}

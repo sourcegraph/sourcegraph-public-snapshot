@@ -20,6 +20,9 @@ export const GitHubAppPage: FC<Props> = ({
     allowEditExternalServicesWithFile,
 }) => {
     const { appID } = useParams()
+    if (!appID) {
+        return null
+    }
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminGitHubApp')
