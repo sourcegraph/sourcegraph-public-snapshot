@@ -159,6 +159,7 @@ go_library(
         "site_usage_stats.go",
         "site_users.go",
         "slow_requests_tracer.go",
+        "source_type.go",
         "status_messages.go",
         "survey_response.go",
         "survey_responses.go",
