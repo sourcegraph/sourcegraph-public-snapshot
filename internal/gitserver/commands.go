@@ -2447,9 +2447,17 @@ func (c *clientImplementor) ArchiveReader(
 			return nil
 		}
 
-		// This Reads the first message to check for errors before contining reading the rest of the stream.
-		// if the first message is an error, the stream is closed and the error is returned.
-		// This is necessary because the first message may contain an error (e.g repo not found error), but the stream may not be closed so the error is not returned.
+		// first message from the gRPC stream needs to be read to check for errors before continuing
+		// to read the rest of the stream. If the first message is an error, we cancel the stream
+		// and return the error.
+		//
+		// This is necessary to provide parity between the REST and gRPC implementations of
+		// ArchiveReader. Users of cli.ArchiveReader may assume error handling occurs immediately,
+		// as is the case with the HTTP implementation where errors are returned as soon as the
+		// function returns. gRPC is asynchronous, so we have to start consuming messages from
+		// the stream to see any errors from the server. Reading the first message ensures we
+		// handle any errors synchronously, similar to the HTTP implementation.
+
 		firstMessage, err := stream.Recv()
 		if err != nil {
 			cancel()
@@ -2457,17 +2465,22 @@ func (c *clientImplementor) ArchiveReader(
 		}
 
 		firstMessageRead := false
+
+		// Create a reader to read from the gRPC stream.
 		r := streamio.NewReader(func() ([]byte, error) {
+			// Check if we've read the first message yet. If not, read it and return.
 			if !firstMessageRead {
 				firstMessageRead = true
 				return firstMessage.GetData(), nil
 			}
 
+			// Receive the next message from the stream.
 			msg, err := stream.Recv()
 			if err != nil {
 				return nil, handleStreamErr(err)
 			}
 
+			// Return the data from the received message.
 			return msg.GetData(), nil
 		})
 
