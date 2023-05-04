@@ -19,11 +19,12 @@ import (
 )
 
 const (
-	kubernetesContainerName = "sg-executor-job-container"
-	kubernetesVolumeName    = "sg-executor-job-volume"
+	kubernetesVolumeName = "sg-executor-job-volume"
 )
 
 const (
+	// KubernetesContainerName is the name of the Kubernetes container that run the main container.
+	KubernetesContainerName = "sg-executor-job-container"
 	// KubernetesExecutorMountPath is the path where the Kubernetes volume is mounted in the container.
 	KubernetesExecutorMountPath = "/data"
 	// KubernetesJobMountPath is the path where the Kubernetes volume is mounted in the container.
@@ -59,6 +60,13 @@ type KubernetesResource struct {
 	Memory resource.Quantity
 }
 
+// KubernetesRetry contains the retry options for a Kubernetes Job.
+type KubernetesRetry struct {
+	Attempts int
+	Backoff  time.Duration
+}
+
+// KubernetesSecurityContext contains the security context options for a Kubernetes Job.
 type KubernetesSecurityContext struct {
 	RunAsUser  *int64
 	RunAsGroup *int64
@@ -84,11 +92,11 @@ func (c *KubernetesCommand) DeleteJob(ctx context.Context, namespace string, job
 var propagationPolicy = metav1.DeletePropagationBackground
 
 // ReadLogs reads the logs of the given pod and writes them to the logger.
-func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podName string, cmdLogger Logger, key string, command []string) error {
-	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{Container: kubernetesContainerName})
+func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podName string, containerName string, cmdLogger Logger, key string, command []string) error {
+	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{Container: containerName})
 	stream, err := req.Stream(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "opening log stream")
 	}
 
 	logEntry := cmdLogger.LogEntry(key, command)
@@ -137,7 +145,7 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace 
 	for {
 		// After 60 seconds, give up
 		if attempts > retry.Attempts {
-			return errors.Newf("job %s did not complete", name)
+			return ErrKubernetesJobDidNotComplete
 		}
 		job, err := c.getJob(ctx, namespace, name)
 		if err != nil {
@@ -146,7 +154,7 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace 
 		if job.Status.Active == 0 && job.Status.Succeeded > 0 {
 			return nil
 		} else if job.Status.Failed > 0 {
-			return errors.Newf("job %s failed", name)
+			return ErrKubernetesJobFailed
 		} else {
 			time.Sleep(retry.Backoff)
 			attempts++
@@ -154,10 +162,11 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace 
 	}
 }
 
-type KubernetesRetry struct {
-	Attempts int
-	Backoff  time.Duration
-}
+// ErrKubernetesJobDidNotComplete is returned when a Kubernetes job does not complete.
+var ErrKubernetesJobDidNotComplete = errors.New("job did not complete")
+
+// ErrKubernetesJobFailed is returned when a Kubernetes job fails.
+var ErrKubernetesJobFailed = errors.New("job failed")
 
 func (c *KubernetesCommand) getJob(ctx context.Context, namespace string, name string) (*batchv1.Job, error) {
 	return c.Clientset.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
@@ -225,7 +234,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 					RestartPolicy: corev1.RestartPolicyNever,
 					Containers: []corev1.Container{
 						{
-							Name:       kubernetesContainerName,
+							Name:       KubernetesContainerName,
 							Image:      image,
 							Command:    spec.Command,
 							WorkingDir: filepath.Join(KubernetesJobMountPath, spec.Dir),

@@ -118,7 +118,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 				Clientset: clientset,
 			}
 
-			err := cmd.ReadLogs(context.Background(), "my-namespace", "my-pod", logger, "my-key", []string{"echo", "hello"})
+			err := cmd.ReadLogs(context.Background(), "my-namespace", "my-pod", command.KubernetesContainerName, logger, "my-key", []string{"echo", "hello"})
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
@@ -249,7 +249,7 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 					return true, &batchv1.Job{Status: batchv1.JobStatus{Failed: 1}}, nil
 				})
 			},
-			expectedErr: errors.New("job my-job failed"),
+			expectedErr: errors.New("job failed"),
 		},
 		{
 			name: "Error occurred",
