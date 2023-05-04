@@ -21,8 +21,6 @@ var (
 		Namespace: "src",
 		Name:      "own_recent_views_events_processed_total",
 	})
-	indexInterval     = time.Minute * 5
-	mockIndexInterval time.Duration
 )
 
 func NewOwnRecentViewsIndexer(db database.DB, observationCtx *observation.Context) goroutine.BackgroundRoutine {
@@ -38,11 +36,7 @@ func NewOwnRecentViewsIndexer(db database.DB, observationCtx *observation.Contex
 		Metrics:           redMetrics,
 	})
 	handler := newRecentViewsIndexer(db, operation.Logger)
-	interval := indexInterval
-	if mockIndexInterval != 0 {
-		interval = mockIndexInterval
-	}
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), "own.recent-views", "", interval, handler, operation)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), "own.recent-views", "", time.Minute*5, handler, operation)
 }
 
 type recentViewsIndexer struct {
