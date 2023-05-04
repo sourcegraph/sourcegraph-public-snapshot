@@ -1,0 +1,20 @@
+.chat-main-wrapper {
+    filter: none;
+    border: 1px solid var(--border-color-2);
+    border-radius: var(--border-radius);
+    padding: 0;
+}
+
+.page-wrapper {
+    padding-top: 0.625rem;
+    height: 93%;
+}
+
+.sidebar {
+    overflow-y: scroll;
+    padding-bottom: 0.625rem;
+}
+
+.dots-icon-paddings {
+    padding: 0 0.625rem;
+}

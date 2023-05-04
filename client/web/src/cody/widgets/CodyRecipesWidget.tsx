@@ -6,7 +6,7 @@ import { mdiCardBulletedOutline, mdiDotsVertical, mdiProgressPencil, mdiTranslat
 
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
 
-import { useChatStoreState } from '../../stores/codyChat'
+import { useChatStoreState } from '../stores/chat'
 
 import { Recipe } from './components/Recipe'
 import { RecipeAction } from './components/RecipeAction'
