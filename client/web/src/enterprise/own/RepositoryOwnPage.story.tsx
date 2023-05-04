@@ -47,6 +47,7 @@ const repo: RepositoryFields = {
         displayName: 'main',
         abbrevName: 'main',
     },
+    metadata: [],
 }
 
 const empyResponse: MockedResponse<GetIngestedCodeownersResult, GetIngestedCodeownersVariables> = {

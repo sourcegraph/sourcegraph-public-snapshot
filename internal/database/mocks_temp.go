@@ -4969,6 +4969,10 @@ type MockDB struct {
 	// QueryRowContextFunc is an instance of a mock function object
 	// controlling the behavior of the method QueryRowContext.
 	QueryRowContextFunc *DBQueryRowContextFunc
+	// RecentContributionSignalsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// RecentContributionSignals.
+	RecentContributionSignalsFunc *DBRecentContributionSignalsFunc
 	// RedisKeyValueFunc is an instance of a mock function object
 	// controlling the behavior of the method RedisKeyValue.
 	RedisKeyValueFunc *DBRedisKeyValueFunc
@@ -5180,6 +5184,11 @@ func NewMockDB() *MockDB {
 		},
 		QueryRowContextFunc: &DBQueryRowContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (r0 *sql.Row) {
+				return
+			},
+		},
+		RecentContributionSignalsFunc: &DBRecentContributionSignalsFunc{
+			defaultHook: func() (r0 RecentContributionSignalStore) {
 				return
 			},
 		},
@@ -5440,6 +5449,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.QueryRowContext")
 			},
 		},
+		RecentContributionSignalsFunc: &DBRecentContributionSignalsFunc{
+			defaultHook: func() RecentContributionSignalStore {
+				panic("unexpected invocation of MockDB.RecentContributionSignals")
+			},
+		},
 		RedisKeyValueFunc: &DBRedisKeyValueFunc{
 			defaultHook: func() RedisKeyValueStore {
 				panic("unexpected invocation of MockDB.RedisKeyValue")
@@ -5638,6 +5652,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		QueryRowContextFunc: &DBQueryRowContextFunc{
 			defaultHook: i.QueryRowContext,
+		},
+		RecentContributionSignalsFunc: &DBRecentContributionSignalsFunc{
+			defaultHook: i.RecentContributionSignals,
 		},
 		RedisKeyValueFunc: &DBRedisKeyValueFunc{
 			defaultHook: i.RedisKeyValue,
@@ -8629,6 +8646,106 @@ func (c DBQueryRowContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// DBRecentContributionSignalsFunc describes the behavior when the
+// RecentContributionSignals method of the parent MockDB instance is
+// invoked.
+type DBRecentContributionSignalsFunc struct {
+	defaultHook func() RecentContributionSignalStore
+	hooks       []func() RecentContributionSignalStore
+	history     []DBRecentContributionSignalsFuncCall
+	mutex       sync.Mutex
+}
+
+// RecentContributionSignals delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDB) RecentContributionSignals() RecentContributionSignalStore {
+	r0 := m.RecentContributionSignalsFunc.nextHook()()
+	m.RecentContributionSignalsFunc.appendCall(DBRecentContributionSignalsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// RecentContributionSignals method of the parent MockDB instance is invoked
+// and the hook queue is empty.
+func (f *DBRecentContributionSignalsFunc) SetDefaultHook(hook func() RecentContributionSignalStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecentContributionSignals method of the parent MockDB instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBRecentContributionSignalsFunc) PushHook(hook func() RecentContributionSignalStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRecentContributionSignalsFunc) SetDefaultReturn(r0 RecentContributionSignalStore) {
+	f.SetDefaultHook(func() RecentContributionSignalStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRecentContributionSignalsFunc) PushReturn(r0 RecentContributionSignalStore) {
+	f.PushHook(func() RecentContributionSignalStore {
+		return r0
+	})
+}
+
+func (f *DBRecentContributionSignalsFunc) nextHook() func() RecentContributionSignalStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRecentContributionSignalsFunc) appendCall(r0 DBRecentContributionSignalsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRecentContributionSignalsFuncCall objects
+// describing the invocations of this function.
+func (f *DBRecentContributionSignalsFunc) History() []DBRecentContributionSignalsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRecentContributionSignalsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRecentContributionSignalsFuncCall is an object that describes an
+// invocation of method RecentContributionSignals on an instance of MockDB.
+type DBRecentContributionSignalsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RecentContributionSignalStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRecentContributionSignalsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRecentContributionSignalsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // DBRedisKeyValueFunc describes the behavior when the RedisKeyValue method
 // of the parent MockDB instance is invoked.
 type DBRedisKeyValueFunc struct {
@@ -10721,6 +10838,9 @@ type MockEventLogStore struct {
 	// function object controlling the behavior of the method
 	// AggregatedCodeIntelInvestigationEvents.
 	AggregatedCodeIntelInvestigationEventsFunc *EventLogStoreAggregatedCodeIntelInvestigationEventsFunc
+	// AggregatedCodyEventsFunc is an instance of a mock function object
+	// controlling the behavior of the method AggregatedCodyEvents.
+	AggregatedCodyEventsFunc *EventLogStoreAggregatedCodyEventsFunc
 	// AggregatedSearchEventsFunc is an instance of a mock function object
 	// controlling the behavior of the method AggregatedSearchEvents.
 	AggregatedSearchEventsFunc *EventLogStoreAggregatedSearchEventsFunc
@@ -10854,6 +10974,11 @@ func NewMockEventLogStore() *MockEventLogStore {
 		},
 		AggregatedCodeIntelInvestigationEventsFunc: &EventLogStoreAggregatedCodeIntelInvestigationEventsFunc{
 			defaultHook: func(context.Context) (r0 []types.CodeIntelAggregatedInvestigationEvent, r1 error) {
+				return
+			},
+		},
+		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
+			defaultHook: func(context.Context, time.Time) (r0 []types.CodyAggregatedEvent, r1 error) {
 				return
 			},
 		},
@@ -11049,6 +11174,11 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.AggregatedCodeIntelInvestigationEvents")
 			},
 		},
+		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
+			defaultHook: func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error) {
+				panic("unexpected invocation of MockEventLogStore.AggregatedCodyEvents")
+			},
+		},
 		AggregatedSearchEventsFunc: &EventLogStoreAggregatedSearchEventsFunc{
 			defaultHook: func(context.Context, time.Time) ([]types.SearchAggregatedEvent, error) {
 				panic("unexpected invocation of MockEventLogStore.AggregatedSearchEvents")
@@ -11237,6 +11367,9 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		},
 		AggregatedCodeIntelInvestigationEventsFunc: &EventLogStoreAggregatedCodeIntelInvestigationEventsFunc{
 			defaultHook: i.AggregatedCodeIntelInvestigationEvents,
+		},
+		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
+			defaultHook: i.AggregatedCodyEvents,
 		},
 		AggregatedSearchEventsFunc: &EventLogStoreAggregatedSearchEventsFunc{
 			defaultHook: i.AggregatedSearchEvents,
@@ -11563,6 +11696,117 @@ func (c EventLogStoreAggregatedCodeIntelInvestigationEventsFuncCall) Args() []in
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreAggregatedCodeIntelInvestigationEventsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EventLogStoreAggregatedCodyEventsFunc describes the behavior when the
+// AggregatedCodyEvents method of the parent MockEventLogStore instance is
+// invoked.
+type EventLogStoreAggregatedCodyEventsFunc struct {
+	defaultHook func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)
+	hooks       []func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)
+	history     []EventLogStoreAggregatedCodyEventsFuncCall
+	mutex       sync.Mutex
+}
+
+// AggregatedCodyEvents delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEventLogStore) AggregatedCodyEvents(v0 context.Context, v1 time.Time) ([]types.CodyAggregatedEvent, error) {
+	r0, r1 := m.AggregatedCodyEventsFunc.nextHook()(v0, v1)
+	m.AggregatedCodyEventsFunc.appendCall(EventLogStoreAggregatedCodyEventsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the AggregatedCodyEvents
+// method of the parent MockEventLogStore instance is invoked and the hook
+// queue is empty.
+func (f *EventLogStoreAggregatedCodyEventsFunc) SetDefaultHook(hook func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AggregatedCodyEvents method of the parent MockEventLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EventLogStoreAggregatedCodyEventsFunc) PushHook(hook func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EventLogStoreAggregatedCodyEventsFunc) SetDefaultReturn(r0 []types.CodyAggregatedEvent, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EventLogStoreAggregatedCodyEventsFunc) PushReturn(r0 []types.CodyAggregatedEvent, r1 error) {
+	f.PushHook(func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error) {
+		return r0, r1
+	})
+}
+
+func (f *EventLogStoreAggregatedCodyEventsFunc) nextHook() func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EventLogStoreAggregatedCodyEventsFunc) appendCall(r0 EventLogStoreAggregatedCodyEventsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EventLogStoreAggregatedCodyEventsFuncCall
+// objects describing the invocations of this function.
+func (f *EventLogStoreAggregatedCodyEventsFunc) History() []EventLogStoreAggregatedCodyEventsFuncCall {
+	f.mutex.Lock()
+	history := make([]EventLogStoreAggregatedCodyEventsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EventLogStoreAggregatedCodyEventsFuncCall is an object that describes an
+// invocation of method AggregatedCodyEvents on an instance of
+// MockEventLogStore.
+type EventLogStoreAggregatedCodyEventsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.CodyAggregatedEvent
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EventLogStoreAggregatedCodyEventsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EventLogStoreAggregatedCodyEventsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

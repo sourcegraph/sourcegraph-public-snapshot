@@ -30,6 +30,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
     const [errorMessage, setErrorMessage] = useState<string>('')
+    const [suggestions, setSuggestions] = useState<string[] | undefined>()
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -68,8 +69,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 case 'contextStatus':
                     setContextStatus(message.contextStatus)
                     break
+                case 'errors':
+                    setErrorMessage(message.errors)
+                    break
                 case 'view':
                     setView(message.messages)
+                    break
+                case 'suggestions':
+                    setSuggestions(message.suggestions)
                     break
             }
         })
@@ -111,13 +118,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     userHistory={userHistory}
                     setUserHistory={setUserHistory}
                     setInputHistory={setInputHistory}
+                    setView={setView}
                     vscodeAPI={vscodeAPI}
                 />
             )}
             {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
-            {view === 'settings' && (
-                <Settings setView={setView} onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />
-            )}
+            {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
             {view === 'chat' && errorMessage && (
                 <div className="error">
                     Error: {errorMessage}
@@ -138,6 +144,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     inputHistory={inputHistory}
                     setInputHistory={setInputHistory}
                     vscodeAPI={vscodeAPI}
+                    suggestions={suggestions}
+                    setSuggestions={setSuggestions}
                 />
             )}
         </div>

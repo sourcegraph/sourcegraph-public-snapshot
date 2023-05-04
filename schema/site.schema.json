@@ -1022,12 +1022,18 @@
     "permissions.syncOldestUsers": {
       "description": "Number of user permissions to schedule for syncing in single scheduler iteration.",
       "type": "integer",
-      "default": 10
+      "default": 10,
+      "!go": {
+        "pointer": true
+      }
     },
     "permissions.syncOldestRepos": {
       "description": "Number of repo permissions to schedule for syncing in single scheduler iteration.",
       "type": "integer",
-      "default": 10
+      "default": 10,
+      "!go": {
+        "pointer": true
+      }
     },
     "permissions.syncUsersBackoffSeconds": {
       "description": "Don't sync a user's permissions if they have synced within the last n seconds.",
@@ -2051,6 +2057,16 @@
           "items": {
             "type": "string"
           }
+        },
+        "maxCodeEmbeddingsPerRepo": {
+          "description": "The maximum number of embeddings for code files to generate per repo",
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxTextEmbeddingsPerRepo": {
+          "description": "The maximum number of embeddings for text files to generate per repo",
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -2086,8 +2102,8 @@
           "default": "anthropic",
           "enum": ["anthropic", "openai"]
         },
-        "perUserHourlyLimit": {
-          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in an hour. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+        "perUserDailyLimit": {
+          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
           "type": "integer",
           "default": 0
         }

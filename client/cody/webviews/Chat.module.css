@@ -16,6 +16,7 @@ body[data-vscode-theme-kind='vscode-light'] .human-transcript-item,
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .human-transcript-item {
     background-color: rgba(0, 0, 0, 0.07); /* slight dark tint */
 }
+
 body[data-vscode-theme-kind='vscode-dark'] .human-transcript-item,
 body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     background-color: rgba(255, 255, 255, 0.07); /* slight light tint */
@@ -38,6 +39,10 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 .transcript-action {
     background: var(--button-secondary-background);
     color: var(--button-secondary-foreground);
+    font-size: var(--vscode-editor-font-size);
+}
+
+.transcript-action > button {
     font-size: var(--vscode-editor-font-size);
 }
 
@@ -67,4 +72,19 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 :global(.token-not-hallucinated) {
     border-bottom: 2px solid var(--vscode-testing-iconPassed);
     word-break: break-all;
+}
+
+.feedback-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 0.15rem;
+}
+
+.edit-button {
+    border-radius: 1rem;
+}
+
+.suggestion-button {
+    border-radius: 1rem;
+    font-size: 0.7rem;
 }

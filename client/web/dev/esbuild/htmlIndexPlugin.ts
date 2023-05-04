@@ -12,7 +12,7 @@ import { WebpackManifest, HTML_INDEX_PATH } from '../utils'
 export const assetPathPrefix = '/'
 
 export const getManifest = (jsEntrypoint: string, cssEntrypoint?: string): WebpackManifest => ({
-    'shell.js': path.join(assetPathPrefix, jsEntrypoint ?? 'scripts/app.js'),
+    'app.js': path.join(assetPathPrefix, jsEntrypoint ?? 'scripts/app.js'),
     'app.css': path.join(assetPathPrefix, cssEntrypoint ?? 'scripts/app.css'),
     isModule: true,
 })
@@ -22,7 +22,7 @@ const writeHtmlIndex = async (manifest: WebpackManifest): Promise<void> => {
     const render = handlebars.compile(template)
     const content = render({
         cssBundle: manifest['app.css'],
-        jsBundle: manifest['shell.js'],
+        jsBundle: manifest['app.js'],
         isModule: manifest.isModule,
     })
     await fs.promises.writeFile(HTML_INDEX_PATH, content)
@@ -72,7 +72,7 @@ export const htmlIndexPlugin: esbuild.Plugin = {
                 }
             }
 
-            await writeHtmlIndex(getManifest(jsEntrypoint, cssEntrypoint))
+            await writeHtmlIndex(getManifest(jsEntrypoint ?? '', cssEntrypoint))
         })
     },
 }

@@ -16,7 +16,7 @@ func (s *store) InsertPathRanks(
 	ctx context.Context,
 	derivativeGraphKey string,
 	batchSize int,
-) (numPathRanksInserted int, numInputsProcessed int, err error) {
+) (numInputsProcessed int, numPathRanksInserted int, err error) {
 	ctx, _, endObservation := s.operations.insertPathRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("derivativeGraphKey", derivativeGraphKey),
 	}})
@@ -42,11 +42,11 @@ func (s *store) InsertPathRanks(
 		return 0, 0, errors.New("no rows from count")
 	}
 
-	if err = rows.Scan(&numPathRanksInserted, &numInputsProcessed); err != nil {
+	if err = rows.Scan(&numInputsProcessed, &numPathRanksInserted); err != nil {
 		return 0, 0, err
 	}
 
-	return numPathRanksInserted, numInputsProcessed, nil
+	return numInputsProcessed, numPathRanksInserted, nil
 }
 
 const insertPathRanksQuery = `

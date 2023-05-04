@@ -10,6 +10,23 @@ cleanup() {
 }
 trap cleanup EXIT
 
+if [[ "$DOCKER_BAZEL" == "true" ]]; then
+  ./dev/ci/bazel.sh build //dev/sg
+
+  out=$(./dev/ci/bazel.sh cquery //dev/sg --output=files)
+
+  cp "$out" "$OUTPUT"
+
+  echo "--- docker build $IMAGE"
+  docker build -f dev/sg/Dockerfile -t "$IMAGE" "$OUTPUT" \
+    --progress=plain \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION
+
+  exit $?
+fi
+
 # Environment for building linux binaries
 export GO111MODULE=on
 export GOARCH=amd64
@@ -19,7 +36,6 @@ export CGO_ENABLED=0
 echo "--- go build"
 pkg="github.com/sourcegraph/sourcegraph/dev/sg"
 go build -trimpath -ldflags "-X main.BuildCommit=$BUILD_COMMIT" -o "$OUTPUT/sg" -buildmode exe "$pkg"
-
 
 echo "--- docker build $IMAGE"
 docker build -f dev/sg/Dockerfile -t "$IMAGE" "$OUTPUT" \

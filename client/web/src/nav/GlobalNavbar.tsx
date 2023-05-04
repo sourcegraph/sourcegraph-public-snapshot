@@ -19,6 +19,8 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize, Tooltip } from '@sourcegraph/wildcard'
 
+import { TauriNavigation } from '../app/TauriNavigation'
+import { HistoryStack } from '../app/useHistoryStack'
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
@@ -69,6 +71,8 @@ export interface GlobalNavbarProps
     showFeedbackModal: () => void
 
     setFuzzyFinderIsVisible: React.Dispatch<SetStateAction<boolean>>
+
+    historyStack: HistoryStack
 }
 
 /**
@@ -131,6 +135,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     notebooksEnabled,
     ownEnabled,
     showFeedbackModal,
+    historyStack,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -169,16 +174,17 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     const codeInsights = codeInsightsEnabled
 
-    const [codyEnabled] = useFeatureFlag('cody-experimental')
-
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
-            codyEnabled && { path: EnterprisePageRoutes.CodySearch, content: 'Cody' },
+            window.context?.codyEnabled && {
+                path: EnterprisePageRoutes.CodySearch,
+                content: 'Cody',
+            },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [codyEnabled, ownEnabled, showSearchContext])
+    }, [ownEnabled, showSearchContext])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
@@ -197,6 +203,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     />
                 }
             >
+                {isSourcegraphApp && <TauriNavigation historyStack={historyStack} />}
+
                 <NavGroup>
                     {searchNavBarItems.length > 0 ? (
                         <NavDropdown
@@ -311,6 +319,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 'navbar'
                             )}
                             size="sm"
+                            target="_blank"
                             onClick={() =>
                                 eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBarSourcegraphApp' })
                             }

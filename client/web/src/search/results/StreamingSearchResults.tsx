@@ -8,7 +8,7 @@ import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@source
 import { asError } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { HighlightResponseFormat, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryUpdate, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
@@ -31,7 +31,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { OwnConfigProps } from '../../own/OwnConfigProps'
-import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
+import { fetchBlob } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { buildSearchURLQueryFromQueryState, setSearchMode, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
@@ -83,7 +83,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     // Feature flags
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
-    const prefetchBlobFormat = usePrefetchBlobFormat()
     const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
     const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
@@ -387,9 +386,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         params =>
             fetchBlob({
                 ...params,
-                format: prefetchBlobFormat,
+                format: HighlightResponseFormat.JSON_SCIP,
             }),
-        [prefetchBlobFormat]
+        []
     )
 
     return (
