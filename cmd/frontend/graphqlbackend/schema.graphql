@@ -3424,8 +3424,8 @@ type RepositoryConnection {
 }
 
 enum RepositoryType {
-  GIT_REPOSITORY
-  PERFORCE_DEPOT
+    GIT_REPOSITORY
+    PERFORCE_DEPOT
 }
 
 """
