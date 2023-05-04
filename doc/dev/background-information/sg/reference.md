@@ -655,7 +655,7 @@ Arguments: `<name>`
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
-* `--schema, --db="<value>"`: The target database `schema` to modify (default: frontend)
+* `--schema, --db="<value>"`: The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights' (default: frontend)
 
 ### sg migration revert
 
@@ -878,7 +878,7 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
 * `--in-timescaledb-container`: Launch TimescaleDB in a Docker container for squashing; do not use the host
-* `--schema, --db="<value>"`: The target database `schema` to modify (default: frontend)
+* `--schema, --db="<value>"`: The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights' (default: frontend)
 * `--skip-data`: Skip writing data rows into the squashed migration
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 
@@ -898,7 +898,7 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
 * `--in-timescaledb-container`: Launch TimescaleDB in a Docker container for squashing; do not use the host
-* `--schema, --db="<value>"`: The target database `schema` to modify (default: frontend)
+* `--schema, --db="<value>"`: The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights' (default: frontend)
 * `--skip-data`: Skip writing data rows into the squashed migration
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 * `-f="<value>"`: The output filepath
@@ -917,7 +917,7 @@ Available schemas:
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
-* `--schema, --db="<value>"`: The target database `schema` to modify (default: frontend)
+* `--schema, --db="<value>"`: The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights' (default: frontend)
 * `-f="<value>"`: The output filepath
 
 ### sg migration rewrite
@@ -935,7 +935,7 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--rev="<value>"`: The target revision
-* `--schema, --db="<value>"`: The target database `schema` to modify (default: frontend)
+* `--schema, --db="<value>"`: The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights' (default: frontend)
 
 ## sg insights
 
