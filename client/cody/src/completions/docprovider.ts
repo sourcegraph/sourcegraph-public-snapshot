@@ -53,10 +53,10 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
         }
 
         return completionGroups
-            .map(({ completions, lang, meta }) =>
+            .map(({ completions, lang }) =>
                 completions
-                    .map(({ prompt, content, stopReason: finishReason }, index) => {
-                        let completionText = `\`\`\`${lang}\n${content}\n\`\`\``
+                    .map(({ content, stopReason: finishReason }, index) => {
+                        const completionText = `\`\`\`${lang}\n${content}\n\`\`\``
                         const headerComponents = [`${index + 1} / ${completions.length}`]
                         if (finishReason) {
                             headerComponents.push(`finish_reason:${finishReason}`)
