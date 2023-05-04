@@ -4,9 +4,11 @@ import { mdiChevronRight, mdiClose, mdiMicrosoftVisualStudioCode } from '@mdi/js
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
+import { EventName } from '../../../util/constants'
 
 import styles from './TryCodyCtaSection.module.scss'
 
@@ -69,9 +71,25 @@ const MeetCodySVG: React.FC = () => (
     </svg>
 )
 
-export const TryCodyCtaSection: React.FC<{ className?: string }> = ({ className }) => {
+export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }> = ({
+    className,
+    telemetryService,
+}) => {
     const [isDismissed, setIsDismissed] = useTemporarySetting('cody.searchPageCta.dismissed', true)
     const onDismiss = useCallback(() => setIsDismissed(true), [setIsDismissed])
+    const onInstallClick = useCallback(
+        () => telemetryService.log(EventName.TRY_CODY_VSCODE, { type: 'ComHome' }, { type: 'ComHome' }),
+        [telemetryService]
+    )
+    const onMarketplaceClick = useCallback(
+        () => telemetryService.log(EventName.TRY_CODY_MARKETPLACE, { type: 'ComHome' }, { type: 'ComHome' }),
+        [telemetryService]
+    )
+    const onCookbookClick = useCallback(
+        () => telemetryService.log(EventName.TRY_CODY_WEB, { type: 'ComHome' }, { type: 'ComHome' }),
+        [telemetryService]
+    )
+
     if (isDismissed) {
         return null
     }
@@ -103,6 +121,7 @@ export const TryCodyCtaSection: React.FC<{ className?: string }> = ({ className 
                         to="vscode:extension/sourcegraph.cody-ai"
                         variant="merged"
                         className="d-inline-flex align-items-center"
+                        onClick={onInstallClick}
                     >
                         Install Cody for VS Code <Icon svgPath={mdiChevronRight} aria-hidden={true} size="md" />
                     </ButtonLink>
@@ -113,6 +132,7 @@ export const TryCodyCtaSection: React.FC<{ className?: string }> = ({ className 
                     to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
                     target="_blank"
                     rel="noopener"
+                    onClick={onMarketplaceClick}
                 >
                     or download on the VS Code marketplace
                 </Text>
@@ -127,6 +147,7 @@ export const TryCodyCtaSection: React.FC<{ className?: string }> = ({ className 
                     target="_blank"
                     rel="noopener"
                     className={classNames(styles.tryCookbookLink, 'd-flex align-items-center')}
+                    onClick={onCookbookClick}
                 >
                     Try it on the openai cookbook
                     <Icon svgPath={mdiChevronRight} aria-hidden={true} size="md" />

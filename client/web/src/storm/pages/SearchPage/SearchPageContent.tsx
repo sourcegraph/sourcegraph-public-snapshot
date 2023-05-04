@@ -89,9 +89,12 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         {isSourcegraphDotCom && (
                             <>
                                 {authenticatedUser ? (
-                                    <TryCodyCtaSection className="mx-auto my-5" />
+                                    <TryCodyCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
                                 ) : (
-                                    <TryCodySignUpCtaSection className="mx-auto my-5" />
+                                    <TryCodySignUpCtaSection
+                                        className="mx-auto my-5"
+                                        telemetryService={telemetryService}
+                                    />
                                 )}
                             </>
                         )}

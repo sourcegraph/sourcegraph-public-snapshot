@@ -245,6 +245,12 @@ function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']):
 
 export const TryCodyWidget: React.FC<TelemetryProps & { className?: string }> = ({ className, telemetryService }) => {
     const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService)
+    useEffect(() => {
+        if (isDismissed) {
+            return
+        }
+        telemetryService.log(EventName.TRY_CODY_WEB_ONBOARDING_DISPLAYED, { type: 'BlobPage' }, { type: 'BlobPage' })
+    }, [isDismissed, telemetryService])
 
     if (isDismissed) {
         return null

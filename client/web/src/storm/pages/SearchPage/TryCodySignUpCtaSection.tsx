@@ -1,11 +1,13 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import { mdiChevronRight, mdiMicrosoftVisualStudioCode } from '@mdi/js'
 import classNames from 'classnames'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
+import { EventName } from '../../../util/constants'
 
 import styles from './TryCodySignUpCtaSection.module.scss'
 
@@ -104,40 +106,56 @@ const MeetCodySVG: React.FC = () => (
     </svg>
 )
 
-export const TryCodySignUpCtaSection: React.FC<{ className?: string }> = ({ className }) => (
-    <div className={classNames('d-flex', className, styles.container)}>
-        <div className="p-2">
-            <MeetCodySVG />
-        </div>
-        <MarketingBlock
-            wrapperClassName="d-flex"
-            contentClassName={classNames('flex-grow-1 d-flex flex-column justify-content-between p-4', styles.card)}
-        >
-            <H3>Get free access</H3>
-            <Text>
-                Cody combines an LLM with the context of Sourcegraph’s code graph on public code or your code at work.
-                Use Cody with:
-            </Text>
-            <ul className={classNames('pl-1', styles.list)}>
-                <Text as="li" size="small" className="mb-2">
-                    our <Icon svgPath={mdiMicrosoftVisualStudioCode} aria-hidden={true} className={styles.vscodeIcon} />{' '}
-                    VS Code extension
-                </Text>
-                <Text as="li" size="small" className="mb-2">
-                    the Sourcegraph web application{' '}
-                </Text>
-                <Text as="li" size="small" className="text-muted">
-                    JetBrains and other editors (Coming soon!)
-                </Text>
-            </ul>
-            <div className="mb-2">
-                <ButtonLink to="/sign-up" variant="merged" className="d-inline-flex align-items-center">
-                    Sign up to gain access <Icon svgPath={mdiChevronRight} aria-hidden={true} size="md" />
-                </ButtonLink>
+export const TryCodySignUpCtaSection: React.FC<TelemetryProps & { className?: string }> = ({
+    className,
+    telemetryService,
+}) => {
+    const onSignUpClick = useCallback(
+        () => telemetryService.log(EventName.CODY_SIGNUP, { type: 'ComHome' }, { type: 'ComHome' }),
+        [telemetryService]
+    )
+
+    return (
+        <div className={classNames('d-flex', className, styles.container)}>
+            <div className="p-2">
+                <MeetCodySVG />
             </div>
-            <Link to="/help/cody/quickstart" target="_blank" rel="noopener">
-                Learn more
-            </Link>
-        </MarketingBlock>
-    </div>
-)
+            <MarketingBlock
+                wrapperClassName="d-flex"
+                contentClassName={classNames('flex-grow-1 d-flex flex-column justify-content-between p-4', styles.card)}
+            >
+                <H3>Get free access</H3>
+                <Text>
+                    Cody combines an LLM with the context of Sourcegraph’s code graph on public code or your code at
+                    work. Use Cody with:
+                </Text>
+                <ul className={classNames('pl-1', styles.list)}>
+                    <Text as="li" size="small" className="mb-2">
+                        our{' '}
+                        <Icon svgPath={mdiMicrosoftVisualStudioCode} aria-hidden={true} className={styles.vscodeIcon} />{' '}
+                        VS Code extension
+                    </Text>
+                    <Text as="li" size="small" className="mb-2">
+                        the Sourcegraph web application{' '}
+                    </Text>
+                    <Text as="li" size="small" className="text-muted">
+                        JetBrains and other editors (Coming soon!)
+                    </Text>
+                </ul>
+                <div className="mb-2">
+                    <ButtonLink
+                        to="/sign-up"
+                        variant="merged"
+                        className="d-inline-flex align-items-center"
+                        onClick={onSignUpClick}
+                    >
+                        Sign up to gain access <Icon svgPath={mdiChevronRight} aria-hidden={true} size="md" />
+                    </ButtonLink>
+                </div>
+                <Link to="/help/cody/quickstart" target="_blank" rel="noopener">
+                    Learn more
+                </Link>
+            </MarketingBlock>
+        </div>
+    )
+}
