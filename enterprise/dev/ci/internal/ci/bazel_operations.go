@@ -425,7 +425,7 @@ func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation 
 				imgs = append(imgs, internalImage)
 			}
 			candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
-			cmds = append(cmds, bk.Cmd(fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " "))))
+			cmds = append(cmds, bk.Cmd(fmt.Sprintf("./dev/ci/docker-publish.sh %s %s &", candidateImage, strings.Join(imgs, " "))))
 
 		}
 		pipeline.AddStep(":docker: :truck: Publish images", cmds...)
