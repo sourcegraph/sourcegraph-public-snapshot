@@ -59,7 +59,7 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 
 	// For cluster liveness and readiness probes
 	healthzLogger := logger.Scoped("healthz", "healthz checks")
-	r.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/-/healthz", func(w http.ResponseWriter, r *http.Request) {
 		if err := healthz(r.Context()); err != nil {
 			healthzLogger.Error("check failed", log.Error(err))
 
@@ -72,7 +72,7 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 		_, _ = w.Write([]byte("healthz: ok"))
 		return
 	})
-	r.HandleFunc("/__version", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/-/__version", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(version.Version()))
 		return
