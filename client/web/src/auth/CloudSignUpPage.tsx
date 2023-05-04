@@ -1,11 +1,6 @@
 import React from 'react'
 
-import {
-    mdiArrowExpandAll,
-    mdiChevronLeft,
-    mdiMessageReplyText,
-    mdiMicrosoftVisualStudioCode,
-} from '@mdi/js'
+import { mdiArrowExpandAll, mdiChevronLeft, mdiMessageReplyText, mdiMicrosoftVisualStudioCode } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
@@ -19,8 +14,8 @@ import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../grap
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
 
-import { FeatureList } from './components/FeatureList'
 import { ExternalsAuth } from './components/ExternalsAuth'
+import { FeatureList } from './components/FeatureList'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './CloudSignUpPage.module.scss'
