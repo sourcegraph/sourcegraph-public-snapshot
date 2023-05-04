@@ -11,6 +11,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -139,4 +140,12 @@ func (r *gitHubAppResolver) ClientID() string {
 
 func (r *gitHubAppResolver) Logo() string {
 	return r.app.Logo
+}
+
+func (r *gitHubAppResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.app.CreatedAt}
+}
+
+func (r *gitHubAppResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.app.UpdatedAt}
 }
