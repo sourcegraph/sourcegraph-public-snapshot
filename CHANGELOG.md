@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 - SCIM user provisioning support for Deactivate/Reactivation of users. [#50533](https://github.com/sourcegraph/sourcegraph/pull/50533)
 - Login form can now be configured with ordering and limit of auth providers. [See docs](https://docs.sourcegraph.com/admin/auth/login_form). [#50586](https://github.com/sourcegraph/sourcegraph/pull/50586), [50284](https://github.com/sourcegraph/sourcegraph/pull/50284) and [#50705](https://github.com/sourcegraph/sourcegraph/pull/50705)
 - When creating a new batch change, spaces are automatically replaced with dashes in the name field. [#50825](https://github.com/sourcegraph/sourcegraph/pull/50825) and [51071](https://github.com/sourcegraph/sourcegraph/pull/51071)
+- Support for custom HTML injection behind an environment variable (`ENABLE_INJECT_HTML`). This allows users to enable or disable HTML customization as needed, which is now disabled by default. [#51400](https://github.com/sourcegraph/sourcegraph/pull/51400)
 
 ### Changed
 

@@ -1576,22 +1576,22 @@
       "default": 5
     },
     "htmlHeadTop": {
-      "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
+      "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.",
       "type": "string",
       "group": "Misc."
     },
     "htmlHeadBottom": {
-      "description": "HTML to inject at the bottom of the `<head>` element on each page, for analytics scripts",
+      "description": "HTML to inject at the bottom of the `<head>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.",
       "type": "string",
       "group": "Misc."
     },
     "htmlBodyTop": {
-      "description": "HTML to inject at the top of the `<body>` element on each page, for analytics scripts",
+      "description": "HTML to inject at the top of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.",
       "type": "string",
       "group": "Misc."
     },
     "htmlBodyBottom": {
-      "description": "HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts",
+      "description": "HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.",
       "type": "string",
       "group": "Misc."
     },
