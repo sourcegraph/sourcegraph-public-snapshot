@@ -81,7 +81,7 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                 </div>
                 <div className="flex-grow-1">
                     <div>
-                        <Icon as={IconComponent} aria-label="Code host logo" className="mr-2" />
+                        <Icon as={IconComponent} aria-label="Code host logo" className="code-host-logo mr-2" />
                         <strong>
                             <Link to={`/site-admin/external-services/${node.id}`}>{node.displayName}</Link>{' '}
                             <small className="text-muted">
