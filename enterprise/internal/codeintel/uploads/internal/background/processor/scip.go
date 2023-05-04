@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"sort"
@@ -209,24 +210,12 @@ func readIndex(r io.Reader, n int64) (*scip.Index, error) {
 // given size is zero, then this function has the same behavior as io.ReadAll.
 func readAllWithSizeHint(r io.Reader, n int64) ([]byte, error) {
 	if n == 0 {
-		n = 512
+		return io.ReadAll(r)
 	}
 
-	b := make([]byte, 0, n)
-	for {
-		if len(b) == cap(b) {
-			// Add more capacity (let append pick how much).
-			b = append(b, 0)[:len(b)]
-		}
-		n, err := r.Read(b[len(b):cap(b)])
-		b = b[:len(b)+n]
-		if err != nil {
-			if err == io.EOF {
-				err = nil
-			}
-			return b, err
-		}
-	}
+	buf := bytes.NewBuffer(make([]byte, 0, n))
+	_, err := io.Copy(buf, r)
+	return buf.Bytes(), err
 }
 
 // ignorePaths returns a set consisting of the relative paths of documents in the give
