@@ -51,6 +51,10 @@ export const FETCH_OWNERS = gql`
                                 }
                                 reasons {
                                     ...CodeownersFileEntryFields
+                                    ... on RecentContributorOwnershipSignal {
+                                        title
+                                        description
+                                    }
                                 }
                             }
                         }
