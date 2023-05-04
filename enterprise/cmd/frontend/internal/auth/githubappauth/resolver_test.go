@@ -191,10 +191,8 @@ func TestResolver_GitHubApp(t *testing.T) {
 	})
 
 	gitHubAppsStore := store.NewStrictMockGitHubAppsStore()
-	gitHubAppsStore.ListFunc.SetDefaultReturn([]*ghtypes.GitHubApp{
-		{
-			ID: 1,
-		},
+	gitHubAppsStore.GetByIDFunc.SetDefaultReturn(&ghtypes.GitHubApp{
+		ID: 1,
 	}, nil)
 
 	db := edb.NewStrictMockEnterpriseDB()
@@ -212,31 +210,29 @@ func TestResolver_GitHubApp(t *testing.T) {
 		Schema:  schema,
 		Context: adminCtx,
 		Query: fmt.Sprintf(`
-			query GitHubApp() {
-				gitHubApp(id: "%s" {
+			query {
+				gitHubApp(id: "%s") {
 					id
 				}
 			}`, graphqlID),
 		ExpectedResult: fmt.Sprintf(`{
-			"gitHubApps": {
-				"nodes": [
-					{"id":"%s"}
-				]
+			"gitHubApp": {
+				"id": "%s"
 			}
 		}`, graphqlID),
 	}, {
 		Schema:  schema,
 		Context: userCtx,
 		Query: fmt.Sprintf(`
-			query GitHubApp() {
-				gitHubApp(id: "%s" {
+			query {
+				gitHubApp(id: "%s") {
 					id
 				}
 			}`, graphqlID),
-		ExpectedResult: `null`,
+		ExpectedResult: `{"gitHubApp": null}`,
 		ExpectedErrors: []*gqlerrors.QueryError{{
 			Message: "must be site admin",
-			Path:    []any{string("gitHubApps")},
+			Path:    []any{string("gitHubApp")},
 		}},
 	}})
 }
