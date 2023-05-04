@@ -84,7 +84,7 @@ type WorkerOptions struct {
 // SimilaritySearch finds the `nResults` most similar rows to a query vector. It uses the cosine similarity metric.
 // IMPORTANT: The vectors in the embedding index have to be normalized for similarity search to work correctly.
 func (index *EmbeddingIndex) SimilaritySearch(query []int8, numResults int, workerOptions WorkerOptions, opts SearchOptions) []EmbeddingSearchResult {
-	if numResults == 0 {
+	if numResults == 0 || len(index.Embeddings) == 0 {
 		return []EmbeddingSearchResult{}
 	}
 
