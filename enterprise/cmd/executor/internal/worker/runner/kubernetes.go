@@ -99,6 +99,5 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 			return errors.Wrapf(err, "waiting for job %s to complete", job.Name)
 		}
 	}
-	// We always want to read the logs
 	return r.cmd.ReadLogs(ctx, r.options.Namespace, pod.Name, command.KubernetesContainerName, r.commandLogger, spec.CommandSpec.Key, spec.CommandSpec.Command)
 }
