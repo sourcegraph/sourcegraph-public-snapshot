@@ -51,8 +51,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setSuggestions,
 }) => {
     const onSubmit = useCallback(
-        (text: string) => {
-            vscodeAPI.postMessage({ command: 'submit', text: escapeCodyMarkdown(text) })
+        (text: string, submitType: 'user' | 'suggestion') => {
+            vscodeAPI.postMessage({ command: 'submit', text: escapeCodyMarkdown(text), submitType })
         },
         [vscodeAPI]
     )
@@ -193,7 +193,8 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
 }) => (
     <div className={className}>
         <VSCodeButton
-            className={classNames(styles.submitButton)}
+            className={classNames(styles.editButton)}
+            appearance="secondary"
             type="button"
             onClick={() => setMessageBeingEdited(!messageBeingEdited)}
         >
@@ -224,7 +225,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
     }
 
     return (
-        <div className={className}>
+        <div className={classNames(styles.feedbackButtons, className)}>
             <VSCodeButton
                 className={classNames(styles.submitButton)}
                 appearance="icon"

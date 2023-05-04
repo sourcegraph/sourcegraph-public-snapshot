@@ -67,5 +67,6 @@ go_test(
         "//internal/api",
         "//internal/database",
         "//internal/types",
+        "@com_github_stretchr_testify//require",
     ],
 )

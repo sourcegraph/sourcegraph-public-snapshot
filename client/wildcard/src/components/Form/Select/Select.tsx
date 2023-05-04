@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 
 import classNames from 'classnames'
 
+import { InputDescription } from '../Input'
 import { AccessibleFieldProps } from '../internal/AccessibleFieldType'
 import { FormFieldLabel } from '../internal/FormFieldLabel'
 import { FormFieldMessage } from '../internal/FormFieldMessage'
@@ -13,6 +14,8 @@ export const SELECT_SIZES = ['sm', 'lg'] as const
 
 export type SelectProps = AccessibleFieldProps<React.SelectHTMLAttributes<HTMLSelectElement>> &
     React.RefAttributes<HTMLSelectElement> & {
+        /** Description block shown above the input (but below the label) */
+        description?: ReactNode
         /**
          * Use the global `custom-select` class.
          */
@@ -68,6 +71,7 @@ export const Select: React.FunctionComponent<React.PropsWithChildren<SelectProps
         isCustomStyle,
         selectSize,
         labelVariant = 'inline',
+        description,
         ...props
     },
     reference
@@ -82,6 +86,7 @@ export const Select: React.FunctionComponent<React.PropsWithChildren<SelectProps
                     {props.label}
                 </FormFieldLabel>
             )}
+            {description && <InputDescription className="ml-0 mb-2 mt-n1">{description}</InputDescription>}
             {/* eslint-disable-next-line react/forbid-elements */}
             <select
                 ref={reference}

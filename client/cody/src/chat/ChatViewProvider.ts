@@ -23,7 +23,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../webviews/NavBar'
 import { LocalStorage } from '../command/LocalStorageProvider'
-import { updateConfiguration } from '../configuration'
+import { getFullConfig, updateConfiguration } from '../configuration'
 import { logEvent } from '../event-logger'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
@@ -97,6 +97,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
                 await this.updateCodebaseContext()
+            }),
+            vscode.workspace.onDidChangeConfiguration(async () => {
+                this.config = await getFullConfig(this.secretStorage)
+                const newCodebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor)
+                if (newCodebaseContext) {
+                    this.codebaseContext = newCodebaseContext
+                }
             })
         )
     }
@@ -106,7 +113,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.configurationChangeEvent.fire()
     }
 
-    public clearAndRestartSession(): void {
+    public async clearAndRestartSession(): Promise<void> {
+        await this.saveTranscriptToChatHistory()
         this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
@@ -116,20 +124,42 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.sendChatHistory()
     }
 
+    public async clearHistory(): Promise<void> {
+        this.chatHistory = {}
+        this.inputHistory = []
+        await this.localStorage.removeChatHistory()
+    }
+
+    /**
+     * Restores a session from a chatID
+     * We delete the loaded session from our in-memory chatHistory (to hide it from the history view)
+     * but don't modify the localStorage as no data changes when a session is restored
+     */
+    public async restoreSession(chatID: string): Promise<void> {
+        await this.saveTranscriptToChatHistory()
+        this.cancelCompletion()
+        this.currentChatID = chatID
+        this.transcript = Transcript.fromJSON(this.chatHistory[chatID])
+        delete this.chatHistory[chatID]
+        this.sendTranscript()
+        this.sendChatHistory()
+    }
+
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
+                this.loadChatHistory()
                 this.publishContextStatus()
                 this.publishConfig()
                 this.sendTranscript()
                 this.sendChatHistory()
                 break
             case 'submit':
-                await this.onHumanMessageSubmitted(message.text)
+                await this.onHumanMessageSubmitted(message.text, message.submitType)
                 break
             case 'edit':
                 this.transcript.removeLastInteraction()
-                await this.onHumanMessageSubmitted(message.text)
+                await this.onHumanMessageSubmitted(message.text, 'user')
                 break
             case 'executeRecipe':
                 await this.executeRecipe(message.recipe)
@@ -158,7 +188,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendEvent('token', 'Delete')
                 break
             case 'removeHistory':
-                await this.localStorage.removeChatHistory()
+                await this.clearHistory()
+                break
+            case 'restoreHistory':
+                await this.restoreSession(message.chatID)
                 break
             case 'links':
                 void this.openExternalLinks(message.value)
@@ -234,7 +267,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     void this.sendLogin(false)
-                    this.clearAndRestartSession()
+                    void this.clearAndRestartSession()
                 }
                 this.onCompletionEnd()
                 console.error(`Completion request failed: ${err}`)
@@ -251,23 +284,29 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
         this.sendTranscript()
-        void this.saveChatHistory()
+        void this.saveTranscriptToChatHistory()
     }
 
-    private async onHumanMessageSubmitted(text: string): Promise<void> {
+    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
+        if (submitType === 'suggestion') {
+            logEvent('CodyVSCodeExtension:chatPredictions:used')
+        }
         this.inputHistory.push(text)
-        await this.runChatCommands(text)
-    }
-
-    private async runChatCommands(text: string): Promise<void> {
         if (this.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
-        switch (text.length > 0) {
-            case text.startsWith('/reset') || text.startsWith('/r'):
-                this.clearAndRestartSession()
+        await this.executeChatCommands(text)
+    }
+
+    private async executeChatCommands(text: string): Promise<void> {
+        const command = text.split(' ')[0]
+        switch (command) {
+            case '/reset':
+            case '/r':
+                await this.clearAndRestartSession()
                 break
-            case text.startsWith('/search ') || text.startsWith('/s '):
+            case '/search':
+            case '/s':
                 await this.executeRecipe('fuzzy-search', text)
                 break
             default:
@@ -375,20 +414,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 return Promise.resolve()
             },
             onTurnComplete: () => {
-                console.log({ text })
-                console.log(text.split('\n'))
-                console.log(text.split('\n').slice(0, 3))
-                console.log(
-                    text
-                        .split('\n')
-                        .slice(3)
-                        .map(line => line.trim().replace(/^-/, '').trim())
-                )
                 const suggestions = text
                     .split('\n')
                     .slice(0, 3)
                     .map(line => line.trim().replace(/^-/, '').trim())
-                console.log({ suggestions })
                 this.sendSuggestions(suggestions)
                 return Promise.resolve()
             },
@@ -432,18 +461,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         })
     }
 
+    private async saveTranscriptToChatHistory(): Promise<void> {
+        if (this.transcript.isEmpty) {
+            return
+        }
+        this.chatHistory[this.currentChatID] = await this.transcript.toJSON()
+        await this.saveChatHistory()
+    }
+
     /**
      * Save chat history
      */
     private async saveChatHistory(): Promise<void> {
-        if (this.transcript) {
-            this.chatHistory[this.currentChatID] = this.transcript.toChat()
-            const userHistory = {
-                chat: this.chatHistory,
-                input: this.inputHistory,
-            }
-            await this.localStorage.setChatHistory(userHistory)
+        const userHistory = {
+            chat: this.chatHistory,
+            input: this.inputHistory,
         }
+        await this.localStorage.setChatHistory(userHistory)
     }
 
     /**
@@ -458,17 +492,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
+     * Loads chat history from local storage
+     */
+    private loadChatHistory(): void {
+        const localHistory = this.localStorage.getChatHistory()
+        if (localHistory) {
+            this.chatHistory = localHistory?.chat
+            this.inputHistory = localHistory.input
+        }
+    }
+
+    /**
      * Sends chat history to webview
      */
     private sendChatHistory(): void {
-        const localHistory = this.localStorage.getChatHistory()
-        if (localHistory) {
-            this.chatHistory = localHistory.chat
-            this.inputHistory = localHistory.input
-        }
         void this.webview?.postMessage({
             type: 'history',
-            messages: localHistory,
+            messages: {
+                chat: this.chatHistory,
+                input: this.inputHistory,
+            },
         })
     }
 
@@ -499,6 +542,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     private publishConfig(): void {
         const send = async (): Promise<void> => {
+            // update codebase context on configuration change
+            void this.updateCodebaseContext()
             // check if new configuration change is valid or not
             // log user out if config is invalid
             const isAuthed = await isValidLogin({
@@ -660,42 +705,46 @@ async function fileExists(filePath: string): Promise<boolean> {
 }
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
+// This should captures:
+// - "github:sourcegraph/sourcegraph" a common SSH host alias
+// - "https://github.com/sourcegraph/deploy-sourcegraph-k8s.git"
+// - "git@github.com:sourcegraph/sourcegraph.git"
 export function convertGitCloneURLToCodebaseName(cloneURL: string): string | null {
-    let parsed: URL | null = null
-    if (cloneURL.startsWith('git@')) {
-        // Handle Git SSH URL format
+    if (!cloneURL) {
+        console.error(`Unable to determine the git clone URL for this workspace.\ngit output: ${cloneURL}`)
+        return null
+    }
+    try {
+        const uri = new URL(cloneURL.replace('git@', ''))
+        // Handle common Git SSH URL format
         const match = cloneURL.match(/git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?/)
-        if (match) {
+        if (cloneURL.startsWith('git@') && match) {
             const host = match[1]
             const owner = match[2]
             const repo = match[3]
             return `${host}/${owner}/${repo}`
         }
-    } else {
-        // Handle HTTP/HTTPS URL format
-        try {
-            parsed = new URL(cloneURL)
-        } catch {
-            return null
+        // Handle GitHub URLs
+        if (uri.protocol.startsWith('github') || uri.href.startsWith('github')) {
+            return `github.com/${uri.pathname.replace('.git', '')}`
         }
-    }
-
-    if (!parsed) {
+        // Handle GitLab URLs
+        if (uri.protocol.startsWith('gitlab') || uri.href.startsWith('gitlab')) {
+            return `gitlab.com/${uri.pathname.replace('.git', '')}`
+        }
+        // Handle HTTPS URLs
+        if (uri.protocol.startsWith('http') && uri.hostname && uri.pathname) {
+            return `${uri.hostname}${uri.pathname.replace('.git', '')}`
+        }
+        // Generic URL
+        if (uri.hostname && uri.pathname) {
+            return `${uri.hostname}${uri.pathname.replace('.git', '')}`
+        }
+        return null
+    } catch (error) {
+        console.error(`Cody could not extract repo name from clone URL ${cloneURL}:`, error)
         return null
     }
-
-    const host = parsed.host
-    const path = parsed.pathname
-
-    // Handle GitHub/GitLab URL format
-    if (host.includes('gitlab.com') || host.includes('github.com')) {
-        const [owner, repo] = path.slice(1).split('/')
-        return `${host}/${owner}/${repo}`.replace(/.git$/, '')
-    }
-
-    // Generic fallback - assume URL path contains owner/repo
-    const [owner, repo] = path.slice(1).split('/')
-    return `${host}/${owner}/${repo}`
 }
 
 async function getCodebaseContext(config: Config, rgPath: string, editor: Editor): Promise<CodebaseContext | null> {
@@ -704,26 +753,18 @@ async function getCodebaseContext(config: Config, rgPath: string, editor: Editor
     if (!workspaceRoot) {
         return null
     }
-
     const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
     const gitOutput = gitCommand.stdout.toString().trim()
-    if (!gitOutput) {
-        void vscode.window.showErrorMessage(
-            `Unable to determine the git clone URL for this workspace.\ngit output: ${gitOutput}`
-        )
-        return null
-    }
-
-    // Get repository name from git clone URL
-    const codebase = convertGitCloneURLToCodebaseName(gitOutput)
+    // Get codebase from config or fallback to getting repository name from git clone URL
+    const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
     if (!codebase) {
-        void vscode.window.showErrorMessage(`could not extract repo name from clone URL ${gitOutput}`)
         return null
     }
+    // Check if repo is embedded in endpoint
     const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
     if (isError(repoId)) {
-        const errorMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
-        void vscode.window.showErrorMessage(errorMessage)
+        const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
+        console.info(infoMessage)
         return null
     }
 

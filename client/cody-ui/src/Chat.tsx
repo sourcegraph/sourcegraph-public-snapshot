@@ -23,7 +23,7 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string) => void
+    onSubmit: (text: string, submitType: 'user' | 'suggestion') => void
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
@@ -138,12 +138,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 
     const submitInput = useCallback(
-        (input: string): void => {
+        (input: string, submitType: 'user' | 'suggestion'): void => {
             if (messageInProgress) {
                 return
             }
 
-            onSubmit(input)
+            onSubmit(input, submitType)
             setSuggestions?.(undefined)
             setHistoryIndex(input.length + 1)
             setInputHistory([...inputHistory, input])
@@ -156,7 +156,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         if (formInput.trim() && !messageInProgress) {
             setInputRows(5)
             setFormInput('')
-            submitInput(formInput)
+            submitInput(formInput, 'user')
         }
     }, [formInput, messageInProgress, setFormInput, submitInput])
 
@@ -223,7 +223,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                                 <SuggestionButton
                                     key={suggestion}
                                     suggestion={suggestion}
-                                    onClick={() => submitInput(suggestion)}
+                                    onClick={() => submitInput(suggestion, 'suggestion')}
                                 />
                             ) : null
                         )}

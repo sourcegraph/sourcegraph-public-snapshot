@@ -48,6 +48,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
+var enableHTMLInject = env.Get("ENABLE_INJECT_HTML", "false", "Enable HTML customization")
+
 type InjectedHTML struct {
 	HeadTop    template.HTML
 	HeadBottom template.HTML
@@ -144,7 +146,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		return mockNewCommon(w, r, title, serveError)
 	}
 
-	manifest, err := assets.LoadWebpackManifest()
+	manifest, err := assets.Provider.LoadWebpackManifest()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading webpack manifest")
 	}
@@ -181,6 +183,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		},
 
 		WebpackDevServer: webpackDevServer,
+	}
+
+	if enableHTMLInject != "true" {
+		common.Injected = InjectedHTML{}
 	}
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {
