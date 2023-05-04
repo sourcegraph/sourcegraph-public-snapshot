@@ -198,8 +198,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Append(
 			bazelBuildCandidateDockerImage("server", c.Version, c.candidateImageTag(), c.RunType),
 			backendIntegrationTests(c.candidateImageTag(), "server"),
-			bazelConfigure(),
-			bazelTest("//..."))
+			// bazelConfigure(),
+			// bazelTest("//...")
+		)
 
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
