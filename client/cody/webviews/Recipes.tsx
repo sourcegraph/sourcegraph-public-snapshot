@@ -1,5 +1,3 @@
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
-
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Recipes.module.css'
@@ -26,14 +24,14 @@ export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({
             <div className="non-transcript-container">
                 <div className={styles.recipes}>
                     {Object.entries(recipesList).map(([key, value]) => (
-                        <VSCodeButton
+                        <button
                             key={key}
                             className={styles.recipeButton}
                             type="button"
                             onClick={() => onRecipeClick(key)}
                         >
                             {value}
-                        </VSCodeButton>
+                        </button>
                     ))}
                 </div>
             </div>

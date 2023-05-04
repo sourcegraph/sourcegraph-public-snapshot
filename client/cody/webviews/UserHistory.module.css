@@ -20,11 +20,12 @@
     flex-direction: column;
 }
 
-/* Sadly we have to use our own button instead of VSCodeButton because it has a
-   #shadow-root style with max-width: 300px AND we get a weird border when the
-   window is wide. So we use a <button> and set our own styles (mostly found by
-   inspecting the standard button) */
-
+/**
+    Sadly we have to use our own button instead of VSCodeButton because it has a
+    #shadow-root style with max-width: 300px AND we get a weird border when the
+    window is wide. So we use a <button> and set our own styles (mostly found by
+    inspecting the standard button)
+**/
 .item-button {
     all: unset;
     box-sizing: border-box;
@@ -41,7 +42,6 @@
     cursor: pointer;
 
 }
-
 .item-button:hover {
     background: var(--button-primary-hover-background);
 }
@@ -50,11 +50,8 @@
 }
 
 .item-button-inner-container {
-    /* By default it has a weird narrow width */
-    width: 100%;
-    /* By default it's centered */
-    text-align: left;
-    margin: .5rem 0;
+    padding-top: .25rem;
+    padding-bottom: .25rem;
 }
 
 .item-date {
