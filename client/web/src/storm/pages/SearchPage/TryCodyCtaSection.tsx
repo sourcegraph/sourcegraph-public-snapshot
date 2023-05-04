@@ -143,9 +143,7 @@ export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }
                     Cody for Sourcegraph.com explains, generates, and translates code, right in the web interface.
                 </Text>
                 <Link
-                    to="todo:"
-                    target="_blank"
-                    rel="noopener"
+                    to="https://sourcegraph.com/github.com/openai/openai-cookbook/-/blob/apps/file-q-and-a/nextjs-with-flask-server/server/answer_question.py"
                     className={classNames(styles.tryCookbookLink, 'd-flex align-items-center')}
                     onClick={onCookbookClick}
                 >
