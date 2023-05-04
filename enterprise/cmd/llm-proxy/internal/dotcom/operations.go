@@ -122,24 +122,6 @@ type CheckAccessTokenResponse struct {
 // GetDotcom returns CheckAccessTokenResponse.Dotcom, and is useful for accessing the field via an interface.
 func (v *CheckAccessTokenResponse) GetDotcom() CheckAccessTokenDotcomDotcomQuery { return v.Dotcom }
 
-// LLMProxyRateLimitState includes the GraphQL fields of LLMProxyRateLimit requested by the fragment LLMProxyRateLimitState.
-// The GraphQL type's documentation follows.
-//
-// LLM-proxy access rate limits for a subscription.
-// FOR INTERNAL USE ONLY.
-type LLMProxyRateLimitState struct {
-	// Requests per time interval.
-	Limit int `json:"limit"`
-	// Interval for rate limiting.
-	IntervalSeconds int `json:"intervalSeconds"`
-}
-
-// GetLimit returns LLMProxyRateLimitState.Limit, and is useful for accessing the field via an interface.
-func (v *LLMProxyRateLimitState) GetLimit() int { return v.Limit }
-
-// GetIntervalSeconds returns LLMProxyRateLimitState.IntervalSeconds, and is useful for accessing the field via an interface.
-func (v *LLMProxyRateLimitState) GetIntervalSeconds() int { return v.IntervalSeconds }
-
 // ProductSubscriptionState includes the GraphQL fields of ProductSubscription requested by the fragment ProductSubscriptionState.
 // The GraphQL type's documentation follows.
 //
@@ -200,64 +182,20 @@ func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) GetRateLimit() *P
 // LLM-proxy access rate limits for a subscription.
 // FOR INTERNAL USE ONLY.
 type ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit struct {
-	LLMProxyRateLimitState `json:"-"`
+	// Requests per time interval.
+	Limit int `json:"limit"`
+	// Interval for rate limiting.
+	IntervalSeconds int `json:"intervalSeconds"`
 }
 
 // GetLimit returns ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit.Limit, and is useful for accessing the field via an interface.
 func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit) GetLimit() int {
-	return v.LLMProxyRateLimitState.Limit
+	return v.Limit
 }
 
 // GetIntervalSeconds returns ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit.IntervalSeconds, and is useful for accessing the field via an interface.
 func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit) GetIntervalSeconds() int {
-	return v.LLMProxyRateLimitState.IntervalSeconds
-}
-
-func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit) UnmarshalJSON(b []byte) error {
-
-	if string(b) == "null" {
-		return nil
-	}
-
-	var firstPass struct {
-		*ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit
-		graphql.NoUnmarshalJSON
-	}
-	firstPass.ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit = v
-
-	err := json.Unmarshal(b, &firstPass)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(
-		b, &v.LLMProxyRateLimitState)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-type __premarshalProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit struct {
-	Limit int `json:"limit"`
-
-	IntervalSeconds int `json:"intervalSeconds"`
-}
-
-func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit) MarshalJSON() ([]byte, error) {
-	premarshaled, err := v.__premarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(premarshaled)
-}
-
-func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit) __premarshalJSON() (*__premarshalProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit, error) {
-	var retval __premarshalProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit
-
-	retval.Limit = v.LLMProxyRateLimitState.Limit
-	retval.IntervalSeconds = v.LLMProxyRateLimitState.IntervalSeconds
-	return &retval, nil
+	return v.IntervalSeconds
 }
 
 // __CheckAccessTokenInput is used internally by genqlient
@@ -292,13 +230,10 @@ fragment ProductSubscriptionState on ProductSubscription {
 	llmProxyAccess {
 		enabled
 		rateLimit {
-			... LLMProxyRateLimitState
+			limit
+			intervalSeconds
 		}
 	}
-}
-fragment LLMProxyRateLimitState on LLMProxyRateLimit {
-	limit
-	intervalSeconds
 }
 `,
 		Variables: &__CheckAccessTokenInput{

@@ -10,6 +10,7 @@ import (
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
+	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
@@ -38,11 +39,15 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	handler := newHandler(obctx.Logger, config)
 	handler = otelhttp.NewHandler(handler, "llm-proxy")
-	handler = authenticate(obctx.Logger,
+	handler = authenticate(
+		obctx.Logger,
 		rcache.New("llm-proxy-tokens"),
-		dotcom.NewClient(config.Dotcom.AccessToken), handler, authenticateOptions{
+		dotcom.NewClient(config.Dotcom.AccessToken),
+		handler,
+		authenticateOptions{
 			AllowAnonymous: config.AllowAnonymous,
-		})
+		},
+	)
 	handler = instrumentation.HTTPMiddleware("", handler)
 
 	server := httpserver.NewFromAddr(config.Address, &http.Server{
@@ -131,7 +136,7 @@ type authenticateOptions struct {
 	AllowAnonymous bool
 }
 
-func authenticate(logger log.Logger, cache *rcache.Cache, dotComClient graphql.Client, next http.Handler, opts authenticateOptions) http.Handler {
+func authenticate(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, next http.Handler, opts authenticateOptions) http.Handler {
 	getSubscriptionFromCache := func(token string) (_ *actor.Subscription, hit bool) {
 		data, hit := cache.Get(token)
 		if !hit {
@@ -162,6 +167,7 @@ func authenticate(logger log.Logger, cache *rcache.Cache, dotComClient graphql.C
 				// TODO: We need to evaluate these to an actor type as well to rate-limit
 				// anonymous users.
 				next.ServeHTTP(w, r)
+				return
 			}
 
 			responseJSONError(logger, w, http.StatusUnauthorized,
