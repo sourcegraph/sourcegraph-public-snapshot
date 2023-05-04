@@ -149,15 +149,10 @@ func getRetryWorkspacesQuery(opts RetryWorkspacesOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state != %s", btypes.BatchSpecWorkspaceExecutionJobStateCompleted))
 	}
 
-	versionExpression := sqlf.Sprintf("%s", versionForExecution(opts.UseV2Execution))
-	if opts.KeepExecutionVersion {
-		versionExpression = sqlf.Sprintf("previous_workspace.version")
-	}
-
 	return sqlf.Sprintf(
 		retryWorkspacesQueryFmtstr,
 		sqlf.Join(preds, "\n AND "),
-		versionExpression,
+		versionForExecution(opts.UseV2Execution),
 	)
 }
 
@@ -165,12 +160,9 @@ const retryWorkspacesQueryFmtstr = `
 WITH workspaces AS (
 	SELECT
 		batch_spec_workspaces.id,
-		batch_spec_workspaces.changeset_spec_ids,
-		batch_spec_workspace_execution_jobs.version
+		batch_spec_workspaces.changeset_spec_ids
 	FROM batch_spec_workspaces
 	INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
-	INNER JOIN batch_spec_workspace_execution_jobs
-		ON batch_spec_workspaces.id = batch_spec_workspace_execution_jobs.batch_spec_workspace_id
 	WHERE
 		repo.deleted_at IS NULL
 		AND
@@ -197,7 +189,7 @@ INSERT INTO
 SELECT
 	batch_spec_workspaces.id,
 	batch_specs.user_id,
-	%s -- version expression
+	%s -- version
 FROM
 	batch_spec_workspaces
 INNER JOIN
