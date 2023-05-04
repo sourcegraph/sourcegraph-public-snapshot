@@ -28,6 +28,16 @@ js_library(
 )
 
 js_binary(
+    name = "build_code_intel_extensions",
+    data = [
+        "//:node_modules/shelljs",
+        "//:node_modules/signale",
+    ],
+    entry_point = "buildCodeIntelExtensions.js",
+    visibility = ["//client:__subpackages__"],
+)
+
+js_binary(
     name = "generate_graphql_operations",
     data = [
         ":extract_graphql_operation_codegen_plugin",
