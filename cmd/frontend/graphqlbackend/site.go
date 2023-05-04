@@ -299,7 +299,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
 func canUpdateSiteConfiguration() bool {
-	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
+	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits || deploy.IsApp()
 }
 
 // IsCodeInsightsEnabled tells if code insights are enabled or not.

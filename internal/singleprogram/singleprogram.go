@@ -108,16 +108,12 @@ func Init(logger log.Logger) {
 
 	siteConfigPath := filepath.Join(configDir, "site-config.json")
 	setDefaultEnv(logger, "SITE_CONFIG_FILE", siteConfigPath)
-	setDefaultEnv(logger, "SITE_CONFIG_ALLOW_EDITS", "true")
 	writeFileIfNotExists(siteConfigPath, []byte(confdefaults.App.Site))
 
 	globalSettingsPath := filepath.Join(configDir, "global-settings.json")
 	setDefaultEnv(logger, "GLOBAL_SETTINGS_FILE", globalSettingsPath)
 	setDefaultEnv(logger, "GLOBAL_SETTINGS_ALLOW_EDITS", "true")
 	writeFileIfNotExists(globalSettingsPath, []byte("{}\n"))
-
-	// Escape hatch isn't needed in local dev since the site config can always just be a file on disk.
-	setDefaultEnv(logger, "NO_SITE_CONFIG_ESCAPE_HATCH", "1")
 
 	// We disable the use of executors passwords, because executors only listen on `localhost` this
 	// is safe to do.

@@ -217,6 +217,16 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 	}
 
 	siteConfigEscapeHatchPath = os.ExpandEnv(siteConfigEscapeHatchPath)
+	if deploy.IsApp() {
+		// App always store the site config on disk, and this is achieved through
+		// making the "escape hatch file" point to our desired location on disk.
+		// The concept of an escape hatch file is not something App users care
+		// about (it only makes sense in Docker/Kubernetes, e.g. to edit the config
+		// file if the sourcegraph-frontend container is crashing) - App runs
+		// natively and this mechanism is just a convenient way for us to keep
+		// the file on disk as our source of truth.
+		siteConfigEscapeHatchPath = os.Getenv("SITE_CONFIG_FILE")
+	}
 
 	var (
 		ctx                                        = context.Background()
@@ -294,6 +304,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 					time.Sleep(1 * time.Second)
 					continue
 				}
+				lastKnownDBContents = newDBConfig.Site
 				lastKnownFileContents = newDBConfig.Site
 				lastKnownConfigID = newDBConfig.ID
 			}
