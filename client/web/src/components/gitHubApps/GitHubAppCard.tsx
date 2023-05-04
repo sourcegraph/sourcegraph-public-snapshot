@@ -22,20 +22,18 @@ interface GitHubAppCardProps {
     className?: string
 }
 
-export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, className = '' }) => {
-    return (
-        <Link
-            className={classNames('d-flex align-items-center p-2 text-body text-decoration-none', className ?? '')}
-            to={`./${app.id}`}
-        >
-            <img className={classNames('mr-3', styles.logo)} src={app.logo} alt="app logo" aria-hidden={true} />
-            <span>
-                <H3 className="mt-1 mb-0">{app.name}</H3>
-                <small className="text-muted">AppID: {app.appID}</small>
-            </span>
-            <span className="ml-auto">
-                Created <Timestamp date={app.createdAt} />
-            </span>
-        </Link>
-    )
-}
+export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, className = '' }) => (
+    <Link
+        className={classNames('d-flex align-items-center p-2 text-body text-decoration-none', className ?? '')}
+        to={`./${app.id}`}
+    >
+        <img className={classNames('mr-3', styles.logo)} src={app.logo} alt="app logo" aria-hidden={true} />
+        <span>
+            <H3 className="mt-1 mb-0">{app.name}</H3>
+            <small className="text-muted">AppID: {app.appID}</small>
+        </span>
+        <span className="ml-auto">
+            Created <Timestamp date={app.createdAt} />
+        </span>
+    </Link>
+)

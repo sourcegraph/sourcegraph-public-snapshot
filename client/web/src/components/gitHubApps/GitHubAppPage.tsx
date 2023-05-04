@@ -20,13 +20,14 @@ export const GitHubAppPage: FC<Props> = ({
     allowEditExternalServicesWithFile,
 }) => {
     const { appID } = useParams()
-    if (!appID) {
-        return null
-    }
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminGitHubApp')
     }, [telemetryService])
+
+    if (!appID) {
+        return null
+    }
 
     const app: any = {
         id: atob(appID).replace('GitHubApp:', ''),
@@ -40,8 +41,6 @@ export const GitHubAppPage: FC<Props> = ({
         <div>
             {app ? <PageTitle title={`GitHub App - ${app.name}`} /> : <PageTitle title="GitHub App" />}
             {error && <ErrorAlert className="mb-3" error={error} />}
-            <h1>GitHub App</h1>
-
             {app && (
                 <Container className="mb-3">
                     <PageHeader
@@ -63,7 +62,7 @@ export const GitHubAppPage: FC<Props> = ({
                         className="mb-3"
                         headingElement="h2"
                         actions={
-                            <ButtonLink to={`/site-admin/github-apps/`} variant="secondary">
+                            <ButtonLink to="/site-admin/github-apps/" variant="secondary">
                                 <Icon aria-hidden={true} className="mr-1" svgPath={mdiChevronLeft} />
                                 Back
                             </ButtonLink>
