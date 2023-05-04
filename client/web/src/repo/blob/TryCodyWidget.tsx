@@ -252,8 +252,8 @@ export const TryCodyWidget: React.FC<TelemetryProps & { className?: string }> = 
 
     return (
         <MarketingBlock
-            contentClassName="d-flex position-relative py-3 overflow-auto"
             wrapperClassName={className}
+            contentClassName={classNames('d-flex position-relative py-3 overflow-auto', styles.card)}
             variant="thin"
         >
             <div>
