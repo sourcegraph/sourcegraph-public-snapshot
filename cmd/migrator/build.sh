@@ -60,15 +60,15 @@ for version in "${gcs_versions[@]}"; do
 done
 
 git_versions=(
-v3.42.0 v3.42.1 v3.42.2
-v3.43.0 v3.43.1 v3.43.2
-v4.0.0 v4.0.1
-v4.1.0 v4.1.1 v4.1.2 v4.1.3
-v4.2.0 v4.2.1
-v4.3.0 v4.3.1
-v4.4.0 v4.4.1 v4.4.2
-v4.5.0 v4.5.1
-v5.0.0 v5.0.1 v5.0.2 5.0.3)
+  v3.42.0 v3.42.1 v3.42.2
+  v3.43.0 v3.43.1 v3.43.2
+  v4.0.0 v4.0.1
+  v4.1.0 v4.1.1 v4.1.2 v4.1.3
+  v4.2.0 v4.2.1
+  v4.3.0 v4.3.1
+  v4.4.0 v4.4.1 v4.4.2
+  v4.5.0 v4.5.1
+  v5.0.0 v5.0.1 v5.0.2 v5.0.3)
 
 for version in "${git_versions[@]}"; do
   echo "Persisting schemas for ${version} from Git..."
