@@ -45,7 +45,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
 
     return (
         <Page className="overflow-hidden">
-            <PageTitle title="Cody AI" />
+            <PageTitle title="Cody AI Chat" />
             <PageHeader
                 actions={
                     <div className="d-flex">
@@ -53,8 +53,30 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                             <Icon aria-hidden={true} svgPath={mdiPlus} />
                             New chat
                         </Button>
+                    </div>
+                }
+                description={
+                    <>
+                        Cody answers code questions and writes code for you by reading your entire codebase and the code
+                        graph.
+                    </>
+                }
+                className="mb-3"
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb icon={CodyPageIcon}> Cody Chat</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
+
+            {/* Page content */}
+            <div className={classNames('row mb-5', styles.pageWrapper)}>
+                <div className="d-flex flex-column col-sm-3 h-100">
+                    <div className={styles.sidebarHeader}>
+                        <H4>
+                            <b>Chats</b>
+                        </H4>
                         <Menu>
-                            <MenuButton variant="icon" outline={false} className={styles.dotsIconPaddings}>
+                            <MenuButton variant="icon" outline={false}>
                                 <Icon aria-hidden={true} svgPath={mdiDotsVertical} size="md" />
                             </MenuButton>
 
@@ -74,26 +96,6 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                             </MenuList>
                         </Menu>
                     </div>
-                }
-                description={
-                    <>
-                        Cody answers code questions and writes code for you by reading your entire codebase and the code
-                        graph.
-                    </>
-                }
-                className="mb-3"
-            >
-                <PageHeader.Heading as="h2" styleAs="h1">
-                    <PageHeader.Breadcrumb icon={CodyPageIcon}> Cody AI</PageHeader.Breadcrumb>
-                </PageHeader.Heading>
-            </PageHeader>
-
-            {/* Page content */}
-            <div className={classNames('row mb-5', styles.pageWrapper)}>
-                <div className="d-flex flex-column col-sm-3 h-100">
-                    <H4>
-                        <b>Chats</b>
-                    </H4>
                     <div className={classNames('h-100', styles.sidebar)}>
                         <HistoryList trucateMessageLenght={60} />
                     </div>
