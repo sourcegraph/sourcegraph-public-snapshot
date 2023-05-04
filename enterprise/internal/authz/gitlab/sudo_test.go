@@ -368,7 +368,7 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 
 	p := newSudoProvider(
 		SudoProviderOp{
-			BaseURL: mustURL(t, "https://gitlab.com"),
+			BaseURL:   mustURL(t, "https://gitlab.com"),
 			SudoToken: "admin_token",
 		},
 		&mockDoer{
