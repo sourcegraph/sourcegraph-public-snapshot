@@ -93,6 +93,10 @@ func TestDot(t *testing.T) {
 }
 
 func FuzzDot(f *testing.F) {
+	if !haveDotArch {
+		f.Skip("skipping test because arch-specific dot product is disabled")
+	}
+
 	f.Fuzz(func(t *testing.T, input1, input2 []byte) {
 		b1 := *(*[]int8)(unsafe.Pointer(&input1))
 		b2 := *(*[]int8)(unsafe.Pointer(&input2))
