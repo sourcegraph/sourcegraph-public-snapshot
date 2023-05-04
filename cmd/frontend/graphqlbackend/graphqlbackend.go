@@ -491,6 +491,9 @@ func NewSchema(
 		EnterpriseResolvers.gitHubAppsResolver = gitHubApps
 		resolver.GitHubAppsResolver = gitHubApps
 		schemas = append(schemas, gitHubAppsSchema)
+		for kind, res := range gitHubApps.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
 	}
 
 	if license := optional.LicenseResolver; license != nil {

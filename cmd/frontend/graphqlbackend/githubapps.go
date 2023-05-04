@@ -12,8 +12,11 @@ import (
 // enterprise/cmd/frontend/internal/auth/githubappauth/
 
 type GitHubAppsResolver interface {
+	NodeResolvers() map[string]NodeByIDFunc
+
 	// Queries
 	GitHubApps(ctx context.Context) (GitHubAppConnectionResolver, error)
+	GitHubApp(ctx context.Context, args *GitHubAppArgs) (GitHubAppResolver, error)
 
 	// Mutations
 	DeleteGitHubApp(ctx context.Context, args *DeleteGitHubAppArgs) (*EmptyResponse, error)
@@ -43,4 +46,8 @@ type GitHubAppsArgs struct {
 	graphqlutil.ConnectionArgs
 	After     *string
 	Namespace *graphql.ID
+}
+
+type GitHubAppArgs struct {
+	ID graphql.ID
 }
