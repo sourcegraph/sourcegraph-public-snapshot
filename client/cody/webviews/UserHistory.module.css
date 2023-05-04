@@ -20,8 +20,34 @@
     flex-direction: column;
 }
 
-/* There's a little bit of fighting we have to do with the VSButton component,
-   but it's probably better than re-creating it ourselves using a link */
+/* Sadly we have to use our own button instead of VSCodeButton because it has a
+   #shadow-root style with max-width: 300px AND we get a weird border when the
+   window is wide. So we use a <button> and set our own styles (mostly found by
+   inspecting the standard button) */
+
+.item-button {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--button-padding-vertical) var(--button-padding-horizontal);
+    outline: none;
+    text-decoration: none;
+    border: calc(var(--border-width) * 1px) solid var(--button-border);
+    color: var(--button-primary-foreground);
+    background: var(--button-primary-background);
+    border-radius: calc(var(--corner-radius) * 1px);
+    cursor: pointer;
+
+}
+
+.item-button:hover {
+    background: var(--button-primary-hover-background);
+}
+.item-button:active {
+    background: var(--button-primary-background);
+}
 
 .item-button-inner-container {
     /* By default it has a weird narrow width */
@@ -42,4 +68,5 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 4;
     overflow: hidden;
+    overflow-wrap: break-word
 }
