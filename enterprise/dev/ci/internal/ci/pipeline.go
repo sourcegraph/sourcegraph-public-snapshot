@@ -198,8 +198,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Append(
 			bazelBuildCandidateDockerImage("server", c.Version, c.candidateImageTag(), c.RunType),
 			backendIntegrationTests(c.candidateImageTag(), "server"),
-			// bazelConfigure(),
-			// bazelTest("//...")
 		)
 
 	case runtype.BextReleaseBranch:
@@ -393,6 +391,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}))
 
 		// Integration tests
+		// Temporary: on main branches, we build images with bazel binaries based on their toolchain and/or purpose. This step key is the first image in the array.
+		// This will be removed once we build images with wolfi.
 		ops.Merge(operations.NewNamedSet("Integration tests",
 			backendIntegrationTests(c.candidateImageTag(), "symbols"),
 			codeIntelQA(c.candidateImageTag()),
