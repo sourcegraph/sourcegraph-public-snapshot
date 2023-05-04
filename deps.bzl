@@ -1727,8 +1727,8 @@ def go_dependencies():
         name = "com_github_dgraph_io_ristretto",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/dgraph-io/ristretto",
-        sum = "h1:Jv3CGQHp9OjuMBSne1485aDpUkTKEcUqF+jm/LuerPI=",
-        version = "v0.1.0",
+        sum = "h1:6CWw5tJNgpegArSHpNHJKldNeq03FQCwYvfMVWajOK8=",
+        version = "v0.1.1",
     )
 
     go_repository(
@@ -3007,8 +3007,8 @@ def go_dependencies():
         name = "com_github_golang_protobuf",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/golang/protobuf",
-        sum = "h1:ROPKBNFfQgOUMifHyP+KYbvpjbdoFNs+aK7DXlji0Tw=",
-        version = "v1.5.2",
+        sum = "h1:KhyjKVUg7Usr/dYsdSqoFveMYd5ko72D+zANwlG1mmg=",
+        version = "v1.5.3",
     )
     go_repository(
         name = "com_github_golang_snappy",
@@ -7921,15 +7921,15 @@ def go_dependencies():
     )
     go_repository(
         name = "com_google_cloud_go_trace",
-        build_file_proto_mode = "disable_global",
-        importpath = "cloud.google.com/go/trace",
-        sum = "h1:GFPLxbp5/FzdgTzor3nlNYNxMd6hLmzkE7sA9F0qQcA=",
-        version = "v1.8.0",
         build_directives = [
             # @go_googleapis is the modern version of @org_golang_google_genproto
             # use @go_googleapis to avoid dependency conflicts between the two
             "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
         ],
+        build_file_proto_mode = "disable_global",
+        importpath = "cloud.google.com/go/trace",
+        sum = "h1:GFPLxbp5/FzdgTzor3nlNYNxMd6hLmzkE7sA9F0qQcA=",
+        version = "v1.8.0",
     )
     go_repository(
         name = "com_google_cloud_go_translate",
@@ -8954,8 +8954,8 @@ def go_dependencies():
         name = "org_golang_google_protobuf",
         build_file_proto_mode = "disable_global",
         importpath = "google.golang.org/protobuf",
-        sum = "h1:d0NfwRgPtno5B1Wa6L2DAG+KivqkdutMf1UhdNx175w=",
-        version = "v1.28.1",
+        sum = "h1:kPPoIgf3TsEvrm0PFe15JQ+570QVxYzEvvHqChK+cng=",
+        version = "v1.30.0",
     )
 
     go_repository(
@@ -9004,16 +9004,15 @@ def go_dependencies():
         name = "org_golang_x_net",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/net",
-        sum = "h1:rJrUqqhjsgNp7KqAIc25s9pZnjU7TUcSY7HcVZjdn1g=",
-        version = "v0.7.0",
+        sum = "h1:aWJ/m6xSmxWBx+V0XRHTlrYrPG56jKsLdTFmsSsCzOM=",
+        version = "v0.9.0",
     )
     go_repository(
         name = "org_golang_x_oauth2",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/oauth2",
-        replace = "github.com/sourcegraph/oauth2",
-        sum = "h1:HGa4iJr6MGKnB5qbU7tI511NdGuHUHnNCqP67G6KmfE=",
-        version = "v0.0.0-20210825125341-77c1d99ece3c",
+        sum = "h1:t6Lr/YWO2T2n0JkHIoZZlMLhPKysnlVCISvcSNgSL5E=",
+        version = "v0.7.1-0.20230411161557-cfe200d5bb2f",
     )
 
     go_repository(
@@ -9027,22 +9026,22 @@ def go_dependencies():
         name = "org_golang_x_sys",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/sys",
-        sum = "h1:MVltZSvRTcU2ljQOhs94SXPftV6DCNnZViHeQps87pQ=",
-        version = "v0.6.0",
+        sum = "h1:3jlCCIQZPdOYu1h8BkNvLz8Kgwtae2cagcG/VamtZRU=",
+        version = "v0.7.0",
     )
     go_repository(
         name = "org_golang_x_term",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/term",
-        sum = "h1:n2a8QNdAb0sZNpU9R1ALUXBbY+w51fCQDN+7EdxNBsY=",
-        version = "v0.5.0",
+        sum = "h1:BEvjmm5fURWqcfbSKTdpkDXYBrUS1c0m8agp14W48vQ=",
+        version = "v0.7.0",
     )
     go_repository(
         name = "org_golang_x_text",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/text",
-        sum = "h1:4BRB4x83lYWy72KwLD/qYDuTu7q9PjSagHvijDw7cLo=",
-        version = "v0.7.0",
+        sum = "h1:2sjJmO8cDvYveuX97RDLsxlyUxLl+GHoLxBiRdHllBE=",
+        version = "v0.9.0",
     )
     go_repository(
         name = "org_golang_x_time",
