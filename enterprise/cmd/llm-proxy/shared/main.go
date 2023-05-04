@@ -130,17 +130,13 @@ func authenticate(logger log.Logger, dotcomAccessToken string, next http.Handler
 				return
 			}
 
-			if resp.Dotcom.ProductSubscriptionByAccessToken.IsArchived ||
-				!resp.Dotcom.ProductSubscriptionByAccessToken.LlmProxyAccess.Enabled {
-				responseJSONError(logger, w, http.StatusBadRequest, errors.New("license archived or LLM proxy access not enabled"))
-				return
-			}
-
-			subscription = &actor.Subscription{
-				ID:        resp.Dotcom.ProductSubscriptionByAccessToken.Id,
-				RateLimit: resp.Dotcom.ProductSubscriptionByAccessToken.LlmProxyAccess.RateLimit,
-			}
+			subscription = actor.NewSubscriptionFromDotCom(resp.Dotcom.ProductSubscriptionByAccessToken.ProductSubscriptionState)
 			saveSubscriptionToCache(token, subscription)
+		}
+
+		if !subscription.AccessEnabled {
+			responseJSONError(logger, w, http.StatusBadRequest, errors.New("license archived or LLM proxy access not enabled"))
+			return
 		}
 
 		r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{Subscription: subscription}))

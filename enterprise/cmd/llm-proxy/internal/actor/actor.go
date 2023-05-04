@@ -2,13 +2,35 @@ package actor
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
 )
 
+type SubscriptionRateLimit struct {
+	Limit    int
+	Interval time.Duration
+}
+
 type Subscription struct {
-	ID        string                                                                                                                                             `json:"id"`
-	RateLimit *dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscriptionLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit `json:"rateLimit"`
+	ID            string                 `json:"id"`
+	AccessEnabled bool                   `json:"accessEnabled"`
+	RateLimit     *SubscriptionRateLimit `json:"rateLimit"`
+}
+
+func NewSubscriptionFromDotCom(s dotcom.ProductSubscriptionState) *Subscription {
+	var rateLimit *SubscriptionRateLimit
+	if s.LlmProxyAccess.RateLimit != nil {
+		rateLimit = &SubscriptionRateLimit{
+			Limit:    s.LlmProxyAccess.RateLimit.Limit,
+			Interval: time.Duration(s.LlmProxyAccess.RateLimit.IntervalSeconds) * time.Second,
+		}
+	}
+	return &Subscription{
+		ID:            s.Id,
+		AccessEnabled: !s.IsArchived && rateLimit != nil && s.LlmProxyAccess.Enabled,
+		RateLimit:     rateLimit,
+	}
 }
 
 type Actor struct {
