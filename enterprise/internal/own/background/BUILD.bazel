@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "background.go",
         "recent_contributors.go",
+        "recent_views.go",
         "scheduler.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/own/background",

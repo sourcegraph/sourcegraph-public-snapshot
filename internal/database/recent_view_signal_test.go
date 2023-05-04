@@ -192,7 +192,7 @@ func TestRecentViewSignalStore_Insert(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, summaries, 1)
 		assert.Equal(t, 2, summaries[0].FilePathID)
-		assert.Equal(t, 100, summaries[0].ViewsCount)
+		assert.Equal(t, 110, summaries[0].ViewsCount)
 		clearTable(ctx, db)
 	})
 }

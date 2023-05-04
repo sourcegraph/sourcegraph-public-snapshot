@@ -15,6 +15,7 @@ go_library(
         "encryption_tables.go",
         "encryption_utils.go",
         "event_logs.go",
+        "event_logs_scrape_state_own.go",
         "executor_secret_access_logs.go",
         "executor_secrets.go",
         "executors.go",

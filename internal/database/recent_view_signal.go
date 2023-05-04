@@ -41,7 +41,8 @@ type RecentViewSummary struct {
 }
 
 func RecentViewSignalStoreWith(other basestore.ShareableStore, logger log.Logger) RecentViewSignalStore {
-	return &recentViewSignalStore{Store: basestore.NewWithHandle(other.Handle()), Logger: logger}
+	lgr := logger.Scoped("RecentViewSignalStore", "Store for a table containing a number of views of a single file by a given viewer")
+	return &recentViewSignalStore{Store: basestore.NewWithHandle(other.Handle()), Logger: lgr}
 }
 
 type recentViewSignalStore struct {
@@ -76,7 +77,7 @@ const insertRecentViewSignalFmtstr = `
 	INSERT INTO own_aggregate_recent_view(viewer_id, viewed_file_path_id, views_count)
 	VALUES(%s, %s, %s)
 	ON CONFLICT(viewer_id, viewed_file_path_id) DO UPDATE
-	SET views_count = EXCLUDED.views_count
+	SET views_count = EXCLUDED.views_count + own_aggregate_recent_view.views_count
 `
 
 func (s *recentViewSignalStore) Insert(ctx context.Context, userID int32, repoPathID, count int) error {
@@ -88,7 +89,7 @@ const bulkInsertRecentViewSignalsFmtstr = `
 	INSERT INTO own_aggregate_recent_view(viewer_id, viewed_file_path_id, views_count)
 	VALUES %s
 	ON CONFLICT(viewer_id, viewed_file_path_id) DO UPDATE
-	SET views_count = EXCLUDED.views_count
+	SET views_count = EXCLUDED.views_count + own_aggregate_recent_view.views_count
 `
 
 // InsertPaths inserts paths and view counts for a given `userID`. This function
