@@ -310,10 +310,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(imageBuildOps)
 		ops.Append(wait)
 
-		publishOps := operations.NewNamedSet("Publish images")
-		publishOps.Append(bazelPublishFinalDockerImage(c, images.SourcegraphDockerImages))
+		pullOps := operations.NewNamedSet("Pull images")
+		pullOps.Append(bazelPullFinalDockerImage(c, images.SourcegraphDockerImages))
 
-		ops.Merge(publishOps)
+		ops.Merge(pullOps)
 
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"
