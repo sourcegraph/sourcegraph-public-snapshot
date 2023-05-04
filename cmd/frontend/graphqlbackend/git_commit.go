@@ -69,11 +69,11 @@ type GitCommitResolver struct {
 // you have batch-loaded a bunch of them and already have them at hand.
 func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	repoName := repo.RepoName()
-
 	return &GitCommitResolver{
-		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").
-			With(log.String("repo", string(repoName)),
-				log.String("commitID", string(id))),
+		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").With(
+			log.String("repo", string(repoName)),
+			log.String("commitID", string(id)),
+		),
 		db:              db,
 		gitserverClient: gsClient,
 		repoResolver:    repo,
@@ -127,6 +127,15 @@ func (r *GitCommitResolver) AbbreviatedOID() string {
 	return string(r.oid)[:7]
 }
 
+func (r *GitCommitResolver) PerforceChangelist(ctx context.Context) (*PerforceChangelistResolver, error) {
+	commit, err := r.resolveCommit(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return toPerforceChangelistResolver(ctx, r.repoResolver, commit.Message.Body())
+}
+
 func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
@@ -156,10 +165,19 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	if subject := maybeTransformP4Subject(ctx, r.repoResolver, commit); subject != nil {
+		return *subject, nil
+	}
+
 	return commit.Message.Subject(), nil
 }
 
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
+	if r.repoResolver.isPerforceDepot(ctx) {
+		return nil, nil
+	}
+
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
 		return nil, err
