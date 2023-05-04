@@ -3423,6 +3423,10 @@ type RepositoryConnection {
     pageInfo: PageInfo!
 }
 
+"""
+All possible types of currently supported repositories, even though they may be stored
+as a git repository on disk.
+"""
 enum RepositoryType {
     GIT_REPOSITORY
     PERFORCE_DEPOT

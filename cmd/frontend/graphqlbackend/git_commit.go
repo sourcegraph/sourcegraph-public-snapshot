@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -167,21 +166,8 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	// Special handling for perforce depots converted to git using p4-fusion. We want to return the
-	// subject from the original changelist and not the subject that is generated during the
-	// conversion.
-	//
-	// For depots converted with git-p4, this special handling is NOT required.
-	if r.repoResolver.isPerforceDepot(ctx) && strings.HasPrefix(commit.Message.Body(), "[p4-fusion") {
-		subject, err := parseP4FusionCommitSubject(commit.Message.Subject())
-		if err == nil {
-			return subject, nil
-		} else {
-			// If parsing this commit message fails for some reason, log the reason and fall-through
-			// to return the the original git-commit's subject instead of a hard failure or an empty
-			// subject.
-			r.logger.Error("failed to parse p4 fusio commit subject", log.Error(err))
-		}
+	if subject := maybeTransformP4Subject(ctx, r.repoResolver, commit); subject != nil {
+		return *subject, nil
 	}
 
 	return commit.Message.Subject(), nil
