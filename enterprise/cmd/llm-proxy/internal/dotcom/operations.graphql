@@ -1,18 +1,22 @@
+fragment ProductSubscriptionState on ProductSubscription {
+    id
+    uuid
+    isArchived
+    llmProxyAccess {
+        enabled
+        rateLimit {
+            limit
+            intervalSeconds
+        }
+    }
+}
+
 # CheckAccessToken returns traints of the product subscription associated with
 # the given access token.
 query CheckAccessToken($token: String!) {
     dotcom {
         productSubscriptionByAccessToken(accessToken: $token) {
-            id
-            uuid
-            isArchived
-            llmProxyAccess {
-                enabled
-                rateLimit {
-                    limit
-                    intervalSeconds
-                }
-            }
+            ...ProductSubscriptionState
         }
     }
 }

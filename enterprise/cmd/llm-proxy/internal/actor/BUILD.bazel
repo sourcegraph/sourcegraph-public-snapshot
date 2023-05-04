@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "actor",
+    srcs = ["actor.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor",
+    visibility = ["//enterprise/cmd/llm-proxy:__subpackages__"],
+    deps = ["//enterprise/cmd/llm-proxy/internal/dotcom"],
+)
