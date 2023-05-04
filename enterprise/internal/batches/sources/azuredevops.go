@@ -2,10 +2,12 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
@@ -103,6 +105,8 @@ func (s AzureDevOpsSource) LoadChangeset(ctx context.Context, cs *Changeset) err
 // exists, *Changeset will be populated and the return value will be true.
 func (s AzureDevOpsSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
 	input := s.changesetToPullRequestInput(cs)
+	fmt.Printf("input from create: %v", input)
+
 	return s.createChangeset(ctx, cs, input)
 }
 
@@ -416,6 +420,15 @@ func (s AzureDevOpsSource) changesetToPullRequestInput(cs *Changeset) azuredevop
 		SourceRefName: cs.HeadRef,
 		TargetRefName: cs.BaseRef,
 	}
+
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		input.CompletionOptions = &azuredevops.PullRequestCompletionOptions{
+			DeleteSourceBranch: true,
+		}
+	}
+
+	fmt.Printf("input from CTPR: %v", input)
+	fmt.Printf("completion options: %v", input.CompletionOptions)
 
 	// If we're forking, then we need to set the source repository as well.
 	if cs.RemoteRepo != cs.TargetRepo {
