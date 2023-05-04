@@ -31,10 +31,7 @@ const AddExternalServicesPage = lazyComponent(
     () => import('../components/externalServices/AddExternalServicesPage'),
     'AddExternalServicesPage'
 )
-const AddGitHubAppPage = lazyComponent(
-    () => import('../components/externalServices/AddGitHubAppPage'),
-    'AddGitHubAppPage'
-)
+const AddGitHubAppPage = lazyComponent(() => import('../components/gitHubApps/AddGitHubAppPage'), 'AddGitHubAppPage')
 
 interface Props extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser

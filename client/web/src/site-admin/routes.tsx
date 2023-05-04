@@ -38,6 +38,7 @@ const SiteAdminExternalServicesArea = lazyComponent(
     () => import('./SiteAdminExternalServicesArea'),
     'SiteAdminExternalServicesArea'
 )
+const SiteAdminGitHubAppsArea = lazyComponent(() => import('./SiteAdminGitHubAppsArea'), 'SiteAdminGitHubAppsArea')
 const SiteAdminRepositoriesPage = lazyComponent(
     () => import('./SiteAdminRepositoriesPage'),
     'SiteAdminRepositoriesPage'
@@ -134,6 +135,10 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/global-settings',
         render: props => <SiteAdminSettingsPage {...props} />,
+    },
+    {
+        path: '/github-apps/*',
+        render: props => <SiteAdminGitHubAppsArea {...props} />,
     },
     {
         path: '/external-services/*',
