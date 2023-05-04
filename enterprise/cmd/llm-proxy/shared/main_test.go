@@ -27,7 +27,7 @@ func TestAuthenticate(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
-	t.Run("unauthenticated not disallow anonymous", func(t *testing.T) {
+	t.Run("unauthenticated but disallow anonymous", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		authenticate(logger, nil, nil, next, authenticateOptions{AllowAnonymous: false}).ServeHTTP(w, r)
