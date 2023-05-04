@@ -132,6 +132,8 @@ func healthz(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "redis: failed to get conn")
 	}
+	defer rconn.Close()
+
 	data, err := rconn.Do("PING")
 	if err != nil {
 		return errors.Wrap(err, "redis: failed to ping")
