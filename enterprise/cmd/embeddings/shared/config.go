@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-const defaultEmbeddingsCacheSize = 6 * 1024 * 1024 * 1024 // 4 GiB
+const defaultEmbeddingsCacheSize = 6 * 1024 * 1024 * 1024 // 6 GiB
 
 type Config struct {
 	env.BaseConfig
