@@ -12,12 +12,14 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/completions/streaming/anthropic",
+        "//enterprise/internal/completions/streaming/dotcom",
         "//enterprise/internal/completions/streaming/openai",
         "//enterprise/internal/completions/types",
         "//internal/actor",
         "//internal/auth",
         "//internal/cody",
         "//internal/conf",
+        "//internal/conf/deploy",
         "//internal/database",
         "//internal/honey",
         "//internal/httpcli",
@@ -26,6 +28,7 @@ go_library(
         "//internal/search/streaming/http",
         "//internal/trace",
         "//lib/errors",
+        "//schema",
         "@com_github_sourcegraph_log//:log",
     ],
 )

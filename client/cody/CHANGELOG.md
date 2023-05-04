@@ -8,9 +8,24 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
+### Changed
+
+## [0.0.10]
+
+### Added
+
+- Adds usage metrics to the experimental completions feature [pull/51350](https://github.com/sourcegraph/sourcegraph/pull/51350)
+- Updating `cody.codebase` does not require reloading VS Code
+
+### Fixed
+
 - Fixes an issue where code blocks were unexpectedly escaped [pull/51247](https://github.com/sourcegraph/sourcegraph/pull/51247)
 
 ### Changed
+
+- Improved Cody header and layout details [pull/51348](https://github.com/sourcegraph/sourcegraph/pull/51348)
+- Replace `Cody: Set Access Token` command with `Cody: Sign in`
+- Various improvements to the experimental completions feature
 
 ## [0.0.9]
 

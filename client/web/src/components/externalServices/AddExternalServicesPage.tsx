@@ -81,10 +81,10 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
 
     return (
         <>
-            <PageTitle title="Add repositories" />
-            <H2>Add repositories</H2>
+            <PageTitle title="Add code host connection" />
+            <H2>Add code host connection</H2>
             <Container>
-                <Text>Add repositories from one of these code hosts.</Text>
+                <Text>Add code host connection to one of the supported code hosts.</Text>
                 {hasDismissedPrivacyWarning && (
                     <Alert variant="info">
                         <Text>

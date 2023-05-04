@@ -6,9 +6,12 @@
 #[cfg(not(dev))]
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
+mod common;
 mod tray;
+use common::{extract_path_from_scheme_url, is_scheme_url, show_window};
 use std::sync::RwLock;
 use tauri::Manager;
+use tauri_utils::config::RemoteDomainAccessScope;
 
 // The URL to open the frontend on, if launched with a scheme url.
 static LAUNCH_PATH: RwLock<String> = RwLock::new(String::new());
@@ -26,21 +29,6 @@ fn set_launch_path(url: String) {
 const SCHEME: &str = "sourcegraph";
 const BUNDLE_IDENTIFIER: &str = "com.sourcegraph.app";
 
-/// Extracts the path from a URL that starts with the `SCHEME` followed by `://`.
-///
-/// # Examples
-///
-/// ```
-/// let url = "sourcegraph://settings";
-/// assert_eq!(extract_path_from_url(url), "/settings");
-///
-/// let url = "sourcegraph://user/admin";
-/// assert_eq!(extract_path_from_url(url), "/user/admin");
-/// ```
-fn extract_path_from_scheme_url(url: &str) -> &str {
-    &url[(SCHEME.len() + 2)..]
-}
-
 fn main() {
     // Prepare handler for sourcegraph:// scheme urls.
     tauri_plugin_deep_link::prepare(BUNDLE_IDENTIFIER);
@@ -53,6 +41,20 @@ fn main() {
     }
 
     let tray = tray::create_system_tray();
+
+    let scope = RemoteDomainAccessScope {
+        scheme: Some("http".to_string()),
+        domain: "localhost".to_string(),
+        windows: vec!["main".to_string()],
+        plugins: vec![],
+        enable_tauri_api: true,
+    };
+    let mut context = tauri::generate_context!();
+    context
+        .config_mut()
+        .tauri
+        .security
+        .dangerous_remote_domain_ipc_access = vec![scope];
 
     tauri::Builder::default()
         .system_tray(tray)
@@ -80,7 +82,7 @@ fn main() {
             // Register handler for sourcegraph:// scheme urls.
             let handle = app.handle();
             tauri_plugin_deep_link::register(SCHEME, move |request| {
-                let path: &str = extract_path_from_scheme_url(&request);
+                let path: &str = extract_path_from_scheme_url(&request, SCHEME);
 
                 // Case 1: the app has been *launched* with the scheme
                 // url. In the frontend, app-shell.tsx will read it with
@@ -97,8 +99,20 @@ fn main() {
                     .unwrap()
                     .eval(&format!("window.location.href = '{}'", path))
                     .unwrap();
+                show_window(&handle);
             })
             .unwrap();
+
+            // If launched with a scheme url, on non-mac the app receives the url as an argument.
+            // On mac, this is handled by the same handler that receives the url when the app is
+            // already running.
+            #[cfg(not(target_os = "macos"))]
+            if let Some(url) = std::env::args().nth(1) {
+                if is_scheme_url(&url, SCHEME) {
+                    let path = extract_path_from_scheme_url(&url, SCHEME);
+                    set_launch_path(url)
+                }
+            }
 
             Ok(())
         })
@@ -108,7 +122,7 @@ fn main() {
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
         .invoke_handler(tauri::generate_handler![get_launch_path])
-        .run(tauri::generate_context!())
+        .run(context)
         .expect("error while running tauri application");
 }
 

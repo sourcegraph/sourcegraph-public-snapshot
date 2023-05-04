@@ -100,7 +100,7 @@ export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): Re
             <FormGroup
                 name="Configuration"
                 title="Configuration"
-                subtitle={<CodeHostInstructions instructions={externalServiceOptions.instructions} />}
+                subtitle={<CodeHostInstructions instructions={externalServiceOptions.Instructions} />}
                 labelClassName={styles.configurationGroupLabel}
             >
                 <DynamicallyImportedMonacoSettingsEditor
@@ -132,12 +132,16 @@ export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): Re
 }
 
 interface CodeHostInstructionsProps {
-    instructions: ReactNode
+    instructions?: React.FunctionComponent
 }
 
 const CodeHostInstructions: FC<CodeHostInstructionsProps> = props => {
-    const { instructions } = props
+    const { instructions: Instructions } = props
     const [isInstructionOpen, setInstructionOpen] = useState(false)
+
+    if (!Instructions) {
+        return null
+    }
 
     return (
         <Collapse isOpen={isInstructionOpen} onOpenChange={setInstructionOpen}>
@@ -151,7 +155,9 @@ const CodeHostInstructions: FC<CodeHostInstructionsProps> = props => {
                 See instructions how to fill out JSONC configuration{' '}
                 <Icon aria-hidden={true} svgPath={isInstructionOpen ? mdiChevronDown : mdiChevronUp} className="mr-1" />
             </CollapseHeader>
-            <CollapsePanel className={styles.configurationGroupInstructions}>{instructions}</CollapsePanel>
+            <CollapsePanel className={styles.configurationGroupInstructions}>
+                <Instructions />
+            </CollapsePanel>
         </Collapse>
     )
 }
