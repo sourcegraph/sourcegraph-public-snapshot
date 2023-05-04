@@ -366,10 +366,10 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
 
-	p := newOAuthProvider(
-		OAuthProviderOp{
-			BaseURL: mustURL(t, "https://gitlab.com"),
-			Token:   "admin_token",
+	p := newSudoProvider(
+		SudoProviderOp{
+			BaseURL:   mustURL(t, "https://gitlab.com"),
+			SudoToken: "admin_token",
 		},
 		&mockDoer{
 			do: func(r *http.Request) (*http.Response, error) {
