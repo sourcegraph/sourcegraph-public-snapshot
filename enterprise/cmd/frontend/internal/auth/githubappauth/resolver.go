@@ -88,21 +88,7 @@ func (r *resolver) GitHubApps(ctx context.Context) (graphqlbackend.GitHubAppConn
 
 func (r *resolver) GitHubApp(ctx context.Context, args *graphqlbackend.GitHubAppArgs) (graphqlbackend.GitHubAppResolver, error) {
 	// 🚨 SECURITY: Check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
-	id, err := UnmarshalGitHubAppID(args.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	app, err := r.db.GitHubApps().GetByID(ctx, int(id))
-	if err != nil {
-		return nil, err
-	}
-
-	return &gitHubAppResolver{app: app}, nil
+	return r.GitHubAppByID(ctx, args.ID)
 }
 
 func (r *resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
