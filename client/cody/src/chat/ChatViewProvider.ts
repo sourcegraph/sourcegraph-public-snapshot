@@ -298,7 +298,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     public async executeRecipe(recipeId: string, humanChatInput = '', showTab = true): Promise<void> {
-        if (this.isMessageInProgress) {
+        if (this.isMessageInProgress && recipeId !== 'non-stop-cody') {
             this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
         }
 

@@ -58,7 +58,7 @@ export class Fixup implements Recipe {
                 },
                 {
                     speaker: 'assistant',
-                    prefix: 'Document has been updated accordingly.\n',
+                    prefix: 'Cody has updated your document.\n\n',
                 },
                 this.getContextMessages(selection.selectedText, context.codebaseContext)
             )

@@ -6,38 +6,39 @@ import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants
 import { CodyContentProvider } from './ContentProvider'
 
 export class FileChatMessage implements vscode.Comment {
-    private id = 0
+    public id: string
     public label: string | undefined
-    public markdownBody: string | vscode.MarkdownString
-
     constructor(
         public body: string | vscode.MarkdownString,
         public mode: vscode.CommentMode,
         public author: vscode.CommentAuthorInformation,
+        public fixupTask: boolean,
         public parent?: vscode.CommentThread,
-        public contextValue?: string
+        public contextValue?: string,
+        public timestamp = new Date(Date.now())
     ) {
-        this.id = this.id++
-        this.markdownBody = this.body
+        this.id = this.timestamp.toUTCString()
     }
 }
 
 export class FileChatProvider {
-    private readonly codyIcon: vscode.Uri = this.getIconPath('cody')
-    private readonly userIcon: vscode.Uri = this.getIconPath('user')
-
     private readonly id = 'cody-file-chat'
     private readonly label = 'Cody: File Chat'
     private readonly threadLabel = 'Ask Cody...'
     private options = {
-        prompt: 'Click here to ask Cody.',
+        prompt: 'Click here to ask Cody for help.',
         placeHolder:
             'Ask Cody a question, or start with /fix to have it perform edits. e.g. “How could you rewrite this in less lines?” or “/fix make the logo bigger”.',
     }
+    public diffFiles: string[] = []
+
+    private readonly codyIcon: vscode.Uri = this.getIconPath('cody')
+    private readonly userIcon: vscode.Uri = this.getIconPath('user')
 
     private commentController: vscode.CommentController
     public threads: vscode.CommentReply | null = null
     public thread: vscode.CommentThread | null = null
+
     public editor: vscode.TextEditor | null = null
     public selection: ActiveTextEditorSelection | null = null
     public selectionRange: vscode.Range | null = null
@@ -46,8 +47,9 @@ export class FileChatProvider {
     public addedLines = 0
     public isInProgress = false
 
-    constructor(private extensionPath: string, private contentProvider: CodyContentProvider) {
-        // Init
+    private _disposables: vscode.Disposable[] = []
+
+    constructor(private extensionPath: string, public contentProvider: CodyContentProvider) {
         this.commentController = vscode.comments.createCommentController(this.id, this.label)
         this.commentController.options = this.options
         this.commentController.commentingRangeProvider = {
@@ -58,7 +60,7 @@ export class FileChatProvider {
         }
         // Track and update line of changes when the task for the current selected range is being processed
         vscode.workspace.onDidChangeTextDocument(e => {
-            if (!this.isInProgress || !this.selectionRange) {
+            if (!this.isInProgress || !this.selectionRange || this.editor?.document.uri.scheme !== 'file') {
                 return
             }
             for (const change of e.contentChanges) {
@@ -111,9 +113,11 @@ export class FileChatProvider {
             this.markdown(humanInput),
             vscode.CommentMode.Preview,
             { name: 'Me', iconPath: this.userIcon },
+            isFixMode,
             thread,
             'loading'
         )
+        newComment.label = newComment.id
         thread.comments = [...thread.comments, newComment]
         // disable reply until the task is completed
         thread.canReply = false
@@ -121,11 +125,12 @@ export class FileChatProvider {
         this.thread = thread
         this.selection = await this.getSelection(isFixMode)
 
-        // store current working docs for showing diff after fixup
+        // store current working docs for diffs after fixup
         if (isFixMode) {
-            const activeDocument = await vscode.workspace.openTextDocument(this.thread.uri)
-            this.contentProvider.set(this.thread.uri, activeDocument.getText())
+            await this.contentProvider.set(this.thread.uri, newComment.id)
+            this.diffFiles.push(newComment.id)
         }
+
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
 
@@ -140,6 +145,7 @@ export class FileChatProvider {
             this.markdown(text.replace(/:$/, '.')),
             vscode.CommentMode.Preview,
             { name: 'Cody', iconPath: this.codyIcon },
+            false,
             this.thread,
             undefined
         )
@@ -152,7 +158,7 @@ export class FileChatProvider {
      * Remove comment thread / conversation
      */
     public delete(thread: vscode.CommentThread): void {
-        this.removeDecorate()
+        this.contentProvider.deleteByThread(thread.comments as FileChatMessage[])
         thread.dispose()
         this.thread?.dispose()
         this.reset()
@@ -160,7 +166,6 @@ export class FileChatProvider {
 
     public reset(): void {
         this.selectionRange = null
-        this.addedLines = 0
         this.thread = null
     }
 
@@ -181,9 +186,6 @@ export class FileChatProvider {
     public async getEditor(): Promise<vscode.TextEditor | null> {
         if (!this.thread) {
             return null
-        }
-        if (this.editor) {
-            return this.editor
         }
         await vscode.window.showTextDocument(this.thread.uri)
         this.editor = vscode.window.activeTextEditor || null
@@ -227,72 +229,12 @@ export class FileChatProvider {
         return selection
     }
 
-    /**
-     * Highlights line where the codes updated by Cody are located.
-     */
-    public async decorate(updatedLength: number): Promise<void> {
-        if (!this.thread) {
-            return
-        }
-        const doc = vscode.window.activeTextEditor?.document
-        if (doc?.uri.toString().startsWith('/commentinput')) {
-            return
-        }
-        this.addedLines = updatedLength
-        const currentFile = doc || (await vscode.workspace.openTextDocument(this.thread?.uri))
-        if (!currentFile) {
-            return
-        }
-        const mdText = this.markdown(this.selection?.selectedText || '')
-        const decorations: vscode.DecorationOptions[] = []
-        if (this.selectionRange) {
-            const start = new vscode.Position(this.selectionRange.start.line, 0)
-            const end = new vscode.Position(this.selectionRange.end.line - updatedLength + 1, 0)
-            const newRange = new vscode.Range(start, end)
-            decorations.push({
-                range: newRange,
-                hoverMessage: mdText,
-            })
-            this.selectionRange = newRange
+    public setNewRange(newRange: vscode.Range): void {
+        this.selectionRange = newRange
+        if (this.thread) {
             this.thread.range = newRange
         }
-        if (this.thread && this.thread.uri.toString() === '') {
-            await vscode.window.showTextDocument(this.thread.uri)
-        }
-        vscode.window.activeTextEditor?.setDecorations(this.decorationType, decorations)
     }
-
-    /**
-     * Remove all decorations on save / accept button click
-     */
-    public removeDecorate(): void {
-        if (!this.thread) {
-            return
-        }
-        const editor = vscode.window.activeTextEditor
-        editor?.setDecorations(this.decorationType, [])
-        this.contentProvider.delete(this.thread.uri)
-        this.addedLines = 0
-    }
-
-    /**
-     * Define styles
-     */
-    private decorationType = vscode.window.createTextEditorDecorationType({
-        isWholeLine: true,
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        before: { contentText: '✨ ' },
-        backgroundColor: 'rgba(161, 18, 255, 0.33)',
-        overviewRulerColor: 'rgba(161, 18, 255, 0.33)',
-        overviewRulerLane: vscode.OverviewRulerLane.Right,
-        light: {
-            borderColor: 'rgba(161, 18, 255, 0.33)',
-        },
-        dark: {
-            borderColor: 'rgba(161, 18, 255, 0.33)',
-        },
-    })
 
     /**
      * Generate icon path for each speaker
@@ -301,5 +243,13 @@ export class FileChatProvider {
         const extensionPath = vscode.Uri.file(this.extensionPath)
         const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
         return vscode.Uri.joinPath(webviewPath, speaker === 'cody' ? 'cody.png' : 'sourcegraph.png')
+    }
+
+    public dispose(): void {
+        this.diffFiles = []
+        for (const disposable of this._disposables) {
+            disposable.dispose()
+        }
+        this._disposables = []
     }
 }

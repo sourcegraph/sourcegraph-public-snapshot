@@ -79,6 +79,8 @@ const register = async (
     )
 
     const editor = new VSCodeEditor(fileChatProvider)
+    const workspaceConfig = vscode.workspace.getConfiguration()
+    const config = getConfiguration(workspaceConfig)
 
     const {
         intentDetector,
@@ -100,23 +102,20 @@ const register = async (
         localStorage,
         rgPath
     )
-    disposables.push(chatProvider)
-
     disposables.push(
+        chatProvider,
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
-        })
+        }),
+        { dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) }
     )
-    disposables.push({ dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) })
 
     const executeRecipe = async (recipe: string): Promise<void> => {
         await vscode.commands.executeCommand('cody.chat.focus')
         await chatProvider.executeRecipe(recipe)
     }
 
-    const workspaceConfig = vscode.workspace.getConfiguration()
-    const config = getConfiguration(workspaceConfig)
-
+    // Reguster Commands
     disposables.push(
         // File Chat Provider
         vscode.commands.registerCommand('cody.file.chat', (reply: vscode.CommentReply) =>
@@ -195,6 +194,7 @@ const register = async (
         })
     )
 
+    // experimental flags
     if (initialConfig.experimentalSuggest) {
         // TODO(sqs): make this listen to config and not just use initialConfig
         const docprovider = new CompletionsDocumentProvider()
@@ -209,7 +209,6 @@ const register = async (
             vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
         )
     }
-
     if (initialConfig.experimentalNonStop) {
         void vscode.commands.executeCommand('setContext', 'cody.experimental.nonStop.enabled', true)
     }

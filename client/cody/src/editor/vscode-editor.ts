@@ -122,7 +122,8 @@ export class VSCodeEditor implements Editor {
             return
         }
         let selection = activeEditor.selection
-        const lens = new CodeLensProvider()
+        const taskID = this.fileChatProvider.diffFiles.shift()
+        const lens = new CodeLensProvider(taskID)
         if (this.fileChatProvider.selectionRange) {
             selection = new vscode.Selection(
                 this.fileChatProvider.selectionRange.start,
@@ -152,13 +153,13 @@ export class VSCodeEditor implements Editor {
         })
 
         const updatedLength = selectedText.split('\n').length - replacement.trim().split('\n').length
+        this.fileChatProvider.addedLines = updatedLength
         const doc = vscode.window.activeTextEditor?.document
         if (doc) {
             await lens.provideCodeLenses(doc, new vscode.CancellationTokenSource().token)
-            lens.set(selection.start.line, this.fileChatProvider)
+            lens.set(selection.start.line, this.fileChatProvider, updatedLength)
             vscode.languages.registerCodeLensProvider('*', lens)
         }
-        await this.fileChatProvider.decorate(updatedLength)
 
         // check performance time
         const duration = performance.now() - startTime

@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
 import { FileChatProvider } from '../../editor'
-import { MAX_CURRENT_FILE_TOKENS, SURROUNDING_LINES } from '../../prompt/constants'
+import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS, SURROUNDING_LINES } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
@@ -29,9 +29,9 @@ export class NonStopCody implements Recipe {
     private trackingInProgress = false
     private comments: FileChatProvider | null = null
 
-    private decorations: Map<vscode.Uri, TrackedDecoration[]> = new Map()
     private fadeAnimation = 0
     private fadeTimer: NodeJS.Timeout | undefined = undefined
+    private decorations: Map<vscode.Uri, TrackedDecoration[]> = new Map()
     private fadeDecorations: vscode.TextEditorDecorationType[] = [
         vscode.window.createTextEditorDecorationType({
             backgroundColor: '#0ca67888', // oc-teal-7; TODO(dpc): Account for themes. See: fhtlight, dark.
@@ -52,9 +52,10 @@ export class NonStopCody implements Recipe {
         }),
     ]
 
+    private disposables: vscode.Disposable[] = []
+
     constructor() {
-        // TODO: Dispose the subscription. Array of disposables?
-        const subscription = vscode.workspace.onDidChangeTextDocument(this.textDocumentChanged.bind(this))
+        this.disposables.push(vscode.workspace.onDidChangeTextDocument(this.textDocumentChanged.bind(this)))
     }
 
     private onAnimationTick(): void {
@@ -196,7 +197,7 @@ export class NonStopCody implements Recipe {
                     return
                 }
                 // TODO: Consider handling content progressively
-                await handleResult(content)
+                await handleResult(content, humanChatInput)
             })
         )
 
@@ -215,7 +216,7 @@ export class NonStopCody implements Recipe {
             .replace('{responseMultiplexerPrompt', context.responseMultiplexer.prompt())
             .replace('{truncateFollowingText}', truncateText(followingText, quarterFileContext))
             .replace('{selectedText}', selectedText)
-            .replace('{humanInput}', humanChatInput)
+            .replace('{humanInput}', truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS))
             .replace('{truncateTextStart}', truncateTextStart(precedingText, quarterFileContext))
             .replace('{fileName}', editor.document.fileName)
 
@@ -245,7 +246,7 @@ export class NonStopCody implements Recipe {
         return contextMessages
     }
 
-    private async handleResult(content: string): Promise<void> {
+    private async handleResult(content: string, humanChatInput: string): Promise<void> {
         this.trackingInProgress = false
         // TODO: Handle multiple concurrent editors, don't use activeTextEditor here but make it part of the batch
         if (!this.batch) {
@@ -282,7 +283,7 @@ export class NonStopCody implements Recipe {
         this.decorations.set(this.batch.editor.document.uri, decorations)
         for (const highlight of diff.highlights) {
             const deco = {
-                hoverMessage: 'Edited by Cody', // TODO: Put the prompt in here
+                hoverMessage: humanChatInput,
                 range: new vscode.Range(
                     new vscode.Position(highlight.start.line, highlight.start.character),
                     new vscode.Position(highlight.end.line, highlight.end.character)
@@ -301,7 +302,7 @@ export class NonStopCody implements Recipe {
         this.fadeTimer = setInterval(this.onAnimationTick.bind(this), 1500)
 
         await vscode.window.showInformationMessage(
-            `Cody done, generated ${content.length} characters; edit: ${success}`
+            `Cody has made changes to your file: generated ${content.length} characters; edit: ${success}`
         )
     }
 
@@ -322,4 +323,11 @@ export class NonStopCody implements Recipe {
     <cody-replace>{truncateTextStart}<cody-help prompt="{humanInput}">{selectedText}</cody-help>{truncateFollowingText}</cody-replace>
 
     {responseMultiplexerPrompt}`
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
+    }
 }
