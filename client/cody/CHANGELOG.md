@@ -23,6 +23,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Changed
 
+- Improved Cody header and layout details [pull/51348](https://github.com/sourcegraph/sourcegraph/pull/51348)
 - Replace `Cody: Set Access Token` command with `Cody: Sign in`
 - Various improvements to the experimental completions feature
 
