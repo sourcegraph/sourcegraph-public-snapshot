@@ -1,6 +1,5 @@
-// This test should only run on CI. It relies on large index files that are not
-// committed to the repository. The build tag makes sure the missing files don't
-// break the build. To run this test, use `go test -tags sourcegraphCI`.
+// This test should only be run with bazel test. It relies on large index files
+// that are not committed to the repository.
 
 package shared
 

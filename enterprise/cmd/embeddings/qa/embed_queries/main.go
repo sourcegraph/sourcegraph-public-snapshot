@@ -1,10 +1,13 @@
 // This is a helper script that embeds a set of queries and writes pairs of
-// embeddings and queries to disk.
+// embeddings and queries to disk. Credentials for the embeddings provider are
+// read from dev-private.
 //
 // Usage:
 //
 // Supply a file with one query per line:
 // go run . <file>
+//
+// OR
 //
 // Supply queries via stdin:
 // cat ../context_data.tsv | awk -F\t '{print $1}' | go run .
