@@ -6,6 +6,10 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
+- New recipe: `Codebase Context Search` --run an approximate search across the codebase. It searches within the embeddings when available to provide relevant code context. [pull/51077](https://github.com/sourcegraph/sourcegraph/pull/51077)
+- Add support to slash commands `/` in chat. [pull/51077](https://github.com/sourcegraph/sourcegraph/pull/51077)
+  - `/r` or `/reset` to reset chat
+  - `/s` or `/search` to perform codebase context search
 - Adds usage metrics to the experimental chat predictions feature [pull/51474](https://github.com/sourcegraph/sourcegraph/pull/51474)
 
 ### Fixed
@@ -17,7 +21,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 ### Added
 
 - Adds usage metrics to the experimental completions feature [pull/51350](https://github.com/sourcegraph/sourcegraph/pull/51350)
-- Updating `cody.codebase` does not require reloading VS Code
+- Updating `cody.codebase` does not require reloading VS Code [pull/51274](https://github.com/sourcegraph/sourcegraph/pull/51274)
 
 ### Fixed
 
@@ -26,7 +30,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 ### Changed
 
 - Improved Cody header and layout details [pull/51348](https://github.com/sourcegraph/sourcegraph/pull/51348)
-- Replace `Cody: Set Access Token` command with `Cody: Sign in`
+- Replace `Cody: Set Access Token` command with `Cody: Sign in` [pull/51274](https://github.com/sourcegraph/sourcegraph/pull/51274)
 - Various improvements to the experimental completions feature
 
 ## [0.0.9]

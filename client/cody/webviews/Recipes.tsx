@@ -14,6 +14,7 @@ export const recipesList = {
     'git-history': 'Summarize recent code changes',
     'find-code-smells': 'Smell code',
     fixup: 'Fixup code from inline instructions',
+    'context-search': 'Codebase context search',
 }
 
 export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
