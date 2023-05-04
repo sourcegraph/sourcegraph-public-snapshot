@@ -154,9 +154,6 @@ func TestClient_ArchiveReader(t *testing.T) {
 			}
 
 			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: test.revision, Format: gitserver.ArchiveFormatZip})
-			if err != nil {
-				t.Fatal(err.Error())
-			}
 			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}
@@ -170,6 +167,14 @@ func TestClient_ArchiveReader(t *testing.T) {
 				}
 			})
 			data, err := io.ReadAll(rc)
+			if err != nil {
+				if name == "revision-not-found-http" {
+					assert.Contains(t, fmt.Sprint(err), "not a valid object")
+					return
+				} else {
+					t.Fatal(err)
+				}
+			}
 			zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 			if err != nil {
 				t.Fatal(err)
@@ -242,39 +247,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 			}
 		}
 	})
-
 }
-
-// func TestArchiveReader_Read(t *testing.T) {
-// 	repo := "test/repo"
-// 	spec := "invalid_spec"
-// 	// base := &mockReadCloser{
-// 	// 	readErr: errors.New("Not a valid object"),
-// 	// }
-// 	reader := &gitserver.archiveReader{
-// 		base: &gitserver.cmdReader{
-// 			rc:      nil,
-// 			trailer: nil,
-// 		},
-// 		repo: repo,
-// 		spec: spec,
-// 	}
-
-// 	_, err := reader.Read([]byte{})
-// 	if err == nil {
-// 		t.Errorf("Expected error, got nil")
-// 	}
-// 	if !errors.Is(err, &gitdomain.RevisionNotFoundError{}) {
-// 		t.Errorf("Expected RevisionNotFoundError, got %v", err)
-// 	}
-// 	notFoundErr := err.(*gitdomain.RevisionNotFoundError)
-// 	if notFoundErr.Repo != repo {
-// 		t.Errorf("Expected repo %s, got %s", repo, notFoundErr.Repo)
-// 	}
-// 	if notFoundErr.Spec != spec {
-// 		t.Errorf("Expected spec %s, got %s", spec, notFoundErr.Spec)
-// 	}
-// }
 
 func createRepoWithDotGitDir(t *testing.T, root string) string {
 	t.Helper()
