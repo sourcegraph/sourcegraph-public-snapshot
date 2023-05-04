@@ -342,6 +342,6 @@
     - path: github.com/gregjones/httpcache
       interfaces:
         - Cache
-    - path: github.com/sourcegraph/sourcegraph/internal/httpcli
+    - path: github.com/Khan/genqlient/graphql
       interfaces:
-        - Doer
+        - Client

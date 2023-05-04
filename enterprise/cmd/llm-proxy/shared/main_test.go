@@ -1,7 +1,7 @@
 package shared
 
 import (
-	"io"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
 )
 
 func TestAuthenticate(t *testing.T) {
@@ -36,33 +37,23 @@ func TestAuthenticate(t *testing.T) {
 
 	t.Run("authenticated without cache hit", func(t *testing.T) {
 		cache := NewMockCache()
-		doer := NewMockDoer()
-		doer.DoFunc.SetDefaultReturn(
-			&http.Response{
-				StatusCode: http.StatusOK,
-				Body: io.NopCloser(strings.NewReader(`
-{
-  "data": {
-    "dotcom": {
-      "productSubscriptionByAccessToken": {
-        "id": "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
-        "uuid": "6452a8fc-e650-45a7-a0a2-357f776b3b46",
-        "isArchived": false,
-        "llmProxyAccess": {
-          "enabled": true,
-          "rateLimit": {
-            "limit": 0,
-            "intervalSeconds": 0
-          }
-        }
-      }
-    }
-  }
-}`)),
-			},
-			nil,
-		)
-		client := graphql.NewClient("https://sourcegraph.com/.api/graphql", doer)
+		client := NewMockClient()
+		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
+			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
+				ProductSubscriptionByAccessToken: dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription{
+					ProductSubscriptionState: dotcom.ProductSubscriptionState{
+						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
+						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
+						IsArchived: false,
+						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
+							Enabled:   true,
+							RateLimit: &dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit{},
+						},
+					},
+				},
+			}
+			return nil
+		})
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			require.NotNil(t, actor.FromContext(r.Context()).Subscription)
 			w.WriteHeader(http.StatusOK)
@@ -73,7 +64,7 @@ func TestAuthenticate(t *testing.T) {
 		r.Header.Set("Authorization", "Bearer abc123")
 		authenticate(logger, cache, client, next, authenticateOptions{AllowAnonymous: false}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
-		mockrequire.Called(t, doer.DoFunc)
+		mockrequire.Called(t, client.MakeRequestFunc)
 	})
 
 	t.Run("authenticated with cache hit", func(t *testing.T) {
@@ -82,14 +73,7 @@ func TestAuthenticate(t *testing.T) {
 			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","accessEnabled":true,"rateLimit":null}`),
 			true,
 		)
-		doer := NewMockDoer()
-		doer.DoFunc.SetDefaultReturn(
-			&http.Response{
-				StatusCode: http.StatusServiceUnavailable,
-			},
-			nil,
-		)
-		client := graphql.NewClient("https://sourcegraph.com/.api/graphql", doer)
+		client := NewMockClient()
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			require.NotNil(t, actor.FromContext(r.Context()).Subscription)
 			w.WriteHeader(http.StatusOK)
@@ -100,7 +84,7 @@ func TestAuthenticate(t *testing.T) {
 		r.Header.Set("Authorization", "Bearer abc123")
 		authenticate(logger, cache, client, next, authenticateOptions{AllowAnonymous: false}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
-		mockrequire.NotCalled(t, doer.DoFunc)
+		mockrequire.NotCalled(t, client.MakeRequestFunc)
 	})
 
 	t.Run("authenticated but not enabled", func(t *testing.T) {
@@ -109,8 +93,7 @@ func TestAuthenticate(t *testing.T) {
 			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","accessEnabled":false,"rateLimit":null}`),
 			true,
 		)
-		doer := NewMockDoer()
-		client := graphql.NewClient("https://sourcegraph.com/.api/graphql", doer)
+		client := NewMockClient()
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
