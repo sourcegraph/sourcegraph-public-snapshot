@@ -7,6 +7,7 @@
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
 mod common;
+mod cody;
 mod tray;
 use common::{extract_path_from_scheme_url, show_window};
 use std::sync::RwLock;
@@ -20,8 +21,20 @@ use common::is_scheme_url;
 static LAUNCH_PATH: RwLock<String> = RwLock::new(String::new());
 
 #[tauri::command]
-fn get_launch_path() -> String {
+fn get_launch_path(window: tauri::Window) -> String {
+    if window.label() == "cody" {
+        return "/cody-standalone".to_string();
+    }
     LAUNCH_PATH.read().unwrap().clone()
+}
+
+#[tauri::command]
+fn hide_window(app: tauri::AppHandle, window: tauri::Window) {
+    if window.label() == "cody" {
+        let item_handle = app.tray_handle().get_item("cody");
+        item_handle.set_title("Show Cody").unwrap();
+    }
+    window.hide().unwrap();
 }
 
 fn set_launch_path(url: String) {
@@ -48,7 +61,7 @@ fn main() {
     let scope = RemoteDomainAccessScope {
         scheme: Some("http".to_string()),
         domain: "localhost".to_string(),
-        windows: vec!["main".to_string()],
+        windows: vec!["main".to_string(), "cody".to_string()],
         plugins: vec![],
         enable_tauri_api: true,
     };
@@ -62,11 +75,15 @@ fn main() {
     tauri::Builder::default()
         .system_tray(tray)
         .on_system_tray_event(tray::on_system_tray_event)
+        .on_system_tray_event(|app, event| {
+            tauri_plugin_positioner::on_tray_event(app, &event);
+        })
         .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
-                // Ensure the app stays open after the last window is closed.
-                event.window().hide().unwrap();
-                api.prevent_close();
+                if event.window().label() == "main" {
+                    event.window().hide().unwrap();
+                    api.prevent_close();
+                }
             }
             _ => {}
         })
@@ -79,11 +96,15 @@ fn main() {
                 .level(log::LevelFilter::Info)
                 .build(),
         )
+        .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
             start_embedded_services();
 
-            // Register handler for sourcegraph:// scheme urls.
+            // Cody system tray window.
             let handle = app.handle();
+            cody::init_cody_window(&handle);
+
+            // Register handler for sourcegraph:// scheme urls.
             tauri_plugin_deep_link::register(SCHEME, move |request| {
                 let path: &str = extract_path_from_scheme_url(&request, SCHEME);
 
@@ -102,7 +123,7 @@ fn main() {
                     .unwrap()
                     .eval(&format!("window.location.href = '{}'", path))
                     .unwrap();
-                show_window(&handle);
+                show_window(&handle, "main");
             })
             .unwrap();
 
@@ -116,7 +137,6 @@ fn main() {
                     set_launch_path(url)
                 }
             }
-
             Ok(())
         })
         // Define a handler so that invoke("get_launch_scheme_url") can be
@@ -124,7 +144,10 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![get_launch_path])
+        .invoke_handler(tauri::generate_handler![
+            get_launch_path,
+            hide_window,
+        ])
         .run(context)
         .expect("error while running tauri application");
 }
