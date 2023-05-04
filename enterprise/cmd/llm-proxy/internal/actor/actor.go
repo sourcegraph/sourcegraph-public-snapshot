@@ -13,9 +13,14 @@ type SubscriptionRateLimit struct {
 }
 
 type Subscription struct {
-	ID            string                 `json:"id"`
-	AccessEnabled bool                   `json:"accessEnabled"`
-	RateLimit     *SubscriptionRateLimit `json:"rateLimit"`
+	// ID is the subscription ID.
+	ID string `json:"id"`
+	// AccessEnabled is an evaluated field that summarizes whether or not LLM-proxy access
+	// is enabled, based on whether the subscription is archived, if access is enabled, and
+	// if any rate limits are set.
+	AccessEnabled bool `json:"accessEnabled"`
+	// RateLimit is the rate limit for LLM-proxy access.
+	RateLimit *SubscriptionRateLimit `json:"rateLimit"`
 }
 
 func NewSubscriptionFromDotCom(s dotcom.ProductSubscriptionState) *Subscription {

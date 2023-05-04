@@ -8,12 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -22,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -37,8 +37,12 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	defer shutdownTracing()
 
 	handler := newHandler(obctx.Logger, config)
-	handler = authenticate(obctx.Logger, config.Dotcom.AccessToken, handler)
-	handler = trace.HTTPMiddleware(obctx.Logger, handler, conf.DefaultClient())
+	handler = otelhttp.NewHandler(handler, "llm-proxy")
+	handler = authenticate(obctx.Logger,
+		rcache.New("llm-proxy-tokens"),
+		dotcom.NewClient(config.Dotcom.AccessToken), handler, authenticateOptions{
+			AllowAnonymous: config.AllowAnonymous,
+		})
 	handler = instrumentation.HTTPMiddleware("", handler)
 
 	server := httpserver.NewFromAddr(config.Address, &http.Server{
@@ -122,11 +126,14 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 	return r
 }
 
-func authenticate(logger log.Logger, dotcomAccessToken string, next http.Handler) http.Handler {
-	dotcomClient := dotcom.NewClient(dotcomAccessToken)
-	tokenCache := rcache.New("llm-proxy-tokens")
+type authenticateOptions struct {
+	// TODO: Later maybe make this a configurable rate limit as well.
+	AllowAnonymous bool
+}
+
+func authenticate(logger log.Logger, cache *rcache.Cache, dotComClient graphql.Client, next http.Handler, opts authenticateOptions) http.Handler {
 	getSubscriptionFromCache := func(token string) (_ *actor.Subscription, hit bool) {
-		data, hit := tokenCache.Get(token)
+		data, hit := cache.Get(token)
 		if !hit {
 			return nil, false
 		}
@@ -145,21 +152,29 @@ func authenticate(logger log.Logger, dotcomAccessToken string, next http.Handler
 			return
 		}
 
-		tokenCache.Set(token, data)
+		cache.Set(token, data)
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if token == "" {
-			// Anonymous requests
-			next.ServeHTTP(w, r)
+			// Anonymous requests. Based on configuration, either allow or disallow.
+			if opts.AllowAnonymous {
+				// TODO: We need to evaluate these to an actor type as well to rate-limit
+				// anonymous users.
+				next.ServeHTTP(w, r)
+			}
+
+			responseJSONError(logger, w, http.StatusUnauthorized,
+				errors.New("unauthorized access is not allowed"))
 			return
 		}
 
 		subscription, hit := getSubscriptionFromCache(token)
 		if !hit {
-			resp, err := dotcom.CheckAccessToken(r.Context(), dotcomClient, token)
+			resp, err := dotcom.CheckAccessToken(r.Context(), dotComClient, token)
 			if err != nil {
-				responseJSONError(logger, w, http.StatusUnauthorized, errors.Errorf("failed to check access token: %s", err))
+				responseJSONError(logger, w, http.StatusUnauthorized,
+					errors.Errorf("failed to check access token: %s", err))
 				return
 			}
 
@@ -168,7 +183,8 @@ func authenticate(logger log.Logger, dotcomAccessToken string, next http.Handler
 		}
 
 		if !subscription.AccessEnabled {
-			responseJSONError(logger, w, http.StatusBadRequest, errors.New("license archived or LLM proxy access not enabled"))
+			responseJSONError(logger, w, http.StatusBadRequest,
+				errors.New("license archived or LLM proxy access not enabled"))
 			return
 		}
 
@@ -187,6 +203,7 @@ func healthz(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "redis: failed to get conn")
 	}
+
 	data, err := rconn.Do("PING")
 	if err != nil {
 		return errors.Wrap(err, "redis: failed to ping")
