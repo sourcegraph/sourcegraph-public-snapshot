@@ -414,9 +414,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
 		// Add final artifacts
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			publishOps.Append(publishFinalDockerImage(c, dockerImage))
-		}
+		// for _, dockerImage := range images.SourcegraphDockerImages {
+		publishOps.Append(bazelPublishFinalDockerImage(c, images.SourcegraphDockerImages))
+		// }
 		// Executor VM image
 		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
 			publishOps.Append(publishExecutorVM(c, skipHashCompare))

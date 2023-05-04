@@ -389,6 +389,7 @@ func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation 
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{}
 		cmds = append(cmds, bk.Agent("queue", "bazel"))
+		candidateImages := []string{}
 
 		for _, app := range apps {
 
@@ -426,8 +427,10 @@ func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation 
 			}
 
 			candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
+			candidateImages = append(candidateImages, candidateImage)
 			cmds = append(cmds, bk.Cmd(fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " "))))
 		}
+		cmds = append(cmds, bk.Cmd(fmt.Sprintf("parallel docker pull ::: %s", strings.Join(candidateImages, " "))))
 		pipeline.AddStep(":docker: :truck: Publish images", cmds...)
 		// This step just pulls a prebuild image and pushes it to some registries. The
 		// only possible failure here is a registry flake, so we retry a few times.
