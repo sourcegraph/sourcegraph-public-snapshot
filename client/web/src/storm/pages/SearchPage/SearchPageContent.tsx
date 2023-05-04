@@ -1,6 +1,5 @@
 import { FC, useEffect, useState } from 'react'
 
-import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
@@ -8,9 +7,8 @@ import { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Icon, Link, Tooltip, Text, Badge } from '@sourcegraph/wildcard'
+import { Tooltip } from '@sourcegraph/wildcard'
 
-import { CodyIcon } from '../../../cody/CodyIcon'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
@@ -89,25 +87,6 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
                         {isSourcegraphDotCom && !authenticatedUser && (
                             <CodySignUpCtaSection className="mx-auto my-5" />
-                        )}
-                        {/* todo: clarify whether to remove this section or not? */}
-                        {!window.context?.codyEnabled && !authenticatedUser && isSourcegraphDotCom && (
-                            <div className="d-flex justify-content-center mt-4">
-                                <Text className="text-muted">
-                                    <Badge variant="merged">Experimental</Badge>{' '}
-                                    <Link
-                                        to="/sign-in?returnTo=/search"
-                                        onClick={() =>
-                                            telemetryService.log('ClickedOnSignupToTryCodySearchCTA', {
-                                                location: 'SearchPage',
-                                            })
-                                        }
-                                    >
-                                        Sign in to try our new AI coding assistant, Cody <CodyIcon />{' '}
-                                        <Icon svgPath={mdiArrowRight} aria-hidden={true} />
-                                    </Link>
-                                </Text>
-                            </div>
                         )}
                     </>
                 )}
