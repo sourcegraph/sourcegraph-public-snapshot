@@ -56,16 +56,16 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
             // Open Chat View
             codeLensTitle.command = {
                 title: 'Edited by Cody',
-                tooltip: 'Click here to open chat view for details.',
+                tooltip: 'Open this in Cody chat view',
                 command: 'cody.focus',
             }
             // Run VS Code command to show diff for current file
             const codeLensDiff = new vscode.CodeLens(range)
             codeLensDiff.command = {
                 title: 'Show Diff',
-                tooltip: 'Open diff view.',
+                tooltip: 'Open a diff of this change',
                 command: 'vscode.diff',
-                arguments: [uri, document.uri, 'Diff by Cody'],
+                arguments: [uri, document.uri, 'Cody edit diff'],
             }
             // Run VS Code command to save all files
             const codeLensSave = new vscode.CodeLens(range)
