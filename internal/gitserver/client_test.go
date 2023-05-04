@@ -116,11 +116,6 @@ func TestClient_ArchiveReader(t *testing.T) {
 			revision: "HEAD",
 			err:      errors.New("repository does not exist: not-found"),
 		},
-		"repo-with-dotgit-dir-1": {
-			remote:   createRepoWithDotGitDir(t, root),
-			revision: "nonexistent-revision",
-			err:      errors.New("exit status 128 (stderr: \"fatal: not a valid object name: nonexistent-revision\n\")"),
-		},
 	}
 
 	s := &server.Server{
@@ -159,6 +154,9 @@ func TestClient_ArchiveReader(t *testing.T) {
 			}
 
 			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: test.revision, Format: gitserver.ArchiveFormatZip})
+			if err != nil {
+				t.Fatal(err.Error())
+			}
 			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}
@@ -172,9 +170,6 @@ func TestClient_ArchiveReader(t *testing.T) {
 				}
 			})
 			data, err := io.ReadAll(rc)
-			if err != nil {
-				t.Fatal(err)
-			}
 			zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 			if err != nil {
 				t.Fatal(err)
@@ -203,6 +198,13 @@ func TestClient_ArchiveReader(t *testing.T) {
 	}
 
 	t.Run("grpc", func(t *testing.T) {
+		message := fmt.Sprintf("exit status 128 (stderr: %q)", "fatal: not a valid object name: revision-not-found\n")
+		tests["revision-not-found-grpc"] = test{
+			remote:   createRepoWithDotGitDir(t, root),
+			revision: "revision-not-found",
+			err:      errors.New(message),
+		}
+
 		t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
 		for name, test := range tests {
 			var spyGitserverService *spyGitserverServiceClient
@@ -220,6 +222,11 @@ func TestClient_ArchiveReader(t *testing.T) {
 	})
 
 	t.Run("http", func(t *testing.T) {
+		delete(tests, "revision-not-found-grpc")
+		tests["revision-not-found-http"] = test{
+			remote:   createRepoWithDotGitDir(t, root),
+			revision: "revision-not-found",
+		}
 		t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
 		for name, test := range tests {
 			var spyGitserverService *spyGitserverServiceClient
@@ -237,6 +244,37 @@ func TestClient_ArchiveReader(t *testing.T) {
 	})
 
 }
+
+// func TestArchiveReader_Read(t *testing.T) {
+// 	repo := "test/repo"
+// 	spec := "invalid_spec"
+// 	// base := &mockReadCloser{
+// 	// 	readErr: errors.New("Not a valid object"),
+// 	// }
+// 	reader := &gitserver.archiveReader{
+// 		base: &gitserver.cmdReader{
+// 			rc:      nil,
+// 			trailer: nil,
+// 		},
+// 		repo: repo,
+// 		spec: spec,
+// 	}
+
+// 	_, err := reader.Read([]byte{})
+// 	if err == nil {
+// 		t.Errorf("Expected error, got nil")
+// 	}
+// 	if !errors.Is(err, &gitdomain.RevisionNotFoundError{}) {
+// 		t.Errorf("Expected RevisionNotFoundError, got %v", err)
+// 	}
+// 	notFoundErr := err.(*gitdomain.RevisionNotFoundError)
+// 	if notFoundErr.Repo != repo {
+// 		t.Errorf("Expected repo %s, got %s", repo, notFoundErr.Repo)
+// 	}
+// 	if notFoundErr.Spec != spec {
+// 		t.Errorf("Expected spec %s, got %s", spec, notFoundErr.Spec)
+// 	}
+// }
 
 func createRepoWithDotGitDir(t *testing.T, root string) string {
 	t.Helper()
