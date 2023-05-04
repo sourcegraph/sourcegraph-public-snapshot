@@ -88,7 +88,7 @@ Then, [add or edit a GitLab connection](#repository-syncing) and include the `au
 }
 ```
 
-In this case, a user's OAuth token will be used to verify that user's access to repositories.
+In this case, a user's OAuth token will be used to get a list of repositories that the user can access.
 [Repository-centric permissions syncing](../../permissions/syncing.md) will be disabled.
 
 ### Administrator (sudo-level) access token
