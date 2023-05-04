@@ -26,9 +26,8 @@ export class FileChatProvider {
     private readonly label = 'Cody: File Chat'
     private readonly threadLabel = 'Ask Cody...'
     private options = {
-        prompt: 'Click here to ask Cody for help.',
-        placeHolder:
-            'Ask Cody a question, or start with /fix to have it perform edits. e.g. “How could you rewrite this in less lines?” or “/fix make the logo bigger”.',
+        prompt: 'Reply...',
+        placeHolder: 'Ask Cody a question, or start with /fix to request edits (e.g. "/fix convert tabs to spaces")',
     }
     public diffFiles: string[] = []
 
