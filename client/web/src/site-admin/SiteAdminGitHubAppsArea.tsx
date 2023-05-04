@@ -14,7 +14,7 @@ import { SITE_EXTERNAL_SERVICE_CONFIG } from './backend'
 
 const AddGitHubAppPage = lazyComponent(() => import('../components/gitHubApps/AddGitHubAppPage'), 'AddGitHubAppPage')
 const GitHubAppPage = lazyComponent(() => import('../components/gitHubApps/GitHubAppPage'), 'GitHubAppPage')
-const GitHubAppsPage = () => <h1>Github Apps</h1>
+const GitHubAppsPage = lazyComponent(() => import('../components/gitHubApps/GitHubAppsPage'), 'GitHubAppsPage')
 
 interface Props extends TelemetryProps, PlatformContextProps {
     authenticatedUser: AuthenticatedUser

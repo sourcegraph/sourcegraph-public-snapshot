@@ -63,4 +63,12 @@ type GitHubApp implements Node {
     The logo URL of the GitHub App
     """
     logo: String!
+    """
+    The created at timestamp of the GitHub App in our database
+    """
+    createdAt: DateTime!
+    """
+    The updated at timestamp of the GitHub App in our database
+    """
+    updatedAt: DateTime!
 }

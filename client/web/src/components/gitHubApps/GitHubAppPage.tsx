@@ -1,10 +1,10 @@
 import { FC, useEffect } from 'react'
 
-import { mdiCog } from '@mdi/js'
+import { mdiCog, mdiChevronLeft } from '@mdi/js'
 import { useParams } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, PageHeader, ButtonLink } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, PageHeader, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
 import { PageTitle } from '../PageTitle'
@@ -25,12 +25,17 @@ export const GitHubAppPage: FC<Props> = ({
         telemetryService.logPageView('SiteAdminGitHubApp')
     }, [telemetryService])
 
-    const app: any = null
+    const app: any = {
+        id: atob(appID).replace('GitHubApp:', ''),
+        name: appID,
+        createdAt: '2021-07-01T00:00:00Z',
+        updatedAt: '2023-04-04T12:35:21Z',
+    }
     const error = null
 
     return (
         <div>
-            {app ? <PageTitle title={`GitHub App - ${app.displayName}`} /> : <PageTitle title="GitHub App" />}
+            {app ? <PageTitle title={`GitHub App - ${app.name}`} /> : <PageTitle title="GitHub App" />}
             {error && <ErrorAlert className="mb-3" error={error} />}
             <h1>GitHub App</h1>
 
@@ -42,7 +47,7 @@ export const GitHubAppPage: FC<Props> = ({
                             { to: '/site-admin/github-apps', text: 'GitHub Apps' },
                             {
                                 to: `/site-admin/github-apps/${appID}`,
-                                text: app.displayName,
+                                text: app.name,
                             },
                         ]}
                         byline={
@@ -56,10 +61,13 @@ export const GitHubAppPage: FC<Props> = ({
                         headingElement="h2"
                         actions={
                             <ButtonLink to={`/site-admin/github-apps/`} variant="secondary">
-                                Cancel
+                                <Icon aria-hidden={true} className="mr-1" svgPath={mdiChevronLeft} />
+                                Back
                             </ButtonLink>
                         }
                     />
+                    <hr />
+                    ID: {app.id}
                 </Container>
             )}
         </div>
