@@ -4,8 +4,7 @@ import { FileChatProvider } from './FileChatProvider'
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
     public ranges: vscode.Range[] = []
-    private static lenes: CodeLensProvider
-    private updatedLength = 0
+    private static lenses: CodeLensProvider
 
     private fileUri: vscode.Uri | null = null
     private fileChatProvider: FileChatProvider | null = null
@@ -21,6 +20,11 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         // vscode.workspace.onDidChangeTextDocument(() => {
         //     this._onDidChangeCodeLenses.fire()
         // })
+        vscode.workspace.onDidCloseTextDocument(() => {
+            this.ranges = []
+            this.dispose()
+            this._onDidChangeCodeLenses.fire()
+        })
         vscode.workspace.onDidSaveTextDocument(() => {
             // TODO: Close comment thread on save
             this.ranges = []
@@ -30,17 +34,25 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
     }
 
     public static get instance(): CodeLensProvider {
-        return (this.lenes ??= new this())
+        return (this.lenses ??= new this())
     }
 
-    public set(line: number, fileChatProvider: FileChatProvider, updatedLength: number): void {
-        this.updatedLength = updatedLength
+    public set(
+        startLine: number,
+        fileChatProvider: FileChatProvider,
+        lineCount: { origin: number; replacement: number }
+    ): void {
+        // Highlight from the origin start line to the length of the replacement content
+        const newRange = new vscode.Range(startLine, 0, startLine + lineCount.replacement - 1, 0)
         this.fileChatProvider = fileChatProvider
-        this.ranges = []
-        this.ranges.push(new vscode.Range(line, 0, line, 1))
+        this.ranges.push(newRange)
+        this.fileChatProvider.setNewRange(newRange)
         this._onDidChangeCodeLenses.fire()
     }
 
+    /**
+     * Remove all lenses created for task
+     */
     public remove(): void {
         this.ranges = []
     }
@@ -56,6 +68,9 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         return this.fixupLenses(document)
     }
 
+    /**
+     * Lenses to display above the code that Cody edited
+     */
     private fixupLenses(document: vscode.TextDocument): vscode.CodeLens[] {
         const uri = vscode.Uri.parse('codyDoc:' + this.id)
         const codeLenses: vscode.CodeLens[] = []
@@ -74,12 +89,12 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                 title: 'Show Diff',
                 tooltip: 'Open a diff of this change',
                 command: 'vscode.diff',
-                arguments: [uri, document.uri, 'Cody edit diff'],
+                arguments: [uri, document.uri, 'Cody Edit Diff'],
             }
             // Run VS Code command to save all files
             const codeLensSave = new vscode.CodeLens(range)
             codeLensSave.command = {
-                title: 'Accept',
+                title: 'Save',
                 tooltip: 'Accept and save all changes',
                 command: 'workbench.action.files.save',
             }
@@ -92,15 +107,14 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
      * Highlights line where the codes updated by Cody are located.
      */
     public async decorate(range: vscode.Range): Promise<void> {
+        console.log('decorating...')
         if (!this.fileUri) {
             return
         }
-
         const editor = vscode.window.activeTextEditor
         if (editor?.document.uri.fsPath !== this.fileUri.fsPath) {
             return
         }
-
         const currentFile = await vscode.workspace.openTextDocument(this.fileUri)
         if (!currentFile) {
             return
@@ -108,15 +122,10 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
 
         const decorations: vscode.DecorationOptions[] = []
         if (range && this.fileChatProvider) {
-            const start = new vscode.Position(range.start.line, 0)
-            const end = new vscode.Position(range.end.line - this.updatedLength + 1, 0)
-            const newRange = new vscode.Range(start, end)
             decorations.push({
-                range: newRange,
-                hoverMessage: this.id,
+                range,
+                hoverMessage: 'Edit by Cody for task#' + this.id,
             })
-            range = newRange
-            this.fileChatProvider.setNewRange(newRange, this.updatedLength)
         }
         await vscode.window.showTextDocument(this.fileUri)
         vscode.window.activeTextEditor?.setDecorations(this.decorationType, decorations)
@@ -133,7 +142,6 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         const editor = vscode.window.activeTextEditor
         const decorationType = vscode.window.createTextEditorDecorationType({})
         editor?.setDecorations(decorationType, [])
-        this.updatedLength = 0
         // TODO remove individually
         this.fileChatProvider?.contentProvider.delete(this.id)
         this.fileChatProvider?.contentProvider.deleteByFilePath(this.fileUri.fsPath)

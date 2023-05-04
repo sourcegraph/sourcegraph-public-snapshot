@@ -142,22 +142,27 @@ export class VSCodeEditor implements Editor {
             )
             return
         }
-
+        // Stop tracking for file changes to perfotm replacement
         this.fileChatProvider.isInProgress = false
+        const trimmedReplacement = replacement.trimStart()
+
         await activeEditor.edit(edit => {
             edit.delete(this.fileChatProvider.selectionRange || selection)
             edit.insert(
                 new vscode.Position(this.fileChatProvider.selectionRange?.start.line || selection.start.line, 0),
-                replacement.trimStart() + '\n'
+                trimmedReplacement
             )
         })
 
-        const lineCountDiff = selectedText.split('\n').length - replacement.trim().split('\n').length
-        this.fileChatProvider.addedLines = lineCountDiff
+        const lineCount = {
+            origin: selectedText.split('\n').length,
+            replacement: trimmedReplacement.split('\n').length,
+        }
+
         const doc = vscode.window.activeTextEditor?.document
         if (doc) {
             await lens.provideCodeLenses(doc, new vscode.CancellationTokenSource().token)
-            lens.set(selection.start.line, this.fileChatProvider, lineCountDiff)
+            lens.set(selection.start.line, this.fileChatProvider, lineCount)
             vscode.languages.registerCodeLensProvider('*', lens)
         }
 

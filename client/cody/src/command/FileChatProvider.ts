@@ -17,36 +17,36 @@ export class FileChatMessage implements vscode.Comment {
         public contextValue?: string,
         public timestamp = new Date(Date.now())
     ) {
-        this.id = this.timestamp.toUTCString()
+        this.id = this.timestamp.getTime().toString()
     }
 }
 
 export class FileChatProvider {
+    // Controller init
     private readonly id = 'cody-file-chat'
     private readonly label = 'Cody: File Chat'
     private readonly threadLabel = 'Ask Cody...'
     private options = {
-        prompt: 'Reply...',
+        prompt: 'Ask Cody a question about the selected line(s) of code...',
         placeHolder: 'Ask Cody a question, or start with /fix to request edits (e.g. "/fix convert tabs to spaces")',
     }
-    public diffFiles: string[] = []
-
     private readonly codyIcon: vscode.Uri = this.getIconPath('cody')
     private readonly userIcon: vscode.Uri = this.getIconPath('user')
+    private _disposables: vscode.Disposable[] = []
 
+    // Constroller State
     private commentController: vscode.CommentController
     public threads: vscode.CommentReply | null = null
-    public thread: vscode.CommentThread | null = null
-
+    // TODO: Update thread to comment
+    public thread: vscode.CommentThread | null = null // a thread is a comment
+    // Editor State
     public editor: vscode.TextEditor | null = null
     public selection: ActiveTextEditorSelection | null = null
     public selectionRange: vscode.Range | null = null
-
-    // Status trackers
+    // Doc State
     public addedLines = 0
     public isInProgress = false
-
-    private _disposables: vscode.Disposable[] = []
+    public diffFiles: string[] = []
 
     constructor(private extensionPath: string, public contentProvider: CodyContentProvider) {
         this.commentController = vscode.comments.createCommentController(this.id, this.label)
@@ -76,17 +76,22 @@ export class FileChatProvider {
                     new vscode.Position(this.selectionRange.start.line + addedLines, 0),
                     new vscode.Position(this.selectionRange.end.line + addedLines, 0)
                 )
+                this.addedLines = addedLines
             }
         })
     }
 
+    // Get controller instance
     public get(): vscode.CommentController {
         return this.commentController
     }
 
+    /**
+     * Create a new thread
+     */
     public newThreads(humanInput: string): vscode.CommentReply | null {
         const editor = vscode.window.activeTextEditor
-        if (!editor || !humanInput) {
+        if (!editor || !humanInput || editor.document.uri.scheme !== 'file') {
             return null
         }
         this.thread = this.commentController.createCommentThread(editor?.document.uri, editor.selection, [])
@@ -95,7 +100,6 @@ export class FileChatProvider {
             thread: this.thread,
         }
         this.threads = threads
-        this.editor = editor
         return threads
     }
 
@@ -116,20 +120,18 @@ export class FileChatProvider {
             thread,
             'loading'
         )
-        newComment.label = newComment.id
         thread.comments = [...thread.comments, newComment]
         // disable reply until the task is completed
         thread.canReply = false
+        // store current working docs for diffs after fixup
+        if (isFixMode) {
+            newComment.label = `#${newComment.id}`
+            await this.contentProvider.set(thread.uri, newComment.id)
+            this.diffFiles.push(newComment.id)
+        }
         this.threads = threads
         this.thread = thread
         this.selection = await this.getSelection(isFixMode)
-
-        // store current working docs for diffs after fixup
-        if (isFixMode) {
-            await this.contentProvider.set(this.thread.uri, newComment.id)
-            this.diffFiles.push(newComment.id)
-        }
-
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
 
@@ -154,7 +156,7 @@ export class FileChatProvider {
         void vscode.commands.executeCommand('setContext', 'cody.replied', true)
     }
     /**
-     * Remove comment thread / conversation
+     * Remove a comment thread / conversation
      */
     public delete(thread: vscode.CommentThread): void {
         this.contentProvider.deleteByThread(thread.comments as FileChatMessage[])
@@ -200,7 +202,6 @@ export class FileChatProvider {
             return null
         }
         const activeDocument = await vscode.workspace.openTextDocument(this.thread.uri)
-
         const lineLength = activeDocument.lineAt(this.thread.range.end.line).text.length
         const endPostFix = new vscode.Position(this.thread.range.end.line, lineLength)
         const endPostAsk = new vscode.Position(this.thread.range.end.line + 1, 0)

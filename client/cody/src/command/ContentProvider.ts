@@ -6,9 +6,15 @@ import { FileChatMessage } from './FileChatProvider'
  * Stores the content of the documents that Cody is about to perform fix up for the source control diff
  */
 export class CodyContentProvider implements vscode.TextDocumentContentProvider, vscode.Disposable {
-    // File contents store where key = fileName
+    // This stores the content of the document state when fixup is first initialized
+    // the key is the task ID, and the value is the content of the document before edits
+    // - Key: <string> task ID
+    // - Value: <string> document content
+    private fileSource = new Map<string, string>()
+    // This tracks the task IDs belong toe each file path
+    // - Key: <string> file name / file path
+    // - Value: <string> Array of task IDs
     private diffMap = new Map<string, string[]>()
-    private editedFiles = new Map<string, string>()
     private _onDidChange = new vscode.EventEmitter<vscode.Uri>()
     private _subscriptions: vscode.Disposable
 
@@ -17,18 +23,18 @@ export class CodyContentProvider implements vscode.TextDocumentContentProvider, 
     }
     // Get content from the content store
     public provideTextDocumentContent(uri: vscode.Uri): string {
-        return this.editedFiles.get(uri.fsPath) || ''
+        return this.fileSource.get(uri.fsPath) || ''
     }
     // Add to store - store origin content by fixup comment id
     public async set(uri: vscode.Uri, id: string): Promise<void> {
         this.diffMap.set(uri.fsPath, [...id])
         const activeDocument = await vscode.workspace.openTextDocument(uri)
-        this.editedFiles.set(id, activeDocument.getText())
+        this.fileSource.set(id, activeDocument.getText())
     }
 
     // Remove by ID
     public delete(id: string): void {
-        this.editedFiles.delete(id)
+        this.fileSource.delete(id)
     }
 
     // Remove by file name / fs path
@@ -38,7 +44,7 @@ export class CodyContentProvider implements vscode.TextDocumentContentProvider, 
             return
         }
         for (const id of files) {
-            this.editedFiles.delete(id)
+            this.fileSource.delete(id)
         }
     }
 
@@ -54,6 +60,6 @@ export class CodyContentProvider implements vscode.TextDocumentContentProvider, 
     public dispose(): void {
         this._subscriptions.dispose()
         this._onDidChange.dispose()
-        this.editedFiles = new Map<string, string>()
+        this.fileSource = new Map<string, string>()
     }
 }
