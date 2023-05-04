@@ -6,6 +6,14 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [0.0.10]
+
+### Added
+
 - Adds usage metrics to the experimental completions feature [pull/51350](https://github.com/sourcegraph/sourcegraph/pull/51350)
 - Updating `cody.codebase` does not require reloading VS Code
 
