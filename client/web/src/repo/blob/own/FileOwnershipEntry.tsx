@@ -7,15 +7,21 @@ import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Badge, Button, ButtonLink, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
-import { CodeownersFileEntryFields, OwnerFields } from '../../../graphql-operations'
+import {
+    CodeownersFileEntryFields,
+    OwnerFields,
+    RecentContributorOwnershipSignalFields
+} from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
 
 import styles from './FileOwnershipEntry.module.scss'
 
 interface Props {
     owner: OwnerFields
-    reasons: CodeownersFileEntryFields[]
+    reasons: TestTest[]
 }
+
+type TestTest = CodeownersFileEntryFields | RecentContributorOwnershipSignalFields
 
 export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
