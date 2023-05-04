@@ -1,6 +1,6 @@
 # <picture title="Cody"><img class="theme-dark-only" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-white.png" width="200"><img class="theme-light-only" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-black.png" width="200"><div style="display:none">Cody</div></picture>
 
-<span class="badge badge-experimental">Experimental</span>
+<span class="badge badge-beta">Beta</span>
 
 Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
 
