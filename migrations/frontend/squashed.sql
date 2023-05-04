@@ -2057,6 +2057,26 @@ CREATE SEQUENCE event_logs_scrape_state_id_seq
 
 ALTER SEQUENCE event_logs_scrape_state_id_seq OWNED BY event_logs_scrape_state.id;
 
+CREATE TABLE event_logs_scrape_state_own (
+    id integer NOT NULL,
+    bookmark_id integer NOT NULL,
+    job_type integer NOT NULL
+);
+
+COMMENT ON TABLE event_logs_scrape_state_own IS 'Contains state for own jobs that scrape events if enabled.';
+
+COMMENT ON COLUMN event_logs_scrape_state_own.bookmark_id IS 'Bookmarks the maximum most recent successful event_logs.id that was scraped';
+
+CREATE SEQUENCE event_logs_scrape_state_own_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE event_logs_scrape_state_own_id_seq OWNED BY event_logs_scrape_state_own.id;
+
 CREATE TABLE executor_heartbeats (
     id integer NOT NULL,
     hostname text NOT NULL,
@@ -3555,6 +3575,25 @@ CREATE SEQUENCE own_aggregate_recent_contribution_id_seq
 
 ALTER SEQUENCE own_aggregate_recent_contribution_id_seq OWNED BY own_aggregate_recent_contribution.id;
 
+CREATE TABLE own_aggregate_recent_view (
+    id integer NOT NULL,
+    viewer_id integer NOT NULL,
+    viewed_file_path_id integer NOT NULL,
+    views_count integer DEFAULT 0
+);
+
+COMMENT ON TABLE own_aggregate_recent_view IS 'One entry contains a number of views of a single file by a given viewer.';
+
+CREATE SEQUENCE own_aggregate_recent_view_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_aggregate_recent_view_id_seq OWNED BY own_aggregate_recent_view.id;
+
 CREATE TABLE own_background_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
@@ -4639,6 +4678,8 @@ ALTER TABLE ONLY event_logs_export_allowlist ALTER COLUMN id SET DEFAULT nextval
 
 ALTER TABLE ONLY event_logs_scrape_state ALTER COLUMN id SET DEFAULT nextval('event_logs_scrape_state_id_seq'::regclass);
 
+ALTER TABLE ONLY event_logs_scrape_state_own ALTER COLUMN id SET DEFAULT nextval('event_logs_scrape_state_own_id_seq'::regclass);
+
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
 
 ALTER TABLE ONLY executor_job_tokens ALTER COLUMN id SET DEFAULT nextval('executor_job_tokens_id_seq'::regclass);
@@ -4710,6 +4751,8 @@ ALTER TABLE ONLY outbound_webhook_logs ALTER COLUMN id SET DEFAULT nextval('outb
 ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound_webhooks_id_seq'::regclass);
 
 ALTER TABLE ONLY own_aggregate_recent_contribution ALTER COLUMN id SET DEFAULT nextval('own_aggregate_recent_contribution_id_seq'::regclass);
+
+ALTER TABLE ONLY own_aggregate_recent_view ALTER COLUMN id SET DEFAULT nextval('own_aggregate_recent_view_id_seq'::regclass);
 
 ALTER TABLE ONLY own_background_jobs ALTER COLUMN id SET DEFAULT nextval('own_background_jobs_id_seq'::regclass);
 
@@ -4932,6 +4975,9 @@ ALTER TABLE ONLY event_logs_export_allowlist
 ALTER TABLE ONLY event_logs
     ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY event_logs_scrape_state_own
+    ADD CONSTRAINT event_logs_scrape_state_own_pk PRIMARY KEY (id);
+
 ALTER TABLE ONLY event_logs_scrape_state
     ADD CONSTRAINT event_logs_scrape_state_pk PRIMARY KEY (id);
 
@@ -5102,6 +5148,9 @@ ALTER TABLE ONLY outbound_webhooks
 
 ALTER TABLE ONLY own_aggregate_recent_contribution
     ADD CONSTRAINT own_aggregate_recent_contribution_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY own_aggregate_recent_view
+    ADD CONSTRAINT own_aggregate_recent_view_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY own_background_jobs
     ADD CONSTRAINT own_background_jobs_pkey PRIMARY KEY (id);
@@ -5602,6 +5651,8 @@ CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs
 CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code);
 
 CREATE UNIQUE INDEX own_aggregate_recent_contribution_file_author ON own_aggregate_recent_contribution USING btree (changed_file_path_id, commit_author_id);
+
+CREATE UNIQUE INDEX own_aggregate_recent_view_viewer ON own_aggregate_recent_view USING btree (viewed_file_path_id, viewer_id);
 
 CREATE INDEX own_background_jobs_repo_id_idx ON own_background_jobs USING btree (repo_id);
 
@@ -6174,6 +6225,12 @@ ALTER TABLE ONLY own_aggregate_recent_contribution
 
 ALTER TABLE ONLY own_aggregate_recent_contribution
     ADD CONSTRAINT own_aggregate_recent_contribution_commit_author_id_fkey FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id);
+
+ALTER TABLE ONLY own_aggregate_recent_view
+    ADD CONSTRAINT own_aggregate_recent_view_viewed_file_path_id_fkey FOREIGN KEY (viewed_file_path_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY own_aggregate_recent_view
+    ADD CONSTRAINT own_aggregate_recent_view_viewer_id_fkey FOREIGN KEY (viewer_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY own_signal_recent_contribution
     ADD CONSTRAINT own_signal_recent_contribution_changed_file_path_id_fkey FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id);
