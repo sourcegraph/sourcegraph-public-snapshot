@@ -51,14 +51,13 @@ export class EventLogger implements TelemetryService {
     private listeners: Set<(eventName: string) => void> = new Set()
     // this is redudant with the extensionDetails object, but we need to keep it for backwards compatibility
     private readonly editorInfo: { editor: string; version: string }
-    private extensionDetails: { ide: string; ideExtensionType: string; ideExtensionVersion: string }
+    private extensionDetails: { ide: string; ideExtensionType: string }
 
     constructor(anonymousUserId: string, editorInfo: { editor: string; version: string }) {
         this.anonymousUserId = anonymousUserId
         this.editorInfo = editorInfo
         this.extensionDetails = {
             ...EXTENSION_DETAILS,
-            ideExtensionVersion: editorInfo.version,
         }
     }
 
