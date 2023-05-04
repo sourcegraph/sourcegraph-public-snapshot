@@ -17,6 +17,7 @@ import { useExperimentalQueryInput } from '../../../search/useExperimentalSearch
 import { AddCodeHostWidget } from './AddCodeHostWidget'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
+import { TryCodyCtaSection } from './TryCodyCtaSection'
 import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
@@ -85,8 +86,14 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                 ) : (
                     <>
                         <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
-                        {isSourcegraphDotCom && !authenticatedUser && (
-                            <TryCodySignUpCtaSection className="mx-auto my-5" />
+                        {isSourcegraphDotCom && (
+                            <>
+                                {authenticatedUser ? (
+                                    <TryCodyCtaSection className="mx-auto my-5" />
+                                ) : (
+                                    <TryCodySignUpCtaSection className="mx-auto my-5" />
+                                )}
+                            </>
                         )}
                     </>
                 )}
