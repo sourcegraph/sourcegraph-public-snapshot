@@ -7,7 +7,7 @@ import { ButtonLink, H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 
-import styles from './CodySignUpCtaSection.module.scss'
+import styles from './TryCodySignUpCtaSection.module.scss'
 
 const CodyCtaSVG: React.FC = () => (
     <svg width="380" height="266" viewBox="0 0 380 266" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -118,7 +118,7 @@ const CodyCtaSVG: React.FC = () => (
     </svg>
 )
 
-export const CodySignUpCtaSection: React.FC<{ className?: string }> = ({ className }) => (
+export const TryCodySignUpCtaSection: React.FC<{ className?: string }> = ({ className }) => (
     <div className={classNames('d-flex', className, styles.container)}>
         <div className="p-2">
             <H2 className="mb-4">Meet Cody, your AI assistant</H2>
