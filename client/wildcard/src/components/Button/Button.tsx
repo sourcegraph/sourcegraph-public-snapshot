@@ -8,7 +8,6 @@ import { ForwardReferenceComponent } from '../../types'
 import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
 import { getButtonClassName } from './utils'
 
-// Trigger scip-typescript
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     /**
      * The variant style of the button. Defaults to `primary`
