@@ -197,14 +197,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.BackendIntegrationTests:
 		ops.Append(
 			bazelBuildCandidateDockerImage("server", c.Version, c.candidateImageTag(), c.RunType),
-			backendIntegrationTests(c.candidateImageTag()))
-
-		// always include very backend-oriented changes in this set of tests
-		testDiff := c.Diff | changed.DatabaseSchema | changed.Go
-		ops.Merge(CoreTestOperations(
-			testDiff,
-			CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion},
-		))
+			backendIntegrationTests(c.candidateImageTag(), "server"),
+		)
 
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
@@ -397,8 +391,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}))
 
 		// Integration tests
+		// Temporary: on main branches, we build images with bazel binaries based on their toolchain and/or purpose. This step key is the first image in the array.
+		// This will be removed once we build images with wolfi.
 		ops.Merge(operations.NewNamedSet("Integration tests",
-			backendIntegrationTests(c.candidateImageTag()),
+			backendIntegrationTests(c.candidateImageTag(), "symbols"),
 			codeIntelQA(c.candidateImageTag()),
 		))
 		// End-to-end tests
