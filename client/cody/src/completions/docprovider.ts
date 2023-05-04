@@ -21,10 +21,6 @@ export interface CompletionGroup {
 export class CompletionsDocumentProvider implements vscode.TextDocumentContentProvider {
     private completionsByUri: { [uri: string]: CompletionGroup[] } = {}
 
-    private isDebug(): boolean {
-        return vscode.workspace.getConfiguration().get<boolean>('cody.debug') === true
-    }
-
     private fireDocumentChanged(uri: vscode.Uri): void {
         this.onDidChangeEmitter.fire(uri)
     }
