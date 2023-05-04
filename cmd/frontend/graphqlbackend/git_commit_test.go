@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,6 +25,7 @@ import (
 func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewMockDB()
+
 	client := gitserver.NewClient()
 
 	commit := &gitdomain.Commit{
@@ -67,6 +69,16 @@ func TestGitCommitResolver(t *testing.T) {
 	})
 
 	t.Run("Lazy loading", func(t *testing.T) {
+		repo := &types.Repo{
+			ID:           1,
+			Name:         "bob-repo",
+			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypeGitHub},
+		}
+
+		repos := database.NewMockRepoStore()
+		repos.GetFunc.SetDefaultReturn(repo, nil)
+		db.ReposFunc.SetDefaultReturn(repos)
+
 		client := gitserver.NewMockClient()
 		client.GetCommitFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
 			return commit, nil
@@ -121,7 +133,7 @@ func TestGitCommitResolver(t *testing.T) {
 			},
 		}} {
 			t.Run(tc.name, func(t *testing.T) {
-				repo := NewRepositoryResolver(db, gitserver.NewClient(), &types.Repo{Name: "bob-repo"})
+				repo := NewRepositoryResolver(db, gitserver.NewClient(), repo)
 				// We pass no commit here to test that it gets lazy loaded via
 				// the git.GetCommit mock above.
 				r := NewGitCommitResolver(db, client, repo, "c1", nil)
@@ -138,10 +150,41 @@ func TestGitCommitResolver(t *testing.T) {
 				pf, err := r.PerforceChangelist(context.Background())
 				require.NoError(t, err)
 				require.Nil(t, pf)
-
 			})
 		}
 	})
+
+	runPerforceTests := func(t *testing.T, commit *gitdomain.Commit) {
+		repo := &types.Repo{
+			ID:           1,
+			Name:         "perforce/test-depot",
+			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
+		}
+
+		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), repo)
+
+		repos := database.NewMockRepoStore()
+		repos.GetFunc.SetDefaultReturn(repo, nil)
+		db.ReposFunc.SetDefaultReturn(repos)
+
+		commitResolver := NewGitCommitResolver(db, client, repoResolver, "c1", commit)
+
+		ctx := actor.WithInternalActor(context.Background())
+
+		source, err := commitResolver.repoResolver.SourceType(ctx)
+		require.NoError(t, err)
+
+		require.Equal(t, PerforceDepotSourceType, source)
+
+		pf, err := commitResolver.PerforceChangelist(ctx)
+		require.NoError(t, err)
+		require.NotNil(t, pf)
+
+		require.Equal(t, "123", pf.cid)
+		subject, err := commitResolver.Subject(ctx)
+		require.NoError(t, err)
+		require.Equal(t, "subject: Changes things", subject)
+	}
 
 	t.Run("perforce depot, git-p4 commit", func(t *testing.T) {
 		commit := &gitdomain.Commit{
@@ -159,22 +202,7 @@ func TestGitCommitResolver(t *testing.T) {
 			},
 		}
 
-		repo := NewRepositoryResolver(db, gitserver.NewClient(), &types.Repo{
-			Name:         "perforce/test-depot",
-			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
-		})
-		commitResolver := NewGitCommitResolver(db, client, repo, "c1", commit)
-
-		require.True(t, commitResolver.repoResolver.IsPerforceDepot())
-
-		pf, err := commitResolver.PerforceChangelist(context.Background())
-		require.NoError(t, err)
-		require.NotNil(t, pf)
-
-		require.Equal(t, "123", pf.cid)
-		subject, err := commitResolver.Subject(context.Background())
-		require.NoError(t, err)
-		require.Equal(t, "subject: Changes things", subject)
+		runPerforceTests(t, commit)
 	})
 
 	t.Run("perforce depot, p4-fusion commit", func(t *testing.T) {
@@ -193,22 +221,7 @@ func TestGitCommitResolver(t *testing.T) {
 			},
 		}
 
-		repo := NewRepositoryResolver(db, gitserver.NewClient(), &types.Repo{
-			Name:         "perforce/test-depot",
-			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
-		})
-		commitResolver := NewGitCommitResolver(db, client, repo, "c1", commit)
-
-		require.True(t, commitResolver.repoResolver.IsPerforceDepot())
-
-		pf, err := commitResolver.PerforceChangelist(context.Background())
-		require.NoError(t, err)
-		require.NotNil(t, pf)
-
-		require.Equal(t, "123", pf.cid)
-		subject, err := commitResolver.Subject(context.Background())
-		require.NoError(t, err)
-		require.Equal(t, "subject: Changes things", subject)
+		runPerforceTests(t, commit)
 	})
 }
 
@@ -642,7 +655,7 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 					  ancestors(first: 10) {
 						nodes {
 						  id
-                          oid
+						  oid
 						  perforceChangelist {
 							cid
 						  }

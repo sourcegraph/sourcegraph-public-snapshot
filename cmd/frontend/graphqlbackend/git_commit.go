@@ -134,7 +134,7 @@ func (r *GitCommitResolver) PerforceChangelist(ctx context.Context) (*PerforceCh
 		return nil, err
 	}
 
-	return toPerforceChangelistResolver(r.repoResolver, commit.Message.Body())
+	return toPerforceChangelistResolver(ctx, r.repoResolver, commit.Message.Body())
 }
 
 func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
@@ -172,7 +172,7 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 	// conversion.
 	//
 	// For depots converted with git-p4, this special handling is NOT required.
-	if r.repoResolver.IsPerforceDepot() && strings.HasPrefix(commit.Message.Body(), "[p4-fusion") {
+	if r.repoResolver.isPerforceDepot(ctx) && strings.HasPrefix(commit.Message.Body(), "[p4-fusion") {
 		subject, err := parseP4FusionCommitSubject(commit.Message.Subject())
 		if err == nil {
 			return subject, nil
@@ -180,7 +180,7 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 			// If parsing this commit message fails for some reason, log the reason and fall-through
 			// to return the the original git-commit's subject instead of a hard failure or an empty
 			// subject.
-			r.logger.Error(err.Error())
+			r.logger.Error("failed to parse p4 fusio commit subject", log.Error(err))
 		}
 	}
 
@@ -188,7 +188,7 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 }
 
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
-	if r.repoResolver.IsPerforceDepot() {
+	if r.repoResolver.isPerforceDepot(ctx) {
 		return nil, nil
 	}
 

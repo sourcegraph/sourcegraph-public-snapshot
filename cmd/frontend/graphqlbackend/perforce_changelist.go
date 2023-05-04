@@ -1,6 +1,8 @@
 package graphqlbackend
 
 import (
+	"context"
+
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -9,8 +11,10 @@ type PerforceChangelistResolver struct {
 	cid string
 }
 
-func toPerforceChangelistResolver(r *RepositoryResolver, commitBody string) (*PerforceChangelistResolver, error) {
-	if !r.IsPerforceDepot() {
+func toPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, commitBody string) (*PerforceChangelistResolver, error) {
+	if source, err := r.SourceType(ctx); err != nil {
+		return nil, err
+	} else if *source != PerforceDepotSourceType {
 		return nil, nil
 	}
 

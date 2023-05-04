@@ -142,6 +142,19 @@ func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
 	return repo.URI, err
 }
 
+func (r *RepositoryResolver) SourceType(ctx context.Context) (*SourceType, error) {
+	_, err := r.repo(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve innerRepo")
+	}
+
+	if r.innerRepo.ExternalRepo.ServiceType == extsvc.TypePerforce {
+		return &PerforceDepotSourceType, nil
+	}
+
+	return &GitRepositorySourceType, nil
+}
+
 func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 	repo, err := r.repo(ctx)
 	return repo.Description, err
@@ -448,15 +461,6 @@ func (r *RepositoryResolver) PermissionsInfo(ctx context.Context) (PermissionsIn
 	return EnterpriseResolvers.authzResolver.RepositoryPermissionsInfo(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) IsPerforceDepot() bool {
-	if r.innerRepo != nil {
-		return r.innerRepo.ExternalRepo.ServiceType == extsvc.TypePerforce
-	}
-
-	r.logger.Warn("cannot reliably determine if nil innerRepo is a perforce depot, default git terms will be used to represent this repo and its artifacts (eg: commit, commit SHA will be used)")
-	return false
-}
-
 func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	Callsign string
 	Name     *string
@@ -751,4 +755,17 @@ func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 
 func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {
 	return EnterpriseResolvers.ownResolver.RepoIngestedCodeowners(ctx, r.IDInt32())
+}
+
+// isPerforceDepot is a helper to avoid the repetitive error handling of calling r.SourceType, and
+// where we want to only take a custom action if this function returns true. For false we want to
+// ignore and continue on the default behaviour.
+func (r *RepositoryResolver) isPerforceDepot(ctx context.Context) bool {
+	s, err := r.SourceType(ctx)
+	if err != nil {
+		r.logger.Error("failed to retrieve sourceType of repository", log.Error(err))
+		return false
+	}
+
+	return s == &PerforceDepotSourceType
 }

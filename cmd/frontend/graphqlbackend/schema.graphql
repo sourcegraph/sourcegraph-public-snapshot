@@ -3423,6 +3423,11 @@ type RepositoryConnection {
     pageInfo: PageInfo!
 }
 
+enum RepositoryType {
+  GIT_REPOSITORY
+  PERFORCE_DEPOT
+}
+
 """
 A repository is a Git source control repository that is mirrored from some origin code host.
 """
@@ -3444,6 +3449,10 @@ type Repository implements Node & GenericSearchResultInterface {
     DEPRECATED: Use name.
     """
     uri: String! @deprecated(reason: "Use name.")
+    """
+    The source of this repository from where it was imported / converted.
+    """
+    sourceType: RepositoryType!
     """
     The repository's description.
     """
@@ -3692,11 +3701,6 @@ type Repository implements Node & GenericSearchResultInterface {
     Returns true if embeddings for the repo are generated.
     """
     embeddingExists: Boolean!
-
-    """
-    Returns true if this git-repo was converted from a perforce depot.
-    """
-    isPerforceDepot: Boolean!
 }
 
 """
