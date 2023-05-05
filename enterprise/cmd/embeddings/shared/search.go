@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"runtime"
 	"strings"
@@ -74,6 +75,7 @@ func searchEmbeddingIndex(
 		repoName,
 		revision,
 		readFile,
+		opts.Debug,
 		results,
 	)
 }
@@ -87,29 +89,43 @@ func filterAndHydrateContent(
 	repoName api.RepoName,
 	revision api.CommitID,
 	readFile readFileFn,
-	unfiltered []embeddings.EmbeddingSearchResult,
+	debug bool,
+	unfiltered []embeddings.SimilaritySearchResult,
 ) []embeddings.EmbeddingSearchResult {
-	filtered := unfiltered[:0]
+	filtered := make([]embeddings.EmbeddingSearchResult, 0, len(unfiltered))
 
-	for idx, result := range unfiltered {
+	for _, result := range unfiltered {
 		fileContent, err := readFile(ctx, repoName, revision, result.FileName)
 		if err != nil {
 			if !os.IsNotExist(err) {
 				logger.Error("error reading file", log.String("repoName", string(repoName)), log.String("revision", string(revision)), log.String("fileName", result.FileName), log.Error(err))
 			}
-			// scrub row just in case we leak it out
-			unfiltered[idx] = embeddings.EmbeddingSearchResult{}
 			continue
 		}
 		lines := strings.Split(string(fileContent), "\n")
 
 		// Sanity check: check that startLine and endLine are within 0 and len(lines).
-		result.StartLine = max(0, min(len(lines), result.StartLine))
-		result.EndLine = max(0, min(len(lines), result.EndLine))
+		startLine := max(0, min(len(lines), result.StartLine))
+		endLine := max(0, min(len(lines), result.EndLine))
 
-		result.Content = strings.Join(lines[result.StartLine:result.EndLine], "\n")
+		content := strings.Join(lines[result.StartLine:result.EndLine], "\n")
 
-		filtered = append(filtered, result)
+		var debugString string
+		if debug {
+			debugString = fmt.Sprintf("score:%d, similarity:%d, rank:%d", result.Score(), result.SimilarityScore, result.RankScore)
+		}
+
+		filtered = append(filtered, embeddings.EmbeddingSearchResult{
+			RepoName: repoName,
+			Revision: revision,
+			RepoEmbeddingRowMetadata: embeddings.RepoEmbeddingRowMetadata{
+				FileName:  result.FileName,
+				StartLine: startLine,
+				EndLine:   endLine,
+			},
+			Debug:   debugString,
+			Content: content,
+		})
 	}
 
 	return filtered
