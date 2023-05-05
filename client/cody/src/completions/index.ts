@@ -8,7 +8,12 @@ import { CompletionsCache } from './cache'
 import { getContext } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
 import { History } from './history'
-import { CompletionProvider, EndOfLineCompletionProvider, MultilineCompletionProvider } from './provider'
+import {
+    CompletionProvider,
+    EndOfLineCompletionProvider,
+    MultilineCompletionProvider,
+    HuggingFaceCompletionProvider,
+} from './provider'
 
 const LOG_INLINE = { type: 'inline' }
 const LOG_MULTILINE = { type: 'multiline' }
@@ -137,7 +142,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // Start of line: medium debounce
             waitMs = 500
             completers.push(
-                new EndOfLineCompletionProvider(
+                new HuggingFaceCompletionProvider(
                     this.completionsClient,
                     remainingChars,
                     this.responseTokens,
@@ -155,7 +160,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // End of line: long debounce, complete until newline
             waitMs = 1000
             completers.push(
-                new EndOfLineCompletionProvider(
+                new HuggingFaceCompletionProvider(
                     this.completionsClient,
                     remainingChars,
                     this.responseTokens,
@@ -164,19 +169,19 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     suffix,
                     '',
                     2 // tries
-                ),
-                // Create a completion request for the current prefix with a new line added. This
-                // will make for faster recommendations when the user presses enter.
-                new EndOfLineCompletionProvider(
-                    this.completionsClient,
-                    remainingChars,
-                    this.responseTokens,
-                    similarCode,
-                    prefix,
-                    suffix,
-                    '\n', // force a new line in the case we are at end of line
-                    1 // tries
                 )
+                // // Create a completion request for the current prefix with a new line added. This
+                // // will make for faster recommendations when the user presses enter.
+                // new EndOfLineCompletionProvider(
+                //     this.completionsClient,
+                //     remainingChars,
+                //     this.responseTokens,
+                //     similarCode,
+                //     prefix,
+                //     suffix,
+                //     '\n', // force a new line in the case we are at end of line
+                //     1 // tries
+                // )
             )
         }
 

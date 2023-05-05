@@ -293,6 +293,47 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
     }
 }
 
+export class HuggingFaceCompletionProvider extends CompletionProvider {
+    protected createPromptPrefix(): Message[] {
+        throw new Error('Method not implemented.')
+    }
+    public async generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
+        // const prompt = `<fim-prefix>${this.prefix}<fim-suffix>${this.suffix}<fim-middle>`
+        const prompt = this.prefix
+
+        console.log('sending request with prompt:', prompt.length)
+        const response = await fetch('https://api-inference.huggingface.co/models/bigcode/starcoder', {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer <INSERT TOKEN HERE>',
+            },
+            method: 'POST',
+            body: JSON.stringify({
+                inputs: prompt,
+                parameters: {
+                    max_length: prompt.length / 4 + this.responseTokens,
+                },
+            }),
+            signal: abortSignal,
+        })
+        console.log(response.status)
+        console.log(response.statusText)
+        let [{ generated_text: result }] = await response.json()
+
+        result = result.slice(prompt.length)
+
+        console.log({ result })
+
+        return [
+            {
+                prefix: this.prefix,
+                prompt: this.prefix,
+                content: result,
+            },
+        ]
+    }
+}
+
 async function batchCompletions(
     client: SourcegraphNodeCompletionsClient,
     params: CodeCompletionParameters,
