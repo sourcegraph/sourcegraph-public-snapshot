@@ -54,14 +54,16 @@ func FromContext(ctx context.Context) *Actor {
 	return a
 }
 
-// Update updates the given actor's state using the actor's originating source.
+// Update updates the given actor's state using the actor's originating source
+// if it implements SourceUpdater.
+//
 // The source may define additional conditions for updates, such that an update
 // does not necessarily occur on every call.
 //
 // If the actor has no source, this is a no-op.
 func (a *Actor) Update(ctx context.Context) {
-	if a.Source != nil {
-		a.Source.Update(ctx, a)
+	if su, ok := a.Source.(SourceUpdater); ok && su != nil {
+		su.Update(ctx, a)
 	}
 }
 
@@ -93,7 +95,7 @@ func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) error {
 	}).TryAcquire(ctx)
 
 	if errors.Is(err, limiter.NoAccessError{}) || errors.Is(err, limiter.RateLimitExceededError{}) {
-		u.Actor.Update(ctx)
+		u.Actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
 	}
 
 	return err
