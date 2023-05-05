@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -21,34 +22,29 @@ public class CompletionsService {
     /**
      * Sends a completions request to the Sourcegraph instance, and returns the response.
      */
-    public String send(@NotNull CompletionsInput input) {
-        try {
-            Gson gson = new Gson();
+    public String getCompletion(@NotNull CompletionsInput input) throws IOException, InterruptedException {
+        Gson gson = new Gson();
 
-            String query = "query completions($input: CompletionsInput!) { completions(input: $input) }";
-            var wrapper = new GraphQLWrapper(query).withVariable("input", input);
-            if (wrapper == null) {
-                return null;
-            }
-            var json = wrapper.toJsonString();
-
-            URI uri = URI.create(instanceUrl);
-            var body = HttpClient.newHttpClient().send(HttpRequest.newBuilder(uri)
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .header("Authorization", "token " + token)
-                    .build(), HttpResponse.BodyHandlers.ofString())
-                .body();
-            if (body == null) {
-                return null;
-            }
-
-            return gson.fromJson(body, JsonObject.class)
-                .getAsJsonObject("data")
-                .getAsJsonPrimitive("completions")
-                .getAsString();
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        String query = "query completions($input: CompletionsInput!) { completions(input: $input) }";
+        var wrapper = new GraphQLWrapper(query).withVariable("input", input);
+        if (wrapper == null) {
+            return null;
         }
-        return "";
+        var json = wrapper.toJsonString();
+
+        URI uri = URI.create(instanceUrl);
+        var body = HttpClient.newHttpClient().send(HttpRequest.newBuilder(uri)
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .header("Authorization", "token " + token)
+                .build(), HttpResponse.BodyHandlers.ofString())
+            .body();
+        if (body == null) {
+            return null;
+        }
+
+        return gson.fromJson(body, JsonObject.class)
+            .getAsJsonObject("data")
+            .getAsJsonPrimitive("completions")
+            .getAsString();
     }
 }

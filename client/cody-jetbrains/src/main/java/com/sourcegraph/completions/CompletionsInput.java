@@ -1,18 +1,20 @@
 package com.sourcegraph.completions;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 
 /**
  * Input for the completions request.
  */
 public class CompletionsInput {
-    public List<Message> messages;
+    public @NotNull List<Message> messages;
     public float temperature;
     public int maxTokensToSample;
     public int topK;
     public int topP;
 
-    public CompletionsInput(List<Message> messages, float temperature, int maxTokensToSample, int topK, int topP) {
+    public CompletionsInput(@NotNull List<Message> messages, float temperature, int maxTokensToSample, int topK, int topP) {
         this.messages = messages;
         this.temperature = temperature;
         this.maxTokensToSample = maxTokensToSample;
@@ -20,7 +22,7 @@ public class CompletionsInput {
         this.topP = topP;
     }
 
-    public void addMessage(Speaker speaker, String text) {
+    public void addMessage(@NotNull Speaker speaker, @NotNull String text) {
         messages.add(new Message(speaker, text));
     }
 }

@@ -4,15 +4,17 @@ import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
-import org.apache.commons.lang.StringUtils;
+import com.sourcegraph.completions.Speaker;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Calendar;
-import java.util.Objects;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
     @Override
@@ -22,79 +24,71 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        CodyToolWindowContent toolWindowContent = new CodyToolWindowContent(toolWindow);
+        CodyToolWindowContent toolWindowContent = new CodyToolWindowContent(project, toolWindow);
         Content content = ContentFactory.SERVICE.getInstance().createContent(toolWindowContent.getContentPanel(), "", false);
         toolWindow.getContentManager().addContent(content);
     }
 
     private static class CodyToolWindowContent {
-        private final JPanel contentPanel = new JPanel();
-        private final JLabel currentDate = new JLabel();
-        private final JLabel timeZone = new JLabel();
-        private final JLabel currentTime = new JLabel();
+        private final @NotNull JPanel contentPanel = new JPanel();
+        private final @NotNull JPanel chatPanel;
+        private final @NotNull JTextField messageField;
+//        private final ArrayList<ChatMessage> messages = new ArrayList<>();
 
-        public CodyToolWindowContent(@NotNull ToolWindow toolWindow) {
-            contentPanel.setLayout(new BorderLayout(0, 20));
-            contentPanel.setBorder(BorderFactory.createEmptyBorder(40, 0, 0, 0));
-            contentPanel.add(createCalendarPanel(), BorderLayout.PAGE_START);
-            contentPanel.add(createControlsPanel(toolWindow), BorderLayout.CENTER);
-            updateCurrentDateTime();
-        }
+        public CodyToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+            // Chat panel
+            chatPanel = new JPanel();
 
-        @NotNull
-        private JPanel createCalendarPanel() {
-            JPanel calendarPanel = new JPanel();
-            calendarPanel.add(currentDate);
-            calendarPanel.add(timeZone);
-            calendarPanel.add(currentTime);
-            return calendarPanel;
-        }
-
-        private void setIconLabel(JLabel label, String imagePath) {
-            label.setIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource(imagePath))));
-        }
-
-        @NotNull
-        private JPanel createControlsPanel(ToolWindow toolWindow) {
+            // Controls panel
             JPanel controlsPanel = new JPanel();
-            JButton refreshDateAndTimeButton = new JButton("Refresh");
-            refreshDateAndTimeButton.addActionListener(e -> updateCurrentDateTime());
-            controlsPanel.add(refreshDateAndTimeButton);
-            JButton hideToolWindowButton = new JButton("Hide");
-            hideToolWindowButton.addActionListener(e -> toolWindow.hide(null));
-            controlsPanel.add(hideToolWindowButton);
-            return controlsPanel;
+            controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.X_AXIS));
+            messageField = new JTextField();
+            controlsPanel.add(messageField);
+            JButton sendButton = new JButton("Send");
+            sendButton.addActionListener(e -> sendMessage(project));
+            controlsPanel.add(sendButton);
+
+            // Main content panel
+            contentPanel.setLayout(new BorderLayout(0, 20));
+            contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            contentPanel.add(chatPanel, BorderLayout.NORTH);
+            contentPanel.add(controlsPanel, BorderLayout.SOUTH);
+
+            // Add welcome message
+            var welcomeText = "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
+            addMessage(ChatMessage.createAssistantMessage(welcomeText));
         }
 
-        private void updateCurrentDateTime() {
-            Calendar calendar = Calendar.getInstance();
-            currentDate.setText(getCurrentDate(calendar));
-            timeZone.setText(getTimeZone(calendar));
-            currentTime.setText(getCurrentTime(calendar));
+        public void addMessage(@NotNull ChatMessage message) {
+            JTextArea textArea = new JTextArea(message.getText());
+            textArea.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            textArea.setBackground(message.getSpeaker() == Speaker.HUMAN ? JBColor.LIGHT_GRAY : JBColor.WHITE);
+            textArea.setLineWrap(true);
+            textArea.setWrapStyleWord(true);
+            String layoutConstraint = message.getSpeaker() == Speaker.HUMAN ? BorderLayout.EAST : BorderLayout.WEST;
+            chatPanel.add(textArea, layoutConstraint);
+            chatPanel.revalidate();
+            chatPanel.repaint();
         }
 
-        private String getCurrentDate(Calendar calendar) {
-            return calendar.get(Calendar.DAY_OF_MONTH) + "/"
-                + (calendar.get(Calendar.MONTH) + 1) + "/"
-                + calendar.get(Calendar.YEAR);
+        private void sendMessage(@NotNull Project project) {
+            EditorContext editorContext = EditorContextGetter.getEditorContext(project);
+            var chat = new Chat();
+            ArrayList<String> contextFiles = editorContext == null ? new ArrayList<>() : new ArrayList<>(Collections.singletonList(editorContext.getCurrentFileContent()));
+
+            try {
+                var assistantMessage = chat.sendMessage(ChatMessage.createHumanMessage(messageField.getText(), contextFiles));
+                addMessage(assistantMessage);
+            } catch (IOException e) { // TODO: Add real error handling
+                System.out.println("IO Exception");
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                System.out.println("Interrupted");
+                e.printStackTrace();
+            }
         }
 
-        private String getTimeZone(Calendar calendar) {
-            long gmtOffset = calendar.get(Calendar.ZONE_OFFSET); // offset from GMT in milliseconds
-            String gmtOffsetString = String.valueOf(gmtOffset / 3600000);
-            return (gmtOffset > 0) ? "GMT + " + gmtOffsetString : "GMT - " + gmtOffsetString;
-        }
-
-        private String getCurrentTime(Calendar calendar) {
-            return getFormattedValue(calendar, Calendar.HOUR_OF_DAY) + ":" + getFormattedValue(calendar, Calendar.MINUTE);
-        }
-
-        private String getFormattedValue(Calendar calendar, int calendarField) {
-            int value = calendar.get(calendarField);
-            return StringUtils.leftPad(Integer.toString(value), 2, "0");
-        }
-
-        public JPanel getContentPanel() {
+        public @NotNull JPanel getContentPanel() {
             return contentPanel;
         }
     }
