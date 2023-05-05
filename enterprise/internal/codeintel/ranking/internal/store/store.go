@@ -25,7 +25,7 @@ type Store interface {
 
 	// Export uploads (metadata tracking) + cleanup
 	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]uploadsshared.ExportedUpload, error)
-	ProcessStaleExportedUploads(ctx context.Context, graphKey string, batchSize int, deleter func(ctx context.Context, objectPrefix string) error) (totalDeleted int, _ error)
+	VacuumAbandonedExportedUploads(ctx context.Context, graphKey string, batchSize int) (int, error)
 
 	// Export definitions + cleanup
 	InsertDefinitionsForRanking(ctx context.Context, graphKey string, definitions chan shared.RankingDefinitions) error

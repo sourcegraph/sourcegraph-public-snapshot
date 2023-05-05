@@ -13,7 +13,7 @@ type operations struct {
 	getReferenceCountStatistics      *observation.Operation
 	lastUpdatedAt                    *observation.Operation
 	getUploadsForRanking             *observation.Operation
-	processStaleExportedUploads      *observation.Operation
+	vacuumAbandonedExportedUploads   *observation.Operation
 	insertDefinitionsForRanking      *observation.Operation
 	vacuumAbandonedDefinitions       *observation.Operation
 	softDeleteStaleDefinitions       *observation.Operation
@@ -60,7 +60,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getReferenceCountStatistics:      op("GetReferenceCountStatistics"),
 		lastUpdatedAt:                    op("LastUpdatedAt"),
 		getUploadsForRanking:             op("GetUploadsForRanking"),
-		processStaleExportedUploads:      op("ProcessStaleExportedUploads"),
+		vacuumAbandonedExportedUploads:   op("VacuumAbandonedExportedUploads"),
 		insertDefinitionsForRanking:      op("InsertDefinitionsForRanking"),
 		vacuumAbandonedDefinitions:       op("VacuumAbandonedDefinitions"),
 		softDeleteStaleDefinitions:       op("SoftDeleteStaleDefinitions"),
