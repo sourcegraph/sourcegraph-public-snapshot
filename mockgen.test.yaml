@@ -337,3 +337,11 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
   interfaces:
     - InsightPermissionStore
+- filename: enterprise/cmd/llm-proxy/shared/mocks_test.go
+  sources:
+    - path: github.com/gregjones/httpcache
+      interfaces:
+        - Cache
+    - path: github.com/Khan/genqlient/graphql
+      interfaces:
+        - Client

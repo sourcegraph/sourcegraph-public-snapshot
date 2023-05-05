@@ -160,8 +160,8 @@ func (a *anthropicClient) Stream(
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
-		return errors.Errorf("Anthropic API failed with: %s", string(respBody))
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		return errors.Errorf("Anthropic API failed with status %d: %s", resp.StatusCode, string(respBody))
 	}
 
 	dec := NewDecoder(resp.Body)

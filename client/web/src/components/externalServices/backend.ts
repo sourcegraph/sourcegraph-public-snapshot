@@ -4,7 +4,6 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors, useMutation, useLazyQuery } from '@sourcegraph/http-client'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -48,34 +47,18 @@ export const externalServiceFragment = gql`
     }
 `
 
-export async function addExternalService(
-    variables: AddExternalServiceVariables,
-    eventLogger: TelemetryService
-): Promise<AddExternalServiceResult['addExternalService']> {
-    return requestGraphQL<AddExternalServiceResult, AddExternalServiceVariables>(
-        gql`
-            mutation AddExternalService($input: AddExternalServiceInput!) {
-                addExternalService(input: $input) {
-                    ...ExternalServiceFields
-                }
-            }
+export const ADD_EXTERNAL_SERVICE = gql`
+    mutation AddExternalService($input: AddExternalServiceInput!) {
+        addExternalService(input: $input) {
+            ...ExternalServiceFields
+        }
+    }
 
-            ${externalServiceFragment}
-        `,
-        variables
-    )
-        .pipe(
-            map(({ data, errors }) => {
-                if (!data?.addExternalService || (errors && errors.length > 0)) {
-                    eventLogger.log('AddExternalServiceFailed')
-                    throw createAggregateError(errors)
-                }
-                eventLogger.log('AddExternalServiceSucceeded')
-                return data.addExternalService
-            })
-        )
-        .toPromise()
-}
+    ${externalServiceFragment}
+`
+
+export const useAddExternalService = (): MutationTuple<AddExternalServiceResult, AddExternalServiceVariables> =>
+    useMutation<AddExternalServiceResult, AddExternalServiceVariables>(ADD_EXTERNAL_SERVICE)
 
 export const UPDATE_EXTERNAL_SERVICE = gql`
     mutation UpdateExternalService($input: UpdateExternalServiceInput!) {

@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"sort"
@@ -29,10 +30,11 @@ import (
 func correlateSCIP(
 	ctx context.Context,
 	r io.Reader,
+	rSize int64,
 	root string,
 	getChildren pathexistence.GetChildrenFunc,
 ) (lsifstore.ProcessedSCIPData, error) {
-	index, err := readIndex(r)
+	index, err := readIndex(r, rSize)
 	if err != nil {
 		return lsifstore.ProcessedSCIPData{}, err
 	}
@@ -185,9 +187,12 @@ loop:
 	return packages, packageReferences, nil
 }
 
-// readIndex unmarshals a SCIP index from the given reader.
-func readIndex(r io.Reader) (*scip.Index, error) {
-	content, err := io.ReadAll(r)
+// readIndex unmarshals a SCIP index from the given reader. The given reader is in practice
+// a gzip deflate layer. We pass the _uncompressed_ size of the reader's payload, which we
+// store at upload time, as a hint to the total buffer size we'll be returning. If this value
+// is undersized, the standard slice resizing behavior (symmetric to io.ReadAll) is used.
+func readIndex(r io.Reader, n int64) (*scip.Index, error) {
+	content, err := readAllWithSizeHint(r, n)
 	if err != nil {
 		return nil, err
 	}
@@ -198,6 +203,19 @@ func readIndex(r io.Reader) (*scip.Index, error) {
 	}
 
 	return &index, nil
+}
+
+// Copied from io.ReadAll, but uses the given initial size for the buffer to
+// attempt to reduce temporary slice allocations during large reads. If the
+// given size is zero, then this function has the same behavior as io.ReadAll.
+func readAllWithSizeHint(r io.Reader, n int64) ([]byte, error) {
+	if n == 0 {
+		return io.ReadAll(r)
+	}
+
+	buf := bytes.NewBuffer(make([]byte, 0, n))
+	_, err := io.Copy(buf, r)
+	return buf.Bytes(), err
 }
 
 // ignorePaths returns a set consisting of the relative paths of documents in the give

@@ -26,17 +26,19 @@ extensions:
 service:
   extensions: [health_check, zpages]
   pipelines:
-    traces/web-app:
+    traces/sampled:
       receivers: [otlp]
-      processors: [filter/web-app]
+      processors: [groupbytrace, tail_sampling]
       exporters: [jaeger]
 
 processors:
+  groupbytrace:
+    num_traces: 100000
   tail_sampling:
     # Wait time since the first span of a trace before making a sampling decision
     decision_wait: 30s # default value = 30s
     # Number of traces kept in memory
-    num_traces: 50000 # default value = 50000
+    num_traces: 100000 # default value = 50000
     # Expected number of new traces (helps in allocating data structures)
     expected_new_traces_per_sec: 10 # default value = 0
     # Recommended reading to understand how the policies are applied:
@@ -56,10 +58,3 @@ processors:
           probabilistic: { sampling_percentage: 10 },
         },
       ]
-  filter/web-app:
-    spans:
-      # ONLY include traces where 'service.name' matches "web-app" and exclude ALL other traces from the pipeline
-      include:
-        match_type: strict
-        services:
-          - 'web-app'

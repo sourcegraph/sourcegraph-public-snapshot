@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Sourcegraph Cody",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -130,6 +130,10 @@
         "title": "Cody: Fixup"
       },
       {
+        "command": "cody.recipe.context-search",
+        "title": "Ask Cody: Codebase Context Search"
+      },
+      {
         "command": "cody.set-access-token",
         "title": "Cody: Set Access Token"
       },
@@ -187,6 +191,10 @@
       "commandPalette": [
         {
           "command": "cody.recipe.explain-code",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.context-search",
           "when": "cody.activated"
         },
         {
@@ -312,10 +320,6 @@
             "blended"
           ],
           "default": "embeddings"
-        },
-        "cody.experimental.suggestions": {
-          "type": "boolean",
-          "default": false
         },
         "cody.experimental.chatPredictions": {
           "type": "boolean",

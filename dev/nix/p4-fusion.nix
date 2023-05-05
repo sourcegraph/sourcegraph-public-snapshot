@@ -131,7 +131,7 @@ in
 with lib;
 # no aarch64-linux helix-core-api
 genAttrs (remove "aarch64-linux" utils.lib.defaultSystems) (system:
-  {
-    p4-fusion = (import nixpkgs { inherit system; }).pkgsStatic.callPackage mkP4Fusion { };
-  }
+{
+  p4-fusion = (import nixpkgs { inherit system; }).pkgsStatic.callPackage mkP4Fusion { };
+}
 )

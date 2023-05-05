@@ -2057,6 +2057,26 @@ CREATE SEQUENCE event_logs_scrape_state_id_seq
 
 ALTER SEQUENCE event_logs_scrape_state_id_seq OWNED BY event_logs_scrape_state.id;
 
+CREATE TABLE event_logs_scrape_state_own (
+    id integer NOT NULL,
+    bookmark_id integer NOT NULL,
+    job_type integer NOT NULL
+);
+
+COMMENT ON TABLE event_logs_scrape_state_own IS 'Contains state for own jobs that scrape events if enabled.';
+
+COMMENT ON COLUMN event_logs_scrape_state_own.bookmark_id IS 'Bookmarks the maximum most recent successful event_logs.id that was scraped';
+
+CREATE SEQUENCE event_logs_scrape_state_own_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE event_logs_scrape_state_own_id_seq OWNED BY event_logs_scrape_state_own.id;
+
 CREATE TABLE executor_heartbeats (
     id integer NOT NULL,
     hostname text NOT NULL,
@@ -2341,6 +2361,23 @@ COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
 
+CREATE TABLE github_app_installs (
+    id integer NOT NULL,
+    app_id integer NOT NULL,
+    installation_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE github_app_installs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE github_app_installs_id_seq OWNED BY github_app_installs.id;
+
 CREATE TABLE github_apps (
     id integer NOT NULL,
     app_id integer NOT NULL,
@@ -2353,7 +2390,8 @@ CREATE TABLE github_apps (
     encryption_key_id text NOT NULL,
     logo text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    app_url text DEFAULT ''::text NOT NULL
 );
 
 CREATE SEQUENCE github_apps_id_seq
@@ -3538,6 +3576,25 @@ CREATE SEQUENCE own_aggregate_recent_contribution_id_seq
 
 ALTER SEQUENCE own_aggregate_recent_contribution_id_seq OWNED BY own_aggregate_recent_contribution.id;
 
+CREATE TABLE own_aggregate_recent_view (
+    id integer NOT NULL,
+    viewer_id integer NOT NULL,
+    viewed_file_path_id integer NOT NULL,
+    views_count integer DEFAULT 0
+);
+
+COMMENT ON TABLE own_aggregate_recent_view IS 'One entry contains a number of views of a single file by a given viewer.';
+
+CREATE SEQUENCE own_aggregate_recent_view_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_aggregate_recent_view_id_seq OWNED BY own_aggregate_recent_view.id;
+
 CREATE TABLE own_background_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
@@ -3772,6 +3829,7 @@ CREATE TABLE users (
     tos_accepted boolean DEFAULT false NOT NULL,
     searchable boolean DEFAULT true NOT NULL,
     completions_quota integer,
+    code_completions_quota integer,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
     CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
@@ -4622,6 +4680,8 @@ ALTER TABLE ONLY event_logs_export_allowlist ALTER COLUMN id SET DEFAULT nextval
 
 ALTER TABLE ONLY event_logs_scrape_state ALTER COLUMN id SET DEFAULT nextval('event_logs_scrape_state_id_seq'::regclass);
 
+ALTER TABLE ONLY event_logs_scrape_state_own ALTER COLUMN id SET DEFAULT nextval('event_logs_scrape_state_own_id_seq'::regclass);
+
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
 
 ALTER TABLE ONLY executor_job_tokens ALTER COLUMN id SET DEFAULT nextval('executor_job_tokens_id_seq'::regclass);
@@ -4633,6 +4693,8 @@ ALTER TABLE ONLY executor_secrets ALTER COLUMN id SET DEFAULT nextval('executor_
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
+
+ALTER TABLE ONLY github_app_installs ALTER COLUMN id SET DEFAULT nextval('github_app_installs_id_seq'::regclass);
 
 ALTER TABLE ONLY github_apps ALTER COLUMN id SET DEFAULT nextval('github_apps_id_seq'::regclass);
 
@@ -4691,6 +4753,8 @@ ALTER TABLE ONLY outbound_webhook_logs ALTER COLUMN id SET DEFAULT nextval('outb
 ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound_webhooks_id_seq'::regclass);
 
 ALTER TABLE ONLY own_aggregate_recent_contribution ALTER COLUMN id SET DEFAULT nextval('own_aggregate_recent_contribution_id_seq'::regclass);
+
+ALTER TABLE ONLY own_aggregate_recent_view ALTER COLUMN id SET DEFAULT nextval('own_aggregate_recent_view_id_seq'::regclass);
 
 ALTER TABLE ONLY own_background_jobs ALTER COLUMN id SET DEFAULT nextval('own_background_jobs_id_seq'::regclass);
 
@@ -4913,6 +4977,9 @@ ALTER TABLE ONLY event_logs_export_allowlist
 ALTER TABLE ONLY event_logs
     ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY event_logs_scrape_state_own
+    ADD CONSTRAINT event_logs_scrape_state_own_pk PRIMARY KEY (id);
+
 ALTER TABLE ONLY event_logs_scrape_state
     ADD CONSTRAINT event_logs_scrape_state_pk PRIMARY KEY (id);
 
@@ -4954,6 +5021,9 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
+
+ALTER TABLE ONLY github_app_installs
+    ADD CONSTRAINT github_app_installs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_pkey PRIMARY KEY (id);
@@ -5080,6 +5150,9 @@ ALTER TABLE ONLY outbound_webhooks
 
 ALTER TABLE ONLY own_aggregate_recent_contribution
     ADD CONSTRAINT own_aggregate_recent_contribution_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY own_aggregate_recent_view
+    ADD CONSTRAINT own_aggregate_recent_view_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY own_background_jobs
     ADD CONSTRAINT own_background_jobs_pkey PRIMARY KEY (id);
@@ -5248,6 +5321,8 @@ CREATE INDEX access_requests_created_at ON access_requests USING btree (created_
 CREATE INDEX access_requests_status ON access_requests USING btree (status);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
+
+CREATE INDEX app_id_idx ON github_app_installs USING btree (app_id);
 
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
 
@@ -5479,6 +5554,8 @@ CREATE INDEX insights_query_runner_jobs_series_id_state ON insights_query_runner
 
 CREATE INDEX insights_query_runner_jobs_state_btree ON insights_query_runner_jobs USING btree (state);
 
+CREATE INDEX installation_id_idx ON github_app_installs USING btree (installation_id);
+
 CREATE UNIQUE INDEX kind_cloud_default ON external_services USING btree (kind, cloud_default) WHERE ((cloud_default = true) AND (deleted_at IS NULL));
 
 CREATE INDEX lsif_configuration_policies_repository_id ON lsif_configuration_policies USING btree (repository_id);
@@ -5576,6 +5653,8 @@ CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs
 CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code);
 
 CREATE UNIQUE INDEX own_aggregate_recent_contribution_file_author ON own_aggregate_recent_contribution USING btree (changed_file_path_id, commit_author_id);
+
+CREATE UNIQUE INDEX own_aggregate_recent_view_viewer ON own_aggregate_recent_view USING btree (viewed_file_path_id, viewer_id);
 
 CREATE INDEX own_background_jobs_repo_id_idx ON own_background_jobs USING btree (repo_id);
 
@@ -6047,6 +6126,9 @@ ALTER TABLE ONLY vulnerability_affected_symbols
 ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY github_app_installs
+    ADD CONSTRAINT github_app_installs_app_id_fkey FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
@@ -6145,6 +6227,12 @@ ALTER TABLE ONLY own_aggregate_recent_contribution
 
 ALTER TABLE ONLY own_aggregate_recent_contribution
     ADD CONSTRAINT own_aggregate_recent_contribution_commit_author_id_fkey FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id);
+
+ALTER TABLE ONLY own_aggregate_recent_view
+    ADD CONSTRAINT own_aggregate_recent_view_viewed_file_path_id_fkey FOREIGN KEY (viewed_file_path_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY own_aggregate_recent_view
+    ADD CONSTRAINT own_aggregate_recent_view_viewer_id_fkey FOREIGN KEY (viewer_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY own_signal_recent_contribution
     ADD CONSTRAINT own_signal_recent_contribution_changed_file_path_id_fkey FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id);
