@@ -30,7 +30,7 @@ import {
 } from '../../../../graphql-operations'
 
 import { UPDATE_LLM_PROXY_CONFIG } from './backend'
-import { LLMProxyRateLimitModal } from './LLMProxyRateLimitModal'
+import { LLMProxyRateLimitModal } from './LlmProxyRateLimitModal'
 import { prettyInterval } from './utils'
 
 interface Props {
@@ -63,31 +63,31 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                     llmProxyAccess: { rateLimit: 0, rateLimitIntervalSeconds: 0 },
                 },
             })
-            await refetchSubscription()
+            refetchSubscription()
         } catch (error) {
             logger.error(error)
         }
-    }, [productSubscriptionID])
+    }, [productSubscriptionID, updateLLMProxyConfig])
 
     const onToggleCompletions = useCallback(
         async (value: boolean) => {
             try {
                 await updateLLMProxyConfig({
                     variables: {
-                        productSubscriptionID: productSubscriptionID,
+                        productSubscriptionID,
                         llmProxyAccess: { enabled: value },
                     },
                 })
-                await refetchSubscription()
+                refetchSubscription()
             } catch (error) {
                 logger.error(error)
             }
         },
-        [productSubscriptionID, refetchSubscription]
+        [productSubscriptionID, refetchSubscription, updateLLMProxyConfig]
     )
 
     const afterSaveRateLimit = useCallback(async () => {
-        await refetchSubscription()
+        refetchSubscription()
         setShowRateLimitConfigModal(false)
     }, [refetchSubscription])
 

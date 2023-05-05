@@ -47,7 +47,7 @@ interface Props {}
 /**
  * Displays a product subscription in the site admin area.
  */
-export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({}) => {
+export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     const navigate = useNavigate()
     const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
@@ -84,16 +84,16 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
         } catch (error) {
             logger.error(error)
         }
-    }, [data, archiveProductSubscription])
+    }, [data, archiveProductSubscription, navigate])
 
     const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
 
     const licenseUpdates = useMemo(() => new Subject<void>(), [])
     const onLicenseUpdate = useCallback(() => {
-        refetch()
+        void refetch()
         licenseUpdates.next()
         setShowGenerate(false)
-    }, [refetch, toggleShowGenerate, licenseUpdates])
+    }, [refetch, licenseUpdates])
 
     // Feature flag only used as this is under development - will be enabled by default
     const [llmProxyManagementUI] = useFeatureFlag('llm-proxy-management-ui')
