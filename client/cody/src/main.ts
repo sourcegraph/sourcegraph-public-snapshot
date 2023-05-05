@@ -103,6 +103,10 @@ const register = async (
         await chatProvider.executeRecipe(recipe, '')
     }
 
+    const webviewErrorMessager = (error: string): void => {
+        chatProvider.sendErrorToWebview(error)
+    }
+
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
@@ -180,7 +184,12 @@ const register = async (
         disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
 
         const history = new History()
-        const completionsProvider = new CodyCompletionItemProvider(completionsClient, docprovider, history)
+        const completionsProvider = new CodyCompletionItemProvider(
+            webviewErrorMessager,
+            completionsClient,
+            docprovider,
+            history
+        )
         disposables.push(
             vscode.commands.registerCommand('cody.experimental.suggest', async () => {
                 await completionsProvider.fetchAndShowCompletions()
