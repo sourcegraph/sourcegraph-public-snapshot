@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strconv"
 	"testing"
 	"time"
 
@@ -55,7 +56,7 @@ func TestSimilaritySearch(t *testing.T) {
 	}
 
 	for i := 0; i < numRows; i++ {
-		index.RowMetadata = append(index.RowMetadata, RepoEmbeddingRowMetadata{FileName: fmt.Sprintf("%d", i)})
+		index.RowMetadata = append(index.RowMetadata, RepoEmbeddingRowMetadata{FileName: strconv.Itoa(i)})
 	}
 
 	for _, numWorkers := range []int{0, 1, 2, 3, 5, 8, 9, 16, 20, 33} {
@@ -66,7 +67,7 @@ func TestSimilaritySearch(t *testing.T) {
 					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0}, SearchOptions{})
 					resultRowNums := make([]int, len(results))
 					for i, r := range results {
-						resultRowNums[i] = r.RowNum
+						resultRowNums[i], _ = strconv.Atoi(r.RepoEmbeddingRowMetadata.FileName)
 					}
 					expectedResults := ranks[q]
 					require.Equal(t, expectedResults[:min(numResults, len(expectedResults))], resultRowNums)
