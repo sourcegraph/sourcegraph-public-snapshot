@@ -478,7 +478,7 @@ func (a *archiveReader) Read(p []byte) (int, error) {
 	n, err := a.base.Read(p)
 	if err != nil {
 		// handle the special case where git archive failed because of an invalid spec
-		if strings.Contains(err.Error(), "Not a valid object") {
+		if strings.Contains(err.Error(), "not a valid object") {
 			return 0, &gitdomain.RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
 		}
 	}
@@ -670,6 +670,11 @@ func (c *CommandStatusError) Error() string {
 		return fmt.Sprintf("non-zero exit status: %d (stderr: %q)", c.StatusCode, stderr)
 	}
 	return stderr
+}
+
+func (c *CommandStatusError) isRevisionNotFound() bool {
+	loweredErr := strings.ToLower(c.Stderr)
+	return strings.Contains(loweredErr, "not a valid object")
 }
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
