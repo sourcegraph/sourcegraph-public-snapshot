@@ -191,11 +191,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				triggerAsync(buildOptions)))
 		}
 
-		ops.Append(
-			bazelBuildCandidateDockerImage("server", c.Version, c.candidateImageTag(), c.RunType),
-			codeIntelQA(c.candidateImageTag()),
-		)
-
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 

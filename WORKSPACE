@@ -202,13 +202,6 @@ go_repository(
     version = "v1.14.1",
 )
 
-go_repository(
-    name = "com_github_sourcegraph_src-cli",
-    build_file_proto_mode = "disable_global",
-    commit = "58b3f701691cbdbd10b54161d9bfca88b781480d",
-    importpath = "github.com/sourcegraph/src-cli",
-)
-
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()
 
