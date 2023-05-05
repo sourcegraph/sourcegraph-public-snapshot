@@ -108,7 +108,7 @@ const register = async (
             const currentTime: number = Date.now()
             const userPref = localStorage.get('rateLimitError')
             // 21600000 is 6h in ms. ex 6 * 60 * 60 * 1000
-            if (!userPref || userPref !== 'never' || currentTime - 86400000 >= parseInt(userPref, 10)) {
+            if (!userPref || userPref !== 'never' || currentTime - 21600000 >= parseInt(userPref, 10)) {
                 const input = await vscode.window.showErrorMessage(error, 'Do not show again', 'Close')
                 switch (input) {
                     case 'Do not show again':
