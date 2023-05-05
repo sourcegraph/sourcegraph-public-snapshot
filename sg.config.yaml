@@ -1428,6 +1428,7 @@ commandsets:
       - llm-proxy
     env:
       LLM_PROXY_ANTHROPIC_ACCESS_TOKEN: foobar
+      LLM_PROXY_DOTCOM_ACCESS_TOKEN: foobar
 
 tests:
   # These can be run with `sg test [name]`

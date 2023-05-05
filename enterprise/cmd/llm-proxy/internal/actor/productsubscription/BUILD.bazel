@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "productsubscription",
+    srcs = ["productsubscription.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/productsubscription",
+    visibility = ["//enterprise/cmd/llm-proxy:__subpackages__"],
+    deps = [
+        "//enterprise/cmd/llm-proxy/internal/actor",
+        "//enterprise/cmd/llm-proxy/internal/dotcom",
+        "//lib/errors",
+        "@com_github_gregjones_httpcache//:httpcache",
+        "@com_github_khan_genqlient//graphql",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

@@ -8,28 +8,35 @@ import (
 )
 
 type Limiter interface {
-	TryAcquire(ctx context.Context, identifier string) error
+	TryAcquire(ctx context.Context) error
 }
 
 type StaticLimiter struct {
+	// Identifier is the key used to identify the rate limit counter.
+	Identifier string
+
 	Redis    RedisStore
 	Limit    int
 	Interval time.Duration
+
+	// UpdateRateLimitTTL, if true, indicates that the TTL of the rate limit count should
+	// updated if there is a significant deviance from the desired interval.
+	UpdateRateLimitTTL bool
 
 	// Optional stub for current time. Used for testing.
 	nowFunc func() time.Time
 }
 
-func (l StaticLimiter) TryAcquire(ctx context.Context, identifier string) error {
+func (l StaticLimiter) TryAcquire(ctx context.Context) error {
 	// Zero values implies no access - this is a fallback check, callers should
 	// be checking independently if access is granted.
-	if l.Limit == 0 || l.Interval == 0 {
+	if l.Identifier == "" || l.Limit == 0 || l.Interval == 0 {
 		return NoAccessError{}
 	}
 
 	// Check the current usage and increment the counter for the current user. If
 	// no record exists, redis will initialize it with 1.
-	currentUsage, err := l.Redis.Incr(identifier)
+	currentUsage, err := l.Redis.Incr(l.Identifier)
 	if err != nil {
 		return errors.Wrap(err, "failed to increase rate limit counter")
 	}
@@ -37,12 +44,13 @@ func (l StaticLimiter) TryAcquire(ctx context.Context, identifier string) error 
 	// Set expiry on the key. If existing TTL has not yet been set, or TTL is
 	// longer than the desired interval (indicates that the rate limit interval
 	// has changed and been shortened)
-	ttl, err := l.Redis.TTL(identifier)
+	ttl, err := l.Redis.TTL(l.Identifier)
 	if err != nil {
 		return errors.Wrap(err, "failed to get TTL for rate limit counter")
 	}
-	if ttl < 0 || ttl > int(l.Interval/time.Second) {
-		if err := l.Redis.Expire(identifier, int(l.Interval/time.Second)); err != nil {
+	intervalSeconds := int(l.Interval / time.Second)
+	if ttl < 0 || (l.UpdateRateLimitTTL && ttl > intervalSeconds) {
+		if err := l.Redis.Expire(l.Identifier, intervalSeconds); err != nil {
 			return errors.Wrap(err, "failed to set expiry for rate limit counter")
 		}
 	}

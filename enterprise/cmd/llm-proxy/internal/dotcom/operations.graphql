@@ -11,7 +11,7 @@ fragment ProductSubscriptionState on ProductSubscription {
     }
 }
 
-# CheckAccessToken returns traints of the product subscription associated with
+# CheckAccessToken returns traits of the product subscription associated with
 # the given access token.
 query CheckAccessToken($token: String!) {
     dotcom {
