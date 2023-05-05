@@ -15,7 +15,7 @@ import (
 
 var keywordSearchPatternType = "regexp"
 
-const MAX_FILES_TO_RANK = 50000
+const MAX_FILES_TO_RANK = 200
 const KEYWORD_CONTEXT_SEARCH_TIMEOUT = "0.5s"
 
 type KeywordSearchArgs struct {
