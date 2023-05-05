@@ -52,7 +52,7 @@ func TestServicePermissionLevels(t *testing.T) {
 	admin := bt.CreateTestUser(t, db, true)
 	user := bt.CreateTestUser(t, db, false)
 	otherUser := bt.CreateTestUser(t, db, false)
-	otherUser2 := bt.CreateTestUser(t, db, false)
+	nonOrgMember := bt.CreateTestUser(t, db, false)
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
