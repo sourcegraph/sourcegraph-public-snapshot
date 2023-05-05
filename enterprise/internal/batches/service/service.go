@@ -157,13 +157,12 @@ func (s *Service) WithStore(store *store.Store) *Service {
 	return &Service{logger: s.logger, store: store, sourcer: s.sourcer, clock: s.clock, operations: s.operations}
 }
 
-// checkBatchChangeAccess checks if the current user has access to perform operation on the batchChange. The logic for this is dependent
-// on the namespace the batch change belongs to.
+// checkBatchChangeAccess checks if the current user can administer a batch change in the context of its creator and the namespace it belongs to, if the namespace is an organization.
 //
-// If it belongs to a user, we check if the current user is the same as the creator of the Batch Change or they're a site admin.
-// If it belongs to an org, we check the org settings for the `orgs.allMembersBatchChangesAdmin` field:
-//   - If true, we allow all org members / site admins / the creator of the batch change to perform the operation
-//   - If false, we only allow site admins / the creator of the batch change to perform the operation.
+// If it belongs to a user (orgID == 0), the user can administer a batch change only if they are its creator or a site admin.
+// If it belongs to an org (orgID != 0), we check the org settings for the `orgs.allMembersBatchChangesAdmin` field:
+//   - If true, the user can administer a batch change if they are a member of that org or a site admin.
+//   - If false, the user can administer a batch change only if they are its creator or a site admin.
 func (s *Service) checkBatchChangeAccess(ctx context.Context, orgID, creatorID int32) error {
 	db := s.store.DatabaseDB()
 	if orgID != 0 {
