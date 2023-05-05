@@ -1,6 +1,8 @@
+import * as uuid from 'uuid'
+
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
+import { EventLogger, ANONYMOUS_USER_ID_KEY } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { version as packageVersion } from '../package.json'
 
@@ -13,9 +15,17 @@ export async function updateEventLogger(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
     localStorage: LocalStorage
 ): Promise<void> {
+    let anonymousUserID = localStorage.get(ANONYMOUS_USER_ID_KEY)
+    let newInstall = false
+    if (!anonymousUserID) {
+        newInstall = true
+        anonymousUserID = uuid.v4()
+        await localStorage.set(ANONYMOUS_USER_ID_KEY, anonymousUserID)
+    }
     if (!eventLoggerGQLClient) {
         eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
         eventLogger = await EventLogger.create(localStorage, eventLoggerGQLClient)
+        logCodyInstalled()
     } else {
         eventLoggerGQLClient.onConfigurationChange(config)
     }
@@ -37,4 +47,11 @@ export function logEvent(eventName: string, eventProperties?: any, publicPropert
     }
 
     void eventLogger.log(eventName, argument, publicArgument)
+}
+
+export async function logCodyInstalled(): Promise<void> {
+    if (!eventLogger) {
+        return
+    }
+    await eventLogger.log('CodyInstalled')
 }
