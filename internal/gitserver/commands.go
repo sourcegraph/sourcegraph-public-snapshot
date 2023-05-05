@@ -2440,11 +2440,9 @@ func (c *clientImplementor) ArchiveReader(
 		handleStreamErr := func(err error) error {
 			if status.Code(err) == codes.Canceled {
 				return context.Canceled
-			} else if err != nil {
-				return convertGRPCErrorToGitDomainError(err)
 			}
 
-			return nil
+			return convertGRPCErrorToGitDomainError(err)
 		}
 
 		// first message from the gRPC stream needs to be read to check for errors before continuing
@@ -2458,10 +2456,23 @@ func (c *clientImplementor) ArchiveReader(
 		// the stream to see any errors from the server. Reading the first message ensures we
 		// handle any errors synchronously, similar to the HTTP implementation.
 
-		firstMessage, err := stream.Recv()
-		if err != nil {
-			cancel()
-			return nil, handleStreamErr(err)
+		firstMessage, firstError := stream.Recv()
+		if firstError != nil {
+			// Hack: The ArchiveReader.Read() implementation handles surfacing the
+			// any "revision not found" errors returned from the invoked git binary.
+			//
+			// In order to maintainparity with the HTTP API, we return this error in the ArchiveReader.Read() method
+			// instead of returning it immediately.
+
+			// We return early only if this isn't a revision not found error.
+
+			err := convertGRPCErrorToGitDomainError(firstError)
+
+			var cse *CommandStatusError
+			if !errors.As(err, &cse) || !cse.isRevisionNotFound() {
+				cancel()
+				return nil, handleStreamErr(err)
+			}
 		}
 
 		firstMessageRead := false
@@ -2471,6 +2482,11 @@ func (c *clientImplementor) ArchiveReader(
 			// Check if we've read the first message yet. If not, read it and return.
 			if !firstMessageRead {
 				firstMessageRead = true
+
+				if firstError != nil {
+					return nil, firstError
+				}
+
 				return firstMessage.GetData(), nil
 			}
 
