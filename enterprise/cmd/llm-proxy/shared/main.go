@@ -140,10 +140,15 @@ func rateLimit(logger log.Logger, cache limiter.RedisStore, next http.Handler) h
 
 		err := l.TryAcquire(r.Context())
 
-		var rateLimitExceeded limiter.RateLimitExceededError
 		if err != nil {
+			var rateLimitExceeded limiter.RateLimitExceededError
 			if errors.As(err, &rateLimitExceeded) {
 				rateLimitExceeded.WriteResponse(w)
+				return
+			}
+
+			if errors.Is(err, limiter.NoAccessError{}) {
+				response.JSONError(logger, w, http.StatusForbidden, err)
 				return
 			}
 
