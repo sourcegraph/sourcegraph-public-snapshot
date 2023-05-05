@@ -51,7 +51,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	handler := newServiceHandler(obctx.Logger, config)
 	handler = rateLimit(obctx.Logger, redispool.Cache, handler)
 	handler = &auth.Authenticator{
-		Log:     obctx.Logger.Scoped("auth", "authenticating middleware"),
+		Log:     obctx.Logger.Scoped("auth", "authentication middleware"),
 		Sources: sources,
 		Next:    handler,
 	}
