@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, H2, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 import { EventName } from '../../../util/constants'

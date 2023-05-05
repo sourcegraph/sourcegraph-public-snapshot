@@ -42,7 +42,7 @@ import {
     useSessionStorage,
 } from '@sourcegraph/wildcard'
 
-import { authenticatedUser, AuthenticatedUser } from '../../auth'
+import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
