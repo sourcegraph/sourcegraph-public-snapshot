@@ -272,3 +272,94 @@ func TestRecentViewSignalStore_InsertPaths_HardLimit(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, summaries, 5000)
 }
+
+func TestRecentViewSignalStore_List(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Creating a user.
+	_, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	require.NoError(t, err)
+
+	// Creating a repo.
+	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
+	require.NoError(t, err)
+
+	// Creating some paths.
+	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1), (1, 'src/abc', 2), (1, 'src/cde', 2)")
+	require.NoError(t, err)
+
+	store := RecentViewSignalStoreWith(db, logger)
+
+	// We need a determined order of inserted signals, hence using a singular insert.
+	for _, path := range []int{1, 2, 3, 4} {
+		// count = 10^path
+		require.NoError(t, store.Insert(ctx, 1, path, int(math.Pow(float64(10), float64(path)))))
+	}
+
+	// As IDs of signals aren't returned, we can rely on counts because of strict
+	// mapping.
+	allCounts := []int{10, 100, 1000, 10000}
+	testCases := map[string]struct {
+		opts              ListRecentViewSignalOpts
+		expectedCounts    []int
+		expectedNoEntries bool
+	}{
+		"listing everything without opts": {
+			opts:           ListRecentViewSignalOpts{},
+			expectedCounts: allCounts,
+		},
+		"filter by viewer ID": {
+			opts:           ListRecentViewSignalOpts{ViewerUserID: 1},
+			expectedCounts: allCounts,
+		},
+		"filter by viewer ID which isn't present": {
+			opts:              ListRecentViewSignalOpts{ViewerUserID: 2},
+			expectedNoEntries: true,
+		},
+		"filter by repo ID": {
+			opts:           ListRecentViewSignalOpts{RepoID: 1},
+			expectedCounts: allCounts,
+		},
+		"filter by repo ID which isn't present": {
+			opts:              ListRecentViewSignalOpts{RepoID: 2},
+			expectedNoEntries: true,
+		},
+		"filter by path": {
+			opts:           ListRecentViewSignalOpts{Path: "src/cde"},
+			expectedCounts: allCounts[len(allCounts)-1:],
+		},
+		"filter by path which isn't present": {
+			opts:              ListRecentViewSignalOpts{Path: "lol"},
+			expectedNoEntries: true,
+		},
+		"limit, offset": {
+			opts:           ListRecentViewSignalOpts{LimitOffset: &LimitOffset{Limit: 2, Offset: 1}},
+			expectedCounts: allCounts[1:4],
+		},
+		"all options": {
+			opts:           ListRecentViewSignalOpts{ViewerUserID: 1, RepoID: 1, Path: "src", LimitOffset: &LimitOffset{Limit: 1}},
+			expectedCounts: allCounts[1:2],
+		},
+	}
+
+	for testName, test := range testCases {
+		t.Run(testName, func(t *testing.T) {
+			gotSummaries, err := store.List(ctx, test.opts)
+			require.NoError(t, err)
+			if test.expectedNoEntries {
+				assert.Empty(t, gotSummaries)
+				return
+			}
+			for idx, summary := range gotSummaries {
+				assert.Equal(t, test.expectedCounts[idx], summary.ViewsCount)
+			}
+		})
+	}
+}
