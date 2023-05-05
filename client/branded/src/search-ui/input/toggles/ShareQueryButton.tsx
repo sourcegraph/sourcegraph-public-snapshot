@@ -79,21 +79,21 @@ const ShareQueryButtonMenu: React.FunctionComponent<Props & { closeMenu: () => v
     onSaveSearch,
     closeMenu,
 }) => {
-    let [destination, setDestination] = useState<SaveQueryDestination>(authenticatedUser!)
-    let [title, setTitle] = useState<string>('')
-    let [shortUrl, setShortUrl] = useState<string>('')
-    let [error, setError] = useState<string>('')
+    const [destination, setDestination] = useState<SaveQueryDestination>(authenticatedUser!)
+    const [title, setTitle] = useState<string>('')
+    const [shortUrl, setShortUrl] = useState<string>('')
+    const [error, setError] = useState<string>('')
 
     const shortUrlCopyRef = useRef<HTMLInputElement | null>(null)
 
-    const reset = () => {
+    const reset = (): void => {
         setDestination(authenticatedUser!)
         setTitle('')
         setShortUrl('')
         setError('')
     }
 
-    let savedSearchesLink = (
+    const savedSearchesLink = (
         <Link
             to={
                 destination === authenticatedUser
@@ -144,8 +144,8 @@ const ShareQueryButtonMenu: React.FunctionComponent<Props & { closeMenu: () => v
                             .then(url => {
                                 setShortUrl(url)
                             })
-                            .catch(err => {
-                                setError(err.toString())
+                            .catch(error_ => {
+                                setError(error_.toString())
                             })
                         event.stopPropagation()
                         event.preventDefault()
@@ -156,8 +156,7 @@ const ShareQueryButtonMenu: React.FunctionComponent<Props & { closeMenu: () => v
                         <span className="d-flex flex-column mb-2">
                             <span className={shareStyles.labelHeader}>Destination</span>
                             <span className={shareStyles.labelDescription}>
-                                Where would you like to save this search? This could be your own profile or an
-                                organization you're a member of.
+                                Where would you like to save this search?
                             </span>
                         </span>
                         <Select
@@ -191,13 +190,13 @@ const ShareQueryButtonMenu: React.FunctionComponent<Props & { closeMenu: () => v
                     </Label>
                     <Label className={shareStyles.label}>
                         <span className="d-flex flex-column mb-2">
-                            <span className={shareStyles.labelHeader}>Title</span>
+                            <span className={shareStyles.labelHeader}>Description</span>
                             <span className={shareStyles.labelDescription}>
-                                Give this search a snazzy title so you can easily find it in {savedSearchesLink}.
+                                Give this search a snazzy description so you can easily find it in {savedSearchesLink}.
                             </span>
                         </span>
                         <Input
-                            required
+                            required={true}
                             onChange={event => {
                                 setTitle(event.target.value)
                             }}

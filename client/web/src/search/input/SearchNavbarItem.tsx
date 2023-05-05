@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useEffect } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
-import { catchError, map } from 'rxjs/operators'
+import { catchError } from 'rxjs/operators'
 import shallow from 'zustand/shallow'
 
 import { SearchBox, Toggles } from '@sourcegraph/branded'
@@ -111,9 +111,9 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 >
                     <Toggles
                         authenticatedUser={props.authenticatedUser}
-                        onSaveSearch={(destination, title, fullQuery) => {
-                            return new Promise((resolve, reject) => {
-                                createSavedSearch(
+                        onSaveSearch={(destination, title, fullQuery) =>
+                            new Promise((resolve, reject) => {
+                                const sub = createSavedSearch(
                                     title,
                                     fullQuery,
                                     false,
@@ -121,11 +121,9 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                                     destination.__typename === 'User' ? destination.id : null,
                                     destination.__typename === 'Org' ? destination.id : null
                                 )
-                                    .pipe(
-                                        map(p => p),
-                                        catchError((error): [ErrorLike] => [asError(error)])
-                                    )
+                                    .pipe(catchError((error): [ErrorLike] => [asError(error)]))
                                     .subscribe(result => {
+                                        sub.unsubscribe()
                                         if ((result as CreateSavedSearchResult).createSavedSearch) {
                                             const res = result as CreateSavedSearchResult
                                             resolve(`${window.location.origin}/short/${res.createSavedSearch.id}`)
@@ -135,7 +133,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                                         }
                                     })
                             })
-                        }}
+                        }
                         patternType={searchPatternType}
                         caseSensitive={searchCaseSensitivity}
                         setPatternType={setSearchPatternType}
