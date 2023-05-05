@@ -14,7 +14,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
-- Display error messages from compeletion client in webview instead of system messages [pull/51521](https://github.com/sourcegraph/sourcegraph/pull/51521)
+- Error notification display pattern for rate limit [pull/51521](https://github.com/sourcegraph/sourcegraph/pull/51521)
 
 ### Changed
 
