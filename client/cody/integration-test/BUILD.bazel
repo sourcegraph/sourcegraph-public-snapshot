@@ -1,0 +1,45 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+
+# load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "ts_project")
+
+# npm_link_all_packages(name = "node_modules")
+
+# gazelle:js_resolve vscode //:node_modules/@vscode
+# gazelle:js_files **/*.{ts,tsx}
+# gazelle:js_test_files **/*.{ts,tsx}
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    deps = [
+        "//client/cody:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "integration-test_tests",
+    testonly = True,
+    srcs = [
+        "api.test.ts",
+        "chat.test.ts",
+        "helpers.ts",
+        "index.ts",
+        "main.ts",
+        "mock-server.ts",
+        "recipes.test.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        "//:node_modules/@types/express",
+        "//:node_modules/@types/glob",
+        "//:node_modules/@types/mocha",
+        "//:node_modules/@types/node",
+        "//:node_modules/@vscode",
+        "//:node_modules/@vscode/test-electron",
+        "//:node_modules/express",
+        "//:node_modules/glob",
+        "//:node_modules/mocha",
+        "//client/cody",
+    ],
+)
