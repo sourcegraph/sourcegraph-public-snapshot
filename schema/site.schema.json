@@ -1890,7 +1890,7 @@
             "github": {
               "description": "GitHub configuration, both for queries and receiving release webhooks.",
               "type": "object",
-              "required": [ "token", "webhookSecret"],
+              "required": ["token", "webhookSecret"],
               "properties": {
                 "repository": {
                   "description": "The repository to get the latest version of.",
@@ -2425,12 +2425,7 @@
       "description": "Configures the OpenID Connect authentication provider for SSO.",
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "type",
-        "issuer",
-        "clientID",
-        "clientSecret"
-      ],
+      "required": ["type", "issuer", "clientID", "clientSecret"],
       "properties": {
         "type": {
           "type": "string",
@@ -2491,16 +2486,9 @@
       "additionalProperties": false,
       "required": ["type"],
       "dependencies": {
-        "serviceProviderCertificate": [
-          "serviceProviderPrivateKey"
-        ],
-        "serviceProviderPrivateKey": [
-          "serviceProviderCertificate"
-        ],
-        "signRequests": [
-          "serviceProviderCertificate",
-          "serviceProviderPrivateKey"
-        ]
+        "serviceProviderCertificate": ["serviceProviderPrivateKey"],
+        "serviceProviderPrivateKey": ["serviceProviderCertificate"],
+        "signRequests": ["serviceProviderCertificate", "serviceProviderPrivateKey"]
       },
       "properties": {
         "type": {
@@ -2620,23 +2608,17 @@
         "usernameHeader": {
           "description": "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.",
           "type": "string",
-          "examples": [
-            "X-Forwarded-User"
-          ]
+          "examples": ["X-Forwarded-User"]
         },
         "stripUsernameHeaderPrefix": {
           "description": "The prefix that precedes the username portion of the HTTP header specified in `usernameHeader`. If specified, the prefix will be stripped from the header value and the remainder will be used as the username. For example, if using Google Identity-Aware Proxy (IAP) with Google Sign-In, set this value to `accounts.google.com:`.",
           "type": "string",
-          "examples": [
-            "accounts.google.com:"
-          ]
+          "examples": ["accounts.google.com:"]
         },
         "emailHeader": {
           "description": "The name (case-insensitive) of an HTTP header whose value is taken to be the email of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.",
           "type": "string",
-          "examples": [
-            "X-App-Email"
-          ]
+          "examples": ["X-App-Email"]
         }
       }
     },
@@ -2704,13 +2686,8 @@
           },
           "examples": [
             {
-              "orgName": [
-                "team1"
-              ],
-              "anotherOrgName": [
-                "team2",
-                "team3"
-              ]
+              "orgName": ["team1"],
+              "anotherOrgName": ["team2", "team3"]
             }
           ]
         },
@@ -2781,13 +2758,7 @@
             "type": "string",
             "minLength": 1
           },
-          "examples": [
-            [
-              "group",
-              "group/subgroup",
-              "group/subgroup/subgroup"
-            ]
-          ]
+          "examples": [["group", "group/subgroup", "group/subgroup/subgroup"]]
         },
         "tokenRefreshWindowMinutes": {
           "description": "Time in minutes before token expiry when we should attempt to refresh it",
