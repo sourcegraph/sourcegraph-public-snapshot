@@ -11,6 +11,7 @@ go_library(
         "preview.go",
         "raw.go",
         "router.go",
+        "short_search.go",
         "tmpl.go",
     ],
     embedsrcs = [
@@ -61,6 +62,8 @@ go_library(
         "@com_github_golang_gddo//httputil",
         "@com_github_gorilla_mux//:mux",
         "@com_github_grafana_regexp//:regexp",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_nytimes_gziphandler//:gziphandler",
         "@com_github_opentracing_opentracing_go//:opentracing-go",
