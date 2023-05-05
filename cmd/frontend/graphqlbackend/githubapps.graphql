@@ -11,6 +11,10 @@ extend type Query {
     All configured GitHub Apps.
     """
     gitHubApps: GitHubAppConnection!
+    """
+    Looks up a GitHub App by its ID.
+    """
+    gitHubApp(id: ID!): GitHubApp
 }
 
 """

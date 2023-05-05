@@ -87,6 +87,38 @@ func (r *resolver) GitHubApps(ctx context.Context) (graphqlbackend.GitHubAppConn
 	return gitHubAppConnection, nil
 }
 
+func (r *resolver) GitHubApp(ctx context.Context, args *graphqlbackend.GitHubAppArgs) (graphqlbackend.GitHubAppResolver, error) {
+	// 🚨 SECURITY: Check whether user is site-admin
+	return r.GitHubAppByID(ctx, args.ID)
+}
+
+func (r *resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
+	return map[string]graphqlbackend.NodeByIDFunc{
+		gitHubAppIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.GitHubAppByID(ctx, id)
+		},
+	}
+}
+
+func (r *resolver) GitHubAppByID(ctx context.Context, id graphql.ID) (*gitHubAppResolver, error) {
+	// 🚨 SECURITY: Check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+	gitHubAppID, err := UnmarshalGitHubAppID(id)
+	if err != nil {
+		return nil, err
+	}
+	app, err := r.db.GitHubApps().GetByID(ctx, int(gitHubAppID))
+	if err != nil {
+		return nil, err
+	}
+
+	return &gitHubAppResolver{
+		app: app,
+	}, nil
+}
+
 // NewGitHubAppResolver creates a new GitHubAppResolver from a GitHubApp.
 func NewGitHubAppResolver(app *types.GitHubApp) *gitHubAppResolver {
 	return &gitHubAppResolver{app: app}
