@@ -70,7 +70,6 @@ func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 			respondRateLimited(w, unwrap)
 			return
 		}
-		fmt.Println("woooooops")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
