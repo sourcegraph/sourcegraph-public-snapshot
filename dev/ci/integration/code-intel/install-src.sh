@@ -17,6 +17,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# TODO: migrate upstream to bazel
+# bazel build @com_github_sourcegraph_src-cli//cmd/src:src
+# out=$(bazel cquery @com_github_sourcegraph_src-cli//cmd/src:src --output=files)
+# cp "$out" "$root_dir/.bin/src"
+
 git clone git@github.com:sourcegraph/src-cli.git "${TEMP}" --depth 1
 pushd "${TEMP}"
 git fetch origin "${VERSION}" --depth 1
