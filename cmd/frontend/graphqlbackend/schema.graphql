@@ -7324,11 +7324,6 @@ type Site implements SettingsSubject {
     The quota of code completions requests allowed per user in a day. Null, if unlimited.
     """
     perUserCodeCompletionsQuota: Int
-
-    """
-    Whether users are required to have a verified email in order to access Cody.
-    """
-    requiresVerifiedEmailForCody: Boolean!
 }
 
 """
