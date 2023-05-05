@@ -5789,16 +5789,6 @@ def go_dependencies():
         version = "v3.1.2",
     )
 
-    # Needed by back compat tests targeting 5.0.0
-    # Context+Owner: @jhchabran
-    go_repository(
-        name = "com_github_rafaeljusto_redigomock",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/rafaeljusto/redigomock",
-        sum = "h1:d7uo5MVINMxnRr20MxbgDkmZ8QRfevjOVgEa4n0OZyY=",
-        version = "v2.4.0+incompatible",
-    ) # keep
-
     go_repository(
         name = "com_github_rainycape_unidecode",
         build_file_proto_mode = "disable_global",
