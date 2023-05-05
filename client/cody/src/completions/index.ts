@@ -57,7 +57,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 return []
             }
 
-            this.webviewErrorMessager(`Error in provideInlineCompletionItems: ${error}`)
+            this.webviewErrorMessager(`ProvideInlineCompletionItems - ${error}`)
             return []
         }
     }
@@ -285,7 +285,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 return
             }
 
-            this.webviewErrorMessager(`Error in fetchAndShowCompletions: ${error}`)
+            this.webviewErrorMessager(`FetchAndShowCompletions - ${error}`)
         }
     }
 }
