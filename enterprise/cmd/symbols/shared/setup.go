@@ -127,7 +127,7 @@ func setupRockskip(observationCtx *observation.Context, config rockskipConfig, g
 
 	codeintelDB := mustInitializeCodeIntelDB(observationCtx)
 	createParser := func() (ctags.Parser, error) {
-		return symbolsParser.SpawnCtags(log.Scoped("parser", "ctags parser"), config.Ctags, symbolsParser.Universal)
+		return symbolsParser.SpawnCtags(log.Scoped("parser", "ctags parser"), config.Ctags, symbolsParser.UniversalCtags)
 	}
 	server, err := rockskip.NewService(codeintelDB, gitserverClient, repositoryFetcher, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize, config.SearchLastIndexedCommit)
 	if err != nil {

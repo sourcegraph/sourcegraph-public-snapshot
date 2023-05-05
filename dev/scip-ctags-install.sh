@@ -26,14 +26,13 @@ trap ctrl_c INT
 function build_scip_ctags {
   cd docker-images/syntax-highlighter
   cargo fetch
-  cargo build --bin scip-ctags
-  set -e
-  cp ./target/debug/scip-ctags "$TARGET"
+  cargo build --bin scip-ctags --release
+  cp ./target/release/scip-ctags "$TARGET"
 }
 
-if [ ! -f "${TARGET}" ]; then 
+if [ ! -f "${TARGET}" ]; then
   echo "Installing scip-ctags"
-  build_scip_ctags 
+  build_scip_ctags
 else
   echo "scip-ctags is already available at $TARGET"
 fi

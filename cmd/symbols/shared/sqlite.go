@@ -54,7 +54,7 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 		return searchFunc, nil, []goroutine.BackgroundRoutine{}, "", nil
 	}
 
-	parserFactory := func(source symbolparser.CtagsSource) (ctags.Parser, error) {
+	parserFactory := func(source symbolparser.ParserType) (ctags.Parser, error) {
 		return symbolparser.SpawnCtags(logger, config.Ctags, source)
 	}
 	parserPool, err := symbolparser.NewParserPool(parserFactory, config.NumCtagsProcesses)

@@ -848,7 +848,7 @@
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
       "type": "object",
-      "required": ["engine", "languages"],
+      "required": ["engine", "languages", "symbols"],
       "properties": {
         "engine": {
           "title": "SyntaxHighlightingEngine",
@@ -900,6 +900,22 @@
                     "type": "string"
                   }
                 }
+              }
+            }
+          }
+        },
+        "symbols": {
+          "title": "SymbolConfiguration",
+          "description": "Configure symbol generation",
+          "type": "object",
+          "required": ["engine"],
+          "properties": {
+            "engine": {
+              "description": "Manually specify overrides for symbol generation engine per language",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "enum": ["universal-ctags", "scip-ctags", "off"]
               }
             }
           }

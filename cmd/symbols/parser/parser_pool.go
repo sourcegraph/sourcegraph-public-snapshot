@@ -2,61 +2,62 @@ package parser
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/go-ctags"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type CtagsSource = uint8
+type ParserType = uint8
 
 const (
-	Universal CtagsSource = iota
-	Scip
+	UnknownCtags ParserType = iota
+	NoCtags
+	UniversalCtags
+	ScipCtags
 )
 
-type ParserFactory func(CtagsSource) (ctags.Parser, error)
-
-type parserPool struct {
-	symbolsSource map[string]any
-	newParser     ParserFactory
-	universalPool chan ctags.Parser
-	scipPool      chan ctags.Parser
+func paserNameToParserType(name string) (ParserType, error) {
+	switch name {
+	case "off":
+		return NoCtags, nil
+	case "universal-ctags":
+		return UniversalCtags, nil
+	case "scip-ctags":
+		return ScipCtags, nil
+	default:
+		return UnknownCtags, fmt.Errorf("unknown parser type: %s", name)
+	}
 }
 
-// TODO(SuperAuguste): have two numParserProcesses - one for universal and one for scip
+type ParserFactory func(ParserType) (ctags.Parser, error)
+
+type parserPool struct {
+	newParser ParserFactory
+	pool      map[ParserType]chan ctags.Parser
+}
+
 func NewParserPool(newParser ParserFactory, numParserProcesses int) (*parserPool, error) {
-	universalPool := make(chan ctags.Parser, numParserProcesses)
-	scipPool := make(chan ctags.Parser, numParserProcesses)
+	pool := make(map[ParserType]chan ctags.Parser)
 
-	for i := 0; i < numParserProcesses; i++ {
-		parser, err := newParser(Universal)
-		if err != nil {
-			return nil, err
+	// NOTE: We obviously don't make `NoCtags` available in the pool.
+	for _, parserType := range []ParserType{UniversalCtags, ScipCtags} {
+		pool[parserType] = make(chan ctags.Parser, numParserProcesses)
+		for i := 0; i < numParserProcesses; i++ {
+			parser, err := newParser(parserType)
+			if err != nil {
+				return nil, err
+			}
+			pool[parserType] <- parser
 		}
-		universalPool <- parser
 	}
 
-	for i := 0; i < numParserProcesses; i++ {
-		parser, err := newParser(Scip)
-		if err != nil {
-			return nil, err
-		}
-		scipPool <- parser
+	parserPool := &parserPool{
+		newParser: newParser,
+		pool:      pool,
 	}
 
-	ppool := &parserPool{
-		symbolsSource: conf.Get().SymbolsSource,
-		newParser:     newParser,
-		universalPool: universalPool,
-		scipPool:      scipPool,
-	}
-
-	conf.Watch(func() {
-		ppool.symbolsSource = conf.Get().SymbolsSource
-	})
-
-	return ppool, nil
+	return parserPool, nil
 }
 
 // Get a parser from the pool. Once this parser is no longer in use, the Done method
@@ -65,13 +66,13 @@ func NewParserPool(newParser ParserFactory, numParserProcesses int) (*parserPool
 // the pool. This method always returns a non-nil parser with a nil error value.
 //
 // This method blocks until a parser is available or the given context is canceled.
-func (p *parserPool) Get(ctx context.Context, source CtagsSource) (ctags.Parser, error) {
-	var pool chan ctags.Parser
-	if source == Universal {
-		pool = p.universalPool
-	} else {
-		pool = p.scipPool
+func (p *parserPool) Get(ctx context.Context, source ParserType) (ctags.Parser, error) {
+	if source == NoCtags || source == UnknownCtags {
+		return nil, errors.New("NoCtags is not a valid ParserType")
 	}
+
+	pool := p.pool[source]
+
 	select {
 	case parser := <-pool:
 		if parser != nil {
@@ -85,12 +86,7 @@ func (p *parserPool) Get(ctx context.Context, source CtagsSource) (ctags.Parser,
 	}
 }
 
-func (p *parserPool) Done(parser ctags.Parser, source CtagsSource) {
-	var pool chan ctags.Parser
-	if source == Universal {
-		pool = p.universalPool
-	} else {
-		pool = p.scipPool
-	}
+func (p *parserPool) Done(parser ctags.Parser, source ParserType) {
+	pool := p.pool[source]
 	pool <- parser
 }
