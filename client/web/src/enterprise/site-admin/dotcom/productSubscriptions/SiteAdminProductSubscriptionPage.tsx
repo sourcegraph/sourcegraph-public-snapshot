@@ -90,8 +90,8 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 
     const licenseUpdates = useMemo(() => new Subject<void>(), [])
     const onLicenseUpdate = useCallback(async () => {
-        void refetch()
         licenseUpdates.next()
+        await refetch()
         setShowGenerate(false)
     }, [refetch, licenseUpdates])
 
