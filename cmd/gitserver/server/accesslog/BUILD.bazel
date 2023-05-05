@@ -4,7 +4,7 @@ go_library(
     name = "accesslog",
     srcs = ["accesslog.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog",
-    visibility = ["//cmd/gitserver/server:__subpackages__"],
+    visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//internal/audit",
         "//internal/conf/conftypes",
