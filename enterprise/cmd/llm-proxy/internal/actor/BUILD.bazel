@@ -8,5 +8,8 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor",
     visibility = ["//enterprise/cmd/llm-proxy:__subpackages__"],
-    deps = ["//enterprise/cmd/llm-proxy/internal/limiter"],
+    deps = [
+        "//enterprise/cmd/llm-proxy/internal/limiter",
+        "//lib/errors",
+    ],
 )
