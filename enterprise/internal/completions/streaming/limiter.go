@@ -14,19 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type RateLimitScope int
+type RateLimitScope string
 
 const (
-	RateLimitScopeCompletion RateLimitScope = iota
-	RateLimitScopeCodeCompletion
+	RateLimitScopeCompletion     RateLimitScope = "completion"
+	RateLimitScopeCodeCompletion RateLimitScope = "code_completion"
 )
-
-func (s RateLimitScope) String() string {
-	if s == RateLimitScopeCompletion {
-		return "completions"
-	}
-	return "code completions"
-}
 
 type RateLimiter interface {
 	TryAcquire(ctx context.Context) error
@@ -40,7 +33,7 @@ type RateLimitExceededError struct {
 }
 
 func (e RateLimitExceededError) Error() string {
-	return fmt.Sprintf("you exceeded the rate limit for %s, only %d requests are allowed per day at the moment to ensure the service stays functional. Current usage: %d. Retry after %s", e.Scope.String(), e.Limit, e.Used, e.RetryAfter.Truncate(time.Second))
+	return fmt.Sprintf("you exceeded the rate limit for %s, only %d requests are allowed per day at the moment to ensure the service stays functional. Current usage: %d. Retry after %s", e.Scope, e.Limit, e.Used, e.RetryAfter.Truncate(time.Second))
 }
 
 func NewRateLimiter(db database.DB, rstore redispool.KeyValue, scope RateLimitScope) RateLimiter {
@@ -148,17 +141,11 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 }
 
 func userKey(userID int32, scope RateLimitScope) string {
-	if scope == RateLimitScopeCodeCompletion {
-		return fmt.Sprintf("user:%d:code_completion_requests", userID)
-	}
-	return fmt.Sprintf("user:%d:completion_requests", userID)
+	return fmt.Sprintf("user:%d:%s_requests", userID, scope)
 }
 
 func anonymousKey(ip string, scope RateLimitScope) string {
-	if scope == RateLimitScopeCodeCompletion {
-		return fmt.Sprintf("anon:%s:code_completion_requests", ip)
-	}
-	return fmt.Sprintf("anon:%s:completion_requests", ip)
+	return fmt.Sprintf("anon:%s:%s_requests", ip, scope)
 }
 
 func getConfiguredLimit(ctx context.Context, db database.DB, scope RateLimitScope) (int, error) {
@@ -168,11 +155,12 @@ func getConfiguredLimit(ctx context.Context, db database.DB, scope RateLimitScop
 		var err error
 
 		// If an authenticated user exists, check if an override exists.
-		if scope == RateLimitScopeCompletion {
+		switch scope {
+		case RateLimitScopeCompletion:
 			limit, err = db.Users().GetCompletionsQuota(ctx, a.UID)
-		} else if scope == RateLimitScopeCodeCompletion {
-			limit, err = db.Users().GetCodeCompletionsQuota(ctx, a.UID)
-		} else {
+		case RateLimitScopeCodeCompletion:
+			limit, err = db.Users().GetCompletionsQuota(ctx, a.UID)
+		default:
 			return 0, errors.Newf("unknown scope: %s", scope)
 		}
 		if err != nil {
@@ -185,15 +173,16 @@ func getConfiguredLimit(ctx context.Context, db database.DB, scope RateLimitScop
 
 	// Otherwise, fall back to the global limit.
 	cfg := conf.Get()
-	if scope == RateLimitScopeCompletion {
+	switch scope {
+	case RateLimitScopeCompletion:
 		if cfg.Completions != nil && cfg.Completions.PerUserDailyLimit > 0 {
 			return cfg.Completions.PerUserDailyLimit, nil
 		}
-	} else if scope == RateLimitScopeCodeCompletion {
+	case RateLimitScopeCodeCompletion:
 		if cfg.Completions != nil && cfg.Completions.PerUserCodeCompletionsDailyLimit > 0 {
 			return cfg.Completions.PerUserCodeCompletionsDailyLimit, nil
 		}
-	} else {
+	default:
 		return 0, errors.Newf("unknown scope: %s", scope)
 	}
 
