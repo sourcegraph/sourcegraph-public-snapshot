@@ -276,7 +276,12 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			return errors.Wrap(err, "store.CommitDate")
 		}
 
-		correlatedSCIPData, err := correlateSCIP(ctx, r, upload.Root, getChildren)
+		rSize := int64(0)
+		if upload.UncompressedSize != nil {
+			rSize = *upload.UncompressedSize
+		}
+
+		correlatedSCIPData, err := correlateSCIP(ctx, r, rSize, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
 		}

@@ -127,24 +127,37 @@ const pathInsertFmtstr = `
 // The result int slice is guaranteed to be in order corresponding to the order
 // of `commit.FilesChanged`.
 func (s *recentContributionSignalStore) ensureRepoPaths(ctx context.Context, commit Commit) ([]int, error) {
-	db := s.Store
-	// compute all the ancestor paths for all changed files in a commit
+	return ensureRepoPaths(ctx, s.Store, commit.FilesChanged, commit.RepoID)
+}
+
+// ensureRepoPaths takes paths and makes sure they all exist in the database
+// (alongside with their ancestor paths) as per the schema.
+//
+// The operation makes a number of queries to the database that is comparable to
+// the size of the given file tree. In other words, every directory mentioned in
+// the `files` (including parents and ancestors) will be queried or inserted with
+// a single query (no repetitions though). Optimizing this into fewer queries
+// seems to make the implementation very hard to read.
+//
+// The result int slice is guaranteed to be in order corresponding to the order
+// of `files`.
+func ensureRepoPaths(ctx context.Context, db *basestore.Store, files []string, repoID api.RepoID) ([]int, error) {
+	// Compute all the ancestor paths for all given files.
 	var paths []string
-	for _, file := range commit.FilesChanged {
+	for _, file := range files {
 		for p := file; p != "."; p = path.Dir(p) {
 			paths = append(paths, p)
 		}
 	}
-	// add empty string which references the repo root directory
+	// Add empty string which references the repo root directory.
 	paths = append(paths, "")
-	// reverse paths so we start at the root
+	// Reverse paths so we start at the root.
 	for i := 0; i < len(paths)/2; i++ {
 		j := len(paths) - i - 1
 		paths[i], paths[j] = paths[j], paths[i]
 	}
-	// remove duplicates from paths, to avoid extra query,
-	// especially if many files within the same directory structure
-	// are referenced
+	// Remove duplicates from paths, to avoid extra query, especially if many files
+	// within the same directory structure are referenced.
 	seen := make(map[string]bool)
 	j := 0
 	for i := 0; i < len(paths); i++ {
@@ -155,7 +168,7 @@ func (s *recentContributionSignalStore) ensureRepoPaths(ctx context.Context, com
 		}
 	}
 	paths = paths[:j]
-	// insert all directories one query each and note the IDs
+	// Insert all directories one query each and note the IDs.
 	ids := map[string]int{}
 	for _, p := range paths {
 		var parentID *int
@@ -168,16 +181,16 @@ func (s *recentContributionSignalStore) ensureRepoPaths(ctx context.Context, com
 		} else if p != "" {
 			return nil, errors.Newf("cannot find parent id of %q: this is a bug", p)
 		}
-		r := db.QueryRow(ctx, sqlf.Sprintf(pathInsertFmtstr, commit.RepoID, p, commit.RepoID, p, parentID))
+		r := db.QueryRow(ctx, sqlf.Sprintf(pathInsertFmtstr, repoID, p, repoID, p, parentID))
 		var id int
 		if err := r.Scan(&id); err != nil {
 			return nil, errors.Wrapf(err, "failed to insert or retrieve %q", p)
 		}
 		ids[p] = id
 	}
-	// return the IDs of inserted files changed, in order of `commit.FilesChanged`
-	fIDs := make([]int, len(commit.FilesChanged))
-	for i, f := range commit.FilesChanged {
+	// Return the IDs of inserted files changed, in order of `files`.
+	fIDs := make([]int, len(files))
+	for i, f := range files {
 		id, ok := ids[f]
 		if !ok {
 			return nil, errors.Newf("cannot find id of %q which should have been inserted, this is a bug", f)

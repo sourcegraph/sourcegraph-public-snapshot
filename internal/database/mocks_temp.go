@@ -62469,6 +62469,9 @@ type MockUserStore struct {
 	// GetByVerifiedEmailFunc is an instance of a mock function object
 	// controlling the behavior of the method GetByVerifiedEmail.
 	GetByVerifiedEmailFunc *UserStoreGetByVerifiedEmailFunc
+	// GetCodeCompletionsQuotaFunc is an instance of a mock function object
+	// controlling the behavior of the method GetCodeCompletionsQuota.
+	GetCodeCompletionsQuotaFunc *UserStoreGetCodeCompletionsQuotaFunc
 	// GetCompletionsQuotaFunc is an instance of a mock function object
 	// controlling the behavior of the method GetCompletionsQuota.
 	GetCompletionsQuotaFunc *UserStoreGetCompletionsQuotaFunc
@@ -62512,6 +62515,9 @@ type MockUserStore struct {
 	// RenewPasswordResetCodeFunc is an instance of a mock function object
 	// controlling the behavior of the method RenewPasswordResetCode.
 	RenewPasswordResetCodeFunc *UserStoreRenewPasswordResetCodeFunc
+	// SetCodeCompletionsQuotaFunc is an instance of a mock function object
+	// controlling the behavior of the method SetCodeCompletionsQuota.
+	SetCodeCompletionsQuotaFunc *UserStoreSetCodeCompletionsQuotaFunc
 	// SetCompletionsQuotaFunc is an instance of a mock function object
 	// controlling the behavior of the method SetCompletionsQuota.
 	SetCompletionsQuotaFunc *UserStoreSetCompletionsQuotaFunc
@@ -62624,6 +62630,11 @@ func NewMockUserStore() *MockUserStore {
 				return
 			},
 		},
+		GetCodeCompletionsQuotaFunc: &UserStoreGetCodeCompletionsQuotaFunc{
+			defaultHook: func(context.Context, int32) (r0 *int, r1 error) {
+				return
+			},
+		},
 		GetCompletionsQuotaFunc: &UserStoreGetCompletionsQuotaFunc{
 			defaultHook: func(context.Context, int32) (r0 *int, r1 error) {
 				return
@@ -62691,6 +62702,11 @@ func NewMockUserStore() *MockUserStore {
 		},
 		RenewPasswordResetCodeFunc: &UserStoreRenewPasswordResetCodeFunc{
 			defaultHook: func(context.Context, int32) (r0 string, r1 error) {
+				return
+			},
+		},
+		SetCodeCompletionsQuotaFunc: &UserStoreSetCodeCompletionsQuotaFunc{
+			defaultHook: func(context.Context, int32, *int) (r0 error) {
 				return
 			},
 		},
@@ -62821,6 +62837,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.GetByVerifiedEmail")
 			},
 		},
+		GetCodeCompletionsQuotaFunc: &UserStoreGetCodeCompletionsQuotaFunc{
+			defaultHook: func(context.Context, int32) (*int, error) {
+				panic("unexpected invocation of MockUserStore.GetCodeCompletionsQuota")
+			},
+		},
 		GetCompletionsQuotaFunc: &UserStoreGetCompletionsQuotaFunc{
 			defaultHook: func(context.Context, int32) (*int, error) {
 				panic("unexpected invocation of MockUserStore.GetCompletionsQuota")
@@ -62889,6 +62910,11 @@ func NewStrictMockUserStore() *MockUserStore {
 		RenewPasswordResetCodeFunc: &UserStoreRenewPasswordResetCodeFunc{
 			defaultHook: func(context.Context, int32) (string, error) {
 				panic("unexpected invocation of MockUserStore.RenewPasswordResetCode")
+			},
+		},
+		SetCodeCompletionsQuotaFunc: &UserStoreSetCodeCompletionsQuotaFunc{
+			defaultHook: func(context.Context, int32, *int) error {
+				panic("unexpected invocation of MockUserStore.SetCodeCompletionsQuota")
 			},
 		},
 		SetCompletionsQuotaFunc: &UserStoreSetCompletionsQuotaFunc{
@@ -62984,6 +63010,9 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		GetByVerifiedEmailFunc: &UserStoreGetByVerifiedEmailFunc{
 			defaultHook: i.GetByVerifiedEmail,
 		},
+		GetCodeCompletionsQuotaFunc: &UserStoreGetCodeCompletionsQuotaFunc{
+			defaultHook: i.GetCodeCompletionsQuota,
+		},
 		GetCompletionsQuotaFunc: &UserStoreGetCompletionsQuotaFunc{
 			defaultHook: i.GetCompletionsQuota,
 		},
@@ -63025,6 +63054,9 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		},
 		RenewPasswordResetCodeFunc: &UserStoreRenewPasswordResetCodeFunc{
 			defaultHook: i.RenewPasswordResetCode,
+		},
+		SetCodeCompletionsQuotaFunc: &UserStoreSetCodeCompletionsQuotaFunc{
+			defaultHook: i.SetCodeCompletionsQuota,
 		},
 		SetCompletionsQuotaFunc: &UserStoreSetCompletionsQuotaFunc{
 			defaultHook: i.SetCompletionsQuota,
@@ -64878,6 +64910,117 @@ func (c UserStoreGetByVerifiedEmailFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// UserStoreGetCodeCompletionsQuotaFunc describes the behavior when the
+// GetCodeCompletionsQuota method of the parent MockUserStore instance is
+// invoked.
+type UserStoreGetCodeCompletionsQuotaFunc struct {
+	defaultHook func(context.Context, int32) (*int, error)
+	hooks       []func(context.Context, int32) (*int, error)
+	history     []UserStoreGetCodeCompletionsQuotaFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCodeCompletionsQuota delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUserStore) GetCodeCompletionsQuota(v0 context.Context, v1 int32) (*int, error) {
+	r0, r1 := m.GetCodeCompletionsQuotaFunc.nextHook()(v0, v1)
+	m.GetCodeCompletionsQuotaFunc.appendCall(UserStoreGetCodeCompletionsQuotaFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetCodeCompletionsQuota method of the parent MockUserStore instance is
+// invoked and the hook queue is empty.
+func (f *UserStoreGetCodeCompletionsQuotaFunc) SetDefaultHook(hook func(context.Context, int32) (*int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCodeCompletionsQuota method of the parent MockUserStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserStoreGetCodeCompletionsQuotaFunc) PushHook(hook func(context.Context, int32) (*int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreGetCodeCompletionsQuotaFunc) SetDefaultReturn(r0 *int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (*int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreGetCodeCompletionsQuotaFunc) PushReturn(r0 *int, r1 error) {
+	f.PushHook(func(context.Context, int32) (*int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserStoreGetCodeCompletionsQuotaFunc) nextHook() func(context.Context, int32) (*int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreGetCodeCompletionsQuotaFunc) appendCall(r0 UserStoreGetCodeCompletionsQuotaFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreGetCodeCompletionsQuotaFuncCall
+// objects describing the invocations of this function.
+func (f *UserStoreGetCodeCompletionsQuotaFunc) History() []UserStoreGetCodeCompletionsQuotaFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreGetCodeCompletionsQuotaFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreGetCodeCompletionsQuotaFuncCall is an object that describes an
+// invocation of method GetCodeCompletionsQuota on an instance of
+// MockUserStore.
+type UserStoreGetCodeCompletionsQuotaFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreGetCodeCompletionsQuotaFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreGetCodeCompletionsQuotaFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // UserStoreGetCompletionsQuotaFunc describes the behavior when the
 // GetCompletionsQuota method of the parent MockUserStore instance is
 // invoked.
@@ -66380,6 +66523,117 @@ func (c UserStoreRenewPasswordResetCodeFuncCall) Args() []interface{} {
 // invocation.
 func (c UserStoreRenewPasswordResetCodeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// UserStoreSetCodeCompletionsQuotaFunc describes the behavior when the
+// SetCodeCompletionsQuota method of the parent MockUserStore instance is
+// invoked.
+type UserStoreSetCodeCompletionsQuotaFunc struct {
+	defaultHook func(context.Context, int32, *int) error
+	hooks       []func(context.Context, int32, *int) error
+	history     []UserStoreSetCodeCompletionsQuotaFuncCall
+	mutex       sync.Mutex
+}
+
+// SetCodeCompletionsQuota delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUserStore) SetCodeCompletionsQuota(v0 context.Context, v1 int32, v2 *int) error {
+	r0 := m.SetCodeCompletionsQuotaFunc.nextHook()(v0, v1, v2)
+	m.SetCodeCompletionsQuotaFunc.appendCall(UserStoreSetCodeCompletionsQuotaFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SetCodeCompletionsQuota method of the parent MockUserStore instance is
+// invoked and the hook queue is empty.
+func (f *UserStoreSetCodeCompletionsQuotaFunc) SetDefaultHook(hook func(context.Context, int32, *int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetCodeCompletionsQuota method of the parent MockUserStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserStoreSetCodeCompletionsQuotaFunc) PushHook(hook func(context.Context, int32, *int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreSetCodeCompletionsQuotaFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, *int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreSetCodeCompletionsQuotaFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, *int) error {
+		return r0
+	})
+}
+
+func (f *UserStoreSetCodeCompletionsQuotaFunc) nextHook() func(context.Context, int32, *int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreSetCodeCompletionsQuotaFunc) appendCall(r0 UserStoreSetCodeCompletionsQuotaFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreSetCodeCompletionsQuotaFuncCall
+// objects describing the invocations of this function.
+func (f *UserStoreSetCodeCompletionsQuotaFunc) History() []UserStoreSetCodeCompletionsQuotaFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreSetCodeCompletionsQuotaFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreSetCodeCompletionsQuotaFuncCall is an object that describes an
+// invocation of method SetCodeCompletionsQuota on an instance of
+// MockUserStore.
+type UserStoreSetCodeCompletionsQuotaFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreSetCodeCompletionsQuotaFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreSetCodeCompletionsQuotaFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // UserStoreSetCompletionsQuotaFunc describes the behavior when the

@@ -100,7 +100,27 @@ const register = async (
 
     const executeRecipe = async (recipe: string): Promise<void> => {
         await vscode.commands.executeCommand('cody.chat.focus')
-        await chatProvider.executeRecipe(recipe)
+        await chatProvider.executeRecipe(recipe, '')
+    }
+
+    const webviewErrorMessager = async (error: string): Promise<void> => {
+        if (error.includes('rate limit')) {
+            const currentTime: number = Date.now()
+            const userPref = localStorage.get('rateLimitError')
+            // 21600000 is 6h in ms. ex 6 * 60 * 60 * 1000
+            if (!userPref || userPref !== 'never' || currentTime - 21600000 >= parseInt(userPref, 10)) {
+                const input = await vscode.window.showErrorMessage(error, 'Do not show again', 'Close')
+                switch (input) {
+                    case 'Do not show again':
+                        await localStorage.set('rateLimitError', 'never')
+                        break
+                    default:
+                        // Save current time as a reminder stamp in 6 hours
+                        await localStorage.set('rateLimitError', currentTime.toString())
+                }
+            }
+        }
+        chatProvider.sendErrorToWebview(error)
     }
 
     const workspaceConfig = vscode.workspace.getConfiguration()
@@ -148,7 +168,8 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
             executeRecipe('improve-variable-names')
         ),
-        vscode.commands.registerCommand('cody.recipe.find-code-smells', async () => executeRecipe('find-code-smells')),
+        vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
+        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
         // Register URI Handler for resolving token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
@@ -179,7 +200,12 @@ const register = async (
         disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
 
         const history = new History()
-        const completionsProvider = new CodyCompletionItemProvider(completionsClient, docprovider, history)
+        const completionsProvider = new CodyCompletionItemProvider(
+            webviewErrorMessager,
+            completionsClient,
+            docprovider,
+            history
+        )
         disposables.push(
             vscode.commands.registerCommand('cody.experimental.suggest', async () => {
                 await completionsProvider.fetchAndShowCompletions()
