@@ -6,3 +6,4 @@ GH2SG.bookmarklet.js
 svelte.config.js
 vite.config.ts
 playwright.config.ts
+.vscode-test

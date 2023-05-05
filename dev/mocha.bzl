@@ -102,6 +102,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
 
         percy_bin.percy_test(
             name = name,
+            stamp = 1,  # uses BUILDKITE_BRANCH and BUILDKITE_COMMIT in Percy report
             args = percy_args + args,
             data = data + args_data + NON_BUNDLED_DEPS + ["//:node_modules/mocha"],
             env = dict(env, **{

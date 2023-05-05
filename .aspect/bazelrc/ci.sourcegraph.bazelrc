@@ -31,3 +31,5 @@ build --test_env=PERCY_TOKEN
 
 # temp
 build --test_env=INCLUDE_ADMIN_ONBOARDING=false
+
+build --workspace_status_command=./dev/bazel_buildkite_stamp_vars.sh
