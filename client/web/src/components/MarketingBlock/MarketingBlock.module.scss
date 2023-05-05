@@ -16,4 +16,8 @@
     color: var(--body-color);
     border-radius: var(--border-radius);
     padding: 0.5rem;
+
+    .thin & {
+        height: 100%;
+    }
 }
