@@ -21,8 +21,20 @@ use common::is_scheme_url;
 static LAUNCH_PATH: RwLock<String> = RwLock::new(String::new());
 
 #[tauri::command]
-fn get_launch_path() -> String {
+fn get_launch_path(window: tauri::Window) -> String {
+    if window.label() == "cody" {
+        return "/cody-standalone".to_string();
+    }
     LAUNCH_PATH.read().unwrap().clone()
+}
+
+#[tauri::command]
+fn hide_window(app: tauri::AppHandle, window: tauri::Window) {
+    if window.label() == "cody" {
+        let item_handle = app.tray_handle().get_item("cody");
+        item_handle.set_title("Show Cody").unwrap();
+    }
+    window.hide().unwrap();
 }
 
 fn set_launch_path(url: String) {
@@ -133,6 +145,7 @@ fn main() {
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
         .invoke_handler(tauri::generate_handler![get_launch_path])
+        .invoke_handler(tauri::generate_handler![hide_window])
         .run(context)
         .expect("error while running tauri application");
 }

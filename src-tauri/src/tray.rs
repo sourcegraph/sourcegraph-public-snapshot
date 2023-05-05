@@ -16,7 +16,7 @@ fn create_system_tray_menu() -> SystemTrayMenu {
             "open".to_string(),
             "Open Sourcegraph App",
         ))
-        .add_item(CustomMenuItem::new("cody".to_string(), "Open Cody"))
+        .add_item(CustomMenuItem::new("cody".to_string(), "Show Cody"))
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(
             CustomMenuItem::new("settings".to_string(), "Settings").accelerator("CmdOrCtrl+,"),
@@ -42,7 +42,15 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
             "cody" => {
                 let win = app.get_window("cody").unwrap();
                 win.move_window(Position::TrayBottomLeft).unwrap();
-                show_window(app, "cody")
+                let item_handle = app.tray_handle().get_item(&id);
+                let window = app.get_window("cody").unwrap();
+                if window.is_visible().unwrap() {
+                    window.hide().unwrap();
+                    item_handle.set_title("Show Cody").unwrap();
+                } else {
+                    window.show().unwrap();
+                    item_handle.set_title("Hide Cody").unwrap();
+                }
             }
             "settings" => {
                 let window = app.get_window("main").unwrap();

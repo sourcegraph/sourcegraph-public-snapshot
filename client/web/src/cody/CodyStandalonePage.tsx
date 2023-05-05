@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { Label, Select } from '@sourcegraph/wildcard'
+import { invoke } from '@tauri-apps/api/tauri'
 
 import { GetReposForCodyResult, GetReposForCodyVariables } from '../graphql-operations'
 import { useChatStore } from '../stores/codyChat'
@@ -32,7 +33,7 @@ export const CodyStandalonePage: React.FunctionComponent<CodyStandalonePageProps
     const repos = data?.repositories.nodes ?? []
 
     return (
-        <div className="d-flex flex-column">
+        <div className="d-flex flex-column w-100">
             <Label className="d-inline-flex align-items-center justify-content-center my-2 px-2 w-100">
                 <span className="mr-2">Repo:</span>
                 <Select
@@ -53,7 +54,7 @@ export const CodyStandalonePage: React.FunctionComponent<CodyStandalonePageProps
                 </Select>
             </Label>
 
-            <CodyChat onClose={noop} />
+            <CodyChat onClose={() => invoke('hide_window')} />
         </div>
     )
 }
