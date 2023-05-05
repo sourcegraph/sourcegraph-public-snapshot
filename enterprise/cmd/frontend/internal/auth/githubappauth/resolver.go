@@ -2,6 +2,7 @@ package githubapp
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -10,10 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	ghauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -211,4 +214,29 @@ func (r *gitHubAppResolver) ExternalServices(ctx context.Context, args *struct{ 
 	}
 
 	return graphqlbackend.NewComputedExternalServiceConnectionResolver(r.db, filteredExtsvc, args.ConnectionArgs)
+}
+
+func (r *gitHubAppResolver) Installations(ctx context.Context) (installationIDs []int32) {
+	auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
+	if err != nil {
+		return nil
+	}
+
+	baseURL, err := url.Parse(r.app.BaseURL)
+	if err != nil {
+		return nil
+	}
+	apiURL, _ := github.APIRoot(baseURL)
+
+	cli := github.NewV3Client(log.Scoped("GitHubAppResolver", ""), "", apiURL, auther, nil)
+	installs, err := cli.GetAppInstallations(ctx)
+	if err != nil {
+		return nil
+	}
+
+	for _, install := range installs {
+		installationIDs = append(installationIDs, int32(*install.ID))
+	}
+
+	return
 }

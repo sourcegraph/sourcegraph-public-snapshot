@@ -41,6 +41,7 @@ type GitHubAppResolver interface {
 	CreatedAt() gqlutil.DateTime
 	UpdatedAt() gqlutil.DateTime
 	ExternalServices(context.Context, *struct{ graphqlutil.ConnectionArgs }) *ComputedExternalServiceConnectionResolver
+	Installations(context.Context) []int32
 }
 
 type DeleteGitHubAppArgs struct {

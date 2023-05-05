@@ -79,4 +79,8 @@ type GitHubApp implements Node {
     Fetches external services related to this GitHub App.
     """
     externalServices(first: Int): ExternalServiceConnection!
+    """
+    Fetches a list of installation IDs for this GitHub App.
+    """
+    installations: [Int!]!
 }
