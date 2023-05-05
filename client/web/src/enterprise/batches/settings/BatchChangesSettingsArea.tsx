@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 
 import { mdiPulse } from '@mdi/js'
 import * as jsonc from 'jsonc-parser'
-import { upperFirst, capitalize } from 'lodash'
 
 import { BatchChangeRolloutWindow } from '@sourcegraph/shared/src/schema/site.schema'
 import { PageHeader, Text, H3, Container, Icon, LoadingSpinner, ErrorAlert, Link } from '@sourcegraph/wildcard'
@@ -12,6 +11,7 @@ import { UserAreaUserFields } from '../../../graphql-operations'
 import { useGetBatchChangesSiteConfiguration } from '../backend'
 
 import { UserCodeHostConnections } from './CodeHostConnections'
+import { formatRate, formatDays } from './format'
 
 import styles from './BatchChangesSettingsArea.module.scss'
 
@@ -95,40 +95,4 @@ export const RolloutWindowsConfiguration: React.FunctionComponent = () => {
                 ))}
         </Container>
     )
-}
-
-/**
- * Formats the days of the week for a rollout window for display.
- *
- * If days are provided, joins them with commas and capitalizes each day name.
- * Otherwise returns 'every other day' as the default.
- *
- * @param days The days of the week for the rollout window, e.g. ['monday', 'wednesday']
- * @returns The formatted days for display in the UI
- */
-const formatDays = (days: string[] | undefined): string => {
-    if (days && Array.isArray(days) && days.length > 0) {
-        return days.join(', ').replace(/\w+/g, capitalize)
-    }
-
-    return 'every other day'
-}
-
-/**
- * Formats the rollout window rate for display.
- *
- * According to the schema, if the rate is a number then it can only be zero.
- * If the rate starts with '0/' then we revert to displaying None, since this is the same as 0.
- * Otherwise, we display the rate in a readable format, e.g. '2 changesets per minute'.
- *
- * https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@3ee30bb/-/blob/schema/site.schema.json?L567-571
- *
- * @param rate The rollout window rate, either a number or a string like '1/minute'
- * @returns The formatted rate for display
- */
-const formatRate = (rate: string | number): string => {
-    if (typeof rate === 'number' || rate.startsWith('0/')) {
-        return 'None'
-    }
-    return upperFirst(rate.replace('/', ' changesets per '))
 }
