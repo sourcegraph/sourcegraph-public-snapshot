@@ -120,6 +120,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
+	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -218,6 +219,7 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
 	db := database.NewMockDB()
+	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
 	own := fakeOwnService{
