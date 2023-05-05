@@ -82,8 +82,8 @@ func (ghai GitHubAppInstallationAccount) URL() string {
 }
 
 type GitHubAppInstallation struct {
-	InstallID                  int32
-	InstallAccount             GitHubAppInstallationAccount
+	InstallID      int32
+	InstallAccount GitHubAppInstallationAccount
 }
 
 func (ghai GitHubAppInstallation) ID() int32 {
