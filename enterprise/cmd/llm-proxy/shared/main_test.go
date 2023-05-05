@@ -14,25 +14,36 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/anonymous"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/productsubscription"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
 )
 
-func TestAuthenticate(t *testing.T) {
+func TestAuthenticateEndToEnd(t *testing.T) {
 	logger := logtest.Scoped(t)
 	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 
 	t.Run("unauthenticated and allow anonymous", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		authenticate(logger, nil, nil, next, authenticateOptions{AllowAnonymous: true}).ServeHTTP(w, r)
+		(&auth.Authenticator{
+			Log:     logger,
+			Sources: actor.Sources{anonymous.NewSource(true)},
+			Next:    next,
+		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
 	t.Run("unauthenticated but disallow anonymous", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		authenticate(logger, nil, nil, next, authenticateOptions{AllowAnonymous: false}).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		(&auth.Authenticator{
+			Log:     logger,
+			Sources: actor.Sources{anonymous.NewSource(false)},
+			Next:    next,
+		}).ServeHTTP(w, r)
+		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
 	t.Run("authenticated without cache hit", func(t *testing.T) {
@@ -65,7 +76,11 @@ func TestAuthenticate(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		r.Header.Set("Authorization", "Bearer abc123")
-		authenticate(logger, cache, client, next, authenticateOptions{AllowAnonymous: false}).ServeHTTP(w, r)
+		(&auth.Authenticator{
+			Log:     logger,
+			Sources: actor.Sources{productsubscription.NewSource(logger, cache, client)},
+			Next:    next,
+		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockrequire.Called(t, client.MakeRequestFunc)
 	})
@@ -85,7 +100,11 @@ func TestAuthenticate(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		r.Header.Set("Authorization", "Bearer abc123")
-		authenticate(logger, cache, client, next, authenticateOptions{AllowAnonymous: false}).ServeHTTP(w, r)
+		(&auth.Authenticator{
+			Log:     logger,
+			Sources: actor.Sources{productsubscription.NewSource(logger, cache, client)},
+			Next:    next,
+		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockrequire.NotCalled(t, client.MakeRequestFunc)
 	})
@@ -101,7 +120,11 @@ func TestAuthenticate(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		r.Header.Set("Authorization", "Bearer abc123")
-		authenticate(logger, cache, client, next, authenticateOptions{AllowAnonymous: false}).ServeHTTP(w, r)
+		(&auth.Authenticator{
+			Log:     logger,
+			Sources: actor.Sources{productsubscription.NewSource(logger, cache, client)},
+			Next:    next,
+		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 }

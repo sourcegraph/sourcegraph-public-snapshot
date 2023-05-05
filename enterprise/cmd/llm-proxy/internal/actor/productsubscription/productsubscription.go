@@ -3,6 +3,7 @@ package productsubscription
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/Khan/genqlient/graphql"
@@ -26,6 +27,9 @@ type Source struct {
 	dotcom graphql.Client
 }
 
+var _ actor.Source = &Source{}
+var _ actor.SourceUpdater = &Source{}
+
 func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client) *Source {
 	return &Source{
 		log:    logger.Scoped("productsubscriptions", "product subscription actor source"),
@@ -34,7 +38,14 @@ func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Cl
 	}
 }
 
+func (s *Source) Name() string { return "sourcegraph.com product subscriptions" }
+
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
+	// "sgs_" is productSubscriptionAccessTokenPrefix
+	if token == "" && !strings.HasPrefix(token, "sgs_") {
+		return nil, actor.ErrNotFromSource{}
+	}
+
 	data, hit := s.cache.Get(token)
 	if !hit {
 		return s.fetchAndCache(ctx, token)
