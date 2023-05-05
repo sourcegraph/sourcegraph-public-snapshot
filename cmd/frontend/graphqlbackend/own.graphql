@@ -87,6 +87,9 @@ enum OwnershipReasonType {
     GIT_COMMITS
 }
 
+"""
+A union of all the different ownership reasons
+"""
 union OwnershipReason = CodeownersFileEntry | RecentContributorOwnershipSignal
 
 """
