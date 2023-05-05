@@ -328,6 +328,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
 	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
 	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
+	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
