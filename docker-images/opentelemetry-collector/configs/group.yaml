@@ -26,12 +26,13 @@ extensions:
 service:
   extensions: [health_check, zpages]
   pipelines:
-    traces/web-app:
+    traces:
       receivers: [otlp]
-      processors: [filter/web-app]
+      processors: [groupbytrace, tail_sampling]
       exporters: [jaeger]
 
 processors:
+  groupbytrace:
   tail_sampling:
     # Wait time since the first span of a trace before making a sampling decision
     decision_wait: 30s # default value = 30s
@@ -56,10 +57,3 @@ processors:
           probabilistic: { sampling_percentage: 10 },
         },
       ]
-  filter/web-app:
-    spans:
-      # ONLY include traces where 'service.name' matches "web-app" and exclude ALL other traces from the pipeline
-      include:
-        match_type: strict
-        services:
-          - 'web-app'
