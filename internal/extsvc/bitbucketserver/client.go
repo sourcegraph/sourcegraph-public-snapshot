@@ -697,13 +697,29 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	return err
 }
 
-func (c *Client) DeleteSourceBranch(ctx context.Context, pr *PullRequest) error {
+type DeleteSourceBranchInput struct {
+	// Don't actually delete the ref name, just do a dry run
+	DryRun bool `json:"dryRun,omitempty"`
+	// Commit ID that the provided ref name is expected to point to. Should the ref point
+	// to a different commit ID, a 400 response will be returned with appropriate error
+	// details.
+	EndPoint *string `json:"endPoint,omitempty"`
+	// Name of the ref to be deleted
+	Name string `json:"name,omitempty"`
+}
+
+func (c *Client) DeleteSourceBranch(ctx context.Context, pr *PullRequest, input DeleteSourceBranchInput) error {
 	path := fmt.Sprintf(
 		"rest/branch-utils/latest/projects/%s/repos/%s/branches",
 		pr.ToRef.Repository.Project.Key,
 		pr.ToRef.Repository.Slug,
 	)
-	_, err := c.send(ctx, "DELETE", path, nil, nil, pr)
+
+	resp, err := c.send(ctx, "DELETE", path, nil, input, nil)
+	if resp != nil && resp.StatusCode != http.StatusNoContent {
+		return errors.Newf("unexpected status code: %d", resp.StatusCode)
+	}
+
 	return err
 }
 
