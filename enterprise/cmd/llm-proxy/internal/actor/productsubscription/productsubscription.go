@@ -17,18 +17,13 @@ import (
 var (
 	minUpdateInterval = 10 * time.Minute
 
-	defaultUpdateInterval       = 24 * time.Hour
-	defaultUpdateIntervalJitter = 15 * time.Minute
+	defaultUpdateInterval = 24 * time.Hour
 )
 
 type Source struct {
 	log    log.Logger
 	cache  httpcache.Cache // TODO: add something to regularly clean up the cache
 	dotcom graphql.Client
-	// random source used to add jitter to repo update intervals.
-	randGenerator interface {
-		Int63n(n int64) int64
-	}
 }
 
 func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client) *Source {
@@ -51,9 +46,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 		return s.fetchAndCache(ctx, token)
 	}
 
-	// Try to avoid lots of actors updating all at once
-	delta := defaultUpdateIntervalJitter.Nanoseconds()
-	if time.Since(*act.LastUpdated) > defaultUpdateInterval+time.Duration(s.randGenerator.Int63n(2*delta)-delta) {
+	if time.Since(*act.LastUpdated) > defaultUpdateInterval {
 		return s.fetchAndCache(ctx, token)
 	}
 

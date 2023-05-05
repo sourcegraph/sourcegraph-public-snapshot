@@ -163,7 +163,7 @@ func authenticate(logger log.Logger, cache httpcache.Cache, dotComClient graphql
 		}
 
 		if !act.AccessEnabled {
-			responseJSONError(logger, w, http.StatusBadRequest,
+			responseJSONError(logger, w, http.StatusForbidden,
 				errors.New("license archived or LLM proxy access not enabled"))
 			return
 		}
