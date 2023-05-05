@@ -5,9 +5,9 @@ import classNames from 'classnames'
 
 import { Link, Icon } from '@sourcegraph/wildcard'
 
-import { AuthProvider, SourcegraphContext } from '../jscontext'
+import { AuthProvider, SourcegraphContext } from '../../jscontext'
 
-import styles from './CloudSignUpPage.module.scss'
+import styles from './ExternalsAuth.module.scss'
 
 interface ExternalsAuthProps {
     context: Pick<SourcegraphContext, 'authProviders'>
@@ -48,7 +48,7 @@ const GitlabColorIcon: React.FunctionComponent<React.PropsWithChildren<{ classNa
     </svg>
 )
 
-const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAuthProps>> = ({
+export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAuthProps>> = ({
     context,
     githubLabel,
     gitlabLabel,
@@ -105,5 +105,3 @@ const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAu
         </>
     )
 }
-
-export { ExternalsAuth }
