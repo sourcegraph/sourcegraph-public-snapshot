@@ -8,7 +8,7 @@ Cody uses a combination of Sourcegraph's code graph and Large Language Models (L
 
 ## Get Cody
 
-- **Sourcegraph Enterprise customers:** Contact your Sourcegraph technical advisor or [request enterprise access](https://about.sourcegraph.com/cody) to use Cody on your existing Sourcegraph instance.
+- **Sourcegraph Enterprise customers:** Contact your Sourcegraph technical advisor or [request enterprise access](https://about.sourcegraph.com/cody#cody-for-work) to use Cody on your existing Sourcegraph instance.
 - **Everyone:** Cody for open source code is available to all users with a Sourcegraph.com account. If you don't yet have a Sourcegraph.com account, you can [create one for free](https://sourcegraph.com/sign-up).
 
 There are currently two ways to experience Cody:
