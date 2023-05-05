@@ -42,7 +42,7 @@ echo '--- :one: clearing existing state'
 bazel run //dev/codeintel-qa/cmd/clear
 
 echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'
-env PATH="${root_dir}/.bin:${PATH}" go run ./cmd/upload --timeout=5m
+bazel run //dev/codeintel-qa/cmd/upload -- --timeout=5m
 
 echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'
 bazel run //dev/codeintel-qa/cmd/query
