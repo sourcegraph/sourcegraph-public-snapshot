@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -142,17 +143,14 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	}})
 	defer endObservation(1, observation.Args{})
 
-	var source CtagsSource
+	language, found := languages.GetLanguage(parseRequest.Path, string(parseRequest.Data))
+	if !found {
+		return errors.Errorf("no language found for %s", parseRequest.Path)
+	}
 
-	switch p.parserPool.symbolsSource[GetLanguageFromPath(parseRequest.Path)] {
-	case "off":
+	source := GetParserType(language)
+	if source == NoCtags || source == UnknownCtags {
 		return nil
-
-	case "scip-ctags":
-		source = Scip
-
-	default:
-		source = Universal
 	}
 
 	parser, err := p.parserFromPool(ctx, source)
@@ -233,7 +231,11 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	return nil
 }
 
-func (p *parser) parserFromPool(ctx context.Context, source CtagsSource) (ctags.Parser, error) {
+func (p *parser) parserFromPool(ctx context.Context, source ParserType) (ctags.Parser, error) {
+	if source == NoCtags || source == UnknownCtags {
+		return nil, errors.New("Should not pass NoCtags to this function")
+	}
+
 	p.operations.parseQueueSize.Inc()
 	defer p.operations.parseQueueSize.Dec()
 
@@ -264,11 +266,11 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 	return true
 }
 
-func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig, source CtagsSource) (ctags.Parser, error) {
+func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig, source ParserType) (ctags.Parser, error) {
 	logger = logger.Scoped("ctags", "ctags processes")
 
 	var options ctags.Options
-	if source == Universal {
+	if source == UniversalCtags {
 		options = ctags.Options{
 			Bin:                ctagsConfig.UniversalCommand,
 			PatternLengthLimit: ctagsConfig.PatternLengthLimit,
