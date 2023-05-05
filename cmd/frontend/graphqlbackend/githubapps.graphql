@@ -75,4 +75,44 @@ type GitHubApp implements Node {
     The updated at timestamp of the GitHub App in our database
     """
     updatedAt: DateTime!
+    """
+    Fetches external services related to this GitHub App.
+    """
+    externalServices(first: Int): ExternalServiceConnection!
+    """
+    Fetches a list of installation IDs for this GitHub App.
+    """
+    installations: [Installation!]!
+}
+
+"""
+Represents a GitHub account on which the App was installed.
+"""
+type GitHubAccount {
+    """
+    The login username of the account.
+    """
+    login: String!
+    """
+    The avatar URL of the account.
+    """
+    avatarURL: String!
+    """
+    A link to the account on GitHub.
+    """
+    url: String!
+}
+
+"""
+Represents a single GitHub App installation.
+"""
+type Installation {
+    """
+    The installation ID of the App.
+    """
+    id: Int!
+    """
+    The account on which the App was installed
+    """
+    account: GitHubAccount!
 }
