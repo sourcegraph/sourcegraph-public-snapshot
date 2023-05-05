@@ -46,8 +46,11 @@ func TestAuthenticate(t *testing.T) {
 						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
 						IsArchived: false,
 						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-							Enabled:   true,
-							RateLimit: &dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit{},
+							Enabled: true,
+							RateLimit: &dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit{
+								Limit:           10,
+								IntervalSeconds: 10,
+							},
 						},
 					},
 				},
@@ -99,6 +102,6 @@ func TestAuthenticate(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		r.Header.Set("Authorization", "Bearer abc123")
 		authenticate(logger, cache, client, next, authenticateOptions{AllowAnonymous: false}).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 }

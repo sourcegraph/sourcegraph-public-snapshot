@@ -46,7 +46,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 		return s.fetchAndCache(ctx, token)
 	}
 
-	if time.Since(*act.LastUpdated) > defaultUpdateInterval {
+	if act.LastUpdated != nil && time.Since(*act.LastUpdated) > defaultUpdateInterval {
 		return s.fetchAndCache(ctx, token)
 	}
 
