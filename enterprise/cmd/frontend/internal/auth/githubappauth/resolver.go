@@ -242,7 +242,6 @@ func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []
 				AccountAvatarURL: install.Account.GetAvatarURL(),
 				AccountURL:       install.Account.GetURL(),
 			},
-			InstallRepositorySelection: install.GetRepositorySelection(),
 		})
 	}
 

@@ -115,8 +115,4 @@ type Installation {
     The account on which the App was installed
     """
     account: GitHubAccount!
-    """
-    The repositories that were selected when this App was installed.
-    """
-    repositorySelection: String!
 }
