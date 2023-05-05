@@ -993,7 +993,6 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the Author of the batch change can move it.
 	if err := s.checkBatchChangeAccess(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID); err != nil {
 		return nil, err
 	}
