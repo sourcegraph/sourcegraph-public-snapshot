@@ -86,14 +86,18 @@ func TestClient_ArchiveReader(t *testing.T) {
 	root := gitserver.CreateRepoDir(t)
 
 	type test struct {
-		remote   string
-		revision string
-		want     map[string]string
-		err      error
+		name string
+
+		remote      string
+		revision    string
+		want        map[string]string
+		err         error
+		readerError error
 	}
 
-	tests := map[api.RepoName]test{
-		"simple": {
+	tests := []test{
+		{
+			name:     "simple",
 			remote:   createSimpleGitRepo(t, root),
 			revision: "HEAD",
 			want: map[string]string{
@@ -102,7 +106,10 @@ func TestClient_ArchiveReader(t *testing.T) {
 				"file 2":     "infile2",
 			},
 		},
-		"repo-with-dotgit-dir": {
+		{
+
+			name: "repo-with-dotgit-dir",
+
 			remote:   createRepoWithDotGitDir(t, root),
 			revision: "HEAD",
 			want: map[string]string{
@@ -112,41 +119,45 @@ func TestClient_ArchiveReader(t *testing.T) {
 				".git/":            "",
 			},
 		},
-		"not-found": {
+		{
+
+			name:     "not-found",
 			revision: "HEAD",
 			err:      errors.New("repository does not exist: not-found"),
 		},
 	}
 
-	s := &server.Server{
-		Logger:   logtest.Scoped(t),
-		ReposDir: filepath.Join(root, "repos"),
-		DB:       newMockDB(),
-		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
-			testData := tests[name]
-			if testData.remote != "" {
-				return testData.remote, nil
-			}
-			return "", errors.Errorf("no remote for %s", name)
-		},
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return &server.GitRepoSyncer{}, nil
-		},
-	}
-
-	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: s})
-
-	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
-	srv := httptest.NewServer(handler)
-	defer srv.Close()
-
-	u, _ := url.Parse(srv.URL)
-	addrs := []string{u.Host}
-	ctx := context.Background()
-
-	runArchiveReaderTestfunc := func(t *testing.T, ctx context.Context, cli gitserver.Client, name api.RepoName, test test) {
+	runArchiveReaderTestfunc := func(t *testing.T, clientFunc func(addr []string) gitserver.Client, name api.RepoName, test test) {
 		t.Run(string(name), func(t *testing.T) {
+
+			s := &server.Server{
+				Logger:   logtest.Scoped(t),
+				ReposDir: filepath.Join(root, "repos"),
+				DB:       newMockDB(),
+				GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
+					if test.remote != "" {
+						return test.remote, nil
+					}
+					return "", errors.Errorf("no remote for %s", test.name)
+				},
+				GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
+					return &server.GitRepoSyncer{}, nil
+				},
+			}
+
+			grpcServer := defaults.NewServer(logtest.Scoped(t))
+
+			proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: s})
+			handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+			srv := httptest.NewServer(handler)
+			defer srv.Close()
+
+			u, _ := url.Parse(srv.URL)
+
+			addrs := []string{u.Host}
+			cli := clientFunc(addrs)
+			ctx := context.Background()
+
 			if test.remote != "" {
 				if _, err := cli.RequestRepoUpdate(ctx, name, 0); err != nil {
 					t.Fatal(err)
@@ -160,21 +171,20 @@ func TestClient_ArchiveReader(t *testing.T) {
 			if rc == nil {
 				return
 			}
-
 			t.Cleanup(func() {
 				if err := rc.Close(); err != nil {
 					t.Fatal(err)
 				}
 			})
+
 			data, err := io.ReadAll(rc)
-			if err != nil {
-				if name == "revision-not-found-http" {
-					assert.Contains(t, fmt.Sprint(err), "not a valid object")
-					return
-				} else {
-					t.Fatal(err)
-				}
+			if have, want := fmt.Sprint(err), fmt.Sprint(test.readerError); have != want {
+				t.Errorf("readError: have err %v, want %v", have, want)
 			}
+			if len(data) == 0 {
+				return
+			}
+
 			zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 			if err != nil {
 				t.Fatal(err)
@@ -203,49 +213,65 @@ func TestClient_ArchiveReader(t *testing.T) {
 	}
 
 	t.Run("grpc", func(t *testing.T) {
-		message := fmt.Sprintf("exit status 128 (stderr: %q)", "fatal: not a valid object name: revision-not-found\n")
-		tests["revision-not-found-grpc"] = test{
-			remote:   createRepoWithDotGitDir(t, root),
-			revision: "revision-not-found",
-			err:      errors.New(message),
-		}
+		tests := append(tests, test{
+			name: "revision-not-found-grpc",
+
+			remote:      createRepoWithDotGitDir(t, root),
+			revision:    "revision-not-found",
+			err:         nil,
+			readerError: &gitdomain.RevisionNotFoundError{Repo: "revision-not-found-grpc", Spec: "revision-not-found"},
+		})
 
 		t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
-		for name, test := range tests {
+		for _, test := range tests {
+			repoName := api.RepoName(test.name)
+
 			var spyGitserverService *spyGitserverServiceClient
 			spy := func(conns grpc.ClientConnInterface) proto.GitserverServiceClient {
 				spyGitserverService = &spyGitserverServiceClient{base: proto.NewGitserverServiceClient(conns)}
 				return spyGitserverService
 			}
 
-			cli := gitserver.NewTestClient(&http.Client{}, spy, addrs)
-			runArchiveReaderTestfunc(t, ctx, cli, name, test)
+			clientFunc := func(addrs []string) gitserver.Client {
+				return gitserver.NewTestClient(&http.Client{}, spy, addrs)
+			}
+
+			runArchiveReaderTestfunc(t, clientFunc, repoName, test)
 			if !spyGitserverService.archiveCalled {
 				t.Error("archiveReader: GitserverServiceClient should have been called")
 			}
+
 		}
 	})
 
 	t.Run("http", func(t *testing.T) {
-		delete(tests, "revision-not-found-grpc")
-		tests["revision-not-found-http"] = test{
-			remote:   createRepoWithDotGitDir(t, root),
-			revision: "revision-not-found",
-		}
+		tests := append(tests, test{
+			name:        "revision-not-found-http",
+			remote:      createRepoWithDotGitDir(t, root),
+			revision:    "revision-not-found",
+			readerError: &gitdomain.RevisionNotFoundError{Repo: "revision-not-found-http", Spec: "revision-not-found"},
+		})
+
 		t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
-		for name, test := range tests {
+		for _, test := range tests {
+			repoName := api.RepoName(test.name)
+
 			var spyGitserverService *spyGitserverServiceClient
 			spy := func(conns grpc.ClientConnInterface) proto.GitserverServiceClient {
 				spyGitserverService = &spyGitserverServiceClient{base: proto.NewGitserverServiceClient(conns)}
 				return spyGitserverService
 			}
 
-			cli := gitserver.NewTestClient(&http.Client{}, spy, addrs)
-			runArchiveReaderTestfunc(t, ctx, cli, name, test)
+			clientFunc := func(addrs []string) gitserver.Client {
+				return gitserver.NewTestClient(&http.Client{}, spy, addrs)
+			}
+
+			runArchiveReaderTestfunc(t, clientFunc, repoName, test)
 			if spyGitserverService != nil {
 				t.Error("archiveReader: GitserverServiceClient should have not been initialized")
 			}
 		}
+
 	})
 }
 
