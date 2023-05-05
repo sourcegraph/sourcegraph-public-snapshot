@@ -285,7 +285,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 return
             }
 
-            this.webviewErrorMessager(`FetchAndShowCompletions - ${error}`)
+            await this.webviewErrorMessager(`FetchAndShowCompletions - ${error}`)
         }
     }
 }
