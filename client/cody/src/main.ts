@@ -103,6 +103,26 @@ const register = async (
         await chatProvider.executeRecipe(recipe, '')
     }
 
+    const webviewErrorMessager = async (error: string): Promise<void> => {
+        if (error.includes('rate limit')) {
+            const currentTime: number = Date.now()
+            const userPref = localStorage.get('rateLimitError')
+            // 21600000 is 6h in ms. ex 6 * 60 * 60 * 1000
+            if (!userPref || userPref !== 'never' || currentTime - 21600000 >= parseInt(userPref, 10)) {
+                const input = await vscode.window.showErrorMessage(error, 'Do not show again', 'Close')
+                switch (input) {
+                    case 'Do not show again':
+                        await localStorage.set('rateLimitError', 'never')
+                        break
+                    default:
+                        // Save current time as a reminder stamp in 6 hours
+                        await localStorage.set('rateLimitError', currentTime.toString())
+                }
+            }
+        }
+        chatProvider.sendErrorToWebview(error)
+    }
+
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
@@ -180,7 +200,12 @@ const register = async (
         disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
 
         const history = new History()
-        const completionsProvider = new CodyCompletionItemProvider(completionsClient, docprovider, history)
+        const completionsProvider = new CodyCompletionItemProvider(
+            webviewErrorMessager,
+            completionsClient,
+            docprovider,
+            history
+        )
         disposables.push(
             vscode.commands.registerCommand('cody.experimental.suggest', async () => {
                 await completionsProvider.fetchAndShowCompletions()

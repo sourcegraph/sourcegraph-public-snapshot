@@ -14,6 +14,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
+- Error notification display pattern for rate limit [pull/51521](https://github.com/sourcegraph/sourcegraph/pull/51521)
+
 ### Changed
 
 - Various improvements to the experimental completions feature
