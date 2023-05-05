@@ -220,7 +220,7 @@ type githubResult struct {
 
 func (s *GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 	var err error
-	_, err = s.v3Client.GetAuthenticatedUser(ctx)
+	_, err = s.v3Client.GetAuthenticatedOAuthScopes(ctx)
 	return err
 }
 
