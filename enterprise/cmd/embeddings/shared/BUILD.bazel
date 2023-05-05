@@ -99,5 +99,6 @@ go_test(
         "//internal/uploadstore/mocks",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_stretchr_testify//require",
     ],
 )
