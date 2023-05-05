@@ -25,13 +25,13 @@ type embeddingsSearcher interface {
 }
 
 // Run runs the evaluation and returns recall for the test data.
-func Run(searcher embeddingsSearcher) error {
+func Run(searcher embeddingsSearcher) (float64, error) {
 
 	count, recall := 0.0, 0.0
 
 	file, err := fs.Open("context_data.tsv")
 	if err != nil {
-		return errors.Wrap(err, "failed to open file")
+		return -1, errors.Wrap(err, "failed to open file")
 	}
 
 	scanner := bufio.NewScanner(file)
@@ -54,7 +54,7 @@ func Run(searcher embeddingsSearcher) error {
 
 		results, err := searcher.Search(args)
 		if err != nil {
-			return errors.Wrap(err, "search failed")
+			return -1, errors.Wrap(err, "search failed")
 		}
 
 		merged := append(results.CodeResults, results.TextResults...)
@@ -83,10 +83,12 @@ func Run(searcher embeddingsSearcher) error {
 		count++
 	}
 
-	fmt.Println()
-	fmt.Printf("Recall: %f\n", recall/count)
+	recall = recall / count
 
-	return nil
+	fmt.Println()
+	fmt.Printf("Recall: %f\n", recall)
+
+	return recall, nil
 }
 
 type client struct {

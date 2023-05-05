@@ -26,6 +26,8 @@ var contextCommand = &cli.Command{
 			return errors.New("url is empty")
 		}
 
-		return qa.Run(qa.NewClient(url))
+		_, err := qa.Run(qa.NewClient(url))
+
+		return err
 	},
 }

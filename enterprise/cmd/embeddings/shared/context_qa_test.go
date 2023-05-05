@@ -79,9 +79,16 @@ func TestRecall(t *testing.T) {
 		)
 	}
 
-	err = qa.Run(embeddingsSearcherFunc(searcher))
+	recall, err := qa.Run(embeddingsSearcherFunc(searcher))
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	epsilon := 0.0001
+	wantMinRecall := 0.4285
+
+	if d := wantMinRecall - recall; d > epsilon {
+		t.Fatalf("Recall decreased: want %f, got %f", wantMinRecall, recall)
 	}
 }
 
