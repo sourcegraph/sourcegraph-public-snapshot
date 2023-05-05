@@ -41,7 +41,7 @@ type GitHubAppResolver interface {
 	CreatedAt() gqlutil.DateTime
 	UpdatedAt() gqlutil.DateTime
 	ExternalServices(context.Context, *struct{ graphqlutil.ConnectionArgs }) *ComputedExternalServiceConnectionResolver
-	Installations(context.Context) []int32
+	Installations(context.Context) []GitHubAppInstallation
 }
 
 type DeleteGitHubAppArgs struct {
@@ -56,4 +56,45 @@ type GitHubAppsArgs struct {
 
 type GitHubAppArgs struct {
 	ID graphql.ID
+}
+
+type GitHubAppInstallationAccount struct {
+	AccountLogin     string
+	AccountName      string
+	AccountAvatarURL string
+	AccountURL       string
+}
+
+func (ghai GitHubAppInstallationAccount) Login() string {
+	return ghai.AccountLogin
+}
+
+func (ghai GitHubAppInstallationAccount) Name() string {
+	return ghai.AccountName
+}
+
+func (ghai GitHubAppInstallationAccount) AvatarURL() string {
+	return ghai.AccountAvatarURL
+}
+
+func (ghai GitHubAppInstallationAccount) URL() string {
+	return ghai.AccountURL
+}
+
+type GitHubAppInstallation struct {
+	InstallID                  int32
+	InstallAccount             GitHubAppInstallationAccount
+	InstallRepositorySelection string
+}
+
+func (ghai GitHubAppInstallation) ID() int32 {
+	return ghai.InstallID
+}
+
+func (ghai GitHubAppInstallation) Account() GitHubAppInstallationAccount {
+	return ghai.InstallAccount
+}
+
+func (ghai GitHubAppInstallation) RepositorySelection() string {
+	return ghai.InstallRepositorySelection
 }

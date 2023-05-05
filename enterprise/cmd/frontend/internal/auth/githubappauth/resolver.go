@@ -216,7 +216,7 @@ func (r *gitHubAppResolver) ExternalServices(ctx context.Context, args *struct{ 
 	return graphqlbackend.NewComputedExternalServiceConnectionResolver(r.db, filteredExtsvc, args.ConnectionArgs)
 }
 
-func (r *gitHubAppResolver) Installations(ctx context.Context) (installationIDs []int32) {
+func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []graphqlbackend.GitHubAppInstallation) {
 	auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
 	if err != nil {
 		return nil
@@ -235,7 +235,15 @@ func (r *gitHubAppResolver) Installations(ctx context.Context) (installationIDs 
 	}
 
 	for _, install := range installs {
-		installationIDs = append(installationIDs, int32(*install.ID))
+		installations = append(installations, graphqlbackend.GitHubAppInstallation{
+			InstallID: int32(*install.ID),
+			InstallAccount: graphqlbackend.GitHubAppInstallationAccount{
+				AccountLogin:     install.Account.GetLogin(),
+				AccountAvatarURL: install.Account.GetAvatarURL(),
+				AccountURL:       install.Account.GetURL(),
+			},
+			InstallRepositorySelection: install.GetRepositorySelection(),
+		})
 	}
 
 	return
