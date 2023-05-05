@@ -1,6 +1,11 @@
 package background
 
 import (
+	"os"
+	"strings"
+
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background/backfiller"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background/expirer"
@@ -68,21 +73,37 @@ func NewJanitor(
 	gitserverClient gitserver.Client,
 	config *janitor.Config,
 ) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		janitor.NewDeletedRepositoryJanitor(store, config, observationCtx),
-		janitor.NewUnknownCommitJanitor(store, gitserverClient, config, observationCtx),
-		janitor.NewAbandonedUploadJanitor(store, config, observationCtx),
-		janitor.NewExpiredUploadJanitor(store, config, observationCtx),
-		janitor.NewExpiredUploadTraversalJanitor(store, config, observationCtx),
-		janitor.NewHardDeleter(store, lsifstore, config, observationCtx),
-		janitor.NewAuditLogJanitor(store, config, observationCtx),
-		janitor.NewSCIPExpirationTask(lsifstore, config, observationCtx),
-		janitor.NewUnknownRepositoryJanitor(store, config, observationCtx),
-		janitor.NewUnknownCommitJanitor2(store, gitserverClient, config, observationCtx),
-		janitor.NewExpiredRecordJanitor(store, config, observationCtx),
-		janitor.NewFrontendDBReconciler(store, lsifstore, config, observationCtx),
-		janitor.NewCodeIntelDBReconciler(store, lsifstore, config, observationCtx),
+	jobsByName := map[string]goroutine.BackgroundRoutine{
+		"DeletedRepositoryJanitor":      janitor.NewDeletedRepositoryJanitor(store, config, observationCtx),
+		"UnknownCommitJanitor":          janitor.NewUnknownCommitJanitor(store, gitserverClient, config, observationCtx),
+		"AbandonedUploadJanitor":        janitor.NewAbandonedUploadJanitor(store, config, observationCtx),
+		"ExpiredUploadJanitor":          janitor.NewExpiredUploadJanitor(store, config, observationCtx),
+		"ExpiredUploadTraversalJanitor": janitor.NewExpiredUploadTraversalJanitor(store, config, observationCtx),
+		"HardDeleter":                   janitor.NewHardDeleter(store, lsifstore, config, observationCtx),
+		"AuditLogJanitor":               janitor.NewAuditLogJanitor(store, config, observationCtx),
+		"SCIPExpirationTask":            janitor.NewSCIPExpirationTask(lsifstore, config, observationCtx),
+		"UnknownRepositoryJanitor":      janitor.NewUnknownRepositoryJanitor(store, config, observationCtx),
+		"UnknownCommitJanitor2":         janitor.NewUnknownCommitJanitor2(store, gitserverClient, config, observationCtx),
+		"ExpiredRecordJanitor":          janitor.NewExpiredRecordJanitor(store, config, observationCtx),
+		"FrontendDBReconciler":          janitor.NewFrontendDBReconciler(store, lsifstore, config, observationCtx),
+		"CodeIntelDBReconciler":         janitor.NewCodeIntelDBReconciler(store, lsifstore, config, observationCtx),
 	}
+
+	disabledJobs := map[string]struct{}{}
+	for _, name := range strings.Split(os.Getenv("CODEINTEL_UPLOAD_JANITOR_DISABLED_SUB_JOBS"), ",") {
+		disabledJobs[name] = struct{}{}
+	}
+
+	jobs := []goroutine.BackgroundRoutine{}
+	for name, v := range jobsByName {
+		if _, ok := disabledJobs[name]; ok {
+			observationCtx.Logger.Warn("DISABLING CODE INTEL UPLOAD JANITOR SUB-JOB", log.String("name", name))
+		} else {
+			jobs = append(jobs, v)
+		}
+	}
+
+	return jobs
 }
 
 func NewCommitGraphUpdater(
