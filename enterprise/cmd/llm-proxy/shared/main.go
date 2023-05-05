@@ -91,7 +91,6 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("healthz: ok"))
-		return
 	})
 	r.HandleFunc("/-/__version", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -123,6 +122,9 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 				return
 			}
 			defer func() { _ = resp.Body.Close() }()
+
+			w.WriteHeader(resp.StatusCode)
+			_ = resp.Header.Write(w)
 
 			_, _ = io.Copy(w, resp.Body)
 		}),
