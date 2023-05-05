@@ -3,7 +3,9 @@ import { uniqBy } from 'lodash'
 import { MarkerType } from 'reactflow'
 
 import scipIndex from './index.json'
-import { Descriptor_Suffix, parseSymbol, SCIPDocument } from './SymbolParser'
+import { DescriptorSuffix, parseSymbol, SCIPDocument, SCIPOccurrence, SCIPSymbol } from './SymbolParser'
+
+// import { parseSymbol as parseSymbol2 } from './SymbolParser2'
 
 /**
  * Returns scip document as object, see [Document.toObject](https://sourcegraph.com/github.com/sourcegraph/scip@d62dfc4d962f4ac975429e0fbb0ebdda25b46503/-/blob/bindings/typescript/scip.ts?L614-634).
@@ -20,7 +22,7 @@ export function getTreeData(path: string): any {
         return null
     }
 
-    return getResults(
+    return getNodesAndEdges(
         uniqBy(document.occurrences, o => o.symbol),
         path
     )
@@ -33,30 +35,42 @@ export function getTreeData(path: string): any {
 
 type Result = { package: string; module: string; symbols: string[] }
 
-function getResults(occurrences: SCIPDocument['occurrences'], path: string): any {
+type ModuleTree = {
+    id: string
+    symbol: SCIPSymbol
+    children: ModuleTree[]
+}
+
+interface GraphNode {
+    id: string
+    children: GraphNode[]
+}
+
+interface Edge {
+    id: string
+    source: string
+    target: string
+}
+
+function getNodesAndEdges(occurrences: SCIPOccurrence[], path: string): { nodes: GraphNode[]; edges: Edge[] } {
     const map = new Map<string, Result>()
     const nodes = []
     const links = []
 
     for (const { symbol } of occurrences) {
+        console.log(symbol)
         const parsedSymbol = parseSymbol(symbol)
-        if (parsedSymbol instanceof Error) {
-            continue
-        }
 
-        const fileName = parsedSymbol.descriptors
-            .filter(d => d.suffix === Descriptor_Suffix.Namespace)
+        const fileName = parsedSymbol
+            .descriptors!.filter(d => d.suffix === DescriptorSuffix.Namespace)
             .map(d => d.name)
             .join('/')
 
         let symbolNameParts = []
-        const descriptors = parsedSymbol.descriptors.filter(d =>
-            [
-                Descriptor_Suffix.Namespace,
-                Descriptor_Suffix.Meta,
-                Descriptor_Suffix.Local,
-                Descriptor_Suffix.Macro,
-            ].every(s => d.suffix !== s)
+        const descriptors = parsedSymbol.descriptors!.filter(d =>
+            [DescriptorSuffix.Namespace, DescriptorSuffix.Meta, DescriptorSuffix.Local, DescriptorSuffix.Macro].every(
+                s => d.suffix !== s
+            )
         )
         for (let i = 0; i < descriptors.length; i++) {
             if (descriptors[i].name) {
@@ -98,12 +112,9 @@ function buildDependencyTreeData(occurrences: SCIPDocument['occurrences'], path:
 
     for (const { symbol } of occurrences) {
         const parsedSymbol = parseSymbol(symbol)
-        if (parsedSymbol instanceof Error) {
-            continue
-        }
 
-        const topLevelKey = parsedSymbol.descriptors
-            .filter(d => d.suffix === Descriptor_Suffix.Namespace)
+        const topLevelKey = parsedSymbol
+            .descriptors!.filter(d => d.suffix === DescriptorSuffix.Namespace)
             .map(d => d.name)
             .join('/')
 
@@ -115,13 +126,10 @@ function buildDependencyTreeData(occurrences: SCIPDocument['occurrences'], path:
 
         let currentLevel = result[topLevelKey]
 
-        const descriptors = parsedSymbol.descriptors.filter(d =>
-            [
-                Descriptor_Suffix.Namespace,
-                Descriptor_Suffix.Meta,
-                Descriptor_Suffix.Local,
-                Descriptor_Suffix.Macro,
-            ].every(s => d.suffix !== s)
+        const descriptors = parsedSymbol.descriptors!.filter(d =>
+            [DescriptorSuffix.Namespace, DescriptorSuffix.Meta, DescriptorSuffix.Local, DescriptorSuffix.Macro].every(
+                s => d.suffix !== s
+            )
         )
         for (let i = 0; i < descriptors.length; i++) {
             const descriptor = descriptors[i]
