@@ -8,6 +8,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { LoadingSpinner, H4, Text, Link, ErrorAlert, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import {
     UserAreaUserFields,
     UserProductSubscriptionResult,
@@ -15,6 +16,8 @@ import {
 } from '../../../graphql-operations'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { CodyServicesSection } from '../../site-admin/dotcom/productSubscriptions/CodyServicesSection'
+import { accessTokenPath, errorForPath } from '../../site-admin/dotcom/productSubscriptions/utils'
 
 import { USER_PRODUCT_SUBSCRIPTION } from './backend'
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
@@ -36,10 +39,16 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
     const isValidUUID = validateUUID(subscriptionUUID!)
     const validationError = !isValidUUID && new Error('Subscription ID is not a valid UUID')
 
-    const { data, loading, error } = useQuery<UserProductSubscriptionResult, UserProductSubscriptionVariables>(
+    const { data, loading, error, refetch } = useQuery<UserProductSubscriptionResult, UserProductSubscriptionVariables>(
         USER_PRODUCT_SUBSCRIPTION,
-        { variables: { uuid: subscriptionUUID } }
+        {
+            variables: { uuid: subscriptionUUID },
+            errorPolicy: 'all',
+        }
     )
+
+    // Feature flag only used as this is under development - will be enabled by default
+    const [llmProxyManagementUI] = useFeatureFlag('llm-proxy-management-ui')
 
     if (loading) {
         return <LoadingSpinner />
@@ -49,7 +58,14 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
         return <ErrorAlert className="my-2" error={validationError} />
     }
 
-    if (error) {
+    // If there's an error, and the entire request failed loading, simply render an error page.
+    // Otherwise, we want to get more specific with error handling.
+    if (
+        error &&
+        (error.networkError ||
+            error.clientErrors.length > 0 ||
+            (error.graphQLErrors.length !== 1 && errorForPath(error, accessTokenPath)))
+    ) {
         return <ErrorAlert className="my-2" error={error} />
     }
 
@@ -90,6 +106,17 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
                     <H4 className="text-muted">License expired</H4>
                     <Text className="text-muted mb-0">This subscription has no active subscription attached.</Text>
                 </Container>
+            )}
+
+            {llmProxyManagementUI && (
+                <CodyServicesSection
+                    viewerCanAdminister={false}
+                    sourcegraphAccessToken={productSubscription.sourcegraphAccessToken}
+                    accessTokenError={errorForPath(error, accessTokenPath)}
+                    llmProxyAccess={productSubscription.llmProxyAccess}
+                    productSubscriptionID={productSubscription.id}
+                    refetchSubscription={refetch}
+                />
             )}
         </div>
     )

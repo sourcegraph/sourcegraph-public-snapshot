@@ -87,15 +87,18 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
                 }
                 sourcegraphAccessToken
                 llmProxyAccess {
-                    enabled
-                    rateLimit {
-                        ...LLMProxyRateLimitFields
-                    }
+                    ...LLMProxyAccessFields
                 }
                 createdAt
                 isArchived
                 url
             }
+        }
+    }
+    fragment LLMProxyAccessFields on LLMProxyAccess {
+        enabled
+        rateLimit {
+            ...LLMProxyRateLimitFields
         }
     }
 

@@ -90,13 +90,9 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
                   >
                     Plan
                   </label>
-                  <small
-                    class="text-muted form-text font-weight-normal descriptionBlock ml-0 mb-2 mt-n1"
-                  >
-                    Subscription plan. Required parameter.
-                  </small>
                   <select
                     class="form-control"
+                    description="Subscription plan. Required parameter."
                     id="site-admin-create-product-subscription-page__plan_select"
                     label="Plan"
                   >

@@ -1,3 +1,6 @@
+import { ApolloError } from '@apollo/client'
+import { isEqual } from 'lodash'
+
 /**
  * Formats an interval in seconds as a human readable form.
  * Examples:
@@ -22,3 +25,9 @@ export function prettyInterval(seconds: number): string {
 
     return result.trim()
 }
+
+export function errorForPath(error: ApolloError | undefined, path: (string | number)[]): Error | undefined {
+    return error?.graphQLErrors.find(error => isEqual(error.path, path))
+}
+
+export const accessTokenPath = ['dotcom', 'productSubscription', 'sourcegraphAccessToken']

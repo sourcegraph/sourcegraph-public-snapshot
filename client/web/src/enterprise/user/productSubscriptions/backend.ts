@@ -34,5 +34,22 @@ export const USER_PRODUCT_SUBSCRIPTION = gql`
         isArchived
         url
         urlForSiteAdmin
+        sourcegraphAccessToken
+        llmProxyAccess {
+            ...LLMProxyAccessFields
+        }
+    }
+
+    fragment LLMProxyAccessFields on LLMProxyAccess {
+        enabled
+        rateLimit {
+            ...LLMProxyRateLimitFields
+        }
+    }
+
+    fragment LLMProxyRateLimitFields on LLMProxyRateLimit {
+        source
+        limit
+        intervalSeconds
     }
 `

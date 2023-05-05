@@ -1,17 +1,123 @@
-import { act } from '@testing-library/react'
-import { of } from 'rxjs'
+import { MockedResponse } from '@apollo/client/testing'
 
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { getDocumentNode } from '@sourcegraph/http-client'
+import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { DotComProductSubscriptionResult, ProductLicensesResult } from '../../../../graphql-operations'
+import {
+    DotComProductSubscriptionResult,
+    DotComProductSubscriptionVariables,
+    ProductLicensesResult,
+    ProductLicensesVariables,
+} from '../../../../graphql-operations'
 
+import { PRODUCT_LICENSES, DOTCOM_PRODUCT_SUBSCRIPTION } from './backend'
 import { SiteAdminProductSubscriptionPage } from './SiteAdminProductSubscriptionPage'
 import { mockLicenseContext } from './testUtils'
 
 jest.mock('mdi-react/ArrowLeftIcon', () => 'ArrowLeftIcon')
 
 jest.mock('mdi-react/AddIcon', () => 'AddIcon')
+
+const subscriptionMock: MockedResponse<DotComProductSubscriptionResult, DotComProductSubscriptionVariables> = {
+    request: {
+        query: getDocumentNode(DOTCOM_PRODUCT_SUBSCRIPTION),
+        variables: { uuid: '' },
+    },
+    result: {
+        data: {
+            __typename: 'Query',
+            dotcom: {
+                __typename: 'DotcomQuery',
+                productSubscription: {
+                    __typename: 'ProductSubscription',
+                    createdAt: '2023-05-05T13:10:30.080Z',
+                    url: '/s',
+                    account: null,
+                    id: 'l1',
+                    isArchived: false,
+                    name: 'sn1',
+                    productLicenses: {
+                        __typename: 'ProductLicenseConnection',
+                        nodes: [
+                            {
+                                __typename: 'ProductLicense',
+                                createdAt: '2023-05-05T13:10:30.080Z',
+                                id: 'l1',
+                                licenseKey: 'lk1',
+                                info: {
+                                    __typename: 'ProductLicenseInfo',
+                                    expiresAt: '2024-05-05T13:10:30.080Z',
+                                    tags: ['a'],
+                                    userCount: 123,
+                                },
+                            },
+                        ],
+                        totalCount: 1,
+                        pageInfo: { __typename: 'PageInfo', hasNextPage: false },
+                    },
+                    activeLicense: null,
+                    sourcegraphAccessToken: '123',
+                    llmProxyAccess: {
+                        __typename: 'LLMProxyAccess',
+                        enabled: false,
+                        rateLimit: null,
+                    },
+                },
+            },
+        },
+    },
+}
+
+const licensesMock: MockedResponse<ProductLicensesResult> = {
+    request: {
+        query: getDocumentNode(PRODUCT_LICENSES),
+        variables: {
+            first: 20,
+            subscriptionUUID: '',
+            after: null,
+        },
+    },
+    result: {
+        data: {
+            __typename: 'Query',
+            dotcom: {
+                __typename: 'DotcomQuery',
+                productSubscription: {
+                    __typename: 'ProductSubscription',
+                    productLicenses: {
+                        __typename: 'ProductLicenseConnection',
+                        nodes: [
+                            {
+                                __typename: 'ProductLicense',
+                                createdAt: '2023-05-05T13:10:30.080Z',
+                                id: 'l1',
+                                licenseKey: 'lk1',
+                                info: {
+                                    __typename: 'ProductLicenseInfo',
+                                    expiresAt: '2024-05-05T13:10:30.080Z',
+                                    productNameWithBrand: 'NB',
+                                    tags: ['a'],
+                                    userCount: 123,
+                                },
+                                subscription: {
+                                    __typename: 'ProductSubscription',
+                                    id: 'l1',
+                                    name: 'sn1',
+                                    urlForSiteAdmin: null,
+                                    account: null,
+                                    activeLicense: { __typename: 'ProductLicense', id: 'l1' },
+                                },
+                            },
+                        ],
+                        totalCount: 1,
+                        pageInfo: { __typename: 'PageInfo', hasNextPage: false },
+                    },
+                },
+            },
+        },
+    },
+}
 
 describe('SiteAdminProductSubscriptionPage', () => {
     const origContext = window.context
@@ -21,78 +127,15 @@ describe('SiteAdminProductSubscriptionPage', () => {
     afterEach(() => {
         window.context = origContext
     })
-    test('renders', () => {
+    test('renders', async () => {
         const component = renderWithBrandedContext(
-            <MockedTestProvider mocks={[]}>
-                <SiteAdminProductSubscriptionPage
-                    _queryProductSubscription={() =>
-                        of<DotComProductSubscriptionResult['dotcom']['productSubscription']>({
-                            __typename: 'ProductSubscription',
-                            createdAt: '2020-01-01',
-                            url: '/s',
-                            account: null,
-                            id: 'l1',
-                            isArchived: false,
-                            name: 'sn1',
-                            productLicenses: {
-                                __typename: 'ProductLicenseConnection',
-                                nodes: [
-                                    {
-                                        createdAt: '2020-01-01',
-                                        id: 'l1',
-                                        licenseKey: 'lk1',
-                                        info: {
-                                            __typename: 'ProductLicenseInfo',
-                                            expiresAt: '2021-01-01',
-                                            tags: ['a'],
-                                            userCount: 123,
-                                        },
-                                    },
-                                ],
-                                totalCount: 1,
-                                pageInfo: { hasNextPage: false },
-                            },
-                            activeLicense: null,
-                            llmProxyAccess: {
-                                __typename: 'LLMProxyAccess',
-                                enabled: false,
-                                rateLimit: null,
-                            },
-                        })
-                    }
-                    _queryProductLicenses={() =>
-                        of<ProductLicensesResult['dotcom']['productSubscription']['productLicenses']>({
-                            __typename: 'ProductLicenseConnection',
-                            nodes: [
-                                {
-                                    createdAt: '2020-01-01',
-                                    id: 'l1',
-                                    licenseKey: 'lk1',
-                                    info: {
-                                        __typename: 'ProductLicenseInfo',
-                                        expiresAt: '2021-01-01',
-                                        productNameWithBrand: 'NB',
-                                        tags: ['a'],
-                                        userCount: 123,
-                                    },
-                                    subscription: {
-                                        id: 'l1',
-                                        name: 'sn1',
-                                        urlForSiteAdmin: null,
-                                        account: null,
-                                        activeLicense: { id: 'l1' },
-                                    },
-                                },
-                            ],
-                            totalCount: 1,
-                            pageInfo: { hasNextPage: false },
-                        })
-                    }
-                />
+            <MockedTestProvider mocks={[subscriptionMock, licensesMock, subscriptionMock, licensesMock]}>
+                <SiteAdminProductSubscriptionPage />
             </MockedTestProvider>,
             { route: '/p' }
         )
-        act(() => undefined)
+        await waitForNextApolloResponse()
+        await waitForNextApolloResponse()
         expect(component.asFragment()).toMatchSnapshot()
     })
 })
