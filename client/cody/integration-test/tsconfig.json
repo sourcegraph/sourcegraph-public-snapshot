@@ -6,7 +6,7 @@
     "sourceRoot": ".",
     "outDir": "../out/integration-test",
     "types": ["mocha", "node"],
-    "jsx": "preserve",
+    "jsx": "react-jsx",
   },
   "references": [{ "path": "../" }],
   "include": ["*", "**/*", ".eslintrc.js"],

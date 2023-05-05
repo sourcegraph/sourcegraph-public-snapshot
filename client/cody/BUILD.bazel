@@ -1,0 +1,106 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "ts_project")
+
+npm_link_all_packages(name = "node_modules")
+
+# gazelle:js_resolve vscode //:node_modules/@vscode
+# gazelle:js_files src/**/*.{ts,tsx}
+# gazelle:js_files webviews/**/*.{ts,tsx}
+# gazelle:js_ignore_imports **/*.css
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/cody-shared:tsconfig",
+        "//client/cody-ui:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "cody",
+    srcs = [
+        "package.json",
+        "src/chat/ChatViewProvider.ts",
+        "src/chat/protocol.ts",
+        "src/command/LocalStorageProvider.ts",
+        "src/completions/cache.ts",
+        "src/completions/context.ts",
+        "src/completions/docprovider.ts",
+        "src/completions/history.ts",
+        "src/completions/index.ts",
+        "src/completions/prompts.ts",
+        "src/completions/provider.ts",
+        "src/configuration.ts",
+        "src/editor/vscode-editor.ts",
+        "src/event-logger.ts",
+        "src/extension.ts",
+        "src/extension-api.ts",
+        "src/external-services.ts",
+        "src/keyword-context/local-keyword-context-fetcher.ts",
+        "src/main.ts",
+        "src/rg.ts",
+        "src/secret-storage.ts",
+        "src/test-support.ts",
+        "src/wink-nlp-utils.d.ts",
+        "webviews/App.story.tsx",
+        "webviews/App.tsx",
+        "webviews/Chat.tsx",
+        "webviews/Debug.tsx",
+        "webviews/FileLink.tsx",
+        "webviews/Header.tsx",
+        "webviews/LoadingPage.tsx",
+        "webviews/Login.story.tsx",
+        "webviews/Login.tsx",
+        "webviews/NavBar.tsx",
+        "webviews/Recipes.tsx",
+        "webviews/Settings.tsx",
+        "webviews/UserHistory.tsx",
+        "webviews/globals.d.ts",
+        "webviews/index.tsx",
+        "webviews/storybook/VSCodeStoryDecorator.tsx",
+        "webviews/utils/VSCodeApi.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":node_modules/@anthropic-ai/sdk",
+        ":node_modules/@sourcegraph/cody-shared",
+        ":node_modules/@sourcegraph/cody-ui",
+        ":node_modules/lru-cache",
+        ":node_modules/wink-nlp-utils",
+        "//:node_modules/@storybook/react",  #keep
+        "//:node_modules/@types/classnames",
+        "//:node_modules/@types/jest",  #keep
+        "//:node_modules/@types/lru-cache",
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/react",
+        "//:node_modules/@types/react-dom",
+        "//:node_modules/@types/stream-json",
+        "//:node_modules/@types/vscode",  #keep
+        "//:node_modules/@vscode",
+        "//:node_modules/@vscode/webview-ui-toolkit",
+        "//:node_modules/classnames",
+        "//:node_modules/react",
+        "//:node_modules/react-dom",
+        "//:node_modules/stream-json",
+        "//:node_modules/util",
+    ],
+)
+
+ts_project(
+    name = "cody_tests",
+    testonly = True,
+    srcs = [
+        "src/chat/ChatViewProvider.test.ts",
+        "src/completions/context.test.ts",
+        "src/configuration.test.ts",
+        "src/keyword-context/local-keyword-context-fetcher.test.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":cody",
+    ],
+)
