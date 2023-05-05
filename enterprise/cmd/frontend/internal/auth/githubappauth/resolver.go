@@ -8,11 +8,16 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // NewResolver returns a new Resolver that uses the given database
@@ -76,7 +81,7 @@ func (r *resolver) GitHubApps(ctx context.Context) (graphqlbackend.GitHubAppConn
 
 	resolvers := make([]graphqlbackend.GitHubAppResolver, len(apps))
 	for i := range apps {
-		resolvers[i] = NewGitHubAppResolver(apps[i])
+		resolvers[i] = NewGitHubAppResolver(r.db, apps[i])
 	}
 
 	gitHubAppConnection := &gitHubAppConnectionResolver{
@@ -116,12 +121,13 @@ func (r *resolver) GitHubAppByID(ctx context.Context, id graphql.ID) (*gitHubApp
 
 	return &gitHubAppResolver{
 		app: app,
+		db:  r.db,
 	}, nil
 }
 
 // NewGitHubAppResolver creates a new GitHubAppResolver from a GitHubApp.
-func NewGitHubAppResolver(app *types.GitHubApp) *gitHubAppResolver {
-	return &gitHubAppResolver{app: app}
+func NewGitHubAppResolver(db edb.EnterpriseDB, app *types.GitHubApp) *gitHubAppResolver {
+	return &gitHubAppResolver{app: app, db: db}
 }
 
 type gitHubAppConnectionResolver struct {
@@ -140,6 +146,7 @@ func (r *gitHubAppConnectionResolver) TotalCount(ctx context.Context) int32 {
 // gitHubAppResolver is a GraphQL node resolver for GitHubApps.
 type gitHubAppResolver struct {
 	app *types.GitHubApp
+	db  edb.EnterpriseDB
 }
 
 func (r *gitHubAppResolver) ID() graphql.ID {
@@ -180,4 +187,28 @@ func (r *gitHubAppResolver) CreatedAt() gqlutil.DateTime {
 
 func (r *gitHubAppResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.app.UpdatedAt}
+}
+
+func (r *gitHubAppResolver) ExternalServices(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) *graphqlbackend.ComputedExternalServiceConnectionResolver {
+	extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+		Kinds: []string{extsvc.KindGitHub},
+	})
+	if err != nil {
+		return nil
+	}
+
+	var filteredExtsvc []*itypes.ExternalService
+	for _, es := range extsvcs {
+		parsed, err := extsvc.ParseEncryptableConfig(ctx, extsvc.KindGitHub, es.Config)
+		if err != nil {
+			continue
+		}
+		c := parsed.(*schema.GitHubConnection)
+		if c.GitHubAppDetails == nil || c.GitHubAppDetails.AppID != r.app.AppID || c.Url != r.app.BaseURL {
+			continue
+		}
+		filteredExtsvc = append(filteredExtsvc, es)
+	}
+
+	return graphqlbackend.NewComputedExternalServiceConnectionResolver(r.db, filteredExtsvc, args.ConnectionArgs)
 }
