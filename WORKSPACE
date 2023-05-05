@@ -210,7 +210,7 @@ go_repository(
     importpath = "google.golang.org/protobuf",
     sum = "h1:7QBf+IK2gx70Ap/hDsOmam3GE0v9HicjfEdAxE62UoM=",
     version = "v1.29.1",
-)
+)  # keep
 
 # Pin protoc-gen-go-grpc to 1.3.0
 # See also //:gen-go-grpc
@@ -220,7 +220,7 @@ go_repository(
     importpath = "google.golang.org/grpc/cmd/protoc-gen-go-grpc",
     sum = "h1:rNBFJjBCOgVr9pWD7rs/knKL4FRTKgpZmsRfV214zcA=",
     version = "v1.3.0",
-)
+)  # keep
 
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()
