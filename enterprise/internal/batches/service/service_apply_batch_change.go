@@ -64,7 +64,7 @@ func (s *Service) ApplyBatchChange(
 		return nil, err
 	}
 
-	if err := s.checkBatchChangeAccess(ctx, batchSpec.NamespaceOrgID, batchSpec.UserID); err != nil {
+	if err := s.checkBatchChangeAdmin(ctx, batchSpec.NamespaceOrgID, batchSpec.UserID); err != nil {
 		return nil, err
 	}
 

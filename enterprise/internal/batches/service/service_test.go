@@ -120,14 +120,14 @@ func TestServicePermissionLevels(t *testing.T) {
 		{
 			name:              "non-org member (org namespace)",
 			batchChangeAuthor: user.ID,
-			currentUser:       otherUser2.ID,
+			currentUser:       nonOrgMember.ID,
 			assertFunc:        assertOrgOrAuthError,
 			orgNamespace:      org.ID,
 		},
 		{
 			name:              "non-org member (org namespace - all members admin)",
 			batchChangeAuthor: user.ID,
-			currentUser:       otherUser2.ID,
+			currentUser:       nonOrgMember.ID,
 			assertFunc:        assertOrgOrAuthError,
 			orgMembersAdmin:   true,
 			orgNamespace:      org.ID,
