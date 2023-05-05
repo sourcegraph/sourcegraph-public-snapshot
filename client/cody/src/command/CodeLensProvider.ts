@@ -89,12 +89,12 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                 title: 'Show Diff',
                 tooltip: 'Open a diff of this change',
                 command: 'vscode.diff',
-                arguments: [uri, document.uri, 'Cody Edit Diff'],
+                arguments: [uri, document.uri, 'Cody edit diff'],
             }
             // Run VS Code command to save all files
             const codeLensSave = new vscode.CodeLens(range)
             codeLensSave.command = {
-                title: 'Save',
+                title: 'Accept',
                 tooltip: 'Accept and save all changes',
                 command: 'workbench.action.files.save',
             }

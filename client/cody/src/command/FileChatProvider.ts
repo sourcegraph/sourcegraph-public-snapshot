@@ -27,7 +27,7 @@ export class FileChatProvider {
     private readonly label = 'Cody: File Chat'
     private readonly threadLabel = 'Ask Cody...'
     private options = {
-        prompt: 'Ask Cody a question about the selected line(s) of code...',
+        prompt: 'Reply...',
         placeHolder: 'Ask Cody a question, or start with /fix to request edits (e.g. "/fix convert tabs to spaces")',
     }
     private readonly codyIcon: vscode.Uri = this.getIconPath('cody')
