@@ -672,6 +672,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 			}),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.Agent("queue", "bazel"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
