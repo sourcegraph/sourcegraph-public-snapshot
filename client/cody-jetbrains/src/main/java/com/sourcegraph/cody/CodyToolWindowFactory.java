@@ -33,7 +33,7 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
         private final JLabel timeZone = new JLabel();
         private final JLabel currentTime = new JLabel();
 
-        public CodyToolWindowContent(ToolWindow toolWindow) {
+        public CodyToolWindowContent(@NotNull ToolWindow toolWindow) {
             contentPanel.setLayout(new BorderLayout(0, 20));
             contentPanel.setBorder(BorderFactory.createEmptyBorder(40, 0, 0, 0));
             contentPanel.add(createCalendarPanel(), BorderLayout.PAGE_START);
