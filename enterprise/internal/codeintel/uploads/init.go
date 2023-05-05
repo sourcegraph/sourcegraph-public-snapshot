@@ -2,6 +2,8 @@ package uploads
 
 import (
 	"context"
+	"os"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -122,14 +124,14 @@ func NewCommittedAtBackfillerJob(uploadSvc *Service) []goroutine.BackgroundRouti
 }
 
 func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserverClient GitserverClient) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewDeletedRepositoryJanitor(
+	jobsByName := map[string]goroutine.BackgroundRoutine{
+		"DeletedRepositoryJanitor": background.NewDeletedRepositoryJanitor(
 			uploadSvc.store,
 			ConfigJanitorInst.Interval,
 			observationCtx,
 		),
 
-		background.NewUnknownCommitJanitor(
+		"UnknownCommitJanitor": background.NewUnknownCommitJanitor(
 			uploadSvc.store,
 			gitserverClient,
 			ConfigJanitorInst.Interval,
@@ -139,40 +141,40 @@ func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserv
 			observationCtx,
 		),
 
-		background.NewAbandonedUploadJanitor(
+		"AbandonedUploadJanitor": background.NewAbandonedUploadJanitor(
 			uploadSvc.store,
 			ConfigJanitorInst.Interval,
 			ConfigJanitorInst.UploadTimeout,
 			observationCtx,
 		),
 
-		background.NewExpiredUploadJanitor(
+		"ExpiredUploadJanitor": background.NewExpiredUploadJanitor(
 			uploadSvc.store,
 			ConfigJanitorInst.Interval,
 			observationCtx,
 		),
 
-		background.NewExpiredUploadTraversalJanitor(
+		"ExpiredUploadTraversalJanitor": background.NewExpiredUploadTraversalJanitor(
 			uploadSvc.store,
 			ConfigJanitorInst.Interval,
 			observationCtx,
 		),
 
-		background.NewHardDeleter(
+		"HardDeleter": background.NewHardDeleter(
 			uploadSvc.store,
 			uploadSvc.lsifstore,
 			ConfigJanitorInst.Interval,
 			observationCtx,
 		),
 
-		background.NewAuditLogJanitor(
+		"AuditLogJanitor": background.NewAuditLogJanitor(
 			uploadSvc.store,
 			ConfigJanitorInst.Interval,
 			ConfigJanitorInst.AuditLogMaxAge,
 			observationCtx,
 		),
 
-		background.NewSCIPExpirationTask(
+		"SCIPExpirationTask": background.NewSCIPExpirationTask(
 			uploadSvc.lsifstore,
 			ConfigJanitorInst.Interval,
 			ConfigJanitorInst.UnreferencedDocumentBatchSize,
@@ -180,11 +182,27 @@ func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserv
 			observationCtx,
 		),
 	}
+
+	disabledJobs := map[string]struct{}{}
+	for _, name := range strings.Split(os.Getenv("CODEINTEL_UPLOAD_JANITOR_DISABLED_SUB_JOBS"), ",") {
+		disabledJobs[name] = struct{}{}
+	}
+
+	jobs := []goroutine.BackgroundRoutine{}
+	for name, v := range jobsByName {
+		if _, ok := disabledJobs[name]; ok {
+			observationCtx.Logger.Warn("DISABLING CODE INTEL UPLOAD JANITOR SUB-JOB", log.String("name", name))
+		} else {
+			jobs = append(jobs, v)
+		}
+	}
+
+	return jobs
 }
 
 func NewReconciler(observationCtx *observation.Context, uploadSvc *Service) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewFrontendDBReconciler(
+	jobsByName := map[string]goroutine.BackgroundRoutine{
+		"FrontendDBReconciler": background.NewFrontendDBReconciler(
 			uploadSvc.store,
 			uploadSvc.lsifstore,
 			ConfigJanitorInst.Interval,
@@ -192,7 +210,7 @@ func NewReconciler(observationCtx *observation.Context, uploadSvc *Service) []go
 			observationCtx,
 		),
 
-		background.NewCodeIntelDBReconciler(
+		"CodeIntelDBReconciler": background.NewCodeIntelDBReconciler(
 			uploadSvc.store,
 			uploadSvc.lsifstore,
 			ConfigJanitorInst.Interval,
@@ -200,6 +218,22 @@ func NewReconciler(observationCtx *observation.Context, uploadSvc *Service) []go
 			observationCtx,
 		),
 	}
+
+	disabledJobs := map[string]struct{}{}
+	for _, name := range strings.Split(os.Getenv("CODEINTEL_UPLOAD_JANITOR_DISABLED_SUB_JOBS"), ",") {
+		disabledJobs[name] = struct{}{}
+	}
+
+	jobs := []goroutine.BackgroundRoutine{}
+	for name, v := range jobsByName {
+		if _, ok := disabledJobs[name]; ok {
+			observationCtx.Logger.Warn("DISABLING CODE INTEL UPLOAD RECONCILER SUB-JOB", log.String("name", name))
+		} else {
+			jobs = append(jobs, v)
+		}
+	}
+
+	return jobs
 }
 
 func NewResetters(observationCtx *observation.Context, db database.DB) []goroutine.BackgroundRoutine {
