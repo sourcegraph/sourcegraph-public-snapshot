@@ -41,7 +41,6 @@ export const RolloutWindowsConfiguration: React.FunctionComponent = () => {
     useEffect(() => {
         if (data) {
             const siteConfig = jsonc.parse(data.site.configuration.effectiveContents)
-            console.log(siteConfig['batchChanges.rolloutWindows'], 'site config')
             setRolloutWindows(siteConfig['batchChanges.rolloutWindows'] || [])
         }
     }, [data])

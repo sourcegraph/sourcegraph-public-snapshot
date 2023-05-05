@@ -13,7 +13,7 @@ import {
 import { BATCH_CHANGES_SITE_CONFIGURATION } from '../backend'
 
 import { USER_CODE_HOSTS } from './backend'
-import { BatchChangesSettingsArea, RolloutWindowsConfiguration } from './BatchChangesSettingsArea'
+import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
