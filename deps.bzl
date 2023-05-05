@@ -5750,13 +5750,17 @@ def go_dependencies():
         sum = "h1:B4Y0XJQiPjpwYmkH55aratKX1VfR+JRqzmDKyZbC99o=",
         version = "v3.1.2",
     )
+
+    # Needed by back compat tests targeting 5.0.0
+    # Context+Owner: @jhchabran
     go_repository(
         name = "com_github_rafaeljusto_redigomock",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/rafaeljusto/redigomock",
         sum = "h1:d7uo5MVINMxnRr20MxbgDkmZ8QRfevjOVgEa4n0OZyY=",
         version = "v2.4.0+incompatible",
-    )
+    ) # keep
+
     go_repository(
         name = "com_github_rainycape_unidecode",
         build_file_proto_mode = "disable_global",
@@ -8891,27 +8895,11 @@ def go_dependencies():
         version = "v1.53.0",
     )
     go_repository(
-        name = "org_golang_google_grpc_cmd_protoc_gen_go_grpc",
-        build_file_proto_mode = "disable_global",
-        importpath = "google.golang.org/grpc/cmd/protoc-gen-go-grpc",
-        sum = "h1:TLkBREm4nIsEcexnCjgQd5GQWaHcqMzwQV0TX9pq8S0=",
-        version = "v1.2.0",
-    )  # keep
-
-    go_repository(
         name = "org_golang_google_grpc_examples",
         build_file_proto_mode = "disable_global",
         importpath = "google.golang.org/grpc/examples",
         sum = "h1:qvsHH4rznMyt8C0umnWLr/oTJPjYrtZ2OMnPZaYLIK8=",
         version = "v0.0.0-20210424002626-9572fd6faeae",
-    )
-
-    go_repository(
-        name = "org_golang_google_protobuf",
-        build_file_proto_mode = "disable_global",
-        importpath = "google.golang.org/protobuf",
-        sum = "h1:d0NfwRgPtno5B1Wa6L2DAG+KivqkdutMf1UhdNx175w=",
-        version = "v1.28.1",
     )
 
     go_repository(
