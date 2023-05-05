@@ -42,6 +42,12 @@
 - [Run a local Sourcegraph instance behind ngrok](sourcegraph_ngrok.md)
 <!-- [Sync repositories from gitolite.sgdev.org](sync_repositories_from_gitolite_sgdev_org.md) -->
 
+
+## Maintenance 
+
+- [How to update pnpm to a newer version](update_pnpm.md)
+
+
 ## Profiling
 
 - [How to do one-off profiling for dogfood and production using pprof](profiling_one-off.md)
