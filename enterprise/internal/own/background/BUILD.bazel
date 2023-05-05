@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "background.go",
         "recent_contributors.go",
+        "recent_views.go",
         "scheduler.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/own/background",
@@ -43,6 +44,7 @@ go_test(
     timeout = "moderate",
     srcs = [
         "recent_contributors_test.go",
+        "recent_views_test.go",
         "scheduler_test.go",
     ],
     embed = [":background"],

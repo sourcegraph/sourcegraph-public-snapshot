@@ -1512,6 +1512,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 				Source:          "test",
 				Timestamp:       timestamp,
 				Argument:        json.RawMessage(`{"key": "value1"}`),
+				PublicArgument:  json.RawMessage("{}"),
 				DeviceID:        ptr("device-id"),
 				InsertID:        ptr("insert-id"),
 			}, {
@@ -1522,6 +1523,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 				Source:          "test",
 				Timestamp:       timestamp,
 				Argument:        json.RawMessage(`{"key": "value2"}`),
+				PublicArgument:  json.RawMessage("{}"),
 				DeviceID:        ptr("device-id"),
 				InsertID:        ptr("insert-id"),
 			},
@@ -1544,6 +1546,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			AnonymousUserID: events[1].AnonymousUserID,
 			Version:         version.Version(),
 			Argument:        events[1].Argument,
+			PublicArgument:  events[1].PublicArgument,
 			Source:          events[1].Source,
 			Timestamp:       timestamp,
 		}
