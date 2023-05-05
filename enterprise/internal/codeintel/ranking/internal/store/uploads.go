@@ -81,6 +81,10 @@ var scanUploads = basestore.NewSliceScanner(func(s dbutil.Scanner) (u shared.Exp
 	return u, err
 })
 
+//
+// TODO - need vacuum abandoned?
+//
+
 func (s *store) ProcessStaleExportedUploads(
 	ctx context.Context,
 	graphKey string,

@@ -30,6 +30,7 @@ func (s *store) InsertPathRanks(
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		insertPathRanksQuery,
 		derivativeGraphKey,
+		derivativeGraphKey,
 		batchSize,
 		derivativeGraphKey,
 	))
@@ -51,6 +52,16 @@ func (s *store) InsertPathRanks(
 
 const insertPathRanksQuery = `
 WITH
+progress AS (
+	SELECT
+		crp.id,
+		crp.mappers_started_at as started_at
+	FROM codeintel_ranking_progress crp
+	WHERE
+		crp.graph_key = %s and
+		crp.reducer_started_at IS NOT NULL AND
+		crp.reducer_completed_at IS NULL
+),
 input_ranks AS (
 	SELECT
 		pci.id,
@@ -58,6 +69,7 @@ input_ranks AS (
 		pci.document_path AS path,
 		pci.count
 	FROM codeintel_ranking_path_counts_inputs pci
+	JOIN progress p ON TRUE
 	WHERE
 		pci.graph_key = %s AND
 		NOT pci.processed AND
@@ -113,6 +125,13 @@ inserted AS (
 				)
 			END
 	RETURNING 1
+),
+set_progress AS (
+	UPDATE codeintel_ranking_progress
+	SET reducer_completed_at = NOW()
+	WHERE
+		id IN (SELECT id FROM progress) AND
+		NOT EXISTS (SELECT 1 FROM processed)
 )
 SELECT
 	(SELECT COUNT(*) FROM processed) AS num_processed,

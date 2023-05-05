@@ -14,8 +14,6 @@ type Config struct {
 	WriteBatchSize int
 }
 
-var ConfigInst = &Config{}
-
 func (c *Config) Load() {
 	c.Interval = c.GetInterval("CODEINTEL_RANKING_SYMBOL_EXPORTER_INTERVAL", "1s", "How frequently to serialize a batch of the code intel graph for ranking.")
 	c.ReadBatchSize = c.GetInt("CODEINTEL_RANKING_SYMBOL_EXPORTER_READ_BATCH_SIZE", "16", "How many uploads to process at once.")

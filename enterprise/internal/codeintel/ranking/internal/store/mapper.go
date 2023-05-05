@@ -31,11 +31,13 @@ func (s *store) InsertPathCountInputs(
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		insertPathCountInputsQuery,
+		derivativeGraphKey,
 		graphKey,
 		derivativeGraphKey,
 		batchSize,
 		derivativeGraphKey,
 		derivativeGraphKey,
+		graphKey,
 		graphKey,
 		derivativeGraphKey,
 	))
@@ -58,14 +60,38 @@ func (s *store) InsertPathCountInputs(
 
 const insertPathCountInputsQuery = `
 WITH
+progress AS (
+	SELECT
+		crp.id,
+		crp.max_definition_id,
+		crp.max_reference_id,
+		crp.mappers_started_at as started_at
+	FROM codeintel_ranking_progress crp
+	WHERE
+		crp.graph_key = %s AND
+		crp.mapper_completed_at IS NULL
+),
 refs AS (
 	SELECT
 		rr.id,
 		rr.upload_id,
 		rr.symbol_names
 	FROM codeintel_ranking_references rr
+	JOIN progress p ON TRUE
 	WHERE
 		rr.graph_key = %s AND
+
+		-- Note that we do a check in the processable_symbols CTE below that will
+		-- ensure that we don't process a record AND the one it shadows. We end up
+		-- taking the lowest ID and no-oping any others that happened to fall into
+		-- the window.
+
+		-- Ensure that the record is within the bounds where it would be visible
+		-- to the current "snapshot" defined by the ranking computation state row.
+		rr.id <= p.max_reference_id AND
+		(rr.deleted_at IS NULL OR rr.deleted_at > p.started_at) AND
+
+		-- Ensure the record isn't already processed
 		NOT EXISTS (
 			SELECT 1
 			FROM codeintel_ranking_references_processed rrp
@@ -104,6 +130,7 @@ processable_symbols AS (
 				u.indexer = u2.indexer AND
 				u.id != u2.id
 		) AND
+
 		-- For multiple references for the same repository/root/indexer in THIS batch, we want to
 		-- process the one associated with the most recently processed upload record. This should
 		-- maximize fresh results.
@@ -127,12 +154,35 @@ referenced_definitions AS (
 	SELECT
 		u.repository_id,
 		rd.document_path,
-		rd.graph_key,
 		COUNT(*) AS count
 	FROM codeintel_ranking_definitions rd
 	JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
 	JOIN lsif_uploads u ON u.id = rd.upload_id
-	WHERE rd.graph_key = %s
+	JOIN progress p ON TRUE
+	WHERE
+		rd.graph_key = %s AND
+
+		-- Ensure that the record is within the bounds where it would be visible
+		-- to the current "snapshot" defined by the ranking computation state row.
+		rd.id <= p.max_definition_id AND
+		(rd.deleted_at IS NULL OR rd.deleted_at > p.started_at) AND
+
+		-- If there are multiple uploads in the same repository/root/indexer, only
+		-- consider definition records attached to the one with the highest id. This
+		-- should prevent over-counting definitions when there are multiple uploads
+		-- in the exported set, but the shadowed (newly non-visible) uploads have not
+		-- yet been removed by the janitor processes.
+		NOT EXISTS (
+			SELECT 1
+			FROM lsif_uploads u2
+			JOIN codeintel_ranking_definitions rd2 ON rd2.upload_id = u2.id
+			WHERE
+				rd2.graph_key = %s AND
+				u.repository_id = u2.repository_id AND
+				u.root = u2.root AND
+				u.indexer = u2.indexer AND
+				u.id > u2.id
+		)
 	GROUP BY u.repository_id, rd.document_path, rd.graph_key
 ),
 ins AS (
@@ -145,6 +195,13 @@ ins AS (
 	FROM referenced_definitions rx
 	GROUP BY rx.repository_id, rx.document_path
 	RETURNING 1
+),
+set_progress AS (
+	UPDATE codeintel_ranking_progress
+	SET mapper_completed_at = NOW()
+	WHERE
+		id IN (SELECT id FROM progress) AND
+		NOT EXISTS (SELECT 1 FROM refs)
 )
 SELECT
 	(SELECT COUNT(*) FROM locked_refs),
@@ -170,6 +227,7 @@ func (s *store) InsertInitialPathCounts(
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		insertInitialPathCountsInputsQuery,
+		derivativeGraphKey,
 		graphKey,
 		derivativeGraphKey,
 		batchSize,
@@ -195,6 +253,16 @@ func (s *store) InsertInitialPathCounts(
 
 const insertInitialPathCountsInputsQuery = `
 WITH
+progress AS (
+	SELECT
+		crp.id,
+		crp.max_path_id,
+		crp.mappers_started_at as started_at
+	FROM codeintel_ranking_progress crp
+	WHERE
+		crp.graph_key = %s AND
+		crp.seed_mapper_completed_at IS NULL
+),
 unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
@@ -205,8 +273,20 @@ unprocessed_path_counts AS (
 			ELSE ipr.document_paths
 		END AS document_paths
 	FROM codeintel_initial_path_ranks ipr
+	JOIN progress p ON TRUE
 	WHERE
 		ipr.graph_key = %s AND
+
+		-- Note that we don't do any special precautions here to de-duplicate the
+		-- zero-rank path data, as duplicate paths add a zero count (no-op), and
+		-- extra paths will no be resolvable in gitserver.
+
+		-- Ensure that the record is within the bounds where it would be visible
+		-- to the current "snapshot" defined by the ranking computation state row.
+		ipr.id <= p.max_path_id AND
+		(ipr.deleted_at IS NULL OR ipr.deleted_at > p.started_at) AND
+
+		-- Ensure the record isn't already processed
 		NOT EXISTS (
 			SELECT 1
 			FROM codeintel_initial_path_ranks_processed prp
@@ -218,6 +298,15 @@ unprocessed_path_counts AS (
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
+locked_path_counts AS (
+	INSERT INTO codeintel_initial_path_ranks_processed (graph_key, codeintel_initial_path_ranks_id)
+	SELECT
+		%s,
+		eupc.id
+	FROM unprocessed_path_counts eupc
+	ON CONFLICT DO NOTHING
+	RETURNING codeintel_initial_path_ranks_id
+),
 expanded_unprocessed_path_counts AS (
 	SELECT
 		upc.id,
@@ -225,15 +314,6 @@ expanded_unprocessed_path_counts AS (
 		upc.graph_key,
 		unnest(upc.document_paths) AS document_path
 	FROM unprocessed_path_counts upc
-),
-locked_path_counts AS (
-	INSERT INTO codeintel_initial_path_ranks_processed (graph_key, codeintel_initial_path_ranks_id)
-	SELECT
-		%s,
-		eupc.id
-	FROM expanded_unprocessed_path_counts eupc
-	ON CONFLICT DO NOTHING
-	RETURNING codeintel_initial_path_ranks_id
 ),
 ins AS (
 	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
@@ -246,6 +326,13 @@ ins AS (
 	JOIN expanded_unprocessed_path_counts eupc on eupc.id = lpc.codeintel_initial_path_ranks_id
 	JOIN lsif_uploads u ON u.id = eupc.upload_id
 	RETURNING 1
+),
+set_progress AS (
+	UPDATE codeintel_ranking_progress
+	SET seed_mapper_completed_at = NOW()
+	WHERE
+		id IN (SELECT id FROM progress) AND
+		NOT EXISTS (SELECT 1 FROM unprocessed_path_counts)
 )
 SELECT
 	(SELECT COUNT(*) FROM locked_path_counts),

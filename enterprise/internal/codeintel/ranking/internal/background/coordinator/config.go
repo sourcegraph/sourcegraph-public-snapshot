@@ -1,4 +1,4 @@
-package janitor
+package coordinator
 
 import (
 	"time"
@@ -13,5 +13,5 @@ type Config struct {
 }
 
 func (c *Config) Load() {
-	c.Interval = c.GetInterval("CODEINTEL_RANKING_JANITOR_INTERVAL", "1s", "How frequently to run the ranking janitor.")
+	c.Interval = c.GetInterval("CODEINTEL_RANKING_COORDINATOR_INTERVAL", "1s", "How frequently to run the ranking coordinator.")
 }

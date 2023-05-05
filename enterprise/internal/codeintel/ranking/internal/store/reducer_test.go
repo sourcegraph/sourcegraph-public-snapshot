@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -64,14 +63,29 @@ func TestInsertPathRanks(t *testing.T) {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
+	// Insert metadata to trigger mapper
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at)
+		VALUES ($1,  1000, 1000, 1000, NOW())
+	`,
+		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
+	); err != nil {
+		t.Fatalf("failed to insert metadata: %s", err)
+	}
+
 	// Test InsertPathCountInputs
 	if _, _, err := store.InsertPathCountInputs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
 	// Insert repos
-	if _, err := db.ExecContext(ctx, fmt.Sprintf(`INSERT INTO repo (id, name) VALUES (1, 'deadbeef')`)); err != nil {
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (id, name) VALUES (1, 'deadbeef')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
+	}
+
+	// Update metadata to trigger reducer
+	if _, err := db.ExecContext(ctx, `UPDATE codeintel_ranking_progress SET reducer_started_at = NOW()`); err != nil {
+		t.Fatalf("failed to update metadata: %s", err)
 	}
 
 	// Finally! Test InsertPathRanks

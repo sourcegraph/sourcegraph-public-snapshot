@@ -17,8 +17,6 @@ type cleanupJobsConfig struct {
 	FailedIndexMaxAge              time.Duration
 }
 
-var ConfigCleanupInst = &cleanupJobsConfig{}
-
 func (c *cleanupJobsConfig) Load() {
 	minimumTimeSinceLastCheckName := env.ChooseFallbackVariableName("CODEINTEL_AUTOINDEXING_MINIMUM_TIME_SINCE_LAST_CHECK", "PRECISE_CODE_INTEL_COMMIT_RESOLVER_MINIMUM_TIME_SINCE_LAST_CHECK")
 	commitResolverBatchSizeName := env.ChooseFallbackVariableName("CODEINTEL_AUTOINDEXING_COMMIT_RESOLVER_BATCH_SIZE", "PRECISE_CODE_INTEL_COMMIT_RESOLVER_BATCH_SIZE")

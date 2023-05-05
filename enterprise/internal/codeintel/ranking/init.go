@@ -2,6 +2,7 @@ package ranking
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/coordinator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/exporter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/mapper"
@@ -29,10 +30,11 @@ func NewService(
 }
 
 var (
-	ExporterConfigInst = &exporter.Config{}
-	MapperConfigInst   = &mapper.Config{}
-	ReducerConfigInst  = &reducer.Config{}
-	JanitorConfigInst  = &janitor.Config{}
+	ExporterConfigInst    = &exporter.Config{}
+	CoordinatorConfigInst = &coordinator.Config{}
+	MapperConfigInst      = &mapper.Config{}
+	ReducerConfigInst     = &reducer.Config{}
+	JanitorConfigInst     = &janitor.Config{}
 )
 
 func NewSymbolExporter(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
@@ -41,6 +43,14 @@ func NewSymbolExporter(observationCtx *observation.Context, rankingService *Serv
 		rankingService.store,
 		rankingService.lsifstore,
 		ExporterConfigInst,
+	)
+}
+
+func NewCoordinator(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
+	return background.NewCoordinator(
+		scopedContext("coordinator", observationCtx),
+		rankingService.store,
+		CoordinatorConfigInst,
 	)
 }
 

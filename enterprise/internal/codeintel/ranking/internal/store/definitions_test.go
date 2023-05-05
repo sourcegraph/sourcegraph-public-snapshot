@@ -120,7 +120,7 @@ func TestVacuumAbandonedDefinitions(t *testing.T) {
 	assertCounts(1*30 + 10)
 }
 
-func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
+func TestSoftDeleteStaleDefinitionsAndReferences(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -197,7 +197,7 @@ func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
 	insertVisibleAtTip(t, db, 50, 2)
 
 	// remove definitions for non-visible uploads
-	_, numStaleDefinitionRecordsDeleted, err := store.VacuumStaleDefinitions(ctx, mockRankingGraphKey)
+	_, numStaleDefinitionRecordsDeleted, err := store.SoftDeleteStaleDefinitions(ctx, mockRankingGraphKey)
 	if err != nil {
 		t.Fatalf("unexpected error vacuuming stale definitions: %s", err)
 	}
@@ -206,12 +206,16 @@ func TestVacuumStaleDefinitionsAndReferences(t *testing.T) {
 	}
 
 	// remove references for non-visible uploads
-	if _, _, err := store.VacuumStaleReferences(ctx, mockRankingGraphKey); err != nil {
+	if _, _, err := store.SoftDeleteStaleReferences(ctx, mockRankingGraphKey); err != nil {
 		t.Fatalf("unexpected error vacuuming stale references: %s", err)
 	}
 
 	// only upload 2's entries remain
 	assertCounts(2, 3)
+}
+
+func TestVacuumDeletedDefinitions(t *testing.T) {
+	// TODO
 }
 
 //
@@ -224,7 +228,7 @@ func getRankingDefinitions(
 	graphKey string,
 ) (_ []shared.RankingDefinitions, err error) {
 	query := fmt.Sprintf(
-		`SELECT upload_id, symbol_name, document_path FROM codeintel_ranking_definitions WHERE graph_key = '%s'`,
+		`SELECT upload_id, symbol_name, document_path FROM codeintel_ranking_definitions WHERE graph_key = '%s' AND deleted_at IS NULL`,
 		graphKey,
 	)
 	rows, err := db.QueryContext(ctx, query)

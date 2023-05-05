@@ -108,6 +108,10 @@ func TestVacuumAbandonedReferences(t *testing.T) {
 	assertCounts(1*30 + 10)
 }
 
+func TestVacuumDeletedReferences(t *testing.T) {
+	// TODO
+}
+
 //
 //
 
@@ -118,7 +122,7 @@ func getRankingReferences(
 	graphKey string,
 ) (_ []shared.RankingReferences, err error) {
 	query := fmt.Sprintf(
-		`SELECT upload_id, symbol_names FROM codeintel_ranking_references WHERE graph_key = '%s'`,
+		`SELECT upload_id, symbol_names FROM codeintel_ranking_references WHERE graph_key = '%s' AND deleted_at IS NULL`,
 		graphKey,
 	)
 	rows, err := db.QueryContext(ctx, query)
