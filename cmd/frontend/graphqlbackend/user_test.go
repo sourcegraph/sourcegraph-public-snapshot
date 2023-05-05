@@ -835,3 +835,79 @@ func TestSchema_SetUserCompletionsQuota(t *testing.T) {
 		})
 	})
 }
+
+func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
+	db := database.NewMockDB()
+
+	t.Run("not site admin", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:       id,
+				Username: strconv.Itoa(int(id)),
+			}, nil
+		})
+		// Different user.
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		schemaResolver := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
+		result, err := schemaResolver.SetUserCodeCompletionsQuota(context.Background(),
+			SetUserCodeCompletionsQuotaArgs{
+				User:  MarshalUserID(1),
+				Quota: nil,
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := auth.ErrMustBeSiteAdmin.Error()
+		assert.Equal(t, want, got)
+		assert.Nil(t, result)
+	})
+
+	t.Run("site admin can change quota", func(t *testing.T) {
+		mockUser := &types.User{
+			ID:        1,
+			Username:  "alice",
+			SiteAdmin: true,
+		}
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
+		users.UpdateFunc.SetDefaultReturn(nil)
+		db.UsersFunc.SetDefaultReturn(users)
+		var quota *int
+		users.SetCodeCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i1 int32, i2 *int) error {
+			quota = i2
+			return nil
+		})
+		users.GetCodeCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i int32) (*int, error) {
+			return quota, nil
+		})
+
+		RunTests(t, []*Test{
+			{
+				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+			mutation {
+				setUserCodeCompletionsQuota(
+					user: "VXNlcjox",
+					quota: 18
+				) {
+					username
+					codeCompletionsQuotaOverride
+				}
+			}
+		`,
+				ExpectedResult: `
+			{
+				"setUserCodeCompletionsQuota": {
+					"username": "alice",
+					"codeCompletionsQuotaOverride": 18
+				}
+			}
+		`,
+			},
+		})
+	})
+}

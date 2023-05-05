@@ -494,3 +494,12 @@ func (r *siteResolver) PerUserCompletionsQuota() *int32 {
 	}
 	return nil
 }
+
+func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
+	c := conf.Get()
+	if c.Completions != nil && c.Completions.PerUserCodeCompletionsDailyLimit > 0 {
+		i := int32(c.Completions.PerUserCodeCompletionsDailyLimit)
+		return &i
+	}
+	return nil
+}

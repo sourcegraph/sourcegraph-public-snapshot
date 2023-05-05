@@ -21,7 +21,7 @@ type completionsResolver struct {
 }
 
 func NewCompletionsResolver(db database.DB) graphqlbackend.CompletionsResolver {
-	rl := streaming.NewRateLimiter(db, redispool.Store)
+	rl := streaming.NewRateLimiter(db, redispool.Store, streaming.RateLimitScopeCompletion)
 	return &completionsResolver{rl: rl}
 }
 

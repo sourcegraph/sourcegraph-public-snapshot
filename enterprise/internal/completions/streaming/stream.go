@@ -33,7 +33,7 @@ const MaxRequestDuration = time.Minute
 
 // NewCompletionsStreamHandler is an http handler which streams back completions results.
 func NewCompletionsStreamHandler(logger log.Logger, db database.DB) http.Handler {
-	rl := NewRateLimiter(db, redispool.Store)
+	rl := NewRateLimiter(db, redispool.Store, RateLimitScopeCompletion)
 	return &streamHandler{logger: logger, rl: rl}
 }
 
