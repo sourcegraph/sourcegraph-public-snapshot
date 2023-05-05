@@ -2,8 +2,6 @@ import { gql } from '@sourcegraph/http-client'
 
 import { LIST_EXTERNAL_SERVICE_FRAGMENT } from '../externalServices/backend'
 
-console.log('fragment', LIST_EXTERNAL_SERVICE_FRAGMENT)
-
 export const GITHUB_APPS_QUERY = gql`
     query GitHubApps {
         gitHubApps {

@@ -1,6 +1,6 @@
 import { FC, useEffect, useMemo } from 'react'
 
-import { mdiCog, mdiChevronLeft, mdiGithub, mdiRefresh, mdiPlus } from '@mdi/js'
+import { mdiCog, mdiGithub, mdiRefresh, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { useParams } from 'react-router-dom'
 
@@ -23,8 +23,7 @@ import {
 
 import { GitHubAppByIDResult, GitHubAppByIDVariables } from '../../graphql-operations'
 import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
-import { ConnectionList, SummaryContainer, ConnectionSummary, ShowMoreButton } from '../FilteredConnection/ui'
-import { hasNextPage } from '../FilteredConnection/utils'
+import { ConnectionList, SummaryContainer, ConnectionSummary } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
 import { GITHUB_APP_BY_ID_QUERY } from './backend'
@@ -48,15 +47,13 @@ export const GitHubAppPage: FC<Props> = ({
     }, [telemetryService])
 
     const { data, loading, error } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(GITHUB_APP_BY_ID_QUERY, {
-        variables: { id: appID },
+        variables: { id: appID ?? '' },
     })
 
     const app = useMemo(() => data?.gitHubApp, [data])
 
-    console.log('APP', app)
-
     // TODO - make an actual GraphQL request to do it here...
-    const refreshFromGH = () => {}
+    const refreshFromGH = (): void => {}
 
     if (!appID) {
         return null
@@ -92,7 +89,7 @@ export const GitHubAppPage: FC<Props> = ({
                         }
                     />
                     <span className="d-flex align-items-center mt-2 mb-3">
-                        <img className={classNames(styles.logo, 'mr-4')} src={app.logo} />
+                        <img className={classNames(styles.logo, 'mr-4')} src={app.logo} alt="App logo" />
                         <div className="d-flex flex-column">
                             <small className="text-muted">AppID: {app.appID}</small>
                             <small className="text-muted">Slug: {app.slug}</small>
@@ -119,7 +116,11 @@ export const GitHubAppPage: FC<Props> = ({
                                 >
                                     <span className="mr-3">
                                         <Link to={installation.account.url} className="mr-3">
-                                            <UserAvatar size={32} user={installation.account} className="mr-2" />
+                                            <UserAvatar
+                                                size={32}
+                                                user={{ ...installation.account, displayName: null }}
+                                                className="mr-2"
+                                            />
                                             {installation.account.login}
                                         </Link>
                                         <span>Type: {installation.account.type}</span>
