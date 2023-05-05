@@ -147,6 +147,10 @@ func (r *productSubscription) SourcegraphAccessToken(ctx context.Context) (*stri
 		return nil, errors.New("an active license is required")
 	}
 
+	if !activeLicense.AccessTokenEnabled {
+		return nil, errors.New("active license has been disabled for access")
+	}
+
 	token := defaultAccessToken(defaultRawAccessToken([]byte(r.activeLicense.LicenseKey)))
 	return &token, nil
 }

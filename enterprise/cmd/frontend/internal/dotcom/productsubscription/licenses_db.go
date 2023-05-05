@@ -24,6 +24,7 @@ type dbLicense struct {
 	LicenseTags           []string
 	LicenseUserCount      *int
 	LicenseExpiresAt      *time.Time
+	AccessTokenEnabled    bool
 }
 
 // errLicenseNotFound occurs when a database operation expects a specific Sourcegraph
@@ -152,7 +153,8 @@ SELECT
 	license_version,
 	license_tags,
 	license_user_count,
-	license_expires_at
+	license_expires_at,
+	access_token_enabled
 FROM product_licenses
 WHERE (%s)
 ORDER BY created_at DESC
@@ -179,6 +181,7 @@ ORDER BY created_at DESC
 			pq.Array(&v.LicenseTags),
 			&v.LicenseUserCount,
 			&v.LicenseExpiresAt,
+			&v.AccessTokenEnabled,
 		); err != nil {
 			return nil, err
 		}
