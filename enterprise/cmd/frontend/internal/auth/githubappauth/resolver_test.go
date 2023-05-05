@@ -2,6 +2,7 @@ package githubapp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -17,8 +18,10 @@ import (
 	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // userCtx returns a context where give user ID identifies logged in user.
@@ -192,13 +195,32 @@ func TestResolver_GitHubApp(t *testing.T) {
 
 	gitHubAppsStore := store.NewStrictMockGitHubAppsStore()
 	gitHubAppsStore.GetByIDFunc.SetDefaultReturn(&ghtypes.GitHubApp{
-		ID: 1,
+		ID:      1,
+		AppID:   1,
+		BaseURL: "https://github.com",
 	}, nil)
+
+	extsvcStore := database.NewMockExternalServiceStore()
+	conn := &schema.GitHubConnection{
+		Url: "https://github.com",
+		GitHubAppDetails: &schema.GitHubAppDetails{
+			AppID:          1,
+			InstallationID: 123,
+		},
+	}
+	extsvcConn, err := json.Marshal(conn)
+	require.NoError(t, err)
+	extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{{
+		DisplayName: "MockExtsvc",
+		Kind:        extsvc.KindGitHub,
+		Config:      extsvc.NewUnencryptedConfig(string(extsvcConn)),
+	}}, nil)
 
 	db := edb.NewStrictMockEnterpriseDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)
+	db.ExternalServicesFunc.SetDefaultReturn(extsvcStore)
 
 	adminCtx := userCtx(1)
 	userCtx := userCtx(2)
@@ -213,11 +235,21 @@ func TestResolver_GitHubApp(t *testing.T) {
 			query {
 				gitHubApp(id: "%s") {
 					id
+					externalServices(first: 1) {
+						nodes {
+							displayName
+						}
+					}
 				}
 			}`, graphqlID),
 		ExpectedResult: fmt.Sprintf(`{
 			"gitHubApp": {
-				"id": "%s"
+				"id": "%s",
+				"externalServices": {
+						"nodes": [{
+							"displayName": "MockExtsvc"
+					}]
+				}
 			}
 		}`, graphqlID),
 	}, {
