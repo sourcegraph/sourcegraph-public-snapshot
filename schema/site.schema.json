@@ -1628,25 +1628,19 @@
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [
-        10000
-      ]
+      "examples": [10000]
     },
     "observability.logSlowGraphQLRequests": {
       "description": "(debug) logs all GraphQL requests slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [
-        10000
-      ]
+      "examples": [10000]
     },
     "observability.captureSlowGraphQLRequestsLimit": {
       "description": "(debug) Set a limit to the amount of captured slow GraphQL requests being stored for visualization. For defining the threshold for a slow GraphQL request, see observability.logSlowGraphQLRequests.",
       "type": "integer",
       "group": "Debug",
-      "examples": [
-        2000
-      ]
+      "examples": [2000]
     },
     "insights.backfill.interruptAfter": {
       "description": "Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.",
@@ -1673,19 +1667,14 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 1,
-      "examples": [
-        10
-      ]
+      "examples": [10]
     },
     "insights.query.worker.rateLimit": {
       "description": "Maximum number of Code Insights queries initiated per second on a worker node.",
       "type": "number",
       "group": "CodeInsights",
       "default": 20,
-      "examples": [
-        10.0,
-        0.5
-      ],
+      "examples": [10.0, 0.5],
       "!go": {
         "pointer": true
       }
@@ -1695,20 +1684,14 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 20,
-      "examples": [
-        10,
-        20
-      ]
+      "examples": [10, 20]
     },
     "insights.historical.worker.rateLimit": {
       "description": "Maximum number of historical Code Insights data frames that may be analyzed per second.",
       "type": "number",
       "group": "CodeInsights",
       "default": 20,
-      "examples": [
-        50.0,
-        0.5
-      ],
+      "examples": [50.0, 0.5],
       "!go": {
         "pointer": true
       }
@@ -1718,10 +1701,7 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 20,
-      "examples": [
-        10,
-        20
-      ]
+      "examples": [10, 20]
     },
     "insights.aggregations.bufferSize": {
       "description": "The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend",
@@ -1741,11 +1721,7 @@
       "group": "CodeInsights",
       "default": 30,
       "maximum": 90,
-      "examples": [
-        12,
-        24,
-        50
-      ]
+      "examples": [12, 24, 50]
     },
     "own.bestEffortTeamMatching": {
       "description": "The Own service will attempt to match a Team by the last part of its handle if it contains a slash and no match is found for its full handle.",
@@ -1870,10 +1846,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": [
-              "key",
-              "message"
-            ],
+            "required": ["key", "message"],
             "properties": {
               "key": {
                 "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
@@ -1906,10 +1879,7 @@
         "srcCliVersionCache": {
           "description": "Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.",
           "type": "object",
-          "required": [
-            "enabled",
-            "github"
-          ],
+          "required": ["enabled", "github"],
           "group": "Sourcegraph.com",
           "properties": {
             "enabled": {
@@ -1920,10 +1890,7 @@
             "github": {
               "description": "GitHub configuration, both for queries and receiving release webhooks.",
               "type": "object",
-              "required": [
-                "token",
-                "webhookSecret"
-              ],
+              "required": [ "token", "webhookSecret"],
               "properties": {
                 "repository": {
                   "description": "The repository to get the latest version of.",
@@ -1989,10 +1956,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": [
-          "key",
-          "message"
-        ],
+        "required": ["key", "message"],
         "properties": {
           "key": {
             "description": "e.g. '2023-03-10-my-key'; MUST START WITH YYYY-MM-DD; a globally unique key used to track whether the message has been dismissed.",
@@ -2017,9 +1981,7 @@
       "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including Google Workspace), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",
       "type": "array",
       "items": {
-        "required": [
-          "type"
-        ],
+        "required": ["type"],
         "properties": {
           "type": {
             "type": "string",
@@ -2087,9 +2049,7 @@
       "type": "string",
       "description": "The duration of a user session, after which it expires and the user is required to re-authenticate. The default is 90 days. There is typically no need to set this, but some users may have specific internal security requirements.\n\nThe string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). E.g., \"720h\", \"43200m\", \"2592000s\" all indicate a timespan of 30 days.\n\nNote: changing this field does not affect the expiration of existing sessions. If you would like to enforce this limit for existing sessions, you must log out currently signed-in users. You can force this by removing all keys beginning with \"session_\" from the Redis store:\n\n* For deployments using `sourcegraph/server`: `docker exec $CONTAINER_ID redis-cli --raw keys 'session_*' | xargs docker exec $CONTAINER_ID redis-cli del`\n* For cluster deployments: \n  ```\n  REDIS_POD=\"$(kubectl get pods -l app=redis-store -o jsonpath={.items[0].metadata.name})\";\n  kubectl exec \"$REDIS_POD\" -- redis-cli --raw keys 'session_*' | xargs kubectl exec \"$REDIS_POD\" -- redis-cli --raw del;\n  ```\n",
       "default": "2160h",
-      "examples": [
-        "168h"
-      ],
+      "examples": ["168h"],
       "group": "Authentication"
     },
     "auth.enableUsernameChanges": {
@@ -2185,17 +2145,10 @@
     },
     "update.channel": {
       "description": "The channel on which to automatically check for Sourcegraph updates.",
-      "type": [
-        "string"
-      ],
-      "enum": [
-        "release",
-        "none"
-      ],
+      "type": ["string"],
+      "enum": ["release", "none"],
       "default": "release",
-      "examples": [
-        "none"
-      ],
+      "examples": ["none"],
       "group": "Misc."
     },
     "productResearchPage.enabled": {
@@ -2305,9 +2258,7 @@
     "organizationInvitations": {
       "description": "Configuration for organization invitations.",
       "type": "object",
-      "required": [
-        "signingKey"
-      ],
+      "required": ["signingKey"],
       "properties": {
         "expiryTime": {
           "description": "Time before the invitation expires, in hours (experimental, not enforced at the moment).",
@@ -2329,13 +2280,7 @@
     "embeddings": {
       "description": "Configuration for embeddings service.",
       "type": "object",
-      "required": [
-        "enabled",
-        "dimensions",
-        "model",
-        "accessToken",
-        "url"
-      ],
+      "required": ["enabled", "dimensions", "model", "accessToken", "url"],
       "properties": {
         "enabled": {
           "description": "Toggles whether embedding service is enabled.",
@@ -2395,12 +2340,7 @@
     "completions": {
       "description": "Configuration for the completions service.",
       "type": "object",
-      "required": [
-        "enabled",
-        "model",
-        "accessToken",
-        "provider"
-      ],
+      "required": ["enabled", "model", "accessToken", "provider"],
       "properties": {
         "enabled": {
           "description": "Toggles whether completions are enabled.",
@@ -2427,10 +2367,7 @@
           "type": "string",
           "description": "The external completions provider.",
           "default": "anthropic",
-          "enum": [
-            "anthropic",
-            "openai"
-          ]
+          "enum": ["anthropic", "openai"]
         },
         "perUserDailyLimit": {
           "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
@@ -2471,9 +2408,7 @@
       "description": "Configures the builtin username-password authentication provider.",
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",
@@ -2554,9 +2489,7 @@
       "description": "Configures the SAML authentication provider for SSO.\n\nNote: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the `auth.providers` array.",
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "dependencies": {
         "serviceProviderCertificate": [
           "serviceProviderPrivateKey"
@@ -2678,10 +2611,7 @@
       "description": "Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).",
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "type",
-        "usernameHeader"
-      ],
+      "required": ["type", "usernameHeader"],
       "properties": {
         "type": {
           "type": "string",
@@ -2714,11 +2644,7 @@
       "description": "Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.",
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "type",
-        "clientID",
-        "clientSecret"
-      ],
+      "required": ["type", "clientID", "clientSecret"],
       "properties": {
         "type": {
           "type": "string",
@@ -2799,11 +2725,7 @@
       "description": "Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have `api` and `read_user` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/gitlab/callback\".",
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "type",
-        "clientID",
-        "clientSecret"
-      ],
+      "required": ["type", "clientID", "clientSecret"],
       "properties": {
         "type": {
           "type": "string",
@@ -2841,10 +2763,7 @@
           "type": "string",
           "description": "The OAuth API scope that should be used",
           "default": "api",
-          "enum": [
-            "api",
-            "read_api"
-          ]
+          "enum": ["api", "read_api"]
         },
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts via GitLab authentication. If false, users signing in via GitLab must have an existing Sourcegraph account, which will be linked to their GitLab identity after sign-in.",
@@ -2881,11 +2800,7 @@
       "description": "Configures the Bitbucket Cloud OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Cloud workspace: https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/. The application should have account, email, and repository scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/bitbucketcloud/callback\".",
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "type",
-        "clientKey",
-        "clientSecret"
-      ],
+      "required": ["type", "clientKey", "clientSecret"],
       "properties": {
         "type": {
           "type": "string",
@@ -2923,11 +2838,7 @@
           "type": "string",
           "description": "The OAuth API scope that should be used",
           "default": "account,email,repository",
-          "enum": [
-            "account",
-            "email",
-            "repository"
-          ]
+          "enum": ["account", "email", "repository"]
         },
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts via Bitbucket Cloud authentication. If false, users signing in via Bitbucket Cloud must have an existing Sourcegraph account, which will be linked to their Bitbucket Cloud identity after sign-in.",
@@ -2940,10 +2851,7 @@
       "description": "Gerrit auth provider",
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "type",
-        "url"
-      ],
+      "required": ["type", "url"],
       "properties": {
         "type": {
           "type": "string",
@@ -2975,11 +2883,7 @@
       "description": "Azure auth provider for dev.azure.com",
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "type",
-        "clientID",
-        "clientSecret"
-      ],
+      "required": ["type", "clientID", "clientSecret"],
       "properties": {
         "type": {
           "type": "string",
@@ -3064,9 +2968,7 @@
     "NotifierSlack": {
       "description": "Slack notifier",
       "type": "object",
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",
@@ -3097,10 +2999,7 @@
     "NotifierPagerduty": {
       "description": "PagerDuty notifier",
       "type": "object",
-      "required": [
-        "type",
-        "integrationKey"
-      ],
+      "required": ["type", "integrationKey"],
       "properties": {
         "type": {
           "type": "string",
@@ -3122,10 +3021,7 @@
     "NotifierWebhook": {
       "description": "Webhook notifier",
       "type": "object",
-      "required": [
-        "type",
-        "url"
-      ],
+      "required": ["type", "url"],
       "properties": {
         "type": {
           "type": "string",
@@ -3148,10 +3044,7 @@
     "NotifierEmail": {
       "description": "Email notifier",
       "type": "object",
-      "required": [
-        "type",
-        "address"
-      ],
+      "required": ["type", "address"],
       "properties": {
         "type": {
           "type": "string",
@@ -3166,9 +3059,7 @@
     "NotifierOpsGenie": {
       "description": "OpsGenie notifier",
       "type": "object",
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",
@@ -3196,12 +3087,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": [
-                  "team",
-                  "user",
-                  "escalation",
-                  "schedule"
-                ]
+                "enum": ["team", "user", "escalation", "schedule"]
               },
               "id": {
                 "type": "string"
@@ -3215,22 +3101,13 @@
             },
             "oneOf": [
               {
-                "required": [
-                  "type",
-                  "id"
-                ]
+                "required": ["type", "id"]
               },
               {
-                "required": [
-                  "type",
-                  "name"
-                ]
+                "required": ["type", "name"]
               },
               {
-                "required": [
-                  "type",
-                  "username"
-                ]
+                "required": ["type", "username"]
               }
             ]
           }
@@ -3240,18 +3117,11 @@
     "EncryptionKey": {
       "description": "Config for a key",
       "type": "object",
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",
-          "enum": [
-            "cloudkms",
-            "awskms",
-            "mounted",
-            "noop"
-          ]
+          "enum": ["cloudkms", "awskms", "mounted", "noop"]
         }
       },
       "oneOf": [
@@ -3275,10 +3145,7 @@
     "CloudKMSEncryptionKey": {
       "description": "Google Cloud KMS Encryption Key, used to encrypt data in Google Cloud environments",
       "type": "object",
-      "required": [
-        "type",
-        "keyname"
-      ],
+      "required": ["type", "keyname"],
       "properties": {
         "type": {
           "type": "string",
@@ -3295,10 +3162,7 @@
     "AWSKMSEncryptionKey": {
       "description": "AWS KMS Encryption Key, used to encrypt data in AWS environments",
       "type": "object",
-      "required": [
-        "type",
-        "keyId"
-      ],
+      "required": ["type", "keyId"],
       "properties": {
         "type": {
           "type": "string",
@@ -3318,10 +3182,7 @@
     "MountedEncryptionKey": {
       "description": "This encryption key is mounted from a given file path or an environment variable.",
       "type": "object",
-      "required": [
-        "type",
-        "keyname"
-      ],
+      "required": ["type", "keyname"],
       "properties": {
         "type": {
           "type": "string",
@@ -3344,9 +3205,7 @@
     "NoOpEncryptionKey": {
       "description": "This encryption key is a no op, leaving your data in plaintext (not recommended).",
       "type": "object",
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "properties": {
         "type": {
           "type": "string",
@@ -3356,10 +3215,7 @@
     },
     "EmailTemplate": {
       "type": "object",
-      "required": [
-        "subject",
-        "html"
-      ],
+      "required": ["subject", "html"],
       "properties": {
         "subject": {
           "description": "Template for email subject header",
