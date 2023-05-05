@@ -11,11 +11,6 @@ type eventLogsScrapeStateStore struct {
 	*basestore.Store
 }
 
-// TODO(sashaostrikov): write tests before merging this PR
-func NewEventLogsScrapeStateStore(db DB) EventLogsScrapeStateStore {
-	return &eventLogsScrapeStateStore{Store: basestore.NewWithHandle(db.Handle())}
-}
-
 func EventLogsScrapeStateStoreWith(other basestore.ShareableStore) EventLogsScrapeStateStore {
 	return &eventLogsScrapeStateStore{Store: basestore.NewWithHandle(other.Handle())}
 }
