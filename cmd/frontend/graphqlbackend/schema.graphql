@@ -10022,3 +10022,22 @@ type PerforceChangelist {
     """
     cid: String!
 }
+extend type Query {
+    """
+    Returns a list of file path and content pairs based on keyword search using sourcegraph search.
+    """
+    codyKeywordContext(
+        """
+        The human query to generate context for.
+        """
+        query: String!
+        """
+        The name of the repository to search.
+        """
+        repo: String
+        """
+        The limit of results to return.
+        """
+        limit: Int
+    ): [FileMatch!]!
+}
