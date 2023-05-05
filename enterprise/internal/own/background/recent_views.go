@@ -21,6 +21,8 @@ var (
 		Namespace: "src",
 		Name:      "own_recent_views_events_processed_total",
 	})
+	indexInterval     = time.Minute * 5
+	mockIndexInterval time.Duration
 )
 
 func NewOwnRecentViewsIndexer(db database.DB, observationCtx *observation.Context) goroutine.BackgroundRoutine {
@@ -36,7 +38,11 @@ func NewOwnRecentViewsIndexer(db database.DB, observationCtx *observation.Contex
 		Metrics:           redMetrics,
 	})
 	handler := newRecentViewsIndexer(db, operation.Logger)
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), "own.recent-views", "", time.Minute*5, handler, operation)
+	interval := indexInterval
+	if mockIndexInterval != 0 {
+		interval = mockIndexInterval
+	}
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), "own.recent-views", "", interval, handler, operation)
 }
 
 type recentViewsIndexer struct {
@@ -48,7 +54,6 @@ func newRecentViewsIndexer(db database.DB, logger log.Logger) *recentViewsIndexe
 	return &recentViewsIndexer{db: db, logger: logger}
 }
 
-// TODO(sashaostrikov): write tests before merging this PR
 func (r *recentViewsIndexer) Handle(ctx context.Context) error {
 	logJobDisabled := func() {
 		r.logger.Info("skipping own background job, job disabled", log.String("job-name", "recent-views"))

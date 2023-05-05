@@ -142,12 +142,6 @@ func (s *recentViewSignalStore) List(ctx context.Context, _ ListRecentViewSignal
 // events. One signal has a userID, repoPathID and a count. This data is derived
 // from the event, please refer to inline comments for more implementation
 // details.
-//
-// TODO(sashaostrikov): BuildAggregateFromEvents should be called from worker,
-// which queries events like so:
-//
-// db := NewDBWith(s.Logger, s)
-// events, err := db.EventLogs().ListEventsByName(ctx, viewBlobEventType, after, limit)
 func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, events []*Event) error {
 	// Map of repo name to repo ID and paths+repoPathIDs of files specified in
 	// "ViewBlob" events. Used to aggregate all the paths for a single repo to then
