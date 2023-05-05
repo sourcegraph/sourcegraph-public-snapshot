@@ -2,10 +2,10 @@ package actor
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RateLimit struct {

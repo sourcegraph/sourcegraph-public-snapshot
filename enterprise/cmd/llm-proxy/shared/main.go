@@ -40,7 +40,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	defer shutdownTracing()
 
 	handler := newServiceHandler(obctx.Logger, config)
-	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
+	handler = rateLimit(obctx.Logger, redispool.Cache, handler)
 	handler = authenticate(
 		obctx.Logger,
 		rcache.New("llm-proxy-tokens"),
@@ -50,6 +50,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			AllowAnonymous: config.AllowAnonymous,
 		},
 	)
+	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
 
 	server := httpserver.NewFromAddr(config.Address, &http.Server{
 		ReadTimeout:  75 * time.Second,
