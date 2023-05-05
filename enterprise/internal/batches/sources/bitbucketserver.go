@@ -8,6 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -141,18 +142,22 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 // CloseChangeset closes the given *Changeset on the code host and updates the
 // Metadata column in the *batches.Changeset to the newly closed pull request.
 func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a Bitbucket Server pull request")
+	}
+
 	declined, err := s.callAndRetryIfOutdated(ctx, c, s.client.DeclinePullRequest)
 	if err != nil {
 		return err
 	}
 
-	pr := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
-
-	deleteBranch := conf.Get().BatchChangesAutoDeleteBranch
-	if deleteBranch {
-		err := s.client.DeleteSourceBranch(ctx, pr)
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		err := s.client.DeleteSourceBranch(ctx, pr, bitbucketserver.DeleteSourceBranchInput{
+			Name: pr.FromRef.ID,
+		})
 		if err != nil {
-			return err
+			return errcode.MakeNonRetryable(errors.Wrap(err, "deleting source branch"))
 		}
 	}
 
