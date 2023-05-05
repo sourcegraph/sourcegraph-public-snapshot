@@ -31,6 +31,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
     const [errorMessage, setErrorMessage] = useState<string>('')
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
+    const isAppInstalled = true // temporary
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -109,7 +110,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         <div className="outer-container">
             <Header />
             {view === 'login' && (
-                <Login onLogin={onLogin} isValidLogin={isValidLogin} serverEndpoint={config?.serverEndpoint} />
+                <Login
+                    onLogin={onLogin}
+                    isValidLogin={isValidLogin}
+                    serverEndpoint={config?.serverEndpoint}
+                    isAppInstalled={isAppInstalled}
+                />
             )}
             {view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
             {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}
@@ -123,9 +129,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             )}
             {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
-            {view === 'settings' && (
-                <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} vscodeAPI={vscodeAPI} />
-            )}
+            {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
             {view === 'chat' && errorMessage && (
                 <div className="error">
                     Error: {errorMessage}

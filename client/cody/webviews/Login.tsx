@@ -14,12 +14,14 @@ interface LoginProps {
     isValidLogin?: boolean
     onLogin: (token: string, endpoint: string) => void
     serverEndpoint?: string
+    isAppInstalled: boolean
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
     isValidLogin,
     onLogin,
     serverEndpoint,
+    isAppInstalled,
 }) => {
     const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState(serverEndpoint)
@@ -90,7 +92,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                             Continue with Sourcegraph.com
                         </VSCodeButton>
                     </a>
-                    <ConnectApp isAppInstalled={false} />
+                    <ConnectApp isAppInstalled={isAppInstalled} />
                 </div>
             </section>
             <div
