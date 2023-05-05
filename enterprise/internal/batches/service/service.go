@@ -186,7 +186,7 @@ func (s *Service) checkBatchChangeAdmin(ctx context.Context, orgID, creatorID in
 			}
 
 			if allMembersBatchChangesAdmin {
-				if err := auth.CheckOrgAccessOrSiteAdminOrSameUser(ctx, db, creatorID, orgID); err != nil {
+				if err := auth.CheckOrgAccessOrSiteAdmin(ctx, db, orgID); err != nil {
 					return err
 				}
 				return nil
