@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//enterprise/internal/completions/streaming/anthropic",
         "//enterprise/internal/completions/streaming/dotcom",
+        "//enterprise/internal/completions/streaming/llmproxy",
         "//enterprise/internal/completions/streaming/openai",
         "//enterprise/internal/completions/types",
         "//internal/actor",

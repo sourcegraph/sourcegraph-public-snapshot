@@ -2100,7 +2100,7 @@
           "type": "string",
           "description": "The external completions provider.",
           "default": "anthropic",
-          "enum": ["anthropic", "openai"]
+          "enum": ["anthropic", "openai", "llmproxy"]
         },
         "perUserDailyLimit": {
           "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
