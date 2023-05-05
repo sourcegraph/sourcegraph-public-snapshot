@@ -2,7 +2,6 @@ import { FC, useCallback, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextInputProps, QueryState, SubmitSearchProps, EditorHint } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -36,7 +35,6 @@ export interface SearchBoxProps
             | 'onCompletionItemSelected'
             | 'applySuggestionsOnEnter'
         > {
-    authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     showSearchContext: boolean
     showSearchContextManagement: boolean
@@ -67,6 +65,7 @@ export interface SearchBoxProps
 
 export const SearchBox: FC<SearchBoxProps> = props => {
     const {
+        authenticatedUser,
         queryState,
         onEditorCreated: onEditorCreatedCallback,
         showSearchHistory,
@@ -194,6 +193,7 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         onSelectSearchFromHistory={onInlineSearchHistorySelect}
                     />
                     <Toggles
+                        authenticatedUser={authenticatedUser}
                         patternType={props.patternType}
                         setPatternType={props.setPatternType}
                         caseSensitive={props.caseSensitive}

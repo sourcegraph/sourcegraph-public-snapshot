@@ -4,6 +4,7 @@ import { mdiCodeBrackets, mdiFormatLetterCase, mdiRegex } from '@mdi/js'
 import classNames from 'classnames'
 
 import { isMacPlatform } from '@sourcegraph/common'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
     SearchPatternTypeProps,
@@ -20,6 +21,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { CopyQueryButton } from './CopyQueryButton'
 import { QueryInputToggle } from './QueryInputToggle'
+import { SaveQueryDestination, ShareQueryButton } from './ShareQueryButton'
 import { SmartSearchToggle } from './SmartSearchToggle'
 
 import styles from './Toggles.module.scss'
@@ -32,10 +34,13 @@ export interface TogglesProps
         SettingsCascadeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
+    authenticatedUser: AuthenticatedUser | null
+    onSaveSearch?: (destination: SaveQueryDestination, title: string, fullQuery: string) => Promise<string>
     navbarSearchQuery: string
     className?: string
     showCopyQueryButton?: boolean
     showSmartSearchButton?: boolean
+    showShareQueryButton?: boolean
     /**
      * If set to false makes all buttons non-actionable. The main use case for
      * this prop is showing the toggles in examples. This is different from
@@ -63,6 +68,8 @@ export const getFullQuery = (
  */
 export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesProps>> = (props: TogglesProps) => {
     const {
+        authenticatedUser,
+        onSaveSearch,
         navbarSearchQuery,
         patternType,
         setPatternType,
@@ -75,6 +82,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         submitSearch,
         showCopyQueryButton = true,
         showSmartSearchButton = true,
+        showShareQueryButton = !!props.authenticatedUser,
         structuralSearchDisabled,
     } = props
 
@@ -191,7 +199,9 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         />
                     )}
                 </>
-                {(showSmartSearchButton || showCopyQueryButton) && <div className={styles.separator} />}
+                {(showSmartSearchButton || showCopyQueryButton || (showShareQueryButton && onSaveSearch)) && (
+                    <div className={styles.separator} />
+                )}
                 {showSmartSearchButton && (
                     <SmartSearchToggle
                         className="test-smart-search-toggle"
@@ -204,7 +214,15 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                     <CopyQueryButton
                         fullQuery={fullQuery}
                         isMacPlatform={isMacPlatform()}
-                        className={classNames(styles.toggle, styles.copyQueryButton)}
+                        className={classNames(styles.toggle, styles.copyShareQueryButton)}
+                    />
+                )}
+                {showShareQueryButton && onSaveSearch && (
+                    <ShareQueryButton
+                        authenticatedUser={authenticatedUser}
+                        onSaveSearch={onSaveSearch}
+                        fullQuery={fullQuery}
+                        className={styles.copyShareQueryButton}
                     />
                 )}
             </>

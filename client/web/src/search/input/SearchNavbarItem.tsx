@@ -1,9 +1,11 @@
 import React, { useCallback, useRef, useEffect } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
+import { catchError, map } from 'rxjs/operators'
 import shallow from 'zustand/shallow'
 
 import { SearchBox, Toggles } from '@sourcegraph/branded'
+import { ErrorLike, asError } from '@sourcegraph/common'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
@@ -11,8 +13,10 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CreateSavedSearchResult } from '../../graphql-operations'
 import { useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
+import { createSavedSearch } from '../backend'
 import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 
 import { LazyExperimentalSearchInput } from './LazyExperimentalSearchInput'
@@ -106,6 +110,32 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                     className="flex-grow-1"
                 >
                     <Toggles
+                        authenticatedUser={props.authenticatedUser}
+                        onSaveSearch={(destination, title, fullQuery) => {
+                            return new Promise((resolve, reject) => {
+                                createSavedSearch(
+                                    title,
+                                    fullQuery,
+                                    false,
+                                    false,
+                                    destination.__typename === 'User' ? destination.id : null,
+                                    destination.__typename === 'Org' ? destination.id : null
+                                )
+                                    .pipe(
+                                        map(p => p),
+                                        catchError((error): [ErrorLike] => [asError(error)])
+                                    )
+                                    .subscribe(result => {
+                                        if ((result as CreateSavedSearchResult).createSavedSearch) {
+                                            const res = result as CreateSavedSearchResult
+                                            resolve(`${window.location.origin}/short/${res.createSavedSearch.id}`)
+                                        } else {
+                                            const res = result as Error
+                                            reject(res)
+                                        }
+                                    })
+                            })
+                        }}
                         patternType={searchPatternType}
                         caseSensitive={searchCaseSensitivity}
                         setPatternType={setSearchPatternType}
