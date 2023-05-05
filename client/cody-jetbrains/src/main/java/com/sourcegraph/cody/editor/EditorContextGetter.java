@@ -1,4 +1,4 @@
-package com.sourcegraph.cody;
+package com.sourcegraph.cody.editor;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;

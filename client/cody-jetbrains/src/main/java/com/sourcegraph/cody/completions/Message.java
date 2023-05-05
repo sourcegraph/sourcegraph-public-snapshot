@@ -1,4 +1,4 @@
-package com.sourcegraph.completions;
+package com.sourcegraph.cody.completions;
 
 import org.jetbrains.annotations.NotNull;
 

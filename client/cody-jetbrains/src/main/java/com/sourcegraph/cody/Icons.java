@@ -1,4 +1,4 @@
-package com.sourcegraph;
+package com.sourcegraph.cody;
 
 import com.intellij.openapi.util.IconLoader;
 

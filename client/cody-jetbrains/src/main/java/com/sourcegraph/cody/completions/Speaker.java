@@ -1,4 +1,4 @@
-package com.sourcegraph.completions;
+package com.sourcegraph.cody.completions;
 
 public enum Speaker {
     HUMAN,

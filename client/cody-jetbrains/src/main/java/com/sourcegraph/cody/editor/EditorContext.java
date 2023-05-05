@@ -1,4 +1,4 @@
-package com.sourcegraph.cody;
+package com.sourcegraph.cody.editor;
 
 import org.jetbrains.annotations.Nullable;
 

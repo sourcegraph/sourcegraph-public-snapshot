@@ -7,7 +7,11 @@ import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
-import com.sourcegraph.completions.Speaker;
+import com.sourcegraph.cody.chat.Chat;
+import com.sourcegraph.cody.chat.ChatMessage;
+import com.sourcegraph.cody.completions.Speaker;
+import com.sourcegraph.cody.editor.EditorContext;
+import com.sourcegraph.cody.editor.EditorContextGetter;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;

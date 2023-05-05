@@ -1,8 +1,8 @@
-package com.sourcegraph.cody;
+package com.sourcegraph.cody.chat;
 
-import com.sourcegraph.completions.CompletionsInput;
-import com.sourcegraph.completions.CompletionsService;
-import com.sourcegraph.completions.Speaker;
+import com.sourcegraph.cody.completions.CompletionsInput;
+import com.sourcegraph.cody.completions.CompletionsService;
+import com.sourcegraph.cody.completions.Speaker;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
