@@ -1,4 +1,7 @@
-ALTER TABLE product_licenses DROP COLUMN IF EXISTS access_token_enabled;
+ALTER TABLE product_licenses ALTER COLUMN access_token_enabled SET DEFAULT TRUE;
+-- One time migration to enable all licenses again, we want to disable them manually if abuse
+-- has been detected.
+UPDATE product_licenses SET access_token_enabled = TRUE;
 
 ALTER TABLE product_subscriptions ALTER COLUMN llm_proxy_enabled SET DEFAULT FALSE;
 

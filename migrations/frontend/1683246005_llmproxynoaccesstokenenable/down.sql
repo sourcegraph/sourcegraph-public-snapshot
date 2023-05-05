@@ -1,8 +1,6 @@
-ALTER TABLE product_licenses
-ADD COLUMN IF NOT EXISTS access_token_enabled BOOLEAN NOT NULL DEFAULT false;
-
-COMMENT ON COLUMN product_licenses.access_token_enabled
-IS 'Whether this license key can be used as an access token to authenticate API requests';
+ALTER TABLE product_licenses ALTER COLUMN access_token_enabled SET DEFAULT FALSE;
+-- One time migration to disable all licenses again.
+UPDATE product_licenses SET access_token_enabled = FALSE;
 
 ALTER TABLE product_subscriptions ALTER COLUMN llm_proxy_enabled SET DEFAULT TRUE;
 

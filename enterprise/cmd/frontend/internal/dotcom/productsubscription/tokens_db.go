@@ -42,7 +42,8 @@ func (t dbTokens) LookupAccessToken(ctx context.Context, token string) (string, 
 SELECT product_subscription_id
 FROM product_licenses
 WHERE
-	digest(license_key, 'sha256')=%s`,
+	access_token_enabled=true
+	AND digest(license_key, 'sha256')=%s`,
 		decoded,
 	)
 	subID, found, err := basestore.ScanFirstString(t.store.Query(ctx, query))
