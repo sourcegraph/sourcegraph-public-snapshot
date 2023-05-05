@@ -96,6 +96,7 @@ ts_project(
     srcs = [
         "src/chat/ChatViewProvider.test.ts",
         "src/completions/context.test.ts",
+        "src/completions/provider.test.ts",
         "src/configuration.test.ts",
         "src/keyword-context/local-keyword-context-fetcher.test.ts",
     ],
