@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -57,53 +56,31 @@ func (s Sources) Get(ctx context.Context, token string) (*Actor, error) {
 
 // Worker is a goroutine.BackgroundRoutine that runs any SourceSyncer implementations
 // at a regular interval.
-func (s Sources) Worker(logger log.Logger, rootInterval time.Duration) goroutine.BackgroundRoutine {
-	return &sourcesWorker{
-		logger:  logger.Scoped("sources", "sources worker"),
-		sources: s,
-		ticker:  time.NewTicker(rootInterval),
-		done:    make(chan struct{}),
-	}
+func (s Sources) Worker(rootInterval time.Duration) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"sources", "sources sync worker",
+		rootInterval,
+		&sourcesPeriodicHandler{sources: s})
 }
 
-type sourcesWorker struct {
-	logger  log.Logger
+type sourcesPeriodicHandler struct {
 	sources Sources
-	ticker  *time.Ticker
-	done    chan struct{}
 }
 
-var _ goroutine.BackgroundRoutine = &sourcesWorker{}
+var _ goroutine.Handler = &sourcesPeriodicHandler{}
 
-func (s *sourcesWorker) Start() {
-	for {
-		select {
-		case <-s.ticker.C:
-			s.sync()
-		case <-s.done:
-			return
-		}
-	}
-}
-
-func (s *sourcesWorker) sync() {
-	g := pool.New().WithErrors()
+func (s *sourcesPeriodicHandler) Handle(ctx context.Context) error {
+	p := pool.New().WithErrors().WithContext(ctx)
 	for _, src := range s.sources {
 		if src, ok := src.(SourceSyncer); ok {
-			g.Go(func() error {
-				if err := src.Sync(context.Background()); err != nil {
+			p.Go(func(ctx context.Context) error {
+				if err := src.Sync(ctx); err != nil {
 					return errors.Wrap(err, src.Name())
 				}
 				return nil
 			})
 		}
 	}
-	if err := g.Wait(); err != nil {
-		s.logger.Error("some sources failed to sync", log.Error(err))
-	}
-}
-
-func (s *sourcesWorker) Stop() {
-	s.ticker.Stop()
-	close(s.done)
+	return p.Wait()
 }

@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,7 +29,7 @@ func (m *mockSourceSyncer) Sync(context.Context) error {
 
 func TestSourcesWorker(t *testing.T) {
 	var s mockSourceSyncer
-	w := (Sources{&s}).Worker(logtest.Scoped(t), time.Millisecond)
+	w := (Sources{&s}).Worker(time.Millisecond)
 	stopped := make(chan struct{})
 
 	// Work happens after start
