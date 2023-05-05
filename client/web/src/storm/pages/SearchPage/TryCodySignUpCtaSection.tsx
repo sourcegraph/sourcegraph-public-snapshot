@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React from 'react'
 
 import { mdiChevronRight, mdiMicrosoftVisualStudioCode } from '@mdi/js'
 import classNames from 'classnames'
@@ -110,10 +110,8 @@ export const TryCodySignUpCtaSection: React.FC<TelemetryProps & { className?: st
     className,
     telemetryService,
 }) => {
-    const onSignUpClick = useCallback(
-        () => telemetryService.log(EventName.CODY_SIGNUP, { type: 'ComHome' }, { type: 'ComHome' }),
-        [telemetryService]
-    )
+    const onSignUpClick = (): void =>
+        telemetryService.log(EventName.CODY_SIGNUP, { type: 'ComHome' }, { type: 'ComHome' })
 
     return (
         <div className={classNames('d-flex', className, styles.container)}>

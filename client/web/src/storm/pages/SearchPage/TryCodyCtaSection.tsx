@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React from 'react'
 
 import { mdiChevronRight, mdiClose, mdiMicrosoftVisualStudioCode } from '@mdi/js'
 import classNames from 'classnames'
@@ -76,19 +76,12 @@ export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }
     telemetryService,
 }) => {
     const [isDismissed, setIsDismissed] = useTemporarySetting('cody.searchPageCta.dismissed', true)
-    const onDismiss = useCallback(() => setIsDismissed(true), [setIsDismissed])
-    const onInstallClick = useCallback(
-        () => telemetryService.log(EventName.TRY_CODY_VSCODE, { type: 'ComHome' }, { type: 'ComHome' }),
-        [telemetryService]
-    )
-    const onMarketplaceClick = useCallback(
-        () => telemetryService.log(EventName.TRY_CODY_MARKETPLACE, { type: 'ComHome' }, { type: 'ComHome' }),
-        [telemetryService]
-    )
-    const onCookbookClick = useCallback(
-        () => telemetryService.log(EventName.TRY_CODY_WEB, { type: 'ComHome' }, { type: 'ComHome' }),
-        [telemetryService]
-    )
+    const onDismiss = (): void => setIsDismissed(true)
+    const logEvent = (eventName: EventName): void =>
+        telemetryService.log(eventName, { type: 'ComHome' }, { type: 'ComHome' })
+    const onInstallClick = (): void => logEvent(EventName.TRY_CODY_VSCODE)
+    const onMarketplaceClick = (): void => logEvent(EventName.TRY_CODY_MARKETPLACE)
+    const onCookbookClick = (): void => logEvent(EventName.TRY_CODY_WEB)
 
     if (isDismissed) {
         return null
