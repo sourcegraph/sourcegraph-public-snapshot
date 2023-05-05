@@ -1,6 +1,5 @@
 import { FC, useEffect, useState } from 'react'
 
-import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
@@ -8,9 +7,8 @@ import { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Icon, Link, Tooltip, Text, Badge } from '@sourcegraph/wildcard'
+import { Tooltip } from '@sourcegraph/wildcard'
 
-import { CodyIcon } from '../../../cody/CodyIcon'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
@@ -19,6 +17,8 @@ import { useExperimentalQueryInput } from '../../../search/useExperimentalSearch
 import { AddCodeHostWidget } from './AddCodeHostWidget'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
+import { TryCodyCtaSection } from './TryCodyCtaSection'
+import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
 
@@ -66,7 +66,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
             <BrandLogo className={styles.logo} isLightTheme={isLightTheme} variant="logo" />
             {isSourcegraphDotCom && (
                 <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">
-                    Searching millions of public repositories
+                    Code search and an AI assistant with the context of the code graph.
                 </div>
             )}
 
@@ -86,23 +86,17 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                 ) : (
                     <>
                         <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
-                        {!window.context?.codyEnabled && !authenticatedUser && isSourcegraphDotCom && (
-                            <div className="d-flex justify-content-center mt-4">
-                                <Text className="text-muted">
-                                    <Badge variant="merged">Experimental</Badge>{' '}
-                                    <Link
-                                        to="/sign-in?returnTo=/search"
-                                        onClick={() =>
-                                            telemetryService.log('ClickedOnSignupToTryCodySearchCTA', {
-                                                location: 'SearchPage',
-                                            })
-                                        }
-                                    >
-                                        Sign in to try our new AI coding assistant, Cody <CodyIcon />{' '}
-                                        <Icon svgPath={mdiArrowRight} aria-hidden={true} />
-                                    </Link>
-                                </Text>
-                            </div>
+                        {isSourcegraphDotCom && (
+                            <>
+                                {authenticatedUser ? (
+                                    <TryCodyCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
+                                ) : (
+                                    <TryCodySignUpCtaSection
+                                        className="mx-auto my-5"
+                                        telemetryService={telemetryService}
+                                    />
+                                )}
+                            </>
                         )}
                     </>
                 )}

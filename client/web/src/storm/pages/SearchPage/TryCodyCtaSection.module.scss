@@ -1,0 +1,32 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.container {
+    gap: 1rem;
+
+    @media (--lg-breakpoint-down) {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+.card {
+    background-color: var(--color-bg-1);
+}
+
+.vscode-icon {
+    color: var(--primary);
+}
+
+.try-cookbook-link {
+    font-size: 1rem;
+    font-weight: bolder;
+    &,
+    &:hover {
+        color: var(--merged);
+    }
+}
+
+.close-button {
+    top: 0;
+    right: 0;
+}

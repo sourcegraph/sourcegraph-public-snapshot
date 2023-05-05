@@ -5,45 +5,6 @@
     isolation: isolate;
 }
 
-.header-background-1,
-.header-background-2,
-.header-background-3 {
-    height: 9.375rem;
-    width: 100%;
-    position: absolute;
-    top: 0;
-
-    @media (--xs-breakpoint-down) {
-        height: 4rem;
-    }
-}
-
-.header-background-1 {
-    :global(.theme-light) & {
-        background: radial-gradient(
-            72.88% 750.51% at 102.36% 110.93%,
-            #30b4fe 2.34%,
-            rgba(114, 183, 253, 0.15) 54.59%,
-            rgba(221, 236, 251, 0) 100%
-        );
-    }
-
-    mix-blend-mode: multiply;
-}
-
-.header-background-2 {
-    :global(.theme-light) & {
-        background: linear-gradient(
-            82.41deg,
-            rgba(114, 252, 226, 0.3) 13.74%,
-            rgba(182, 251, 238, 0.3) 34.35%,
-            rgba(210, 250, 247, 0) 96.66%
-        );
-    }
-
-    mix-blend-mode: multiply;
-}
-
 .logo {
     width: 14.0625rem;
     height: 2.375rem;
@@ -112,13 +73,6 @@
     }
 }
 
-.feature-list {
-    margin: 2rem 0;
-    @media (--xs-breakpoint-down) {
-        margin-left: -1rem;
-    }
-}
-
 .companies-header {
     font-size: 0.875rem;
     margin-bottom: 2rem;
@@ -143,43 +97,6 @@
     }
 }
 
-.sign-up-button {
-    display: flex;
-    align-items: center;
-    border: none;
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border-radius: 4px;
-}
-
-.github-button {
-    margin-bottom: 0.75rem;
-    margin-top: 1.5rem;
-
-    :global(.theme-dark) & {
-        background-color: var(--gray-03);
-        color: var(--gray-08);
-    }
-
-    :global(.theme-light) & {
-        background: #212529;
-        color: var(--white);
-    }
-}
-
-.gitlab-button {
-    background-color: #6e49cb;
-    margin-bottom: 1rem;
-
-    :global(.theme-dark) & {
-        color: var(--gray-04);
-    }
-
-    :global(.theme-light) & {
-        color: var(--white);
-    }
-}
-
 .separator {
     margin-top: 1.5rem;
     margin-bottom: 2rem;
@@ -188,11 +105,6 @@
 .back-icon {
     margin-left: -0.25rem; // Negative margin so icon aligns with form taking internal padding into account.
     margin-right: 0.25rem;
-}
-
-.helper-text {
-    font-size: 0.875rem;
-    line-height: 1.5;
 }
 
 .avatar {

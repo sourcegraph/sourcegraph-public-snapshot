@@ -290,7 +290,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <>
                             <NavAction>
                                 <Link className={styles.link} to="https://about.sourcegraph.com">
-                                    About
+                                    About Sourcegraph
                                 </Link>
                             </NavAction>
 

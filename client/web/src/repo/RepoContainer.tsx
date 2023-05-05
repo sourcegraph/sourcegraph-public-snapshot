@@ -45,6 +45,7 @@ import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useNavbarQueryState } from '../stores'
 import { useChatStore } from '../stores/codyChat'
 import { useCodySidebarStore } from '../stores/codySidebar'
+import { EventName } from '../util/constants'
 import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -382,7 +383,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                 !isCodySidebarOpen ? (
                                     <AskCodyButton
                                         onClick={() => {
-                                            props.telemetryService.log('web:codySidebar:chatOpened', {
+                                            props.telemetryService.log(EventName.CODY_SIDEBAR_CHAT_OPENED, {
                                                 repo,
                                                 path: filePath,
                                             })
