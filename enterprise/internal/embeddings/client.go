@@ -57,6 +57,18 @@ type EmbeddingsSearchParameters struct {
 	Debug bool `json:"debug"`
 }
 
+type EmbeddingsMultiSearchParameters struct {
+	RepoNames        []api.RepoName `json:"repoNames"`
+	RepoIDs          []api.RepoID   `json:"repoIDs"`
+	Query            string         `json:"query"`
+	CodeResultsCount int            `json:"codeResultsCount"`
+	TextResultsCount int            `json:"textResultsCount"`
+
+	UseDocumentRanks bool `json:"useDocumentRanks"`
+	// If set to "True", EmbeddingSearchResult.Debug will contain useful information about scoring.
+	Debug bool `json:"debug"`
+}
+
 type IsContextRequiredForChatQueryParameters struct {
 	Query string `json:"query"`
 }

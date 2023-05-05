@@ -143,7 +143,17 @@ func NewHandler(
 			return
 		}
 
-		res, err := searchRepoEmbeddingIndex(r.Context(), logger, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
+		multiArgs := embeddings.EmbeddingsMultiSearchParameters{
+			RepoNames:        []api.RepoName{args.RepoName},
+			RepoIDs:          []api.RepoID{args.RepoID},
+			Query:            args.Query,
+			CodeResultsCount: args.CodeResultsCount,
+			TextResultsCount: args.TextResultsCount,
+			UseDocumentRanks: args.UseDocumentRanks,
+			Debug:            args.Debug,
+		}
+
+		res, err := searchRepoEmbeddingIndexes(r.Context(), logger, multiArgs, readFile, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
 		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
