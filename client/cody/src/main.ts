@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
-import { DOTCOM_URL } from './chat/protocol'
+import { DOTCOM_URL, LOCAL_APP_URL } from './chat/protocol'
 import { LocalStorage } from './command/LocalStorageProvider'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
@@ -152,12 +152,13 @@ const register = async (
         // Register URI Handler for resolving token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
-                // TODO: Here, split into two cases:
-                // A) We received a dotcom token, which is current behavior below
-                // B) We received a Sourcegraph App token. Then, don't touch cody.serverEndpoint and don't store CODY_ACCESS_TOKEN_SECRET.
-                //    Instead, store in cody.appEndpoint and the token in CODY_APP_ACCESS_TOKEN_SECRET (both will be new fields)
-                await workspaceConfig.update('cody.serverEndpoint', DOTCOM_URL.href, vscode.ConfigurationTarget.Global)
-                const token = new URLSearchParams(uri.query).get('code')
+                const params = new URLSearchParams(uri.query)
+                let serverEndpoint = DOTCOM_URL.href
+                if (params.get('type') === 'app') {
+                    serverEndpoint = LOCAL_APP_URL.href
+                }
+                await workspaceConfig.update('cody.serverEndpoint', serverEndpoint, vscode.ConfigurationTarget.Global)
+                const token = params.get('code')
                 if (token && token.length > 8) {
                     await context.secrets.store(CODY_ACCESS_TOKEN_SECRET, token)
                     const isAuthed = await isValidLogin({

@@ -45,3 +45,4 @@ export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debu
 }
 
 export const DOTCOM_URL = new URL('https://sourcegraph.com')
+export const LOCAL_APP_URL = new URL('http://localhost:3080')

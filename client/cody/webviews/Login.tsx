@@ -6,6 +6,8 @@ import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 
+import { ConnectApp } from './ConnectApp'
+
 import styles from './Login.module.css'
 
 interface LoginProps {
@@ -88,6 +90,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                             Continue with Sourcegraph.com
                         </VSCodeButton>
                     </a>
+                    <ConnectApp isAppInstalled={false} />
                 </div>
             </section>
             <div
