@@ -29,9 +29,10 @@ type RecentViewSignalStore interface {
 }
 
 type ListRecentViewSignalOpts struct {
-	ViewerID int
-	RepoID   api.RepoID
-	Path     string
+	ViewerUserID int
+	RepoID       api.RepoID
+	Path         string
+	LimitOffset  *LimitOffset
 }
 
 type RecentViewSummary struct {
@@ -116,17 +117,19 @@ func (s *recentViewSignalStore) InsertPaths(ctx context.Context, userID int32, r
 	return s.Exec(ctx, q)
 }
 
-// TODO(sashaostrikov): update query with opts
 const listRecentViewSignalsFmtstr = `
-	SELECT viewer_id, viewed_file_path_id, views_count
-	FROM own_aggregate_recent_view
-	ORDER BY id
+	SELECT o.viewer_id, o.viewed_file_path_id, o.views_count
+	FROM own_aggregate_recent_view AS o
+	-- Optional join with repo_paths table
+	%s
+	-- Optional WHERE clauses
+	WHERE %s
+	-- Order, limit
+	ORDER BY o.id
+	%s
 `
 
-func (s *recentViewSignalStore) List(ctx context.Context, _ ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
-	q := sqlf.Sprintf(listRecentViewSignalsFmtstr)
-
-	// TODO(sashaostrikov): implement paging and use opts
+func (s *recentViewSignalStore) List(ctx context.Context, opts ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
 	viewsScanner := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (RecentViewSummary, error) {
 		var summary RecentViewSummary
 		if err := scanner.Scan(&summary.UserID, &summary.FilePathID, &summary.ViewsCount); err != nil {
@@ -134,8 +137,29 @@ func (s *recentViewSignalStore) List(ctx context.Context, _ ListRecentViewSignal
 		}
 		return summary, nil
 	})
+	return viewsScanner(s.Query(ctx, createListQuery(opts)))
+}
 
-	return viewsScanner(s.Query(ctx, q))
+func createListQuery(opts ListRecentViewSignalOpts) *sqlf.Query {
+	joinClause := &sqlf.Query{}
+	if opts.RepoID != 0 || opts.Path != "" {
+		joinClause = sqlf.Sprintf("INNER JOIN repo_paths AS p ON p.id = o.viewed_file_path_id")
+	}
+	whereClause := sqlf.Sprintf("TRUE")
+	wherePredicates := make([]*sqlf.Query, 0)
+	if opts.RepoID != 0 {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.repo_id = %s", opts.RepoID))
+	}
+	if opts.Path != "" {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.absolute_path = %s", opts.Path))
+	}
+	if opts.ViewerUserID != 0 {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.viewer_id = %s", opts.ViewerUserID))
+	}
+	if len(wherePredicates) > 0 {
+		whereClause = sqlf.Sprintf("%s", sqlf.Join(wherePredicates, "AND"))
+	}
+	return sqlf.Sprintf(listRecentViewSignalsFmtstr, joinClause, whereClause, opts.LimitOffset.SQL())
 }
 
 // BuildAggregateFromEvents builds recent view signals from provided "ViewBlob"
