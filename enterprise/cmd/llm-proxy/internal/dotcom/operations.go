@@ -206,7 +206,7 @@ type __CheckAccessTokenInput struct {
 // GetToken returns __CheckAccessTokenInput.Token, and is useful for accessing the field via an interface.
 func (v *__CheckAccessTokenInput) GetToken() string { return v.Token }
 
-// CheckAccessToken returns traints of the product subscription associated with
+// CheckAccessToken returns traits of the product subscription associated with
 // the given access token.
 func CheckAccessToken(
 	ctx context.Context,

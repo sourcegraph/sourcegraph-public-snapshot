@@ -29,8 +29,9 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 		{
 			name: "new entry",
 			limiter: StaticLimiter{
-				Limit:    10,
-				Interval: 24 * time.Hour,
+				Identifier: "foobar",
+				Limit:      10,
+				Interval:   24 * time.Hour,
 			},
 			wantErr: nil,
 			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
@@ -40,6 +41,7 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 		{
 			name: "increments existing entry",
 			limiter: StaticLimiter{
+				Identifier: "foobar",
 				Redis: mockStore{
 					"foobar": mockRedisEntry{
 						value: 9,
@@ -56,16 +58,38 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 			}}),
 		},
 		{
-			name: "existing limit's TTL is longer than desired interval",
+			name: "existing limit's TTL is longer than desired interval but UpdateRateLimitTTL=false",
 			limiter: StaticLimiter{
+				Identifier: "foobar",
 				Redis: mockStore{
 					"foobar": mockRedisEntry{
 						value: 1,
 						ttl:   999,
 					},
 				},
-				Limit:    10,
-				Interval: 10 * time.Minute,
+				Limit:              10,
+				Interval:           10 * time.Minute,
+				UpdateRateLimitTTL: false,
+			},
+			wantErr: nil,
+			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
+				value: 2,
+				ttl:   999,
+			}}),
+		},
+		{
+			name: "existing limit's TTL is longer than desired interval",
+			limiter: StaticLimiter{
+				Identifier: "foobar",
+				Redis: mockStore{
+					"foobar": mockRedisEntry{
+						value: 1,
+						ttl:   999,
+					},
+				},
+				Limit:              10,
+				Interval:           10 * time.Minute,
+				UpdateRateLimitTTL: true,
 			},
 			wantErr: nil,
 			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
@@ -76,6 +100,7 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 		{
 			name: "rejects request over quota",
 			limiter: StaticLimiter{
+				Identifier: "foobar",
 				Redis: mockStore{
 					"foobar": mockRedisEntry{
 						value: 10,
@@ -97,7 +122,7 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				tc.limiter.Redis = mockStore{}
 			}
 			tc.limiter.nowFunc = func() time.Time { return now }
-			err := tc.limiter.TryAcquire(context.Background(), "foobar")
+			err := tc.limiter.TryAcquire(context.Background())
 			if tc.wantErr != nil {
 				require.Error(t, err)
 				tc.wantErr.Equal(t, err.Error())

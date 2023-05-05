@@ -55,7 +55,7 @@ func TestAuthenticate(t *testing.T) {
 			return nil
 		})
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			require.NotNil(t, actor.FromContext(r.Context()).Subscription)
+			require.NotNil(t, actor.FromContext(r.Context()))
 			w.WriteHeader(http.StatusOK)
 		})
 
@@ -75,7 +75,7 @@ func TestAuthenticate(t *testing.T) {
 		)
 		client := NewMockClient()
 		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			require.NotNil(t, actor.FromContext(r.Context()).Subscription)
+			require.NotNil(t, actor.FromContext(r.Context()))
 			w.WriteHeader(http.StatusOK)
 		})
 
