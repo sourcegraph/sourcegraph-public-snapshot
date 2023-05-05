@@ -74,3 +74,4 @@
 | Topic | Content Type | Description |
 | -------- | -------- | -------- |
 | [Sourcegraph Tour](../getting-started/tour.md) | How-to-Guide | A tour of a sample Sourcegraph use cases, including using Sourcegraph for code reviews, debugging, and understanding how a function works. |
+| [Cody Use Cases](../cody/explanations/use_cases.md) | How-to-Guide | A tour of Cody and where the AI code assistant fits into everyday workflows. |
