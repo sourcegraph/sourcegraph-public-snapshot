@@ -80,8 +80,7 @@ func (r *schemaResolver) CodyKeywordContext(ctx context.Context, args *KeywordSe
 		})
 	}
 
-	stats := findStats(&terms, documents[0:int(math.Min(float64(MAX_FILES_TO_RANK), float64(len(documents))))])
-
+	stats := findStats(&terms, documents)
 	idfDict := idf(stats.TermTotalFiles, stats.TotalFiles)
 	queryStems := terms.Stems()
 
