@@ -64,7 +64,6 @@ func (s *Service) ApplyBatchChange(
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
 	if err := s.checkBatchChangeAccess(ctx, batchSpec.NamespaceOrgID, batchSpec.UserID); err != nil {
 		return nil, err
 	}
