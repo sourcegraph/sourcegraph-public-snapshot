@@ -65,6 +65,10 @@ export class ContextSearch implements Recipe {
         for (const file of resultContext.results) {
             const fileContent = this.sanitizeContent(file.content)
             const extension = getFileExtension(file.fileName)
+            const ignoreFilesExtension = /^(md|txt)$/
+            if (extension.match(ignoreFilesExtension)) {
+                continue
+            }
             let uri = new URL(`/search?q=context:global+file:${file.fileName}`, endpointUri).href
 
             // TODO: Open file in editor (the uri is currently being stripped by the chat component)
