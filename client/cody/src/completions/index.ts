@@ -100,7 +100,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const remainingChars = this.tokToChar(this.promptTokens)
 
-        const completionNoSnippets = new MultilineCompletionProvider(
+        const completionNoSnippets = new EndOfLineCompletionProvider(
             this.completionsClient,
             remainingChars,
             this.responseTokens,

@@ -273,7 +273,7 @@ exports[`GlobalNavbar default 1`] = `
           class="anchorLink link"
           href="https://about.sourcegraph.com"
         >
-          About
+          About Sourcegraph
         </a>
       </li>
       <li

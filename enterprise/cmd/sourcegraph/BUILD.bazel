@@ -33,6 +33,18 @@ go_library(
 go_binary(
     name = "sourcegraph",
     embed = [":sourcegraph_lib"],
+    # -trimpath removes useless information like e.g. /Users/stephen/stephen@sourcegraph.com/
+    # prefixes from import paths in stack traces
+    gc_goopts = ["-trimpath"],
+
+    # The options below reduce the final binary size considerably.
+    #
+    # -s strips debug symbols (not needed for stack traces)
+    # -w strips the DWARF debug symbol table (not needed for stack traces)
+    gc_linkopts = [
+        "-s",
+        "-w",
+    ],
     # x_defs = {
     #     "github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType": "app",
     # },

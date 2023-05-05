@@ -124,6 +124,8 @@ env:
   # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
+  LLM_PROXY_ALLOW_ANONYMOUS: true
+
 commands:
   server:
     description: Run an all-in-one sourcegraph/server image

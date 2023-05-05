@@ -67,7 +67,7 @@ func setupStore(ctx context.Context, factory RunnerFactory, schemaName string) (
 }
 
 // sanitizeSchemaNames sanitizies the given string slice from the user.
-func sanitizeSchemaNames(schemaNames []string) []string {
+func sanitizeSchemaNames(schemaNames []string, out *output.Output) []string {
 	if len(schemaNames) == 1 && schemaNames[0] == "" {
 		schemaNames = nil
 	}
@@ -76,7 +76,30 @@ func sanitizeSchemaNames(schemaNames []string) []string {
 		return schemas.SchemaNames
 	}
 
+	for i, name := range schemaNames {
+		schemaNames[i] = TranslateSchemaNames(name, out)
+	}
+
 	return schemaNames
+}
+
+var dbNameToSchema = map[string]string{
+	"pgsql":           "frontend",
+	"codeintel-db":    "codeintel",
+	"codeinsights-db": "codeinsights",
+}
+
+// TranslateSchemaNames translates a string with potentially the value of the service/container name
+// of the db schema the user wants to operate on into the schema name.
+func TranslateSchemaNames(name string, out *output.Output) string {
+	// users might input the name of the service e.g. pgsql instead of frontend, so we
+	// translate to what it actually should be
+	if translated, ok := dbNameToSchema[name]; ok {
+		out.WriteLine(output.Linef(output.EmojiInfo, output.StyleGrey, "Translating container/service name %q to schema name %q", name, translated))
+		name = translated
+	}
+
+	return name
 }
 
 // parseTargets parses the given strings as integers.

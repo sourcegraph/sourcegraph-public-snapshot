@@ -89,6 +89,15 @@ func TestStreamBlame(t *testing.T) {
 		if name == "github.com/bob/foo" {
 			return &types.Repo{Name: name}, nil
 		}
+
+		// A repo synced from src serve-git.
+		if name == "foo" {
+			return &types.Repo{
+				Name: name,
+				URI:  "repos/foo",
+			}, nil
+		}
+
 		return nil, &database.RepoNotFoundErr{Name: name}
 	}
 	backend.Mocks.Repos.Get = func(ctx context.Context, repo api.RepoID) (*types.Repo, error) {
@@ -221,6 +230,7 @@ func TestStreamBlame(t *testing.T) {
 		data := rec.Body.String()
 		assert.Contains(t, data, `"commitID":"efgh"`)
 		assert.Contains(t, data, `done`)
+		assert.Contains(t, data, `"url":"github.com/bob/foo/-/commit/efgh"`)
 	})
 
 	t.Run("NOK err reading hunks", func(t *testing.T) {
@@ -236,5 +246,39 @@ func TestStreamBlame(t *testing.T) {
 		gsClient := setupMockGSClient(t, "abcd", errors.New("foo"), hunks)
 		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	})
+
+	t.Run("src-serve OK rev", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		req, err := http.NewRequest(http.MethodGet, "/", nil)
+		require.NoError(t, err)
+		req = req.WithContext(ctx)
+
+		req = mux.SetURLVars(req, map[string]string{
+			"Rev":  "@1234",
+			"Repo": "foo",
+			"path": "foo.c",
+		})
+		gsClient := setupMockGSClient(t, "efgh", nil, []*gitserver.Hunk{
+			{
+				StartLine: 1,
+				EndLine:   2,
+				CommitID:  api.CommitID("efgh"),
+				Author: gitdomain.Signature{
+					Name:  "Bob",
+					Email: "bob@internet.com",
+					Date:  time.Now(),
+				},
+				Message:  "one",
+				Filename: "foo.c",
+			},
+		})
+
+		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+		data := rec.Body.String()
+		assert.Contains(t, data, `"commitID":"efgh"`)
+		assert.Contains(t, data, `done`)
+		assert.Contains(t, data, `"url":"foo/-/commit/efgh"`)
 	})
 }

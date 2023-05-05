@@ -154,7 +154,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 				Filename:  h.Filename,
 				Commit: BlameHunkCommitResponse{
 					Parents: parents,
-					URL:     fmt.Sprintf("%s/-/commit/%s", repo.URI, h.CommitID),
+					URL:     fmt.Sprintf("%s/-/commit/%s", repo.Name, h.CommitID),
 				},
 				User: blameHunkUserResponse,
 			}

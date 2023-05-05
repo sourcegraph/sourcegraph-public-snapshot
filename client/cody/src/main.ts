@@ -100,7 +100,7 @@ const register = async (
 
     const executeRecipe = async (recipe: string): Promise<void> => {
         await vscode.commands.executeCommand('cody.chat.focus')
-        await chatProvider.executeRecipe(recipe)
+        await chatProvider.executeRecipe(recipe, '')
     }
 
     const workspaceConfig = vscode.workspace.getConfiguration()
@@ -148,7 +148,8 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
             executeRecipe('improve-variable-names')
         ),
-        vscode.commands.registerCommand('cody.recipe.find-code-smells', async () => executeRecipe('find-code-smells')),
+        vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
+        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
         // Register URI Handler for resolving token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {

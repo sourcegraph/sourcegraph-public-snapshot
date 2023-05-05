@@ -25,14 +25,15 @@ const getRepoId = memoize(async (codebase: string) => {
 
 export async function createCodebaseContext(
     codebase: string,
-    contextType: 'embeddings' | 'keyword' | 'none' | 'blended'
+    contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
+    serverEndpoint: string
 ) {
     const repoId = await getRepoId(codebase)
     const embeddingsSearch =
         repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(sourcegraphClient, repoId) : null
 
     const codebaseContext = new CodebaseContext(
-        { useContext: contextType },
+        { useContext: contextType, serverEndpoint },
         codebase,
         embeddingsSearch,
         new LocalKeywordContextFetcherMock()
@@ -43,6 +44,9 @@ export async function createCodebaseContext(
 
 class LocalKeywordContextFetcherMock implements KeywordContextFetcher {
     public getContext() {
+        return Promise.resolve([])
+    }
+    public getSearchContext() {
         return Promise.resolve([])
     }
 }

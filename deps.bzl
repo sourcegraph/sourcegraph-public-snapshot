@@ -3261,6 +3261,34 @@ def go_dependencies():
         sum = "h1:9XdMn+d/G57qq1s8dNc5IesGCXHf6V2HZ2JwRxfA2tA=",
         version = "v1.0.0",
     )
+    go_repository(
+        name = "com_github_googlecloudplatform_opentelemetry_operations_go_detectors_gcp",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp",
+        sum = "h1:hc3Fb+ufGf+EznhPOSvQODMl9Qn++cATyI/7q7E7geM=",
+        version = "v1.11.0",
+    )
+    go_repository(
+        name = "com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace",
+        sum = "h1:VqRrsKqdr9rEDAqu3Rowg63OAQU3r8cIAFpbLxCbBtA=",
+        version = "v1.12.0",
+    )
+    go_repository(
+        name = "com_github_googlecloudplatform_opentelemetry_operations_go_internal_cloudmock",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/cloudmock",
+        sum = "h1:X80uwIJN1QTdM/Ou7V/flg7YmY36mQGsEEhNb9+hQkI=",
+        version = "v0.36.0",
+    )
+    go_repository(
+        name = "com_github_googlecloudplatform_opentelemetry_operations_go_internal_resourcemapping",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping",
+        sum = "h1:0AXq7h5nGMp+9HEyBg6bmRfrP4h8OE/TbX8/sM/zqHk=",
+        version = "v0.36.0",
+    )
 
     go_repository(
         name = "com_github_gophercloud_gophercloud",
@@ -5743,6 +5771,16 @@ def go_dependencies():
         sum = "h1:54yBemHnGHp/7xgT+pxwmIlMSDNYKx5JW5dfRAiCZi0=",
         version = "v2.1.0",
     )
+
+    go_repository(
+        # This is no longer used but we keep it for backwards compatability
+        # tests while on 5.0.x.
+        name = "com_github_rafaeljusto_redigomock",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/rafaeljusto/redigomock",
+        sum = "h1:d7uo5MVINMxnRr20MxbgDkmZ8QRfevjOVgEa4n0OZyY=",
+        version = "v2.4.0+incompatible",
+    )  # keep
     go_repository(
         name = "com_github_rafaeljusto_redigomock_v3",
         build_file_proto_mode = "disable_global",
@@ -5750,13 +5788,7 @@ def go_dependencies():
         sum = "h1:B4Y0XJQiPjpwYmkH55aratKX1VfR+JRqzmDKyZbC99o=",
         version = "v3.1.2",
     )
-    go_repository(
-        name = "com_github_rafaeljusto_redigomock",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/rafaeljusto/redigomock",
-        sum = "h1:d7uo5MVINMxnRr20MxbgDkmZ8QRfevjOVgEa4n0OZyY=",
-        version = "v2.4.0+incompatible",
-    )
+
     go_repository(
         name = "com_github_rainycape_unidecode",
         build_file_proto_mode = "disable_global",
@@ -7891,8 +7923,13 @@ def go_dependencies():
         name = "com_google_cloud_go_trace",
         build_file_proto_mode = "disable_global",
         importpath = "cloud.google.com/go/trace",
-        sum = "h1:qO9eLn2esajC9sxpqp1YKX37nXC3L4BfGnPS0Cx9dYo=",
-        version = "v1.4.0",
+        sum = "h1:GFPLxbp5/FzdgTzor3nlNYNxMd6hLmzkE7sA9F0qQcA=",
+        version = "v1.8.0",
+        build_directives = [
+            # @go_googleapis is the modern version of @org_golang_google_genproto
+            # use @go_googleapis to avoid dependency conflicts between the two
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
+        ],
     )
     go_repository(
         name = "com_google_cloud_go_translate",
@@ -8554,6 +8591,13 @@ def go_dependencies():
         importpath = "go.opentelemetry.io/contrib",
         sum = "h1:ubFQUn0VCZ0gPwIoJfBJVpeBlyRMxu8Mm/huKWYd9p0=",
         version = "v0.20.0",
+    )
+    go_repository(
+        name = "io_opentelemetry_go_contrib_detectors_gcp",
+        build_file_proto_mode = "disable_global",
+        importpath = "go.opentelemetry.io/contrib/detectors/gcp",
+        sum = "h1:o2NurqCUGl7GaHH5vQjzYnjijlX2zrKneN7qsgia138=",
+        version = "v1.14.0",
     )
 
     go_repository(

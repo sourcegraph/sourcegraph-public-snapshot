@@ -155,11 +155,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendChatHistory()
                 break
             case 'submit':
-                await this.onHumanMessageSubmitted(message.text)
+                await this.onHumanMessageSubmitted(message.text, message.submitType)
                 break
             case 'edit':
                 this.transcript.removeLastInteraction()
-                await this.onHumanMessageSubmitted(message.text)
+                await this.onHumanMessageSubmitted(message.text, 'user')
                 break
             case 'executeRecipe':
                 await this.executeRecipe(message.recipe)
@@ -287,13 +287,31 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         void this.saveTranscriptToChatHistory()
     }
 
-    private async onHumanMessageSubmitted(text: string): Promise<void> {
+    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
+        if (submitType === 'suggestion') {
+            logEvent('CodyVSCodeExtension:chatPredictions:used')
+        }
         this.inputHistory.push(text)
-
         if (this.config.experimentalChatPredictions) {
             void this.runRecipeForSuggestion('next-questions', text)
         }
-        await this.executeRecipe('chat-question', text)
+        await this.executeChatCommands(text)
+    }
+
+    private async executeChatCommands(text: string): Promise<void> {
+        const command = text.split(' ')[0]
+        switch (command) {
+            case '/reset':
+            case '/r':
+                await this.clearAndRestartSession()
+                break
+            case '/search':
+            case '/s':
+                await this.executeRecipe('context-search', text)
+                break
+            default:
+                return this.executeRecipe('chat-question', text)
+        }
     }
 
     private async updateCodebaseContext(): Promise<void> {
@@ -346,10 +364,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.transcript.addInteraction(interaction)
 
         this.showTab('chat')
-        this.sendTranscript()
 
+        // Check whether or not to connect to LLM backend for responses
+        // Ex: performing fuzzy / context-search does not require responses from LLM backend
         const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
-        this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
+
+        switch (recipeId) {
+            case 'context-search':
+                this.onCompletionEnd()
+                break
+            default:
+                this.sendTranscript()
+                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
+                await this.saveTranscriptToChatHistory()
+        }
 
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
     }
