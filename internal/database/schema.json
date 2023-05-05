@@ -11856,6 +11856,19 @@
           "Comment": ""
         },
         {
+          "Name": "app_url",
+          "Index": 13,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "base_url",
           "Index": 5,
           "TypeName": "text",
