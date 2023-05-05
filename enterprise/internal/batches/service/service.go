@@ -195,7 +195,7 @@ func (s *Service) checkBatchChangeAccess(ctx context.Context, orgID, creatorID i
 		}
 	}
 
-	// 🚨 SECURITY: Only the author of the batch change or a site admin should be able to access this operation.
+	// 🚨 SECURITY: Unless the org setting override is true, only the author of the batch change or a site admin should be able to perform this operation.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, db, creatorID); err != nil {
 		return err
 	}
