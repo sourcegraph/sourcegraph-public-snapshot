@@ -16,6 +16,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Changed
 
+- Various improvements to the experimental completions feature
+
 ## [0.0.10]
 
 ### Added
