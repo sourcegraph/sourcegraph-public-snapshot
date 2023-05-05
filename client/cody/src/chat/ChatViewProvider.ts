@@ -596,7 +596,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public sendErrorToWebview(errorMsg: string): void {
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
-        console.error(errorMsg)
     }
 
     /**

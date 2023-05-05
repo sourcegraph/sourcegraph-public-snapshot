@@ -29,7 +29,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private abortOpenMultilineCompletion: () => void = () => {}
 
     constructor(
-        private webviewErrorMessager: (error: string) => void,
+        private webviewErrorMessager: (error: string) => Promise<void>,
         private completionsClient: SourcegraphNodeCompletionsClient,
         private documentProvider: CompletionsDocumentProvider,
         private history: History,
@@ -57,7 +57,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 return []
             }
 
-            this.webviewErrorMessager(`ProvideInlineCompletionItems - ${error}`)
+            await this.webviewErrorMessager(`ProvideInlineCompletionItems - ${error}`)
             return []
         }
     }
