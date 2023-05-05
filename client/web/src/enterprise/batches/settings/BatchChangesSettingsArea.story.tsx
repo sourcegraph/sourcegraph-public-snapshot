@@ -10,6 +10,7 @@ import {
     ExternalServiceKind,
     UserBatchChangesCodeHostsResult,
 } from '../../../graphql-operations'
+import { BATCH_CHANGES_SITE_CONFIGURATION } from '../backend'
 
 import { USER_CODE_HOSTS } from './backend'
 import { BatchChangesSettingsArea, RolloutWindowsConfiguration } from './BatchChangesSettingsArea'
@@ -40,6 +41,27 @@ const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields 
     sshPublicKey:
         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 })
+
+const noRolloutWindowMockResult = {
+    data: {
+        site: {
+            configuration: {
+                effectiveContents: '{}',
+            },
+        },
+    },
+}
+
+const rolloutWindowConfigMockResult = {
+    data: {
+        site: {
+            configuration: {
+                effectiveContents:
+                    '{"batchChanges.rolloutWindows":[{"rate":"unlimited"},{"rate":"3/hour","days":["monday","wednesday","thursday"]},{"rate":"0/hour","days":["friday"]}]}',
+            },
+        },
+    },
+}
 
 export const Overview: Story = () => (
     <WebStory>
@@ -87,6 +109,12 @@ export const Overview: Story = () => (
                                 }
                             ),
                         },
+                    },
+                    {
+                        request: {
+                            query: getDocumentNode(BATCH_CHANGES_SITE_CONFIGURATION),
+                        },
+                        result: noRolloutWindowMockResult,
                     },
                 ]}
             >
@@ -143,6 +171,12 @@ export const ConfigAdded: Story = () => (
                             ),
                         },
                     },
+                    {
+                        request: {
+                            query: getDocumentNode(BATCH_CHANGES_SITE_CONFIGURATION),
+                        },
+                        result: noRolloutWindowMockResult,
+                    },
                 ]}
             >
                 <BatchChangesSettingsArea {...props} user={{ id: 'user-id-2' }} />
@@ -156,20 +190,60 @@ ConfigAdded.storyName = 'Config added'
 export const RolloutWindowsConfigurationStory: Story = () => (
     <WebStory>
         {props => (
-            <RolloutWindowsConfiguration
-                {...props}
-                rolloutWindows={[
+            <MockedTestProvider
+                mocks={[
                     {
-                        rate: 'unlimited',
+                        request: {
+                            query: getDocumentNode(USER_CODE_HOSTS),
+                            variables: {
+                                user: 'user-id-2',
+                                after: null,
+                                first: 15,
+                            },
+                        },
+                        result: {
+                            data: codeHostsResult(
+                                {
+                                    credential: sshCredential(false),
+                                    externalServiceKind: ExternalServiceKind.GITHUB,
+                                    externalServiceURL: 'https://github.com/',
+                                    requiresSSH: false,
+                                    requiresUsername: false,
+                                },
+                                {
+                                    credential: sshCredential(false),
+                                    externalServiceKind: ExternalServiceKind.GITLAB,
+                                    externalServiceURL: 'https://gitlab.com/',
+                                    requiresSSH: false,
+                                    requiresUsername: false,
+                                },
+                                {
+                                    credential: sshCredential(false),
+                                    externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
+                                    externalServiceURL: 'https://bitbucket.sgdev.org/',
+                                    requiresSSH: true,
+                                    requiresUsername: false,
+                                },
+                                {
+                                    credential: sshCredential(false),
+                                    externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
+                                    externalServiceURL: 'https://bitbucket.org/',
+                                    requiresSSH: false,
+                                    requiresUsername: true,
+                                }
+                            ),
+                        },
                     },
                     {
-                        rate: '10/hour',
-                        days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-                        start: '08:00',
-                        end: '16:00',
+                        request: {
+                            query: getDocumentNode(BATCH_CHANGES_SITE_CONFIGURATION),
+                        },
+                        result: rolloutWindowConfigMockResult,
                     },
                 ]}
-            />
+            >
+                <BatchChangesSettingsArea {...props} user={{ id: 'user-id-2' }} />
+            </MockedTestProvider>
         )}
     </WebStory>
 )

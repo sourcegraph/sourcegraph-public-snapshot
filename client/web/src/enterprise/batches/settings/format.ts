@@ -10,6 +10,7 @@ import { upperFirst, capitalize } from 'lodash'
  * @returns The formatted days for display in the UI
  */
 export const formatDays = (days: string[] | undefined): string => {
+    console.log('days ===>>>>', days)
     if (days && days.length > 0) {
         return days.join(', ').replace(/\w+/g, capitalize)
     }
