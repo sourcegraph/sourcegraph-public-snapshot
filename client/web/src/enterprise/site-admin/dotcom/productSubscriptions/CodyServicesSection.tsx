@@ -67,7 +67,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
         } catch (error) {
             logger.error(error)
         }
-    }, [productSubscriptionID, updateLLMProxyConfig])
+    }, [productSubscriptionID, refetchSubscription, updateLLMProxyConfig])
 
     const onToggleCompletions = useCallback(
         async (value: boolean) => {
@@ -86,7 +86,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
         [productSubscriptionID, refetchSubscription, updateLLMProxyConfig]
     )
 
-    const afterSaveRateLimit = useCallback(async () => {
+    const afterSaveRateLimit = useCallback(() => {
         refetchSubscription()
         setShowRateLimitConfigModal(false)
     }, [refetchSubscription])

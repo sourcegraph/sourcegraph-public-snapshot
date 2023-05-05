@@ -89,7 +89,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
     const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
 
     const licenseUpdates = useMemo(() => new Subject<void>(), [])
-    const onLicenseUpdate = useCallback(() => {
+    const onLicenseUpdate = useCallback(async () => {
         void refetch()
         licenseUpdates.next()
         setShowGenerate(false)

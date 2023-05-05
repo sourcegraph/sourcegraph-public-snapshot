@@ -18,10 +18,18 @@ export function prettyInterval(seconds: number): string {
     const minutes = Math.floor(seconds / 60)
     seconds -= minutes * 60
 
-    if (days > 0) result += `${days} day${days > 1 ? 's' : ''} `
-    if (hours > 0) result += `${hours} hour${hours > 1 ? 's' : ''} `
-    if (minutes > 0) result += `${minutes} minute${minutes > 1 ? 's' : ''} `
-    if (seconds > 0) result += `${seconds} second${seconds > 1 ? 's' : ''}`
+    if (days > 0) {
+        result += `${days} day${days > 1 ? 's' : ''} `
+    }
+    if (hours > 0) {
+        result += `${hours} hour${hours > 1 ? 's' : ''} `
+    }
+    if (minutes > 0) {
+        result += `${minutes} minute${minutes > 1 ? 's' : ''} `
+    }
+    if (seconds > 0) {
+        result += `${seconds} second${seconds > 1 ? 's' : ''}`
+    }
 
     return result.trim()
 }
