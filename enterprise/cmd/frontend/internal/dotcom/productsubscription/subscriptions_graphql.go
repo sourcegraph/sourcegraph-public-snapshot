@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // productSubscription implements the GraphQL type ProductSubscription.
@@ -100,23 +101,24 @@ func (r *productSubscription) Account(ctx context.Context) (*graphqlbackend.User
 }
 
 func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend.ProductLicense, error) {
-	r.hydrateActiveLicense(ctx)
-	if r.activeLicenseErr != nil {
-		return nil, r.activeLicenseErr
+	activeLicense, err := r.computeActiveLicense(ctx)
+	if err != nil {
+		return nil, err
 	}
-	if r.activeLicense == nil {
+	if activeLicense == nil {
 		return nil, nil
 	}
-	return &productLicense{db: r.db, v: r.activeLicense}, nil
+	return &productLicense{db: r.db, v: activeLicense}, nil
 }
 
-// hydrateActiveLicense populates r.activeLicense and r.activeLicenseErr once,
+// computeActiveLicense populates r.activeLicense and r.activeLicenseErr once,
 // make sure this is called before attempting to use either.
-func (r *productSubscription) hydrateActiveLicense(ctx context.Context) {
-	// Get newest license.
+func (r *productSubscription) computeActiveLicense(ctx context.Context) (*dbLicense, error) {
 	r.activeLicenseOnce.Do(func() {
 		r.activeLicense, r.activeLicenseErr = dbLicenses{db: r.db}.Active(ctx, r.v.ID)
 	})
+
+	return r.activeLicense, r.activeLicenseErr
 }
 
 func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ProductLicenseConnection, error) {
@@ -133,6 +135,20 @@ func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphql
 
 func (r *productSubscription) LLMProxyAccess() graphqlbackend.LLMProxyAccess {
 	return llmProxyAccessResolver{sub: r}
+}
+
+func (r *productSubscription) SourcegraphAccessToken(ctx context.Context) (*string, error) {
+	activeLicense, err := r.computeActiveLicense(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if activeLicense == nil {
+		return nil, errors.New("an active license is required")
+	}
+
+	token := defaultAccessToken(defaultRawAccessToken([]byte(r.activeLicense.LicenseKey)))
+	return &token, nil
 }
 
 func (r *productSubscription) CreatedAt() gqlutil.DateTime {

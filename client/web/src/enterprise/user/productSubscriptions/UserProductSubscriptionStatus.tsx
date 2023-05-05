@@ -16,6 +16,7 @@ interface Props {
     userCount: number
     expiresAt: Date | number
     licenseKey: string | null
+    className?: string
 }
 
 /**
@@ -27,6 +28,7 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<React.PropsW
     userCount,
     expiresAt,
     licenseKey,
+    className,
 }) => {
     const [showLicenseKey, setShowLicenseKey] = useState(false)
 
@@ -35,6 +37,7 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<React.PropsW
     return (
         <ProductCertificate
             title={productNameWithBrand}
+            className={className}
             subtitle={
                 <>
                     {formatUserCount(userCount, true)} license,{' '}

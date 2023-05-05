@@ -3008,15 +3008,12 @@ Indexes:
  license_tags            | text[]                   |           |          | 
  license_user_count      | integer                  |           |          | 
  license_expires_at      | timestamp with time zone |           |          | 
- access_token_enabled    | boolean                  |           | not null | false
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
     "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
 ```
-
-**access_token_enabled**: Whether this license key can be used as an access token to authenticate API requests
 
 # Table "public.product_subscriptions"
 ```
@@ -3029,7 +3026,7 @@ Foreign-key constraints:
  updated_at                      | timestamp with time zone |           | not null | now()
  archived_at                     | timestamp with time zone |           |          | 
  account_number                  | text                     |           |          | 
- llm_proxy_enabled               | boolean                  |           | not null | true
+ llm_proxy_enabled               | boolean                  |           | not null | false
  llm_proxy_rate_limit            | integer                  |           |          | 
  llm_proxy_rate_interval_seconds | integer                  |           |          | 
 Indexes:
