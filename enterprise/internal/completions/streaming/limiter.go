@@ -14,31 +14,47 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type RateLimitScope int
+
+const (
+	RateLimitScopeCompletion RateLimitScope = iota
+	RateLimitScopeCodeCompletion
+)
+
+func (s RateLimitScope) String() string {
+	if s == RateLimitScopeCompletion {
+		return "completions"
+	}
+	return "code completions"
+}
+
 type RateLimiter interface {
 	TryAcquire(ctx context.Context) error
 }
 
 type RateLimitExceededError struct {
+	Scope      RateLimitScope
 	Limit      int
 	Used       int
 	RetryAfter time.Time
 }
 
 func (e RateLimitExceededError) Error() string {
-	return fmt.Sprintf("you exceeded the rate limit for completions, only %d requests are allowed per day at the moment to ensure the service stays functional. Current usage: %d. Retry after %s", e.Limit, e.Used, e.RetryAfter.Truncate(time.Second))
+	return fmt.Sprintf("you exceeded the rate limit for %s, only %d requests are allowed per day at the moment to ensure the service stays functional. Current usage: %d. Retry after %s", e.Scope.String(), e.Limit, e.Used, e.RetryAfter.Truncate(time.Second))
 }
 
-func NewRateLimiter(db database.DB, rstore redispool.KeyValue) RateLimiter {
-	return &rateLimiter{db: db, rstore: rstore}
+func NewRateLimiter(db database.DB, rstore redispool.KeyValue, scope RateLimitScope) RateLimiter {
+	return &rateLimiter{db: db, rstore: rstore, scope: scope}
 }
 
 type rateLimiter struct {
+	scope  RateLimitScope
 	rstore redispool.KeyValue
 	db     database.DB
 }
 
 func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
-	limit, err := getConfiguredLimit(ctx, r.db)
+	limit, err := getConfiguredLimit(ctx, r.db, r.scope)
 	if err != nil {
 		return errors.Wrap(err, "failed to read configured rate limit")
 	}
@@ -53,7 +69,7 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	if a.IsInternal() {
 		return nil
 	}
-	key := userKey(a.UID)
+	key := userKey(a.UID, r.scope)
 	if !a.IsAuthenticated() {
 		// Fall back to the IP address, if provided in context (ie. this is a request handler).
 		req := requestclient.FromContext(ctx)
@@ -70,7 +86,7 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 		if ip == "" {
 			return errors.Wrap(auth.ErrNotAuthenticated, "cannot claim rate limit for unauthenticated user without request context")
 		}
-		key = anonymousKey(ip)
+		key = anonymousKey(ip, r.scope)
 	}
 
 	rstore := r.rstore.WithContext(ctx)
@@ -118,6 +134,7 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	// like the limit and the time by when they should retry.
 	if currentUsage > limit {
 		return RateLimitExceededError{
+			Scope: r.scope,
 			Limit: limit,
 			// Return the minimum value of currentUsage and limit to not return
 			// confusing values when the limit was exceeded. This method increases
@@ -130,19 +147,34 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	return nil
 }
 
-func userKey(userID int32) string {
+func userKey(userID int32, scope RateLimitScope) string {
+	if scope == RateLimitScopeCodeCompletion {
+		return fmt.Sprintf("user:%d:code_completion_requests", userID)
+	}
 	return fmt.Sprintf("user:%d:completion_requests", userID)
 }
 
-func anonymousKey(ip string) string {
+func anonymousKey(ip string, scope RateLimitScope) string {
+	if scope == RateLimitScopeCodeCompletion {
+		return fmt.Sprintf("anon:%s:code_completion_requests", ip)
+	}
 	return fmt.Sprintf("anon:%s:completion_requests", ip)
 }
 
-func getConfiguredLimit(ctx context.Context, db database.DB) (int, error) {
+func getConfiguredLimit(ctx context.Context, db database.DB, scope RateLimitScope) (int, error) {
 	a := actor.FromContext(ctx)
 	if a.IsAuthenticated() && !a.IsInternal() {
+		var limit *int
+		var err error
+
 		// If an authenticated user exists, check if an override exists.
-		limit, err := db.Users().GetCompletionsQuota(ctx, a.UID)
+		if scope == RateLimitScopeCompletion {
+			limit, err = db.Users().GetCompletionsQuota(ctx, a.UID)
+		} else if scope == RateLimitScopeCodeCompletion {
+			limit, err = db.Users().GetCodeCompletionsQuota(ctx, a.UID)
+		} else {
+			return 0, errors.Newf("unknown scope: %s", scope)
+		}
 		if err != nil {
 			return 0, err
 		}
@@ -153,8 +185,16 @@ func getConfiguredLimit(ctx context.Context, db database.DB) (int, error) {
 
 	// Otherwise, fall back to the global limit.
 	cfg := conf.Get()
-	if cfg.Completions != nil && cfg.Completions.PerUserDailyLimit > 0 {
-		return cfg.Completions.PerUserDailyLimit, nil
+	if scope == RateLimitScopeCompletion {
+		if cfg.Completions != nil && cfg.Completions.PerUserDailyLimit > 0 {
+			return cfg.Completions.PerUserDailyLimit, nil
+		}
+	} else if scope == RateLimitScopeCodeCompletion {
+		if cfg.Completions != nil && cfg.Completions.PerUserCodeCompletionsDailyLimit > 0 {
+			return cfg.Completions.PerUserCodeCompletionsDailyLimit, nil
+		}
+	} else {
+		return 0, errors.Newf("unknown scope: %s", scope)
 	}
 
 	return 0, nil
