@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
@@ -23,7 +25,7 @@ func NewFrontendDBReconciler(
 		"Counts SCIP metadata records for which there is no data in the codeintel-db schema.",
 		"SCIP metadata",
 		&storeWrapper{store},
-		&lsifStoreWrapper{lsifstore},
+		&lsifStoreWrapper{lsifstore, observationCtx},
 		interval,
 		batchSize,
 		observationCtx,
@@ -37,11 +39,11 @@ func NewCodeIntelDBReconciler(
 	batchSize int,
 	observationCtx *observation.Context,
 ) goroutine.BackgroundRoutine {
-	return newReconciler(
+	return newReconciler2(
 		"codeintel.uploads.reconciler.scip-data",
 		"Removes SCIP data records for which there is no known associated metadata in the frontend schema.",
 		"SCIP data",
-		&lsifStoreWrapper{lsifstore},
+		&lsifStoreWrapper{lsifstore, observationCtx},
 		&storeWrapper{store},
 		interval,
 		batchSize,
@@ -110,6 +112,58 @@ func newReconciler(
 	})
 }
 
+func newReconciler2(
+	name string,
+	description string,
+	recordTypeName string,
+	sourceStore *lsifStoreWrapper,
+	reconcileStore *storeWrapper,
+	interval time.Duration,
+	batchSize int,
+	observationCtx *observation.Context,
+) goroutine.BackgroundRoutine {
+	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+		Name:        name,
+		Description: description,
+		Interval:    interval,
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
+			candidateIDs, err := sourceStore.Candidates(ctx, batchSize)
+			if err != nil {
+				return 0, 0, err
+			}
+			observationCtx.Logger.Warn("RECONCILER!", log.Ints("candidateIDs", candidateIDs))
+
+			existingIDs, err := reconcileStore.FilterExists(ctx, candidateIDs)
+			if err != nil {
+				return 0, 0, err
+			}
+			observationCtx.Logger.Warn("RECONCILER!", log.Ints("existingIDs", existingIDs))
+
+			found := map[int]struct{}{}
+			for _, id := range existingIDs {
+				found[id] = struct{}{}
+			}
+
+			missingIDs := candidateIDs[:0]
+			for _, id := range candidateIDs {
+				if _, ok := found[id]; ok {
+					continue
+				}
+
+				missingIDs = append(missingIDs, id)
+			}
+			observationCtx.Logger.Warn("RECONCILER!", log.Ints("missingIDs", missingIDs))
+
+			if err := sourceStore.Prune(ctx, missingIDs); err != nil {
+				return 0, 0, err
+			}
+
+			return len(candidateIDs), len(missingIDs), nil
+		},
+	})
+}
+
 //
 //
 
@@ -143,7 +197,8 @@ func (s *storeWrapper) FilterExists(ctx context.Context, candidateIDs []int) ([]
 }
 
 type lsifStoreWrapper struct {
-	lsifstore lsifstore.LsifStore
+	lsifstore      lsifstore.LsifStore
+	observationCtx *observation.Context
 }
 
 func (s *lsifStoreWrapper) Candidates(ctx context.Context, batchSize int) ([]int, error) {
@@ -151,7 +206,8 @@ func (s *lsifStoreWrapper) Candidates(ctx context.Context, batchSize int) ([]int
 }
 
 func (s *lsifStoreWrapper) Prune(ctx context.Context, ids []int) error {
-	return s.lsifstore.DeleteLsifDataByUploadIds(ctx, ids...)
+	s.observationCtx.Logger.Warn("PRUNING (no-op)!", log.Ints("ids", ids))
+	return nil // return s.lsifstore.DeleteLsifDataByUploadIds(ctx, ids...)
 }
 
 func (s *lsifStoreWrapper) FilterExists(ctx context.Context, candidateIDs []int) ([]int, error) {
