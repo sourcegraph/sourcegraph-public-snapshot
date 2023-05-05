@@ -330,13 +330,21 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 	return graphqlutil.HasNextPage(false), nil
 }
 
-type computedExternalServiceConnectionResolver struct {
+type ComputedExternalServiceConnectionResolver struct {
 	args             graphqlutil.ConnectionArgs
 	externalServices []*types.ExternalService
 	db               database.DB
 }
 
-func (r *computedExternalServiceConnectionResolver) Nodes(_ context.Context) []*externalServiceResolver {
+func NewComputedExternalServiceConnectionResolver(db database.DB, externalServices []*types.ExternalService, args graphqlutil.ConnectionArgs) *ComputedExternalServiceConnectionResolver {
+	return &ComputedExternalServiceConnectionResolver{
+		db:               db,
+		externalServices: externalServices,
+		args:             args,
+	}
+}
+
+func (r *ComputedExternalServiceConnectionResolver) Nodes(_ context.Context) []*externalServiceResolver {
 	svcs := r.externalServices
 	if r.args.First != nil && int(*r.args.First) < len(svcs) {
 		svcs = svcs[:*r.args.First]
@@ -348,11 +356,11 @@ func (r *computedExternalServiceConnectionResolver) Nodes(_ context.Context) []*
 	return resolvers
 }
 
-func (r *computedExternalServiceConnectionResolver) TotalCount(_ context.Context) int32 {
+func (r *ComputedExternalServiceConnectionResolver) TotalCount(_ context.Context) int32 {
 	return int32(len(r.externalServices))
 }
 
-func (r *computedExternalServiceConnectionResolver) PageInfo(_ context.Context) *graphqlutil.PageInfo {
+func (r *ComputedExternalServiceConnectionResolver) PageInfo(_ context.Context) *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
 }
 
