@@ -221,7 +221,7 @@ function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']):
     isDismissed: boolean | undefined
     onDismiss: () => void
 } {
-    const [isDismissed, setIsDismissed] = useTemporarySetting('cody.blobPageCta.dismissed', true)
+    const [isDismissed = true, setIsDismissed] = useTemporarySetting('cody.blobPageCta.dismissed', false)
 
     const onDismiss = useCallback(() => {
         setIsDismissed(true)
