@@ -24,21 +24,21 @@ go_binary(
 )
 
 go_cross_binary(
-  name = "symbols_docker",
+  name = "symbols_linux_amd64",
   platform = "@zig_sdk//platform:linux_amd64",
   target = "symbols",
 )
 
 pkg_tar(
-    name = "tar",
-    srcs = [":symbols_docker"],
+    name = "tar_symbols_linux_amd64",
+    srcs = [":symbols_linux_amd64"],
 )
 
 oci_image(
     name = "image",
     architecture = "amd64",
     base = "@wolfi_symbols_base",
-    tars = [":tar"],
+    tars = [":tar_symbols_linux_amd64"],
     entrypoint = ["/symbols_docker"],
     os = "linux",
 )
