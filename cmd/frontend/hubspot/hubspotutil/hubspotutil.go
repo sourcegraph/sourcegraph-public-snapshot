@@ -23,8 +23,10 @@ var HubSpotAccessToken = env.Get("HUBSPOT_ACCESS_TOKEN", "", "HubSpot access tok
 // SurveyFormID is the ID for a satisfaction (NPS) survey.
 var SurveyFormID = "ee042306-491a-4b06-bd9c-1181774dfda0"
 
-// CodySurveyFormID is the ID for a Cody usage survey on dotcom users.
-var CodySurveyFormID = "todo: replace with a real ID"
+// is a hubspot Event ID for when a user submits a form where they share that they are using Cody for work.
+var UserOptedIntoCodyForWorkEventID = "000018226337"
+// is a hubspot Event ID for when a user submits a form where they share that they are using Cody for personal.
+var UserOptedIntoCodyForPersonalEventID = "000018227056"
 
 // HappinessFeedbackFormID is the ID for a Happiness survey.
 var HappinessFeedbackFormID = "417ec50b-39b4-41fa-a267-75da6f56a7cf"

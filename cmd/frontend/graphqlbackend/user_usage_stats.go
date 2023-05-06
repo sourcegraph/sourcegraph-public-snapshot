@@ -306,16 +306,18 @@ func (r *schemaResolver) SubmitCodySurvey(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// Submit form to HubSpot
-	if err := hubspotutil.Client().SubmitForm(hubspotutil.CodySurveyFormID, &codySurveySubmissionForHubSpot{
-		Email:         email,
-		IsForWork:     args.IsForWork,
-		IsForPersonal: args.IsForPersonal,
-	}); err != nil {
-		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
-		log15.Error("Unable to submit cody survey results to Sourcegraph remote", "error", err)
-		// fixme: remove this log line after we've confirmed that the survey is working
-		fmt.Printf("Unable to submit cody survey results to Sourcegraph remote: Email=%v, isForWork=%v, isForPersonal=%v\n", email, args.IsForWork, args.IsForPersonal)
+	if args.IsForWork {
+		fmt.Println("Syncing Cody survey submission to HubSpot isForWork=true")
+		hubspotutil.SyncUser(email, hubspotutil.UserOptedIntoCodyForWorkEventID, &hubspot.ContactProperties{
+			DatabaseID: actor.UID,
+		})
+	}
+
+	if args.IsForPersonal {
+		fmt.Println("Syncing Cody survey submission to HubSpot IsForPersonal=true")
+		hubspotutil.SyncUser(email, hubspotutil.UserOptedIntoCodyForPersonalEventID, &hubspot.ContactProperties{
+			DatabaseID: actor.UID,
+		})
 	}
 
 	return &EmptyResponse{}, nil
