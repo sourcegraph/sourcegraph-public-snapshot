@@ -1,4 +1,6 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_cross_binary")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 go_library(
     name = "searcher_lib",
@@ -19,4 +21,31 @@ go_binary(
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
         "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
     },
+)
+
+go_cross_binary(
+    name = "searcher_linux_amd64",
+    platform = "@io_bazel_rules_go//go/toolchain:linux_amd64",
+    target = ":searcher"
+)
+
+pkg_tar(
+    name = "tar_searcher_linux_amd64",
+    srcs = [":searcher_linux_amd64"],
+    remap_paths = { "/searcher_linux_amd64": "/searcher" },
+)
+
+oci_image(
+    name = "image",
+    architecture = "amd64",
+    base = "@wolfi_base",
+    tars = [":tar_searcher_linux_amd64"],
+    entrypoint = ["/searcher"],
+    os = "linux",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repotags = ["searcher:candidate"]
 )
