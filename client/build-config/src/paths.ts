@@ -1,6 +1,7 @@
 /* eslint-disable no-sync */
 import fs from 'fs'
 import path from 'path'
+import { getEnvironmentBoolean } from './utils/environment-config'
 
 // TODO(bazel): drop when non-bazel removed.
 const IS_BAZEL = !!(process.env.JS_BINARY__TARGET || process.env.BAZEL_BINDIR || process.env.BAZEL_TEST)
@@ -19,15 +20,23 @@ export function resolveWithSymlink(...args: string[]): string {
     }
 }
 
+function resolveAssetsPath(ROOT_PATH: string): string {
+    let isEnterprise: boolean = getEnvironmentBoolean("ENTERPRISE");
+    let relativeAssetPath: string = isEnterprise ? "enterprise" : "oss"
+    const path: string = resolveWithSymlink(
+        ROOT_PATH,
+        IS_BAZEL && process.env.WEB_BUNDLE_PATH ? process.env.WEB_BUNDLE_PATH : 'ui/assets',
+        relativeAssetPath
+    )
+
+    return path
+}
+
 export const ROOT_PATH = IS_BAZEL ? process.cwd() : resolveWithSymlink(__dirname, '../../../')
 export const WORKSPACES_PATH = resolveWithSymlink(ROOT_PATH, 'client')
 export const NODE_MODULES_PATH = resolveWithSymlink(ROOT_PATH, 'node_modules')
 export const MONACO_EDITOR_PATH = resolveWithSymlink(NODE_MODULES_PATH, 'monaco-editor')
-export const STATIC_ASSETS_PATH = resolveWithSymlink(
-    ROOT_PATH,
-    IS_BAZEL && process.env.WEB_BUNDLE_PATH ? process.env.WEB_BUNDLE_PATH : 'ui/assets'
-)
-
+export const STATIC_ASSETS_PATH = resolveAssetsPath(ROOT_PATH)
 function getWorkspaceNodeModulesPaths(): string[] {
     const workspaces = fs.readdirSync(WORKSPACES_PATH)
     const nodeModulesPaths = workspaces.map(workspace => resolveWithSymlink(WORKSPACES_PATH, workspace, 'node_modules'))
