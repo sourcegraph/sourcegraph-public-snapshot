@@ -14,6 +14,13 @@ build --host_platform=@rules_nixpkgs_core//platforms:host
 build --extra_toolchains=@nixpkgs_nodejs_toolchain//:nodejs_nix,@nixpkgs_rust_toolchain//:rust_nix
 build --action_env=PATH=$BAZEL_ACTION_PATH
 EOF
+  if [ ! -f /lib64/ld-linux-x86-64.so.2 ]; then
+    echo "----------------------------------------------------------------------------------------------------------------------------------"
+    echo "⚠️ Bazel provisions binaries that expect the program interpreter (ld.so) at /lib64/ld-linux-x86-64.so.2, but it wasn't found.   ⚠️"
+    echo "⚠️ You may need to add the following to your system configuration if you intend to use bazel locally:                           ⚠️"
+    echo "⚠️ https://sourcegraph.com/github.com/Strum355/nix-dotfiles@7951c755/-/blob/hosts/noah-nixos-desktop/configuration.nix?L272-276 ⚠️"
+    echo "----------------------------------------------------------------------------------------------------------------------------------"
+  fi
 fi
 
 pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null || exit
