@@ -256,9 +256,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                 text = text.slice(textConsumed)
                 textConsumed += text.length
-                return this.multiplexer.publish(text)
+                void this.multiplexer.publish(text)
             },
-            onComplete: () => this.multiplexer.notifyTurnComplete(),
+            onComplete: () => {
+                void this.multiplexer.notifyTurnComplete()
+            },
             onError: (err, statusCode) => {
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(
@@ -428,9 +430,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                 text = text.slice(textConsumed)
                 textConsumed += text.length
-                return multiplexer.publish(text)
+                void multiplexer.publish(text)
             },
-            onComplete: () => multiplexer.notifyTurnComplete(),
+            onComplete: () => {
+                void multiplexer.notifyTurnComplete()
+            },
             onError: (error, statusCode) => {
                 console.error(error, statusCode)
             },
