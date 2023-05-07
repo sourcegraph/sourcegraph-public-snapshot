@@ -26,7 +26,7 @@ func dotArch(a []int8, b []int8) int32 {
 		return 0
 	}
 
-	rem := la % 32
+	rem := la % 16
 	blockA := a[:la-rem]
 	blockB := b[:lb-rem]
 
