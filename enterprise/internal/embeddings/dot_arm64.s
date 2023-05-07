@@ -1,6 +1,5 @@
 #include "textflag.h"
 
-
 TEXT ·dotSIMD(SB), NOSPLIT, $0-56
 	// Offsets based on slice header offsets.
 	// To check, use `GOARCH=amd64 go vet`
@@ -19,7 +18,7 @@ blockloop:
 	CMP R4, R6
 	BEQ reduce
 
-	// Load 16 bytes from each slice
+	// Load 16 bytes from each slice, post-incrementing the pointers
 	VLD1.P 16(R4), [V1.B16]
 	VLD1.P 16(R5), [V2.B16]
 
