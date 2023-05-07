@@ -17,8 +17,6 @@ blockloop:
     CMP BLOCKSIZE, R6
     BLT reduce
 
-    // TODO: consider loading 32 bytes at a time with
-    // VLD1.W 16(R4), [V1.B16, V2.B16]
     VLD1 (R4), [V1.B16]
     VLD1 (R5), [V2.B16]
 
