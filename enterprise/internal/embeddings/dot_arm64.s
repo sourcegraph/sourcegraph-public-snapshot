@@ -1,5 +1,11 @@
 #include "textflag.h"
 
+// dotSIMD uses NEON instructions and the SDOT instruction
+// (required after Armv8.4) to compute the dot product of
+// two int8 vectors.
+//
+// The vectors must be of the same length, and that length
+// must be a multiple of 16.
 TEXT ·dotSIMD(SB), NOSPLIT, $0-56
 	// Offsets based on slice header offsets.
 	// To check, use `GOARCH=amd64 go vet`

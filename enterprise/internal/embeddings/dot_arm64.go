@@ -10,7 +10,7 @@ import (
 
 var (
 	simdEnabled   = env.MustGetBool("ENABLE_EMBEDDINGS_SEARCH_SIMD", false, "Enable SIMD dot product for embeddings search")
-	hasDotProduct = cpuid.CPU.Has(cpuid.ASIMDDP)
+	hasDotProduct = cpuid.CPU.Supports(cpuid.ASIMD, cpuid.ASIMDDP)
 	haveDotArch   = simdEnabled && hasDotProduct
 )
 
