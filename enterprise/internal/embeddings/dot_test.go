@@ -20,14 +20,14 @@ func TestDot(t *testing.T) {
 			b    []int8
 			want int32
 		}{{
-			// 	a:    []int8{1},
-			// 	b:    []int8{1},
-			// 	want: 1,
-			// }, {
-			// 	a:    append(repeat(0, 16), 1),
-			// 	b:    append(repeat(0, 16), 2),
-			// 	want: 2,
-			// }, {
+			a:    []int8{1},
+			b:    []int8{1},
+			want: 1,
+		}, {
+			a:    append(repeat(0, 16), 1),
+			b:    append(repeat(0, 16), 2),
+			want: 2,
+		}, {
 			a:    []int8{10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 			b:    []int8{10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
 			want: 102,
