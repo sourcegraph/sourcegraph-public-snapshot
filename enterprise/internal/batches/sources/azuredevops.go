@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -105,8 +104,6 @@ func (s AzureDevOpsSource) LoadChangeset(ctx context.Context, cs *Changeset) err
 // exists, *Changeset will be populated and the return value will be true.
 func (s AzureDevOpsSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
 	input := s.changesetToPullRequestInput(cs)
-	fmt.Printf("input from create: %v", input)
-
 	return s.createChangeset(ctx, cs, input)
 }
 
@@ -175,6 +172,14 @@ func (s AzureDevOpsSource) CloseChangeset(ctx context.Context, cs *Changeset) er
 		return errors.Wrap(err, "abandoning pull request")
 	}
 
+	// TODO: We ought to check the AutoDeleteBranch setting here and delete the branch if
+	// it's set, but we don't have all the necessary details of the head ref here in order
+	// to perform that update, so currently we only honor the setting on "completion" aka
+	// merge. In order to accomplish this, we would need to issue a POST request to update
+	// the ref and supply its name and old Object ID (which we don't have) and then
+	// "0000000000000000000000000000000000000000" as the new Object ID. See
+	// https://learn.microsoft.com/en-us/rest/api/azure/devops/git/refs/update-refs?view=azure-devops-rest-7.0&tabs=HTTP#gitrefupdate
+
 	return errors.Wrap(s.setChangesetMetadata(ctx, repo, &updated, cs), "setting Azure DevOps changeset metadata")
 }
 
@@ -215,8 +220,12 @@ func (s AzureDevOpsSource) UpdateChangeset(ctx context.Context, cs *Changeset) e
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
 // If not, it's a noop.
 func (s AzureDevOpsSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
+	deleteSourceBranch := conf.Get().BatchChangesAutoDeleteBranch
 	input := azuredevops.PullRequestUpdateInput{
 		Status: &azuredevops.PullRequestStatusActive,
+		CompletionOptions: &azuredevops.PullRequestCompletionOptions{
+			DeleteSourceBranch: deleteSourceBranch,
+		},
 	}
 	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
 	args, err := s.createCommonPullRequestArgs(*repo, *cs)
@@ -270,9 +279,11 @@ func (s AzureDevOpsSource) MergeChangeset(ctx context.Context, cs *Changeset, sq
 		mergeStrategy = &ms
 	}
 
+	deleteSourceBranch := conf.Get().BatchChangesAutoDeleteBranch
 	updated, err := s.client.CompletePullRequest(ctx, args, azuredevops.PullRequestCompleteInput{
-		CommitID:      cs.SyncState.HeadRefOid,
-		MergeStrategy: mergeStrategy,
+		CommitID:           cs.SyncState.HeadRefOid,
+		MergeStrategy:      mergeStrategy,
+		DeleteSourceBranch: deleteSourceBranch,
 	})
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -413,22 +424,16 @@ func (s AzureDevOpsSource) setChangesetMetadata(ctx context.Context, repo *azure
 }
 
 func (s AzureDevOpsSource) changesetToPullRequestInput(cs *Changeset) azuredevops.CreatePullRequestInput {
-
+	deleteSourceBranch := conf.Get().BatchChangesAutoDeleteBranch
 	input := azuredevops.CreatePullRequestInput{
 		Title:         cs.Title,
 		Description:   cs.Body,
 		SourceRefName: cs.HeadRef,
 		TargetRefName: cs.BaseRef,
+		CompletionOptions: &azuredevops.PullRequestCompletionOptions{
+			DeleteSourceBranch: deleteSourceBranch,
+		},
 	}
-
-	if conf.Get().BatchChangesAutoDeleteBranch {
-		input.CompletionOptions = &azuredevops.PullRequestCompletionOptions{
-			DeleteSourceBranch: true,
-		}
-	}
-
-	fmt.Printf("input from CTPR: %v", input)
-	fmt.Printf("completion options: %v", input.CompletionOptions)
 
 	// If we're forking, then we need to set the source repository as well.
 	if cs.RemoteRepo != cs.TargetRepo {
@@ -441,16 +446,20 @@ func (s AzureDevOpsSource) changesetToPullRequestInput(cs *Changeset) azuredevop
 }
 
 func (s AzureDevOpsSource) changesetToUpdatePullRequestInput(cs *Changeset, targetRefChanged bool) azuredevops.PullRequestUpdateInput {
-	targetRed := gitdomain.EnsureRefPrefix(cs.BaseRef)
+	targetRef := gitdomain.EnsureRefPrefix(cs.BaseRef)
 	if targetRefChanged {
 		return azuredevops.PullRequestUpdateInput{
-			TargetRefName: &targetRed,
+			TargetRefName: &targetRef,
 		}
 	}
 
+	deleteSourceBranch := conf.Get().BatchChangesAutoDeleteBranch
 	return azuredevops.PullRequestUpdateInput{
 		Title:       &cs.Title,
 		Description: &cs.Body,
+		CompletionOptions: &azuredevops.PullRequestCompletionOptions{
+			DeleteSourceBranch: deleteSourceBranch,
+		},
 	}
 }
 
