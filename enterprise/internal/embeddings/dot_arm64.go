@@ -15,24 +15,21 @@ var (
 )
 
 func dotArch(a []int8, b []int8) int32 {
-	la := len(a)
-	lb := len(b)
-
-	if la != lb {
+	if len(a) != len(b) {
 		panic("mismatched lengths")
 	}
 
-	if la == 0 {
+	if len(a) == 0 {
 		return 0
 	}
 
-	rem := la % 16
-	blockA := a[:la-rem]
-	blockB := b[:lb-rem]
+	rem := len(a) % 16
+	blockA := a[:len(a)-rem]
+	blockB := b[:len(b)-rem]
 
 	sum := int32(dotSIMD(blockA, blockB))
 
-	for i := la - rem; i < la; i++ {
+	for i := len(a) - rem; i < len(a); i++ {
 		sum += int32(a[i]) * int32(b[i])
 	}
 
