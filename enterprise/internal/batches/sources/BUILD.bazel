@@ -19,6 +19,7 @@ go_library(
         "//enterprise/internal/batches/sources/bitbucketcloud",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
+        "//internal/conf",
         "//internal/database",
         "//internal/errcode",
         "//internal/extsvc",

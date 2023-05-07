@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -96,11 +95,6 @@ func (c *client) GetPullRequestStatuses(ctx context.Context, args PullRequestCom
 //
 // Warning: If you are setting the TargetRefName in the PullRequestUpdateInput, it will be the only thing to get updated (bug in the ADO API).
 func (c *client) UpdatePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestUpdateInput) (PullRequest, error) {
-	if conf.Get().BatchChangesAutoDeleteBranch {
-		input.CompletionOptions = &PullRequestCompletionOptions{
-			DeleteSourceBranch: true,
-		}
-	}
 
 	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
 
@@ -148,11 +142,13 @@ func (c *client) CreatePullRequestCommentThread(ctx context.Context, args PullRe
 func (c *client) CompletePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestCompleteInput) (PullRequest, error) {
 	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
 	completed := PullRequestStatusCompleted
-	pri := PullRequestUpdateInput{Status: &completed, LastMergeSourceCommit: &PullRequestCommit{CommitID: input.CommitID}}
+	pri := PullRequestUpdateInput{
+		Status:                &completed,
+		LastMergeSourceCommit: &PullRequestCommit{CommitID: input.CommitID},
+		CompletionOptions:     &PullRequestCompletionOptions{DeleteSourceBranch: input.DeleteSourceBranch},
+	}
 	if input.MergeStrategy != nil {
-		pri.CompletionOptions = &PullRequestCompletionOptions{
-			MergeStrategy: *input.MergeStrategy,
-		}
+		pri.CompletionOptions.MergeStrategy = *input.MergeStrategy
 	}
 
 	data, err := json.Marshal(pri)
