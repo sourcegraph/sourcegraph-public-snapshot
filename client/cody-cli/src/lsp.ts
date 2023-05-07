@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
+// TODO(sqs): ^^^ rm this
+
+import fs from 'fs'
+
 import { v4 as uuidv4 } from 'uuid'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import {
@@ -7,11 +12,8 @@ import {
     // DiagnosticSeverity,
     ProposedFeatures,
     InitializeParams,
-    DidChangeConfigurationNotification,
     CompletionItem,
-    CompletionItemKind,
     TextDocumentPositionParams,
-    TextDocumentSyncKind,
     InitializeResult,
     Connection,
     DidChangeConfigurationParams,
@@ -20,17 +22,14 @@ import {
     MessageType,
     ExecuteCommandParams,
     WorkDoneProgress,
-    WorkDoneProgressBegin,
     WorkDoneProgressCreateRequest,
     ApplyWorkspaceEditRequest,
     ShowMessageNotification,
-    TextDocumentIdentifier,
     TextDocumentEdit,
     TextEdit,
     Range,
-    OptionalVersionedTextDocumentIdentifier,
-    WorkspaceEdit,
     Position,
+    LogMessageNotification,
 } from 'vscode-languageserver/node'
 
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
@@ -59,7 +58,7 @@ interface SourcegraphSettings {
 }
 
 function validSettings(settings: SourcegraphSettings): boolean {
-    return settings.url !== '' && settings.accessToken !== '' && settings.repos.length !== 0
+    return settings.url !== '' && settings.accessToken !== ''
 }
 
 interface CodyLSPSettings {
@@ -88,13 +87,11 @@ class CodyLanguageServer {
     private completionsClient?: SourcegraphNodeCompletionsClient
 
     constructor() {
-        this.connection = createConnection(ProposedFeatures.all)
+        this.connection = createConnection(process.stdin, process.stdout, undefined, ProposedFeatures.all)
         this.documents = new TextDocuments(TextDocument)
 
-        this.connection.onInitialize(this.onInitialize.bind(this))
-        this.connection.onInitialized(() => {
-            this.onInitialized.bind(this)
-        })
+        this.connection.onInitialize(params => this.onInitialize(params))
+        this.connection.onInitialized(this.logAsyncErrors(() => this.onInitialized()))
         this.connection.onDidChangeConfiguration(change => {
             this.onDidChangeConfiguration(change)
         })
@@ -113,12 +110,30 @@ class CodyLanguageServer {
     }
 
     private onInitialize(params: InitializeParams): InitializeResult {
+        appendToLog(`INIT: ${JSON.stringify(params)}`)
+        setTimeout(
+            () =>
+                this.connection.sendNotification(LogMessageNotification.type, {
+                    message: 'XXXXX888888',
+                    type: MessageType.Info,
+                }),
+            500
+        )
+
         const result: InitializeResult = {
             capabilities: {
-                textDocumentSync: TextDocumentSyncKind.Incremental,
+                // textDocumentSync: TextDocumentSyncKind.Incremental,
+                /*                 textDocumentSync: {
+                    change: TextDocumentSyncKind.Full,
+                    openClose: true,
+                    willSave: true,
+                }, */
+                documentSymbolProvider: false,
+
                 // Tell the client that this server supports code completion.
                 completionProvider: {
-                    resolveProvider: true,
+                    resolveProvider: false,
+                    workDoneProgress: true,
                 },
                 inlayHintProvider: false,
             },
@@ -127,15 +142,16 @@ class CodyLanguageServer {
     }
 
     private async onInitialized() {
-        await this.connection.client.register(DidChangeConfigurationNotification.type, undefined)
+        appendToLog('INITIALIZED')
     }
 
     private async onDidChangeConfiguration(change: DidChangeConfigurationParams) {
         this.globalSettings = (change.settings.codylsp || defaultSettings) as CodyLSPSettings
+        console.error('XXXXXX', change)
         if (validSettings(this.globalSettings.sourcegraph)) {
             await this.initializeCody()
         } else {
-            this.connection.sendNotification(ShowMessageNotification.type.method, {
+            this.connection.sendNotification(ShowMessageNotification.type, {
                 message: 'Invalid settings',
                 type: MessageType.Error,
             })
@@ -160,13 +176,18 @@ class CodyLanguageServer {
         })
 
         try {
-            this.codebaseContext = await createCodebaseContext(sourcegraphClient, codebase, contextType)
+            this.codebaseContext = await createCodebaseContext(
+                sourcegraphClient,
+                codebase,
+                contextType,
+                this.globalSettings.sourcegraph.url
+            )
         } catch (error) {
             const errorMessage =
                 `Cody could not connect to your Sourcegraph instance: ${error}\n` +
                 'Make sure that cody.serverEndpoint is set to a running Sourcegraph instance and that an access token is configured.'
 
-            this.connection.sendNotification(ShowMessageNotification.type.method, {
+            this.connection.sendNotification(ShowMessageNotification.type, {
                 message: errorMessage,
                 type: MessageType.Error,
             })
@@ -206,12 +227,26 @@ class CodyLanguageServer {
         await this.connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
     }
 
-    private onCompletion(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] {
+    private onCompletion(position: TextDocumentPositionParams): CompletionItem[] {
         // The pass parameter contains the position of the text document in
         // which code complete got requested. For the example we ignore this
         // info and always provide the same completion items.
         return [
             {
+                label: 'Foo',
+                detail: 'asdf',
+                textEdit: {
+                    newText: 'asdf',
+                    range: {
+                        start: position.position,
+                        end: {
+                            line: position.position.line,
+                            character: position.position.character + 'asdf'.length,
+                        },
+                    },
+                },
+            },
+            /*             {
                 label: 'TypeScript',
                 kind: CompletionItemKind.Text,
                 data: 1,
@@ -221,6 +256,7 @@ class CodyLanguageServer {
                 kind: CompletionItemKind.Text,
                 data: 2,
             },
+ */
         ]
     }
 
@@ -241,7 +277,7 @@ class CodyLanguageServer {
             this.codebaseContext === undefined ||
             this.completionsClient === undefined
         ) {
-            this.connection.sendNotification(ShowMessageNotification.type.method, {
+            this.connection.sendNotification(ShowMessageNotification.type, {
                 message: 'Cannot execute command, because not connected to Sourcegraph instance',
                 type: MessageType.Error,
             })
@@ -250,7 +286,7 @@ class CodyLanguageServer {
         }
 
         if (params.arguments === undefined) {
-            this.connection.sendNotification(ShowMessageNotification.type.method, {
+            this.connection.sendNotification(ShowMessageNotification.type, {
                 message: 'Cannot execute command, because arguments are missing',
                 type: MessageType.Error,
             })
@@ -293,7 +329,7 @@ class CodyLanguageServer {
         return result
     }
 
-    async handleCodyExplain({
+    private async handleCodyExplain({
         uri,
         startLine,
         endLine,
@@ -325,7 +361,7 @@ class CodyLanguageServer {
         }
     }
 
-    async handleCodyReplace({
+    private async handleCodyReplace({
         uri,
         startLine,
         endLine,
@@ -351,16 +387,16 @@ class CodyLanguageServer {
         const text = await this.getCompletion(initialMessage)
 
         // TODO: This is incredibly hacky
-        const regex = /```\w+([\s\S]*?)```/g
+        const regex = /```\w+([\S\s]*?)```/g
         const match = regex.exec(text)
-        const extractedStr = match && match[1] ? match[1] : ''
+        const extractedStr = match?.[1] ? match[1] : ''
 
         const startPosition = Position.create(startLine, 0)
         const endPosition = Position.create(endLine, 9999999) // this is fucking ugly, jesus
         const textEdit = TextEdit.replace(Range.create(startPosition, endPosition), extractedStr)
         const edit = TextDocumentEdit.create({ uri: doc.uri, version: null }, [textEdit])
 
-        await this.connection.sendRequest(ApplyWorkspaceEditRequest.type.method, {
+        await this.connection.sendRequest(ApplyWorkspaceEditRequest.type, {
             edit: {
                 documentChanges: [edit],
             },
@@ -377,7 +413,7 @@ class CodyLanguageServer {
             this.codebaseContext === undefined ||
             this.completionsClient === undefined
         ) {
-            this.connection.sendNotification(ShowMessageNotification.type.method, {
+            this.connection.sendNotification(ShowMessageNotification.type, {
                 message: 'cannot execute command, because not connected to Sourcegraph instance',
                 type: MessageType.Error,
             })
@@ -424,4 +460,16 @@ class CodyLanguageServer {
 
         return text
     }
+
+    private logAsyncErrors(fn: () => Promise<void>): () => void {
+        return () => {
+            fn().catch(error => console.error(error))
+        }
+    }
+}
+
+function appendToLog(message: string): void {
+    // TODO(sqs)
+    // eslint-disable-next-line no-sync
+    fs.appendFileSync('/tmp/cody-lsp.log', message + '\n')
 }

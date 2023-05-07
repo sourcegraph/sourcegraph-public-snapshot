@@ -6,6 +6,7 @@
     "rootDir": ".",
     "outDir": "./out",
     "baseUrl": "./src",
+    "types": ["node"],
   },
   "include": ["src", "package.json", ".eslintrc.js", "jest.config.js"],
   "exclude": ["out", "dist"],

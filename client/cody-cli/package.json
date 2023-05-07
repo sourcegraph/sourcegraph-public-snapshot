@@ -25,5 +25,8 @@
   "main": "dist/app.js",
   "bin": {
     "cody": "./dist/app.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.1.0"
   }
 }
