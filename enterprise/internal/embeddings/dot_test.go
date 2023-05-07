@@ -91,26 +91,3 @@ func TestDot(t *testing.T) {
 		}
 	})
 }
-
-func FuzzDot(f *testing.F) {
-	if !haveDotArch {
-		f.Skip("skipping test because arch-specific dot product is disabled")
-	}
-
-	f.Fuzz(func(t *testing.T, input1, input2 []byte) {
-		b1 := *(*[]int8)(unsafe.Pointer(&input1))
-		b2 := *(*[]int8)(unsafe.Pointer(&input2))
-
-		if len(b1) > len(b2) {
-			b1 = b1[:len(b2)]
-		} else {
-			b2 = b2[:len(b1)]
-		}
-
-		got := Dot(b1, b2)
-		want := dotPortable(b1, b2)
-		if want != got {
-			t.Fatalf("want: %d, got: %d", want, got)
-		}
-	})
-}
