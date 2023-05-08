@@ -6,6 +6,21 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^^ Keyword
 //        ^^^^^^ Identifier
   
+  // Comments
+//^^^^^^^^^^^ Comment
+  /* Multi
+//^^^^^^^^ Comment 3:0..5:13
+     line
+     comment */
+  
+  // Imports
+//^^^^^^^^^^ Comment
+  import java.util.*
+//^^^^^^ Keyword
+//       ^^^^ Identifier
+//           ^ PunctuationDelimiter
+//            ^^^^ Identifier
+  
   import java.nio.channels.FileChannel
 //^^^^^^ Keyword
 //       ^^^^ Identifier
@@ -39,7 +54,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                                            ^^^^^^^^^^^^ IdentifierFunction
   
   /***
-//^^^^ Comment 6:0..12:3
+//^^^^ Comment 14:0..20:3
    *  Example use:
    *
    *  val (b, g, r) = mat.at<UByte>(50, 50).v3c
@@ -104,7 +119,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   
   
   /**
-//^^^ Comment 21:0..24:3
+//^^^ Comment 29:0..32:3
    * Implementation of [DataAccess] which handles access and interactions with file and data
    * under scoped storage via the MediaStore API.
    */
@@ -268,33 +283,11 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
    }
   }
   
-  // Comments
-//^^^^^^^^^^^ Comment
-  /* Multi
-//^^^^^^^^ Comment 60:0..62:13
-     line
-     comment */
-  
-  // Package declaration
-//^^^^^^^^^^^^^^^^^^^^^^ Comment
-  package demo
-//^^^^^^^ Identifier
-//        ^^^^ Identifier
-  
-  // Imports
-//^^^^^^^^^^ Comment
-  import java.util.*
-//^^^^^^ Identifier
-//       ^^^^ Identifier
-//           ^ PunctuationDelimiter
-//            ^^^^ Identifier
-//                ^ PunctuationDelimiter
-//                 ^ IdentifierOperator
   
   // Variables
 //^^^^^^^^^^^^ Comment
   var a = 1         // Mutable
-//^^^ Identifier
+//^^^ Keyword
 //    ^ Identifier
 //      ^ IdentifierOperator
 //        ^ NumericLiteral
@@ -377,7 +370,8 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //^^^^^^^ IdentifierBuiltin
 //        ^^^^^^^ StringLiteral
 //               ^ StringLiteralEscape
-//                ^^^^^^ StringLiteral
+//                ^^^^ Identifier
+//                    ^^ StringLiteral
   
   // Conditional expressions
 //^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment

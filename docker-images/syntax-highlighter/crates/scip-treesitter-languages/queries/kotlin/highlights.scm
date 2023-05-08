@@ -83,13 +83,14 @@
 ((simple_identifier) @constant
   (#match? @constant "^[A-Z][A-Z0-9_]*$"))
 
-(simple_identifier) @variable
+(simple_identifier) @identifier
+(interpolated_identifier) @identifier
 
 ; `this` keyword inside classes
-(this_expression) @variable.builtin
+(this_expression) @identifier.builtin
 
 ; `super` keyword inside classes
-(super_expression) @variable.builtin
+(super_expression) @identifier.builtin
 
 (enum_entry
 	(simple_identifier) @constant)
