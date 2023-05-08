@@ -88,6 +88,7 @@ export const renderMarkdown = (
         : {
               USE_PROFILES: { html: true },
               FORBID_ATTR: ['rel', 'style'],
+              FORBID_TAGS: ['style', 'form', 'input', 'button'],
           }
 
     return DOMPurify.sanitize(rendered, dompurifyConfig).trim()

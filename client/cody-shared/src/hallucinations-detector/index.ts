@@ -1,4 +1,6 @@
-import { MarkdownLine, parseMarkdown } from '../chat/markdown'
+import { marked } from 'marked'
+
+import { parseMarkdown } from '../chat/markdown'
 
 export interface HighlightedToken {
     type: 'file' | 'symbol'
@@ -17,40 +19,54 @@ export async function highlightTokens(
     text: string,
     fileExists: (filePath: string) => Promise<boolean>
 ): Promise<HighlightTokensResult> {
-    const markdownLines = parseMarkdown(text)
-    const tokens = await detectTokens(markdownLines, fileExists)
-    const highlightedText = markdownLines
-        .map(({ line, isCodeBlock }) => (isCodeBlock ? line : highlightLine(line, tokens)))
-        .join('\n')
+    const markdownTokens = parseMarkdown(text)
+    const tokens = await detectTokens(markdownTokens, fileExists)
+
+    const highlightedText = markdownTokens
+        .map(token => {
+            switch (token.type) {
+                case 'code':
+                case 'codespan':
+                    return token.raw
+                default:
+                    return highlightLine(token.raw, tokens)
+            }
+        })
+        .join('')
+
     return { text: highlightedText, tokens }
 }
 
 async function detectTokens(
-    lines: MarkdownLine[],
+    tokens: marked.Token[],
     fileExists: (filePath: string) => Promise<boolean>
 ): Promise<HighlightedToken[]> {
-    const tokens: HighlightedToken[] = []
-    for (const { line, isCodeBlock } of lines) {
-        if (isCodeBlock) {
-            continue
+    const highlightedTokens: HighlightedToken[] = []
+    for (const token of tokens) {
+        switch (token.type) {
+            case 'code':
+            case 'codespan':
+                continue
+            default: {
+                const lineTokens = await detectFilePaths(token.raw, fileExists)
+                highlightedTokens.push(...lineTokens)
+            }
         }
-        const lineTokens = await detectFilePaths(line, fileExists)
-        tokens.push(...lineTokens)
     }
-    return deduplicateTokens(tokens)
+    return deduplicateTokens(highlightedTokens)
 }
 
 function highlightLine(line: string, tokens: HighlightedToken[]): string {
     let highlightedLine = line
     for (const token of tokens) {
-        highlightedLine = highlightedLine.replaceAll(token.outerValue, getHighlightedTokenHTML(token))
+        highlightedLine = highlightedLine.replaceAll(token.innerValue, getHighlightedTokenHTML(token))
     }
     return highlightedLine
 }
 
 function getHighlightedTokenHTML(token: HighlightedToken): string {
     const isHallucinatedClassName = token.isHallucinated ? 'hallucinated' : 'not-hallucinated'
-    return ` <span class="token-${token.type} token-${isHallucinatedClassName}">${token.outerValue.trim()}</span> `
+    return `<span class="token-${token.type} token-${isHallucinatedClassName}">${token.innerValue}</span>`
 }
 
 function deduplicateTokens(tokens: HighlightedToken[]): HighlightedToken[] {
