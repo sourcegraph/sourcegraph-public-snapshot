@@ -27,17 +27,8 @@ jobs:
           run_install: false
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
-      # - name: install golang
-      #   uses: actions/setup-go@v2
-      #   with:
-      #     go-version: 1.19.8
       - uses: actions/checkout@v3
       - uses: bazelbuild/setup-bazelisk@v2
-      - name: Mount bazel cache  # Optional
-        uses: actions/cache@v3
-        with:
-          path: "~/.cache/bazel"
-          key: bazel
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-20.04'
         run: |
@@ -45,10 +36,42 @@ jobs:
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
       - name: install frontend dependencies
         run: pnpm install
-      # start building things
+      # setup caches
+      - name: Mount bazel cache  # Optional
+        if: matrix.platform == 'ubuntu-20.04'
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/bazel
+          key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.aspect/bazelrc/*.bazelrc', 'WORKSPACE', '*.bzl','dev/*.bzl') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-
+      - name: Mount bazel cache (Mac)
+        if: matrix.platform == 'macos-latest'
+        uses: actions/cache@v3
+        with:
+          path: |
+            /private/var/tmp/_bazel_runner/
+          # we can't use **/*.bzl because that is too slow in the mac action
+          key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.aspect/bazelrc/*.bazelrc', 'WORKSPACE', '*.bzl','dev/*.bzl') }}
+          restore-keys: |
+            ${{ runner.os }}-bazel-
+      - name: Mount Rust Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            src-tauri/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      # build all the things
       - name: build app-shell, Sourcegraph web and Sourcegraph Backend
         run: |
           ./enterprise/dev/app/build-release.sh
+        env:
+          RELEASE_BUILD: 1
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -58,4 +81,3 @@ jobs:
           releaseName: "Sourcegraph App v__VERSION__"
           releaseDraft: true
           prerelease: true
-
