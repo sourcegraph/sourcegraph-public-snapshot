@@ -1,4 +1,6 @@
 import { execFile, spawn } from 'child_process'
+import { createInterface } from 'readline';
+
 import * as path from 'path'
 
 import StreamValues from 'stream-json/streamers/StreamValues'
@@ -168,6 +170,91 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         return fileTermCounts
     }
 
+    private async fetchFileMatches2(
+        queryTerms: Term[],
+        rootPath: string
+    ): Promise<{
+        totalFiles: number
+        fileTermCounts: { [filename: string]: { [stem: string]: number } }
+        termTotalFiles: { [stem: string]: number }
+    }> {
+        const fileTermCounts: { [filename: string]: { [stem: string]: number } } = {}
+        const termTotalFiles: { [stem: string]: number } = {}
+        let totalFiles: number | undefined
+
+        const proc = spawn(
+            this.rgPath,
+            [
+                '-i',
+                ...fileExtRipgrepParams,
+                '--stats',
+                `\\b${regexForTerms(...queryTerms)}`,
+                './',
+            ],
+            {
+                cwd: rootPath,
+            },
+        )
+
+        const rl = createInterface({
+            input: proc.stdout,
+            output: process.stdout,
+            crlfDelay: Infinity,
+            terminal: false
+        });
+
+        const queryTermRegexes = queryTerms.map((term: Term): [Term, RegExp] => [term, new RegExp(regexForTerms(term))])
+        rl.on('line', (line: string) => {
+            try {
+                // TODO(beyang): we assume ':' is a reliable delimiter between filename and line content
+                // This will break if the file path contains a colon
+                const colIndex = line.indexOf(':')
+                if (colIndex === -1) {
+                    const matches = /^(\d+) files searched$/.exec(line)
+                    if (matches && matches.length === 2) {
+                        try {
+                            totalFiles = parseInt(matches[1], 10)
+                        } catch {
+                            console.error(`failed to parse number of files matched from string: ${matches[1]}`)
+                        }
+                    }
+                    return
+                }
+                const filePath = line.slice(0, colIndex)
+                const lineText = line.slice(colIndex + 1)
+                for (const [term, termRegex] of queryTermRegexes) {
+                    const termCount = lineText.match(termRegex)?.length || 0
+                    fileTermCounts[filePath] = fileTermCounts[filePath] || {}
+                    fileTermCounts[filePath][term.stem] = (fileTermCounts[filePath][term.stem] || 0) + termCount
+                    if (termCount > 0) {
+                        termTotalFiles[term.stem] = (termTotalFiles[term.stem] || 0) + 1
+                    }
+                }
+            } catch (error) {
+                console.error(`error checking line from query term: ${error}`)
+            }
+        });
+
+        await new Promise<void>((resolve, reject) => {
+            proc.once('error', (error: Error) => {
+                reject(error)
+            })
+            rl.on('close', () => {
+                resolve()
+            })
+        })
+
+        if (totalFiles === undefined) {
+            throw new Error('Did not extract number of files searched')
+        }
+
+        return {
+            totalFiles,
+            fileTermCounts,
+            termTotalFiles,
+        }
+    }
+
     private async fetchFileMatches(
         queryTerms: Term[],
         rootPath: string
@@ -266,7 +353,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     ): Promise<{ filename: string; score: number }[]> {
         const query = userQueryToKeywordQuery(rawQuery)
 
-        const fileMatchesPromise = this.fetchFileMatches(query, rootPath)
+        const fileMatchesPromise = this.fetchFileMatches2(query, rootPath)
         const fileStatsPromise = this.fetchFileStats(query, rootPath)
 
         const fileMatches = await fileMatchesPromise
