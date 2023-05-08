@@ -173,7 +173,8 @@ type embeddingsSearchResultsResolver struct {
 func (r *embeddingsSearchResultsResolver) CodeResults(ctx context.Context) []graphqlbackend.EmbeddingsSearchResultResolver {
 	codeResults := make([]graphqlbackend.EmbeddingsSearchResultResolver, len(r.results.CodeResults))
 	for idx, result := range r.results.CodeResults {
-		codeResults[idx] = &embeddingsSearchResultResolver{result}
+		panic("TODO: get content")
+		codeResults[idx] = &embeddingsSearchResultResolver{result: result}
 	}
 	return codeResults
 }
@@ -181,13 +182,17 @@ func (r *embeddingsSearchResultsResolver) CodeResults(ctx context.Context) []gra
 func (r *embeddingsSearchResultsResolver) TextResults(ctx context.Context) []graphqlbackend.EmbeddingsSearchResultResolver {
 	textResults := make([]graphqlbackend.EmbeddingsSearchResultResolver, len(r.results.TextResults))
 	for idx, result := range r.results.TextResults {
-		textResults[idx] = &embeddingsSearchResultResolver{result}
+		panic("TODO: get content")
+		textResults[idx] = &embeddingsSearchResultResolver{
+			result: result,
+		}
 	}
 	return textResults
 }
 
 type embeddingsSearchResultResolver struct {
-	result embeddings.EmbeddingSearchResult
+	result  embeddings.EmbeddingSearchResult
+	content string
 }
 
 func (r *embeddingsSearchResultResolver) FileName(ctx context.Context) string {
@@ -203,5 +208,5 @@ func (r *embeddingsSearchResultResolver) EndLine(ctx context.Context) int32 {
 }
 
 func (r *embeddingsSearchResultResolver) Content(ctx context.Context) string {
-	return r.result.Content
+	return r.content
 }

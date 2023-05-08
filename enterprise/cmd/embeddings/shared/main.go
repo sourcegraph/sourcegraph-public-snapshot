@@ -150,7 +150,6 @@ func NewHandler(
 			CodeResultsCount: args.CodeResultsCount,
 			TextResultsCount: args.TextResultsCount,
 			UseDocumentRanks: args.UseDocumentRanks,
-			Debug:            args.Debug,
 		}
 
 		res, err := searchRepoEmbeddingIndexes(r.Context(), logger, multiArgs, readFile, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)

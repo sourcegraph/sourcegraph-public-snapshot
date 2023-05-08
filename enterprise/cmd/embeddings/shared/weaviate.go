@@ -56,7 +56,7 @@ func (w *weaviateClient) Use(ctx context.Context) bool {
 	return featureflag.FromContext(ctx).GetBoolOr("search-weaviate", false)
 }
 
-func (w *weaviateClient) Search(ctx context.Context, params embeddings.EmbeddingsSearchParameters) (codeResults, textResults []embeddings.SimilaritySearchResult, _ api.CommitID, _ error) {
+func (w *weaviateClient) Search(ctx context.Context, params embeddings.EmbeddingsSearchParameters) (codeResults, textResults []embeddings.EmbeddingSearchResult, _ api.CommitID, _ error) {
 	if w.clientErr != nil {
 		return nil, nil, "", w.clientErr
 	}
@@ -75,18 +75,21 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 				{Name: "start_line"},
 				{Name: "end_line"},
 				{Name: "revision"},
+				{Name: "_additional", Fields: []graphql.Field{
+					{Name: "distance"},
+				}},
 			}...).
 			WithLimit(limit)
 	}
 
-	extractResults := func(res *models.GraphQLResponse, typ string) ([]embeddings.SimilaritySearchResult, api.CommitID) {
+	extractResults := func(res *models.GraphQLResponse, typ string) ([]embeddings.EmbeddingSearchResult, api.CommitID) {
 		get := res.Data["Get"].(map[string]any)
 		code := get[typ].([]any)
 		if len(code) == 0 {
 			return nil, ""
 		}
 
-		srs := make([]embeddings.SimilaritySearchResult, 0, len(code))
+		srs := make([]embeddings.EmbeddingSearchResult, 0, len(code))
 		revision := ""
 		for _, c := range code {
 			cMap := c.(map[string]any)
@@ -100,11 +103,15 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 				}
 			}
 
-			srs = append(srs, embeddings.SimilaritySearchResult{
-				RepoEmbeddingRowMetadata: embeddings.RepoEmbeddingRowMetadata{
-					FileName:  fileName,
-					StartLine: int(cMap["start_line"].(float64)),
-					EndLine:   int(cMap["end_line"].(float64)),
+			srs = append(srs, embeddings.EmbeddingSearchResult{
+				RepoName:  params.RepoName,
+				Revision:  api.CommitID(revision),
+				FileName:  fileName,
+				StartLine: int(cMap["start_line"].(float64)),
+				EndLine:   int(cMap["end_line"].(float64)),
+				ScoreDetails: embeddings.SearchScoreDetails{
+					// multiply by half max int32 since distance will always be between 0 and 2
+					SimilarityScore: int32(cMap["_additional"].(map[string]any)["distance"].(float64) * (1073741823)),
 				},
 			})
 		}

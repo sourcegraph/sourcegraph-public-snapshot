@@ -64,10 +64,10 @@ func TestSimilaritySearch(t *testing.T) {
 			for q := 0; q < numQueries; q++ {
 				t.Run(fmt.Sprintf("find nearest neighbors query=%d numResults=%d numWorkers=%d", q, numResults, numWorkers), func(t *testing.T) {
 					query := queries[q*columnDimension : (q+1)*columnDimension]
-					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0}, SearchOptions{})
+					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0}, SearchOptions{}, "", "")
 					resultRowNums := make([]int, len(results))
 					for i, r := range results {
-						resultRowNums[i], _ = strconv.Atoi(r.RepoEmbeddingRowMetadata.FileName)
+						resultRowNums[i], _ = strconv.Atoi(r.FileName)
 					}
 					expectedResults := ranks[q]
 					require.Equal(t, expectedResults[:min(numResults, len(expectedResults))], resultRowNums)
@@ -152,7 +152,7 @@ func BenchmarkSimilaritySearch(b *testing.B) {
 		b.Run(fmt.Sprintf("numWorkers=%d", numWorkers), func(b *testing.B) {
 			start := time.Now()
 			for n := 0; n < b.N; n++ {
-				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers}, SearchOptions{})
+				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers}, SearchOptions{}, "", "")
 			}
 			m := float64(numRows) * float64(b.N) / time.Since(start).Seconds()
 			b.ReportMetric(m, "embeddings/s")

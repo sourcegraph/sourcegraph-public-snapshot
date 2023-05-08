@@ -49,7 +49,6 @@ func Run(searcher embeddingsSearcher) (float64, error) {
 			Query:            query,
 			CodeResultsCount: 20,
 			TextResultsCount: 2,
-			Debug:            true,
 		}
 
 		results, err := searcher.Search(args)
@@ -70,11 +69,7 @@ func Run(searcher embeddingsSearcher) (float64, error) {
 				fmt.Printf("   ")
 			}
 			fmt.Printf("%d. %s", i+1, result.FileName)
-			if result.Debug != "" {
-				fmt.Printf(" (%s)\n", result.Debug)
-			} else {
-				fmt.Print("\n")
-			}
+			fmt.Printf(" (%s)\n", result.Debug)
 		}
 		fmt.Println()
 		if fileFound {

@@ -1,6 +1,7 @@
 package embeddings
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -51,12 +52,27 @@ type EmbeddingSearchResults struct {
 }
 
 type EmbeddingSearchResult struct {
-	RepoName api.RepoName
-	Revision api.CommitID
-	RepoEmbeddingRowMetadata
-	Content string `json:"content"`
-	// Experimental: Clients should not rely on any particular format of debug
-	Debug string `json:"debug,omitempty"`
+	RepoName api.RepoName `json:"repoName"`
+	Revision api.CommitID `json:"revision"`
+
+	FileName  string `json:"fileName"`
+	StartLine int    `json:"startLine"`
+	EndLine   int    `json:"endLine"`
+
+	ScoreDetails SearchScoreDetails `json:"scoreDetails"`
+}
+
+func (esr *EmbeddingSearchResult) Score() int32 {
+	return esr.ScoreDetails.RankScore + esr.ScoreDetails.SimilarityScore
+}
+
+type SearchScoreDetails struct {
+	SimilarityScore int32 `json:"similarityScore"`
+	RankScore       int32 `json:"rankScore"`
+}
+
+func (s *SearchScoreDetails) String() string {
+	return fmt.Sprintf("score:%d, similarity:%d, rank:%d", s.SimilarityScore+s.RankScore, s.SimilarityScore, s.RankScore)
 }
 
 // DEPRECATED: to support decoding old indexes, we need a struct

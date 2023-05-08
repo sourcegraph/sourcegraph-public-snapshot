@@ -2,11 +2,8 @@ package shared
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"runtime"
 	"sort"
-	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -56,7 +53,6 @@ func searchRepoEmbeddingIndexes(
 			CodeResultsCount: 0,
 			TextResultsCount: 0,
 			UseDocumentRanks: false,
-			Debug:            false,
 		}
 
 		if weaviate.Use(ctx) {
@@ -75,113 +71,43 @@ func searchRepoEmbeddingIndexes(
 			return nil, errors.Wrapf(err, "getting repo embedding index for repo %q", params.RepoName)
 		}
 
-		codeResults := embeddingIndex.CodeIndex.SimilaritySearch(embeddedQuery, params.CodeResultsCount, workerOpts, searchOpts)
+		codeResults := embeddingIndex.CodeIndex.SimilaritySearch(embeddedQuery, params.CodeResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
 		aggregatedCodeResults.Add(embeddingIndex.RepoName, embeddingIndex.Revision, codeResults...)
 
-		textResults := embeddingIndex.TextIndex.SimilaritySearch(embeddedQuery, params.TextResultsCount, workerOpts, searchOpts)
+		textResults := embeddingIndex.TextIndex.SimilaritySearch(embeddedQuery, params.TextResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
 		aggregatedTextResults.Add(embeddingIndex.RepoName, embeddingIndex.Revision, textResults...)
 	}
 
-	toEmbeddingSearchResults := func(srs []aggregatedResult) []embeddings.EmbeddingSearchResult {
-		res := make([]embeddings.EmbeddingSearchResult, 0, len(aggregatedCodeResults.results))
-		for _, cr := range aggregatedCodeResults.results {
-			esr, ok := toEmbeddingSearchResult(ctx, logger, cr.repoName, cr.revision, multiParams.Debug, readFile, cr.result)
-			if ok {
-				res = append(res, esr)
-			}
-		}
-		return res
-	}
-
 	return &embeddings.EmbeddingSearchResults{
-		CodeResults: toEmbeddingSearchResults(aggregatedCodeResults.results),
-		TextResults: toEmbeddingSearchResults(aggregatedTextResults.results),
+		CodeResults: aggregatedCodeResults.results,
+		TextResults: aggregatedTextResults.results,
 	}, nil
-}
-
-type aggregatedResult struct {
-	repoName api.RepoName
-	revision api.CommitID
-	result   embeddings.SimilaritySearchResult
-}
-
-func toEmbeddingSearchResult(
-	ctx context.Context,
-	logger log.Logger,
-	repoName api.RepoName,
-	revision api.CommitID,
-	debug bool,
-	readFile readFileFn,
-	result embeddings.SimilaritySearchResult,
-) (embeddings.EmbeddingSearchResult, bool) {
-	fileContent, err := readFile(ctx, repoName, revision, result.FileName)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			logger.Error("error reading file", log.String("repoName", string(repoName)), log.String("revision", string(revision)), log.String("fileName", result.FileName), log.Error(err))
-		}
-		return embeddings.EmbeddingSearchResult{}, false
-	}
-
-	lines := strings.Split(string(fileContent), "\n")
-
-	// Sanity check: check that startLine and endLine are within 0 and len(lines).
-	startLine := max(0, min(len(lines), result.StartLine))
-	endLine := max(0, min(len(lines), result.EndLine))
-
-	content := strings.Join(lines[result.StartLine:result.EndLine], "\n")
-
-	var debugString string
-	if debug {
-		debugString = fmt.Sprintf("score:%d, similarity:%d, rank:%d", result.Score(), result.SimilarityScore, result.RankScore)
-	}
-
-	return embeddings.EmbeddingSearchResult{
-		RepoName: repoName,
-		Revision: revision,
-		RepoEmbeddingRowMetadata: embeddings.RepoEmbeddingRowMetadata{
-			FileName:  result.FileName,
-			StartLine: startLine,
-			EndLine:   endLine,
-		},
-		Debug:   debugString,
-		Content: content,
-	}, true
 }
 
 func newResultAggregator(maxResults int) resultAggregator {
 	return resultAggregator{
-		results:    make([]aggregatedResult, maxResults*2),
+		results:    make([]embeddings.EmbeddingSearchResult, maxResults*2),
 		maxResults: maxResults,
 	}
 }
 
 type resultAggregator struct {
-	results    []aggregatedResult
+	results    []embeddings.EmbeddingSearchResult
 	maxResults int
 }
 
-func (a *resultAggregator) Add(repoName api.RepoName, revision api.CommitID, srs ...embeddings.SimilaritySearchResult) {
+func (a *resultAggregator) Add(repoName api.RepoName, revision api.CommitID, srs ...embeddings.EmbeddingSearchResult) {
 	// Note: this leaves some performance on the table because we know the new
 	// results are sorted. We could instead merge here. Given that the number of
 	// results we are usually fetching is quite small (<100), I don't expect
 	// re-sorting for ever repo to be a problem.
-	a.append(repoName, revision, srs)
+	a.results = append(a.results, srs...)
 	a.sort()
 	a.results = a.results[:min(a.maxResults, len(a.results))]
 }
 
-func (a *resultAggregator) append(repoName api.RepoName, revision api.CommitID, srs []embeddings.SimilaritySearchResult) {
-	for _, sr := range srs {
-		a.results = append(a.results, aggregatedResult{
-			repoName: repoName,
-			revision: revision,
-			result:   sr,
-		})
-	}
-}
-
 func (a *resultAggregator) sort() {
-	sort.Slice(a.results, func(i, j int) bool { return a.results[i].result.Score() > a.results[i].result.Score() })
+	sort.Slice(a.results, func(i, j int) bool { return a.results[i].Score() > a.results[j].Score() })
 }
 
 const SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT = 1000
