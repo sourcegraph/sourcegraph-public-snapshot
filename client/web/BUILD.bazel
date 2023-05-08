@@ -1685,6 +1685,7 @@ ts_project(
         "//:node_modules/focus-visible",
         "//:node_modules/fzf",
         "//:node_modules/graphiql",
+        "//:node_modules/graphql",  # keep
         "//:node_modules/history",
         "//:node_modules/http-status-codes",
         "//:node_modules/is-absolute-url",
