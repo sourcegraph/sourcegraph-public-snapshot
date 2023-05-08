@@ -4,65 +4,58 @@ import (
 	"context"
 	"net"
 
-	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
+
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc/propagator"
 )
 
-// UnaryServerInterceptor returns a grpc.UnaryServerInterceptor that sets the
-// Client in the context based on the peer address. See https://pkg.go.dev/google.golang.org/grpc/peer
-// for more information.
+// Propagator is a Propagator that propagates the Client in the context across the gRPC client / server
+// request boundary.
 //
-// Note: This interceptor doesn't set the ForwardedFor field of the Client, as our gRPC implementation
-// only handles requests from internal services.
-func UnaryServerInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-	p, ok := peer.FromContext(ctx)
-	if !ok || p == nil {
-		return handler(ctx, req)
+// If the context does not contain a Client, the server will backfill the Client's IP with the IP of the address
+// that the request came from. (see https://pkg.go.dev/google.golang.org/grpc/peer for more information)
+type Propagator struct{}
+
+func (Propagator) FromContext(ctx context.Context) metadata.MD {
+	client := FromContext(ctx)
+	if client == nil {
+		return metadata.New(nil)
 	}
 
-	client := &Client{
-		IP: baseIP(p.Addr),
+	return metadata.Pairs(
+		headerKeyClientIP, client.IP,
+		headerKeyForwardedFor, client.ForwardedFor,
+	)
+}
+
+func (Propagator) InjectContext(ctx context.Context, md metadata.MD) context.Context {
+	var ip string
+	var forwardedFor string
+
+	if vals := md.Get(headerKeyClientIP); len(vals) > 0 {
+		ip = vals[0]
 	}
 
-	ctx = WithClient(ctx, client)
-	return handler(ctx, req)
-}
-
-// StreamServerInterceptor returns a grpc.StreamServerInterceptor that sets the
-// Client in the context based on the peer address. See https://pkg.go.dev/google.golang.org/grpc/peer
-// for more information.
-//
-// Note: This interceptor doesn't set the ForwardedFor field of the Client, as our gRPC implementation
-// only handles requests from internal services.
-func StreamServerInterceptor(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	p, ok := peer.FromContext(ss.Context())
-	if !ok || p == nil {
-		return handler(srv, ss)
+	if vals := md.Get(headerKeyForwardedFor); len(vals) > 0 {
+		forwardedFor = vals[0]
 	}
 
-	client := &Client{
-		IP: baseIP(p.Addr),
+	if ip == "" {
+		p, ok := peer.FromContext(ctx)
+		if ok && p != nil {
+			ip = baseIP(p.Addr)
+		}
 	}
 
-	ctx := WithClient(ss.Context(), client)
-	return handler(srv, &customContextServerStream{
-		ServerStream:  ss,
-		customContext: ctx,
-	})
+	c := Client{
+		IP:           ip,
+		ForwardedFor: forwardedFor,
+	}
+	return WithClient(ctx, &c)
 }
 
-// customContextServerStream is a wrapper around grpc.ServerStream that returns a custom context
-// from the Context method.
-type customContextServerStream struct {
-	grpc.ServerStream
-	customContext context.Context
-}
-
-func (s *customContextServerStream) Context() context.Context {
-	return s.customContext
-}
-
-var _ grpc.ServerStream = &customContextServerStream{}
+var _ internalgrpc.Propagator = Propagator{}
 
 // baseIP returns the base IP address of the given net.Addr
 func baseIP(addr net.Addr) string {
