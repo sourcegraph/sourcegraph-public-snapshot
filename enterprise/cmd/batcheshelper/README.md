@@ -27,10 +27,10 @@ OPTIONS:
 
 ### Options
 
-| Flag                | Default Value           | Description                                                                  |
-| ------------------- | ----------------------- | ---------------------------------------------------------------------------- |
-| `-input`            | `input.json`            | The path to the input file. Defaults to "input.json". (default "input.json") |
-| `-previousStepPath` | N/A                     | The path to the previous step's result file.                                 |
+| Flag                | Default Value          | Description                                                                  |
+| ------------------- | ---------------------- | ---------------------------------------------------------------------------- |
+| `-input`            | `input.json`           | The path to the input file. Defaults to "input.json". (default "input.json") |
+| `-previousStepPath` | N/A                    | The path to the previous step's result file.                                 |
 | `-workspaceFiles`   | `/job/workspace-files` | The path to the workspace files.                                             |
 
 ## Modes
