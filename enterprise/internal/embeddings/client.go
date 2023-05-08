@@ -114,6 +114,7 @@ func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsMultiSearchPara
 	}
 
 	p := pool.NewWithResults[*EmbeddingSearchResults]().WithContext(ctx)
+
 	for endpoint, partition := range partitions {
 		endpoint := endpoint
 
@@ -123,28 +124,7 @@ func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsMultiSearchPara
 		args.RepoIDs = partition.repoIDs
 
 		p.Go(func(ctx context.Context) (*EmbeddingSearchResults, error) {
-			resp, err := c.httpPost(ctx, "multiSearch", endpoint, args)
-			if err != nil {
-				return nil, err
-			}
-			defer resp.Body.Close()
-
-			if resp.StatusCode != http.StatusOK {
-				// best-effort inclusion of body in error message
-				body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-				return nil, errors.Errorf(
-					"Embeddings.Search http status %d: %s",
-					resp.StatusCode,
-					string(body),
-				)
-			}
-
-			var response EmbeddingSearchResults
-			err = json.NewDecoder(resp.Body).Decode(&response)
-			if err != nil {
-				return nil, err
-			}
-			return &response, nil
+			return c.multiSearchPartition(ctx, endpoint, args)
 		})
 	}
 
@@ -160,6 +140,31 @@ func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsMultiSearchPara
 	}
 
 	return &combinedResult, nil
+}
+
+func (c *Client) multiSearchPartition(ctx context.Context, endpoint string, args EmbeddingsMultiSearchParameters) (*EmbeddingSearchResults, error) {
+	resp, err := c.httpPost(ctx, "multiSearch", endpoint, args)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// best-effort inclusion of body in error message
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return nil, errors.Errorf(
+			"Embeddings.Search http status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
+	}
+
+	var response EmbeddingSearchResults
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return nil, err
+	}
+	return &response, nil
 }
 
 func mergeSearchResults(a, b []EmbeddingSearchResult, max int) []EmbeddingSearchResult {
