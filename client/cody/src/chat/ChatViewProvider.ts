@@ -476,7 +476,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             this.experimentalErrorMessage('cody.experimental.nonStop')
             return
         }
-        const humanInput = await vscode.window.showInputBox()
+        const humanInput = await vscode.window.showInputBox({ prompt: 'What changes do you want to make? Or start with /chat to ask a question.', title: 'Cody Fixup' })
         const threads = this.editor.fileChatProvider.newThreads(humanInput || '')
         if (!threads) {
             return
