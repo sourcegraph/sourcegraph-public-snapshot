@@ -170,7 +170,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         return fileTermCounts
     }
 
-    private async fetchFileMatches2(
+    private async fetchFileMatches(
         queryTerms: Term[],
         rootPath: string
     ): Promise<{
@@ -178,6 +178,9 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         fileTermCounts: { [filename: string]: { [stem: string]: number } }
         termTotalFiles: { [stem: string]: number }
     }> {
+        console.log('fetchFileMatches')
+        console.time('fetchFileMatches')
+
         const fileTermCounts: { [filename: string]: { [stem: string]: number } } = {}
         const termTotalFiles: { [stem: string]: number } = {}
         let totalFiles: number | undefined
@@ -248,6 +251,8 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             throw new Error('Did not extract number of files searched')
         }
 
+        console.timeEnd('fetchFileMatches')
+
         return {
             totalFiles,
             fileTermCounts,
@@ -255,7 +260,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         }
     }
 
-    private async fetchFileMatches(
+    private async fetchFileMatches_Old(
         queryTerms: Term[],
         rootPath: string
     ): Promise<{
@@ -263,6 +268,8 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         fileTermCounts: { [filename: string]: { [stem: string]: number } }
         termTotalFiles: { [stem: string]: number }
     }> {
+        console.log('fetchFileMatches_Old')
+        console.time('fetchFileMatches_Old')
         const termFileCountsArr: { fileCounts: { [filename: string]: number }; filesSearched: number }[] =
             await Promise.all(
                 queryTerms.map(async term => {
@@ -339,7 +346,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 fileTermCounts[filename][term.stem] = count
             }
         }
-
+        console.timeEnd('fetchFileMatches_Old')
         return {
             totalFiles: totalFilesSearched,
             termTotalFiles,
@@ -353,7 +360,8 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     ): Promise<{ filename: string; score: number }[]> {
         const query = userQueryToKeywordQuery(rawQuery)
 
-        const fileMatchesPromise = this.fetchFileMatches2(query, rootPath)
+        // const fileMatchesPromise = this.fetchFileMatches_Old(query, rootPath)
+        const fileMatchesPromise = this.fetchFileMatches(query, rootPath)
         const fileStatsPromise = this.fetchFileStats(query, rootPath)
 
         const fileMatches = await fileMatchesPromise
