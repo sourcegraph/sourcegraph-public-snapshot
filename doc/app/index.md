@@ -16,6 +16,10 @@
 .socials a:hover {
   filter: brightness(0.75);
 }
+.socials a img {
+  width: 100%;
+  height: 100%;
+}
 </style>
 
 # Sourcegraph App
