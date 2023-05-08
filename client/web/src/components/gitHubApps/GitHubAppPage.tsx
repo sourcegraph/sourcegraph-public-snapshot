@@ -141,7 +141,7 @@ export const GitHubAppPage: FC<Props> = ({
                         </div>
                         <Button
                             onClick={async () => {
-                                const req = await fetch('/.auth/githubapp/state')
+                                const req = await fetch(`/.auth/githubapp/state?id=${app.id}`)
                                 const state = await req.text()
                                 window.location.href = app.appURL.endsWith('/')
                                     ? app.appURL + 'installations/new?state=' + state

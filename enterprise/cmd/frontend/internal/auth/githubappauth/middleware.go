@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/graph-gophers/graphql-go"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -109,6 +110,18 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
+		id := 1
+		query := req.URL.Query()
+		gqlID := query.Get("id")
+		if gqlID != "" {
+			id64, err := UnmarshalGitHubAppID(graphql.ID(gqlID))
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Unexpected error while unmarshalling App ID: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+			id = int(id64)
+		}
+
 		// 🚨 SECURITY: only site admins can create github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
 			return
@@ -119,7 +132,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, fmt.Sprintf("Unexpected error when creating redirect URL: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
-		cache.Set(s, []byte{1})
+		cache.Set(s, []byte(strconv.Itoa(id)))
 
 		_, _ = w.Write([]byte(s))
 	})
