@@ -992,6 +992,9 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 		return nil, err
 	}
 
+	// 🚨 SECURITY: Only the Author of the batch change can move it.
+	// If the batch change belongs to an org namespace, org members will be able to access it if
+	// the `orgs.allMembersBatchChangesAdmin` setting is true.
 	if err := s.checkBatchChangeAdmin(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID); err != nil {
 		return nil, err
 	}
@@ -1325,6 +1328,8 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 		return bulkGroupID, errors.Wrap(err, "loading batch change")
 	}
 
+	// If the batch change belongs to an org namespace, org members will be able to access it if
+	// the `orgs.allMembersBatchChangesAdmin` setting is true.
 	if err := s.checkBatchChangeAdmin(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID); err != nil {
 		return bulkGroupID, err
 	}
