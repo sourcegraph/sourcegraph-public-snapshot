@@ -14,6 +14,7 @@ import ReactFlow, {
 
 import FloatingConnectionLine from './FloatingConnectionLine'
 import FloatingEdge from './FloatingEdge'
+import { GraphNode } from './GraphNode'
 import { getTreeData } from './utils'
 
 import styles from './DependencyGraph.module.scss'
@@ -26,6 +27,10 @@ interface Props {
 
 const edgeTypes = {
     floating: FloatingEdge,
+}
+
+const nodeTypes = {
+    graphNode: GraphNode,
 }
 
 function getLayoutedNodes(nodes: Node[], links: Edge[]): Node[] {
@@ -79,10 +84,27 @@ function getLayoutedNodes(nodes: Node[], links: Edge[]): Node[] {
 }
 
 export const DependencyGraph: React.FC<Props> = props => {
-    const { nodes: initialNodes, links } = getTreeData(props.filePath)
+    const treeData = getTreeData(props.filePath)
 
-    const [nodes, , onNodesChange] = useNodesState(getLayoutedNodes(initialNodes, JSON.parse(JSON.stringify(links))))
-    const [edges, setEdges, onEdgesChange] = useEdgesState(links)
+    if (!treeData) {
+        return null
+    }
+
+    const [nodes, , onNodesChange] = useNodesState(
+        getLayoutedNodes(
+            treeData.nodes.map(node => ({ ...node, type: 'graphNode', position: { x: 0, y: 0 } })),
+            JSON.parse(JSON.stringify(treeData.edges))
+        )
+    )
+    const [edges, setEdges, onEdgesChange] = useEdgesState(
+        treeData.edges.map(edge => ({
+            ...edge,
+            type: 'floating',
+            markerEnd: {
+                type: MarkerType.Arrow,
+            },
+        }))
+    )
 
     const onConnect = useCallback(
         params => setEdges(eds => addEdge({ ...params, type: 'floating', markerEnd: { type: MarkerType.Arrow } }, eds)),
@@ -96,9 +118,10 @@ export const DependencyGraph: React.FC<Props> = props => {
                 <ReactFlow
                     fitView
                     nodes={nodes}
+                    nodeTypes={nodeTypes}
+                    onNodesChange={onNodesChange}
                     edges={edges}
                     edgeTypes={edgeTypes}
-                    onNodesChange={onNodesChange}
                     onEdgesChange={onEdgesChange}
                     onConnect={onConnect}
                     connectionLineComponent={FloatingConnectionLine}

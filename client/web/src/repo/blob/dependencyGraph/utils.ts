@@ -1,11 +1,23 @@
 // SCIP index as object for https://sourcegraph.com/github.com/codecov/sourcegraph-codecov@92d2f701f935b7ce3c3504ab893f808643e6eb24/-/blob/src/insights.ts
 import { uniqBy } from 'lodash'
-import { MarkerType } from 'reactflow'
 
 import scipIndex from './index.json'
 import { DescriptorSuffix, parseSymbol, SCIPDocument, SCIPOccurrence, SCIPSymbol } from './SymbolParser'
 
-// import { parseSymbol as parseSymbol2 } from './SymbolParser2'
+interface Edge {
+    id: string
+    source: string
+    target: string
+}
+
+interface GraphNode {
+    name: string
+    suffix: DescriptorSuffix
+    symbol?: string
+    children: Graph
+}
+
+type Graph = Map<string, GraphNode>
 
 /**
  * Returns scip document as object, see [Document.toObject](https://sourcegraph.com/github.com/sourcegraph/scip@d62dfc4d962f4ac975429e0fbb0ebdda25b46503/-/blob/bindings/typescript/scip.ts?L614-634).
@@ -15,7 +27,7 @@ export function getDocument(path: string): SCIPDocument | undefined {
     return scipIndex.documents.find(d => d.relative_path === path) as SCIPDocument | undefined
 }
 
-export function getTreeData(path: string): any {
+export function getTreeData(path: string): ReturnType<typeof getNodesAndEdges> | null {
     const document = getDocument(path)
 
     if (!document) {
@@ -26,123 +38,73 @@ export function getTreeData(path: string): any {
         uniqBy(document.occurrences, o => o.symbol),
         path
     )
-
-    return buildDependencyTreeData(
-        uniqBy(document.occurrences, o => o.symbol),
-        path
-    )
 }
 
-type Result = { package: string; module: string; symbols: string[] }
+function createGraph(data: [string, SCIPSymbol][]): Graph {
+    const graph: Graph = new Map()
 
-type ModuleTree = {
-    id: string
-    symbol: SCIPSymbol
-    children: ModuleTree[]
-}
+    for (const [symbol, { descriptors }] of data) {
+        let fileName = ''
+        let currentNode: GraphNode | undefined = undefined
 
-interface GraphNode {
-    id: string
-    children: GraphNode[]
-}
-
-interface Edge {
-    id: string
-    source: string
-    target: string
-}
-
-function getNodesAndEdges(occurrences: SCIPOccurrence[], path: string): { nodes: GraphNode[]; edges: Edge[] } {
-    const map = new Map<string, Result>()
-    const nodes = []
-    const links = []
-
-    for (const { symbol } of occurrences) {
-        console.log(symbol)
-        const parsedSymbol = parseSymbol(symbol)
-
-        const fileName = parsedSymbol
-            .descriptors!.filter(d => d.suffix === DescriptorSuffix.Namespace)
-            .map(d => d.name)
-            .join('/')
-
-        let symbolNameParts = []
-        const descriptors = parsedSymbol.descriptors!.filter(d =>
-            [DescriptorSuffix.Namespace, DescriptorSuffix.Meta, DescriptorSuffix.Local, DescriptorSuffix.Macro].every(
-                s => d.suffix !== s
-            )
-        )
-        for (let i = 0; i < descriptors.length; i++) {
-            if (descriptors[i].name) {
-                symbolNameParts.push(descriptors[i].name)
-            }
-        }
-        if (symbolNameParts.length === 0) continue
-
-        const key = `${parsedSymbol.package?.name}/${fileName}`
-        let item = map.get(key)
-        if (!item) {
-            item = { package: parsedSymbol.package?.name || '', module: fileName, symbols: [] }
-            map.set(key, item)
-            nodes.push({ id: fileName, data: { label: key }, position: { x: 0, y: 0 } })
-            if (fileName !== path) {
-                links.push({
-                    id: fileName + path,
-                    source: fileName,
-                    target: path,
-                    type: 'floating',
-                    markerEnd: {
-                        type: MarkerType.Arrow,
-                    },
-                })
-            }
-        }
-        item.symbols.push(symbolNameParts.join('.'))
-    }
-
-    return { nodes, links }
-}
-
-type NestedObject = {
-    [key: string]: NestedObject
-}
-
-function buildDependencyTreeData(occurrences: SCIPDocument['occurrences'], path: string) {
-    const result: NestedObject = {}
-
-    for (const { symbol } of occurrences) {
-        const parsedSymbol = parseSymbol(symbol)
-
-        const topLevelKey = parsedSymbol
-            .descriptors!.filter(d => d.suffix === DescriptorSuffix.Namespace)
-            .map(d => d.name)
-            .join('/')
-
-        if (!topLevelKey || topLevelKey === path) continue
-
-        if (!result[topLevelKey]) {
-            result[topLevelKey] = {}
-        }
-
-        let currentLevel = result[topLevelKey]
-
-        const descriptors = parsedSymbol.descriptors!.filter(d =>
-            [DescriptorSuffix.Namespace, DescriptorSuffix.Meta, DescriptorSuffix.Local, DescriptorSuffix.Macro].every(
-                s => d.suffix !== s
-            )
-        )
-        for (let i = 0; i < descriptors.length; i++) {
-            const descriptor = descriptors[i]
-            if (i < descriptors.length - 1) {
-                const key = descriptor.name
-                if (!key) continue
-                if (!currentLevel[key]) {
-                    currentLevel[key] = {}
+        for (let i = 0; i < descriptors!.length; i++) {
+            let node: GraphNode | undefined = undefined
+            const descriptor = descriptors![i]
+            switch (descriptor.suffix) {
+                case DescriptorSuffix.Namespace: {
+                    const nextDescriptor = descriptors![i + 1]
+                    fileName += fileName ? '/' + descriptor.name : descriptor.name
+                    if (!nextDescriptor || nextDescriptor.suffix !== DescriptorSuffix.Namespace) {
+                        node = graph.get(fileName)
+                        if (!node) {
+                            node = { name: fileName, suffix: DescriptorSuffix.Namespace, children: new Map() }
+                            graph.set(fileName, node)
+                        }
+                        currentNode = node
+                    }
+                    break
                 }
-                currentLevel = currentLevel[key]
+
+                case DescriptorSuffix.Meta:
+                case DescriptorSuffix.Local:
+                case DescriptorSuffix.Macro:
+                    break
+
+                default: {
+                    node = currentNode!.children.get(descriptor.name)
+                    if (!node) {
+                        node = { name: descriptor.name, suffix: descriptor.suffix, children: new Map() }
+                        currentNode!.children.set(descriptor.name, node)
+                    }
+                    currentNode = node
+                    break
+                }
+            }
+
+            if (node && i === descriptors!.length - 1) {
+                node.symbol = symbol
             }
         }
     }
 
-    return result
+    return graph
+}
+
+function getNodesAndEdges(
+    occurrences: SCIPOccurrence[],
+    path: string
+): { nodes: { id: string; data: GraphNode }[]; edges: Edge[] } {
+    const graph = createGraph(occurrences.map(o => [o.symbol, parseSymbol(o.symbol)]))
+    const nodes = []
+    const edges = []
+
+    for (const [fileName, data] of graph) {
+        nodes.push({ id: fileName, data })
+
+        if (fileName !== path) {
+            edges.push({ id: fileName, source: fileName, target: path })
+        }
+    }
+
+    return { nodes, edges }
 }
