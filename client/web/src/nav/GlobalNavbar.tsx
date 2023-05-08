@@ -180,7 +180,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
             window.context?.codyEnabled && {
                 path: EnterprisePageRoutes.CodySearch,
-                content: <>Natural language search <ProductStatusBadge status="experimental" /></>,
+                content: (
+                    <>
+                        Natural language search <ProductStatusBadge status="experimental" />
+                    </>
+                ),
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
