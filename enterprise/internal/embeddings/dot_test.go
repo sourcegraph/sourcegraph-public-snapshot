@@ -1,9 +1,10 @@
 package embeddings
 
 import (
+	"math/rand"
+	"strconv"
 	"testing"
 	"testing/quick"
-	"unsafe"
 )
 
 func TestDot(t *testing.T) {
@@ -15,43 +16,42 @@ func TestDot(t *testing.T) {
 			}
 			return res
 		}
+
 		cases := []struct {
 			a    []int8
 			b    []int8
 			want int32
-		}{{
-			a:    []int8{1},
-			b:    []int8{1},
-			want: 1,
-		}, {
-			a:    append(repeat(0, 16), 1),
-			b:    append(repeat(0, 16), 2),
-			want: 2,
-		}, {
-			a:    []int8{10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-			b:    []int8{10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
-			want: 102,
-		}, {
-			a:    repeat(0, 16),
-			b:    repeat(0, 16),
-			want: 0,
-		}, {
-			a:    repeat(0, 16),
-			b:    repeat(1, 16),
-			want: 0,
-		}, {
-			a:    repeat(1, 16),
-			b:    repeat(1, 16),
-			want: 16,
-		}, {
-			a:    repeat(1, 16),
-			b:    repeat(2, 16),
-			want: 32,
-		}, {
-			a:    repeat(1, 17),
-			b:    repeat(1, 17),
-			want: 17,
-		}}
+		}{
+			{[]int8{1}, []int8{1}, 1},
+			{append(repeat(0, 16), 1), append(repeat(0, 16), 2), 2},
+			{
+				[]int8{10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+				[]int8{10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+				102,
+			},
+			{repeat(0, 16), repeat(0, 16), 0},
+			{repeat(0, 16), repeat(1, 16), 0},
+			{repeat(1, 16), repeat(1, 16), 16},
+			{repeat(1, 16), repeat(2, 16), 32},
+			{repeat(1, 17), repeat(1, 17), 17},
+
+			// A couple of large ones to ensure no weird behavior at scale
+			{repeat(1, 1000000), repeat(1, 1000000), 1000000},
+			{repeat(1, 1000000), repeat(2, 1000000), 2000000},
+
+			// This will come very close to overflowing an int32.
+			// Make sure nothing crashes.
+			{repeat(127, 133000), repeat(127, 133000), 2145157000},
+
+			// This will overflow an int32 and return garbage.
+			// Just make sure nothing crashes.
+			{repeat(127, 134000), repeat(127, 134000), -2133681296},
+
+			// These will overflow if we don't multiply into larger ints
+			{repeat(127, 40), repeat(127, 40), 645160},
+			{repeat(-128, 40), repeat(-128, 40), 655360},
+			{repeat(-128, 40), repeat(127, 40), -650240},
+		}
 
 		for _, tc := range cases {
 			t.Run("dot", func(t *testing.T) {
@@ -90,4 +90,21 @@ func TestDot(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+}
+
+func BenchmarkDot(b *testing.B) {
+	prng := rand.New(rand.NewSource(0))
+	const size = 1_000_000
+	for _, offset := range []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16} {
+		embeddings1 := getRandomEmbeddings(prng, size+offset)
+		embeddings1 = embeddings1[offset:]
+		embeddings2 := getRandomEmbeddings(prng, size+offset)
+		embeddings2 = embeddings2[offset:]
+		b.Run(strconv.Itoa(offset), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				_ = Dot(embeddings1, embeddings2)
+			}
+		})
+	}
+
 }
