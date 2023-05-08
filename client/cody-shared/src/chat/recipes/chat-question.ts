@@ -13,7 +13,14 @@ export class ChatQuestion implements Recipe {
     public id = 'chat-question'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
+        // Add selected text to the end of prompt when available
+        const selection = context.editor.getActiveTextEditorSelection()
+        const selectedCode = selection
+            ? this.selectionPrompt
+                  .replace('{selectedText}', selection.selectedText)
+                  .replace('{fileName}', selection.fileName)
+            : ''
+        const truncatedText = truncateText(humanChatInput + selectedCode, MAX_HUMAN_INPUT_TOKENS)
 
         return Promise.resolve(
             new Interaction(
@@ -59,4 +66,10 @@ export class ChatQuestion implements Recipe {
             visibleContent.fileName
         )
     }
+
+    private selectionPrompt = `\n\n
+    I am currently looking at this part of the code from {fileName}:
+    \`\`\`
+    {selectedText}
+    \`\`\``
 }
