@@ -33,7 +33,7 @@ var errOutOfSync = errors.Newf("database schema is out of sync")
 func compareAndDisplaySchemaDescriptions(rawOut *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (err error) {
 	out := &preambledOutput{rawOut, false}
 	for _, drift := range compareSchemaDescriptions(schemaName, version, actual, expected) {
-		drift.display(out)
+		drift.Display(out)
 		err = errOutOfSync
 	}
 
@@ -43,13 +43,21 @@ func compareAndDisplaySchemaDescriptions(rawOut *output.Output, schemaName, vers
 	return err
 }
 
-type DriftSummary struct {
+type DriftSummary interface {
+	Display(out *preambledOutput)
+}
+
+type driftSummary struct {
 	display func(out *preambledOutput)
+}
+
+func (s *driftSummary) Display(out *preambledOutput) {
+	s.display(out)
 }
 
 func newDrift(display func(out *preambledOutput)) []DriftSummary {
 	return []DriftSummary{
-		{display: display},
+		&driftSummary{display: display},
 	}
 }
 
