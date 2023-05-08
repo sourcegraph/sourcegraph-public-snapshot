@@ -27,10 +27,17 @@ jobs:
           run_install: false
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
-      - name: install golang
-        uses: actions/setup-go@v2
+      # - name: install golang
+      #   uses: actions/setup-go@v2
+      #   with:
+      #     go-version: 1.19.8
+      - uses: actions/checkout@v3
+      - uses: bazelbuild/setup-bazelisk@v2
+      - name: Mount bazel cache  # Optional
+        uses: actions/cache@v3
         with:
-          go-version: 1.19.8
+          path: "~/.cache/bazel"
+          key: bazel
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-20.04'
         run: |
@@ -41,7 +48,7 @@ jobs:
       # start building things
       - name: build app-shell, Sourcegraph web and Sourcegraph Backend
         run: |
-          ./enterprise/dev/app/build-release.sh go
+          ./enterprise/dev/app/build-release.sh
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
