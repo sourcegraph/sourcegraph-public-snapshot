@@ -1,13 +1,46 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .container {
-    max-width: 47rem;
-    gap: 1rem;
+    max-width: 50rem;
+    gap: 2rem;
 
     @media (--sm-breakpoint-down) {
         flex-wrap: wrap-reverse;
         justify-content: center;
     }
+}
+
+h2 {
+    font-family: 'Source Sans Pro';
+    font-style: normal;
+    font-weight: 600;
+}
+
+.cody-illustration {
+    /* Auto layout */
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0px;
+    gap: 24px;
+
+    /* Inside auto layout */
+    flex: none;
+    flex-grow: 0;
+}
+
+.cody-conversations {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0px 12px;
+    gap: 12px;
+}
+
+.cody-conversation {
+    font-family: 'Source Sans Pro', sans-serif;
+    border: 2px solid var(--border-color);
+    padding:.5em 1em;
+    border-radius: 4px 4px 4px 0px;
 }
 
 .card {
@@ -21,3 +54,9 @@
 .list {
     list-style: inside;
 }
+
+@media screen and (--lg-breakpoint-down) {
+    .cody-illustration {
+        order:1;
+    }
+ }
