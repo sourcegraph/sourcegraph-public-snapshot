@@ -294,7 +294,7 @@ type codeownersFileEntryResolver struct {
 }
 
 func (r *codeownersFileEntryResolver) Title() (string, error) {
-	return "CODEOWNERS", nil
+	return "codeowners", nil
 }
 
 func (r *codeownersFileEntryResolver) Description() (string, error) {
