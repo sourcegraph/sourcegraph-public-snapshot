@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { TranscriptJSON } from '@sourcegraph/cody-shared/chat/transcript'
+import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Text } from '@sourcegraph/wildcard'
 
 import { safeTimestampToDate, useChatStoreState } from '../../stores/chat'
