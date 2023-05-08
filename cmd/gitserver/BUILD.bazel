@@ -1,4 +1,6 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 go_library(
     name = "gitserver_lib",
@@ -19,4 +21,30 @@ go_binary(
     name = "gitserver",
     embed = [":gitserver_lib"],
     visibility = ["//visibility:public"],
+)
+
+go_cross_binary(
+    name = "gitserver_docker",
+    platform = "@zig_sdk//platform:linux_amd64",
+    target = "gitserver",
+)
+
+pkg_tar(
+    name = "tar",
+    srcs = [":gitserver_docker"],
+)
+
+oci_image(
+    name = "image",
+    architecture = "amd64",
+    base = "@wolfi_symbols_base",
+    entrypoint = ["/gitserver"],
+    os = "linux",
+    tars = [":tar"],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repotags = ["gitserver:candidate"],
 )
