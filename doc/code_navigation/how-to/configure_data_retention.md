@@ -15,6 +15,8 @@ Configure the retention policies of your code graph data to prevent old data fro
 
 As code graph data ages, it gets less and less relevant. Users tend to need code navigation on newer commits, tagged commits, and in branches. The data providing intelligence for an old commit on the main development branch is unlikely to be used and only takes up valuable space in the database.
 
+> NOTE: See the [best practices guide](policies_best_practices.md) for additional details on how policies affect resource usage.
+
 Each policy has several configurable options, including:
 
 - The set of Git branches or tags to which the policy applies.
