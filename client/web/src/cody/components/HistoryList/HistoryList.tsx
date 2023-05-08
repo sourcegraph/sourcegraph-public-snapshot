@@ -78,6 +78,7 @@ const HistoryListItem: React.FunctionComponent<{
     return (
         <button
             key={id}
+            type="button"
             className={classNames(styles.historyItem, {
                 [styles.selected]: transcriptId === id,
             })}
