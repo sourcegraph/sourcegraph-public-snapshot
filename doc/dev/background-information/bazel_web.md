@@ -76,9 +76,9 @@ load("@npm//:rawr/package_json.bzl", my_alias = "bin")
 
 With the above statement `rules_js` generated the following targets for `rawr`:
 
-* `rawr` for use with `bazel build` ([js_binary](https://docs.aspect.build/rules/aspect_rules_js/docs/js_binary) + [js_run_binary](https://docs.aspect.build/rules/aspect_rules_js/docs/js_run_binary) interanlly)
-* `rawr_binary` for use with `bazel run` ([js_binary](https://docs.aspect.build/rules/aspect_rules_js/docs/js_binary) interanlly)
-* `rawr_test` for use with `bazel test` ([js_test](https://docs.aspect.build/rules/aspect_rules_js/docs/js_binary#js_test) interanlly)
+* `rawr` for use with `bazel build` ([js_binary](https://docs.aspect.build/rules/aspect_rules_js/docs/js_binary) + [js_run_binary](https://docs.aspect.build/rules/aspect_rules_js/docs/js_run_binary) internally)
+* `rawr_binary` for use with `bazel run` ([js_binary](https://docs.aspect.build/rules/aspect_rules_js/docs/js_binary) internally)
+* `rawr_test` for use with `bazel test` ([js_test](https://docs.aspect.build/rules/aspect_rules_js/docs/js_binary#js_test) internally)
 
 See the generated macro implementation [here](https://sourcegraph.com/github.com/aspect-build/rules_js@f60bbf809ec013df3979659b4dfa84bc248da3fa/-/blob/npm/private/npm_import.bzl?L281-331) for more details.
 
