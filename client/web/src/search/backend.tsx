@@ -112,7 +112,7 @@ export function createSavedSearch(
     notifySlack: boolean,
     userId: Scalars['ID'] | null,
     orgId: Scalars['ID'] | null
-): Observable<void> {
+): Observable<CreateSavedSearchResult> {
     return requestGraphQL<CreateSavedSearchResult, CreateSavedSearchVariables>(
         gql`
             mutation CreateSavedSearch(
@@ -146,7 +146,7 @@ export function createSavedSearch(
         }
     ).pipe(
         map(dataOrThrowErrors),
-        map(() => undefined)
+        map(res => res)
     )
 }
 

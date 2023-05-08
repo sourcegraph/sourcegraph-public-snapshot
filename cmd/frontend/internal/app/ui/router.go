@@ -73,6 +73,7 @@ const (
 	routeRegistry                = "registry"
 	routeExtensions              = "extensions"
 	routeHelp                    = "help"
+	routeShortSearch             = "short"
 	routeCommunitySearchContexts = "community-search-contexts"
 	routeCncf                    = "community-search-contexts.cncf"
 	routeSnippets                = "snippets"
@@ -175,6 +176,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/registry").Methods("GET").Name(routeRegistry)
 	r.PathPrefix("/extensions").Methods("GET").Name(routeExtensions)
 	r.PathPrefix("/help").Methods("GET").Name(routeHelp)
+	r.PathPrefix("/short/{id}").Methods("GET").Name(routeShortSearch)
 	r.PathPrefix("/snippets").Methods("GET").Name(routeSnippets)
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
@@ -291,6 +293,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 		})
 	}
 	router.Get(routeHelp).HandlerFunc(serveHelp)
+	router.Get(routeShortSearch).HandlerFunc(serveShortSearch(db))
 	router.Get(routeSnippets).Handler(brandedNoIndex("Snippets"))
 	router.Get(routeSubscriptions).Handler(brandedNoIndex("Subscriptions"))
 	router.Get(routeViews).Handler(brandedNoIndex("View"))

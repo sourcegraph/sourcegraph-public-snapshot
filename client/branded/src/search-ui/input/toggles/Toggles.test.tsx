@@ -41,6 +41,7 @@ describe('Toggles', () => {
         test('case toggle for case subexpressions', () => {
             renderWithBrandedContext(
                 <Toggles
+                    authenticatedUser={null}
                     navbarSearchQuery="(case:yes foo) or (case:no bar)"
                     patternType={SearchPatternType.standard}
                     setPatternType={() => undefined}
@@ -59,6 +60,7 @@ describe('Toggles', () => {
         test('case toggle for patterntype subexpressions', () => {
             renderWithBrandedContext(
                 <Toggles
+                    authenticatedUser={null}
                     navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
                     patternType={SearchPatternType.standard}
                     setPatternType={() => undefined}
@@ -76,6 +78,7 @@ describe('Toggles', () => {
         test('regexp toggle for patterntype subexpressions', () => {
             renderWithBrandedContext(
                 <Toggles
+                    authenticatedUser={null}
                     navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
                     patternType={SearchPatternType.standard}
                     setPatternType={() => undefined}

@@ -142,6 +142,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             className="flex-grow-1"
         >
             <Toggles
+                authenticatedUser={authenticatedUser}
                 patternType={patternType}
                 caseSensitive={caseSensitive}
                 setPatternType={setSearchPatternType}
@@ -152,6 +153,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                 navbarSearchQuery={queryState.query}
                 showCopyQueryButton={false}
                 showSmartSearchButton={false}
+                showShareQueryButton={false}
             />
         </LazyExperimentalSearchInput>
     ) : (

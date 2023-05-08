@@ -1,0 +1,38 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.popover-window {
+    // Move the popover a bit so the close button aligns with the smart search icon
+    margin-top: 0.5rem;
+    margin-left: 0.875rem;
+
+    @media (--xs-breakpoint-down) {
+        margin-top: 0.25rem;
+        margin-left: 1rem;
+    }
+
+    &-top {
+        border-bottom: 1px solid var(--border-color);
+    }
+}
+
+.label {
+    margin-bottom: 1rem;
+
+    max-width: 17rem;
+}
+
+.label-header {
+    font-weight: 500;
+}
+
+.label-description {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: normal;
+}
