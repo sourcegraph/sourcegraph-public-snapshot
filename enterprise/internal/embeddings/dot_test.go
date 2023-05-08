@@ -1,8 +1,6 @@
 package embeddings
 
 import (
-	"math/rand"
-	"strconv"
 	"testing"
 	"testing/quick"
 )
@@ -90,21 +88,4 @@ func TestDot(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-}
-
-func BenchmarkDot(b *testing.B) {
-	prng := rand.New(rand.NewSource(0))
-	const size = 1_000_000
-	for _, offset := range []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16} {
-		embeddings1 := getRandomEmbeddings(prng, size+offset)
-		embeddings1 = embeddings1[offset:]
-		embeddings2 := getRandomEmbeddings(prng, size+offset)
-		embeddings2 = embeddings2[offset:]
-		b.Run(strconv.Itoa(offset), func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
-				_ = Dot(embeddings1, embeddings2)
-			}
-		})
-	}
-
 }
