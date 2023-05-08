@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -76,7 +78,12 @@ type IsContextRequiredForChatQueryResult struct {
 }
 
 func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingSearchResults, error) {
-	resp, err := c.httpPost(ctx, "search", args.RepoName, args)
+	url, err := c.url(args.RepoName)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.httpPost(ctx, "search", url, args)
 	if err != nil {
 		return nil, err
 	}
@@ -100,29 +107,65 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*
 	return &response, nil
 }
 
-func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingSearchResults, error) {
-	resp, err := c.httpPost(ctx, "multiSearch", args.RepoName, args)
+func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsMultiSearchParameters) (*EmbeddingSearchResults, error) {
+	partitions, err := c.urls(args.RepoNames, args.RepoIDs)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return nil, errors.Errorf(
-			"Embeddings.Search http status %d: %s",
-			resp.StatusCode,
-			string(body),
-		)
+	p := pool.NewWithResults[*EmbeddingSearchResults]().WithContext(ctx)
+	for endpoint, partition := range partitions {
+		endpoint := endpoint
+
+		// make a copy for this request
+		args := args
+		args.RepoNames = partition.repoNames
+		args.RepoIDs = partition.repoIDs
+
+		p.Go(func(ctx context.Context) (*EmbeddingSearchResults, error) {
+			resp, err := c.httpPost(ctx, "multiSearch", endpoint, args)
+			if err != nil {
+				return nil, err
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				// best-effort inclusion of body in error message
+				body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+				return nil, errors.Errorf(
+					"Embeddings.Search http status %d: %s",
+					resp.StatusCode,
+					string(body),
+				)
+			}
+
+			var response EmbeddingSearchResults
+			err = json.NewDecoder(resp.Body).Decode(&response)
+			if err != nil {
+				return nil, err
+			}
+			return &response, nil
+		})
 	}
 
-	var response EmbeddingSearchResults
-	err = json.NewDecoder(resp.Body).Decode(&response)
+	allResults, err := p.Wait()
 	if err != nil {
 		return nil, err
 	}
-	return &response, nil
+
+	var combinedResult EmbeddingSearchResults
+	for _, result := range allResults {
+		combinedResult.CodeResults = mergeSearchResults(combinedResult.CodeResults, result.CodeResults, args.CodeResultsCount)
+		combinedResult.TextResults = mergeSearchResults(combinedResult.TextResults, result.TextResults, args.TextResultsCount)
+	}
+
+	return &combinedResult, nil
+}
+
+func mergeSearchResults(a, b []EmbeddingSearchResult, max int) []EmbeddingSearchResult {
+	merged := append(a, b...)
+	sort.Slice(merged, func(i, j int) bool { return merged[i].Score() > merged[j].Score() })
+	return merged[:max]
 }
 
 func (c *Client) IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryParameters) (bool, error) {
@@ -157,19 +200,43 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 	return c.Endpoints.Get(string(repo))
 }
 
-// TODO: this takes a repo to route it to the right replica.
-// We need to partition the requests ahead of time.
-func (c *Client) httpPost(
-	ctx context.Context,
-	method string,
-	repo api.RepoName,
-	payload any,
-) (resp *http.Response, err error) {
-	url, err := c.url(repo)
+type repoPartition struct {
+	repoNames []api.RepoName
+	repoIDs   []api.RepoID
+}
+
+// returns a map from URL to a list of indexes into the input list of repos
+func (c *Client) urls(repos []api.RepoName, repoIDs []api.RepoID) (map[string]repoPartition, error) {
+	if c.Endpoints == nil {
+		return nil, errors.New("an embeddings service has not been configured")
+	}
+
+	repoStrings := make([]string, len(repos))
+	for i, repo := range repos {
+		repoStrings[i] = string(repo)
+	}
+
+	endpoints, err := c.Endpoints.GetMany(repoStrings...)
 	if err != nil {
 		return nil, err
 	}
 
+	res := make(map[string]repoPartition)
+	for i, endpoint := range endpoints {
+		res[endpoint] = repoPartition{
+			repoNames: append(res[endpoint].repoNames, repos[i]),
+			repoIDs:   append(res[endpoint].repoIDs, repoIDs[i]),
+		}
+	}
+	return res, nil
+}
+
+func (c *Client) httpPost(
+	ctx context.Context,
+	method string,
+	url string,
+	payload any,
+) (resp *http.Response, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

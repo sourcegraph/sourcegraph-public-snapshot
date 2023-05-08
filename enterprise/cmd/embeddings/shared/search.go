@@ -88,6 +88,7 @@ func searchRepoEmbeddingIndexes(
 
 func newResultAggregator(maxResults int) resultAggregator {
 	return resultAggregator{
+		// reserve space to add 2x max results so we can sort and truncate
 		results:    make([]embeddings.EmbeddingSearchResult, maxResults*2),
 		maxResults: maxResults,
 	}
