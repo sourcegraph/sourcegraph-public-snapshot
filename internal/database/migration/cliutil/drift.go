@@ -102,7 +102,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		}
 		schema := schemas["public"]
 
-		return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
+		return compareAndDisplaySchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
 	})
 
 	return &cli.Command{
@@ -235,4 +235,18 @@ func canonicalize(schemaDescription descriptions.SchemaDescription) descriptions
 	schemaDescription.Tables = filtered
 
 	return schemaDescription
+}
+
+// getSchemaJSONFilename returns the basename of the JSON-serialized schema in the sg/sg repository.
+func getSchemaJSONFilename(schemaName string) (string, error) {
+	switch schemaName {
+	case "frontend":
+		return "internal/database/schema.json", nil
+	case "codeintel":
+		fallthrough
+	case "codeinsights":
+		return fmt.Sprintf("internal/database/schema.%s.json", schemaName), nil
+	}
+
+	return "", errors.Newf("unknown schema name %q", schemaName)
 }

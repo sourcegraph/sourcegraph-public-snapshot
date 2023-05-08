@@ -14,36 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// getSchemaJSONFilename returns the basename of the JSON-serialized schema in the sg/sg repository.
-func getSchemaJSONFilename(schemaName string) (string, error) {
-	switch schemaName {
-	case "frontend":
-		return "internal/database/schema.json", nil
-	case "codeintel":
-		fallthrough
-	case "codeinsights":
-		return fmt.Sprintf("internal/database/schema.%s.json", schemaName), nil
-	}
-
-	return "", errors.Newf("unknown schema name %q", schemaName)
-}
-
 var errOutOfSync = errors.Newf("database schema is out of sync")
 
-func compareSchemaDescriptions(rawOut *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (err error) {
+func compareAndDisplaySchemaDescriptions(rawOut *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (err error) {
 	out := &preambledOutput{rawOut, false}
-
-	for _, f := range []func(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool{
-		compareExtensions,
-		compareEnums,
-		compareFunctions,
-		compareSequences,
-		compareTables,
-		compareViews,
-	} {
-		if f(out, schemaName, version, actual, expected) {
-			err = errOutOfSync
-		}
+	for _, drift := range compareSchemaDescriptions(schemaName, version, actual, expected) {
+		drift.display(out)
+		err = errOutOfSync
 	}
 
 	if err == nil {
@@ -52,20 +29,47 @@ func compareSchemaDescriptions(rawOut *output.Output, schemaName, version string
 	return err
 }
 
-func compareExtensions(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
-	return compareNamedLists(wrapStrings(actual.Extensions), wrapStrings(expected.Extensions), func(extension *stringNamer, expectedExtension stringNamer) bool {
+type DriftSummary struct {
+	display func(out *preambledOutput)
+}
+
+func newDrift(display func(out *preambledOutput)) []DriftSummary {
+	return []DriftSummary{
+		{display: display},
+	}
+}
+
+func compareSchemaDescriptions(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary {
+	s := []DriftSummary{}
+	for _, f := range []func(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary{
+		compareExtensions,
+		compareEnums,
+		compareFunctions,
+		compareSequences,
+		compareTables,
+		compareViews,
+	} {
+		s = append(s, f(schemaName, version, actual, expected)...)
+	}
+
+	return s
+}
+
+func compareExtensions(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary {
+	return compareNamedLists(wrapStrings(actual.Extensions), wrapStrings(expected.Extensions), func(extension *stringNamer, expectedExtension stringNamer) []DriftSummary {
 		if extension == nil {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing extension %q", expectedExtension)))
-			writeSQLSolution(out, "install the extension", fmt.Sprintf("CREATE EXTENSION %s;", expectedExtension))
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing extension %q", expectedExtension)))
+				writeSQLSolution(out, "install the extension", fmt.Sprintf("CREATE EXTENSION %s;", expectedExtension))
+			})
 		}
 
-		return false
+		return nil
 	}, noopAdditionalCallback[stringNamer])
 }
 
-func compareEnums(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
-	return compareNamedLists(actual.Enums, expected.Enums, func(enum *schemas.EnumDescription, expectedEnum schemas.EnumDescription) bool {
+func compareEnums(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary {
+	return compareNamedLists(actual.Enums, expected.Enums, func(enum *schemas.EnumDescription, expectedEnum schemas.EnumDescription) []DriftSummary {
 		quotedLabels := make([]string, 0, len(expectedEnum.Labels))
 		for _, label := range expectedEnum.Labels {
 			quotedLabels = append(quotedLabels, fmt.Sprintf("'%s'", label))
@@ -74,96 +78,102 @@ func compareEnums(out *preambledOutput, schemaName, version string, actual, expe
 		dropEnumStmt := fmt.Sprintf("DROP TYPE %s;", expectedEnum.Name)
 
 		if enum == nil {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing enum %q", expectedEnum.Name)))
-			writeSQLSolution(out, "create the type", createEnumStmt)
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing enum %q", expectedEnum.Name)))
+				writeSQLSolution(out, "create the type", createEnumStmt)
+			})
 		}
 
 		if ordered, ok := constructEnumRepairStatements(*enum, expectedEnum); ok {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing %d labels for enum %q", len(ordered), expectedEnum.Name)))
-			writeSQLSolution(out, "add the missing enum labels", ordered...)
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing %d labels for enum %q", len(ordered), expectedEnum.Name)))
+				writeSQLSolution(out, "add the missing enum labels", ordered...)
+			})
 		}
 
-		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected labels for enum %q", expectedEnum.Name)))
-		writeDiff(out, enum.Labels, expectedEnum.Labels)
-		writeSQLSolution(out, "drop and re-create the type", dropEnumStmt, createEnumStmt)
-		return true
+		return newDrift(func(out *preambledOutput) {
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected labels for enum %q", expectedEnum.Name)))
+			writeDiff(out, enum.Labels, expectedEnum.Labels)
+			writeSQLSolution(out, "drop and re-create the type", dropEnumStmt, createEnumStmt)
+		})
 	}, noopAdditionalCallback[schemas.EnumDescription])
 }
 
-func compareFunctions(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
-	return compareNamedLists(actual.Functions, expected.Functions, func(function *schemas.FunctionDescription, expectedFunction schemas.FunctionDescription) bool {
+func compareFunctions(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary {
+	return compareNamedLists(actual.Functions, expected.Functions, func(function *schemas.FunctionDescription, expectedFunction schemas.FunctionDescription) []DriftSummary {
 		definitionStmt := fmt.Sprintf("%s;", strings.TrimSpace(expectedFunction.Definition))
 
 		if function == nil {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing function %q", expectedFunction.Name)))
-			writeSQLSolution(out, "define the function", definitionStmt)
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing function %q", expectedFunction.Name)))
+				writeSQLSolution(out, "define the function", definitionStmt)
+			})
 		}
 
-		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected definition of function %q", expectedFunction.Name)))
-		writeDiff(out, expectedFunction.Definition, function.Definition)
-		writeSQLSolution(out, "replace the function definition", definitionStmt)
-		return true
+		return newDrift(func(out *preambledOutput) {
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected definition of function %q", expectedFunction.Name)))
+			writeDiff(out, expectedFunction.Definition, function.Definition)
+			writeSQLSolution(out, "replace the function definition", definitionStmt)
+		})
 	}, noopAdditionalCallback[schemas.FunctionDescription])
 }
 
-func compareSequences(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
-	return compareNamedLists(actual.Sequences, expected.Sequences, func(sequence *schemas.SequenceDescription, expectedSequence schemas.SequenceDescription) bool {
+func compareSequences(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary {
+	return compareNamedLists(actual.Sequences, expected.Sequences, func(sequence *schemas.SequenceDescription, expectedSequence schemas.SequenceDescription) []DriftSummary {
 		definitionStmt := makeSearchURL(schemaName, version,
 			fmt.Sprintf("CREATE SEQUENCE %s", expectedSequence.Name),
 			fmt.Sprintf("nextval('%s'::regclass);", expectedSequence.Name),
 		)
 
 		if sequence == nil {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing sequence %q", expectedSequence.Name)))
-			writeSearchHint(out, "define the sequence", definitionStmt)
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing sequence %q", expectedSequence.Name)))
+				writeSearchHint(out, "define the sequence", definitionStmt)
+			})
 		}
 
-		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of sequence %q", expectedSequence.Name)))
-		writeDiff(out, expectedSequence, *sequence)
-		writeSearchHint(out, "redefine the sequence", definitionStmt)
-		return true
+		return newDrift(func(out *preambledOutput) {
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of sequence %q", expectedSequence.Name)))
+			writeDiff(out, expectedSequence, *sequence)
+			writeSearchHint(out, "redefine the sequence", definitionStmt)
+		})
 	}, noopAdditionalCallback[schemas.SequenceDescription])
 }
 
-func compareTables(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
-	return compareNamedLists(actual.Tables, expected.Tables, func(table *schemas.TableDescription, expectedTable schemas.TableDescription) bool {
+func compareTables(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary {
+	return compareNamedLists(actual.Tables, expected.Tables, func(table *schemas.TableDescription, expectedTable schemas.TableDescription) []DriftSummary {
 		if table == nil {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing table %q", expectedTable.Name)))
-			writeSearchHint(out, "define the table", makeSearchURL(schemaName, version,
-				fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
-				fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
-				fmt.Sprintf("CREATE .*(INDEX|TRIGGER).* ON %s", expectedTable.Name),
-			))
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing table %q", expectedTable.Name)))
+				writeSearchHint(out, "define the table", makeSearchURL(schemaName, version,
+					fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
+					fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
+					fmt.Sprintf("CREATE .*(INDEX|TRIGGER).* ON %s", expectedTable.Name),
+				))
+			})
 		}
 
-		outOfSync := false
-		outOfSync = compareColumns(out, schemaName, version, *table, expectedTable) || outOfSync
-		outOfSync = compareConstraints(out, *table, expectedTable) || outOfSync
-		outOfSync = compareIndexes(out, *table, expectedTable) || outOfSync
-		outOfSync = compareTriggers(out, *table, expectedTable) || outOfSync
-		outOfSync = compareTableComments(out, *table, expectedTable) || outOfSync
-		return outOfSync
+		summaries := []DriftSummary(nil)
+		summaries = append(summaries, compareColumns(schemaName, version, *table, expectedTable)...)
+		summaries = append(summaries, compareConstraints(*table, expectedTable)...)
+		summaries = append(summaries, compareIndexes(*table, expectedTable)...)
+		summaries = append(summaries, compareTriggers(*table, expectedTable)...)
+		summaries = append(summaries, compareTableComments(*table, expectedTable)...)
+		return summaries
 	}, noopAdditionalCallback[schemas.TableDescription])
 }
 
-func compareColumns(out *preambledOutput, schemaName, version string, actualTable, expectedTable schemas.TableDescription) bool {
-	return compareNamedLists(actualTable.Columns, expectedTable.Columns, func(column *schemas.ColumnDescription, expectedColumn schemas.ColumnDescription) bool {
+func compareColumns(schemaName, version string, actualTable, expectedTable schemas.TableDescription) []DriftSummary {
+	return compareNamedLists(actualTable.Columns, expectedTable.Columns, func(column *schemas.ColumnDescription, expectedColumn schemas.ColumnDescription) []DriftSummary {
 		if column == nil {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing column %q.%q", expectedTable.Name, expectedColumn.Name)))
-			writeSearchHint(out, "define the column", makeSearchURL(schemaName, version,
-				fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
-				fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
-			))
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing column %q.%q", expectedTable.Name, expectedColumn.Name)))
+				writeSearchHint(out, "define the column", makeSearchURL(schemaName, version,
+					fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
+					fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
+				))
+			})
 		}
-
-		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of column %q.%q", expectedTable.Name, expectedColumn.Name)))
-		writeDiff(out, expectedColumn, *column)
 
 		equivIf := func(f func(*schemas.ColumnDescription)) bool {
 			c := *column
@@ -181,65 +191,85 @@ func compareColumns(out *preambledOutput, schemaName, version string, actualTabl
 				verb = "SET"
 			}
 
-			nullabilityStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s %s NOT NULL;", expectedTable.Name, expectedColumn.Name, verb)
-			writeSQLSolution(out, "change the column nullability constraint", nullabilityStmt)
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of column %q.%q", expectedTable.Name, expectedColumn.Name)))
+				writeDiff(out, expectedColumn, *column)
+				nullabilityStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s %s NOT NULL;", expectedTable.Name, expectedColumn.Name, verb)
+				writeSQLSolution(out, "change the column nullability constraint", nullabilityStmt)
+			})
 		}
 		if equivIf(func(s *schemas.ColumnDescription) { s.Default = expectedColumn.Default }) {
-			setDefaultStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s;", expectedTable.Name, expectedColumn.Name, expectedColumn.Default)
-			writeSQLSolution(out, "change the column default", setDefaultStmt)
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of column %q.%q", expectedTable.Name, expectedColumn.Name)))
+				writeDiff(out, expectedColumn, *column)
+				setDefaultStmt := fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s;", expectedTable.Name, expectedColumn.Name, expectedColumn.Default)
+				writeSQLSolution(out, "change the column default", setDefaultStmt)
+			})
 		}
 		if equivIf(func(s *schemas.ColumnDescription) { s.Comment = expectedColumn.Comment }) {
-			setDefaultStmt := fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s';", expectedTable.Name, expectedColumn.Name, expectedColumn.Comment)
-			writeSQLSolution(out, "change the column comment", setDefaultStmt)
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of column %q.%q", expectedTable.Name, expectedColumn.Name)))
+				writeDiff(out, expectedColumn, *column)
+				setDefaultStmt := fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s';", expectedTable.Name, expectedColumn.Name, expectedColumn.Comment)
+				writeSQLSolution(out, "change the column comment", setDefaultStmt)
+			})
 		}
 
-		writeSearchHint(out, "redefine the column", makeSearchURL(schemaName, version,
-			fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
-			fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
-		))
-		return true
-	}, func(additional []schemas.ColumnDescription) bool {
+		return newDrift(func(out *preambledOutput) {
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of column %q.%q", expectedTable.Name, expectedColumn.Name)))
+			writeDiff(out, expectedColumn, *column)
+			writeSearchHint(out, "redefine the column", makeSearchURL(schemaName, version,
+				fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
+				fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
+			))
+		})
+	}, func(additional []schemas.ColumnDescription) []DriftSummary {
+		summaries := []DriftSummary{}
 		for _, column := range additional {
-			dropColumnStmt := fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;", expectedTable.Name, column.Name)
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected column %q.%q", expectedTable.Name, column.Name)))
-			writeSQLSolution(out, "drop the column", dropColumnStmt)
+			summaries = append(summaries, newDrift(func(out *preambledOutput) {
+				dropColumnStmt := fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;", expectedTable.Name, column.Name)
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected column %q.%q", expectedTable.Name, column.Name)))
+				writeSQLSolution(out, "drop the column", dropColumnStmt)
+			})...)
 		}
 
-		return true
+		return summaries
 	})
 }
 
-func compareConstraints(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
-	return compareNamedLists(actualTable.Constraints, expectedTable.Constraints, func(constraint *schemas.ConstraintDescription, expectedConstraint schemas.ConstraintDescription) bool {
+func compareConstraints(actualTable, expectedTable schemas.TableDescription) []DriftSummary {
+	return compareNamedLists(actualTable.Constraints, expectedTable.Constraints, func(constraint *schemas.ConstraintDescription, expectedConstraint schemas.ConstraintDescription) []DriftSummary {
 		createConstraintStmt := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", expectedTable.Name, expectedConstraint.Name, expectedConstraint.ConstraintDefinition)
 		dropConstraintStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, expectedConstraint.Name)
 
 		if constraint == nil {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing constraint %q.%q", expectedTable.Name, expectedConstraint.Name)))
-			writeSQLSolution(out, "define the constraint", createConstraintStmt)
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing constraint %q.%q", expectedTable.Name, expectedConstraint.Name)))
+				writeSQLSolution(out, "define the constraint", createConstraintStmt)
+			})
 		}
 
-		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of constraint %q.%q", expectedTable.Name, expectedConstraint.Name)))
-		writeDiff(out, expectedConstraint, *constraint)
-		writeSQLSolution(out, "redefine the constraint", dropConstraintStmt, createConstraintStmt)
-		return true
-	}, func(additional []schemas.ConstraintDescription) bool {
+		return newDrift(func(out *preambledOutput) {
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of constraint %q.%q", expectedTable.Name, expectedConstraint.Name)))
+			writeDiff(out, expectedConstraint, *constraint)
+			writeSQLSolution(out, "redefine the constraint", dropConstraintStmt, createConstraintStmt)
+		})
+	}, func(additional []schemas.ConstraintDescription) []DriftSummary {
+		summaries := []DriftSummary{}
 		for _, constraint := range additional {
-			dropConstraintStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, constraint.Name)
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected constraint %q.%q", expectedTable.Name, constraint.Name)))
-			writeSQLSolution(out, "drop the constraint", dropConstraintStmt)
+			summaries = append(summaries, newDrift(func(out *preambledOutput) {
+				dropConstraintStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, constraint.Name)
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected constraint %q.%q", expectedTable.Name, constraint.Name)))
+				writeSQLSolution(out, "drop the constraint", dropConstraintStmt)
+			})...)
 		}
 
-		return true
+		return summaries
 	})
 }
 
-func compareIndexes(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
-	return compareNamedLists(actualTable.Indexes, expectedTable.Indexes, func(index *schemas.IndexDescription, expectedIndex schemas.IndexDescription) bool {
+func compareIndexes(actualTable, expectedTable schemas.TableDescription) []DriftSummary {
+	return compareNamedLists(actualTable.Indexes, expectedTable.Indexes, func(index *schemas.IndexDescription, expectedIndex schemas.IndexDescription) []DriftSummary {
 		var createIndexStmt string
 		switch expectedIndex.ConstraintType {
 		case "u":
@@ -251,87 +281,99 @@ func compareIndexes(out *preambledOutput, actualTable, expectedTable schemas.Tab
 		}
 
 		if index == nil {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing index %q.%q", expectedTable.Name, expectedIndex.Name)))
-			writeSQLSolution(out, "define the index", createIndexStmt)
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing index %q.%q", expectedTable.Name, expectedIndex.Name)))
+				writeSQLSolution(out, "define the index", createIndexStmt)
+			})
 		}
 
-		dropIndexStmt := fmt.Sprintf("DROP INDEX %s;", expectedIndex.Name)
-		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of index %q.%q", expectedTable.Name, expectedIndex.Name)))
-		writeDiff(out, expectedIndex, *index)
-		writeSQLSolution(out, "redefine the index", dropIndexStmt, createIndexStmt)
-		return true
-	}, func(additional []schemas.IndexDescription) bool {
+		return newDrift(func(out *preambledOutput) {
+			dropIndexStmt := fmt.Sprintf("DROP INDEX %s;", expectedIndex.Name)
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of index %q.%q", expectedTable.Name, expectedIndex.Name)))
+			writeDiff(out, expectedIndex, *index)
+			writeSQLSolution(out, "redefine the index", dropIndexStmt, createIndexStmt)
+		})
+	}, func(additional []schemas.IndexDescription) []DriftSummary {
+		summaries := []DriftSummary{}
 		for _, index := range additional {
-			dropIndexStmt := fmt.Sprintf("DROP INDEX %s;", index.Name)
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected index %q.%q", expectedTable.Name, index.Name)))
-			writeSQLSolution(out, "drop the index", dropIndexStmt)
+			summaries = append(summaries, newDrift(func(out *preambledOutput) {
+				dropIndexStmt := fmt.Sprintf("DROP INDEX %s;", index.Name)
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected index %q.%q", expectedTable.Name, index.Name)))
+				writeSQLSolution(out, "drop the index", dropIndexStmt)
+			})...)
 		}
 
-		return true
+		return summaries
 	})
 }
 
-func compareTriggers(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
-	return compareNamedLists(actualTable.Triggers, expectedTable.Triggers, func(trigger *schemas.TriggerDescription, expectedTrigger schemas.TriggerDescription) bool {
+func compareTriggers(actualTable, expectedTable schemas.TableDescription) []DriftSummary {
+	return compareNamedLists(actualTable.Triggers, expectedTable.Triggers, func(trigger *schemas.TriggerDescription, expectedTrigger schemas.TriggerDescription) []DriftSummary {
 		createTriggerStmt := fmt.Sprintf("%s;", expectedTrigger.Definition)
 		dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", expectedTrigger.Name, expectedTable.Name)
 
 		if trigger == nil {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing trigger %q.%q", expectedTable.Name, expectedTrigger.Name)))
-			writeSQLSolution(out, "define the trigger", createTriggerStmt)
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing trigger %q.%q", expectedTable.Name, expectedTrigger.Name)))
+				writeSQLSolution(out, "define the trigger", createTriggerStmt)
+			})
 		}
 
-		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of trigger %q.%q", expectedTable.Name, expectedTrigger.Name)))
-		writeDiff(out, expectedTrigger, *trigger)
-		writeSQLSolution(out, "redefine the trigger", dropTriggerStmt, createTriggerStmt)
-		return true
-	}, func(additional []schemas.TriggerDescription) bool {
+		return newDrift(func(out *preambledOutput) {
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected properties of trigger %q.%q", expectedTable.Name, expectedTrigger.Name)))
+			writeDiff(out, expectedTrigger, *trigger)
+			writeSQLSolution(out, "redefine the trigger", dropTriggerStmt, createTriggerStmt)
+		})
+	}, func(additional []schemas.TriggerDescription) []DriftSummary {
+		summaries := []DriftSummary{}
 		for _, trigger := range additional {
-			dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", trigger.Name, expectedTable.Name)
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected trigger %q.%q", expectedTable.Name, trigger.Name)))
-			writeSQLSolution(out, "drop the trigger", dropTriggerStmt)
+			summaries = append(summaries, newDrift(func(out *preambledOutput) {
+				dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", trigger.Name, expectedTable.Name)
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected trigger %q.%q", expectedTable.Name, trigger.Name)))
+				writeSQLSolution(out, "drop the trigger", dropTriggerStmt)
+			})...)
 		}
 
-		return true
-
+		return summaries
 	})
 }
 
-func compareTableComments(out *preambledOutput, actualTable, expectedTable schemas.TableDescription) bool {
+func compareTableComments(actualTable, expectedTable schemas.TableDescription) []DriftSummary {
 	if actualTable.Comment != expectedTable.Comment {
-		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected comment of table %q", expectedTable.Name)))
-		setDefaultStmt := fmt.Sprintf("COMMENT ON TABLE %s IS '%s';", expectedTable.Name, expectedTable.Comment)
-		writeSQLSolution(out, "change the table comment", setDefaultStmt)
-		return true
+		return newDrift(func(out *preambledOutput) {
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected comment of table %q", expectedTable.Name)))
+			setDefaultStmt := fmt.Sprintf("COMMENT ON TABLE %s IS '%s';", expectedTable.Name, expectedTable.Comment)
+			writeSQLSolution(out, "change the table comment", setDefaultStmt)
+		})
 	}
 
-	return false
+	return nil
 }
 
-func compareViews(out *preambledOutput, schemaName, version string, actual, expected schemas.SchemaDescription) bool {
-	return compareNamedLists(actual.Views, expected.Views, func(view *schemas.ViewDescription, expectedView schemas.ViewDescription) bool {
+func compareViews(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary {
+	return compareNamedLists(actual.Views, expected.Views, func(view *schemas.ViewDescription, expectedView schemas.ViewDescription) []DriftSummary {
 		// pgsql has weird indents here
 		viewDefinition := strings.TrimSpace(stripIndent(" " + expectedView.Definition))
 		createViewStmt := fmt.Sprintf("CREATE VIEW %s AS %s", expectedView.Name, viewDefinition)
 		dropViewStmt := fmt.Sprintf("DROP VIEW %s;", expectedView.Name)
 
 		if view == nil {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing view %q", expectedView.Name)))
-			writeSQLSolution(out, "define the view", createViewStmt)
-			return true
+			return newDrift(func(out *preambledOutput) {
+				out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Missing view %q", expectedView.Name)))
+				writeSQLSolution(out, "define the view", createViewStmt)
+			})
 		}
 
-		out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected definition of view %q", expectedView.Name)))
-		writeDiff(out, expectedView.Definition, view.Definition)
-		writeSQLSolution(out, "redefine the view", dropViewStmt, createViewStmt)
-		return true
+		return newDrift(func(out *preambledOutput) {
+			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("Unexpected definition of view %q", expectedView.Name)))
+			writeDiff(out, expectedView.Definition, view.Definition)
+			writeSQLSolution(out, "redefine the view", dropViewStmt, createViewStmt)
+		})
 	}, noopAdditionalCallback[schemas.ViewDescription])
 }
 
-func noopAdditionalCallback[T schemas.Namer](_ []T) bool {
-	return false
+func noopAdditionalCallback[T schemas.Namer](_ []T) []DriftSummary {
+	return nil
 }
 
 // writeDiff writes a colorized diff of the given objects.
@@ -477,21 +519,20 @@ outer:
 func compareNamedLists[T schemas.Namer](
 	as []T,
 	bs []T,
-	primaryCallback func(a *T, b T) bool,
-	additionsCallback func(additional []T) bool,
-) (outOfSync bool) {
+	primaryCallback func(a *T, b T) []DriftSummary,
+	additionsCallback func(additional []T) []DriftSummary,
+) []DriftSummary {
 	am := groupByName(as)
 	bm := groupByName(bs)
 	additional := make([]T, 0, len(am))
+	summaries := []DriftSummary(nil)
 
 	for _, k := range keys(am) {
 		av := am[k]
 
 		if bv, ok := bm[k]; ok {
 			if cmp.Diff(schemas.Normalize(av), schemas.Normalize(bv)) != "" {
-				if primaryCallback(&av, bv) {
-					outOfSync = true
-				}
+				summaries = append(summaries, primaryCallback(&av, bv)...)
 			}
 		} else {
 			additional = append(additional, av)
@@ -501,19 +542,15 @@ func compareNamedLists[T schemas.Namer](
 		bv := bm[k]
 
 		if _, ok := am[k]; !ok {
-			if primaryCallback(nil, bv) {
-				outOfSync = true
-			}
+			summaries = append(summaries, primaryCallback(nil, bv)...)
 		}
 	}
 
 	if len(additional) > 0 {
-		if additionsCallback(additional) {
-			outOfSync = true
-		}
+		summaries = append(summaries, additionsCallback(additional)...)
 	}
 
-	return
+	return summaries
 }
 
 // groupByName converts the given element slice into a map indexed by
