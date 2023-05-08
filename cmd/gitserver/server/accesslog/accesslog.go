@@ -19,8 +19,25 @@ import (
 type contextKey struct{}
 
 type paramsContext struct {
+	mu sync.Mutex
+
 	repo     string
 	metadata []log.Field
+}
+
+func (pc *paramsContext) Set(repo string, metadata ...log.Field) {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	pc.repo = repo
+	pc.metadata = metadata
+}
+
+func (pc *paramsContext) Get() (repo string, metadata []log.Field) {
+	pc.mu.Lock()
+	defer pc.mu.Unlock()
+
+	return pc.repo, pc.metadata
 }
 
 // Record updates a mutable unexported field stored in the context,
@@ -32,8 +49,7 @@ func Record(ctx context.Context, repo string, meta ...log.Field) {
 		return
 	}
 
-	pc.repo = repo
-	pc.metadata = meta
+	pc.Set(repo, meta...)
 }
 
 func withContext(ctx context.Context, pc *paramsContext) context.Context {
@@ -86,14 +102,16 @@ func (a *accessLogger) maybeLog(ctx context.Context) {
 	if paramsCtx == nil {
 		return
 	}
-	if paramsCtx.repo == "" {
+	repository, metadata := paramsCtx.Get()
+
+	if repository == "" {
 		return
 	}
 
 	var fields []log.Field
 
 	if paramsCtx != nil {
-		params := append([]log.Field{log.String("repo", paramsCtx.repo)}, paramsCtx.metadata...)
+		params := append([]log.Field{log.String("repo", repository)}, metadata...)
 		fields = append(fields, log.Object("params", params...))
 	} else {
 		fields = append(fields, log.String("params", "nil"))
