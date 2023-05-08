@@ -83,6 +83,7 @@ const ShareQueryButtonMenu: React.FunctionComponent<Props & { closeMenu: () => v
     const [title, setTitle] = useState<string>('')
     const [shortUrl, setShortUrl] = useState<string>('')
     const [error, setError] = useState<string>('')
+    const [isPublic, setPublic] = useState<boolean>(false)
 
     const shortUrlCopyRef = useRef<HTMLInputElement | null>(null)
 
@@ -91,6 +92,7 @@ const ShareQueryButtonMenu: React.FunctionComponent<Props & { closeMenu: () => v
         setTitle('')
         setShortUrl('')
         setError('')
+        setPublic(false)
     }
 
     const savedSearchesLink = (
@@ -124,7 +126,7 @@ const ShareQueryButtonMenu: React.FunctionComponent<Props & { closeMenu: () => v
         >
             <div className={classNames(shareStyles.popoverWindowTop, 'd-flex align-items-center px-3 py-2')}>
                 <H4 as={H2} id="smart-search-popover-header" className="m-0 flex-1">
-                    Save and Share
+                    Save and share this search
                 </H4>
                 <Button
                     onClick={() => {
@@ -150,7 +152,7 @@ const ShareQueryButtonMenu: React.FunctionComponent<Props & { closeMenu: () => v
                         event.stopPropagation()
                         event.preventDefault()
                     }}
-                    className="d-flex flex-column px-3 py-2"
+                    className={classNames('d-flex flex-column px-3 py-2', shareStyles.labelList)}
                 >
                     <Label className={shareStyles.label} id="save-destination-label">
                         <span className="d-flex flex-column mb-2">
@@ -202,37 +204,74 @@ const ShareQueryButtonMenu: React.FunctionComponent<Props & { closeMenu: () => v
                             }}
                         />
                     </Label>
+                    <Label className={shareStyles.label}>
+                        <span className="d-flex flex-column mb-2">
+                            <span className={shareStyles.labelHeader}>Visibility</span>
+                            <span className={shareStyles.labelDescription}>
+                                Would you like to save this search in private (so only{' '}
+                                {destination === authenticatedUser
+                                    ? 'you'
+                                    : `members of ${
+                                          destination.displayName && destination.displayName.length > 0
+                                              ? destination.displayName
+                                              : destination.name
+                                      }`}{' '}
+                                can access it) or in public?
+                            </span>
+                        </span>
+                        <Select
+                            onChange={event => {
+                                setPublic(event.target.selectedIndex === 1)
+                            }}
+                            aria-labelledby="save-destination-label"
+                            isCustomStyle={true}
+                            className="mb-0"
+                        >
+                            <option value="private" label="Private" />
+                            <option value="public" label="Public" />
+                        </Select>
+                    </Label>
                     <Button type="submit" variant="primary">
                         Save
                     </Button>
                 </Form>
             )}
             {shortUrl && (
-                <div className="d-flex flex-column px-3 py-2">
-                    <Label className={shareStyles.label}>
-                        <span className="d-flex flex-column mb-2">
-                            <span className={shareStyles.labelHeader}>Short URL</span>
+                <div className={classNames('d-flex flex-column px-3 py-2', shareStyles.labelList)}>
+                    <div className={shareStyles.label}>
+                        <span className="d-flex flex-column">
+                            <span className={shareStyles.labelHeader}>Search Saved!</span>
                             <span className={shareStyles.labelDescription}>
-                                Use this short link to access this search anytime. You can also modify or delete this
-                                saved search in {savedSearchesLink}.
+                                You can always access or edit this search in {savedSearchesLink}!
                             </span>
                         </span>
-                        <div className="input-group">
-                            <Input readOnly={true} value={shortUrl} type="url" ref={shortUrlCopyRef} />
-                            <div className="input-group-append">
-                                <Button
-                                    variant="secondary"
-                                    aria-label="Copy"
-                                    onClick={() => {
-                                        shortUrlCopyRef.current!.select()
-                                        copy(shortUrl)
-                                    }}
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiContentCopy} />
-                                </Button>
+                    </div>
+
+                    {(destination !== authenticatedUser! || isPublic) && (
+                        <Label className={shareStyles.label}>
+                            <span className="d-flex flex-column mb-2">
+                                <span className={shareStyles.labelHeader}>Short URL</span>
+                                <span className={shareStyles.labelDescription}>
+                                    Share this short link to quickly get collaborators on the same page.
+                                </span>
+                            </span>
+                            <div className="input-group">
+                                <Input readOnly={true} value={shortUrl} type="url" ref={shortUrlCopyRef} />
+                                <div className="input-group-append">
+                                    <Button
+                                        variant="secondary"
+                                        aria-label="Copy"
+                                        onClick={() => {
+                                            shortUrlCopyRef.current!.select()
+                                            copy(shortUrl)
+                                        }}
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiContentCopy} />
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                    </Label>
+                        </Label>
+                    )}
                 </div>
             )}
             {error && <span className="d-flex flex-column px-3 py-2">An error occurred: {error}</span>}

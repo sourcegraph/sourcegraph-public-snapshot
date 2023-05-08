@@ -21,9 +21,12 @@
     }
 }
 
-.label {
-    margin-bottom: 1rem;
+.label-list {
+    gap: 1rem;
+}
 
+.label {
+    margin-bottom: 0;
     max-width: 17rem;
 }
 
