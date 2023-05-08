@@ -221,13 +221,6 @@ type args struct {
 	Display            int
 	EnableChunkMatches bool
 	SearchMode         int
-
-	// Optional decoration parameters for server-side rendering a result set
-	// or subset. Decorations may specify, e.g., highlighting results with
-	// HTML markup up-front, and/or including context lines around file results.
-	DecorationLimit        int    // The initial number of files to decorate in the result set.
-	DecorationKind         string // The kind of decoration to apply (HTML highlighting, plaintext, etc.)
-	DecorationContextLines int    // The number of lines of context to include around lines with matches.
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -240,10 +233,9 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	a := args{
-		Query:          get("q", ""),
-		Version:        get("v", "V3"),
-		PatternType:    get("t", ""),
-		DecorationKind: get("dk", "html"),
+		Query:       get("q", ""),
+		Version:     get("v", "V3"),
+		PatternType: get("t", ""),
 	}
 
 	if a.Query == "" {
@@ -264,16 +256,6 @@ func parseURLQuery(q url.Values) (*args, error) {
 	searchMode := get("sm", "0")
 	if a.SearchMode, err = strconv.Atoi(searchMode); err != nil {
 		return nil, errors.Errorf("search mode must be integer, got %q: %w", searchMode, err)
-	}
-
-	decorationLimit := get("dl", "0")
-	if a.DecorationLimit, err = strconv.Atoi(decorationLimit); err != nil {
-		return nil, errors.Errorf("decorationLimit must be an integer, got %q: %w", decorationLimit, err)
-	}
-
-	decorationContextLines := get("dc", "1")
-	if a.DecorationContextLines, err = strconv.Atoi(decorationContextLines); err != nil {
-		return nil, errors.Errorf("decorationContextLines must be an integer, got %q: %w", decorationContextLines, err)
 	}
 
 	return &a, nil
