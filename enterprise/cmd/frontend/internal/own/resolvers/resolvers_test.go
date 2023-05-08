@@ -191,7 +191,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 									},
 									"reasons": [
 										{
-											"title": "CODEOWNERS",
+											"title": "codeowners",
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "GitBlob",
@@ -290,7 +290,7 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 								{
 									"reasons": [
 										{
-											"title": "CODEOWNERS",
+											"title": "codeowners",
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
@@ -658,7 +658,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 								{
 									"reasons": [
 										{
-											"title": "CODEOWNERS",
+											"title": "codeowners",
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
@@ -671,8 +671,8 @@ func TestOwnership_WithSignals(t *testing.T) {
 								{
 									"reasons": [
 										{
-											"title": "RECENT CONTRIBUTOR",
-											"description": "Owner is associated because they are the a recent contributor in the file"
+											"title": "recent contributor",
+											"description": "Owner is associated because they are have contributed to this file in the last 90 days."
 										}
 									]
 								}
