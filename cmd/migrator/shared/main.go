@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"os"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -34,6 +35,14 @@ func NewRunnerWithSchemas(observationCtx *observation.Context, logger log.Logger
 	if err != nil {
 		return nil, err
 	}
+
+	var dsnsStrings []string
+	for schema, dsn := range dsns {
+		dsnsStrings = append(dsnsStrings, schema+" => "+dsn)
+	}
+
+	out.WriteLine(output.Linef(output.EmojiInfo, output.StyleGrey, "Connection DSNs used: %s", strings.Join(dsnsStrings, ", ")))
+
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(observationCtx, db, migrationsTable))
 	}
