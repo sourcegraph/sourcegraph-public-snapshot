@@ -1,4 +1,24 @@
 import { listen, Event } from '@tauri-apps/api/event'
+import { invoke } from '@tauri-apps/api/tauri'
+
+function addRedirectParamToSignInUrl(url: string, returnTo: string) {
+    const urlObject = new URL(url)
+    urlObject.searchParams.append('redirect', returnTo)
+    return urlObject.toString()
+}
+
+async function getLaunchPathFromTauri(): Promise<string> {
+    return (await invoke('get_launch_path')) as string
+}
+
+async function launchWithSignInUrl(url: string) {
+    const launchPath = await getLaunchPathFromTauri()
+    if (launchPath) {
+        console.log('Using launch path:', launchPath)
+        url = addRedirectParamToSignInUrl(url, launchPath)
+    }
+    window.location.href = url
+}
 
 // Sourcegraph desktop app entrypoint. There are two:
 //
@@ -16,7 +36,7 @@ interface TauriLog {
 const outputHandler = (event: Event<TauriLog>): void => {
     if (event.payload.message.includes('tauri:sign-in-url: ')) {
         const url = event.payload.message.split('tauri:sign-in-url: ')[1]
-        window.location.href = url
+        launchWithSignInUrl(url)
     }
 }
 

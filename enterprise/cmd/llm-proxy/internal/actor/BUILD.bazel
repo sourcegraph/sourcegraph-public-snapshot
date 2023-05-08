@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "actor",
+    srcs = [
+        "actor.go",
+        "source.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor",
+    visibility = ["//enterprise/cmd/llm-proxy:__subpackages__"],
+    deps = [
+        "//enterprise/cmd/llm-proxy/internal/limiter",
+        "//internal/goroutine",
+        "//lib/errors",
+        "@com_github_sourcegraph_conc//pool",
+    ],
+)
+
+go_test(
+    name = "actor_test",
+    srcs = ["source_test.go"],
+    embed = [":actor"],
+    deps = [
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

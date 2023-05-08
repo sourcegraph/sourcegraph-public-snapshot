@@ -1,0 +1,23 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.container {
+    max-width: 47rem;
+    gap: 1rem;
+
+    @media (--sm-breakpoint-down) {
+        flex-wrap: wrap-reverse;
+        justify-content: center;
+    }
+}
+
+.card {
+    background-color: var(--color-bg-1);
+}
+
+.vscode-icon {
+    color: var(--primary);
+}
+
+.list {
+    list-style: inside;
+}

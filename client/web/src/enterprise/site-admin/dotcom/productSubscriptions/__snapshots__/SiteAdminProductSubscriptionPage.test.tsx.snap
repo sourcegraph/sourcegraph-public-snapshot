@@ -140,6 +140,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
     </div>
     <div
       class="card mt-3"
+      hidden=""
     >
       <div
         class="cardHeader d-flex align-items-center justify-content-between"
@@ -173,6 +174,48 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
           class=""
         >
           Access tokens can be used for LLM-proxy access - coming soon!
+        </p>
+      </div>
+    </div>
+    <div
+      class="card mt-3"
+      hidden=""
+    >
+      <div
+        class="cardHeader"
+      >
+        Cody services
+      </div>
+      <div
+        class="cardBody"
+        hidden=""
+      >
+        <h3
+          class="h3"
+        >
+          Completions
+        </h3>
+        <div
+          class="form-check"
+        >
+          <input
+            class="form-check-input mb-2"
+            disabled=""
+            id="llm-proxy-enabled"
+            label="Enable access to hosted completions (LLM-proxy)"
+            type="checkbox"
+          />
+          <label
+            class="label form-check-label label"
+            for="llm-proxy-enabled"
+          >
+            Enable access to hosted completions (LLM-proxy)
+          </label>
+        </div>
+        <p
+          class=""
+        >
+          Rate limits: null
         </p>
       </div>
     </div>

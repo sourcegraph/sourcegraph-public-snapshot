@@ -19,7 +19,7 @@ import (
 
 // NewCodeCompletionsHandler is an http handler which sends back code completion results
 func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
-	rl := NewRateLimiter(db, redispool.Store)
+	rl := NewRateLimiter(db, redispool.Store, RateLimitScopeCodeCompletion)
 	return &codeCompletionHandler{logger: logger, rl: rl}
 }
 

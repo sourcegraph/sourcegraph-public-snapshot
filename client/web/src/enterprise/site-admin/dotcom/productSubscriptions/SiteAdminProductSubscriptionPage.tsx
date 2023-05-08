@@ -22,12 +22,15 @@ import {
     H2,
     ErrorAlert,
     Text,
+    Checkbox,
+    H3,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { CopyableText } from '../../../../components/CopyableText'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
+import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
 import {
     ArchiveProductSubscriptionResult,
     ArchiveProductSubscriptionVariables,
@@ -136,6 +139,9 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
         GENERATE_ACCESS_TOKEN_GQL
     )
 
+    // Feature flag only used as this is under development - will be enabled by default
+    const [llmProxyManagementUI] = useFeatureFlag('llm-proxy-management-ui')
+
     const nodeProps: Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'> = {
         showSubscription: false,
     }
@@ -199,7 +205,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             </tbody>
                         </table>
                     </Card>
-                    <Card className="mt-3">
+                    <Card className="mt-3" hidden={!llmProxyManagementUI}>
                         <CardHeader className="d-flex align-items-center justify-content-between">
                             Access token
                             <Button
@@ -228,6 +234,20 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                     className="mt-2"
                                 />
                             )}
+                        </CardBody>
+                    </Card>
+                    <Card className="mt-3" hidden={!llmProxyManagementUI}>
+                        <CardHeader>Cody services</CardHeader>
+                        <CardBody hidden={!productSubscription.llmProxyAccess.enabled}>
+                            <H3>Completions</H3>
+                            <Checkbox
+                                id="llm-proxy-enabled"
+                                checked={productSubscription.llmProxyAccess.enabled}
+                                disabled={true}
+                                label="Enable access to hosted completions (LLM-proxy)"
+                                className="mb-2"
+                            />
+                            <Text>Rate limits: {JSON.stringify(productSubscription.llmProxyAccess.rateLimit)}</Text>
                         </CardBody>
                     </Card>
                     <LicenseGenerationKeyWarning className="mt-3" />
@@ -314,6 +334,13 @@ function queryProductSubscription(
                             }
                             licenseKey
                             createdAt
+                        }
+                        llmProxyAccess {
+                            enabled
+                            rateLimit {
+                                limit
+                                intervalSeconds
+                            }
                         }
                         createdAt
                         isArchived
