@@ -8,7 +8,6 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { CodeLensProvider } from '../command/CodeLensProvider'
 import { FileChatProvider } from '../command/FileChatProvider'
 
 export class VSCodeEditor implements Editor {
@@ -50,8 +49,7 @@ export class VSCodeEditor implements Editor {
         }
         const selection = activeEditor.selection
         if (!selection || selection?.start.isEqual(selection.end)) {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            vscode.window.showErrorMessage('No code selected. Please select some code and try again.')
+            void vscode.window.showErrorMessage('No code selected. Please select some code and try again.')
             return null
         }
         return this.createActiveTextEditorSelection(activeEditor, selection)
@@ -122,14 +120,14 @@ export class VSCodeEditor implements Editor {
             return
         }
         let selection = activeEditor.selection
-        const taskID = this.fileChatProvider.diffFiles.shift()
-        const lens = new CodeLensProvider(taskID)
+        const taskID = this.fileChatProvider.diffFiles.shift() || ''
+
+        // Stop tracking for file changes to perfotm replacement
+        this.fileChatProvider.isInProgress = false
+        const chatSelection = this.fileChatProvider.getSelectionRange()
+
         if (this.fileChatProvider.selectionRange) {
-            selection = new vscode.Selection(
-                this.fileChatProvider.selectionRange.start,
-                this.fileChatProvider.selectionRange.end
-            )
-            lens.ranges.push()
+            selection = new vscode.Selection(chatSelection.start, new vscode.Position(chatSelection.end.line + 1, 0))
         }
         if (!selection) {
             console.error('Missing selection')
@@ -142,16 +140,13 @@ export class VSCodeEditor implements Editor {
             )
             return
         }
-        // Stop tracking for file changes to perfotm replacement
-        this.fileChatProvider.isInProgress = false
-        const trimmedReplacement = replacement.trimStart()
+        const trimmedReplacement = replacement
+        const startLine = selection.start.line
 
+        // Perform edits
         await activeEditor.edit(edit => {
-            edit.delete(this.fileChatProvider.selectionRange || selection)
-            edit.insert(
-                new vscode.Position(this.fileChatProvider.selectionRange?.start.line || selection.start.line, 0),
-                trimmedReplacement
-            )
+            edit.delete(selection)
+            edit.insert(new vscode.Position(startLine, 0), trimmedReplacement + '\n')
         })
 
         const lineCount = {
@@ -159,16 +154,14 @@ export class VSCodeEditor implements Editor {
             replacement: trimmedReplacement.split('\n').length,
         }
 
-        const doc = vscode.window.activeTextEditor?.document
-        if (doc) {
-            await lens.provideCodeLenses(doc, new vscode.CancellationTokenSource().token)
-            lens.set(selection.start.line, this.fileChatProvider, lineCount)
-            vscode.languages.registerCodeLensProvider('*', lens)
+        if (activeEditor.document) {
+            // Highlight from the start line to the length of the replacement content
+            const newRange = new vscode.Range(startLine, 0, startLine + lineCount.replacement - 1, 0)
+            this.fileChatProvider.setReplacementRange(newRange, taskID)
         }
 
         // check performance time
-        const duration = performance.now() - startTime
-        console.info('Replacement duration:', duration)
+        console.info('Replacement duration:', performance.now() - startTime)
         return
     }
 

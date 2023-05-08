@@ -489,9 +489,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     /**
      * Handles in-file chat (comments) threads from editor
      */
-    public async fileChat(threads: vscode.CommentReply, fixMode: boolean): Promise<void> {
+    public async fileChat(threads: vscode.CommentReply, fixMode: boolean = false): Promise<void> {
         if (threads.text.startsWith('/fix ') || threads.text.startsWith('/f ')) {
-            fixMode = true
+            fixMode = this.config.experimentalNonStop
         }
         await this.editor.fileChatProvider.chat(threads, fixMode)
         void this.executeRecipe(fixMode ? 'fixup' : 'file-chat', threads.text, false)

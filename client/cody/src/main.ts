@@ -72,7 +72,11 @@ const register = async (
 
     // File Chat Provider
     const fixupContentProvider = new CodyContentProvider()
-    const fileChatProvider = new FileChatProvider(context.extensionPath, fixupContentProvider)
+    const fileChatProvider = new FileChatProvider(
+        context.extensionPath,
+        fixupContentProvider,
+        initialConfig.experimentalNonStop
+    )
     disposables.push(
         vscode.workspace.registerTextDocumentContentProvider('codyDoc', fixupContentProvider),
         fileChatProvider.get()

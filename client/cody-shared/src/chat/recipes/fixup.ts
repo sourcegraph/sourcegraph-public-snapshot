@@ -58,7 +58,7 @@ export class Fixup implements Recipe {
                 },
                 {
                     speaker: 'assistant',
-                    prefix: 'Cody has updated your document.\n\n',
+                    prefix: 'Check your document for updates from Cody.\n\n',
                 },
                 this.getContextMessages(selection.selectedText, context.codebaseContext)
             )
@@ -88,8 +88,8 @@ export class Fixup implements Recipe {
     Put the rewritten replacement inside <selection> tags. I only want to see the code within <selection>.
     Do not move code from outside the selection into the selection in your reply.
     Do not remove code inside the <selection> tags that might be being used by the code outside the <selection> tags.
-    It is OK to provide some commentary before you tell me the replacement <selection>.
-    It is encouraged to explain the updated code by adding comments to the replacement <selection>.
+    It is OK to provide some commentary within the replacement <selection>.
+    Only return provide me the replacement <selection> and nothing else.
     If it doesn't make sense, you do not need to provide <selection>.
 
     \`\`\`
