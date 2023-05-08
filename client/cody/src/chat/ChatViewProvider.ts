@@ -594,9 +594,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Display error message in webview view as banner in chat view
      * It does not display error message as assistant response
      */
-    private sendErrorToWebview(errorMsg: string): void {
+    public sendErrorToWebview(errorMsg: string): void {
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
-        console.error(errorMsg)
     }
 
     /**

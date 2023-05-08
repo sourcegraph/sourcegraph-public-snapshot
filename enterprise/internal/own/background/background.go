@@ -46,6 +46,7 @@ type JobTypeID int
 const (
 	_ JobTypeID = iota
 	RecentContributors
+	RecentViews
 )
 
 func featureFlagName(jobType IndexJobType) string {
