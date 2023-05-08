@@ -191,7 +191,8 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 
 		repoSet := []repoData{UnindexedList(unindexed)}
 		if indexed != nil {
-			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
+			repoRevsFromBranchRepos := indexed.GetRepoRevsFromBranchRepos()
+			repoSet = append(repoSet, IndexedMap(repoRevsFromBranchRepos))
 		}
 		err = runStructuralSearch(ctx, clients, s.SearcherArgs, s.BatchRetry, repoSet, stream)
 		if err != nil {

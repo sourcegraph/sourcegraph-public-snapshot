@@ -8,9 +8,7 @@ import { Interaction } from '../transcript/interaction'
 import { Recipe, RecipeContext } from './recipe'
 
 export class Fixup implements Recipe {
-    public getID(): string {
-        return 'fixup'
-    }
+    public id = 'fixup'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // TODO: Prompt the user for additional direction.

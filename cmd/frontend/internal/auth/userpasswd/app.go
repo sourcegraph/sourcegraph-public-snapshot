@@ -16,6 +16,7 @@ import (
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -90,7 +91,7 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 			return handler(w, r)
 		}
 
-		if !appNonce.Verify(nonce) {
+		if !appNonce.Verify(nonce) && !env.InsecureDev {
 			return errors.New("Authentication failed")
 		}
 
@@ -108,11 +109,19 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 			return errors.Wrap(err, "Could not create new user session")
 		}
 
-		// Success. Redirect to search
-		url := r.URL
-		url.RawQuery = ""
-		url.Path = "/search"
-		http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
+		// Success. Redirect to search or to "redirect" param if present.
+		redirect := r.URL.Query().Get("redirect")
+		u := r.URL
+		u.RawQuery = ""
+		if redirect != "" {
+			path, err := url.QueryUnescape(redirect)
+			if err == nil {
+				u.Path = path
+			}
+		} else {
+			u.Path = "/search"
+		}
+		http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
 		return nil
 	}
 }

@@ -1,6 +1,6 @@
 import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
-import { KeywordContextFetcher } from '../keyword-context'
+import { KeywordContextFetcher, KeywordContextFetcherResult } from '../keyword-context'
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
@@ -15,10 +15,15 @@ export interface ContextSearchOptions {
 
 export class CodebaseContext {
     constructor(
-        private config: Pick<Configuration, 'useContext'>,
+        private config: Pick<Configuration, 'useContext' | 'serverEndpoint'>,
+        private codebase: string | undefined,
         private embeddings: EmbeddingsSearch | null,
-        private keywords: KeywordContextFetcher
+        private keywords: KeywordContextFetcher | null
     ) {}
+
+    public getCodebase(): string | undefined {
+        return this.codebase
+    }
 
     public onConfigurationChange(newConfig: typeof this.config): void {
         this.config = newConfig
@@ -26,17 +31,32 @@ export class CodebaseContext {
 
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
         switch (this.config.useContext) {
-            case 'blended':
+            case 'embeddings' || 'blended':
                 return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
                     : this.getKeywordContextMessages(query, options)
-            case 'embeddings':
-                return this.getEmbeddingsContextMessages(query, options)
             case 'keyword':
                 return this.getKeywordContextMessages(query, options)
             default:
-                return []
+                return this.getEmbeddingsContextMessages(query, options)
         }
+    }
+
+    public checkEmbeddingsConnection(): boolean {
+        return !!this.embeddings
+    }
+
+    public async getSearchResults(
+        query: string,
+        options: ContextSearchOptions
+    ): Promise<{ results: KeywordContextFetcherResult[] | EmbeddingsSearchResult[]; endpoint: string }> {
+        if (this.embeddings && this.config.useContext !== 'keyword') {
+            return {
+                results: await this.getEmbeddingSearchResults(query, options),
+                endpoint: this.config.serverEndpoint,
+            }
+        }
+        return { results: await this.getKeywordSearchResults(query, options), endpoint: this.config.serverEndpoint }
     }
 
     // We split the context into multiple messages instead of joining them into a single giant message.
@@ -46,6 +66,17 @@ export class CodebaseContext {
         query: string,
         options: ContextSearchOptions
     ): Promise<ContextMessage[]> {
+        const combinedResults = await this.getEmbeddingSearchResults(query, options)
+
+        return groupResultsByFile(combinedResults)
+            .reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
+            .flatMap(groupedResults => this.makeContextMessageWithResponse(groupedResults))
+    }
+
+    private async getEmbeddingSearchResults(
+        query: string,
+        options: ContextSearchOptions
+    ): Promise<EmbeddingsSearchResult[]> {
         if (!this.embeddings) {
             return []
         }
@@ -60,30 +91,35 @@ export class CodebaseContext {
             return []
         }
 
-        const combinedResults = embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
+        return embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
+    }
 
-        return groupResultsByFile(combinedResults)
-            .reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
-            .flatMap(groupedResults => {
-                const contextTemplateFn = isMarkdownFile(groupedResults.fileName)
-                    ? populateMarkdownContextTemplate
-                    : populateCodeContextTemplate
+    private makeContextMessageWithResponse(groupedResults: { fileName: string; results: string[] }): ContextMessage[] {
+        const contextTemplateFn = isMarkdownFile(groupedResults.fileName)
+            ? populateMarkdownContextTemplate
+            : populateCodeContextTemplate
 
-                return groupedResults.results.flatMap<Message>(text =>
-                    getContextMessageWithResponse(
-                        contextTemplateFn(text, groupedResults.fileName),
-                        groupedResults.fileName
-                    )
-                )
-            })
+        return groupedResults.results.flatMap<Message>(text =>
+            getContextMessageWithResponse(contextTemplateFn(text, groupedResults.fileName), groupedResults.fileName)
+        )
     }
 
     private async getKeywordContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        const results = await this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
+        const results = await this.getKeywordSearchResults(query, options)
         return results.flatMap(({ content, fileName }) => {
             const messageText = populateCodeContextTemplate(content, fileName)
             return getContextMessageWithResponse(messageText, fileName)
         })
+    }
+
+    private async getKeywordSearchResults(
+        query: string,
+        options: ContextSearchOptions
+    ): Promise<KeywordContextFetcherResult[]> {
+        if (!this.keywords) {
+            return []
+        }
+        return this.keywords.getSearchContext(query, options.numCodeResults + options.numTextResults)
     }
 }
 

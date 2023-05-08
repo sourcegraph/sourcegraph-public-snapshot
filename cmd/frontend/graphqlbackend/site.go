@@ -299,7 +299,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
 func canUpdateSiteConfiguration() bool {
-	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
+	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits || deploy.IsApp()
 }
 
 // IsCodeInsightsEnabled tells if code insights are enabled or not.
@@ -484,4 +484,22 @@ func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
 	}
 	err := upgradestore.NewWith(r.db.Handle()).SetAutoUpgrade(ctx, args.Enable)
 	return &EmptyResponse{}, err
+}
+
+func (r *siteResolver) PerUserCompletionsQuota() *int32 {
+	c := conf.Get()
+	if c.Completions != nil && c.Completions.PerUserDailyLimit > 0 {
+		i := int32(c.Completions.PerUserDailyLimit)
+		return &i
+	}
+	return nil
+}
+
+func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
+	c := conf.Get()
+	if c.Completions != nil && c.Completions.PerUserCodeCompletionsDailyLimit > 0 {
+		i := int32(c.Completions.PerUserCodeCompletionsDailyLimit)
+		return &i
+	}
+	return nil
 }

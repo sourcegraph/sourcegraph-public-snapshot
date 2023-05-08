@@ -2,17 +2,34 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Sourcegraph Cody",
-  "version": "0.0.7",
+  "version": "0.0.10",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
-  "description": "Your programming sidekick powered by AI and Sourcegraph's code search and intelligence.",
+  "description": "AI code assistant that writes code and answers questions for you",
   "categories": [
-    "Other"
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Education"
   ],
   "keywords": [
-    "developer tools",
-    "ai"
+    "ai",
+    "openai",
+    "anthropic",
+    "assistant",
+    "chatbot",
+    "chat",
+    "refactor",
+    "documentation",
+    "test",
+    "sourcegraph",
+    "codey",
+    "llm",
+    "codegen",
+    "autocomplete",
+    "bot",
+    "model"
   ],
   "repository": {
     "type": "git",
@@ -22,7 +39,14 @@
   "bugs": {
     "url": "https://github.com/sourcegraph/sourcegraph/issues"
   },
-  "homepage": "https://github.com/sourcegraph/sourcegraph#readme",
+  "homepage": "https://docs.sourcegraph.com/cody",
+  "badges": [
+    {
+      "url": "https://img.shields.io/discord/969688426372825169?color=5765F2",
+      "href": "https://srcgr.ph/discord",
+      "description": "Discord"
+    }
+  ],
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -33,7 +57,7 @@
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
-    "test:integration": "tsc -b && pnpm run --silent build:dev && node ./out/src/integration-test/runTest.js",
+    "test:integration": "tsc -b ./integration-test && pnpm run --silent build:dev && ts-node out/integration-test/main.js",
     "test:unit": "jest",
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
@@ -41,7 +65,8 @@
     "release": "ts-node ./scripts/release.ts",
     "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
     "watch:esbuild": "pnpm esbuild --sourcemap --watch",
-    "watch:webview": "vite build --mode development --watch"
+    "watch:webview": "vite build --mode development --watch",
+    "storybook": "STORIES_GLOB='client/cody/webviews/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start"
   },
   "main": "./dist/extension.js",
   "activationEvents": [
@@ -74,69 +99,73 @@
       },
       {
         "command": "cody.recipe.explain-code",
-        "title": "Ask Cody: Explain Code in Detail",
-        "when": "cody.activated"
+        "title": "Ask Cody: Explain Code in Detail"
       },
       {
         "command": "cody.recipe.explain-code-high-level",
-        "title": "Ask Cody: Explain Code at a High Level",
-        "when": "cody.activated"
+        "title": "Ask Cody: Explain Code at a High Level"
       },
       {
         "command": "cody.recipe.generate-unit-test",
-        "title": "Ask Cody: Generate Unit Test",
-        "when": "cody.activated"
+        "title": "Ask Cody: Generate Unit Test"
       },
       {
         "command": "cody.recipe.generate-docstring",
-        "title": "Ask Cody: Generate Docstring",
-        "when": "cody.activated"
+        "title": "Ask Cody: Generate Docstring"
       },
       {
         "command": "cody.recipe.translate-to-language",
-        "title": "Ask Cody: Translate to Language",
-        "when": "cody.activated"
+        "title": "Ask Cody: Translate to Language"
       },
       {
         "command": "cody.recipe.git-history",
-        "title": "Ask Cody: Summarize Recent Code Changes",
-        "when": "cody.activated"
+        "title": "Ask Cody: Summarize Recent Code Changes"
       },
       {
         "command": "cody.recipe.improve-variable-names",
-        "title": "Ask Cody: Improve Variable Names",
-        "when": "cody.activated"
+        "title": "Ask Cody: Improve Variable Names"
       },
       {
         "command": "cody.recipe.fixup",
-        "title": "Cody: Fixup",
-        "when": "cody.activated"
+        "title": "Cody: Fixup"
+      },
+      {
+        "command": "cody.recipe.context-search",
+        "title": "Ask Cody: Codebase Context Search"
       },
       {
         "command": "cody.set-access-token",
-        "title": "Cody: Set Access Token",
-        "when": "!cody.activated"
+        "title": "Cody: Set Access Token"
       },
       {
         "command": "cody.delete-access-token",
-        "title": "Cody: Delete Access Token",
-        "when": "cody.activated"
+        "title": "Cody: Sign out"
       },
       {
         "command": "cody.experimental.suggest",
-        "title": "Cody: View Suggestions",
-        "when": "cody.activated"
+        "title": "Cody: View Suggestions"
       },
       {
         "command": "cody.settings",
         "title": "Cody: Settings",
-        "icon": "$(gear)",
-        "when": "cody.activated"
+        "group": "Cody",
+        "icon": "$(gear)"
       },
       {
         "command": "cody.focus",
-        "title": "Cody: Sign In to Use Cody",
-        "when": "!cody.activated"
+        "title": "Cody: Sign In"
+      },
+      {
+        "command": "cody.interactive.clear",
+        "title": "Cody: Clear & Restart Chat Session",
+        "group": "Cody",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "cody.history",
+        "title": "Cody: Chat History",
+        "group": "Cody",
+        "icon": "$(history)"
       }
     ],
     "keybindings": [
@@ -165,6 +194,10 @@
           "when": "cody.activated"
         },
         {
+          "command": "cody.recipe.context-search",
+          "when": "cody.activated"
+        },
+        {
           "command": "cody.recipe.explain-code-high-level",
           "when": "cody.activated"
         },
@@ -187,6 +220,15 @@
         {
           "command": "cody.recipe.fixup",
           "when": "cody.activated"
+        },
+        {
+          "command": "cody.set-access-token",
+          "when": "false"
+        },
+        {
+          "command": "cody.focus",
+          "title": "Cody: Sign In",
+          "when": "!cody.activated"
         }
       ],
       "editor/context": [
@@ -231,7 +273,17 @@
       ],
       "view/title": [
         {
+          "command": "cody.interactive.clear",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation"
+        },
+        {
           "command": "cody.settings",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation"
+        },
+        {
+          "command": "cody.history",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation"
         }
@@ -269,7 +321,7 @@
           ],
           "default": "embeddings"
         },
-        "cody.experimental.suggestions": {
+        "cody.experimental.chatPredictions": {
           "type": "boolean",
           "default": false
         },
@@ -292,8 +344,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.4.2",
     "@sourcegraph/cody-shared": "workspace:*",
-    "openai": "^3.2.1",
     "@sourcegraph/cody-ui": "workspace:*",
+    "lru-cache": "^9.1.1",
+    "openai": "^3.2.1",
     "wink-eng-lite-web-model": "^1.5.0",
     "wink-nlp": "^1.13.1",
     "wink-nlp-utils": "^2.1.0"

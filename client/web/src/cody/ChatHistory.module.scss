@@ -1,0 +1,18 @@
+.history-item {
+    display: flex;
+    flex-direction: column;
+    background: var(--body-bg);
+    border-bottom: 1px solid var(--border-color-2);
+    gap: var(--spacing);
+    cursor: pointer;
+}
+
+.item-body {
+    padding: var(--spacing);
+    margin-bottom: 0;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--input-bg);
+    }
+}

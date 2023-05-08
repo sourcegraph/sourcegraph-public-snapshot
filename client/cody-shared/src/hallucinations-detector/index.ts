@@ -1,3 +1,5 @@
+import { MarkdownLine, parseMarkdown } from '../chat/markdown'
+
 export interface HighlightedToken {
     type: 'file' | 'symbol'
     // Including leading/trailing whitespaces or quotes.
@@ -61,25 +63,6 @@ function deduplicateTokens(tokens: HighlightedToken[]): HighlightedToken[] {
         }
     }
     return deduplicatedTokens
-}
-
-interface MarkdownLine {
-    line: string
-    isCodeBlock: boolean
-}
-
-function parseMarkdown(text: string): MarkdownLine[] {
-    const markdownLines: MarkdownLine[] = []
-    let isCodeBlock = false
-    for (const line of text.split('\n')) {
-        if (line.trim().startsWith('```')) {
-            markdownLines.push({ line, isCodeBlock: true })
-            isCodeBlock = !isCodeBlock
-        } else {
-            markdownLines.push({ line, isCodeBlock })
-        }
-    }
-    return markdownLines
 }
 
 function detectFilePaths(

@@ -88,6 +88,9 @@ Then, [add or edit a GitLab connection](#repository-syncing) and include the `au
 }
 ```
 
+In this case, a user's OAuth token will be used to get a list of repositories that the user can access.
+[Repository-centric permissions syncing](../../permissions/syncing.md) will be disabled.
+
 ### Administrator (sudo-level) access token
 
 This method requires administrator access to GitLab so that Sourcegraph can access the [admin GitLab Users API endpoint](https://docs.gitlab.com/ee/api/users.html#for-admins). For each GitLab user, this endpoint provides the user ID that comes from the authentication provider, so Sourcegraph can associate a user in its system to a user in GitLab.

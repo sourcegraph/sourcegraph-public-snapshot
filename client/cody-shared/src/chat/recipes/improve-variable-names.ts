@@ -11,9 +11,7 @@ import {
 import { Recipe, RecipeContext } from './recipe'
 
 export class ImproveVariableNames implements Recipe {
-    public getID(): string {
-        return 'improve-variable-names'
-    }
+    public id = 'improve-variable-names'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()

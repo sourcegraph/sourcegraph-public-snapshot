@@ -1,0 +1,48 @@
+# hadolint ignore=DL3007
+FROM us.gcr.io/sourcegraph-dev/wolfi-jaeger-all-in-one-base:latest
+
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+LABEL com.sourcegraph.jaeger.version=${JAEGER_VERSION}
+
+COPY ./config/sampling_strategies.json /etc/jaeger/sampling_strategies.json
+
+# # Ensure the /tmp directory is chown'd to user jaeger
+RUN chown -R jaeger /tmp
+USER jaeger
+VOLUME ["/tmp"]
+
+# Agent zipkin.thrift compact
+EXPOSE 5775/udp
+
+# Agent jaeger.thrift compact
+EXPOSE 6831/udp
+
+# Agent jaeger.thrift binary
+EXPOSE 6832/udp
+
+# Agent config HTTP
+EXPOSE 5778
+
+# Collector HTTP
+EXPOSE 14268
+
+# Collector gRPC
+EXPOSE 14250
+
+# Web HTTP
+EXPOSE 16686
+
+# Used in order to reverse proxy the Jaeger UI
+ENV QUERY_BASE_PATH="/-/debug/jaeger"
+
+# Default configuration file for setting sampling strategies, we override the command in docker-compose
+ENV SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json
+
+ENTRYPOINT ["/usr/local/bin/jaeger-all-in-one"]
+CMD ["--sampling.strategies-file=/etc/jaeger/sampling_strategies.json"]

@@ -28,6 +28,7 @@ import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, Scalars } from '../../graphql-operations'
+import { useEditorStore } from '../../stores/editor'
 import { BlameHunkData } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -47,6 +48,7 @@ import { pin, updatePin, selectOccurrence } from './codemirror/token-selection/c
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
+import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
 
@@ -95,9 +97,6 @@ export interface BlobPropsFacet extends BlobProps {
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** The raw content of the blob. */
     content: string
-
-    /** The trusted syntax-highlighted code as HTML */
-    html: string
 
     /** LSIF syntax-highlighting data */
     lsif?: string
@@ -289,6 +288,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }),
             scipSnapshot(blobInfo.snapshotData),
             codeFoldingExtension(),
+            window.context?.codyEnabled ? codyWidgetExtension() : [],
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
@@ -431,6 +431,23 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             openSearchPanel(editorRef.current)
         }
     }, [])
+
+    // Sync the currently viewed document with the editor zustand store. This is used for features
+    // like Cody to know what file and range a user is looking at.
+    useEffect(() => {
+        const view = editorRef.current
+        useEditorStore.setState({
+            editor: view
+                ? {
+                      view,
+                      repo: props.blobInfo.repoName,
+                      filename: props.blobInfo.filePath,
+                      content: props.blobInfo.content,
+                  }
+                : null,
+        })
+        return () => useEditorStore.setState({ editor: null })
+    }, [props.blobInfo.content, props.blobInfo.filePath, props.blobInfo.repoName])
 
     return (
         <>

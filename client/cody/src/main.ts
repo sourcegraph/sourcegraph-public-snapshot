@@ -3,22 +3,17 @@ import * as vscode from 'vscode'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
+import { DOTCOM_URL } from './chat/protocol'
 import { LocalStorage } from './command/LocalStorageProvider'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
-import { getConfiguration } from './configuration'
+import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { getRgPath } from './rg'
-import {
-    CODY_ACCESS_TOKEN_SECRET,
-    InMemorySecretStorage,
-    SecretStorage,
-    VSCodeSecretStorage,
-    getAccessToken,
-} from './secret-storage'
+import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -29,16 +24,11 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
     const localStorage = new LocalStorage(context.globalState)
     const rgPath = await getRgPath(context.extensionPath)
 
-    const getFullConfig = async (): Promise<ConfigurationWithAccessToken> => {
-        const config = getConfiguration(vscode.workspace.getConfiguration())
-        return { ...config, accessToken: await getAccessToken(secretStorage) }
-    }
-
     const disposables: vscode.Disposable[] = []
 
     const { disposable, onConfigurationChange } = await register(
         context,
-        await getFullConfig(),
+        await getFullConfig(secretStorage),
         secretStorage,
         localStorage,
         rgPath
@@ -49,12 +39,12 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
     disposables.push(
         secretStorage.onDidChange(async key => {
             if (key === CODY_ACCESS_TOKEN_SECRET) {
-                onConfigurationChange(await getFullConfig())
+                onConfigurationChange(await getFullConfig(secretStorage))
             }
         }),
         vscode.workspace.onDidChangeConfiguration(async event => {
-            if (event.affectsConfiguration('cody') || event.affectsConfiguration('sourcegraph')) {
-                onConfigurationChange(await getFullConfig())
+            if (event.affectsConfiguration('cody')) {
+                onConfigurationChange(await getFullConfig(secretStorage))
             }
         })
     )
@@ -96,7 +86,8 @@ const register = async (
         codebaseContext,
         editor,
         secretStorage,
-        localStorage
+        localStorage,
+        rgPath
     )
     disposables.push(chatProvider)
 
@@ -109,39 +100,33 @@ const register = async (
 
     const executeRecipe = async (recipe: string): Promise<void> => {
         await vscode.commands.executeCommand('cody.chat.focus')
-        await chatProvider.executeRecipe(recipe)
+        await chatProvider.executeRecipe(recipe, '')
+    }
+
+    const webviewErrorMessager = async (error: string): Promise<void> => {
+        if (error.includes('rate limit')) {
+            const currentTime: number = Date.now()
+            const userPref = localStorage.get('rateLimitError')
+            // 21600000 is 6h in ms. ex 6 * 60 * 60 * 1000
+            if (!userPref || userPref !== 'never' || currentTime - 21600000 >= parseInt(userPref, 10)) {
+                const input = await vscode.window.showErrorMessage(error, 'Do not show again', 'Close')
+                switch (input) {
+                    case 'Do not show again':
+                        await localStorage.set('rateLimitError', 'never')
+                        break
+                    default:
+                        // Save current time as a reminder stamp in 6 hours
+                        await localStorage.set('rateLimitError', currentTime.toString())
+                }
+            }
+        }
+        chatProvider.sendErrorToWebview(error)
     }
 
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
     disposables.push(
-        // Register URI Handler to resolve token sending back from sourcegraph.com
-        vscode.window.registerUriHandler({
-            handleUri: async (uri: vscode.Uri) => {
-                await workspaceConfig.update(
-                    'cody.serverEndpoint',
-                    'https://sourcegraph.com',
-                    vscode.ConfigurationTarget.Global
-                )
-                const token = new URLSearchParams(uri.query).get('code')
-                if (token && token.length > 8) {
-                    await context.secrets.store(CODY_ACCESS_TOKEN_SECRET, token)
-                    const isAuthed = await isValidLogin({
-                        serverEndpoint: 'https://sourcegraph.com',
-                        accessToken: token,
-                        customHeaders: config.customHeaders,
-                    })
-                    await chatProvider.sendLogin(isAuthed)
-                    logEvent(
-                        'CodyVSCodeExtension:codySetAccessToken:clicked',
-                        { serverEndpoint: config.serverEndpoint },
-                        { serverEndpoint: config.serverEndpoint }
-                    )
-                    void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
-                }
-            },
-        }),
         // Toggle Chat
         vscode.commands.registerCommand('cody.toggle-enabled', async () => {
             await workspaceConfig.update(
@@ -164,16 +149,11 @@ const register = async (
             await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
             logEvent('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
         }),
-        // TOS
-        vscode.commands.registerCommand('cody.accept-tos', version =>
-            localStorage.set('cody.tos-version-accepted', version)
-        ),
-        vscode.commands.registerCommand('cody.get-accepted-tos-version', () =>
-            localStorage.get('cody.tos-version-accepted')
-        ),
         // Commands
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
+        vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
+        vscode.commands.registerCommand('cody.interactive.clear', () => chatProvider.clearAndRestartSession()),
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
             executeRecipe('explain-code-high-level')
@@ -188,7 +168,30 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
             executeRecipe('improve-variable-names')
         ),
-        vscode.commands.registerCommand('cody.recipe.find-code-smells', async () => executeRecipe('find-code-smells'))
+        vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
+        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
+        // Register URI Handler for resolving token sending back from sourcegraph.com
+        vscode.window.registerUriHandler({
+            handleUri: async (uri: vscode.Uri) => {
+                await workspaceConfig.update('cody.serverEndpoint', DOTCOM_URL.href, vscode.ConfigurationTarget.Global)
+                const token = new URLSearchParams(uri.query).get('code')
+                if (token && token.length > 8) {
+                    await context.secrets.store(CODY_ACCESS_TOKEN_SECRET, token)
+                    const isAuthed = await isValidLogin({
+                        serverEndpoint: DOTCOM_URL.href,
+                        accessToken: token,
+                        customHeaders: config.customHeaders,
+                    })
+                    await chatProvider.sendLogin(isAuthed)
+                    logEvent(
+                        'CodyVSCodeExtension:codySetAccessToken:clicked',
+                        { serverEndpoint: config.serverEndpoint },
+                        { serverEndpoint: config.serverEndpoint }
+                    )
+                    void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
+                }
+            },
+        })
     )
 
     if (initialConfig.experimentalSuggest) {
@@ -197,10 +200,21 @@ const register = async (
         disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
 
         const history = new History()
-        const completionsProvider = new CodyCompletionItemProvider(completionsClient, docprovider, history)
+        const completionsProvider = new CodyCompletionItemProvider(
+            webviewErrorMessager,
+            completionsClient,
+            docprovider,
+            history
+        )
         disposables.push(
             vscode.commands.registerCommand('cody.experimental.suggest', async () => {
                 await completionsProvider.fetchAndShowCompletions()
+            }),
+            vscode.commands.registerCommand('cody.completions.inline.accepted', (...args) => {
+                const params = {
+                    type: 'inline',
+                }
+                logEvent('CodyVSCodeExtension:completion:accepted', params, params)
             }),
             vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
         )

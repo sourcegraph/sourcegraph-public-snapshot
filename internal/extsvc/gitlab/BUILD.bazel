@@ -28,6 +28,7 @@ go_library(
         "//internal/api",
         "//internal/conf",
         "//internal/encryption",
+        "//internal/errcode",
         "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/httpcli",

@@ -1,0 +1,39 @@
+contents:
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  repositories:
+    - https://packages.wolfi.dev/os
+  packages:
+    ## Base set of packages included in sourcegraph/alpine base image
+    - wolfi-baselayout
+    - ca-certificates-bundle
+    - tzdata
+    # Debugging tools, can be removed
+    - busybox
+
+    ## postgres-exporter-specific packages
+    - 'prometheus-postgres-exporter=0.12.0-r1' # IMPORTANT: Pinned version for managed updates
+
+accounts:
+  groups:
+    - groupname: sourcegraph
+      gid: 101
+    - groupname: postgres_exporter
+      gid: 102
+  users:
+    - username: sourcegraph
+      uid: 100
+      gid: 101
+    - username: postgres_exporter
+      uid: 20001
+      gid: 102
+
+# NOTE: This is ignored (see build output)
+# To force amd64, first run `docker pull --platform linux/arm64 cgr.dev/chainguard/apko`
+archs:
+ - amd64
+
+annotations:
+  org.opencontainers.image.url: https://sourcegraph.com/
+  org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
+  org.opencontainers.image.documentation: https://docs.sourcegraph.com/

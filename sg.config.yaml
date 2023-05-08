@@ -124,6 +124,8 @@ env:
   # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
+  LLM_PROXY_ALLOW_ANONYMOUS: true
+
 commands:
   server:
     description: Run an all-in-one sourcegraph/server image
@@ -383,6 +385,21 @@ commands:
       - internal
       - enterprise/cmd/embeddings
       - enterprise/internal/embeddings
+
+  llm-proxy:
+    cmd: |
+      .bin/llm-proxy
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      go build -gcflags="$GCFLAGS" -o .bin/llm-proxy github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy
+    checkBinary: .bin/llm-proxy
+    watch:
+      - lib
+      - internal
+      - enterprise/cmd/llm-proxy
 
   searcher:
     cmd: .bin/searcher
@@ -876,6 +893,10 @@ commands:
       - internal
       - lib
       - schema
+
+  tauri:
+    description: App shell (Tauri)
+    cmd: pnpm tauri dev --config src-tauri/tauri.dev.conf.json
 
   sourcegraph-oss:
     description: Single program (Go static binary) distribution, OSS variant
@@ -1395,8 +1416,19 @@ commandsets:
       - docsite
       - web
       - caddy
+      - tauri
     env:
       DISABLE_CODE_INSIGHTS: false
+      SOURCEGRAPH_APP: 1
+
+  llm-proxy:
+    checks:
+      - redis
+    commands:
+      - llm-proxy
+    env:
+      LLM_PROXY_ANTHROPIC_ACCESS_TOKEN: foobar
+      LLM_PROXY_DOTCOM_ACCESS_TOKEN: foobar
 
 tests:
   # These can be run with `sg test [name]`

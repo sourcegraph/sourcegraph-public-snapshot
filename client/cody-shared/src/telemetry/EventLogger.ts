@@ -1,7 +1,6 @@
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { version as packageVersion } from '../../package.json'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
 function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): string {
@@ -18,7 +17,6 @@ interface StorageProvider {
 }
 
 export class EventLogger {
-    private version = packageVersion
     private serverEndpoint = _getServerEndpointFromConfig(config)
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
 
@@ -52,13 +50,11 @@ export class EventLogger {
         }
         const argument = {
             ...eventProperties,
-            version: this.version,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
         }
         const publicArgument = {
             ...publicProperties,
-            version: this.version,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
         }

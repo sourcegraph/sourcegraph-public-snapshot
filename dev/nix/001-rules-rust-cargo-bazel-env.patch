@@ -1,0 +1,13 @@
+diff --git a/src/lockfile.rs b/src/lockfile.rs
+index 1ff96f43..53c01882 100644
+--- a/src/lockfile.rs
++++ b/src/lockfile.rs
+@@ -131,7 +131,7 @@ impl Digest {
+     }
+
+     pub fn bin_version(binary: &Path) -> Result<String> {
+-        let safe_vars = [OsStr::new("HOMEDRIVE"), OsStr::new("PATHEXT")];
++        let safe_vars = [OsStr::new("HOMEDRIVE"), OsStr::new("PATHEXT"), OsStr::new("LD_LIBRARY_PATH")];
+         let env = std::env::vars_os().filter(|(var, _)| safe_vars.contains(&var.as_os_str()));
+
+         let output = Command::new(binary)

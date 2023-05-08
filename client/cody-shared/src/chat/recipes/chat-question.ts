@@ -10,9 +10,7 @@ import { Interaction } from '../transcript/interaction'
 import { Recipe, RecipeContext } from './recipe'
 
 export class ChatQuestion implements Recipe {
-    public getID(): string {
-        return 'chat-question'
-    }
+    public id = 'chat-question'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)

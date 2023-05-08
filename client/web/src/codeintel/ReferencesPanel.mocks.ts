@@ -35,39 +35,6 @@ const diffFileContent =
 const printFileContent =
     'package diff\n\nimport (\n\t"bytes"\n\t"fmt"\n\t"io"\n\t"path/filepath"\n\t"time"\n)\n\n// PrintMultiFileDiff prints a multi-file diff in unified diff format.\nfunc PrintMultiFileDiff(ds []*FileDiff) ([]byte, error) {\n\tvar buf bytes.Buffer\n\tfor _, d := range ds {\n\t\tdiff, err := PrintFileDiff(d)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tif _, err := buf.Write(diff); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\treturn buf.Bytes(), nil\n}\n\n// PrintFileDiff prints a FileDiff in unified diff format.\n//\n// TODO(sqs): handle escaping whitespace/etc. chars in filenames\nfunc PrintFileDiff(d *FileDiff) ([]byte, error) {\n\tvar buf bytes.Buffer\n\n\tfor _, xheader := range d.Extended {\n\t\tif _, err := fmt.Fprintln(\u0026buf, xheader); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t}\n\n\t// FileDiff is added/deleted file\n\t// No further hunks printing needed\n\tif d.NewName == "" {\n\t\t_, err := fmt.Fprintf(\u0026buf, onlyInMessage, filepath.Dir(d.OrigName), filepath.Base(d.OrigName))\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\treturn buf.Bytes(), nil\n\t}\n\n\tif d.Hunks == nil {\n\t\treturn buf.Bytes(), nil\n\t}\n\n\tif err := printFileHeader(\u0026buf, "--- ", d.OrigName, d.OrigTime); err != nil {\n\t\treturn nil, err\n\t}\n\tif err := printFileHeader(\u0026buf, "+++ ", d.NewName, d.NewTime); err != nil {\n\t\treturn nil, err\n\t}\n\n\tph, err := PrintHunks(d.Hunks)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\n\tif _, err := buf.Write(ph); err != nil {\n\t\treturn nil, err\n\t}\n\treturn buf.Bytes(), nil\n}\n\nfunc printFileHeader(w io.Writer, prefix string, filename string, timestamp *time.Time) error {\n\tif _, err := fmt.Fprint(w, prefix, filename); err != nil {\n\t\treturn err\n\t}\n\tif timestamp != nil {\n\t\tif _, err := fmt.Fprint(w, "\\t", timestamp.Format(diffTimeFormatLayout)); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\tif _, err := fmt.Fprintln(w); err != nil {\n\t\treturn err\n\t}\n\treturn nil\n}\n\n// PrintHunks prints diff hunks in unified diff format.\nfunc PrintHunks(hunks []*Hunk) ([]byte, error) {\n\tvar buf bytes.Buffer\n\tfor _, hunk := range hunks {\n\t\t_, err := fmt.Fprintf(\u0026buf,\n\t\t\t"@@ -%d,%d +%d,%d @@", hunk.OrigStartLine, hunk.OrigLines, hunk.NewStartLine, hunk.NewLines,\n\t\t)\n\t\tif err != nil {\n\t\t\treturn nil, err\n\t\t}\n\t\tif hunk.Section != "" {\n\t\t\t_, err := fmt.Fprint(\u0026buf, " ", hunk.Section)\n\t\t\tif err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\t\t}\n\t\tif _, err := fmt.Fprintln(\u0026buf); err != nil {\n\t\t\treturn nil, err\n\t\t}\n\n\t\tif hunk.OrigNoNewlineAt == 0 {\n\t\t\tif _, err := buf.Write(hunk.Body); err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\t\t} else {\n\t\t\tif _, err := buf.Write(hunk.Body[:hunk.OrigNoNewlineAt]); err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\t\t\tif err := printNoNewlineMessage(\u0026buf); err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\t\t\tif _, err := buf.Write(hunk.Body[hunk.OrigNoNewlineAt:]); err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\t\t}\n\n\t\tif !bytes.HasSuffix(hunk.Body, []byte{\'\\n\'}) {\n\t\t\tif _, err := fmt.Fprintln(\u0026buf); err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\t\t\tif err := printNoNewlineMessage(\u0026buf); err != nil {\n\t\t\t\treturn nil, err\n\t\t\t}\n\t\t}\n\t}\n\treturn buf.Bytes(), nil\n}\n\nfunc printNoNewlineMessage(w io.Writer) error {\n\tif _, err := w.Write([]byte(noNewlineMessage)); err != nil {\n\t\treturn err\n\t}\n\tif _, err := fmt.Fprintln(w); err != nil {\n\t\treturn err\n\t}\n\treturn nil\n}\n'
 
-// highlightedDiffFileContent is a shortened version of the highlighted
-// contents of diff/diff.go so it's easier to manage here.
-const highlightedDiffFileContent = [
-    '<table>',
-    '<tbody>',
-    '<tr><td class="line" data-line="1"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-keyword hl-other hl-package hl-go">package</span> <span class="hl-variable hl-other hl-go">diff</span>\n</span></div></td></tr>',
-    '<tr><td class="line" data-line="2"/><td class="code"><div><span class="hl-source hl-go">\n</span></div></td></tr>',
-    '<tr><td class="line" data-line="3"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-keyword hl-other hl-import hl-go">import</span> <span class="hl-punctuation hl-section hl-parens hl-begin hl-go">(</span>\n</span></div></td></tr><tr><td class="line" data-line="4"/><td class="code"><div><span class="hl-source hl-go">\t<span class="hl-string hl-quoted hl-double hl-go"><span class="hl-punctuation hl-definition hl-string hl-begin hl-go">\u0026quot;</span>bytes<span class="hl-punctuation hl-definition hl-string hl-end hl-go">\u0026quot;</span></span>\n</span></div></td></tr>',
-    '<tr><td class="line" data-line="5"/><td class="code"><div><span class="hl-source hl-go">\t<span class="hl-string hl-quoted hl-double hl-go"><span class="hl-punctuation hl-definition hl-string hl-begin hl-go">\u0026quot;</span>time<span class="hl-punctuation hl-definition hl-string hl-end hl-go">\u0026quot;</span></span>\n</span></div></td></tr>',
-    '<tr><td class="line" data-line="6"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-punctuation hl-section hl-parens hl-end hl-go">)</span>\n</span></div></td></tr>',
-    '<tr><td class="line" data-line="7"/><td class="code"><div><span class="hl-source hl-go">\n</span></div></td></tr>',
-    '<tr><td class="line" data-line="8"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-comment hl-line hl-go"><span class="hl-punctuation hl-definition hl-comment hl-go">//</span> A FileDiff represents a unified diff for a single file.\n</span></span></div></td></tr>',
-    '<tr><td class="line" data-line="9"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-comment hl-line hl-go"><span class="hl-punctuation hl-definition hl-comment hl-go">//</span>\n</span></span></div></td></tr>',
-    '<tr><td class="line" data-line="10"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-comment hl-line hl-go"><span class="hl-punctuation hl-definition hl-comment hl-go">//</span> A file unified diff has a header that resembles the following:\n</span></span></div></td></tr>',
-    '<tr><td class="line" data-line="11"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-comment hl-line hl-go"><span class="hl-punctuation hl-definition hl-comment hl-go">//</span>\n</span></span></div></td></tr>',
-    '<tr><td class="line" data-line="12"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-comment hl-line hl-go"><span class="hl-punctuation hl-definition hl-comment hl-go">//</span>   --- oldname\t2009-10-11 15:12:20.000000000 -0700\n</span></span></div></td></tr>',
-    '<tr><td class="line" data-line="13"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-comment hl-line hl-go"><span class="hl-punctuation hl-definition hl-comment hl-go">//</span>   +++ newname\t2009-10-11 15:12:30.000000000 -0700\n</span></span></div></td></tr>',
-    '<tr><td class="line" data-line="14"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-storage hl-type hl-keyword hl-type hl-go">type</span> <span class="hl-entity hl-name hl-type hl-go">FileDiff</span> <span class="hl-storage hl-type hl-keyword hl-struct hl-go">struct</span> <span class="hl-meta hl-type hl-go"><span class="hl-punctuation hl-section hl-braces hl-begin hl-go">{</span>\n</span></span></div></td></tr>',
-    '<tr><td class="line" data-line="15"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-meta hl-type hl-go">\t<span class="hl-comment hl-line hl-go"><span class="hl-punctuation hl-definition hl-comment hl-go">//</span> the original name of the file\n</span></span></span></div></td></tr>',
-    '<tr><td class="line" data-line="16"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-meta hl-type hl-go">\t<span class="hl-variable hl-other hl-member hl-declaration hl-go">OrigName</span> <span class="hl-storage hl-type hl-go"><span class="hl-support hl-type hl-builtin hl-go">string</span></span>\n</span></span></div></td></tr>',
-    '<tr><td class="line" data-line="17"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-meta hl-type hl-go">\t<span class="hl-comment hl-line hl-go"><span class="hl-punctuation hl-definition hl-comment hl-go">//</span> the original timestamp (nil if not present)\n</span></span></span></div></td></tr>',
-    '<tr><td class="line" data-line="18"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-meta hl-type hl-go">\t<span class="hl-variable hl-other hl-member hl-declaration hl-go">OrigTime</span> <span class="hl-keyword hl-operator hl-go">*</span><span class="hl-variable hl-other hl-go">time</span><span class="hl-punctuation hl-accessor hl-dot hl-go">.</span><span class="hl-storage hl-type hl-go">Time</span>\n</span></span></div></td></tr>',
-    '<tr><td class="line" data-line="19"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-meta hl-type hl-go">\t<span class="hl-comment hl-line hl-go"><span class="hl-punctuation hl-definition hl-comment hl-go">//</span> the new name of the file (often same as OrigName)\n</span></span></span></div></td></tr>',
-    '<tr><td class="line" data-line="20"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-meta hl-type hl-go">\t<span class="hl-variable hl-other hl-member hl-declaration hl-go">NewName</span> <span class="hl-storage hl-type hl-go"><span class="hl-support hl-type hl-builtin hl-go">string</span></span>\n</span></span></div></td></tr>',
-    '<tr><td class="line" data-line="21"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-meta hl-type hl-go">\t<span class="hl-comment hl-line hl-go"><span class="hl-punctuation hl-definition hl-comment hl-go">//</span> the new timestamp (nil if not present)\n</span></span></span></div></td></tr>',
-    '<tr><td class="line" data-line="22"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-meta hl-type hl-go">\t<span class="hl-variable hl-other hl-member hl-declaration hl-go">NewTime</span> <span class="hl-keyword hl-operator hl-go">*</span><span class="hl-variable hl-other hl-go">time</span><span class="hl-punctuation hl-accessor hl-dot hl-go">.</span><span class="hl-storage hl-type hl-go">Time</span>\n</span></span></div></td></tr>',
-    '<tr><td class="line" data-line="23"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-meta hl-type hl-go">\t<span class="hl-comment hl-line hl-go"><span class="hl-punctuation hl-definition hl-comment hl-go">//</span> extended header lines (e.g., git\u0026#39;s \u0026quot;new mode \u0026lt;mode\u0026gt;\u0026quot;, \u0026quot;rename from \u0026lt;path\u0026gt;\u0026quot;, etc.)\n</span></span></span></div></td></tr>',
-    '<tr><td class="line" data-line="24"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-meta hl-type hl-go">\t<span class="hl-variable hl-other hl-member hl-declaration hl-go">Extended</span> <span class="hl-punctuation hl-section hl-brackets hl-begin hl-go">[</span><span class="hl-punctuation hl-section hl-brackets hl-end hl-go">]</span><span class="hl-storage hl-type hl-go"><span class="hl-support hl-type hl-builtin hl-go">string</span></span>\n</span></span></div></td></tr>',
-    '<tr><td class="line" data-line="25"/><td class="code"><div><span class="hl-source hl-go"><span class="hl-meta hl-type hl-go">\t<span class="hl-comment hl-line hl-go"><span class="hl-punctuation hl-definition hl-comment hl-go">//</span> hunks that were changed from orig to new\n</span></span></span></div></td></tr>',
-    '</tbody>',
-    '</table>',
-].join('')
-
 interface ReferencePanelMock {
     url: string
     requestMocks: readonly MockedResponse[]
@@ -103,8 +70,7 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
         commit,
         path,
         repository: repoName,
-        format: HighlightResponseFormat.HTML_HIGHLIGHT,
-        html: true,
+        format: HighlightResponseFormat.JSON_SCIP,
     }
 
     return {
@@ -300,11 +266,399 @@ const HIGHLIGHTED_FILE_MOCK = {
             commit: {
                 id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3lNRFE9IiwiYyI6IjlkMWYzNTNhMjg1YjMwOTRiYzMzYmRhZTI3N2ExOWFlZGFiZThiNzEifQ==',
                 blob: {
-                    content: 'content',
+                    content: `package diff
+
+                    import (
+                        "bytes"
+                        "time"
+                    )
+
+                    // A FileDiff represents a unified diff for a single file.
+                    //
+                    // A file unified diff has a header that resembles the following:
+                    //
+                    //   --- oldname	2009-10-11 15:12:20.000000000 -0700
+                    //   +++ newname	2009-10-11 15:12:30.000000000 -0700
+                    type FileDiff struct {
+                        // the original name of the file
+                        OrigName string
+                        // the original timestamp (nil if not present)
+                        OrigTime *time.Time
+                        // the new name of the file (often same as OrigName)
+                        NewName string
+                        // the new timestamp (nil if not present)
+                        NewTime *time.Time
+                        // extended header lines (e.g., git's "new mode <mode>", "rename from <path>", etc.)
+                        Extended []string
+                        // hunks that were changed from orig to new
+                        Hunks []*Hunk
+                    }
+
+                    // A Hunk represents a series of changes (additions or deletions) in a file's
+                    // unified diff.
+                    type Hunk struct {
+                        // starting line number in original file
+                        OrigStartLine int32
+                        // number of lines the hunk applies to in the original file
+                        OrigLines int32
+                        // if > 0, then the original file had a 'No newline at end of file' mark at this offset
+                        OrigNoNewlineAt int32
+                        // starting line number in new file
+                        NewStartLine int32
+                        // number of lines the hunk applies to in the new file
+                        NewLines int32
+                        // optional section heading
+                        Section string
+                        // 0-indexed line offset in unified file diff (including section headers); this is
+                        // only set when Hunks are read from entire file diff (i.e., when ReadAllHunks is
+                        // called) This accounts for hunk headers, too, so the StartPosition of the first
+                        // hunk will be 1.
+                        StartPosition int32
+                        // hunk body (lines prefixed with '-', '+', or ' ')
+                        Body []byte
+                    }
+
+                    // A Stat is a diff stat that represents the number of lines added/changed/deleted.
+                    type Stat struct {
+                        // number of lines added
+                        Added int32
+                        // number of lines changed
+                        Changed int32
+                        // number of lines deleted
+                        Deleted int32
+                    }
+
+                    // Stat computes the number of lines added/changed/deleted in all
+                    // hunks in this file's diff.
+                    func (d *FileDiff) Stat() Stat {
+                        total := Stat{}
+                        for _, h := range d.Hunks {
+                            total.add(h.Stat())
+                        }
+                        return total
+                    }
+
+                    // Stat computes the number of lines added/changed/deleted in this
+                    // hunk.
+                    func (h *Hunk) Stat() Stat {
+                        lines := bytes.Split(h.Body, []byte{'\n'})
+                        var last byte
+                        st := Stat{}
+                        for _, line := range lines {
+                            if len(line) == 0 {
+                                last = 0
+                                continue
+                            }
+                            switch line[0] {
+                            case '-':
+                                if last == '+' {
+                                    st.Added--
+                                    st.Changed++
+                                    last = 0 // next line can't change this one since this is already a change
+                                } else {
+                                    st.Deleted++
+                                    last = line[0]
+                                }
+                            case '+':
+                                if last == '-' {
+                                    st.Deleted--
+                                    st.Changed++
+                                    last = 0 // next line can't change this one since this is already a change
+                                } else {
+                                    st.Added++
+                                    last = line[0]
+                                }
+                            default:
+                                last = 0
+                            }
+                        }
+                        return st
+                    }
+
+                    var (
+                        hunkPrefix          = []byte("@@ ")
+                        onlyInMessagePrefix = []byte("Only in ")
+                    )
+
+                    const hunkHeader = "@@ -%d,%d +%d,%d @@"
+                    const onlyInMessage = "Only in %s: %s\n"
+
+                    // diffTimeParseLayout is the layout used to parse the time in unified diff file
+                    // header timestamps.
+                    // See https://www.gnu.org/software/diffutils/manual/html_node/Detailed-Unified.html.
+                    const diffTimeParseLayout = "2006-01-02 15:04:05 -0700"
+
+                    // diffTimeFormatLayout is the layout used to format (i.e., print) the time in unified diff file
+                    // header timestamps.
+                    // See https://www.gnu.org/software/diffutils/manual/html_node/Detailed-Unified.html.
+                    const diffTimeFormatLayout = "2006-01-02 15:04:05.000000000 -0700"
+
+                    func (s *Stat) add(o Stat) {
+                        s.Added += o.Added
+                        s.Changed += o.Changed
+                        s.Deleted += o.Deleted
+                    }`,
                     highlight: {
                         aborted: false,
-                        html: highlightedDiffFileContent,
-                        lsif: false,
+                        lsif: JSON.stringify({
+                            occurrences: [
+                                { range: [0, 0, 7], syntaxKind: 4 },
+                                { range: [0, 8, 12], syntaxKind: 14 },
+                                { range: [2, 0, 6], syntaxKind: 4 },
+                                { range: [3, 1, 8], syntaxKind: 27 },
+                                { range: [4, 1, 7], syntaxKind: 27 },
+                                { range: [7, 0, 58], syntaxKind: 1 },
+                                { range: [8, 0, 2], syntaxKind: 1 },
+                                { range: [9, 0, 65], syntaxKind: 1 },
+                                { range: [10, 0, 2], syntaxKind: 1 },
+                                { range: [11, 0, 52], syntaxKind: 1 },
+                                { range: [12, 0, 52], syntaxKind: 1 },
+                                { range: [13, 0, 4], syntaxKind: 4 },
+                                { range: [13, 5, 13], syntaxKind: 19 },
+                                { range: [13, 14, 20], syntaxKind: 4 },
+                                { range: [14, 1, 33], syntaxKind: 1 },
+                                { range: [15, 1, 9], syntaxKind: 6 },
+                                { range: [15, 10, 16], syntaxKind: 20 },
+                                { range: [16, 1, 47], syntaxKind: 1 },
+                                { range: [17, 1, 9], syntaxKind: 6 },
+                                { range: [17, 10, 11], syntaxKind: 5 },
+                                { range: [17, 11, 15], syntaxKind: 14 },
+                                { range: [17, 16, 20], syntaxKind: 19 },
+                                { range: [18, 1, 53], syntaxKind: 1 },
+                                { range: [19, 1, 8], syntaxKind: 6 },
+                                { range: [19, 9, 15], syntaxKind: 20 },
+                                { range: [20, 1, 42], syntaxKind: 1 },
+                                { range: [21, 1, 8], syntaxKind: 6 },
+                                { range: [21, 9, 10], syntaxKind: 5 },
+                                { range: [21, 10, 14], syntaxKind: 14 },
+                                { range: [21, 15, 19], syntaxKind: 19 },
+                                { range: [22, 1, 85], syntaxKind: 1 },
+                                { range: [23, 1, 9], syntaxKind: 6 },
+                                { range: [23, 12, 18], syntaxKind: 20 },
+                                { range: [24, 1, 44], syntaxKind: 1 },
+                                { range: [25, 1, 6], syntaxKind: 6 },
+                                { range: [25, 9, 10], syntaxKind: 5 },
+                                { range: [25, 10, 14], syntaxKind: 19 },
+                                { range: [28, 0, 77], syntaxKind: 1 },
+                                { range: [29, 0, 16], syntaxKind: 1 },
+                                { range: [30, 0, 4], syntaxKind: 4 },
+                                { range: [30, 5, 9], syntaxKind: 19 },
+                                { range: [30, 10, 16], syntaxKind: 4 },
+                                { range: [31, 1, 41], syntaxKind: 1 },
+                                { range: [32, 1, 14], syntaxKind: 6 },
+                                { range: [32, 15, 20], syntaxKind: 20 },
+                                { range: [33, 1, 60], syntaxKind: 1 },
+                                { range: [34, 1, 10], syntaxKind: 6 },
+                                { range: [34, 11, 16], syntaxKind: 20 },
+                                { range: [35, 1, 88], syntaxKind: 1 },
+                                { range: [36, 1, 16], syntaxKind: 6 },
+                                { range: [36, 17, 22], syntaxKind: 20 },
+                                { range: [37, 1, 36], syntaxKind: 1 },
+                                { range: [38, 1, 13], syntaxKind: 6 },
+                                { range: [38, 14, 19], syntaxKind: 20 },
+                                { range: [39, 1, 55], syntaxKind: 1 },
+                                { range: [40, 1, 9], syntaxKind: 6 },
+                                { range: [40, 10, 15], syntaxKind: 20 },
+                                { range: [41, 1, 28], syntaxKind: 1 },
+                                { range: [42, 1, 8], syntaxKind: 6 },
+                                { range: [42, 9, 15], syntaxKind: 20 },
+                                { range: [43, 1, 83], syntaxKind: 1 },
+                                { range: [44, 1, 82], syntaxKind: 1 },
+                                { range: [45, 1, 82], syntaxKind: 1 },
+                                { range: [46, 1, 19], syntaxKind: 1 },
+                                { range: [47, 1, 14], syntaxKind: 6 },
+                                { range: [47, 15, 20], syntaxKind: 20 },
+                                { range: [48, 1, 52], syntaxKind: 1 },
+                                { range: [49, 1, 5], syntaxKind: 6 },
+                                { range: [49, 8, 12], syntaxKind: 20 },
+                                { range: [52, 0, 83], syntaxKind: 1 },
+                                { range: [53, 0, 4], syntaxKind: 4 },
+                                { range: [53, 5, 9], syntaxKind: 19 },
+                                { range: [53, 10, 16], syntaxKind: 4 },
+                                { range: [54, 1, 25], syntaxKind: 1 },
+                                { range: [55, 1, 6], syntaxKind: 6 },
+                                { range: [55, 7, 12], syntaxKind: 20 },
+                                { range: [56, 1, 27], syntaxKind: 1 },
+                                { range: [57, 1, 8], syntaxKind: 6 },
+                                { range: [57, 9, 14], syntaxKind: 20 },
+                                { range: [58, 1, 27], syntaxKind: 1 },
+                                { range: [59, 1, 8], syntaxKind: 6 },
+                                { range: [59, 9, 14], syntaxKind: 20 },
+                                { range: [62, 0, 65], syntaxKind: 1 },
+                                { range: [63, 0, 29], syntaxKind: 1 },
+                                { range: [64, 0, 4], syntaxKind: 4 },
+                                { range: [64, 6, 7], syntaxKind: 11 },
+                                { range: [64, 8, 9], syntaxKind: 5 },
+                                { range: [64, 9, 17], syntaxKind: 19 },
+                                { range: [64, 19, 23], syntaxKind: 15 },
+                                { range: [64, 26, 30], syntaxKind: 19 },
+                                { range: [65, 1, 6], syntaxKind: 6 },
+                                { range: [65, 7, 9], syntaxKind: 5 },
+                                { range: [65, 10, 14], syntaxKind: 19 },
+                                { range: [66, 1, 4], syntaxKind: 4 },
+                                { range: [66, 5, 6], syntaxKind: 9 },
+                                { range: [66, 8, 9], syntaxKind: 6 },
+                                { range: [66, 10, 12], syntaxKind: 5 },
+                                { range: [66, 13, 18], syntaxKind: 4 },
+                                { range: [66, 19, 20], syntaxKind: 6 },
+                                { range: [66, 21, 26], syntaxKind: 6 },
+                                { range: [67, 2, 7], syntaxKind: 6 },
+                                { range: [67, 8, 11], syntaxKind: 15 },
+                                { range: [67, 12, 13], syntaxKind: 6 },
+                                { range: [67, 14, 18], syntaxKind: 15 },
+                                { range: [69, 1, 7], syntaxKind: 4 },
+                                { range: [69, 8, 13], syntaxKind: 6 },
+                                { range: [72, 0, 66], syntaxKind: 1 },
+                                { range: [73, 0, 8], syntaxKind: 1 },
+                                { range: [74, 0, 4], syntaxKind: 4 },
+                                { range: [74, 6, 7], syntaxKind: 11 },
+                                { range: [74, 8, 9], syntaxKind: 5 },
+                                { range: [74, 9, 13], syntaxKind: 19 },
+                                { range: [74, 15, 19], syntaxKind: 15 },
+                                { range: [74, 22, 26], syntaxKind: 19 },
+                                { range: [75, 1, 6], syntaxKind: 6 },
+                                { range: [75, 7, 9], syntaxKind: 5 },
+                                { range: [75, 10, 15], syntaxKind: 6 },
+                                { range: [75, 16, 21], syntaxKind: 15 },
+                                { range: [75, 22, 23], syntaxKind: 6 },
+                                { range: [75, 24, 28], syntaxKind: 6 },
+                                { range: [75, 32, 36], syntaxKind: 20 },
+                                { range: [75, 37, 41], syntaxKind: 27 },
+                                { range: [76, 1, 4], syntaxKind: 4 },
+                                { range: [76, 5, 9], syntaxKind: 6 },
+                                { range: [76, 10, 14], syntaxKind: 20 },
+                                { range: [77, 1, 3], syntaxKind: 6 },
+                                { range: [77, 4, 6], syntaxKind: 5 },
+                                { range: [77, 7, 11], syntaxKind: 19 },
+                                { range: [78, 1, 4], syntaxKind: 4 },
+                                { range: [78, 5, 6], syntaxKind: 9 },
+                                { range: [78, 8, 12], syntaxKind: 6 },
+                                { range: [78, 13, 15], syntaxKind: 5 },
+                                { range: [78, 16, 21], syntaxKind: 4 },
+                                { range: [78, 22, 27], syntaxKind: 6 },
+                                { range: [79, 2, 4], syntaxKind: 4 },
+                                { range: [79, 5, 8], syntaxKind: 7 },
+                                { range: [79, 9, 13], syntaxKind: 6 },
+                                { range: [79, 15, 17], syntaxKind: 5 },
+                                { range: [79, 18, 19], syntaxKind: 32 },
+                                { range: [80, 3, 7], syntaxKind: 6 },
+                                { range: [80, 8, 9], syntaxKind: 5 },
+                                { range: [80, 10, 11], syntaxKind: 32 },
+                                { range: [81, 3, 11], syntaxKind: 4 },
+                                { range: [83, 2, 8], syntaxKind: 4 },
+                                { range: [83, 9, 13], syntaxKind: 6 },
+                                { range: [83, 14, 15], syntaxKind: 32 },
+                                { range: [84, 2, 6], syntaxKind: 4 },
+                                { range: [84, 7, 10], syntaxKind: 27 },
+                                { range: [85, 3, 5], syntaxKind: 4 },
+                                { range: [85, 6, 10], syntaxKind: 6 },
+                                { range: [85, 11, 13], syntaxKind: 5 },
+                                { range: [85, 14, 17], syntaxKind: 27 },
+                                { range: [86, 4, 6], syntaxKind: 6 },
+                                { range: [86, 7, 12], syntaxKind: 6 },
+                                { range: [86, 12, 14], syntaxKind: 5 },
+                                { range: [87, 4, 6], syntaxKind: 6 },
+                                { range: [87, 7, 14], syntaxKind: 6 },
+                                { range: [87, 14, 16], syntaxKind: 5 },
+                                { range: [88, 4, 8], syntaxKind: 6 },
+                                { range: [88, 9, 10], syntaxKind: 5 },
+                                { range: [88, 11, 12], syntaxKind: 32 },
+                                { range: [88, 13, 78], syntaxKind: 1 },
+                                { range: [89, 5, 9], syntaxKind: 4 },
+                                { range: [90, 4, 6], syntaxKind: 6 },
+                                { range: [90, 7, 14], syntaxKind: 6 },
+                                { range: [90, 14, 16], syntaxKind: 5 },
+                                { range: [91, 4, 8], syntaxKind: 6 },
+                                { range: [91, 9, 10], syntaxKind: 5 },
+                                { range: [91, 11, 15], syntaxKind: 6 },
+                                { range: [91, 16, 17], syntaxKind: 32 },
+                                { range: [93, 2, 6], syntaxKind: 4 },
+                                { range: [93, 7, 10], syntaxKind: 27 },
+                                { range: [94, 3, 5], syntaxKind: 4 },
+                                { range: [94, 6, 10], syntaxKind: 6 },
+                                { range: [94, 11, 13], syntaxKind: 5 },
+                                { range: [94, 14, 17], syntaxKind: 27 },
+                                { range: [95, 4, 6], syntaxKind: 6 },
+                                { range: [95, 7, 14], syntaxKind: 6 },
+                                { range: [95, 14, 16], syntaxKind: 5 },
+                                { range: [96, 4, 6], syntaxKind: 6 },
+                                { range: [96, 7, 14], syntaxKind: 6 },
+                                { range: [96, 14, 16], syntaxKind: 5 },
+                                { range: [97, 4, 8], syntaxKind: 6 },
+                                { range: [97, 9, 10], syntaxKind: 5 },
+                                { range: [97, 11, 12], syntaxKind: 32 },
+                                { range: [97, 13, 78], syntaxKind: 1 },
+                                { range: [98, 5, 9], syntaxKind: 4 },
+                                { range: [99, 4, 6], syntaxKind: 6 },
+                                { range: [99, 7, 12], syntaxKind: 6 },
+                                { range: [99, 12, 14], syntaxKind: 5 },
+                                { range: [100, 4, 8], syntaxKind: 6 },
+                                { range: [100, 9, 10], syntaxKind: 5 },
+                                { range: [100, 11, 15], syntaxKind: 6 },
+                                { range: [100, 16, 17], syntaxKind: 32 },
+                                { range: [102, 2, 9], syntaxKind: 4 },
+                                { range: [103, 3, 7], syntaxKind: 6 },
+                                { range: [103, 8, 9], syntaxKind: 5 },
+                                { range: [103, 10, 11], syntaxKind: 32 },
+                                { range: [106, 1, 7], syntaxKind: 4 },
+                                { range: [106, 8, 10], syntaxKind: 6 },
+                                { range: [109, 0, 3], syntaxKind: 4 },
+                                { range: [110, 1, 11], syntaxKind: 6 },
+                                { range: [110, 21, 22], syntaxKind: 5 },
+                                { range: [110, 25, 29], syntaxKind: 20 },
+                                { range: [110, 30, 35], syntaxKind: 27 },
+                                { range: [111, 1, 20], syntaxKind: 6 },
+                                { range: [111, 21, 22], syntaxKind: 5 },
+                                { range: [111, 25, 29], syntaxKind: 20 },
+                                { range: [111, 30, 40], syntaxKind: 27 },
+                                { range: [114, 0, 5], syntaxKind: 4 },
+                                { range: [114, 6, 16], syntaxKind: 9 },
+                                { range: [114, 17, 18], syntaxKind: 5 },
+                                { range: [114, 19, 40], syntaxKind: 27 },
+                                { range: [115, 0, 5], syntaxKind: 4 },
+                                { range: [115, 6, 19], syntaxKind: 9 },
+                                { range: [115, 20, 21], syntaxKind: 5 },
+                                { range: [115, 22, 37], syntaxKind: 27 },
+                                { range: [115, 37, 39], syntaxKind: 28 },
+                                { range: [115, 39, 40], syntaxKind: 27 },
+                                { range: [117, 0, 80], syntaxKind: 1 },
+                                { range: [118, 0, 21], syntaxKind: 1 },
+                                { range: [119, 0, 85], syntaxKind: 1 },
+                                { range: [120, 0, 5], syntaxKind: 4 },
+                                { range: [120, 6, 25], syntaxKind: 9 },
+                                { range: [120, 26, 27], syntaxKind: 5 },
+                                { range: [120, 28, 55], syntaxKind: 27 },
+                                { range: [122, 0, 96], syntaxKind: 1 },
+                                { range: [123, 0, 21], syntaxKind: 1 },
+                                { range: [124, 0, 85], syntaxKind: 1 },
+                                { range: [125, 0, 5], syntaxKind: 4 },
+                                { range: [125, 6, 26], syntaxKind: 9 },
+                                { range: [125, 27, 28], syntaxKind: 5 },
+                                { range: [125, 29, 66], syntaxKind: 27 },
+                                { range: [127, 0, 4], syntaxKind: 4 },
+                                { range: [127, 6, 7], syntaxKind: 11 },
+                                { range: [127, 8, 9], syntaxKind: 5 },
+                                { range: [127, 9, 13], syntaxKind: 19 },
+                                { range: [127, 15, 18], syntaxKind: 15 },
+                                { range: [127, 19, 20], syntaxKind: 11 },
+                                { range: [127, 21, 25], syntaxKind: 19 },
+                                { range: [128, 1, 2], syntaxKind: 6 },
+                                { range: [128, 3, 8], syntaxKind: 6 },
+                                { range: [128, 9, 11], syntaxKind: 5 },
+                                { range: [128, 12, 13], syntaxKind: 6 },
+                                { range: [128, 14, 19], syntaxKind: 6 },
+                                { range: [129, 1, 2], syntaxKind: 6 },
+                                { range: [129, 3, 10], syntaxKind: 6 },
+                                { range: [129, 11, 13], syntaxKind: 5 },
+                                { range: [129, 14, 15], syntaxKind: 6 },
+                                { range: [129, 16, 23], syntaxKind: 6 },
+                                { range: [130, 1, 2], syntaxKind: 6 },
+                                { range: [130, 3, 10], syntaxKind: 6 },
+                                { range: [130, 11, 13], syntaxKind: 5 },
+                                { range: [130, 14, 15], syntaxKind: 6 },
+                                { range: [130, 16, 23], syntaxKind: 6 },
+                            ],
+                        }),
                         __typename: 'HighlightedFile',
                     },
                     __typename: 'GitBlob',
@@ -321,13 +675,7 @@ export const defaultProps: ReferencesPanelProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
     settingsCascade: {
         subjects: null,
-        final: {
-            // TODO: we won't need to set experimental features explicitly once we cover CodeMirror side blob view with tests:
-            // https://github.com/sourcegraph/sourcegraph/issues/48049
-            experimentalFeatures: {
-                enableCodeMirrorFileView: false,
-            },
-        },
+        final: null,
     },
     platformContext: NOOP_PLATFORM_CONTEXT as any,
     fetchHighlightedFileLineRanges: args => {

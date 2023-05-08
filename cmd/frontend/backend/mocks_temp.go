@@ -1185,6 +1185,10 @@ type MockUserEmailsService struct {
 	// ResendVerificationEmailFunc is an instance of a mock function object
 	// controlling the behavior of the method ResendVerificationEmail.
 	ResendVerificationEmailFunc *UserEmailsServiceResendVerificationEmailFunc
+	// SendUserEmailOnAccessTokenChangeFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// SendUserEmailOnAccessTokenChange.
+	SendUserEmailOnAccessTokenChangeFunc *UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc
 	// SendUserEmailOnFieldUpdateFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// SendUserEmailOnFieldUpdate.
@@ -1214,6 +1218,11 @@ func NewMockUserEmailsService() *MockUserEmailsService {
 		},
 		ResendVerificationEmailFunc: &UserEmailsServiceResendVerificationEmailFunc{
 			defaultHook: func(context.Context, int32, string, time.Time) (r0 error) {
+				return
+			},
+		},
+		SendUserEmailOnAccessTokenChangeFunc: &UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc{
+			defaultHook: func(context.Context, int32, string, bool) (r0 error) {
 				return
 			},
 		},
@@ -1255,6 +1264,11 @@ func NewStrictMockUserEmailsService() *MockUserEmailsService {
 				panic("unexpected invocation of MockUserEmailsService.ResendVerificationEmail")
 			},
 		},
+		SendUserEmailOnAccessTokenChangeFunc: &UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc{
+			defaultHook: func(context.Context, int32, string, bool) error {
+				panic("unexpected invocation of MockUserEmailsService.SendUserEmailOnAccessTokenChange")
+			},
+		},
 		SendUserEmailOnFieldUpdateFunc: &UserEmailsServiceSendUserEmailOnFieldUpdateFunc{
 			defaultHook: func(context.Context, int32, string) error {
 				panic("unexpected invocation of MockUserEmailsService.SendUserEmailOnFieldUpdate")
@@ -1286,6 +1300,9 @@ func NewMockUserEmailsServiceFrom(i UserEmailsService) *MockUserEmailsService {
 		},
 		ResendVerificationEmailFunc: &UserEmailsServiceResendVerificationEmailFunc{
 			defaultHook: i.ResendVerificationEmail,
+		},
+		SendUserEmailOnAccessTokenChangeFunc: &UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc{
+			defaultHook: i.SendUserEmailOnAccessTokenChange,
 		},
 		SendUserEmailOnFieldUpdateFunc: &UserEmailsServiceSendUserEmailOnFieldUpdateFunc{
 			defaultHook: i.SendUserEmailOnFieldUpdate,
@@ -1627,6 +1644,121 @@ func (c UserEmailsServiceResendVerificationEmailFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserEmailsServiceResendVerificationEmailFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc describes the
+// behavior when the SendUserEmailOnAccessTokenChange method of the parent
+// MockUserEmailsService instance is invoked.
+type UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc struct {
+	defaultHook func(context.Context, int32, string, bool) error
+	hooks       []func(context.Context, int32, string, bool) error
+	history     []UserEmailsServiceSendUserEmailOnAccessTokenChangeFuncCall
+	mutex       sync.Mutex
+}
+
+// SendUserEmailOnAccessTokenChange delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockUserEmailsService) SendUserEmailOnAccessTokenChange(v0 context.Context, v1 int32, v2 string, v3 bool) error {
+	r0 := m.SendUserEmailOnAccessTokenChangeFunc.nextHook()(v0, v1, v2, v3)
+	m.SendUserEmailOnAccessTokenChangeFunc.appendCall(UserEmailsServiceSendUserEmailOnAccessTokenChangeFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SendUserEmailOnAccessTokenChange method of the parent
+// MockUserEmailsService instance is invoked and the hook queue is empty.
+func (f *UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc) SetDefaultHook(hook func(context.Context, int32, string, bool) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendUserEmailOnAccessTokenChange method of the parent
+// MockUserEmailsService instance invokes the hook at the front of the queue
+// and discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc) PushHook(hook func(context.Context, int32, string, bool) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, string, bool) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, string, bool) error {
+		return r0
+	})
+}
+
+func (f *UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc) nextHook() func(context.Context, int32, string, bool) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc) appendCall(r0 UserEmailsServiceSendUserEmailOnAccessTokenChangeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UserEmailsServiceSendUserEmailOnAccessTokenChangeFuncCall objects
+// describing the invocations of this function.
+func (f *UserEmailsServiceSendUserEmailOnAccessTokenChangeFunc) History() []UserEmailsServiceSendUserEmailOnAccessTokenChangeFuncCall {
+	f.mutex.Lock()
+	history := make([]UserEmailsServiceSendUserEmailOnAccessTokenChangeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserEmailsServiceSendUserEmailOnAccessTokenChangeFuncCall is an object
+// that describes an invocation of method SendUserEmailOnAccessTokenChange
+// on an instance of MockUserEmailsService.
+type UserEmailsServiceSendUserEmailOnAccessTokenChangeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserEmailsServiceSendUserEmailOnAccessTokenChangeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserEmailsServiceSendUserEmailOnAccessTokenChangeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

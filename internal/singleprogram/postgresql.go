@@ -138,22 +138,24 @@ func useSinglePostgreSQLDatabase(logger log.Logger, vars *postgresqlEnvVars) {
 	// Use a single PostgreSQL DB.
 	//
 	// For code intel:
-	setDefaultEnv(logger, "CODEINTEL_PGPORT", vars.PGPORT)
-	setDefaultEnv(logger, "CODEINTEL_PGHOST", vars.PGHOST)
-	setDefaultEnv(logger, "CODEINTEL_PGUSER", vars.PGUSER)
-	setDefaultEnv(logger, "CODEINTEL_PGPASSWORD", vars.PGPASSWORD)
-	setDefaultEnv(logger, "CODEINTEL_PGDATABASE", vars.PGDATABASE)
-	setDefaultEnv(logger, "CODEINTEL_PGSSLMODE", vars.PGSSLMODE)
-	setDefaultEnv(logger, "CODEINTEL_PGDATASOURCE", vars.PGDATASOURCE)
-	setDefaultEnv(logger, "CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+	logger.Debug("setting CODEINTEL database variables")
+	os.Setenv("CODEINTEL_PGPORT", vars.PGPORT)
+	os.Setenv("CODEINTEL_PGHOST", vars.PGHOST)
+	os.Setenv("CODEINTEL_PGUSER", vars.PGUSER)
+	os.Setenv("CODEINTEL_PGPASSWORD", vars.PGPASSWORD)
+	os.Setenv("CODEINTEL_PGDATABASE", vars.PGDATABASE)
+	os.Setenv("CODEINTEL_PGSSLMODE", vars.PGSSLMODE)
+	os.Setenv("CODEINTEL_PGDATASOURCE", vars.PGDATASOURCE)
+	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
 	// And for code insights.
-	setDefaultEnv(logger, "CODEINSIGHTS_PGPORT", vars.PGPORT)
-	setDefaultEnv(logger, "CODEINSIGHTS_PGHOST", vars.PGHOST)
-	setDefaultEnv(logger, "CODEINSIGHTS_PGUSER", vars.PGUSER)
-	setDefaultEnv(logger, "CODEINSIGHTS_PGPASSWORD", vars.PGPASSWORD)
-	setDefaultEnv(logger, "CODEINSIGHTS_PGDATABASE", vars.PGDATABASE)
-	setDefaultEnv(logger, "CODEINSIGHTS_PGSSLMODE", vars.PGSSLMODE)
-	setDefaultEnv(logger, "CODEINSIGHTS_PGDATASOURCE", vars.PGDATASOURCE)
+	logger.Debug("setting CODEINSIGHTS database variables")
+	os.Setenv("CODEINSIGHTS_PGPORT", vars.PGPORT)
+	os.Setenv("CODEINSIGHTS_PGHOST", vars.PGHOST)
+	os.Setenv("CODEINSIGHTS_PGUSER", vars.PGUSER)
+	os.Setenv("CODEINSIGHTS_PGPASSWORD", vars.PGPASSWORD)
+	os.Setenv("CODEINSIGHTS_PGDATABASE", vars.PGDATABASE)
+	os.Setenv("CODEINSIGHTS_PGSSLMODE", vars.PGSSLMODE)
+	os.Setenv("CODEINSIGHTS_PGDATASOURCE", vars.PGDATASOURCE)
 }
 
 // debugLogLinesWriter returns an io.Writer which will log each line written to it to logger.

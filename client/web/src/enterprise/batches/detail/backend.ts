@@ -63,6 +63,10 @@ const changesetsStatsFragment = gql`
         archived
         isCompleted
         percentComplete
+        failed
+        retrying
+        scheduled
+        processing
     }
 `
 

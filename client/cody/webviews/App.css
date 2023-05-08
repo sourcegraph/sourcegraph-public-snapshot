@@ -1,6 +1,5 @@
 .outer-container {
     background-color: var(--vscode-sideBar-background);
-    border-top: 1px solid var(--vscode-sideBarSectionHeader-border);
     width: 100%;
     height: 100%;
     display: flex;
@@ -24,4 +23,27 @@ button {
     flex-direction: column;
     overflow: auto;
     flex: 1;
+}
+
+.error {
+    flex-direction: row;
+    display: flex;
+    padding: 1rem;
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-inputValidation-errorBackground);
+    align-items: center;
+    min-height: 2rem;
+    position: relative;
+    overflow: scroll;
+    align-items: baseline;
+}
+
+.close-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: none;
+    border: none;
+    color: var(--vscode-input-foreground);
+    cursor: pointer;
 }

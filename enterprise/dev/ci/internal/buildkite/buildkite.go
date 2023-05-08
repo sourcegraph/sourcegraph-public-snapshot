@@ -228,24 +228,11 @@ func (p *Pipeline) WriteYAMLTo(w io.Writer) (int64, error) {
 
 type StepOpt func(step *Step)
 
-// RawCmd adds a command step without any instrumentation. This is useful to
-// test the instrumentation itself.
-func RawCmd(command string) StepOpt {
+// Cmd adds a command step.
+func Cmd(command string) StepOpt {
 	return func(step *Step) {
 		step.Command = append(step.Command, command)
 	}
-}
-
-func tracedCmd(command string) string {
-	// ./tr is a symbolic link created by the .buildkite/hooks/post-checkout hook.
-	// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
-	// see the underlying command even if prefixed by the tracing script.
-	return fmt.Sprintf("./tr %s", command)
-}
-
-// Cmd adds a command step with added instrumentation for testing purposes.
-func Cmd(command string) StepOpt {
-	return RawCmd(tracedCmd(command))
 }
 
 type AnnotationType string
@@ -377,8 +364,8 @@ func AnnotatedCmd(command string, opts AnnotatedCmdOpts) StepOpt {
 	// ./an is a symbolic link created by the .buildkite/hooks/post-checkout hook.
 	// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
 	// see the underlying command even if prefixed by the annotation scraper.
-	annotatedCmd := fmt.Sprintf("./an %q", tracedCmd(command))
-	return flattenStepOpts(RawCmd(annotatedCmd),
+	annotatedCmd := fmt.Sprintf("./an %q", command)
+	return flattenStepOpts(Cmd(annotatedCmd),
 		Env("ANNOTATE_OPTS", annotateOpts),
 		Env("TEST_REPORT_OPTS", testReportOpts))
 }

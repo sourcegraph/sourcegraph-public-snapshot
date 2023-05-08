@@ -6,9 +6,7 @@ import { getContextMessagesFromSelection, getNormalizedLanguageName, MARKDOWN_FO
 import { Recipe, RecipeContext } from './recipe'
 
 export class ExplainCodeHighLevel implements Recipe {
-    public getID(): string {
-        return 'explain-code-high-level'
-    }
+    public id = 'explain-code-high-level'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()

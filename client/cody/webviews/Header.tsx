@@ -1,20 +1,14 @@
 import { VSCodeTag } from '@vscode/webview-ui-toolkit/react'
 
-import './Header.css'
-
 import { CodyColoredSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
+import styles from './Header.module.css'
+
 export const Header: React.FunctionComponent = () => (
-    <div className="header-container">
-        <div className="header-container-left">
-            <div className="header-logo">
-                <CodyColoredSvg />
-            </div>
-            <div className="header-title">
-                <span className="header-cody">Cody</span>
-                <VSCodeTag className="tag-beta">experimental</VSCodeTag>
-            </div>
+    <div className={styles.container}>
+        <div className={styles.logo}>
+            <CodyColoredSvg />
         </div>
-        <div className="header-container-right" />
+        <VSCodeTag className={styles.tag}>experimental</VSCodeTag>
     </div>
 )

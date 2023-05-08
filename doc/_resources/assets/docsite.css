@@ -1123,7 +1123,7 @@ a.cloud-cta {
     left: 0;
     opacity: 0;
     padding: 4rem;
-    background: #00000080;
+    background: #000000bb;
     pointer-events: none;
     transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
     transition-duration: 150ms;
@@ -1140,9 +1140,52 @@ a.cloud-cta {
     max-width: 48rem;
     height: 100%;
     max-height: 32rem;
-    background-color: #ffffff;
     border-radius: 0.375rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     overflow: hidden;
     padding: 0;
+    border: 1px solid var(--input-border-color);
+    background-color: var(--body-bg);
 }
+
+markprompt-content {
+    --primary-color: var(--link-color);
+    --accent-color: var(--link-color);
+    --background-color: var(--body-bg);
+    --border-color: var(--border-color);
+    --text-color: var(--text-color);
+    --link-color: var(--link-color);
+
+    --input-bg-color: var(--body-bg);
+    --input-placeholder-color: var(--text-muted);
+
+    --search-icon-color: var(--text-muted);
+
+    --result-bg-color: var(--sidebar-bg);
+
+    --reference-item-bg-color: var(--body-bg);
+    --reference-item-bg-color-hover: var(--sidebar-bg);
+
+    --caret-color: var(--link-color);
+}
+
+markprompt-content.dark {
+    --primary-color: var(--link-color);
+    --accent-color: var(--link-color);
+    --background-color: var(--body-bg);
+    --border-color: var(--input-border-color);
+    --text-color: var(--text-color);
+    --link-color: var(--link-color);
+
+    --input-bg-color: var(--sidebar-bg);
+    --input-placeholder-color: var(--link-color);
+
+    --search-icon-color: var(--link-color);
+
+    --result-bg-color: var(--body-bg);
+
+    --reference-item-bg-color: var(--body-bg);
+    --reference-item-bg-color-hover: var(--sidebar-bg);
+
+    --caret-color: var(--link-color);
+  }

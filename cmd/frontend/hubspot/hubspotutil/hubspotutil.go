@@ -34,6 +34,9 @@ var SignupEventID = "000001776813"
 // SelfHostedSiteInitEventID is the Hubstpot Event ID for when a new site is created in /site-admin/sites
 var SelfHostedSiteInitEventID = "000010399089"
 
+// CodyClientInstalledEventID is the HubSpot Event ID for when a user reports installing a Cody client.
+var CodyClientInstalledEventID = "000018021981"
+
 var client *hubspot.Client
 
 // HasAPIKey returns true if a HubspotAPI key is present. A subset of requests require a HubSpot API key.

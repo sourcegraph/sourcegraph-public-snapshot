@@ -125,6 +125,11 @@
     color: var(--body-color) !important;
 }
 
+.edit-button {
+    border: none;
+    background: none;
+}
+
 .code-blocks-copy-button {
     top: 8px !important;
     right: 8px !important;
@@ -134,4 +139,14 @@
     // stylelint-disable-next-line declaration-property-unit-allowed-list
     padding: 1px 8px;
     background-color: var(--color-bg-2) !important;
+}
+
+:global(.cody-chat-error) {
+    color: var(--danger);
+    background-color: var(--danger-4);
+    padding: 0.5rem;
+}
+
+:global(.cody-chat-error) > span {
+    font-weight: bold;
 }

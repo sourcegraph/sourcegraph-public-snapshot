@@ -95,6 +95,37 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         return messagePairs.reverse().flat()
     }
 
+    public async getSearchContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
+        console.log('fetching keyword context')
+        const rootPath = this.editor.getWorkspaceRootPath()
+        if (!rootPath) {
+            return []
+        }
+
+        const stems = userQueryToKeywordQuery(query)
+            .map(t => (t.prefix.length < 4 ? t.originals[0] : t.prefix))
+            .join('|')
+
+        const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
+        const messagePairs = await Promise.all(
+            filesnamesWithScores.slice(0, numResults).map(async ({ filename }) => {
+                const uri = vscode.Uri.file(path.join(rootPath, filename))
+                const textDocument = await vscode.workspace.openTextDocument(uri)
+                const snippet = textDocument.getText()
+                const keywordPattern = new RegExp(stems, 'g')
+                const matches = snippet.match(keywordPattern)
+                const keywordIndex = snippet.indexOf(matches ? matches[0] : query)
+                // show 5 lines of code only
+                const startLine = Math.max(0, textDocument.positionAt(keywordIndex).line - 2)
+                const endLine = startLine + 5
+                const content = textDocument.getText(new vscode.Range(startLine, 0, endLine, 0))
+
+                return { fileName: filename, content }
+            })
+        )
+        return messagePairs.flat()
+    }
+
     private async fetchFileStats(
         terms: Term[],
         rootPath: string

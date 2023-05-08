@@ -35,6 +35,7 @@ go_library(
         "//internal/cookie",
         "//internal/database",
         "//internal/deviceid",
+        "//internal/env",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/featureflag",

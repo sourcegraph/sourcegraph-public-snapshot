@@ -23,7 +23,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -125,6 +124,64 @@ func TestGitHub_stripDateRange(t *testing.T) {
 	}
 }
 
+func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
+	setUpRcache(t)
+
+	fixtureName := "GITHUB-ENTERPRISE/list-public-repos"
+	gheToken := prepareGheToken(t, fixtureName)
+
+	service := &types.ExternalService{
+		Kind: extsvc.KindGitHub,
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://ghe.sgdev.org",
+			Token: gheToken,
+		})),
+	}
+
+	factory, save := newClientFactory(t, fixtureName)
+	defer save(t)
+
+	ctx := context.Background()
+	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), service, factory)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results := make(chan *githubResult)
+	go func() {
+		githubSrc.listPublic(ctx, results)
+		close(results)
+	}()
+
+	count := 0
+	countArchived := 0
+	for result := range results {
+		if result.err != nil {
+			t.Errorf("unexpected error: %s, expected repository instead", result.err.Error())
+		}
+		if result.repo.IsArchived {
+			countArchived++
+		}
+		count++
+	}
+	if count != 100 {
+		t.Errorf("unexpected repo count, wanted: 100, but got: %d", count)
+	}
+	if countArchived != 1 {
+		t.Errorf("unexpected archived repo count, wanted: 1, but got: %d", countArchived)
+	}
+}
+
+func prepareGheToken(t *testing.T, fixtureName string) string {
+	t.Helper()
+	gheToken := os.Getenv("GHE_TOKEN")
+
+	if update(fixtureName) && gheToken == "" {
+		t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
+	}
+	return gheToken
+}
+
 func TestGithubSource_GetRepo(t *testing.T) {
 	testCases := []struct {
 		name          string
@@ -205,7 +262,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -315,7 +372,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			defer save(t)
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -349,7 +406,7 @@ func TestMakeRepo_NullCharacter(t *testing.T) {
 	schema := &schema.GitHubConnection{
 		Url: "https://github.com",
 	}
-	s, err := newGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, schema, nil)
+	s, err := newGitHubSource(context.Background(), logtest.Scoped(t), &svc, schema, nil)
 	require.NoError(t, err)
 	repo := s.makeRepo(r)
 
@@ -404,8 +461,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GithubSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-
-			s, err := newGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, test.schema, nil)
+			s, err := newGitHubSource(context.Background(), logtest.Scoped(t), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -679,7 +735,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -715,7 +771,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
+	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -732,26 +788,6 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 			t.Error("unexpected nil Source")
 		}
 	})
-
-	t.Run("unsupported", func(t *testing.T) {
-		for name, tc := range map[string]auth.Authenticator{
-			"nil":         nil,
-			"BasicAuth":   &auth.BasicAuth{},
-			"OAuthClient": &auth.OAuthClient{},
-		} {
-			t.Run(name, func(t *testing.T) {
-				src, err := githubSrc.WithAuthenticator(tc)
-				if err == nil {
-					t.Error("unexpected nil error")
-				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
-					t.Errorf("unexpected error of type %T: %v", err, err)
-				}
-				if src != nil {
-					t.Errorf("expected non-nil Source: %v", src)
-				}
-			})
-		}
-	})
 }
 
 func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
@@ -764,7 +800,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
+	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -791,7 +827,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		githubSrc, err := NewGithubSource(ctx, logger, database.NewMockExternalServiceStore(), svc, nil)
+		githubSrc, err := NewGitHubSource(ctx, logger, svc, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -827,7 +863,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		githubSrc, err := NewGithubSource(ctx, logger, database.NewMockExternalServiceStore(), svc, cf)
+		githubSrc, err := NewGitHubSource(ctx, logger, svc, cf)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1150,7 +1186,7 @@ func TestGithubSource_SearchRepositories(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
