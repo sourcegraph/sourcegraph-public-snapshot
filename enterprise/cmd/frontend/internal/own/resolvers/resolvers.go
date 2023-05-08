@@ -362,7 +362,7 @@ func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, p
 			},
 			reasons: []graphqlbackend.OwnershipReasonResolver{&ownershipReasonResolver{&recentContributorOwnershipSignal{}}},
 		}
-		user, err := identifyUser(db, author.AuthorEmail)
+		user, err := identifyUser(ctx, db, author.AuthorEmail)
 		if err == nil {
 			// if we don't get an error (meaning we can match) we will add it to the resolver, otherwise use the contributor data
 			res.resolvedOwner = &codeowners.Person{
@@ -374,6 +374,6 @@ func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, p
 	return results, nil
 }
 
-func identifyUser(db database.DB, email string) (*types.User, error) {
-	return db.Users().GetByVerifiedEmail(context.Background(), email)
+func identifyUser(ctx context.Context, db database.DB, email string) (*types.User, error) {
+	return db.Users().GetByVerifiedEmail(ctx, email)
 }
