@@ -162,16 +162,20 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             required={required}
             onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
             onKeyDown={onKeyDown}
-            onKeyUp={e => {
-                let newCaretPosition: number | null = null
-                if (inputRef.current) {
-                    // inputRef isn't actually a HTMLTextAreaElement (though
-                    // that's closest type we can get without entering typing hell)
-                    // so we cast to any and then grab control which is the actual textarea
-                    newCaretPosition = (inputRef.current! as any).control.selectionStart
-                }
-                onKeyUp(e, newCaretPosition)
-            }}
+            onKeyUp={
+                onKeyUp
+                    ? e => {
+                          let newCaretPosition: number | null = null
+                          if (inputRef.current) {
+                              // inputRef isn't actually a HTMLTextAreaElement (though
+                              // that's closest type we can get without entering typing hell)
+                              // so we cast to any and then grab control which is the actual textarea
+                              newCaretPosition = (inputRef.current! as any).control.selectionStart
+                          }
+                          onKeyUp(e, newCaretPosition)
+                      }
+                    : undefined
+            }
         />
     )
 }

@@ -52,8 +52,8 @@ export interface ChatUITextAreaProps {
     value: string
     required: boolean
     onInput: React.FormEventHandler<HTMLElement>
-    onKeyDown: React.KeyboardEventHandler<HTMLElement>
-    onKeyUp: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
+    onKeyDown?: React.KeyboardEventHandler<HTMLElement>
+    onKeyUp?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
 }
 
 export interface ChatUISubmitButtonProps {
@@ -178,7 +178,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 onChatSubmit()
             }
         },
-        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput, setMessageBeingEdited]
+        [onChatSubmit, formInput, setMessageBeingEdited]
     )
 
     const onChatKeyUp = useCallback(
@@ -200,7 +200,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
         },
-        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput, setMessageBeingEdited]
+        [inputHistory, formInput, historyIndex, setFormInput]
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(

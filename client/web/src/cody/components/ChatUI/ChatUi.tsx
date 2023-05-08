@@ -33,12 +33,12 @@ export const ChatUI = (): JSX.Element => {
     useEffect(() => {
         setInputHistory(
             transcriptHistory
-                .flatMap(_ => _.interactions)
-                .sort((a, b) => +new Date(a.timestamp) - +new Date(b.timestamp))
-                .filter(_ => _.humanMessage.displayText !== undefined)
-                .map(_ => _.humanMessage.displayText!)
+                .flatMap(entry => entry.interactions)
+                .sort((entryA, entryB) => +new Date(entryA.timestamp) - +new Date(entryB.timestamp))
+                .filter(interaction => interaction.humanMessage.displayText !== undefined)
+                .map(interaction => interaction.humanMessage.displayText!)
         )
-    }, [])
+    }, [transcriptHistory])
 
     return (
         <Chat
@@ -148,9 +148,13 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
             autoFocus={false}
             required={true}
             onKeyDown={onKeyDown}
-            onKeyUp={e => {
-                onKeyUp(e, textAreaRef.current?.selectionStart ?? null)
-            }}
+            onKeyUp={
+                onKeyUp
+                    ? event => {
+                          onKeyUp(event, textAreaRef.current?.selectionStart ?? null)
+                      }
+                    : undefined
+            }
             onInput={onInput}
         />
     )
