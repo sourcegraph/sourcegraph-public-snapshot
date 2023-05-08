@@ -236,17 +236,3 @@ func canonicalize(schemaDescription descriptions.SchemaDescription) descriptions
 
 	return schemaDescription
 }
-
-// getSchemaJSONFilename returns the basename of the JSON-serialized schema in the sg/sg repository.
-func getSchemaJSONFilename(schemaName string) (string, error) {
-	switch schemaName {
-	case "frontend":
-		return "internal/database/schema.json", nil
-	case "codeintel":
-		fallthrough
-	case "codeinsights":
-		return fmt.Sprintf("internal/database/schema.%s.json", schemaName), nil
-	}
-
-	return "", errors.Newf("unknown schema name %q", schemaName)
-}
