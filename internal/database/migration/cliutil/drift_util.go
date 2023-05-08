@@ -241,7 +241,6 @@ func compareTables(schemaName, version string, actual, expected schemas.SchemaDe
 		summaries = append(summaries, compareConstraints(*table, expectedTable)...)
 		summaries = append(summaries, compareIndexes(*table, expectedTable)...)
 		summaries = append(summaries, compareTriggers(*table, expectedTable)...)
-		summaries = append(summaries, compareTableComments(*table, expectedTable)...)
 		return summaries
 	}, noopAdditionalCallback[schemas.TableDescription])
 }
@@ -292,15 +291,6 @@ func compareColumns(schemaName, version string, actualTable, expectedTable schem
 				fmt.Sprintf("%q.%q", expectedTable.Name, expectedColumn.Name),
 				fmt.Sprintf("Unexpected properties of column %q.%q", expectedTable.Name, expectedColumn.Name),
 				"change the column default",
-			).withDiff(expectedColumn, *column).withStatements(alterColumnStmt)
-		}
-		if equivIf(func(s *schemas.ColumnDescription) { s.Comment = expectedColumn.Comment }) {
-			alterColumnStmt := fmt.Sprintf("COMMENT ON COLUMN %s.%s IS '%s';", expectedTable.Name, expectedColumn.Name, expectedColumn.Comment)
-
-			return newDriftSummary(
-				fmt.Sprintf("%q.%q", expectedTable.Name, expectedColumn.Name),
-				fmt.Sprintf("Unexpected properties of column %q.%q", expectedTable.Name, expectedColumn.Name),
-				"change the column comment",
 			).withDiff(expectedColumn, *column).withStatements(alterColumnStmt)
 		}
 
@@ -443,20 +433,6 @@ func compareTriggers(actualTable, expectedTable schemas.TableDescription) []Drif
 
 		return summaries
 	})
-}
-
-func compareTableComments(actualTable, expectedTable schemas.TableDescription) []DriftSummary {
-	if actualTable.Comment != expectedTable.Comment {
-		commentStmt := fmt.Sprintf("COMMENT ON TABLE %s IS '%s';", expectedTable.Name, expectedTable.Comment)
-
-		return wrap(newDriftSummary(
-			expectedTable.Name,
-			fmt.Sprintf("Unexpected comment of table %q", expectedTable.Name),
-			"change the table comment",
-		).withStatements(commentStmt))
-	}
-
-	return nil
 }
 
 func compareViews(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary {
@@ -636,10 +612,10 @@ func compareNamedListsMulti[T schemas.Namer](
 	summaries := []DriftSummary(nil)
 
 	for _, k := range keys(am) {
-		av := am[k]
+		av := schemas.Normalize(am[k])
 
 		if bv, ok := bm[k]; ok {
-			if cmp.Diff(schemas.Normalize(av), schemas.Normalize(bv)) != "" {
+			if cmp.Diff(schemas.PreComparisonNormalize(av), schemas.PreComparisonNormalize(bv)) != "" {
 				summaries = append(summaries, primaryCallback(&av, bv)...)
 			}
 		} else {
@@ -647,7 +623,7 @@ func compareNamedListsMulti[T schemas.Namer](
 		}
 	}
 	for _, k := range keys(bm) {
-		bv := bm[k]
+		bv := schemas.Normalize(bm[k])
 
 		if _, ok := am[k]; !ok {
 			summaries = append(summaries, primaryCallback(nil, bv)...)
