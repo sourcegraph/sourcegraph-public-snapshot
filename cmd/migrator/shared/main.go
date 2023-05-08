@@ -23,10 +23,7 @@ import (
 
 const appName = "migrator"
 
-var out = output.NewOutput(os.Stdout, output.OutputOpts{
-	ForceColor: true,
-	ForceTTY:   true,
-})
+var out = output.NewOutput(os.Stdout, output.OutputOpts{})
 
 // NewRunnerWithSchemas returns new migrator runner with given scheme names and
 // definitions.

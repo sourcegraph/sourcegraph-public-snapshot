@@ -3,6 +3,7 @@ package connections
 import (
 	"context"
 	"database/sql"
+	"os"
 
 	"github.com/sourcegraph/log"
 
@@ -10,7 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+var out = output.NewOutput(os.Stdout, output.OutputOpts{})
 
 func RunnerFromDSNs(logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory) (*runner.Runner, error) {
 	return RunnerFromDSNsWithSchemas(logger, dsns, appName, newStore, schemas.Schemas)
@@ -32,10 +36,13 @@ func RunnerFromDSNsWithSchemas(logger log.Logger, dsns map[string]string, appNam
 		factory func(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error),
 	) runner.StoreFactory {
 		return func(ctx context.Context) (runner.Store, error) {
+			pending := out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s", dsns[name]))
 			db, err := factory(observation.NewContext(logger), dsns[name], appName)
 			if err != nil {
+				pending.Destroy()
 				return nil, err
 			}
+			pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s succeeded", dsns[name]))
 
 			return initStore(ctx, newStore, db, schema)
 		}
