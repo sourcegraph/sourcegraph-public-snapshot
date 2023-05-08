@@ -113,7 +113,7 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 
 See other possible Environment Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables).
 
-> Note: `externalUrl` must be set in the Site configuration for Executors to work correctly.
+> Note: `executor.frontendUrl` must be set in the Site configuration for Executors to work correctly.
 
 ### Job Scheduling
 
