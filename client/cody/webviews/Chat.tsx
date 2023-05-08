@@ -122,11 +122,12 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
+    onKeyUp,
 }) => {
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
     // View` with the keyboard.
-    const inputRef = useRef<HTMLElement>(null)
+    const inputRef = useRef<HTMLTextAreaElement>(null)
     useEffect(() => {
         const handleFocus = (): void => {
             if (document.getSelection()?.isCollapsed) {
@@ -161,6 +162,16 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             required={required}
             onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
             onKeyDown={onKeyDown}
+            onKeyUp={e => {
+                let newCaretPosition: number | null = null
+                if (inputRef.current) {
+                    // inputRef isn't actually a HTMLTextAreaElement (though
+                    // that's closest type we can get without entering typing hell)
+                    // so we cast to any and then grab control which is the actual textarea
+                    newCaretPosition = (inputRef.current! as any).control.selectionStart
+                }
+                onKeyUp(e, newCaretPosition)
+            }}
         />
     )
 }

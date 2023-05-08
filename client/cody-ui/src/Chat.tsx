@@ -53,6 +53,7 @@ export interface ChatUITextAreaProps {
     required: boolean
     onInput: React.FormEventHandler<HTMLElement>
     onKeyDown: React.KeyboardEventHandler<HTMLElement>
+    onKeyUp: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
 }
 
 export interface ChatUISubmitButtonProps {
@@ -145,7 +146,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
             onSubmit(input, submitType)
             setSuggestions?.(undefined)
-            setHistoryIndex(input.length + 1)
+            setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, input])
         },
         [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
@@ -161,7 +162,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     }, [formInput, messageInProgress, setFormInput, submitInput])
 
     const onChatKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLDivElement>): void => {
+        (event: React.KeyboardEvent<HTMLElement>): void => {
             // Submit input on Enter press (without shift) and
             // trim the formInput to make sure input value is not empty.
             if (
@@ -176,12 +177,26 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 setMessageBeingEdited(false)
                 onChatSubmit()
             }
+        },
+        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput, setMessageBeingEdited]
+    )
+
+    const onChatKeyUp = useCallback(
+        (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
             // Loop through input history on up arrow press
-            if (event.key === 'ArrowUp' && inputHistory.length) {
-                if (formInput === inputHistory[historyIndex] || !formInput) {
-                    const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
-                    setHistoryIndex(newIndex)
-                    setFormInput(inputHistory[newIndex])
+            if (inputHistory.length) {
+                if (event.key === 'ArrowUp' && caretPosition === 0) {
+                    if (formInput === inputHistory[historyIndex] || !formInput) {
+                        const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
+                        setHistoryIndex(newIndex)
+                        setFormInput(inputHistory[newIndex])
+                    }
+                } else if (event.key === 'ArrowDown' && caretPosition === formInput.length) {
+                    if (formInput === inputHistory[historyIndex] || !formInput) {
+                        const newIndex = historyIndex + 1 >= inputHistory.length ? 0 : historyIndex + 1
+                        setHistoryIndex(newIndex)
+                        setFormInput(inputHistory[newIndex])
+                    }
                 }
             }
         },
@@ -241,6 +256,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             inputHandler(value)
                         }}
                         onKeyDown={onChatKeyDown}
+                        onKeyUp={onChatKeyUp}
                     />
                     <SubmitButton
                         className={styles.submitButton}
