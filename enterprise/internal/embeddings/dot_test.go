@@ -6,7 +6,7 @@ import (
 )
 
 func TestDot(t *testing.T) {
-	t.Run("previously failed", func(t *testing.T) {
+	t.Run("edge cases", func(t *testing.T) {
 		repeat := func(n int8, size int) []int8 {
 			res := make([]int8, size)
 			for i := 0; i < size; i++ {
