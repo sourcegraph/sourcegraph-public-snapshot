@@ -71,7 +71,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
     },
     APP: {
         name: 'Sourcegraph App',
-        redirectURL: 'http://localhost:3080/app/auth/callback?code=$TOKEN',
+        redirectURL: 'sourcegraph://app/auth/callback?code=$TOKEN',
         description: 'Authenticate Sourcegraph App',
         successMessage: 'Click on the link bellow to continue in Sourcegraph App',
         infoMessage: 'You will be redirected to Sourcegraph App',

@@ -36,7 +36,6 @@ import { CodyChat } from '../cody/CodyChat'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
@@ -46,6 +45,7 @@ import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useNavbarQueryState } from '../stores'
 import { useChatStore } from '../stores/codyChat'
 import { useCodySidebarStore } from '../stores/codySidebar'
+import { EventName } from '../util/constants'
 import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -189,7 +189,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         )
     )
 
-    const [isCodyEnabled] = useFeatureFlag('cody-experimental')
     const focusCodyShortcut = useKeyboardShortcut('focusCody')
     const {
         isOpen: isCodySidebarOpen,
@@ -349,7 +348,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     return (
         <>
-            {isCodyEnabled &&
+            {window.context?.codyEnabled &&
                 focusCodyShortcut?.keybindings.map((keybinding, index) => (
                     <Shortcut
                         key={index}
@@ -373,7 +372,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         telemetryService={props.telemetryService}
                     />
 
-                    {isCodyEnabled ? (
+                    {window.context?.codyEnabled ? (
                         <RepoHeaderContributionPortal
                             position="right"
                             priority={1}
@@ -384,7 +383,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                 !isCodySidebarOpen ? (
                                     <AskCodyButton
                                         onClick={() => {
-                                            props.telemetryService.log('web:codySidebar:chatOpened', {
+                                            props.telemetryService.log(EventName.CODY_SIDEBAR_CHAT_OPENED, {
                                                 repo,
                                                 path: filePath,
                                             })
@@ -489,7 +488,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     </Suspense>
                 </div>
 
-                {isCodyEnabled && isCodySidebarOpen && (
+                {window.context?.codyEnabled && isCodySidebarOpen && (
                     <Panel
                         className="cody-sidebar-panel"
                         position="right"

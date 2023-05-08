@@ -32,10 +32,15 @@ import (
 var (
 	migrateTargetDatabase     string
 	migrateTargetDatabaseFlag = &cli.StringFlag{
-		Name:        "db",
-		Usage:       "The target database `schema` to modify",
+		Name:        "schema",
+		Usage:       "The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
 		Value:       db.DefaultDatabase.Name,
 		Destination: &migrateTargetDatabase,
+		Aliases:     []string{"db"},
+		Action: func(ctx *cli.Context, val string) error {
+			migrateTargetDatabase = cliutil.TranslateSchemaNames(val, std.Out.Output)
+			return nil
+		},
 	}
 
 	squashInContainer     bool

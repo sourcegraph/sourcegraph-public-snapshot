@@ -8,6 +8,8 @@ import {
 import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
+import { HistoryStack } from '../app/useHistoryStack'
+
 import { GlobalNavbar } from './GlobalNavbar'
 
 jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
@@ -37,6 +39,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     codeMonitoringEnabled: true,
     ownEnabled: true,
     showFeedbackModal: () => undefined,
+    historyStack: {} as HistoryStack,
 }
 
 describe('GlobalNavbar', () => {

@@ -21,7 +21,10 @@ export type { TranscriptJSON }
 export { Transcript }
 
 export interface ClientInit {
-    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken'>
+    config: Pick<
+        ConfigurationWithAccessToken,
+        'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
+    >
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: Transcript) => void
     editor: Editor
@@ -49,7 +52,7 @@ export async function createClient({
     editor,
     initialTranscript,
 }: ClientInit): Promise<Client> {
-    const fullConfig = { ...config, debug: false, customHeaders: {} }
+    const fullConfig = { debug: false, ...config }
 
     const completionsClient = new SourcegraphBrowserCompletionsClient(fullConfig)
     const chatClient = new ChatClient(completionsClient)

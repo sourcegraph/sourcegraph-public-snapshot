@@ -12,8 +12,8 @@ import { PrefilledOptions } from '@sourcegraph/cody-shared/src/editor/withPresel
 import { isErrorLike } from '@sourcegraph/common'
 
 import { CodeMirrorEditor } from '../cody/CodeMirrorEditor'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { eventLogger } from '../tracking/eventLogger'
+import { EventName } from '../util/constants'
 
 import { EditorStore, useEditorStore } from './editor'
 
@@ -91,7 +91,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         const { client, onEvent, getChatContext } = get()
         if (client && !isErrorLike(client)) {
             const { codebase, filePath } = getChatContext()
-            eventLogger.log('web:codySidebar:submit', {
+            eventLogger.log(EventName.CODY_SIDEBAR_SUBMIT, {
                 repo: codebase,
                 path: filePath,
                 text,
@@ -105,7 +105,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         const { client, onEvent, getChatContext } = get()
         if (client && !isErrorLike(client)) {
             const { codebase, filePath } = getChatContext()
-            eventLogger.log('web:codySidebar:edit', {
+            eventLogger.log(EventName.CODY_SIDEBAR_EDIT, {
                 repo: codebase,
                 path: filePath,
                 text,
@@ -125,10 +125,10 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         const { client, getChatContext, onEvent } = get()
         if (client && !isErrorLike(client)) {
             const { codebase, filePath } = getChatContext()
-            eventLogger.log('web:codySidebar:recipe', { repo: codebase, path: filePath, recipeId })
+            eventLogger.log(EventName.CODY_SIDEBAR_RECIPE, { repo: codebase, path: filePath, recipeId })
             onEvent?.('submit')
             await client.executeRecipe(recipeId, options)
-            eventLogger.log('web:codySidebar:recipe:executed', { repo: codebase, path: filePath, recipeId })
+            eventLogger.log(EventName.CODY_SIDEBAR_RECIPE_EXECUTED, { repo: codebase, path: filePath, recipeId })
         }
         return Promise.resolve()
     }
@@ -218,7 +218,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
 
             set({ client })
         } catch (error) {
-            eventLogger.log('web:codySidebar:clientError', { repo: config?.codebase })
+            eventLogger.log(EventName.CODY_SIDEBAR_CLIENT_ERROR, { repo: config?.codebase })
             onEvent('error')
             set({ client: error })
         }
@@ -267,7 +267,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             set({ client, transcript: messages })
             await setTranscript(transcript)
         } catch (error) {
-            eventLogger.log('web:codySidebar:clientError', { repo: config?.codebase })
+            eventLogger.log(EventName.CODY_SIDEBAR_CLIENT_ERROR, { repo: config?.codebase })
             onEvent?.('error')
             set({ client: error })
         }
@@ -299,7 +299,6 @@ export const useChatStore = ({
     codebase: string
     setIsCodySidebarOpen: (state: boolean | undefined) => void
 }): CodyChatStore => {
-    const [isCodyEnabled] = useFeatureFlag('cody-experimental')
     const store = useChatStoreState()
 
     const onEvent = useCallback(
@@ -326,18 +325,19 @@ export const useChatStore = ({
             useContext: 'embeddings',
             codebase,
             accessToken: null,
+            customHeaders: window.context.xhrHeaders,
         }),
         [codebase]
     )
 
     const { initializeClient, config: currentConfig } = store
     useEffect(() => {
-        if (!isCodyEnabled || isEqual(config, currentConfig)) {
+        if (!window.context?.codyEnabled || isEqual(config, currentConfig)) {
             return
         }
 
         void initializeClient(config, editorStateRef, onEvent)
-    }, [config, initializeClient, currentConfig, isCodyEnabled, editorStateRef, onEvent])
+    }, [config, initializeClient, currentConfig, editorStateRef, onEvent])
 
     return store
 }

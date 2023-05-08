@@ -1,0 +1,13 @@
+.list {
+    gap: 0.25rem;
+    margin: 0 -0.5rem;
+}
+
+.button {
+    padding: 0 0.25rem;
+
+    &[aria-disabled='true'] {
+        opacity: 0.4;
+        cursor: default; // Don't use the "disabled" cursor, it's too prominent.
+    }
+}

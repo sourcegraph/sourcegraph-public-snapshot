@@ -8,9 +8,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -19,7 +19,7 @@ import (
 
 // NewCodeCompletionsHandler is an http handler which sends back code completion results
 func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
-	rl := NewRateLimiter(db, redispool.Store)
+	rl := NewRateLimiter(db, redispool.Store, RateLimitScopeCodeCompletion)
 	return &codeCompletionHandler{logger: logger, rl: rl}
 }
 
