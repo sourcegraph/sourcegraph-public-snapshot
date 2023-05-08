@@ -23,11 +23,11 @@ The first front selects the set of repositories and commits within those reposit
 
 The second front determines the set of index jobs that can run over candidate commits. By default, index jobs are [inferred](../explanations/auto_indexing_inference.md) from the repository structure's on disk. Index job inference uses heuristics such as the presence or contents of particular files to determine the paths and commands required to index a repository. Alternatively, index job configuration [can be supplied explicitly](#explicit-index-job-configuration) for a repository when the inference heuristics are not powerful enough to create an index job that produces the correct results. This might be necessary for projects that have non-standard or complex dependency resolution or pre-compilation steps, for example.
 
-TODO - best practices link
-
 ## Configure auto-indexing policies
 
 This guide shows how to configure policies to control the scheduling of precise code navigation indexing jobs. Indexing jobs [produce a code graph data index](../explanations/precise_code_navigation.md) and uploads it to your Sourcegraph instance for use with code navigation.
+
+> NOTE: See the [best practices guide](policies_best_practices.md) for additional details on how policies affect resource usage.
 
 Each policy has a number of configurable options, including:
 
