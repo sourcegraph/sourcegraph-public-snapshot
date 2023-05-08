@@ -38,8 +38,8 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	// Log which actor is accessing the repo.
 	args := req.GetArgs()
 	cmd := ""
-	if len(req.GetArgs()) > 0 {
-		cmd = req.GetArgs()[0]
+	if len(args) > 0 {
+		cmd = args[0]
 		args = args[1:]
 	}
 
