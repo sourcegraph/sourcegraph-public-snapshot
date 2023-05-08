@@ -345,7 +345,7 @@ func (g *recentContributorOwnershipSignal) Title() (string, error) {
 }
 
 func (g *recentContributorOwnershipSignal) Description() (string, error) {
-	return "Owner is associated because they are the a recent contributor in the file", nil
+	return "Owner is associated because they are have contributed to this file in the last 90 days.", nil
 }
 
 func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
