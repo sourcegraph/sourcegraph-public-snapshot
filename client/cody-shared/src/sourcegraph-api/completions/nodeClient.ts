@@ -37,6 +37,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     res.on('end', () => {
                         req.destroy()
                         try {
+                            // When rate-limiting occurs, the response is an error message
+                            if (res.statusCode === 429) {
+                                reject(new Error(buffer))
+                            }
+
                             const resp = JSON.parse(buffer) as CodeCompletionResponse
                             if (typeof resp.completion !== 'string' || typeof resp.stopReason !== 'string') {
                                 reject(new Error(`response does not satisfy CodeCompletionResponse: ${buffer}`))
