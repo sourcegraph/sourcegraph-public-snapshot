@@ -179,6 +179,7 @@ func (r *ownResolver) GitBlobOwnership(
 	for _, resolver := range contribResolvers {
 		ownerships = append(ownerships, resolver)
 	}
+	total += len(contribResolvers)
 
 	return &ownershipConnectionResolver{
 		db:             r.db,
@@ -340,7 +341,7 @@ type recentContributorOwnershipSignal struct {
 }
 
 func (g *recentContributorOwnershipSignal) Title() (string, error) {
-	return "RECENT CONTRIBUTOR", nil
+	return "recent contributor", nil
 }
 
 func (g *recentContributorOwnershipSignal) Description() (string, error) {
