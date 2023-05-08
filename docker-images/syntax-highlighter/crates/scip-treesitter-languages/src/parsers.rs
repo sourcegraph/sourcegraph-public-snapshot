@@ -89,6 +89,7 @@ impl BundledParser {
             "java" => Some(BundledParser::Java),
             "js" => Some(BundledParser::Javascript),
             "jsonnet" => Some(BundledParser::Jsonnet),
+            "kt" | "kts" => Some(BundledParser::Kotlin),
             "ncl" => Some(BundledParser::Nickel),
             "pl" => Some(BundledParser::Perl),
             "pod" => Some(BundledParser::Pod),
