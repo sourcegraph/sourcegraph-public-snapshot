@@ -34,21 +34,15 @@ let
     if [ "$1" == "configure" ]; then
       exec env --unset=USE_BAZEL_VERSION ${pkgs.bazelisk}/bin/bazelisk "$@"
     fi
-    exec ${bazel-static}/bin/bazel "$@"
+    exec ${pkgs.bazel_6}/bin/bazel "$@"
   '');
-  bazel-static = pkgs.bazel_6.overrideAttrs (oldAttrs: {
-    preBuildPhase = oldAttrs.preBuildPhase + ''
-      export BAZEL_LINKLIBS=-l%:libstdc++.a:-lm
-      export BAZEL_LINKOPTS=-static-libstdc++:-static-libgcc
-    '';
-  });
   bazel-watcher = pkgs.writeShellScriptBin "ibazel" ''
     exec ${pkgs.bazel-watcher}/bin/ibazel \
-      ${pkgs.lib.optionalString pkgs.hostPlatform.isLinux "-bazel_path=${bazel-static}/bin/bazel"} "$@"
+      ${pkgs.lib.optionalString pkgs.hostPlatform.isLinux "-bazel_path=${pkgs.bazel_6}/bin/bazel"} "$@"
   '';
   # custom cargo-bazel so we can pass down LD_LIBRARY_PATH, see definition of LD_LIBRARY_PATH below
   # for more info.
-  cargo-bazel = pkgs.rustPlatform.buildRustPackage rec {
+  cargo-bazel = pkgs.rustPlatform.buildRustPackage {
     pname = "cargo-bazel";
     version = "0.8.0";
     sourceRoot = "source/crate_universe";
