@@ -55,7 +55,7 @@ ZOEKT_DEPS = [
 container_dependencies(DEPS)
 container_dependencies(ZOEKT_DEPS)
 
-    go_cross_binary(
+go_cross_binary(
     name = platformed_name,
     platform = "@zig_sdk//platform:linux_amd64",
     target = target,

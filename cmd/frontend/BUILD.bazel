@@ -1,7 +1,6 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library","go_cross_binary")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
-
 
 go_library(
     name = "frontend_lib",
@@ -35,7 +34,7 @@ go_cross_binary(
 pkg_tar(
     name = "tar",
     srcs = [":frontend_linux_amd64"],
-    remap_paths = { "/frontend_linux_amd64": "/frontend"},
+    remap_paths = {"/frontend_linux_amd64": "/frontend"},
 )
 
 oci_image(

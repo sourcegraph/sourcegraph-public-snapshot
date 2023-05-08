@@ -32,8 +32,7 @@ go_cross_binary(
 pkg_tar(
     name = "tar",
     srcs = [":gitserver_docker"],
-    remap_paths = { "/gitserver_docker": "/gitserver" }
-
+    remap_paths = {"/gitserver_docker": "/gitserver"},
 )
 
 oci_image(
