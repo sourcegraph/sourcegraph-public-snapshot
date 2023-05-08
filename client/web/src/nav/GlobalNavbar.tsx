@@ -273,7 +273,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             items={[
                                 {
                                     content: 'Join our Discord',
-                                    path: 'https://about.sourcegraph.com/community',
+                                    path: 'https://discord.com/servers/sourcegraph-969688426372825169',
                                     target: '_blank',
                                 },
                                 {
