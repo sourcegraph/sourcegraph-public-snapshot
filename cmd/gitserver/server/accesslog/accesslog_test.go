@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
@@ -479,36 +478,12 @@ func chainStreamInterceptors(interceptors ...grpc.StreamServerInterceptor) grpc.
 
 // testServerStream is a mock implementation of grpc.ServerStream for testing.
 type testServerStream struct {
+	grpc.ServerStream
 	ctx context.Context
-}
-
-func (m *testServerStream) SetHeader(metadata.MD) error {
-	// No-op for testing
-	return nil
-}
-
-func (m *testServerStream) SendHeader(metadata.MD) error {
-	// No-op for testing
-	return nil
-
-}
-
-func (m *testServerStream) SetTrailer(metadata.MD) {
-	// No-op for testing
 }
 
 func (m *testServerStream) Context() context.Context {
 	return m.ctx
-}
-
-func (m *testServerStream) SendMsg(any) error {
-	// No-op for testing
-	return nil
-}
-
-func (m *testServerStream) RecvMsg(any) error {
-	// No-op for testing
-	return nil
 }
 
 var _ grpc.ServerStream = &testServerStream{}
