@@ -3,9 +3,9 @@ import { useMemo } from 'react'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { TranscriptJSON } from '@sourcegraph/cody-shared/chat/transcript'
 import { Text } from '@sourcegraph/wildcard'
 
-import { TranscriptJSON } from '../../../../../cody-shared/out/src/chat/transcript'
 import { safeTimestampToDate, useChatStoreState } from '../../stores/chat'
 
 import styles from './HistoryList.module.scss'
@@ -79,7 +79,7 @@ const HistoryListItem: React.FunctionComponent<{
         <button
             key={id}
             type="button"
-            className={classNames(styles.historyItem, {
+            className={classNames('text-left', styles.historyItem, {
                 [styles.selected]: transcriptId === id,
             })}
             onClick={(): any => {
