@@ -9,6 +9,8 @@ import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchCha
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 
+const AppSettingsArea = lazyComponent(() => import('../app/settings/AppSettingsArea'), 'AppSettingsArea')
+
 const NamespaceBatchChangesArea = lazyComponent<NamespaceBatchChangesAreaProps, 'NamespaceBatchChangesArea'>(
     () => import('../batches/global/GlobalBatchChangesArea'),
     'NamespaceBatchChangesArea'
@@ -32,6 +34,14 @@ const EditBatchSpecPage = lazyComponent<EditBatchSpecPageProps, 'EditBatchSpecPa
 export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     ...userAreaRoutes,
     ...enterpriseNamespaceAreaRoutes,
+
+    // Sourcegraph app specific route (cody/app settings page) this route won't be
+    // available for any non-app deploy types see enterprise userAreaHeaderNavItems
+    // for more context on user settings page
+    {
+        path: 'app-settings/*',
+        render: props => <AppSettingsArea telemetryService={props.telemetryService} />,
+    },
 
     // Redirect from previous /users/:username/subscriptions -> /users/:username/settings/subscriptions.
     {
