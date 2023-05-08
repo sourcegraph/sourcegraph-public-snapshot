@@ -32,6 +32,8 @@ go_cross_binary(
 pkg_tar(
     name = "tar",
     srcs = [":gitserver_docker"],
+    remap_paths = { "/gitserver_docker": "/gitserver" }
+
 )
 
 oci_image(
@@ -46,5 +48,5 @@ oci_image(
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repotags = ["gitserver:candidate"],
+    repotags = ["sourcegraph/gitserver:candidate"],
 )
