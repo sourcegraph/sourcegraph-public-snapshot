@@ -16,12 +16,29 @@ import styles from './ChatUi.module.scss'
 export const SCROLL_THRESHOLD = 100
 
 export const ChatUI = (): JSX.Element => {
-    const { submitMessage, editMessage, messageInProgress, transcript, getChatContext, transcriptId } =
-        useChatStoreState()
+    const {
+        submitMessage,
+        editMessage,
+        messageInProgress,
+        transcript,
+        getChatContext,
+        transcriptId,
+        transcriptHistory,
+    } = useChatStoreState()
 
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
+
+    useEffect(() => {
+        setInputHistory(
+            transcriptHistory
+                .flatMap(_ => _.interactions)
+                .sort((a, b) => +new Date(a.timestamp) - +new Date(b.timestamp))
+                .filter(_ => _.humanMessage.displayText !== undefined)
+                .map(_ => _.humanMessage.displayText!)
+        )
+    }, [])
 
     return (
         <Chat
@@ -96,6 +113,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
     value,
     onInput,
     onKeyDown,
+    onKeyUp,
     className,
 }) => {
     const textAreaRef = useRef<HTMLTextAreaElement>(null)
@@ -130,6 +148,9 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
             autoFocus={false}
             required={true}
             onKeyDown={onKeyDown}
+            onKeyUp={e => {
+                onKeyUp(e, textAreaRef.current?.selectionStart ?? null)
+            }}
             onInput={onInput}
         />
     )
