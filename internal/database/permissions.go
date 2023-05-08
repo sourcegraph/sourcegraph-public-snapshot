@@ -55,12 +55,12 @@ type GetPermissionForUserOpts struct {
 	UserID int32
 
 	Namespace rtypes.PermissionNamespace
-	Action    string
+	Action    rtypes.PermissionAction
 }
 
 type CreatePermissionOpts struct {
 	Namespace rtypes.PermissionNamespace
-	Action    string
+	Action    rtypes.PermissionAction
 }
 
 type PermissionOpts struct {
@@ -83,7 +83,7 @@ type PermissionNotFoundErr struct {
 	ID int32
 
 	Namespace rtypes.PermissionNamespace
-	Action    string
+	Action    rtypes.PermissionAction
 }
 
 func (p *PermissionNotFoundErr) Error() string {

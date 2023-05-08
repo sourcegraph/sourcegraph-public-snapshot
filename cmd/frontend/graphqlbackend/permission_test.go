@@ -36,7 +36,7 @@ func TestPermissionResolver(t *testing.T) {
 
 	perm, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
 		Namespace: rtypes.BatchChangesNamespace,
-		Action:    "READ",
+		Action:    rtypes.BatchChangesReadAction,
 	})
 	if err != nil {
 		t.Fatal(err)
