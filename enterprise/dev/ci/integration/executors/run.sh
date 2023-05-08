@@ -22,7 +22,7 @@ cleanup() {
   popd 1>/dev/null
   rm -rf "${TMP_WORK_DIR}"
 }
-trap cleanup EXIT
+#trap cleanup EXIT
 
 export POSTGRES_IMAGE="us.gcr.io/sourcegraph-dev/postgres-12-alpine:${CANDIDATE_VERSION}"
 export SERVER_IMAGE="us.gcr.io/sourcegraph-dev/server:${CANDIDATE_VERSION}"
