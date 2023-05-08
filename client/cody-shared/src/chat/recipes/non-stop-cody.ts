@@ -26,7 +26,6 @@ export class NonStopCody implements Recipe {
 
     // TODO: Generalize this to having multiple in-flight at once.
     private batch?: BatchState
-    private trackingInProgress = false
     private comments: FileChatProvider | null = null
 
     private fadeAnimation = 0
@@ -59,19 +58,13 @@ export class NonStopCody implements Recipe {
     }
 
     private onAnimationTick(): void {
-        if (!this.trackingInProgress) {
-            this.fadeTimer = undefined
-            return
-        }
         // TODO: Make this animation tick per document
         if (this.fadeAnimation === this.fadeDecorations.length) {
             for (const editor of vscode.window.visibleTextEditors) {
                 this.decorations.delete(editor.document.uri)
-                editor.setDecorations(this.fadeDecorations[this.fadeDecorations.length - 1], [])
+                editor.setDecorations(this.fadeDecorations.at(-1)!, [])
             }
-            if (this.fadeTimer) {
-                clearInterval(this.fadeTimer)
-            }
+            clearInterval(this.fadeTimer!)
             this.fadeTimer = undefined
             return
         }
@@ -87,10 +80,6 @@ export class NonStopCody implements Recipe {
     }
 
     private textDocumentChanged(event: vscode.TextDocumentChangeEvent): void {
-        // Stop tracking changes when no task has been initiated
-        if (!this.trackingInProgress) {
-            return
-        }
         // TODO: Experiment with a cooldown timer which commits changes when the user is idle.
         // TODO: Generalize this to tracking multiple ranges
         if (this.batch) {
@@ -145,7 +134,6 @@ export class NonStopCody implements Recipe {
         if (!humanChatInput) {
             return null
         }
-        this.trackingInProgress = true
         // const deco = {
         //     hoverMessage: 'Edited by Cody', // TODO: Put the prompt in here
         //     range: vscode.window.activeTextEditor!.selection,
@@ -247,7 +235,6 @@ export class NonStopCody implements Recipe {
     }
 
     private async handleResult(content: string, humanChatInput: string): Promise<void> {
-        this.trackingInProgress = false
         // TODO: Handle multiple concurrent editors, don't use activeTextEditor here but make it part of the batch
         if (!this.batch) {
             return
