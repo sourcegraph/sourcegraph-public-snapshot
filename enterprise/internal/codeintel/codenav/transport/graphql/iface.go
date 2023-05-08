@@ -12,6 +12,7 @@ type CodeNavService interface {
 	GetHover(ctx context.Context, args codenav.RequestArgs, requestState codenav.RequestState) (_ string, _ shared.Range, _ bool, err error)
 	GetReferences(ctx context.Context, args codenav.RequestArgs, requestState codenav.RequestState, cursor codenav.ReferencesCursor) (_ []shared.UploadLocation, nextCursor codenav.ReferencesCursor, err error)
 	GetImplementations(ctx context.Context, args codenav.RequestArgs, requestState codenav.RequestState, cursor codenav.ImplementationsCursor) (_ []shared.UploadLocation, nextCursor codenav.ImplementationsCursor, err error)
+	GetPrototypes(ctx context.Context, args codenav.RequestArgs, requestState codenav.RequestState, cursor codenav.ImplementationsCursor) (_ []shared.UploadLocation, nextCursor codenav.ImplementationsCursor, err error)
 	GetDefinitions(ctx context.Context, args codenav.RequestArgs, requestState codenav.RequestState) (_ []shared.UploadLocation, err error)
 	GetDiagnostics(ctx context.Context, args codenav.RequestArgs, requestState codenav.RequestState) (diagnosticsAtUploads []codenav.DiagnosticAtUpload, _ int, err error)
 	GetRanges(ctx context.Context, args codenav.RequestArgs, requestState codenav.RequestState, startLine, endLine int) (adjustedRanges []codenav.AdjustedCodeIntelligenceRange, err error)

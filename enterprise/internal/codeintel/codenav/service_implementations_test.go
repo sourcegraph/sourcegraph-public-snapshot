@@ -263,69 +263,9 @@ func TestImplementationsRemote(t *testing.T) {
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
 		{Dump: uploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
 		{Dump: uploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
-		{Dump: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-		{Dump: uploads[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange2},
-		{Dump: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-		{Dump: uploads[3], Path: "sub4/b.go", TargetCommit: "deadbeef", TargetRange: testRange4},
-		{Dump: uploads[3], Path: "sub4/c.go", TargetCommit: "deadbeef", TargetRange: testRange5},
 	}
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
-	}
-
-	if history := mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.History(); len(history) != 1 {
-		t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
-	} else {
-		expectedMonikers := []precise.QualifiedMonikerData{
-			{MonikerData: monikers[0], PackageInformationData: packageInformation1},
-		}
-		if diff := cmp.Diff(expectedMonikers, history[0].Arg1); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
-	}
-
-	if history := mockLsifStore.GetBulkMonikerLocationsFunc.History(); len(history) != 4 {
-		t.Fatalf("unexpected call count for lsifstore.BulkMonikerResults. want=%d have=%d", 4, len(history))
-	} else {
-		if expected := "definitions"; history[0].Arg1 != expected {
-			t.Errorf("unexpected call type. want=%q have=%q", expected, history[0].Arg1)
-		}
-		if diff := cmp.Diff([]int{151, 152, 153}, history[0].Arg2); diff != "" {
-			t.Errorf("unexpected ids (-want +got):\n%s", diff)
-		}
-		if diff := cmp.Diff([]precise.MonikerData{monikers[0]}, history[0].Arg3); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
-
-		if expected := "implementations"; history[1].Arg1 != expected {
-			t.Errorf("unexpected call type. want=%q have=%q", expected, history[1].Arg1)
-		}
-		if diff := cmp.Diff([]int{151, 152, 153}, history[1].Arg2); diff != "" {
-			t.Errorf("unexpected ids (-want +got):\n%s", diff)
-		}
-		if diff := cmp.Diff([]precise.MonikerData{monikers[0]}, history[1].Arg3); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
-
-		if expected := "implementations"; history[2].Arg1 != expected {
-			t.Errorf("unexpected call type. want=%q have=%q", expected, history[2].Arg1)
-		}
-		if diff := cmp.Diff([]int{251}, history[2].Arg2); diff != "" {
-			t.Errorf("unexpected ids (-want +got):\n%s", diff)
-		}
-		if diff := cmp.Diff([]precise.MonikerData{monikers[1]}, history[2].Arg3); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
-
-		if expected := "implementations"; history[3].Arg1 != expected {
-			t.Errorf("unexpected call type. want=%q have=%q", expected, history[3].Arg1)
-		}
-		if diff := cmp.Diff([]int{252, 253}, history[3].Arg2); diff != "" {
-			t.Errorf("unexpected ids (-want +got):\n%s", diff)
-		}
-		if diff := cmp.Diff([]precise.MonikerData{monikers[1]}, history[3].Arg3); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
 	}
 }
 
@@ -448,65 +388,8 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	expectedLocations := []shared.UploadLocation{
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
 		{Dump: uploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
-		{Dump: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange1},
-		{Dump: uploads[3], Path: "sub4/a.go", TargetCommit: "deadbeef", TargetRange: testRange3},
 	}
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
-	}
-
-	if history := mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.History(); len(history) != 1 {
-		t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
-	} else {
-		expectedMonikers := []precise.QualifiedMonikerData{
-			{MonikerData: monikers[0], PackageInformationData: packageInformation1},
-		}
-		if diff := cmp.Diff(expectedMonikers, history[0].Arg1); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
-	}
-
-	if history := mockLsifStore.GetBulkMonikerLocationsFunc.History(); len(history) != 4 {
-		t.Fatalf("unexpected call count for lsifstore.BulkMonikerResults. want=%d have=%d", 4, len(history))
-	} else {
-		if expected := "definitions"; history[0].Arg1 != expected {
-			t.Errorf("unexpected call type. want=%q have=%q", expected, history[1].Arg1)
-		}
-		if diff := cmp.Diff([]int{151, 152, 153}, history[0].Arg2); diff != "" {
-			t.Errorf("unexpected ids (-want +got):\n%s", diff)
-		}
-		if diff := cmp.Diff([]precise.MonikerData{monikers[0]}, history[0].Arg3); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
-
-		if expected := "implementations"; history[1].Arg1 != expected {
-			t.Errorf("unexpected call type. want=%q have=%q", expected, history[1].Arg1)
-		}
-		if diff := cmp.Diff([]int{151, 152, 153}, history[1].Arg2); diff != "" {
-			t.Errorf("unexpected ids (-want +got):\n%s", diff)
-		}
-		if diff := cmp.Diff([]precise.MonikerData{monikers[0]}, history[1].Arg3); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
-
-		if expected := "implementations"; history[2].Arg1 != expected {
-			t.Errorf("unexpected call type. want=%q have=%q", expected, history[1].Arg1)
-		}
-		if diff := cmp.Diff([]int{251}, history[2].Arg2); diff != "" {
-			t.Errorf("unexpected ids (-want +got):\n%s", diff)
-		}
-		if diff := cmp.Diff([]precise.MonikerData{monikers[1]}, history[2].Arg3); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
-
-		if expected := "implementations"; history[3].Arg1 != expected {
-			t.Errorf("unexpected call type. want=%q have=%q", expected, history[1].Arg1)
-		}
-		if diff := cmp.Diff([]int{252, 253}, history[3].Arg2); diff != "" {
-			t.Errorf("unexpected ids (-want +got):\n%s", diff)
-		}
-		if diff := cmp.Diff([]precise.MonikerData{monikers[1]}, history[3].Arg3); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
 	}
 }

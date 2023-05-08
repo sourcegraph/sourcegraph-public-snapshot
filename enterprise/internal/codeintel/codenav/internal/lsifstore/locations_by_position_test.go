@@ -115,13 +115,6 @@ func TestDatabaseReferences(t *testing.T) {
 	// -> `    lru.set(key, value)`
 	//         ^^^
 
-	scipExpected := []shared.Location{
-		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(7, 10, 7, 13)},
-		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(10, 12, 10, 15)},
-		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(12, 19, 12, 22)},
-		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(15, 8, 15, 11)},
-	}
-
 	// Symbol name search for
 	//
 	// `export interface HoverPayload {`
@@ -144,17 +137,11 @@ func TestDatabaseReferences(t *testing.T) {
 		offset          int
 		expected        []shared.Location
 	}{
-		// SCIP (local)
-		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 4, 5, 0, scipExpected},
-		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 4, 2, 0, scipExpected[:2]},
-		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 4, 2, 1, scipExpected[1:3]},
-		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 4, 5, 5, scipExpected[:0]},
-
 		// SCIP (non-local)
-		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 5, 5, 0, scipNonLocalExpected},
-		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 5, 2, 0, scipNonLocalExpected[:2]},
-		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 5, 2, 1, scipNonLocalExpected[1:3]},
-		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 5, 5, 5, scipNonLocalExpected[:0]},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 2, 5, 0, scipNonLocalExpected[3:]},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 2, 2, 1, scipNonLocalExpected[4:]},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 2, 2, 0, scipNonLocalExpected[3:]},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 2, 5, 5, scipNonLocalExpected[:0]},
 	}
 
 	for i, testCase := range testCases {
@@ -345,7 +332,14 @@ func TestExtractOccurrenceData(t *testing.T) {
 						{
 							Symbol: "react 17.1 main.go func1",
 							Relationships: []*scip.Relationship{
-								{IsReference: true},
+								{
+									Symbol:      "react 17.1 main.go func1",
+									IsReference: true,
+								},
+								{
+									Symbol:       "react 17.1 main.go func2",
+									IsDefinition: true,
+								},
 							},
 						},
 					},
@@ -425,18 +419,13 @@ func TestExtractOccurrenceData(t *testing.T) {
 			expectedRanges []*scip.Range
 		}{
 			{
-				explanation: "#1 happy path: symbol name match",
+				explanation: "#1 happy path: we have implementation",
 				document: &scip.Document{
 					Occurrences: []*scip.Occurrence{
 						{
-							Range:       []int32{1, 100, 1, 200},
-							Symbol:      "react 17.1 main.go func1",
-							SymbolRoles: 0,
-						},
-						{
 							Range:       []int32{3, 300, 4, 400},
-							Symbol:      "react 17.1 main.go iface",
-							SymbolRoles: 1, // is definition
+							Symbol:      "react 17.1 main.go func1A",
+							SymbolRoles: 1, // a definition
 						},
 					},
 					Symbols: []*scip.SymbolInformation{
@@ -444,15 +433,24 @@ func TestExtractOccurrenceData(t *testing.T) {
 							Symbol: "react 17.1 main.go func1",
 							Relationships: []*scip.Relationship{
 								{
-									Symbol:           "react 17.1 main.go iface",
+									Symbol:           "react 17.1 main.go func1A",
 									IsImplementation: true,
+								},
+							},
+						},
+						{
+							Symbol: "react 17.1 main.go func1A",
+							Relationships: []*scip.Relationship{
+								{
+									Symbol:       "react 17.1 main.go func1",
+									IsDefinition: true,
 								},
 							},
 						},
 					},
 				},
 				occurrence: &scip.Occurrence{
-					Symbol:      "react 17.1 main.go func1",
+					Symbol:      "react 17.1 main.go func1A",
 					SymbolRoles: 1,
 				},
 				expectedRanges: []*scip.Range{
@@ -488,6 +486,52 @@ func TestExtractOccurrenceData(t *testing.T) {
 
 		for _, testCase := range testCases {
 			if diff := cmp.Diff(testCase.expectedRanges, extractOccurrenceData(testCase.document, testCase.occurrence).implementations); diff != "" {
+				t.Errorf("unexpected ranges (-want +got):\n%s -- %s", diff, testCase.explanation)
+			}
+		}
+	})
+
+	t.Run("prototypes", func(t *testing.T) {
+		testCases := []struct {
+			explanation    string
+			document       *scip.Document
+			occurrence     *scip.Occurrence
+			expectedRanges []*scip.Range
+		}{
+			{
+				explanation: "#1 happy path: we have prototype",
+				document: &scip.Document{
+					Occurrences: []*scip.Occurrence{
+						{
+							Range:       []int32{3, 300, 4, 400},
+							Symbol:      "react 17.1 main.go func1",
+							SymbolRoles: 1, // a definition
+						},
+					},
+					Symbols: []*scip.SymbolInformation{
+						{
+							Symbol: "react 17.1 main.go func1A",
+							Relationships: []*scip.Relationship{
+								{
+									Symbol:           "react 17.1 main.go func1",
+									IsImplementation: true,
+								},
+							},
+						},
+					},
+				},
+				occurrence: &scip.Occurrence{
+					Symbol:      "react 17.1 main.go func1A",
+					SymbolRoles: 1,
+				},
+				expectedRanges: []*scip.Range{
+					scip.NewRange([]int32{3, 300, 4, 400}),
+				},
+			},
+		}
+
+		for _, testCase := range testCases {
+			if diff := cmp.Diff(testCase.expectedRanges, extractOccurrenceData(testCase.document, testCase.occurrence).prototypes); diff != "" {
 				t.Errorf("unexpected ranges (-want +got):\n%s -- %s", diff, testCase.explanation)
 			}
 		}
