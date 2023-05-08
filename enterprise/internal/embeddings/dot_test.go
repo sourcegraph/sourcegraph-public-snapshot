@@ -20,6 +20,7 @@ func TestDot(t *testing.T) {
 			b    []int8
 			want int32
 		}{
+			{[]int8{}, []int8{}, 0},
 			{[]int8{1}, []int8{1}, 1},
 			{append(repeat(0, 16), 1), append(repeat(0, 16), 2), 2},
 			{
