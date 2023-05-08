@@ -366,8 +366,12 @@ func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, p
 		user, err := identifyUser(ctx, db, author.AuthorEmail)
 		if err == nil {
 			// if we don't get an error (meaning we can match) we will add it to the resolver, otherwise use the contributor data
+			em := author.AuthorEmail
 			res.resolvedOwner = &codeowners.Person{
-				User: user,
+				User:         user,
+				Email:        em,
+				PrimaryEmail: &em,
+				Handle:       author.AuthorName,
 			}
 		}
 		results = append(results, &res)
