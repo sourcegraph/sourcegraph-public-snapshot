@@ -8,7 +8,7 @@
 // must be a multiple of 16.
 TEXT ·dotSIMD(SB), NOSPLIT, $0-56
 	// Offsets based on slice header offsets.
-	// To check, use `GOARCH=amd64 go vet`
+	// To check, use `GOARCH=arm64 go vet`
 	MOVD a_base+0(FP), R4
 	MOVD b_base+24(FP), R5
 	MOVD a_len+8(FP), R6
