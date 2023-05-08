@@ -494,9 +494,37 @@ func TestZoektSearchOptions(t *testing.T) {
 					Ranking: true,
 				},
 			},
+			// Most important is ShardRepoMaxMatchCount=1. Otherwise we still
+			// want to set normal limits so we respect things like low file
+			// match limits.
 			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:     10_000,
+				TotalMaxMatchCount:     100_000,
 				ShardRepoMaxMatchCount: 1,
 				MaxWallTime:            20000000000,
+				MaxDocDisplayCount:     500,
+				ChunkMatches:           true,
+			},
+		},
+		{
+			name:    "test repo search low match count",
+			context: context.Background(),
+			options: &Options{
+				Selector:       []string{filter.Repository},
+				FileMatchLimit: 5,
+				NumRepos:       3,
+				Features: search.Features{
+					Ranking: true,
+				},
+			},
+			// This is like the above test, but we are testing
+			// MaxDocDisplayCount is adjusted to 5.
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:     10_000,
+				TotalMaxMatchCount:     100_000,
+				ShardRepoMaxMatchCount: 1,
+				MaxWallTime:            20000000000,
+				MaxDocDisplayCount:     5,
 				ChunkMatches:           true,
 			},
 		},
