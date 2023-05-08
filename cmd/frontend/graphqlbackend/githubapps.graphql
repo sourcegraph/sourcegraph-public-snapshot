@@ -101,6 +101,10 @@ type GitHubAccount {
     A link to the account on GitHub.
     """
     url: String!
+    """
+    The account type.
+    """
+    type: String!
 }
 
 """
@@ -111,6 +115,10 @@ type Installation {
     The installation ID of the App.
     """
     id: Int!
+    """
+    The installation URL.
+    """
+    url: String!
     """
     The account on which the App was installed
     """

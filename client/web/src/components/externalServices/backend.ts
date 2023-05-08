@@ -175,7 +175,7 @@ export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
     }
 `
 
-const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
+export const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
     ${EXTERNAL_SERVICE_SYNC_JOB_CONNECTION_FIELDS_FRAGMENT}
     fragment ListExternalServiceFields on ExternalService {
         id
