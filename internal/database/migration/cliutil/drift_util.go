@@ -615,6 +615,8 @@ func compareNamedListsMulti[T schemas.Namer](
 		av := schemas.Normalize(am[k])
 
 		if bv, ok := bm[k]; ok {
+			bv = schemas.Normalize(bv)
+
 			if cmp.Diff(schemas.PreComparisonNormalize(av), schemas.PreComparisonNormalize(bv)) != "" {
 				summaries = append(summaries, primaryCallback(&av, bv)...)
 			}
