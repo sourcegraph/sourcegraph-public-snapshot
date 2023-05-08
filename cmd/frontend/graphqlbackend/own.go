@@ -58,14 +58,26 @@ type OwnerResolver interface {
 }
 
 type OwnershipReasonResolver interface {
+	SimpleOwnReasonResolver
 	ToCodeownersFileEntry() (CodeownersFileEntryResolver, bool)
+	ToRecentContributorOwnershipSignal() (RecentContributorOwnershipSignalResolver, bool)
+}
+
+type SimpleOwnReasonResolver interface {
+	Title() (string, error)
+	Description() (string, error)
 }
 
 type CodeownersFileEntryResolver interface {
-	Title(context.Context) (string, error)
-	Description(context.Context) (string, error)
+	Title() (string, error)
+	Description() (string, error)
 	CodeownersFile(context.Context) (FileResolver, error)
 	RuleLineMatch(context.Context) (int32, error)
+}
+
+type RecentContributorOwnershipSignalResolver interface {
+	Title() (string, error)
+	Description() (string, error)
 }
 
 type CodeownersFileArgs struct {
