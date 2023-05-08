@@ -369,7 +369,7 @@ func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, p
 			em := author.AuthorEmail
 			res.resolvedOwner = &codeowners.Person{
 				User:         user,
-				Email:        author.AuthorEmail,
+				Email:        em,
 				PrimaryEmail: &em,
 				Handle:       author.AuthorName,
 			}
