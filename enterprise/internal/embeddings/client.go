@@ -108,7 +108,7 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*
 }
 
 func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsMultiSearchParameters) (*EmbeddingSearchResults, error) {
-	partitions, err := c.urls(args.RepoNames, args.RepoIDs)
+	partitions, err := c.partition(args.RepoNames, args.RepoIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -205,8 +205,8 @@ type repoPartition struct {
 	repoIDs   []api.RepoID
 }
 
-// returns a map from URL to a list of indexes into the input list of repos
-func (c *Client) urls(repos []api.RepoName, repoIDs []api.RepoID) (map[string]repoPartition, error) {
+// returns a partition of the input repos by the endpoint their requests should be routed to
+func (c *Client) partition(repos []api.RepoName, repoIDs []api.RepoID) (map[string]repoPartition, error) {
 	if c.Endpoints == nil {
 		return nil, errors.New("an embeddings service has not been configured")
 	}
