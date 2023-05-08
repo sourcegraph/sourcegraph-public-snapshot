@@ -9,7 +9,7 @@ import (
 var contextCommand = &cli.Command{
 	Name:        "embeddings-qa",
 	Usage:       "Calculate recall for embeddings",
-	Description: "Requires a running embeddings service with embeddings of the Sourcegraph repository.",
+	Description: "Recall is the fraction of relevant documents that were successfully retrieved. Recall=1 if, for every query in the test data, all relevant documents were retrieved. The command requires a running embeddings service with embeddings of the Sourcegraph repository.",
 	Category:    CategoryDev,
 	Flags: []cli.Flag{
 		&cli.StringFlag{

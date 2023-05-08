@@ -2,20 +2,13 @@ package shared
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/Khan/genqlient/graphql"
 	"github.com/gorilla/mux"
-	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -26,6 +19,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/anonymous"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/productsubscription"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/response"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
@@ -37,19 +38,26 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	}
 	defer shutdownTracing()
 
-	handler := newHandler(obctx.Logger, config)
-	handler = otelhttp.NewHandler(handler, "llm-proxy")
-	handler = authenticate(
-		obctx.Logger,
-		rcache.New("llm-proxy-tokens"),
-		dotcom.NewClient(config.Dotcom.AccessToken),
-		handler,
-		authenticateOptions{
-			AllowAnonymous: config.AllowAnonymous,
-		},
-	)
-	handler = instrumentation.HTTPMiddleware("", handler)
+	// Supported actor/auth sources
+	sources := actor.Sources{
+		anonymous.NewSource(config.AllowAnonymous),
+		productsubscription.NewSource(
+			obctx.Logger,
+			rcache.New("product-subscriptions"),
+			dotcom.NewClient(config.Dotcom.AccessToken)),
+	}
 
+	// Set up our handler chain, which is run from the bottom up
+	handler := newServiceHandler(obctx.Logger, config)
+	handler = rateLimit(obctx.Logger, redispool.Cache, handler)
+	handler = &auth.Authenticator{
+		Log:     obctx.Logger.Scoped("auth", "authentication middleware"),
+		Sources: sources,
+		Next:    handler,
+	}
+	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
+
+	// Initialize our server
 	server := httpserver.NewFromAddr(config.Address, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
@@ -60,22 +68,15 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	ready()
 	obctx.Logger.Info("service ready", log.String("address", config.Address))
 
-	goroutine.MonitorBackgroundRoutines(ctx, server)
+	// Block until done
+	goroutine.MonitorBackgroundRoutines(ctx,
+		server,
+		sources.Worker(config.SourcesSyncInterval))
 
 	return nil
 }
 
-func responseJSONError(logger log.Logger, w http.ResponseWriter, code int, err error) {
-	w.WriteHeader(code)
-	err = json.NewEncoder(w).Encode(map[string]string{
-		"error": err.Error(),
-	})
-	if err != nil {
-		logger.Error("failed to write response", log.Error(err))
-	}
-}
-
-func newHandler(logger log.Logger, config *Config) http.Handler {
+func newServiceHandler(logger log.Logger, config *Config) http.Handler {
 	r := mux.NewRouter()
 
 	// For cluster liveness and readiness probes
@@ -91,7 +92,6 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("healthz: ok"))
-		return
 	})
 	r.HandleFunc("/-/__version", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -105,7 +105,7 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
 			if err != nil {
-				responseJSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to create request: %s", err))
+				response.JSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to create request: %s", err))
 				return
 			}
 
@@ -119,10 +119,13 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 
 			resp, err := httpcli.ExternalDoer.Do(r)
 			if err != nil {
-				responseJSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to make request to Anthropic: %s", err))
+				response.JSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to make request to Anthropic: %s", err))
 				return
 			}
 			defer func() { _ = resp.Body.Close() }()
+
+			w.WriteHeader(resp.StatusCode)
+			_ = resp.Header.Write(w)
 
 			_, _ = io.Copy(w, resp.Body)
 		}),
@@ -131,71 +134,27 @@ func newHandler(logger log.Logger, config *Config) http.Handler {
 	return r
 }
 
-type authenticateOptions struct {
-	// TODO: Later maybe make this a configurable rate limit as well.
-	AllowAnonymous bool
-}
-
-func authenticate(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, next http.Handler, opts authenticateOptions) http.Handler {
-	getSubscriptionFromCache := func(token string) (_ *actor.Subscription, hit bool) {
-		data, hit := cache.Get(token)
-		if !hit {
-			return nil, false
-		}
-
-		var subscription actor.Subscription
-		if err := json.Unmarshal(data, &subscription); err != nil {
-			logger.Error("failed to unmarshal subscription", log.Error(err))
-			return nil, false
-		}
-		return &subscription, true
-	}
-	saveSubscriptionToCache := func(token string, subscription *actor.Subscription) {
-		data, err := json.Marshal(subscription)
-		if err != nil {
-			logger.Error("failed to marshal subscription", log.Error(err))
-			return
-		}
-
-		cache.Set(token, data)
-	}
+func rateLimit(logger log.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if token == "" {
-			// Anonymous requests. Based on configuration, either allow or disallow.
-			if opts.AllowAnonymous {
-				// TODO: We need to evaluate these to an actor type as well to rate-limit
-				// anonymous users.
-				next.ServeHTTP(w, r)
+		l := actor.FromContext(r.Context()).Limiter(cache)
+
+		err := l.TryAcquire(r.Context())
+
+		if err != nil {
+			var rateLimitExceeded limiter.RateLimitExceededError
+			if errors.As(err, &rateLimitExceeded) {
+				rateLimitExceeded.WriteResponse(w)
 				return
 			}
 
-			responseJSONError(logger, w, http.StatusUnauthorized,
-				errors.New("unauthorized access is not allowed"))
-			return
-		}
-
-		subscription, hit := getSubscriptionFromCache(token)
-		if !hit {
-			resp, err := dotcom.CheckAccessToken(r.Context(), dotComClient, token)
-			if err != nil {
-				responseJSONError(logger, w, http.StatusUnauthorized,
-					errors.Errorf("failed to check access token: %s", err),
-				)
+			if errors.Is(err, limiter.NoAccessError{}) {
+				response.JSONError(logger, w, http.StatusForbidden, err)
 				return
 			}
 
-			subscription = actor.NewSubscriptionFromDotCom(resp.Dotcom.ProductSubscriptionByAccessToken.ProductSubscriptionState)
-			saveSubscriptionToCache(token, subscription)
+			response.JSONError(logger, w, http.StatusInternalServerError, err)
 		}
 
-		if !subscription.AccessEnabled {
-			responseJSONError(logger, w, http.StatusBadRequest,
-				errors.New("license archived or LLM proxy access not enabled"))
-			return
-		}
-
-		r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{Subscription: subscription}))
 		next.ServeHTTP(w, r)
 	})
 }

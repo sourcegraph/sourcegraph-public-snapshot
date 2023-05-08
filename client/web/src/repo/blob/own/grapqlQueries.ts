@@ -39,6 +39,11 @@ export const FETCH_OWNERS = gql`
         ruleLineMatch
     }
 
+    fragment RecentContributorOwnershipSignalFields on RecentContributorOwnershipSignal {
+        title
+        description
+    }
+
     query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
         node(id: $repo) {
             ... on Repository {
@@ -51,6 +56,7 @@ export const FETCH_OWNERS = gql`
                                 }
                                 reasons {
                                     ...CodeownersFileEntryFields
+                                    ...RecentContributorOwnershipSignalFields
                                 }
                             }
                         }

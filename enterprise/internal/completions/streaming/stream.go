@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/dotcom"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/llmproxy"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/openai"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
@@ -32,7 +33,7 @@ const MaxRequestDuration = time.Minute
 
 // NewCompletionsStreamHandler is an http handler which streams back completions results.
 func NewCompletionsStreamHandler(logger log.Logger, db database.DB) http.Handler {
-	rl := NewRateLimiter(db, redispool.Store)
+	rl := NewRateLimiter(db, redispool.Store, RateLimitScopeCompletion)
 	return &streamHandler{logger: logger, rl: rl}
 }
 
@@ -49,6 +50,8 @@ func GetCompletionClient(provider string, accessToken string, model string) (typ
 		return openai.NewOpenAIClient(httpcli.ExternalDoer, accessToken, model), nil
 	case dotcom.ProviderName:
 		return dotcom.NewClient(httpcli.ExternalDoer, accessToken, model), nil
+	case llmproxy.ProviderName:
+		return llmproxy.NewClient(httpcli.ExternalDoer, accessToken, model), nil
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}

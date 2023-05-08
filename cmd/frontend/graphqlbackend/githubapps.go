@@ -14,8 +14,11 @@ import (
 // enterprise/cmd/frontend/internal/auth/githubappauth/
 
 type GitHubAppsResolver interface {
+	NodeResolvers() map[string]NodeByIDFunc
+
 	// Queries
 	GitHubApps(ctx context.Context) (GitHubAppConnectionResolver, error)
+	GitHubApp(ctx context.Context, args *GitHubAppArgs) (GitHubAppResolver, error)
 
 	// Mutations
 	DeleteGitHubApp(ctx context.Context, args *DeleteGitHubAppArgs) (*EmptyResponse, error)
@@ -37,6 +40,8 @@ type GitHubAppResolver interface {
 	Logo() string
 	CreatedAt() gqlutil.DateTime
 	UpdatedAt() gqlutil.DateTime
+	ExternalServices(context.Context, *struct{ graphqlutil.ConnectionArgs }) *ComputedExternalServiceConnectionResolver
+	Installations(context.Context) []GitHubAppInstallation
 }
 
 type DeleteGitHubAppArgs struct {
@@ -47,4 +52,54 @@ type GitHubAppsArgs struct {
 	graphqlutil.ConnectionArgs
 	After     *string
 	Namespace *graphql.ID
+}
+
+type GitHubAppArgs struct {
+	ID graphql.ID
+}
+
+type GitHubAppInstallationAccount struct {
+	AccountLogin     string
+	AccountName      string
+	AccountAvatarURL string
+	AccountURL       string
+	AccountType      string
+}
+
+func (ghai GitHubAppInstallationAccount) Login() string {
+	return ghai.AccountLogin
+}
+
+func (ghai GitHubAppInstallationAccount) Name() string {
+	return ghai.AccountName
+}
+
+func (ghai GitHubAppInstallationAccount) AvatarURL() string {
+	return ghai.AccountAvatarURL
+}
+
+func (ghai GitHubAppInstallationAccount) URL() string {
+	return ghai.AccountURL
+}
+
+func (ghai GitHubAppInstallationAccount) Type() string {
+	return ghai.AccountType
+}
+
+type GitHubAppInstallation struct {
+	InstallID      int32
+	InstallURL     string
+	InstallAccount GitHubAppInstallationAccount
+}
+
+func (ghai GitHubAppInstallation) ID() int32 {
+	return ghai.InstallID
+}
+
+func (ghai GitHubAppInstallation) URL() string {
+	return ghai.InstallURL
+}
+
+func (ghai GitHubAppInstallation) Account() GitHubAppInstallationAccount {
+	return ghai.InstallAccount
 }

@@ -120,6 +120,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
+	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -190,7 +191,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 									},
 									"reasons": [
 										{
-											"title": "CODEOWNERS",
+											"title": "codeowners",
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "GitBlob",
@@ -218,6 +219,7 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
 	db := database.NewMockDB()
+	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
 	own := fakeOwnService{
@@ -288,7 +290,7 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 								{
 									"reasons": [
 										{
-											"title": "CODEOWNERS",
+											"title": "codeowners",
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
@@ -328,6 +330,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
 	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
 	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
+	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
@@ -497,6 +500,7 @@ func TestOwnershipPagination(t *testing.T) {
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
+	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	repos.GetFunc.SetDefaultReturn(&types.Repo{}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		return "42", nil
@@ -565,4 +569,123 @@ func TestOwnershipPagination(t *testing.T) {
 	if diff := cmp.Diff(wantPaginatedOwners, paginatedOwners); diff != "" {
 		t.Errorf("returned owners -want+got: %s", diff)
 	}
+}
+
+func TestOwnership_WithSignals(t *testing.T) {
+	logger := logtest.Scoped(t)
+	fakeDB := fakedb.New()
+	db := database.NewMockDB()
+
+	recentContribStore := database.NewMockRecentContributionSignalStore()
+	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
+		AuthorName:        "santa claus",
+		AuthorEmail:       "santa@northpole.com",
+		ContributionCount: 5,
+	}}, nil)
+	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
+
+	fakeDB.Wire(db)
+	repoID := api.RepoID(1)
+	own := fakeOwnService{
+		Ruleset: codeowners.NewRuleset(
+			codeowners.IngestedRulesetSource{ID: int32(repoID)},
+			&codeownerspb.File{
+				Rule: []*codeownerspb.Rule{
+					{
+						Pattern: "*.js",
+						Owner: []*codeownerspb.Owner{
+							{Handle: "js-owner"},
+						},
+						LineNumber: 1,
+					},
+				},
+			}),
+	}
+	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	repos := database.NewMockRepoStore()
+	db.ReposFunc.SetDefaultReturn(repos)
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		return "deadbeef", nil
+	}
+	git := fakeGitserver{}
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			fragment CodeownersFileEntryFields on CodeownersFileEntry {
+				title
+				description
+				codeownersFile {
+					__typename
+					url
+				}
+				ruleLineMatch
+			}
+
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+				node(id: $repo) {
+					... on Repository {
+						commit(rev: $revision) {
+							blob(path: $currentPath) {
+								ownership {
+									nodes {
+										reasons {
+											...CodeownersFileEntryFields
+											... on RecentContributorOwnershipSignal {
+											  title
+											  description
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}`,
+		ExpectedResult: `{
+			"node": {
+				"commit": {
+					"blob": {
+						"ownership": {
+							"nodes": [
+								{
+									"reasons": [
+										{
+											"title": "codeowners",
+											"description": "Owner is associated with a rule in a CODEOWNERS file.",
+											"codeownersFile": {
+												"__typename": "VirtualFile",
+												"url": "/github.com/sourcegraph/own/-/own"
+											},
+											"ruleLineMatch": 1
+										}
+									]
+								},
+								{
+									"reasons": [
+										{
+											"title": "recent contributor",
+											"description": "Owner is associated because they are have contributed to this file in the last 90 days."
+										}
+									]
+								}
+							]
+						}
+					}
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"repo":        string(relay.MarshalID("Repository", repoID)),
+			"revision":    "revision",
+			"currentPath": "foo/bar.js",
+		},
+	})
 }

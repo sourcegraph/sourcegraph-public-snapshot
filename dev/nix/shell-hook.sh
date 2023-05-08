@@ -12,6 +12,7 @@ if [ -f /etc/NIXOS ]; then
   cat <<EOF > .bazelrc-nix
 build --host_platform=@rules_nixpkgs_core//platforms:host
 build --extra_toolchains=@nixpkgs_nodejs_toolchain//:nodejs_nix,@nixpkgs_rust_toolchain//:rust_nix
+build --action_env=PATH=$BAZEL_ACTION_PATH
 EOF
 fi
 

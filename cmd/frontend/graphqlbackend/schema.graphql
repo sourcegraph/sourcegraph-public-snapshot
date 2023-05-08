@@ -892,6 +892,12 @@ type Mutation {
     use the default quota.
     """
     setUserCompletionsQuota(user: ID!, quota: Int): User!
+
+    """
+    Sets the code completions requests quota for the user per day. Quota: Null means
+    use the default quota.
+    """
+    setUserCodeCompletionsQuota(user: ID!, quota: Int): User!
 }
 
 """
@@ -6184,6 +6190,12 @@ type User implements Node & SettingsSubject & Namespace {
     Null, if not overwritten.
     """
     completionsQuotaOverride: Int
+    """
+    The configured override for the user to the code completions request quota
+    per day.
+    Null, if not overwritten.
+    """
+    codeCompletionsQuotaOverride: Int
 }
 
 """
@@ -6989,6 +7001,11 @@ type Site implements SettingsSubject {
     The quota of completions requests allowed per user in a day. Null, if unlimited.
     """
     perUserCompletionsQuota: Int
+
+    """
+    The quota of code completions requests allowed per user in a day. Null, if unlimited.
+    """
+    perUserCodeCompletionsQuota: Int
 }
 
 """

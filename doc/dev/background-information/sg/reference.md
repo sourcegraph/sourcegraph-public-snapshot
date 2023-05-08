@@ -1111,7 +1111,7 @@ Flags:
 
 Calculate recall for embeddings.
 
-Requires a running embeddings service with embeddings of the Sourcegraph repository.
+Recall is the fraction of relevant documents that were successfully retrieved. Recall=1 if, for every query in the test data, all relevant documents were retrieved. The command requires a running embeddings service with embeddings of the Sourcegraph repository.
 
 
 Flags:

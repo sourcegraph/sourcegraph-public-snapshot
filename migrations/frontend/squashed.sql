@@ -2390,7 +2390,8 @@ CREATE TABLE github_apps (
     encryption_key_id text NOT NULL,
     logo text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    app_url text DEFAULT ''::text NOT NULL
 );
 
 CREATE SEQUENCE github_apps_id_seq
@@ -3828,6 +3829,7 @@ CREATE TABLE users (
     tos_accepted boolean DEFAULT false NOT NULL,
     searchable boolean DEFAULT true NOT NULL,
     completions_quota integer,
+    code_completions_quota integer,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
     CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))

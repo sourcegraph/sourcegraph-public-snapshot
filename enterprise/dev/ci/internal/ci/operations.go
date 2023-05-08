@@ -77,8 +77,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				// addBrowserExtensionsUnitTests is now covered by Bazel
 				// addBrowserExtensionUnitTests, // ~4.5m
 				addJetBrainsUnitTests, // ~2.5m
-				// addTypescriptCheck is now covered by Bazel, but some Cody stuff not being is Bazel still requires it.
-				addTypescriptCheck,    // ~4m
+				// addTypescriptCheck is now covered by Bazel
 				addVsceTests,          // ~3.0m
 				addCodyExtensionTests, // ~2.5m
 			)
@@ -673,6 +672,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 			}),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.Agent("queue", "bazel"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
