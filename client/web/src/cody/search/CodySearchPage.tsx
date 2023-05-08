@@ -10,14 +10,14 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Alert, Form, Input, LoadingSpinner, Text, Badge, useSessionStorage } from '@sourcegraph/wildcard'
 
-import { CodyIcon } from '../../../cody/CodyIcon'
-import { BrandLogo } from '../../../components/branding/BrandLogo'
-import { useURLSyncedString } from '../../../hooks/useUrlSyncedString'
-import { eventLogger } from '../../../tracking/eventLogger'
+import { BrandLogo } from '../../components/branding/BrandLogo'
+import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
+import { eventLogger } from '../../tracking/eventLogger'
+import { CodyIcon } from '../components/CodyIcon'
 
 import { translateToQuery } from './translateToQuery'
 
-import searchPageStyles from '../../../storm/pages/SearchPage/SearchPageContent.module.scss'
+import searchPageStyles from '../../storm/pages/SearchPage/SearchPageContent.module.scss'
 import styles from './CodySearchPage.module.scss'
 
 interface CodeSearchPageProps {

@@ -32,7 +32,9 @@ import { Button, Icon, Link, Panel, useObservable } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
-import { CodyChat } from '../cody/CodyChat'
+import { CodySidebar } from '../cody/sidebar'
+import { useChatStore } from '../cody/stores/chat'
+import { useCodySidebarStore } from '../cody/stores/sidebar'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -43,8 +45,6 @@ import { OwnConfigProps } from '../own/OwnConfigProps'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useNavbarQueryState } from '../stores'
-import { useChatStore } from '../stores/codyChat'
-import { useCodySidebarStore } from '../stores/codySidebar'
 import { EventName } from '../util/constants'
 import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
@@ -499,7 +499,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         storageKey="size-cache-cody-sidebar"
                         onResize={onCodySidebarResize}
                     >
-                        <CodyChat onClose={() => setIsCodySidebarOpen(false)} />
+                        <CodySidebar onClose={() => setIsCodySidebarOpen(false)} />
                     </Panel>
                 )}
             </div>

@@ -11,9 +11,9 @@ import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messag
 import { PrefilledOptions } from '@sourcegraph/cody-shared/src/editor/withPreselectedOptions'
 import { isErrorLike } from '@sourcegraph/common'
 
-import { CodeMirrorEditor } from '../cody/CodeMirrorEditor'
-import { eventLogger } from '../tracking/eventLogger'
-import { EventName } from '../util/constants'
+import { eventLogger } from '../../tracking/eventLogger'
+import { EventName } from '../../util/constants'
+import { CodeMirrorEditor } from '../components/CodeMirrorEditor'
 
 import { EditorStore, useEditorStore } from './editor'
 
@@ -24,6 +24,7 @@ interface CodyChatStore {
     readonly messageInProgress: ChatMessage | null
     readonly transcript: ChatMessage[]
     readonly transcriptHistory: TranscriptJSON[]
+    readonly transcriptId: string | null
     // private, not used outside of this module
     onEvent: ((eventName: 'submit' | 'reset' | 'error') => void) | null
     initializeClient: (
@@ -162,7 +163,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             messages.pop()
         }
 
-        set({ transcript: messages })
+        set({ transcript: messages, transcriptId: transcript.isEmpty ? null : transcript.id })
 
         if (transcript.isEmpty) {
             return
@@ -204,6 +205,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             editor,
             onEvent,
             transcript: initialTranscript.toChat(),
+            transcriptId: initialTranscript.isEmpty ? null : initialTranscript.id,
             transcriptHistory,
         })
 
@@ -281,6 +283,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         transcript: [],
         transcriptHistory: fetchTranscriptHistory(),
         onEvent: null,
+        transcriptId: null,
         initializeClient,
         submitMessage,
         editMessage,
@@ -294,10 +297,10 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
 
 export const useChatStore = ({
     codebase,
-    setIsCodySidebarOpen,
+    setIsCodySidebarOpen = () => undefined,
 }: {
     codebase: string
-    setIsCodySidebarOpen: (state: boolean | undefined) => void
+    setIsCodySidebarOpen?: (state: boolean | undefined) => void
 }): CodyChatStore => {
     const store = useChatStoreState()
 

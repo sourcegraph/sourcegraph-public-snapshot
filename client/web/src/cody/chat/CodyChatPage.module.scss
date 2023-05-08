@@ -1,0 +1,23 @@
+.chat-main-wrapper {
+    filter: none;
+    border: 1px solid var(--border-color-2);
+    border-radius: var(--border-radius);
+    padding: 0;
+}
+
+.page-wrapper {
+    padding-top: 0.625rem;
+    height: 93%;
+}
+
+.sidebar {
+    overflow-y: auto;
+    padding-bottom: 0.625rem;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.3125rem;
+}

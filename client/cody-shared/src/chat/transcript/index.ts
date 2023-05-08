@@ -43,13 +43,15 @@ export class Transcript {
     }
 
     public get lastInteractionTimestamp(): string {
-        const timestamp = this.getLastInteraction()?.timestamp || ''
+        for (let index = this.interactions.length - 1; index >= 0; index--) {
+            const { timestamp } = this.interactions[index]
 
-        if (isNaN(new Date(timestamp) as any)) {
-            return new Date().toISOString()
+            if (!isNaN(new Date(timestamp) as any)) {
+                return timestamp
+            }
         }
 
-        return timestamp
+        return new Date().toISOString()
     }
 
     public addInteraction(interaction: Interaction | null): void {
