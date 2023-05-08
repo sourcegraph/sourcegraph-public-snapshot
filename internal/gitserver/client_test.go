@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/quick"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -44,6 +45,26 @@ func newMockDB() database.DB {
 	db.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
 	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 	return db
+}
+
+func TestProtoRoundTrip(t *testing.T) {
+	var diff string
+
+	f := func(original gitserver.ArchiveOptions) bool {
+
+		var converted gitserver.ArchiveOptions
+		converted.FromProto(original.ToProto())
+
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Errorf("ArchiveOptions proto roundtrip failed (-want +got):\n%s", diff)
+	}
 }
 
 func TestClient_Remove(t *testing.T) {

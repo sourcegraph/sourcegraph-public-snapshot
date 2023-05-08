@@ -37,7 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -2415,19 +2414,8 @@ func (c *clientImplementor) ArchiveReader(
 
 		client := c.gRPCClientSource(conn)
 
-		req := &proto.ArchiveRequest{
-			Repo:    string(repo),
-			Treeish: options.Treeish,
-			Format:  string(options.Format),
-			Pathspecs: func() []string {
-				pathspec := make([]string, len(options.Pathspecs))
-
-				for i, path := range options.Pathspecs {
-					pathspec[i] = string(path)
-				}
-				return pathspec
-			}(),
-		}
+		req := options.ToProto()
+		req.Repo = string(repo) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
 
 		ctx, cancel := context.WithCancel(ctx)
 

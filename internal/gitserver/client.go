@@ -455,6 +455,35 @@ type ArchiveOptions struct {
 	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
 }
 
+func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
+	protoPathSpecs := x.GetPathspecs()
+	pathSpecs := make([]gitdomain.Pathspec, 0, len(protoPathSpecs))
+
+	for _, path := range protoPathSpecs {
+		pathSpecs = append(pathSpecs, gitdomain.Pathspec(path))
+	}
+
+	*o = ArchiveOptions{
+		Treeish:   x.GetTreeish(),
+		Format:    ArchiveFormat(x.GetFormat()),
+		Pathspecs: pathSpecs,
+	}
+}
+
+func (o *ArchiveOptions) ToProto() *proto.ArchiveRequest {
+	protoPathSpecs := make([]string, 0, len(o.Pathspecs))
+
+	for _, path := range o.Pathspecs {
+		protoPathSpecs = append(protoPathSpecs, string(path))
+	}
+
+	return &proto.ArchiveRequest{
+		Treeish:   o.Treeish,
+		Format:    string(o.Format),
+		Pathspecs: protoPathSpecs,
+	}
+}
+
 type BatchLogOptions protocol.BatchLogRequest
 
 func (opts BatchLogOptions) LogFields() []log.Field {
