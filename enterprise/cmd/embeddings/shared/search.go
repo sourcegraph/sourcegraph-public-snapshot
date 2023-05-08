@@ -102,12 +102,8 @@ func (a *resultAggregator) Add(repoName api.RepoName, revision api.CommitID, srs
 	// results we are usually fetching is quite small (<100), I don't expect
 	// re-sorting for ever repo to be a problem.
 	a.results = append(a.results, srs...)
-	a.sort()
-	a.results = a.results[:min(a.maxResults, len(a.results))]
-}
-
-func (a *resultAggregator) sort() {
 	sort.Slice(a.results, func(i, j int) bool { return a.results[i].Score() > a.results[j].Score() })
+	a.results = a.results[:min(a.maxResults, len(a.results))]
 }
 
 const SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT = 1000
@@ -190,13 +186,6 @@ func filterAndHydrateContent(
 
 func min(a, b int) int {
 	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
 		return a
 	}
 	return b
