@@ -84,20 +84,28 @@ func TestSourcesWorkers(t *testing.T) {
 	// Wait for some things to happen
 	time.Sleep(100 * time.Millisecond)
 
-	// Only the first worker should be doing work
-	assert.NotZero(t, s1.syncCount)
-	assert.Zero(t, s2.syncCount)
+	t.Run("only the first worker should be doing work", func(t *testing.T) {
+		assert.NotZero(t, s1.syncCount)
+		assert.Zero(t, s2.syncCount)
+	})
 
-	// No work happens in first worker after stop
+	// Stop the first worker and wait a bit
 	close(stop1)
-	count1 := s1.syncCount
+	count1 := s1.syncCount // Save the count to assert later
 	time.Sleep(100 * time.Millisecond)
-	// Bounded range assertion to avoid flakiness
-	assert.GreaterOrEqual(t, count1, s1.syncCount-1)
-	assert.LessOrEqual(t, count1, s1.syncCount+1)
+
+	t.Run("first worker does no work after stop", func(t *testing.T) {
+		// Bounded range assertion to avoid flakiness
+		assert.GreaterOrEqual(t, count1, s1.syncCount-1)
+		assert.LessOrEqual(t, count1, s1.syncCount+1)
+	})
 
 	// Worker 2 should pick up work
-	assert.NotZero(t, s2.syncCount)
+	t.Run("second worker does work after first worker stops", func(t *testing.T) {
+		assert.NotZero(t, s2.syncCount)
+	})
+
+	// Stop worker 2
 	close(stop2)
 
 	// Wait for everyone to go home for the weekend

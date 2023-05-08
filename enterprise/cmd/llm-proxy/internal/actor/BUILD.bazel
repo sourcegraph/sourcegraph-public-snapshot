@@ -21,6 +21,10 @@ go_test(
     name = "actor_test",
     srcs = ["source_test.go"],
     embed = [":actor"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/redispool",
         "//lib/errors",
