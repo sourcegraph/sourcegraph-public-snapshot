@@ -7,10 +7,12 @@ import { SiteAdminRepositoriesContainer } from '../../site-admin/SiteAdminReposi
 
 import { CustomNextButton } from './setup-steps'
 
-interface SyncRepositoriesStep extends TelemetryProps {}
+interface SyncRepositoriesStep extends TelemetryProps {
+    baseURL: string
+}
 
 export function SyncRepositoriesStep(props: SyncRepositoriesStep): ReactElement {
-    const { telemetryService, ...attributes } = props
+    const { telemetryService, baseURL, ...attributes } = props
 
     useEffect(() => {
         telemetryService.log('SetupWizardLandedSyncRepositories')
