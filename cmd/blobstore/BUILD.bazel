@@ -25,7 +25,7 @@ go_binary(
 
 go_cross_binary(
     name = "blobstore_linux_amd64",
-    platform = "@zig_sdk//platform:linux_amd64",
+    platform = "@io_bazel_rules_go//go/toolchain:linux_amd64",
     target = "blobstore",
 )
 

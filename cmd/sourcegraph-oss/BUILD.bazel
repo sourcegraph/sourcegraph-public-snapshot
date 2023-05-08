@@ -1,4 +1,7 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library""go_cross_binary")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
 
 go_library(
     name = "sourcegraph-oss_lib",
@@ -6,7 +9,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss",
     visibility = ["//visibility:private"],
     deps = [
-        "//cmd/blobstore/shared",
+        "//cmd/sourcegraph-oss/shared",
         "//cmd/frontend/shared",
         "//cmd/github-proxy/shared",
         "//cmd/gitserver/shared",
@@ -24,4 +27,31 @@ go_binary(
     name = "sourcegraph-oss",
     embed = [":sourcegraph-oss_lib"],
     visibility = ["//visibility:public"],
+)
+
+go_cross_binary(
+    name = "sourcegraph-oss_linux_amd64",
+    platform = "@io_bazel_rules_go//go/toolchain:linux_amd64",
+    target = "sourcegraph-oss",
+)
+
+pkg_tar(
+    name = "tar",
+    srcs = [":sourcegraph-oss_linux_amd64"],
+    remap_paths = { "/sourcegraph-oss_linux_amd64": "/sourcegraph-oss" }
+)
+
+oci_image(
+    name = "image",
+    architecture = "amd64",
+    base = "@wolfi_base",
+    entrypoint = ["/sourcegraph-oss"],
+    os = "linux",
+    tars = [":tar"],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repotags = ["sourcegraph/sourcegraph-oss:candidate"],
 )
