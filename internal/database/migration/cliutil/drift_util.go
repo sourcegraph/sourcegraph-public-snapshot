@@ -62,6 +62,30 @@ type driftSummary struct {
 	url        string
 }
 
+func wrap(summary DriftSummary) []DriftSummary {
+	return []DriftSummary{summary}
+}
+
+func (s *driftSummary) Display(out OutputWriter) {
+	out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, s.problem))
+	if s.hasDiff {
+		_ = out.WriteCode("diff", strings.TrimSpace(cmp.Diff(s.a, s.b)))
+	}
+
+	out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: %s.", s.solution)))
+
+	if s.hasStatements {
+		_ = out.WriteCode("sql", strings.Join(s.statements, "\n"))
+	}
+
+	if s.hasURLHint {
+		out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Hint: Reproduce %s as defined at the following URL:", s.name)))
+		out.Write("")
+		out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleUnderline, s.url))
+		out.Write("")
+	}
+}
+
 func newDriftSummary(name string, problem, solution string) *driftSummary {
 	return &driftSummary{
 		name:     name,
@@ -86,27 +110,6 @@ func (s *driftSummary) withURLHint(url string) *driftSummary {
 	s.hasURLHint = true
 	s.url = url
 	return s
-}
-
-func (s *driftSummary) Display(out OutputWriter) {
-	out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, s.problem))
-
-	if s.hasDiff {
-		// TODO - inline
-		writeDiff(out, s.a, s.b)
-	}
-	if s.hasStatements {
-		// TODO - inline
-		writeSQLSolution(out, s.solution, s.statements...)
-	}
-	if s.hasURLHint {
-		// TODO - inline
-		writeSearchHint(out, s.solution, s.url)
-	}
-}
-
-func wrap(summary DriftSummary) []DriftSummary {
-	return []DriftSummary{summary}
 }
 
 func compareSchemaDescriptions(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary {
@@ -481,28 +484,6 @@ func compareViews(schemaName, version string, actual, expected schemas.SchemaDes
 
 func noopAdditionalCallback[T schemas.Namer](_ []T) []DriftSummary {
 	return nil
-}
-
-// writeDiff writes a colorized diff of the given objects.
-func writeDiff(out OutputWriter, a, b any) {
-	out.WriteCode("diff", strings.TrimSpace(cmp.Diff(a, b)))
-}
-
-// writeSQLSolution writes a block of text containing the given solution deescription
-// and the given SQL statements formatted (and colorized) as code.
-func writeSQLSolution(out OutputWriter, description string, statements ...string) {
-	out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Suggested action: %s.", description)))
-	out.WriteCode("sql", strings.Join(statements, "\n"))
-}
-
-// writeSearchHint writes a block of text containing the given hint description and
-// a link to a set of Sourcegraph search results relevant to the missing or unexpected
-// object definition.
-func writeSearchHint(out OutputWriter, description, url string) {
-	out.WriteLine(output.Line(output.EmojiLightbulb, output.StyleItalic, fmt.Sprintf("Hint: %s using the definition at the following URL:", description)))
-	out.Write("")
-	out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleUnderline, url))
-	out.Write("")
 }
 
 // makeSearchURL returns a URL to a sourcegraph.com search query within the squashed
