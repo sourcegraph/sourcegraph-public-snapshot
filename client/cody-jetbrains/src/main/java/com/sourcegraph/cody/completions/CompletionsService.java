@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 
 public class CompletionsService {
     private final String instanceUrl;
@@ -33,11 +34,12 @@ public class CompletionsService {
         var json = wrapper.toJsonString();
 
         URI uri = URI.create(instanceUrl);
-        var body = HttpClient.newHttpClient().send(HttpRequest.newBuilder(uri)
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .header("Authorization", "token " + token)
-                .build(), HttpResponse.BodyHandlers.ofString())
-            .body();
+        HttpResponse<String> response = HttpClient.newHttpClient().send(HttpRequest.newBuilder(uri)
+            .timeout(Duration.ofSeconds(2))
+            .POST(HttpRequest.BodyPublishers.ofString(json))
+            .header("Authorization", "token " + token)
+            .build(), HttpResponse.BodyHandlers.ofString());
+        var body = response.body();
         if (body == null) {
             return null;
         }
