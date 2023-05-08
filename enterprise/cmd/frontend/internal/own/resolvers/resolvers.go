@@ -172,14 +172,16 @@ func (r *ownResolver) GitBlobOwnership(
 		}
 	}
 
-	contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), repoID)
+	signals, err := loadSignals(ctx, r.db, blob.Path(), repoID)
 	if err != nil {
 		return nil, err
 	}
-	for _, resolver := range contribResolvers {
-		ownerships = append(ownerships, resolver)
+	for _, signal := range signals {
+		res := signal.resolver
+		r.logger.Info("signal resolved", log.Float64("value", signal.value), log.String("name", signal.person.Handle))
+		ownerships = append(ownerships, &res)
+		total += 1
 	}
-	total += len(contribResolvers)
 
 	return &ownershipConnectionResolver{
 		db:             r.db,
@@ -379,6 +381,62 @@ func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, p
 	return results, nil
 }
 
+func loadSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) ([]signal, error) {
+	loaders := []signalLoader{{ff: rccSignals, weight: 0.4}}
+
+	var got []signal
+	for _, loader := range loaders {
+		temp, err := loader.ff(ctx, db, path, repoID)
+		if err != nil {
+			return nil, err
+		}
+		for _, s := range temp {
+			s.value *= loader.weight
+			got = append(got, s)
+		}
+	}
+
+	sort.Slice(got, func(i, j int) bool {
+		return got[i].value > got[j].value
+	})
+	return got, nil
+}
+
+func rccSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []signal, err error) {
+	recentAuthors, err := db.RecentContributionSignals().FindRecentAuthors(ctx, repoID, path)
+	if err != nil {
+		return nil, errors.Wrap(err, "FindRecentAuthors")
+	}
+
+	for _, author := range recentAuthors {
+		em := author.AuthorEmail
+		person := codeowners.Person{Email: em, PrimaryEmail: &em, Handle: author.AuthorName}
+		results = append(results, signal{
+			person: person,
+			value:  float64(author.ContributionCount),
+			resolver: ownershipResolver{
+				db:            db,
+				resolvedOwner: &person,
+				reasons:       []graphqlbackend.OwnershipReasonResolver{&ownershipReasonResolver{&recentContributorOwnershipSignal{}}},
+			},
+		})
+	}
+	return results, nil
+}
+
 func identifyUser(ctx context.Context, db database.DB, email string) (*types.User, error) {
 	return db.Users().GetByVerifiedEmail(ctx, email)
+}
+
+type signal struct {
+	person   codeowners.Person
+	value    float64
+	resolver ownershipResolver
+}
+
+type signalLoaderFunc func(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) ([]signal, error)
+
+type signalLoader struct {
+	ff     signalLoaderFunc
+	weight float64
 }
