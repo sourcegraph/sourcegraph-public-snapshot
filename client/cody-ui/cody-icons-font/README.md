@@ -8,7 +8,6 @@ Contains the [cody-icons](font) font, used by the VS Code extension to show Cody
 | --------- | -------------- |
 | `A`       | ![](svg/A.svg) |
 
-
 ## Regenerating
 
 ```sh
