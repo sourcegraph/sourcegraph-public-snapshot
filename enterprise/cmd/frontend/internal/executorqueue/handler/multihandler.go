@@ -9,28 +9,40 @@ import (
 	"github.com/sourcegraph/log"
 	"golang.org/x/exp/slices"
 
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type MultiHandler struct {
+type MultiHandler[T workerutil.Record] struct {
 	JobTokenStore         executorstore.JobTokenStore
-	CodeIntelQueueHandler QueueHandler[uploadsshared.Index]
-	BatchesQueueHandler   QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]
+	CodeIntelQueueHandler QueueHandler[T]
+	BatchesQueueHandler   QueueHandler[T]
 	logger                log.Logger
 }
 
-func NewMultiHandler(
+//func NewMultiHandler(
+//	jobTokenStore executorstore.JobTokenStore,
+//	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
+//	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
+//) MultiHandler {
+//	return MultiHandler{
+//		JobTokenStore:         jobTokenStore,
+//		CodeIntelQueueHandler: codeIntelQueueHandler,
+//		BatchesQueueHandler:   batchesQueueHandler,
+//		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
+//	}
+//}
+
+func NewMultiHandler[T workerutil.Record](
 	jobTokenStore executorstore.JobTokenStore,
-	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
-	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
-) MultiHandler {
-	return MultiHandler{
+	codeIntelQueueHandler QueueHandler[T],
+	batchesQueueHandler QueueHandler[T],
+) MultiHandler[T] {
+	return MultiHandler[T]{
 		JobTokenStore:         jobTokenStore,
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
@@ -51,17 +63,16 @@ func validateQueues(queues []string) []string {
 }
 
 // TODO: fairly sure this is basically executortypes.DequeueRequest with Queues extended
-// (and WorkerHostName == ExecutorName?)
 type dequeueRequest struct {
-	Queues         []string `json:"queues"`
-	WorkerHostName string   `json:"workerHostName"`
-	Version        string   `json:"version"`
-	NumCPUs        int      `json:"numCPUs,omitempty"`
-	Memory         string   `json:"memory,omitempty"`
-	DiskSpace      string   `json:"diskSpace,omitempty"`
+	Queues       []string `json:"queues"`
+	ExecutorName string   `json:"executorName"`
+	Version      string   `json:"version"`
+	NumCPUs      int      `json:"numCPUs,omitempty"`
+	Memory       string   `json:"memory,omitempty"`
+	DiskSpace    string   `json:"diskSpace,omitempty"`
 }
 
-func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (m *MultiHandler[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var req dequeueRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		// TODO: should we also log errors here? Not sure
@@ -69,7 +80,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: simply exported this method: I guess all of this will move into the handler package anyway so temp solution
-	if err := validateWorkerHostname(req.WorkerHostName); err != nil {
+	if err := validateWorkerHostname(req.ExecutorName); err != nil {
 		// TODO
 	}
 
@@ -100,7 +111,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// TODO: basically replicating error handling of handler.dequeue() here
 		switch queue {
 		case "batches":
-			record, _, err := m.BatchesQueueHandler.Store.Dequeue(r.Context(), req.WorkerHostName, nil)
+			record, _, err := m.BatchesQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
 			if err != nil {
 				logger.Error("Handler returned an error", log.Error(err))
 				http.Error(w, fmt.Sprintf("Failed to dequeue from queue %s: %s", queue, errors.Wrap(err, "dbworkerstore.Dequeue").Error()), http.StatusInternalServerError)
@@ -117,7 +128,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, fmt.Sprintf("Failed to transform %s record into job: %s", queue, errors.Wrap(err, "RecordTransformer")), http.StatusInternalServerError)
 			}
 		case "codeintel":
-			record, _, err := m.CodeIntelQueueHandler.Store.Dequeue(r.Context(), req.WorkerHostName, nil)
+			record, _, err := m.CodeIntelQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
 			if err != nil {
 				logger.Error("Handler returned an error", log.Error(err))
 				http.Error(w, fmt.Sprintf("Failed to dequeue from queue %s: %s", queue, errors.Wrap(err, "dbworkerstore.Dequeue").Error()), http.StatusInternalServerError)
@@ -134,29 +145,29 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if job.ID != 0 {
+			job.Queue = queue
 			break
 		}
-		// If this executor supports v2, return a v2 payload. Based on this field,
-		// marshalling will be switched between old and new payload.
-		if version2Supported {
-			job.Version = 2
-		}
-
-		token, err := m.JobTokenStore.Create(r.Context(), job.ID, queue, job.RepositoryName)
-		if err != nil {
-			if errors.Is(err, executorstore.ErrJobTokenAlreadyCreated) {
-				// Token has already been created, regen it.
-				token, err = m.JobTokenStore.Regenerate(r.Context(), job.ID, queue)
-				if err != nil {
-					http.Error(w, fmt.Sprintf("Failed to regenerate token: %s", errors.Wrap(err, "RegenerateToken").Error()), http.StatusInternalServerError)
-				}
-			} else {
-				http.Error(w, fmt.Sprintf("Failed to create token: %s", errors.Wrap(err, "CreateToken").Error()), http.StatusInternalServerError)
-			}
-		}
-		job.Token = token
-		job.Queue = queue
 	}
+	// If this executor supports v2, return a v2 payload. Based on this field,
+	// marshalling will be switched between old and new payload.
+	if version2Supported {
+		job.Version = 2
+	}
+
+	token, err := m.JobTokenStore.Create(r.Context(), job.ID, job.Queue, job.RepositoryName)
+	if err != nil {
+		if errors.Is(err, executorstore.ErrJobTokenAlreadyCreated) {
+			// Token has already been created, regen it.
+			token, err = m.JobTokenStore.Regenerate(r.Context(), job.ID, job.Queue)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to regenerate token: %s", errors.Wrap(err, "RegenerateToken").Error()), http.StatusInternalServerError)
+			}
+		} else {
+			http.Error(w, fmt.Sprintf("Failed to create token: %s", errors.Wrap(err, "CreateToken").Error()), http.StatusInternalServerError)
+		}
+	}
+	job.Token = token
 
 	// TODO - does this actually work?
 	if err := json.NewEncoder(w).Encode(job); err != nil {
