@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "Sourcegraph App",
-    "version": "1.0.0-dev"
+    "version": "1.0.0"
   },
   "tauri": {
     "allowlist": {
