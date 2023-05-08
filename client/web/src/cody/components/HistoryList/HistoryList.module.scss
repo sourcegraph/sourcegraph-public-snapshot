@@ -5,13 +5,14 @@
     cursor: pointer;
     padding: var(--spacing);
     margin-bottom: 0;
+    border-radius: 0.25rem;
+    border: none;
     &:hover {
         background: var(--color-bg-1);
     }
 
     &.selected,
     &.selected:hover {
-        border-radius: 0.25rem;
         background: var(--color-bg-2);
     }
 }

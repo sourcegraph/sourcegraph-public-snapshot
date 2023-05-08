@@ -205,6 +205,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             editor,
             onEvent,
             transcript: initialTranscript.toChat(),
+            transcriptId: initialTranscript.isEmpty ? null : initialTranscript.id,
             transcriptHistory,
         })
 

@@ -17,27 +17,30 @@ interface HistoryListProps {
 
 export const HistoryList: React.FunctionComponent<HistoryListProps> = ({ trucateMessageLenght, onSelect }) => {
     const { transcriptHistory } = useChatStoreState()
+    const transcripts = useMemo(
+        () =>
+            transcriptHistory.sort(
+                (a, b) =>
+                    -1 *
+                    ((safeTimestampToDate(a.lastInteractionTimestamp) as any) -
+                        (safeTimestampToDate(b.lastInteractionTimestamp) as any))
+            ),
+        [transcriptHistory]
+    )
 
     return transcriptHistory.length === 0 ? (
         <Text className="p-2 pb-0 text-muted text-center">No chats yet</Text>
     ) : (
-        <ul className="p-0 d-flex flex-column">
-            {transcriptHistory
-                .sort(
-                    (a, b) =>
-                        -1 *
-                        ((safeTimestampToDate(a.lastInteractionTimestamp) as any) -
-                            (safeTimestampToDate(b.lastInteractionTimestamp) as any))
-                )
-                .map(timestamp => (
-                    <HistoryListItem
-                        key={timestamp.id}
-                        transcript={timestamp}
-                        onSelect={onSelect}
-                        truncateMessageLength={trucateMessageLenght}
-                    />
-                ))}
-        </ul>
+        <div className="p-0 d-flex flex-column">
+            {transcripts.map(transcript => (
+                <HistoryListItem
+                    key={transcript.id}
+                    transcript={transcript}
+                    onSelect={onSelect}
+                    truncateMessageLength={trucateMessageLenght}
+                />
+            ))}
+        </div>
     )
 }
 
@@ -72,10 +75,8 @@ const HistoryListItem: React.FunctionComponent<{
         return null
     }
 
-    /* eslint-disable jsx-a11y/no-noninteractive-element-to-interactive-role */
     return (
-        <li
-            role="button"
+        <button
             key={id}
             className={classNames(styles.historyItem, {
                 [styles.selected]: transcriptId === id,
@@ -96,7 +97,6 @@ const HistoryListItem: React.FunctionComponent<{
                 {lastMessage.text.slice(0, truncateMessageLength)}
                 {lastMessage.text.length > truncateMessageLength ? '...' : ''}
             </Text>
-        </li>
+        </button>
     )
-    /* eslint-enable jsx-a11y/no-noninteractive-element-interactions */
 }
