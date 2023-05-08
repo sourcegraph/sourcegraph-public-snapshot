@@ -445,8 +445,8 @@ func validateGitHubConnection(githubValidators []func(*types.GitHubConnection) e
 		)
 	}
 
-	if c.Token == "" {
-		err = errors.Append(err, errors.New("token must be set"))
+	if c.Token == "" && c.GitHubAppDetails == nil {
+		err = errors.Append(err, errors.New("either token or GitHub App Details must be set"))
 	}
 	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil {
 		err = errors.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
