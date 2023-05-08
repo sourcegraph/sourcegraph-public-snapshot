@@ -65,8 +65,8 @@ func searchRepoEmbeddingIndexes(
 				return nil, err
 			}
 
-			aggregatedCodeResults.Add(params.RepoName, revision, codeResults)
-			aggregatedTextResults.Add(params.RepoName, revision, textResults)
+			aggregatedCodeResults.Add(params.RepoName, revision, codeResults...)
+			aggregatedTextResults.Add(params.RepoName, revision, textResults...)
 			continue
 		}
 
@@ -76,10 +76,10 @@ func searchRepoEmbeddingIndexes(
 		}
 
 		codeResults := embeddingIndex.CodeIndex.SimilaritySearch(embeddedQuery, params.CodeResultsCount, workerOpts, searchOpts)
-		aggregatedCodeResults.Add(embeddingIndex.RepoName, embeddingIndex.Revision, codeResults)
+		aggregatedCodeResults.Add(embeddingIndex.RepoName, embeddingIndex.Revision, codeResults...)
 
 		textResults := embeddingIndex.TextIndex.SimilaritySearch(embeddedQuery, params.TextResultsCount, workerOpts, searchOpts)
-		aggregatedTextResults.Add(embeddingIndex.RepoName, embeddingIndex.Revision, textResults)
+		aggregatedTextResults.Add(embeddingIndex.RepoName, embeddingIndex.Revision, textResults...)
 	}
 
 	toEmbeddingSearchResults := func(srs []aggregatedResult) []embeddings.EmbeddingSearchResult {
@@ -160,7 +160,11 @@ type resultAggregator struct {
 	maxResults int
 }
 
-func (a *resultAggregator) Add(repoName api.RepoName, revision api.CommitID, srs []embeddings.SimilaritySearchResult) {
+func (a *resultAggregator) Add(repoName api.RepoName, revision api.CommitID, srs ...embeddings.SimilaritySearchResult) {
+	// Note: this leaves some performance on the table because we know the new
+	// results are sorted. We could instead merge here. Given that the number of
+	// results we are usually fetching is quite small (<100), I don't expect
+	// re-sorting for ever repo to be a problem.
 	a.append(repoName, revision, srs)
 	a.sort()
 	a.results = a.results[:min(a.maxResults, len(a.results))]

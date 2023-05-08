@@ -168,6 +168,34 @@ func NewHandler(
 		json.NewEncoder(w).Encode(res)
 	})
 
+	mux.HandleFunc("/multiSearch", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
+			return
+		}
+
+		var args embeddings.EmbeddingsMultiSearchParameters
+		err := json.NewDecoder(r.Body).Decode(&args)
+		if err != nil {
+			http.Error(w, "could not parse request body: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		res, err := searchRepoEmbeddingIndexes(r.Context(), logger, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
+		if errcode.IsNotFound(err) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err != nil {
+			logger.Error("error searching embedding index", log.Error(err))
+			http.Error(w, fmt.Sprintf("error searching embedding index: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(res)
+	})
+
 	mux.HandleFunc("/isContextRequiredForChatQuery", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
