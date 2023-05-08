@@ -1,4 +1,6 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library","go_cross_binary")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 go_library(
     name = "loadtest_lib",
@@ -20,4 +22,31 @@ go_binary(
     name = "loadtest",
     embed = [":loadtest_lib"],
     visibility = ["//visibility:public"],
+)
+
+go_cross_binary(
+    name = "loadtest_linux_amd64",
+    platform = "@zig_sdk//platform:linux_amd64",
+    target = "loadtest",
+)
+
+pkg_tar(
+    name = "tar",
+    srcs = [":loadtest_linux_amd64"],
+    remap_paths = { "/loadtest_linux_amd64": "/loadtest" }
+)
+
+oci_image(
+    name = "image",
+    architecture = "amd64",
+    base = "@wolfi_base",
+    entrypoint = ["/loadtest"],
+    os = "linux",
+    tars = [":tar"],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repotags = ["sourcegraph/loadtest:candidate"],
 )
