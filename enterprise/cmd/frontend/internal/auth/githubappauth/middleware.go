@@ -187,7 +187,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		state := query.Get("state")
 		instID := query.Get("installation_id")
 		if state == "" || instID == "" {
-			http.Error(w, "Bad request, installation_id and state query params must be present", http.StatusBadRequest)
+			http.Redirect(w, req, "/site-admin/github-apps", http.StatusFound)
 			return
 		}
 		idBytes, ok := cache.Get(state)

@@ -53,7 +53,7 @@ export const GitHubAppPage: FC<Props> = ({
     const app = useMemo(() => data?.gitHubApp, [data])
 
     // TODO - make an actual GraphQL request to do it here...
-    const refreshFromGH = (): void => {}
+    const refreshFromGH = (): void => { }
 
     if (!appID) {
         return null
@@ -109,7 +109,7 @@ export const GitHubAppPage: FC<Props> = ({
                     <div className="mt-4">
                         <H2>App installations</H2>
                         <div className="list-group mb-3" aria-label="GitHub App Installations">
-                            {app.installations?.map(installation => (
+                            {app.installations?.length > 0 ? app.installations?.map(installation => (
                                 <Card
                                     className={classNames(styles.listNode, 'd-flex flex-row align-items-center')}
                                     key={installation.id}
@@ -126,22 +126,31 @@ export const GitHubAppPage: FC<Props> = ({
                                         <span>Type: {installation.account.type}</span>
                                     </span>
                                     <small className="text-muted mr-3">ID: {installation.id}</small>
-                                    <ButtonLink to={installation.url} variant="secondary" className="ml-auto" size="sm">
+                                    <ButtonLink to={installation.url} variant="secondary" className="ml-auto mr-1" size="sm">
                                         <Icon inline={true} svgPath={mdiGithub} aria-hidden={true} /> Edit
                                     </ButtonLink>
+                                    <ButtonLink variant="success" to={
+                                        `/site-admin/external-services/new?id=github&appID=${app.appID}&installationID=${installation.id}&url=${encodeURI(app.baseURL)}&org=${installation.account.login}`
+                                    } size="sm">
+                                        <Icon svgPath={mdiPlus} aria-hidden={true} /> New connection
+                                    </ButtonLink>
                                 </Card>
-                            ))}
+                            )) : (
+                                <p>This GitHub App does not have any installations. Install the App to create a new connection.</p>
+                            )}
                         </div>
-                        <ButtonLink
-                            to={
-                                app.appURL.endsWith('/')
-                                    ? app.appURL + 'installations/new'
-                                    : app.appURL + '/installations/new'
-                            }
+                        <Button
+                            onClick={async () => {
+                                const req = await fetch('/.auth/githubapp/state')
+                                const state = await req.text()
+                                window.location.href = app.appURL.endsWith('/')
+                                    ? app.appURL + 'installations/new?state=' + state
+                                    : app.appURL + '/installations/new?state=' + state
+                            }}
                             variant="success"
                         >
                             <Icon svgPath={mdiPlus} aria-hidden={true} /> Add installation
-                        </ButtonLink>
+                        </Button>
                     </div>
                     <hr className="mt-4" />
                     <div className="mt-4">
@@ -164,9 +173,6 @@ export const GitHubAppPage: FC<Props> = ({
                                 />
                             </SummaryContainer>
                         )}
-                        <Button variant="success">
-                            <Icon svgPath={mdiPlus} aria-hidden={true} /> Add connection
-                        </Button>
                     </div>
                 </Container>
             )}

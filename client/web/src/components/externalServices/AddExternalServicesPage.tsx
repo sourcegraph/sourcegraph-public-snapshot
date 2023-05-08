@@ -13,6 +13,7 @@ import { ExternalServiceCard } from './ExternalServiceCard'
 import { allExternalServices, AddExternalServiceOptions } from './externalServices'
 
 import styles from './AddExternalServicesPage.module.scss'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 
 export interface AddExternalServicesPageProps extends TelemetryProps {
     /**
@@ -53,10 +54,27 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         setHasDismissedPrivacyWarning(true)
     }
 
-    const id = new URLSearchParams(search).get('id')
+    const params = new URLSearchParams(search)
+    const id = params.get('id')
     if (id) {
         const externalService = allExternalServices[id]
         if (externalService) {
+            if (externalService.kind === ExternalServiceKind.GITHUB) {
+                const appID = params.get('appID')
+                const installationID = params.get('installationID')
+                const baseURL = params.get('url')
+                const org = params.get('org')
+                if (appID != null && installationID != null && baseURL != null) {
+                    externalService.defaultConfig = `{
+  "url": "${decodeURI(baseURL)}",
+  "gitHubAppDetails": {
+    "installationID": ${installationID},
+    "appID": ${appID}
+  },
+  "orgs": ["${org}"]
+}`
+                }
+            }
             return (
                 <AddExternalServicePage
                     telemetryService={telemetryService}
