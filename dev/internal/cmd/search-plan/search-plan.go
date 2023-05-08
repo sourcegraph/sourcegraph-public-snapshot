@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -66,7 +67,7 @@ func run(w io.Writer, args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create planJob")
 	}
-	fmt.Fprintln(w, printer.SexpPretty(planJob))
+	fmt.Fprintln(w, printer.SexpVerbose(planJob, job.VerbosityMax, true))
 
 	return nil
 }
