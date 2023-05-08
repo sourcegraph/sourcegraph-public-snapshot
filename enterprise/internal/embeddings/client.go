@@ -102,6 +102,31 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*
 	return &response, nil
 }
 
+func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingSearchResults, error) {
+	resp, err := c.httpPost(ctx, "multiSearch", args.RepoName, args)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// best-effort inclusion of body in error message
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return nil, errors.Errorf(
+			"Embeddings.Search http status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
+	}
+
+	var response EmbeddingSearchResults
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return nil, err
+	}
+	return &response, nil
+}
+
 func (c *Client) IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryParameters) (bool, error) {
 	resp, err := c.httpPost(ctx, "isContextRequiredForChatQuery", "", args)
 	if err != nil {
@@ -134,6 +159,8 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 	return c.Endpoints.Get(string(repo))
 }
 
+// TODO: this takes a repo to route it to the right replica.
+// We need to partition the requests ahead of time.
 func (c *Client) httpPost(
 	ctx context.Context,
 	method string,
