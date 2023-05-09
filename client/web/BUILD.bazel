@@ -1782,6 +1782,7 @@ ts_project(
         "src/components/diff/DiffSplitHunk.test.tsx",
         "src/components/diff/DiffStat.test.tsx",
         "src/components/externalServices/ExternalServiceForm.test.tsx",
+        "src/components/externalServices/externalServices.test.tsx",
         "src/components/fuzzyFinder/FuzzyFinder.test.tsx",
         "src/enterprise/batches/MultiSelectContext.test.tsx",
         "src/enterprise/batches/batch-spec/yaml-util.test.ts",
