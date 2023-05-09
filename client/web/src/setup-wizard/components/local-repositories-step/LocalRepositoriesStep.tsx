@@ -43,11 +43,17 @@ import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_CODE_HOSTS, GET_LOCAL_DIRECTORY_
 
 import styles from './LocalRepositoriesStep.module.scss'
 
-interface LocalRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTMLDivElement> {}
+interface LocalRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTMLDivElement> {
+    description?: boolean
+    progressBar?: boolean
+}
 
-export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
-    const { telemetryService, ...attributes } = props
-
+export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = ({
+    telemetryService,
+    description = true,
+    progressBar = true,
+    ...attributes
+}) => {
     const [directoryPaths, setDirectoryPaths] = useState<string[]>([])
     const [error, setError] = useState<ErrorLike | undefined>()
 
@@ -68,7 +74,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
     )
 
     // Automatically creates or deletes local external service to
-    // match user choosen paths for local repositories.
+    // match user chosen paths for local repositories.
     useEffect(() => {
         if (loading) {
             return
@@ -143,7 +149,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
 
     return (
         <div {...attributes}>
-            <Text className="mb-2">Add your local repositories from your disk.</Text>
+            {description && <Text className="mb-2">Add your local repositories from your disk.</Text>}
 
             <CodeHostExternalServiceAlert />
 
@@ -162,9 +168,11 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
                 )}
             </Container>
 
-            <FooterWidget>
-                <ProgressBar />
-            </FooterWidget>
+            {progressBar && (
+                <FooterWidget>
+                    <ProgressBar />
+                </FooterWidget>
+            )}
 
             <CustomNextButton
                 label={directoryPaths.length > 0 ? 'Next' : 'Skip'}

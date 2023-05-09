@@ -30,7 +30,7 @@ export const CodeHostsPicker: FC = () => (
                 <li key={codeHostType}>
                     <Button
                         as={Link}
-                        to={`/setup/remote-repositories/${getCodeHostURLParam(codeHostType)}/create`}
+                        to={`${getCodeHostURLParam(codeHostType)}/create`}
                         variant="secondary"
                         outline={true}
                         className={styles.item}

@@ -21,16 +21,25 @@ import { GET_CODE_HOSTS } from './queries'
 
 import styles from './RemoteRepositoriesStep.module.scss'
 
-interface RemoteRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTMLDivElement> {}
+interface RemoteRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTMLDivElement> {
+    baseURL: string
+    description?: boolean
+    progressBar?: boolean
+}
 
-export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => {
-    const { className, telemetryService, ...attributes } = props
-
+export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
+    className,
+    telemetryService,
+    baseURL,
+    description = true,
+    progressBar = true,
+    ...attributes
+}) => {
     const location = useLocation()
     const [codeHostToDelete, setCodeHostToDelete] = useState<CodeHostToDelete | null>(null)
 
-    const editConnectionRouteMatch = matchPath('/setup/remote-repositories/:codehostId/edit', location.pathname)
-    const newConnectionRouteMatch = matchPath('/setup/remote-repositories/:codeHostType/create', location.pathname)
+    const editConnectionRouteMatch = matchPath(`${baseURL}/:codehostId/edit`, location.pathname)
+    const newConnectionRouteMatch = matchPath(`${baseURL}/:codeHostType/create`, location.pathname)
 
     const codeHostQueryResult = useQuery<GetCodeHostsResult>(GET_CODE_HOSTS, {
         fetchPolicy: 'cache-and-network',
@@ -53,7 +62,7 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
 
     return (
         <div {...attributes} className={classNames(className, styles.root)}>
-            <Text className="mb-2">Connect remote code hosts where your source code lives.</Text>
+            {description && <Text className="mb-2">Connect remote code hosts where your source code lives.</Text>}
 
             <CodeHostExternalServiceAlert />
 
@@ -88,9 +97,11 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
                 </Container>
             </section>
 
-            <FooterWidget>
-                <ProgressBar />
-            </FooterWidget>
+            {progressBar && (
+                <FooterWidget>
+                    <ProgressBar />
+                </FooterWidget>
+            )}
 
             <CustomNextButton
                 label={getNextButtonLabel(codeHostQueryResult.data)}

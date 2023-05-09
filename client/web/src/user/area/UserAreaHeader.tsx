@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
 
+import classNames from 'classnames'
 import { NavLink } from 'react-router-dom'
 
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
@@ -68,12 +69,15 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
                     </PageHeader.Heading>
                 </PageHeader>
                 <nav className="d-flex align-items-end justify-content-between" aria-label="User">
-                    <ul className="nav nav-tabs w-100">
+                    <ul className={classNames('nav nav-tabs w-100', styles.navigation)}>
                         {navItems.map(
                             ({ to, label, exact, icon: ItemIcon, condition = () => true }) =>
                                 condition(props) && (
                                     <li key={label} className="nav-item">
-                                        <NavLink to={url + to} className="nav-link">
+                                        <NavLink
+                                            to={url + to}
+                                            className={classNames('nav-link', styles.navigationLink)}
+                                        >
                                             <span>
                                                 {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
                                                 <span className="text-content" data-tab-content={label}>

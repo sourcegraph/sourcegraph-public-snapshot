@@ -4,3 +4,12 @@
     max-height: 10rem;
     margin-right: 1rem;
 }
+
+.navigation {
+    display: flex;
+    gap: 0.5rem;
+
+    &-link {
+        padding: 0.5rem 0.25rem;
+    }
+}

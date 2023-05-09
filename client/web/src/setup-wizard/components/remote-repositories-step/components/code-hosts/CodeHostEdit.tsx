@@ -81,7 +81,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
         return (
             <Alert variant="warning">
                 <H4>We either couldn't find code host</H4>
-                Try to connect new code host instead <Link to="/setup/remote-repositories">here</Link>
+                Try to connect new code host instead <Link to="..">here</Link>
             </Alert>
         )
     }
@@ -107,7 +107,7 @@ export const CodeHostEdit: FC<CodeHostEditProps> = props => {
                         disabled={state.submitting}
                     />
 
-                    <Button as={Link} size="sm" to="/setup/remote-repositories" variant="secondary">
+                    <Button as={Link} size="sm" to=".." variant="secondary">
                         Cancel
                     </Button>
 
@@ -147,7 +147,7 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
             refetchQueries: ['StatusAndRepoStats'],
         })
 
-        navigate('/setup/remote-repositories')
+        navigate('..')
         // TODO show notification UI that code host has been added successfully
     }
 

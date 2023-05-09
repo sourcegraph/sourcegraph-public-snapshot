@@ -25,6 +25,7 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 import styles from './SetupSteps.module.scss'
 
 interface StepComponentProps extends TelemetryProps {
+    baseURL: string
     className?: string
 }
 
@@ -170,7 +171,9 @@ export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
                     <Route
                         key="hardcoded-key"
                         path={`${path}/*`}
-                        element={<Component className={styles.content} telemetryService={telemetryService} />}
+                        element={
+                            <Component baseURL={path} className={styles.content} telemetryService={telemetryService} />
+                        }
                     />
                 ))}
                 <Route path="*" element={<Navigate to={steps[activeStepIndex].path} replace={true} />} />
