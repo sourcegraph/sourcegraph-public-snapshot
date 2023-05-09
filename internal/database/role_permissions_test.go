@@ -259,7 +259,7 @@ func TestRolePermissionGetByRoleID(t *testing.T) {
 
 	r := createTestRoleForRolePermission(ctx, "TEST ROLE", t, db)
 
-	totalRolePermissions := 2
+	totalRolePermissions := 5
 	for i := 1; i <= totalRolePermissions; i++ {
 		action := rtypes.NamespaceAction(fmt.Sprintf("%s-%d", rtypes.BatchChangesReadAction, i))
 		p := createTestPermissionForRolePermission(ctx, action, t, db)
@@ -697,7 +697,7 @@ func createTestPermissionForRolePermission(ctx context.Context, action rtypes.Na
 	t.Helper()
 	p, err := db.Permissions().Create(ctx, CreatePermissionOpts{
 		Namespace: rtypes.BatchChangesNamespace,
-		Action:    rtypes.BatchChangesReadAction,
+		Action:    action,
 	})
 	if err != nil {
 		t.Fatal(err)
