@@ -137,13 +137,11 @@ const register = async (
             logEvent('CodyVSCodeExtension:codyToggleEnabled:clicked')
         }),
         // Access token
+        // This is only used in configuration tests
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
-            const tokenInput = args?.length ? (args[0] as string) : await vscode.window.showInputBox()
-            if (tokenInput === undefined || tokenInput === '') {
-                return
+            if (args?.length && (args[0] as string)) {
+                await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, args[0])
             }
-            await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, tokenInput)
-            logEvent('CodyVSCodeExtension:codySetAccessToken:clicked')
         }),
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
             await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
@@ -176,18 +174,13 @@ const register = async (
                 await workspaceConfig.update('cody.serverEndpoint', DOTCOM_URL.href, vscode.ConfigurationTarget.Global)
                 const token = new URLSearchParams(uri.query).get('code')
                 if (token && token.length > 8) {
-                    await context.secrets.store(CODY_ACCESS_TOKEN_SECRET, token)
+                    await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
                     const isAuthed = await isValidLogin({
                         serverEndpoint: DOTCOM_URL.href,
                         accessToken: token,
                         customHeaders: config.customHeaders,
                     })
                     await chatProvider.sendLogin(isAuthed)
-                    logEvent(
-                        'CodyVSCodeExtension:codySetAccessToken:clicked',
-                        { serverEndpoint: config.serverEndpoint },
-                        { serverEndpoint: config.serverEndpoint }
-                    )
                     void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
                 }
             },
