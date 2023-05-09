@@ -17,6 +17,7 @@ go_library(
         "//internal/database/migration/store",
         "//internal/observation",
         "//lib/errors",
+        "//lib/output",
         "@com_github_sourcegraph_log//:log",
     ],
 )
