@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/strings/slices"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
@@ -225,7 +226,9 @@ func getTitles(t *testing.T, args gqltestutil.GetDashboardArgs) []string {
 }
 
 func TestUpdateInsight(t *testing.T) {
-	t.Skip()
+	repos := []string{"github.com/sgtest/go-diff", "github.com/sgtest/appdash"}
+	setupReposForInsights(t)
+
 	t.Run("metadata update no recalculation", func(t *testing.T) {
 		dataSeries := map[string]any{
 			"query": "lang:css",
@@ -234,7 +237,7 @@ func TestUpdateInsight(t *testing.T) {
 				"lineColor": "#6495ED",
 			},
 			"repositoryScope": map[string]any{
-				"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+				"repositories": repos,
 			},
 			"timeScope": map[string]any{
 				"stepInterval": map[string]any{
@@ -270,7 +273,7 @@ func TestUpdateInsight(t *testing.T) {
 		}
 		// Ensure order of repositories does not affect.
 		dataSeries["repositoryScope"] = map[string]any{
-			"repositories": []string{"github.com/sourcegraph/about", "github.com/sourcegraph/sourcegraph"},
+			"repositories": repos,
 		}
 		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
 			"dataSeries": []any{
@@ -632,7 +635,7 @@ func TestUpdateInsight(t *testing.T) {
 }
 
 func TestSaveInsightAsNewView(t *testing.T) {
-	t.Skip()
+	setupReposForInsights(t)
 	dataSeries := map[string]any{
 		"query": "lang:go",
 		"options": map[string]string{
@@ -640,7 +643,7 @@ func TestSaveInsightAsNewView(t *testing.T) {
 			"lineColor": "blue",
 		},
 		"repositoryScope": map[string]any{
-			"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+			"repositories": []string{"github.com/sgtest/go-diff", "github.com/sgtest/appdash"},
 		},
 		"timeScope": map[string]any{
 			"stepInterval": map[string]any{
@@ -690,10 +693,11 @@ func TestSaveInsightAsNewView(t *testing.T) {
 }
 
 func TestCreateInsight(t *testing.T) {
-	t.Skip()
+	repos := []string{"github.com/sgtest/go-diff", "github.com/sgtest/appdash"}
+
+	setupReposForInsights(t)
 
 	t.Run("series level repo & time scopes", func(t *testing.T) {
-		repos := []string{"a", "b"}
 		intervalUnit := "MONTH"
 		intervalValue := 4
 		dataSeries := map[string]any{
@@ -741,7 +745,6 @@ func TestCreateInsight(t *testing.T) {
 	})
 
 	t.Run("view level repo & time scopes", func(t *testing.T) {
-		repos := []string{"repo1"}
 		intervalUnit := "MONTH"
 		intervalValue := 4
 		dataSeries := map[string]any{
@@ -788,7 +791,6 @@ func TestCreateInsight(t *testing.T) {
 	})
 
 	t.Run("series level scopes override", func(t *testing.T) {
-		repos := []string{"series1", "series2"}
 		intervalUnit := "MONTH"
 		intervalValue := 4
 		dataSeries := map[string]any{
@@ -860,5 +862,34 @@ func TestCreateInsight(t *testing.T) {
 		}
 
 	})
+}
 
+func setupReposForInsights(t *testing.T) {
+	if len(*githubToken) == 0 {
+		t.Skip("Environment variable GITHUB_TOKEN is not set")
+	}
+
+	// Set up external service
+	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "gqltest-github-search",
+		Config: mustMarshalJSONString(struct {
+			URL                   string   `json:"url"`
+			Token                 string   `json:"token"`
+			Repos                 []string `json:"repos"`
+			RepositoryPathPattern string   `json:"repositoryPathPattern"`
+		}{
+			URL:   "https://ghe.sgdev.org/",
+			Token: *githubToken,
+			Repos: []string{
+				"sgtest/go-diff",
+				"sgtest/appdash",
+			},
+			RepositoryPathPattern: "github.com/{nameWithOwner}",
+		}),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	removeExternalServiceAfterTest(t, esID)
 }
