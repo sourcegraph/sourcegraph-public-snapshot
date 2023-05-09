@@ -10,4 +10,6 @@ func (a NamespaceAction) String() string {
 }
 
 const BatchChangesWriteAction NamespaceAction = "WRITE"
+const SubscriptionsReadAction NamespaceAction = "READ"
+const SubscriptionsWriteAction NamespaceAction = "WRITE"
 const BatchChangesReadAction NamespaceAction = "READ"
