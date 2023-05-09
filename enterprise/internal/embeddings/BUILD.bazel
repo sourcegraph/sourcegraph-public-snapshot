@@ -7,7 +7,9 @@ go_library(
         "dot.go",
         "dot_amd64.go",
         "dot_amd64.s",
-        "dot_noamd64.go",
+        "dot_arm64.go",
+        "dot_arm64.s",
+        "dot_portable.go",
         "index_name.go",
         "index_storage.go",
         "quantize.go",
@@ -33,6 +35,9 @@ go_library(
         "@org_golang_x_sync//errgroup",
     ] + select({
         "@io_bazel_rules_go//go/platform:amd64": [
+            "@com_github_klauspost_cpuid_v2//:cpuid",
+        ],
+        "@io_bazel_rules_go//go/platform:arm64": [
             "@com_github_klauspost_cpuid_v2//:cpuid",
         ],
         "//conditions:default": [],
