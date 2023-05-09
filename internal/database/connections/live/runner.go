@@ -3,7 +3,6 @@ package connections
 import (
 	"context"
 	"database/sql"
-	"os"
 
 	"github.com/sourcegraph/log"
 
@@ -14,13 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var out = output.NewOutput(os.Stdout, output.OutputOpts{})
-
-func RunnerFromDSNs(logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory) (*runner.Runner, error) {
-	return RunnerFromDSNsWithSchemas(logger, dsns, appName, newStore, schemas.Schemas)
+func RunnerFromDSNs(out *output.Output, logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory) (*runner.Runner, error) {
+	return RunnerFromDSNsWithSchemas(out, logger, dsns, appName, newStore, schemas.Schemas)
 }
 
-func RunnerFromDSNsWithSchemas(logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory, availableSchemas []*schemas.Schema) (*runner.Runner, error) {
+func RunnerFromDSNsWithSchemas(out *output.Output, logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory, availableSchemas []*schemas.Schema) (*runner.Runner, error) {
 	frontendSchema, ok := schemaByName(availableSchemas, "frontend")
 	if !ok {
 		return nil, errors.Newf("no available schema matches %q", "frontend")

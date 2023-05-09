@@ -43,7 +43,7 @@ func NewRunnerWithSchemas(observationCtx *observation.Context, logger log.Logger
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(observationCtx, db, migrationsTable))
 	}
-	r, err := connections.RunnerFromDSNsWithSchemas(logger, dsns, appName, storeFactory, schemas)
+	r, err := connections.RunnerFromDSNsWithSchemas(out, logger, dsns, appName, storeFactory, schemas)
 	if err != nil {
 		return nil, err
 	}
