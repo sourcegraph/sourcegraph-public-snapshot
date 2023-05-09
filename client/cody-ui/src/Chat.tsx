@@ -52,8 +52,7 @@ export interface ChatUITextAreaProps {
     value: string
     required: boolean
     onInput: React.FormEventHandler<HTMLElement>
-    onKeyDown?: React.KeyboardEventHandler<HTMLElement>
-    onKeyUp?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
+    onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
 }
 
 export interface ChatUISubmitButtonProps {
@@ -162,7 +161,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     }, [formInput, messageInProgress, setFormInput, submitInput])
 
     const onChatKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLElement>): void => {
+        (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
             // Submit input on Enter press (without shift) and
             // trim the formInput to make sure input value is not empty.
             if (
@@ -177,12 +176,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 setMessageBeingEdited(false)
                 onChatSubmit()
             }
-        },
-        [onChatSubmit, formInput, setMessageBeingEdited]
-    )
 
-    const onChatKeyUp = useCallback(
-        (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
             // Loop through input history on up arrow press
             if (inputHistory.length) {
                 if (event.key === 'ArrowUp' && caretPosition === 0) {
@@ -200,7 +194,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 }
             }
         },
-        [inputHistory, formInput, historyIndex, setFormInput]
+        [inputHistory, historyIndex, setFormInput, onChatSubmit, formInput, setMessageBeingEdited]
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
@@ -256,7 +250,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                             inputHandler(value)
                         }}
                         onKeyDown={onChatKeyDown}
-                        onKeyUp={onChatKeyUp}
                     />
                     <SubmitButton
                         className={styles.submitButton}
