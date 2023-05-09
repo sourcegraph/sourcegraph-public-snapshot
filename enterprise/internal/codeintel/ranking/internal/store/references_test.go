@@ -10,6 +10,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/sourcegraph/log/logtest"
 
+	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -109,7 +110,21 @@ func TestVacuumAbandonedReferences(t *testing.T) {
 }
 
 func TestVacuumDeletedReferences(t *testing.T) {
-	// TODO
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+
+	// TODO - setup
+
+	_, err := store.VacuumDeletedReferences(ctx, key)
+	if err != nil {
+		t.Fatalf("unexpected error vacuuming deleted references: %s", err)
+	}
+
+	// TODO - assertions
 }
 
 //

@@ -68,5 +68,17 @@ func TestGetUploadsForRanking(t *testing.T) {
 }
 
 func TestVacuumAbandonedExportedUploads(t *testing.T) {
-	// TODO
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	// TODO - setup
+
+	_, err := store.VacuumAbandonedExportedUploads(ctx, mockRankingGraphKey, 100)
+	if err != nil {
+		t.Fatalf("unexpected error vacuuming deleted exported uploads: %s", err)
+	}
+
+	// TODO - assertions
 }

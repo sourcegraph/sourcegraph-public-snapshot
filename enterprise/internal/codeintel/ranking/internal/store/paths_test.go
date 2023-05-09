@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
+	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -138,7 +139,21 @@ func TestSoftDeleteStaleInitialPaths(t *testing.T) {
 }
 
 func TestVacuumDeletedInitialPaths(t *testing.T) {
-	// TODO
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+
+	// TODO - setup
+
+	_, err := store.VacuumDeletedInitialPaths(ctx, key)
+	if err != nil {
+		t.Fatalf("unexpected error vacuuming deleted initial paths: %s", err)
+	}
+
+	// TODO - assertions
 }
 
 //

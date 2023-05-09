@@ -100,7 +100,7 @@ locked_exported_uploads AS (
 ),
 deleted_uploads AS (
 	DELETE FROM codeintel_ranking_exports
-	WHERE id IN (SELECT id FROM locked_references)
+	WHERE id IN (SELECT id FROM locked_exported_uploads)
 	RETURNING 1
 )
 SELECT COUNT(*) FROM deleted_uploads

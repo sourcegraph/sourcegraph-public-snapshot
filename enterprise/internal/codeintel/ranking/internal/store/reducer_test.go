@@ -114,15 +114,34 @@ func TestVacuumStaleRanks(t *testing.T) {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
 
+	key1 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+	key2 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 234)
+	key3 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 345)
+	key4 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456)
+
+	// Insert metadata to rank progress by completion date
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at, reducer_completed_at)
+		VALUES
+			($1,  1000, 1000, 1000, NOW() - '80 second'::interval, NOW() - '70 second'::interval),
+			($2,  1000, 1000, 1000, NOW() - '60 second'::interval, NOW() - '50 second'::interval),
+			($3,  1000, 1000, 1000, NOW() - '40 second'::interval, NOW() - '30 second'::interval),
+			($4,  1000, 1000, 1000, NOW() - '20 second'::interval, NULL)
+	`,
+		key1, key2, key3, key4,
+	); err != nil {
+		t.Fatalf("failed to insert metadata: %s", err)
+	}
+
 	for r, key := range map[string]string{
-		"foo1": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
-		"foo2": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
-		"foo3": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
-		"foo4": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
-		"foo5": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
-		"bar":  rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 234),
-		"baz":  rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 345),
-		"bonk": rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456),
+		"foo1": key1,
+		"foo2": key1,
+		"foo3": key1,
+		"foo4": key1,
+		"foo5": key1,
+		"bar":  key2,
+		"baz":  key3,
+		"bonk": key4,
 	} {
 		if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName(r), nil, key); err != nil {
 			t.Fatalf("failed to insert document ranks: %s", err)
@@ -151,7 +170,7 @@ func TestVacuumStaleRanks(t *testing.T) {
 	assertNames([]string{"bar", "baz", "bonk", "foo1", "foo2", "foo3", "foo4", "foo5"})
 
 	// remove sufficiently stale records associated with other ranking keys
-	_, rankRecordsDeleted, err := store.VacuumStaleRanks(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456))
+	_, rankRecordsDeleted, err := store.VacuumStaleRanks(ctx, key4)
 	if err != nil {
 		t.Fatalf("unexpected error vacuuming stale ranks: %s", err)
 	}
@@ -166,13 +185,13 @@ func TestVacuumStaleRanks(t *testing.T) {
 //
 //
 
-func setDocumentRanks(ctx context.Context, db *basestore.Store, repoName api.RepoName, ranks map[string]float64, graphKey string) error {
+func setDocumentRanks(ctx context.Context, db *basestore.Store, repoName api.RepoName, ranks map[string]float64, derivativeGraphKey string) error {
 	serialized, err := json.Marshal(ranks)
 	if err != nil {
 		return err
 	}
 
-	return db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, graphKey, repoName, serialized))
+	return db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, derivativeGraphKey, repoName, serialized))
 }
 
 const setDocumentRanksQuery = `
