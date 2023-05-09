@@ -4,7 +4,6 @@ import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/confi
 
 import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
 import { DOTCOM_URL } from './chat/protocol'
-import { LocalStorage } from './command/LocalStorageProvider'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -13,7 +12,14 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { getRgPath } from './rg'
-import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
+import { CommentController } from './services/CommentController'
+import { LocalStorage } from './services/LocalStorageProvider'
+import {
+    CODY_ACCESS_TOKEN_SECRET,
+    InMemorySecretStorage,
+    SecretStorage,
+    VSCodeSecretStorage,
+} from './services/SecretStorageProvider'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -67,7 +73,13 @@ const register = async (
 
     await updateEventLogger(initialConfig, localStorage)
 
-    const editor = new VSCodeEditor()
+    // File Chat Provider
+    const commentController = new CommentController(context.extensionPath)
+    disposables.push(commentController.get())
+
+    const editor = new VSCodeEditor(commentController)
+    const workspaceConfig = vscode.workspace.getConfiguration()
+    const config = getConfiguration(workspaceConfig)
 
     const {
         intentDetector,
@@ -123,10 +135,16 @@ const register = async (
         chatProvider.sendErrorToWebview(error)
     }
 
-    const workspaceConfig = vscode.workspace.getConfiguration()
-    const config = getConfiguration(workspaceConfig)
-
     disposables.push(
+        // File Chat Provider
+        vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
+            const isFixMode = comment.text.startsWith('/f')
+            await commentController.chat(comment, isFixMode)
+            await chatProvider.executeRecipe(isFixMode ? 'fixup' : 'file-chat', comment.text, false)
+        }),
+        vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
+            commentController.delete(thread)
+        }),
         // Toggle Chat
         vscode.commands.registerCommand('cody.toggle-enabled', async () => {
             await workspaceConfig.update(

@@ -15,7 +15,12 @@ export interface ActiveTextEditorVisibleContent {
     fileName: string
 }
 
+export interface CommentController {
+    selection: ActiveTextEditorSelection | null
+}
+
 export interface Editor {
+    controller?: CommentController
     getWorkspaceRootPath(): string | null
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null

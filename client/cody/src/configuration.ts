@@ -6,7 +6,7 @@ import type {
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
 
-import { SecretStorage, getAccessToken } from './secret-storage'
+import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
 
 /**
  * All configuration values, with some sanitization performed.

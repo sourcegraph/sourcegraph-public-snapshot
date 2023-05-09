@@ -12,21 +12,22 @@ export class Fixup implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // TODO: Prompt the user for additional direction.
-        const selection = context.editor.getActiveTextEditorSelection()
+        const selection = context.editor.getActiveTextEditorSelection() || context.editor.controller?.selection
         if (!selection) {
             await context.editor.showWarningMessage('Select some code to fixup.')
             return null
         }
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(selection.selectedText, quarterFileContext * 2) !== selection.selectedText) {
-            await context.editor.showWarningMessage("The amount of text selected exceeds Cody's current capacity.")
+            const msg = "The amount of text selected exceeds Cody's current capacity."
+            await context.editor.showWarningMessage(msg)
             return null
         }
 
         // TODO: Move the prompt suffix from the recipe to the chat view. It may have other subscribers.
         const promptText = Fixup.prompt
-            .replace('{responseMultiplexerPrompt}', context.responseMultiplexer.prompt())
             .replace('{humanInput}', truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS))
+            .replace('{responseMultiplexerPrompt}', context.responseMultiplexer.prompt())
             .replace('{truncateFollowingText}', truncateText(selection.followingText, quarterFileContext))
             .replace('{selectedText}', selection.selectedText)
             .replace('{truncateTextStart}', truncateTextStart(selection.precedingText, quarterFileContext))
@@ -58,7 +59,7 @@ export class Fixup implements Recipe {
                 },
                 {
                     speaker: 'assistant',
-                    prefix: 'Check your document for updates from Cody.\n\n',
+                    prefix: 'Check your document for updates from Cody.\n',
                 },
                 this.getContextMessages(selection.selectedText, context.codebaseContext)
             )
@@ -76,9 +77,9 @@ export class Fixup implements Recipe {
     private sanitize(text: string): string {
         const tagsIndex = text.indexOf('tags:')
         if (tagsIndex !== -1) {
-            return text.slice(tagsIndex + 6).trimEnd()
+            return text.trim().slice(tagsIndex + 6) + '\n'
         }
-        return text.trimEnd()
+        return text.trim() + '\n'
     }
 
     // Prompt Templates
@@ -97,7 +98,7 @@ export class Fixup implements Recipe {
     \`\`\`
 
     Additional Instruction:
-    - {humanInput}
     - {responseMultiplexerPrompt}
+    - {humanInput}
 `
 }

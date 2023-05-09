@@ -2,6 +2,7 @@ import { ChatQuestion } from './chat-question'
 import { ContextSearch } from './context-search'
 import { ExplainCodeDetailed } from './explain-code-detailed'
 import { ExplainCodeHighLevel } from './explain-code-high-level'
+import { FileChat } from './file-chat'
 import { FindCodeSmells } from './find-code-smells'
 import { Fixup } from './fixup'
 import { GenerateDocstring } from './generate-docstring'
@@ -31,6 +32,7 @@ function init(): void {
         new ChatQuestion(),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
+        new FileChat(),
         new GenerateDocstring(),
         new GenerateTest(),
         new GitHistory(),
