@@ -57,11 +57,11 @@ func (s *store) SetRepositoryExceptions(ctx context.Context, repositoryID int, c
 }
 
 const setRepositoryExceptionsQuery = `
-INSERT INTO codeintel_autoindexing_exceptions (repository_id, disable_scheduling, disable_indexing)
+INSERT INTO codeintel_autoindexing_exceptions (repository_id, disable_scheduling, disable_inference)
 VALUES (%s, %s, %s)
 ON CONFLICT (repository_id) DO UPDATE SET
 	disable_scheduling = %s,
-	disable_indexing = %s
+	disable_inference = %s
 `
 
 func (s *store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
