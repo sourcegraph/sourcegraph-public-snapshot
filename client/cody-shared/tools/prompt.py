@@ -31,11 +31,12 @@ Human: '''
 
 evaluation_instructions = '''The output must NOT contain <cody-help>.
 The output MUST contain <cody-replace>.
-There MUST be some lines of context repeated from the input after the start and before the end of the <cody-replace> tags.
+The unchanged context MUST be repeated within the <cody-replace> tags.
+The reply must NOT elide chunks of code using ...
 '''
 
 inputs = [
-    ('',
+    (evaluation_instructions,
      'document what does this program does',
      'hello.rs',
      '',
@@ -45,7 +46,7 @@ fn main() {
 }''',
     ''),
 
-    ('',
+    (evaluation_instructions,
      'write a doc comment explaining what this function does',
      'main.rs',
      '''    if denominator != 0 && numerator % denominator == 0 {
@@ -87,6 +88,76 @@ struct Board {
     cells: [u16; DIM * DIM],
 }
 
+'''),
+
+(evaluation_instructions,
+ 'add comments briefly explaining all the fields in this struct',
+ 'main.rs',
+ '''    for receptor in &puzzle.receptors {
+        for cell in &receptor.cells {
+            let i = cell.v * DIM + cell.u;
+            assert_eq!(false, used[i], "cell {},{} used twice", cell.u, cell.v);
+            used[i] = true;
+        }
+    }
+}
+
+''',
+'',
+'''// Iterates over the set bits in a board.
+struct Bits {
+    n: u16,
+    i: usize,
+}
+
+// Yields the indices of the l.o. DIM bits in n which are set.
+// We only need DIM because the puzzle is DIMxDIM
+impl Bits {
+    fn new(n: u16) -> Bits {
+        Bits { n, i: 0 }
+    }
+}
+
+impl Iterator for Bits {
+    type Item = i32;
+    fn next(&mut self) -> Option<Self::Item> {
+        while self.i < 10 {
+            let k = self.i;
+            self.i += 1;
+            if self.n & 1 << k != 0 {
+                return Some(k as i32);
+            }
+        }
+        None
+    }
+}
+'''
+ ),
+
+ (evaluation_instructions,
+  '''write a react component with a pair of color pickers
+we want one of the colors to always be the complementary color of the other''',
+'scheme.tsx',
+'', '', ''
+  ),
+
+  (evaluation_instructions + '\nMust have implemented the complementaryColor function body.', 'implement the function', 'scheme.tsx', '''  const handleColor2Change = (e) => {
+    setColor2(e.target.value);
+    setColor1(complementaryColor(e.target.value));
+  }
+
+  return (
+    <div>
+      <ColorPicker color={color1} onChange={handleColor1Change} />
+      <ColorPicker color={color2} onChange={handleColor2Change} />
+    </div>
+  )
+}
+''',
+'', '''
+function complementaryColor(color) {
+  // Logic to calculate complementary color
+}
 ''')
 ]
 
@@ -94,25 +165,30 @@ struct Board {
 # Returns a function which, given specific inputs, returns a tuple of whole prompt and context for the meta-evaluator.
 def generate_prompt(gen):
     prompt = []
-    prompt.append(gen.pick('FLATTER', ['', 'You are an expert software engineer who writes flawless code.', 'You write code for a hobby.']))
-    prompt.append(gen.pick('TASK', ['', 'I need your help to improve some code.', 'This is the code you are writing.']))
+
+    prompt.append(gen.pick('FLATTER', ['', 'You are an expert software engineer who writes flawless code.']))
+    #prompt.append(gen.pick('TASK', ['', 'This is the code you are writing.']))
+
+    prompt.append('Fix up the <cody-help> tags.')
+    #prompt.append(gen.pick('CODY-HELP', ['The area I need help with is highlighted with <cody-help> tags.', 'Fix up the <cody-help> tags.']))
+
+    prompt.append('Strip the <cody-help> tags from your reply, just leave the improved code.')
+    prompt.append('Put the replacement in <cody-replace> tags.')
+
+    prompt.append(gen.pick('TAG-USE', ['You will repeat the code verbatim within the <cody-replace> tags.', 'Repeat all your unchanged code in the <cody-replace> tags.']))
+
+    prompt.append('\n\nAssistant: OK, I understand. I will follow the prompts to improve the code, and only reply with code in <cody-replace> tags. The last thing I write will be the closing </cody-replace> tag. I will not write code outside <cody-replace> tags. I will not write the <cody-help> tags in my reply.\n\nHuman:')
+    #prompt.append(gen.pick('ROBO-REPLY', ['', '\n\nAssistant: OK, I understand. I will follow the prompts to improve the code, and only reply with code in <cody-replace> tags. The last thing I write will be the closing </cody-replace> tag. I will not write code outside <cody-replace> tags. I will not write the <cody-help> tags in my reply.\n\nHuman:']))
+
     # TODO: test presence of context.responseMultiplexer.prompt()
     text = ' '.join(prompt)
     def g(input):
         context = f'<cody-replace>{input[3]}<cody-help prompt="{input[1]}">{input[4]}</cody-help>${input[5]}</cody-replace>'
         return (stock_cody_preamble + text + f'''
-The area I need help with is highlighted with <cody-help> tags. You are helping me work on that part.
-Follow the instructions in the prompt attribute and produce a rewritten replacement.
-Strip the <cody-help> tags from your reply, just leave the improved content inside the tags.
-Put the replacement in <cody-replace> tags.
-I need only the replacement, no other commentary about it. Do not write anything after the closing </cody-replace> tag.
-If you are adding code, I need you to repeat three lines of my code verbatim, both before and after your new code, so I understand where to insert your new code. You should put that repeated code within the <cody-replace> tags.
 
-Assistant: OK, I understand. I will follow the prompts to improve the code, and only reply with code in <cody-replace> tags. The last thing I write will be the closing </cody-replace> tag. I will not write code outside <cody-replace> tags. I will not write the <cody-help> tags in my reply.
-
-Human: Great, thank you! This is part of the file ${
+This is part of the file you are writing, ${
             input[2]
-        }. The area I need help with is highlighted with <cody-help> tags. Again, I only need the replacement in <cody-replace> tags.
+        }:
 
 {context}\n\nAssistant: ''', context)
     return g
@@ -194,7 +270,7 @@ def try_candidate(prompt, inp):
 
 
 async def run_parallel_candidates(prompts):
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    with ThreadPoolExecutor(max_workers=16) as executor:
         loop = asyncio.get_event_loop()
         return [loop.run_in_executor(executor, try_candidate, *prompt) for prompt in prompts]
 
@@ -261,7 +337,10 @@ class WinLossTable(object):
             print(f'{i:-3d}|', end='')
             for j in range(self.n):
                 print(f' {self.scores[(i * self.n) + j]:-{n}d}', end='')
-            print(f'| {sum(self.scores[i*self.n:(i+1)*self.n]):-{n}d}')
+            print(f'| {self.marginal(i):-{n}d}')
+
+    def marginal(self, i):
+        return sum(self.scores[i*self.n:(i+1)*self.n])
 
 
 def evaluate_and_score_candidates(table: WinLossTable, sample_a: Sample, sample_b: Sample):
@@ -277,7 +356,7 @@ def evaluate_and_score_candidates(table: WinLossTable, sample_a: Sample, sample_
 
 
 async def run_parallel_evaluations(pairs):
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    with ThreadPoolExecutor(max_workers=16) as executor:
         loop = asyncio.get_event_loop()
         return [loop.run_in_executor(executor, evaluate_and_score_candidates, *work) for work in pairs]
 
@@ -288,6 +367,9 @@ def main():
     schema.discover_prompts(generate_prompt)
     for prompt in schema.prompts:
         print(f'{prompt.id}: {prompt.choices}')
+
+    # Debugging: Trim the prompts.
+    #schema.prompts = schema.prompts[0:2]
 
     table = WinLossTable(len(schema.prompts))
 
@@ -307,9 +389,37 @@ def main():
     for result in loop.run_until_complete(run_parallel_evaluations([(table, *pair) for pair in pairs])):
         result.result()
 
+    min_i = -1
+    min_sum = 10**20
+    max_i = -1
+    max_sum = -10**20
+    for i in range(table.n):
+        i_sum = table.marginal(i)
+        if i_sum > max_sum:
+            max_sum = i_sum
+            max_i = i
+        if i_sum < min_sum:
+            min_sum = i_sum
+            min_i = i
+
+    print(f'worst is {min_i} scoring {min_sum}')
+    print('worst sample output')
+    for sample in corpus:
+        if sample.prompt.id == min_i:
+            print(sample.output['completion'])
+            print('-' * 20)
+
+    print(f'best is {max_i} scoring {max_sum}')
+    print('best sample output')
+    for sample in corpus:
+        if sample.prompt.id == max_i:
+            print(sample.output['completion'])
+            print('-' * 20)
+
     for prompt in schema.prompts:
         print(f'{prompt.id}: {prompt.choices}')
     table.show()
+
 
 if __name__ == "__main__":
     main()
