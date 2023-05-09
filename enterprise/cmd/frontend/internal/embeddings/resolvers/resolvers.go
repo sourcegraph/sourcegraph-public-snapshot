@@ -78,7 +78,7 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 		repoNames[i] = repo.Name
 	}
 
-	results, err := r.embeddingsClient.MultiSearch(ctx, embeddings.EmbeddingsMultiSearchParameters{
+	results, err := r.embeddingsClient.Search(ctx, embeddings.EmbeddingsMultiSearchParameters{
 		RepoNames:        repoNames,
 		RepoIDs:          repoIDs,
 		Query:            args.Query,
@@ -214,6 +214,7 @@ func embeddingsSearchResultsToResolvers(
 
 	p := pool.New()
 	for _, result := range results {
+		result := result
 		p.Go(func() {
 			content, err := gs.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, result.RepoName, result.Revision, result.FileName)
 			if err != nil {

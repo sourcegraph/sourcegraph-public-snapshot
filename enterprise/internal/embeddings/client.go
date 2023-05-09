@@ -112,7 +112,7 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsMultiSearchParameter
 }
 
 func (c *Client) searchPartition(ctx context.Context, endpoint string, args EmbeddingsMultiSearchParameters) (*EmbeddingCombinedSearchResults, error) {
-	resp, err := c.httpPost(ctx, "multiSearch", endpoint, args)
+	resp, err := c.httpPost(ctx, "search", endpoint, args)
 	if err != nil {
 		return nil, err
 	}
