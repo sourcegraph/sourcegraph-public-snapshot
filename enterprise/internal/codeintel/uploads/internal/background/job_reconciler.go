@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -132,16 +133,23 @@ func newReconciler2(
 			if err != nil {
 				return 0, 0, err
 			}
-			observationCtx.Logger.Warn("RECONCILER!", log.Ints("candidateIDs", candidateIDs))
+			// observationCtx.Logger.Warn("RECONCILER!", log.Ints("candidateIDs", candidateIDs))
 
 			existingIDs, err := reconcileStore.FilterExists(ctx, candidateIDs)
 			if err != nil {
 				return 0, 0, err
 			}
-			observationCtx.Logger.Warn("RECONCILER!", log.Ints("existingIDs", existingIDs))
+			adminExistingIDs, err := reconcileStore.FilterExists(actor.WithInternalActor(ctx), candidateIDs)
+			if err != nil {
+				return 0, 0, err
+			}
+			if len(adminExistingIDs) > len(existingIDs) {
+				observationCtx.Logger.Warn("RECONCILER", log.Ints("adminIDs", adminExistingIDs), log.Ints("existingIDs", existingIDs))
+			}
+			// observationCtx.Logger.Warn("RECONCILER!", log.Ints("existingIDs", existingIDs))
 
 			found := map[int]struct{}{}
-			for _, id := range existingIDs {
+			for _, id := range adminExistingIDs {
 				found[id] = struct{}{}
 			}
 
@@ -153,7 +161,7 @@ func newReconciler2(
 
 				missingIDs = append(missingIDs, id)
 			}
-			observationCtx.Logger.Warn("RECONCILER!", log.Ints("missingIDs", missingIDs))
+			// observationCtx.Logger.Warn("RECONCILER!", log.Ints("missingIDs", missingIDs))
 
 			if err := sourceStore.Prune(ctx, missingIDs); err != nil {
 				return 0, 0, err
@@ -206,7 +214,7 @@ func (s *lsifStoreWrapper) Candidates(ctx context.Context, batchSize int) ([]int
 }
 
 func (s *lsifStoreWrapper) Prune(ctx context.Context, ids []int) error {
-	s.observationCtx.Logger.Warn("PRUNING (no-op)!", log.Ints("ids", ids))
+	// s.observationCtx.Logger.Warn("PRUNING (no-op)!", log.Ints("ids", ids))
 	return nil // return s.lsifstore.DeleteLsifDataByUploadIds(ctx, ids...)
 }
 
