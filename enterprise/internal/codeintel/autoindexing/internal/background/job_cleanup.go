@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,7 +22,7 @@ func NewUnknownRepositoryJanitor(
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.autoindexing.janitor.unknown-repository"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+	return background.NewJanitorJob(actor.WithInternalActor(context.Background()), background.JanitorOptions{
 		Name:        name,
 		Description: "Removes index records associated with an unknown repository.",
 		Interval:    interval,
@@ -46,7 +47,7 @@ func NewUnknownCommitJanitor(
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.autoindexing.janitor.unknown-commit"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+	return background.NewJanitorJob(actor.WithInternalActor(context.Background()), background.JanitorOptions{
 		Name:        name,
 		Description: "Removes index records associated with an unknown commit.",
 		Interval:    interval,
@@ -98,7 +99,7 @@ func NewExpiredRecordJanitor(
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.autoindexing.janitor.expired"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+	return background.NewJanitorJob(actor.WithInternalActor(context.Background()), background.JanitorOptions{
 		Name:        name,
 		Description: "Removes old index records",
 		Interval:    interval,

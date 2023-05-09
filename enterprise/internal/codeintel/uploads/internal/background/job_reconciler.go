@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -71,7 +72,7 @@ func newReconciler(
 	batchSize int,
 	observationCtx *observation.Context,
 ) goroutine.BackgroundRoutine {
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+	return background.NewJanitorJob(actor.WithInternalActor(context.Background()), background.JanitorOptions{
 		Name:        name,
 		Description: description,
 		Interval:    interval,

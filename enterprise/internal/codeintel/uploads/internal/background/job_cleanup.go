@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -25,7 +26,7 @@ func NewDeletedRepositoryJanitor(
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.janitor.unknown-repository"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+	return background.NewJanitorJob(actor.WithInternalActor(context.Background()), background.JanitorOptions{
 		Name:        name,
 		Description: "Removes upload records associated with an unknown repository.",
 		Interval:    interval,
@@ -50,7 +51,7 @@ func NewUnknownCommitJanitor(
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.janitor.unknown-commit"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+	return background.NewJanitorJob(actor.WithInternalActor(context.Background()), background.JanitorOptions{
 		Name:        name,
 		Description: "Removes upload records associated with an unknown commit.",
 		Interval:    interval,
@@ -101,7 +102,7 @@ func NewAbandonedUploadJanitor(
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.janitor.abandoned"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+	return background.NewJanitorJob(actor.WithInternalActor(context.Background()), background.JanitorOptions{
 		Name:        name,
 		Description: "Removes upload records that did did not receive a full payload from the user.",
 		Interval:    interval,
@@ -127,7 +128,7 @@ func NewExpiredUploadJanitor(
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.expirer.unreferenced"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+	return background.NewJanitorJob(actor.WithInternalActor(context.Background()), background.JanitorOptions{
 		Name:        name,
 		Description: "Soft-deletes unreferenced upload records that are not protected by any data retention policy.",
 		Interval:    interval,
@@ -145,7 +146,7 @@ func NewExpiredUploadTraversalJanitor(
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.expirer.unreferenced-graph"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+	return background.NewJanitorJob(actor.WithInternalActor(context.Background()), background.JanitorOptions{
 		Name:        name,
 		Description: "Soft-deletes a tree of externally unreferenced upload records that are not protected by any data retention policy.",
 		Interval:    interval,
@@ -167,7 +168,7 @@ func NewHardDeleter(
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.hard-deleter"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+	return background.NewJanitorJob(actor.WithInternalActor(context.Background()), background.JanitorOptions{
 		Name:        name,
 		Description: "Deleted data associated with soft-deleted upload records.",
 		Interval:    interval,
@@ -233,7 +234,7 @@ func NewAuditLogJanitor(
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.janitor.audit-logs"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+	return background.NewJanitorJob(actor.WithInternalActor(context.Background()), background.JanitorOptions{
 		Name:        name,
 		Description: "Deletes sufficiently old upload audit log records.",
 		Interval:    interval,
@@ -256,7 +257,7 @@ func NewSCIPExpirationTask(
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.uploads.janitor.scip-documents"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+	return background.NewJanitorJob(actor.WithInternalActor(context.Background()), background.JanitorOptions{
 		Name:        name,
 		Description: "Deletes SCIP document payloads that are not referenced by any index.",
 		Interval:    interval,
