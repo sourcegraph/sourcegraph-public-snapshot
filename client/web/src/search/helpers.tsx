@@ -55,11 +55,7 @@ export function submitSearch({
         searchQueryParameter = searchQueryParameter + '&' + preserved
     }
 
-    eventLogger.log(
-        'SearchSubmitted',
-        { source },
-        { source }
-    )
+    eventLogger.log('SearchSubmitted', { source }, { source })
 
     const state = {
         ...(typeof location.state === 'object' ? location.state : null),
