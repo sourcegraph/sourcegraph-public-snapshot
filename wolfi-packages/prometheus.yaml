@@ -1,0 +1,42 @@
+package:
+  name: prometheus
+  version: 2.42.0
+  epoch: 0
+  description: "The Prometheus monitoring system and time series database"
+  target-architecture:
+    - x86_64
+  copyright:
+    - paths:
+      - "*"
+      attestation: 'Copyright 2012-2015 The Prometheus Authors'
+      license: 'Apache License 2.0'
+  dependencies:
+    runtime:
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - wolfi-base
+      - busybox
+      - ca-certificates-bundle
+
+pipeline:
+  - uses: fetch
+    with:
+      uri: https://github.com/prometheus/prometheus/releases/download/v${{package.version}}/prometheus-${{package.version}}.linux-amd64.tar.gz
+      expected-sha256: 422dab055ed9c7bcaff52b718705f9192c6fac0de6b7e78dd278e70ee2663dcc
+  - runs: |
+      tar zxvf prometheus-${{package.version}}.linux-amd64.tar.gz
+  - runs: |
+      mkdir -p ${{targets.destdir}}/usr/bin/
+      mkdir -p ${{targets.destdir}}/etc/prometheus/
+      mkdir -p ${{targets.destdir}}/usr/share/prometheus
+      cp prometheus-${{package.version}}.linux-amd64/promtool ${{targets.destdir}}/usr/bin/
+      cp prometheus-${{package.version}}.linux-amd64/prometheus ${{targets.destdir}}/usr/bin/
+      cp prometheus-${{package.version}}.linux-amd64/prometheus.yml ${{targets.destdir}}/etc/prometheus/
+      cp -r prometheus-${{package.version}}.linux-amd64/consoles ${{targets.destdir}}/etc/prometheus/
+      cp -r prometheus-${{package.version}}.linux-amd64/console_libraries ${{targets.destdir}}/etc/prometheus/
