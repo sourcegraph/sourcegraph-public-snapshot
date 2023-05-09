@@ -18,6 +18,10 @@ public class GraphQlResponse {
         return statusCode;
     }
 
+    public String getBody() {
+        return body;
+    }
+
     @NotNull
     public JsonObject getBodyAsJson() throws JsonSyntaxException {
         return JsonParser.parseString(body).getAsJsonObject();
