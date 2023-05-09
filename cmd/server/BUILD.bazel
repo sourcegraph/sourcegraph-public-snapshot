@@ -27,7 +27,7 @@ go_cross_binary(
 )
 
 pkg_tar(
-    name = "tar",
+    name = "tar_server_linux_amd64",
     srcs = [":server_linux_amd64"],
     remap_paths = { "/server_linux_amd64": "/server" }
 )
@@ -55,19 +55,13 @@ ZOEKT_DEPS = [
 container_dependencies(DEPS)
 container_dependencies(ZOEKT_DEPS)
 
-    go_cross_binary(
-    name = platformed_name,
-    platform = "@zig_sdk//platform:linux_amd64",
-    target = target,
-    )
-
 # Tip: to view exactly what gets built here, you can run:
 #   bazel cquery '//cmd/server:image' --output build
 oci_image(
     name = "image",
     architecture = "amd64",
     base = "@wolfi_server_base",
-    tars = dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS) + [":tar"],
+    tars = dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS) + [":tar_server_linux_amd64"],
     entrypoint = ["/server"],
     os = "linux",
 )
