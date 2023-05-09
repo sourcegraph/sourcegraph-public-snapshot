@@ -34,9 +34,6 @@ func buildQueries() <-chan queryFunc {
 			if queryReferencesOfReferences {
 				for _, reference := range testCase.References {
 					references := testCase.References
-					// if reference.Repo == testCase.Definition.Repo && reference.Rev == testCase.Definition.Rev && reference.Path == testCase.Definition.Path {
-					// 	references = referencesWithDefinition
-					// }
 					fns <- makeTestFunc("refs -> refs", queryReferences, reference, references)
 				}
 			}
