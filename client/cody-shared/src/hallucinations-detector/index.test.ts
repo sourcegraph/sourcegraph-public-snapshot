@@ -1,6 +1,6 @@
 import assert from 'assert'
 
-import { highlightTokens } from '.'
+import { findFilePaths, highlightTokens } from '.'
 
 const markdownText = `# Title
 
@@ -32,7 +32,41 @@ const validFilePaths = new Set(['file/path.js'])
 
 describe('Hallucinations detector', () => {
     it('highlights hallucinated file paths', async () => {
-        const { text } = await highlightTokens(markdownText, filePath => Promise.resolve(validFilePaths.has(filePath)))
+        const { text } = await highlightTokens(markdownText, filePaths => {
+            const filePathExists: { [filePath: string]: boolean } = {}
+            for (const filePath of filePaths) {
+                filePathExists[filePath] = validFilePaths.has(filePath)
+            }
+            return Promise.resolve(filePathExists)
+        })
         assert.deepStrictEqual(text, expectedHighlightedTokensText)
+    })
+
+    it('findFilePaths', () => {
+        const cases: {
+            input: string
+            output: { pathMatch: string; fullMatch: string }[]
+        }[] = [
+            {
+                input: 'foo/bar/baz',
+                output: [{ fullMatch: 'foo/bar/baz', pathMatch: 'foo/bar/baz' }],
+            },
+            {
+                input: 'use of this/that in a sentence',
+                output: [],
+            },
+            {
+                input: '`this/that`',
+                output: [{ fullMatch: '`this/that`', pathMatch: 'this/that' }],
+            },
+            {
+                input: 'pattern/foo/bar/*.ts',
+                output: [],
+            },
+        ]
+        for (const { input, output } of cases) {
+            const actualOutput = findFilePaths(input)
+            assert.deepStrictEqual(actualOutput, output)
+        }
     })
 })
