@@ -12,6 +12,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+func (s *store) RepositoryExceptions(ctx context.Context, repositoryID int) (canSchedule, canInfer bool, err error) {
+	ctx, _, endObservation := s.operations.repositoryExceptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(repositoryExceptionsQuery, repositoryID))
+	if err != nil {
+		return false, false, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var disableSchedule, disableInference bool
+	for rows.Next() {
+		if err := rows.Scan(&disableSchedule, &disableInference); err != nil {
+			return false, false, err
+		}
+	}
+
+	return !disableSchedule, !disableInference, rows.Err()
+}
+
+const repositoryExceptionsQuery = `
+SELECT
+	cae.disable_scheduling,
+	cae.disable_inference
+FROM codeintel_autoindexing_exceptions cae
+WHERE cae.repository_id = %s
+`
+
 func (s *store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),

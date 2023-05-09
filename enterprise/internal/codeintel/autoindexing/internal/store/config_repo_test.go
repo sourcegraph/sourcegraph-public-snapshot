@@ -13,6 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+func TestRepositoryExceptions(t *testing.T) {
+	// TODO
+}
+
 func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))

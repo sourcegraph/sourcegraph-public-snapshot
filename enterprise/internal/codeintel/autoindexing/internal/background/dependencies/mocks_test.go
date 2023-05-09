@@ -1958,6 +1958,9 @@ type MockStore struct {
 	// QueueRepoRevFunc is an instance of a mock function object controlling
 	// the behavior of the method QueueRepoRev.
 	QueueRepoRevFunc *StoreQueueRepoRevFunc
+	// RepositoryExceptionsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepositoryExceptions.
+	RepositoryExceptionsFunc *StoreRepositoryExceptionsFunc
 	// RepositoryIDsWithConfigurationFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// RepositoryIDsWithConfiguration.
@@ -2041,6 +2044,11 @@ func NewMockStore() *MockStore {
 		},
 		QueueRepoRevFunc: &StoreQueueRepoRevFunc{
 			defaultHook: func(context.Context, int, string) (r0 error) {
+				return
+			},
+		},
+		RepositoryExceptionsFunc: &StoreRepositoryExceptionsFunc{
+			defaultHook: func(context.Context, int) (r0 bool, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -2141,6 +2149,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.QueueRepoRev")
 			},
 		},
+		RepositoryExceptionsFunc: &StoreRepositoryExceptionsFunc{
+			defaultHook: func(context.Context, int) (bool, bool, error) {
+				panic("unexpected invocation of MockStore.RepositoryExceptions")
+			},
+		},
 		RepositoryIDsWithConfigurationFunc: &StoreRepositoryIDsWithConfigurationFunc{
 			defaultHook: func(context.Context, int, int) ([]shared1.RepositoryWithAvailableIndexers, int, error) {
 				panic("unexpected invocation of MockStore.RepositoryIDsWithConfiguration")
@@ -2215,6 +2228,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		QueueRepoRevFunc: &StoreQueueRepoRevFunc{
 			defaultHook: i.QueueRepoRev,
+		},
+		RepositoryExceptionsFunc: &StoreRepositoryExceptionsFunc{
+			defaultHook: i.RepositoryExceptions,
 		},
 		RepositoryIDsWithConfigurationFunc: &StoreRepositoryIDsWithConfigurationFunc{
 			defaultHook: i.RepositoryIDsWithConfiguration,
@@ -3465,6 +3481,117 @@ func (c StoreQueueRepoRevFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreQueueRepoRevFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// StoreRepositoryExceptionsFunc describes the behavior when the
+// RepositoryExceptions method of the parent MockStore instance is invoked.
+type StoreRepositoryExceptionsFunc struct {
+	defaultHook func(context.Context, int) (bool, bool, error)
+	hooks       []func(context.Context, int) (bool, bool, error)
+	history     []StoreRepositoryExceptionsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepositoryExceptions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) RepositoryExceptions(v0 context.Context, v1 int) (bool, bool, error) {
+	r0, r1, r2 := m.RepositoryExceptionsFunc.nextHook()(v0, v1)
+	m.RepositoryExceptionsFunc.appendCall(StoreRepositoryExceptionsFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the RepositoryExceptions
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreRepositoryExceptionsFunc) SetDefaultHook(hook func(context.Context, int) (bool, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepositoryExceptions method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreRepositoryExceptionsFunc) PushHook(hook func(context.Context, int) (bool, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreRepositoryExceptionsFunc) SetDefaultReturn(r0 bool, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (bool, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreRepositoryExceptionsFunc) PushReturn(r0 bool, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (bool, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreRepositoryExceptionsFunc) nextHook() func(context.Context, int) (bool, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreRepositoryExceptionsFunc) appendCall(r0 StoreRepositoryExceptionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreRepositoryExceptionsFuncCall objects
+// describing the invocations of this function.
+func (f *StoreRepositoryExceptionsFunc) History() []StoreRepositoryExceptionsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreRepositoryExceptionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreRepositoryExceptionsFuncCall is an object that describes an
+// invocation of method RepositoryExceptions on an instance of MockStore.
+type StoreRepositoryExceptionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreRepositoryExceptionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreRepositoryExceptionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreRepositoryIDsWithConfigurationFunc describes the behavior when the
