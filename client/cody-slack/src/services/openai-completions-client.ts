@@ -45,7 +45,7 @@ export class OpenAICompletionsClient implements Pick<SourcegraphCompletionsClien
                 let modelResponseText = ''
 
                 stream.on('data', (chunk: Buffer) => {
-                    // Split messames in the event stream.
+                    // Split messages in the event stream.
                     const payloads = chunk.toString().split('\n\n')
 
                     for (const payload of payloads) {

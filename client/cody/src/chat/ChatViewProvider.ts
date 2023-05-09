@@ -234,14 +234,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
             onResponse: (content: string) => {
                 text += content
-                this.transcript.addAssistantResponse(reformatBotMessage(escapeCodyMarkdown(text), responsePrefix))
+                this.transcript.addAssistantResponse(reformatBotMessage(escapeCodyMarkdown(text, true), responsePrefix))
                 this.sendTranscript()
                 return Promise.resolve()
             },
             onTurnComplete: async () => {
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
-                    const { text, displayText } = lastInteraction.getAssistantMessage()
+                    const displayText = reformatBotMessage(escapeCodyMarkdown(text, false), responsePrefix)
                     const { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                 }

@@ -52,7 +52,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 }) => {
     const onSubmit = useCallback(
         (text: string, submitType: 'user' | 'suggestion') => {
-            vscodeAPI.postMessage({ command: 'submit', text: escapeCodyMarkdown(text), submitType })
+            vscodeAPI.postMessage({ command: 'submit', text: escapeCodyMarkdown(text, false), submitType })
         },
         [vscodeAPI]
     )

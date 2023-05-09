@@ -116,16 +116,22 @@ export async function createClient({
 
         const prompt = await transcript.toPrompt(getPreamble(config.codebase))
         const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
+        let rawText = ''
 
         chatClient.chat(prompt, {
-            onChange(rawText) {
-                const text = reformatBotMessage(escapeCodyMarkdown(rawText), responsePrefix)
+            onChange(_rawText) {
+                rawText = _rawText
+
+                const text = reformatBotMessage(escapeCodyMarkdown(rawText, true), responsePrefix)
                 transcript.addAssistantResponse(text)
 
                 sendTranscript()
             },
             onComplete() {
                 isMessageInProgress = false
+
+                const text = reformatBotMessage(escapeCodyMarkdown(rawText, false), responsePrefix)
+                transcript.addAssistantResponse(text)
                 sendTranscript()
             },
             onError(error) {
