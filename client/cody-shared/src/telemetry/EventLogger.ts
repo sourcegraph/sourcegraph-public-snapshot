@@ -10,21 +10,13 @@ const config = vscode.workspace.getConfiguration()
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 
-interface StorageProvider {
-    get(key: string): string | null
-    set(key: string, value: string): Promise<void>
-}
-
 export class EventLogger {
     private serverEndpoint = _getServerEndpointFromConfig(config)
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
 
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
 
-    public static async create(
-        localStorageService: StorageProvider,
-        gqlAPIClient: SourcegraphGraphQLAPIClient
-    ): Promise<EventLogger> {
+    public static async create(gqlAPIClient: SourcegraphGraphQLAPIClient): Promise<EventLogger> {
         return new EventLogger(gqlAPIClient)
     }
 
