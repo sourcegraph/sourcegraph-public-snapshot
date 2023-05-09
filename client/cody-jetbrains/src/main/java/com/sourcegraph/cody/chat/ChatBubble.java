@@ -12,12 +12,14 @@ import java.awt.*;
 public class ChatBubble extends JPanel {
     private final int radius;
 
-    public ChatBubble(int radius, Color background, ChatMessage message) {
+    public ChatBubble(int radius, ChatMessage message) {
         super();
 
         boolean isHuman = message.getSpeaker() == Speaker.HUMAN;
+        JBColor background = isHuman ? JBColor.BLUE : JBColor.GRAY;
         this.radius = radius;
         this.setBackground(background);
+        this.setLayout(new BorderLayout());
         this.setBorder(new EmptyBorder(new JBInsets(10, 10, 10, 10)));
         JTextArea textArea = new JTextArea(message.getDisplayText());
         textArea.setFont(UIUtil.getLabelFont());
@@ -27,6 +29,17 @@ public class ChatBubble extends JPanel {
         textArea.setForeground(isHuman ? JBColor.WHITE : JBColor.BLACK);
         textArea.setComponentOrientation(isHuman ? ComponentOrientation.RIGHT_TO_LEFT : ComponentOrientation.LEFT_TO_RIGHT);
         this.add(textArea, BorderLayout.CENTER);
+        // Debug info: sizes
+        SwingUtilities.invokeLater(() -> {
+            System.out.println("ChatBubble size: " + this.getSize());
+            System.out.println("ChatBubble pref: " + this.getPreferredSize());
+            System.out.println("ChatBubble min: " + this.getMinimumSize());
+            System.out.println("ChatBubble max: " + this.getMaximumSize());
+            System.out.println("TextArea size: " + textArea.getSize());
+            System.out.println("TextArea pref: " + textArea.getPreferredSize());
+            System.out.println("TextArea min: " + textArea.getMinimumSize());
+            System.out.println("TextArea max: " + textArea.getMaximumSize());
+        });
     }
 
     @Override

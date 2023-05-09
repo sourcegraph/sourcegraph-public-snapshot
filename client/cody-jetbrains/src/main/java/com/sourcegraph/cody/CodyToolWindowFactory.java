@@ -9,6 +9,7 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import com.intellij.ui.scale.JBUIScale;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
@@ -86,11 +87,12 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
 
             // Bubble panel
             var bubblePanel = new JPanel();
-            bubblePanel.setLayout(new FlowLayout(isHuman ? FlowLayout.RIGHT : FlowLayout.LEFT, 0, 0));
+            bubblePanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
+            bubblePanel.setBorder(BorderFactory.createEmptyBorder(0, isHuman ? JBUIScale.scale(20) : 0, 0, !isHuman ? JBUIScale.scale(20) : 0));
 
             // Chat bubble
-            ChatBubble bubble = new ChatBubble(10, isHuman ? JBColor.BLUE : JBColor.GRAY, message);
-            bubblePanel.add(bubble);
+            ChatBubble bubble = new ChatBubble(10, message);
+            bubblePanel.add(bubble, VerticalFlowLayout.TOP);
             messagesPanel.add(bubblePanel);
             messagesPanel.revalidate();
             messagesPanel.repaint();
