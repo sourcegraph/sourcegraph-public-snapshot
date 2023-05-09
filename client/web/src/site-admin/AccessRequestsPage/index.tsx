@@ -212,7 +212,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             if (!confirm('Are you sure you want to reject the selected access request?')) {
                 return
             }
-            eventLogger.log('AccessRequestRejected', { id })
+            eventLogger.log('AccessRequestRejected')
             rejectAccessRequest({
                 variables: {
                     id,
@@ -249,7 +249,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             if (!confirm('Are you sure you want to approve the selected access request?')) {
                 return
             }
-            eventLogger.log('AccessRequestApproved', { id })
+            eventLogger.log('AccessRequestApproved')
             async function createUserAndApproveRequest(): Promise<void> {
                 const username = await generateUsername(name)
                 const { data } = await createUser({

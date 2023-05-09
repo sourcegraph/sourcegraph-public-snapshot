@@ -55,13 +55,9 @@ export function submitSearch({
         searchQueryParameter = searchQueryParameter + '&' + preserved
     }
 
-    const queryWithContext = appendContextFilter(query, selectedSearchContextSpec)
     eventLogger.log(
         'SearchSubmitted',
-        {
-            query: queryWithContext,
-            source,
-        },
+        { source },
         { source }
     )
 
