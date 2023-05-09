@@ -115,13 +115,12 @@
       },
       "examples": [
         {
-          "auth.passwordPolicy": {
-            "enabled": true,
-            "numberOfSpecialCharacters": 1,
-            "requireAtLeastOneNumber": true,
-            "requireUpperandLowerCase": true
-          }
+          "enabled": true,
+          "numberOfSpecialCharacters": 1,
+          "requireAtLeastOneNumber": true,
+          "requireUpperandLowerCase": true
         }
+
       ]
     },
     "experimentalFeatures": {
@@ -817,10 +816,12 @@
       },
       "group": "External services",
       "examples": [
-        {
-          "from": "^../(?P<name>\\w+)$",
-          "to": "github.com/user/{name}"
-        }
+        [
+          {
+            "from": "^../(?P<name>\\w+)$",
+            "to": "github.com/user/{name}"
+          }
+        ]
       ]
     },
     "gitLongCommandTimeout": {
@@ -1015,10 +1016,10 @@
       },
       "examples": [
         {
-          "maxTimeoutSeconds": 120,
-          "maxRepos": 500,
-          "commitDiffMaxRepos": 100,
-          "commitDiffWithTimeFilterMaxRepos": 10000
+          "maxTimeoutSeconds": 60,
+          "maxRepos": 200,
+          "commitDiffMaxRepos": 50,
+          "commitDiffWithTimeFilterMaxRepos": 5000
         }
       ]
     },
@@ -2325,15 +2326,16 @@
       },
       "examples": [
         {
-          "summary": "Enable OpenAI embeddings",
-          "value": {
-            "enabled": true,
-            "url": "https://api.openai.com/v1/embeddings",
-            "accessToken": "<token>",
-            "model": "text-embedding-ada-002",
-            "dimensions": 1536,
-            "excludedFilePathPatterns": []
-          }
+          "enabled": true,
+          "dimensions": 1536,
+          "model": "text-embedding-ada-002",
+          "accessToken": "your-access-token",
+          "url": "https://api.openai.com/v1/embeddings",
+          "excludedFilePathPatterns": [
+            "*.svg",
+            "**/__mocks__/**",
+            "**/test/**"
+          ]
         }
       ]
     },
