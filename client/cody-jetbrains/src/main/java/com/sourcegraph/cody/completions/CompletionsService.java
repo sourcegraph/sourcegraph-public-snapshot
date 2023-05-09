@@ -35,7 +35,7 @@ public class CompletionsService {
 
         URI uri = URI.create(instanceUrl);
         HttpResponse<String> response = HttpClient.newHttpClient().send(HttpRequest.newBuilder(uri)
-            .timeout(Duration.ofSeconds(2))
+            .timeout(Duration.ofSeconds(20))
             .POST(HttpRequest.BodyPublishers.ofString(json))
             .header("Authorization", "token " + token)
             .build(), HttpResponse.BodyHandlers.ofString());

@@ -29,17 +29,6 @@ public class ChatBubble extends JPanel {
         textArea.setForeground(isHuman ? JBColor.WHITE : JBColor.BLACK);
         textArea.setComponentOrientation(isHuman ? ComponentOrientation.RIGHT_TO_LEFT : ComponentOrientation.LEFT_TO_RIGHT);
         this.add(textArea, BorderLayout.CENTER);
-        // Debug info: sizes
-        SwingUtilities.invokeLater(() -> {
-            System.out.println("ChatBubble size: " + this.getSize());
-            System.out.println("ChatBubble pref: " + this.getPreferredSize());
-            System.out.println("ChatBubble min: " + this.getMinimumSize());
-            System.out.println("ChatBubble max: " + this.getMaximumSize());
-            System.out.println("TextArea size: " + textArea.getSize());
-            System.out.println("TextArea pref: " + textArea.getPreferredSize());
-            System.out.println("TextArea min: " + textArea.getMinimumSize());
-            System.out.println("TextArea max: " + textArea.getMaximumSize());
-        });
     }
 
     @Override
