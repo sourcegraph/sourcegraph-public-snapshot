@@ -296,7 +296,7 @@ func runTargetedUpMigrations(database db.Database, targetVersions []int, postgre
 		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
 	}
 
-	r, err := connections.RunnerFromDSNs(logger.IncreaseLevel("runner", "", log.LevelNone), dsns, "sg", storeFactory)
+	r, err := connections.RunnerFromDSNs(std.Out.Output, logger.IncreaseLevel("runner", "", log.LevelNone), dsns, "sg", storeFactory)
 	if err != nil {
 		return err
 	}
