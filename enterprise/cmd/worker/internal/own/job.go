@@ -34,7 +34,6 @@ func (o *ownRepoIndexingQueue) Routines(startupCtx context.Context, observationC
 	var routines []goroutine.BackgroundRoutine
 	routines = append(routines, background.NewOwnBackgroundWorker(context.Background(), db, observationCtx)...)
 	routines = append(routines, background.GetOwnIndexSchedulerRoutines(db, observationCtx)...)
-	routines = append(routines, background.NewOwnRecentViewsIndexer(db, observationCtx))
 
 	return routines, nil
 }

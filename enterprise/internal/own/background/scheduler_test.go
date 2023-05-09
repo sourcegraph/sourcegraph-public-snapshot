@@ -38,7 +38,7 @@ func TestOwnRepoIndexSchedulerJob_JobsAutoIndex(t *testing.T) {
 		require.Equal(t, expected, count)
 	}
 
-	for _, jobType := range IndexJobTypes {
+	for _, jobType := range QueuePerRepoIndexJobs {
 		t.Run(jobType.Name, func(t *testing.T) {
 			ctx := context.Background()
 

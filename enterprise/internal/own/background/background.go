@@ -27,20 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type IndexJobType struct {
-	Name            string
-	Id              JobTypeID
-	IndexInterval   time.Duration
-	RefreshInterval time.Duration
-}
-
-var IndexJobTypes = []IndexJobType{{
-	Name:            "recent-contributors",
-	Id:              RecentContributors,
-	IndexInterval:   time.Hour * 24,
-	RefreshInterval: time.Minute * 5,
-}}
-
 type JobTypeID int
 
 const (
