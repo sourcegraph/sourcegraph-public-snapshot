@@ -29,6 +29,7 @@ export const GITHUB_APP_BY_ID_QUERY = gql`
             name
             slug
             appURL
+            baseURL
             clientID
             logo
             createdAt
