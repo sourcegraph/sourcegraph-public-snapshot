@@ -77,6 +77,7 @@ func (m *MultiHandler[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		// TODO: should we also log errors here? Not sure
 		http.Error(w, fmt.Sprintf("Failed to unmarshal payload: %s", err.Error()), http.StatusBadRequest)
+		return
 	}
 
 	// TODO: simply exported this method: I guess all of this will move into the handler package anyway so temp solution
@@ -91,12 +92,14 @@ func (m *MultiHandler[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// TODO: should we also log errors here? Not sure
 			http.Error(w, fmt.Sprintf("Failed to check Sourcegraph version: %s", err.Error()), http.StatusInternalServerError)
+			return
 		}
 	}
 
 	if invalidQueues := validateQueues(req.Queues); len(invalidQueues) != 0 {
 		// TODO: should we also log errors here? Not sure
 		http.Error(w, fmt.Sprintf("Invalid queue name(s) '%s' found. Supported queue names are '%s'. ", strings.Join(invalidQueues, ", "), strings.Join(validQueues, ", ")), http.StatusBadRequest)
+		return
 	}
 
 	resourceMetadata := ResourceMetadata{
@@ -115,6 +118,7 @@ func (m *MultiHandler[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				logger.Error("Handler returned an error", log.Error(err))
 				http.Error(w, fmt.Sprintf("Failed to dequeue from queue %s: %s", queue, errors.Wrap(err, "dbworkerstore.Dequeue").Error()), http.StatusInternalServerError)
+				return
 			}
 
 			job, err = m.BatchesQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
@@ -126,12 +130,14 @@ func (m *MultiHandler[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 
 				http.Error(w, fmt.Sprintf("Failed to transform %s record into job: %s", queue, errors.Wrap(err, "RecordTransformer")), http.StatusInternalServerError)
+				return
 			}
 		case "codeintel":
 			record, _, err := m.CodeIntelQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
 			if err != nil {
 				logger.Error("Handler returned an error", log.Error(err))
 				http.Error(w, fmt.Sprintf("Failed to dequeue from queue %s: %s", queue, errors.Wrap(err, "dbworkerstore.Dequeue").Error()), http.StatusInternalServerError)
+				return
 			}
 			job, err = m.CodeIntelQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
 			if err != nil {
@@ -142,6 +148,7 @@ func (m *MultiHandler[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 
 				http.Error(w, fmt.Sprintf("Failed to transform %s record into job: %s", queue, errors.Wrap(err, "RecordTransformer")), http.StatusInternalServerError)
+				return
 			}
 		}
 		if job.ID != 0 {
@@ -162,9 +169,11 @@ func (m *MultiHandler[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			token, err = m.JobTokenStore.Regenerate(r.Context(), job.ID, job.Queue)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Failed to regenerate token: %s", errors.Wrap(err, "RegenerateToken").Error()), http.StatusInternalServerError)
+				return
 			}
 		} else {
 			http.Error(w, fmt.Sprintf("Failed to create token: %s", errors.Wrap(err, "CreateToken").Error()), http.StatusInternalServerError)
+			return
 		}
 	}
 	job.Token = token
