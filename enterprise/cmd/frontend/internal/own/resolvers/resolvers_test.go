@@ -577,12 +577,25 @@ func TestOwnership_WithSignals(t *testing.T) {
 	db := database.NewMockDB()
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
+	santaEmail := "santa@northpole.com"
 	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
 		AuthorName:        "santa claus",
-		AuthorEmail:       "santa@northpole.com",
+		AuthorEmail:       santaEmail,
 		ContributionCount: 5,
 	}}, nil)
 	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
+
+	recentViewStore := database.NewMockRecentViewSignalStore()
+	recentViewStore.ListFunc.SetDefaultReturn([]database.RecentViewSummary{{
+		UserID:     1,
+		FilePathID: 1,
+		ViewsCount: 10,
+	}}, nil)
+	db.RecentViewSignalFunc.SetDefaultReturn(recentViewStore)
+
+	userEmails := database.NewMockUserEmailsStore()
+	userEmails.GetPrimaryEmailFunc.SetDefaultReturn(santaEmail, true, nil)
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
@@ -647,6 +660,10 @@ func TestOwnership_WithSignals(t *testing.T) {
 											  title
 											  description
 											}
+											... on RecentViewOwnershipSignal {
+											  title
+											  description
+											}
 										}
 									}
 								}
@@ -686,7 +703,15 @@ func TestOwnership_WithSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent contributor",
-											"description": "Owner is associated because they are have contributed to this file in the last 90 days."
+											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+										}
+									]
+								},
+								{
+									"reasons": [
+										{
+											"title": "recent view",
+											"description": "Owner is associated because they have viewed this file in the last 90 days."
 										}
 									]
 								}

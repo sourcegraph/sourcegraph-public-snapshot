@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/log"
 
@@ -47,6 +48,8 @@ var (
 	_ graphqlbackend.OwnershipReasonResolver                  = &ownershipReasonResolver{}
 	_ graphqlbackend.RecentContributorOwnershipSignalResolver = &recentContributorOwnershipSignal{}
 	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentContributorOwnershipSignal{}
+	_ graphqlbackend.RecentViewOwnershipSignalResolver        = &recentViewOwnershipSignal{}
+	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentViewOwnershipSignal{}
 	_ graphqlbackend.SimpleOwnReasonResolver                  = &codeownersFileEntryResolver{}
 )
 
@@ -87,6 +90,13 @@ func (o *ownershipReasonResolver) ToRecentContributorOwnershipSignal() (graphqlb
 	return nil, false
 }
 
+func (o *ownershipReasonResolver) ToRecentViewOwnershipSignal() (graphqlbackend.RecentViewOwnershipSignalResolver, bool) {
+	if res, ok := o.resolver.(*recentViewOwnershipSignal); ok {
+		return res, true
+	}
+	return nil, false
+}
+
 func ownerText(o *codeownerspb.Owner) string {
 	if o == nil {
 		return ""
@@ -118,6 +128,13 @@ func (r *ownResolver) GitBlobOwnership(
 		return nil, err
 	}
 	ownerships = append(ownerships, contribResolvers...)
+
+	// Retrieve recent view signals.
+	viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, blob.Path(), repoID)
+	if err != nil {
+		return nil, err
+	}
+	ownerships = append(ownerships, viewerResolvers...)
 
 	return r.ownershipConnection(args, ownerships)
 }
@@ -360,7 +377,7 @@ func (g *recentContributorOwnershipSignal) Title() (string, error) {
 }
 
 func (g *recentContributorOwnershipSignal) Description() (string, error) {
-	return "Owner is associated because they are have contributed to this file in the last 90 days.", nil
+	return "Owner is associated because they have contributed to this file in the last 90 days.", nil
 }
 
 func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
@@ -378,7 +395,7 @@ func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, p
 			},
 			reasons: []graphqlbackend.OwnershipReasonResolver{&ownershipReasonResolver{&recentContributorOwnershipSignal{}}},
 		}
-		user, err := identifyUser(ctx, db, author.AuthorEmail)
+		user, err := db.Users().GetByVerifiedEmail(ctx, author.AuthorEmail)
 		if err == nil {
 			// if we don't get an error (meaning we can match) we will add it to the resolver, otherwise use the contributor data
 			em := author.AuthorEmail
@@ -394,6 +411,64 @@ func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, p
 	return results, nil
 }
 
-func identifyUser(ctx context.Context, db database.DB, email string) (*types.User, error) {
-	return db.Users().GetByVerifiedEmail(ctx, email)
+type recentViewOwnershipSignal struct {
+	total int32
+}
+
+func (v *recentViewOwnershipSignal) Title() (string, error) {
+	return "recent view", nil
+}
+
+func (v *recentViewOwnershipSignal) Description() (string, error) {
+	return "Owner is associated because they have viewed this file in the last 90 days.", nil
+}
+
+func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	summaries, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{Path: path, RepoID: repoID})
+	if err != nil {
+		return nil, errors.Wrap(err, "list recent view signals")
+	}
+
+	fetchedUsers := make(map[int32]*types.User)
+	userEmails := make(map[int32]string)
+
+	for _, summary := range summaries {
+		var user *types.User
+		var email string
+		userID := summary.UserID
+		if fetchedUser, found := fetchedUsers[userID]; found {
+			user = fetchedUser
+			email = userEmails[userID]
+		} else {
+			userFromDB, err := db.Users().GetByID(ctx, userID)
+			if err != nil {
+				return nil, errors.Wrap(err, "getting user")
+			}
+			primaryEmail, _, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
+			if err != nil {
+				if errcode.IsNotFound(err) {
+					logger.Warn("Cannot find a primary email", log.Int32("userID", userID))
+				} else {
+					return nil, errors.Wrap(err, "getting user primary email")
+				}
+			}
+			user = userFromDB
+			email = primaryEmail
+			fetchedUsers[userID] = userFromDB
+			userEmails[userID] = primaryEmail
+		}
+		// TODO(sashaostrikov): what to do if email here is empty
+		res := ownershipResolver{
+			db: db,
+			resolvedOwner: &codeowners.Person{
+				User:         user,
+				Email:        email,
+				PrimaryEmail: &email,
+				Handle:       user.Username,
+			},
+			reasons: []graphqlbackend.OwnershipReasonResolver{&ownershipReasonResolver{&recentViewOwnershipSignal{}}},
+		}
+		results = append(results, &res)
+	}
+	return results, nil
 }
