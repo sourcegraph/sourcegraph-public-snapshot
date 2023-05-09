@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"sync"
@@ -235,7 +236,7 @@ func embeddingsSearchResultsToResolvers(
 
 			output = append(output, &embeddingsSearchResultResolver{
 				result:  result,
-				content: string(content),
+				content: string(extractLineRange(content, result.StartLine, result.EndLine)),
 			})
 		})
 	}
@@ -243,6 +244,25 @@ func embeddingsSearchResultsToResolvers(
 	p.Wait()
 
 	return output, nil
+}
+
+func extractLineRange(content []byte, startLine, endLine int) []byte {
+	lines := bytes.Split(content, []byte("\n"))
+
+	// Sanity check: check that startLine and endLine are within 0 and len(lines).
+	startLine = clamp(startLine, 0, len(lines))
+	endLine = clamp(endLine, 0, len(lines))
+
+	return bytes.Join(lines[startLine:endLine], []byte("\n"))
+}
+
+func clamp(input, min, max int) int {
+	if input > max {
+		return max
+	} else if input < min {
+		return min
+	}
+	return input
 }
 
 type embeddingsSearchResultResolver struct {
