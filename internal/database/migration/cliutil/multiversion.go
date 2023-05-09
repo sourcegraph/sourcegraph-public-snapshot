@@ -346,7 +346,7 @@ func CheckDrift(ctx context.Context, r Runner, version string, out *output.Outpu
 		if err != nil {
 			return err
 		}
-		if err := compareSchemaDescriptions(driftOut, schemaName, version, canonicalize(schema), canonicalize(expectedSchema)); err != nil {
+		if err := compareAndDisplaySchemaDescriptions(driftOut, schemaName, version, canonicalize(schema), canonicalize(expectedSchema)); err != nil {
 			schemasWithDrift = append(schemasWithDrift,
 				&schemaWithDrift{
 					name:  schemaName,

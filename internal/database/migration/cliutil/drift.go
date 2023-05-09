@@ -102,7 +102,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		}
 		schema := schemas["public"]
 
-		return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
+		return compareAndDisplaySchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
 	})
 
 	return &cli.Command{
