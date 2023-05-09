@@ -64,7 +64,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                 const installationID = params.get('installationID')
                 const baseURL = params.get('url')
                 const org = params.get('org')
-                if (appID != null && installationID != null && baseURL != null) {
+                if (appID !== null && installationID !== null && baseURL !== null) {
                     externalService.defaultConfig = `{
   "url": "${decodeURI(baseURL)}",
   "gitHubAppDetails": {
