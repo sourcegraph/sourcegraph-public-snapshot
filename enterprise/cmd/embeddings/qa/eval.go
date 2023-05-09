@@ -69,7 +69,7 @@ func Run(searcher embeddingsSearcher) (float64, error) {
 				fmt.Printf("   ")
 			}
 			fmt.Printf("%d. %s", i+1, result.FileName)
-			fmt.Printf(" (%s)\n", result.Debug)
+			fmt.Printf(" (%s)\n", result.ScoreDetails.String())
 		}
 		fmt.Println()
 		if fileFound {

@@ -2,7 +2,11 @@ package resolvers
 
 import (
 	"context"
+	"os"
+	"sync"
 
+	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -12,6 +16,7 @@ import (
 	repobg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,6 +25,7 @@ import (
 
 func NewResolver(
 	db database.DB,
+	logger log.Logger,
 	gitserverClient gitserver.Client,
 	embeddingsClient *embeddings.Client,
 	repoStore repobg.RepoEmbeddingJobsStore,
@@ -27,6 +33,7 @@ func NewResolver(
 ) graphqlbackend.EmbeddingsResolver {
 	return &Resolver{
 		db:                        db,
+		logger:                    logger,
 		gitserverClient:           gitserverClient,
 		embeddingsClient:          embeddingsClient,
 		repoEmbeddingJobsStore:    repoStore,
@@ -36,6 +43,7 @@ func NewResolver(
 
 type Resolver struct {
 	db                        database.DB
+	logger                    log.Logger
 	gitserverClient           gitserver.Client
 	embeddingsClient          *embeddings.Client
 	repoEmbeddingJobsStore    repobg.RepoEmbeddingJobsStore
@@ -72,7 +80,11 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 		return nil, err
 	}
 
-	return &embeddingsSearchResultsResolver{results}, nil
+	return &embeddingsSearchResultsResolver{
+		results:   results,
+		gitserver: r.gitserverClient,
+		logger:    r.logger,
+	}, nil
 }
 
 func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graphqlbackend.IsContextRequiredForChatQueryInputArgs) (bool, error) {
@@ -167,27 +179,60 @@ func (r *Resolver) ScheduleContextDetectionForEmbedding(ctx context.Context) (*g
 }
 
 type embeddingsSearchResultsResolver struct {
-	results *embeddings.EmbeddingSearchResults
+	results   *embeddings.EmbeddingSearchResults
+	gitserver gitserver.Client
+	logger    log.Logger
 }
 
-func (r *embeddingsSearchResultsResolver) CodeResults(ctx context.Context) []graphqlbackend.EmbeddingsSearchResultResolver {
-	codeResults := make([]graphqlbackend.EmbeddingsSearchResultResolver, len(r.results.CodeResults))
-	for idx, result := range r.results.CodeResults {
-		panic("TODO: get content")
-		codeResults[idx] = &embeddingsSearchResultResolver{result: result}
-	}
-	return codeResults
+func (r *embeddingsSearchResultsResolver) CodeResults(ctx context.Context) ([]graphqlbackend.EmbeddingsSearchResultResolver, error) {
+	return embeddingsSearchResultsToResolvers(ctx, r.logger, r.gitserver, r.results.CodeResults)
 }
 
-func (r *embeddingsSearchResultsResolver) TextResults(ctx context.Context) []graphqlbackend.EmbeddingsSearchResultResolver {
-	textResults := make([]graphqlbackend.EmbeddingsSearchResultResolver, len(r.results.TextResults))
-	for idx, result := range r.results.TextResults {
-		panic("TODO: get content")
-		textResults[idx] = &embeddingsSearchResultResolver{
-			result: result,
-		}
+func (r *embeddingsSearchResultsResolver) TextResults(ctx context.Context) ([]graphqlbackend.EmbeddingsSearchResultResolver, error) {
+	return embeddingsSearchResultsToResolvers(ctx, r.logger, r.gitserver, r.results.TextResults)
+}
+
+func embeddingsSearchResultsToResolvers(
+	ctx context.Context,
+	logger log.Logger,
+	gs gitserver.Client,
+	results []embeddings.EmbeddingSearchResult,
+) ([]graphqlbackend.EmbeddingsSearchResultResolver, error) {
+	var (
+		mu     sync.Mutex
+		output []graphqlbackend.EmbeddingsSearchResultResolver
+	)
+
+	p := pool.New()
+	for _, result := range results {
+		p.Go(func() {
+			content, err := gs.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, result.RepoName, result.Revision, result.FileName)
+			if err != nil {
+				if !os.IsNotExist(err) {
+					logger.Error(
+						"error reading file",
+						log.String("repoName", string(result.RepoName)),
+						log.String("revision", string(result.Revision)),
+						log.String("fileName", result.FileName),
+						log.Error(err),
+					)
+				}
+				return
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			output = append(output, &embeddingsSearchResultResolver{
+				result:  result,
+				content: string(content),
+			})
+		})
 	}
-	return textResults
+
+	p.Wait()
+
+	return output, nil
 }
 
 type embeddingsSearchResultResolver struct {

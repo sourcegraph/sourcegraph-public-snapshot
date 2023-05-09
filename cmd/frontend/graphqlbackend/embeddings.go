@@ -34,8 +34,8 @@ type EmbeddingsSearchInputArgs struct {
 }
 
 type EmbeddingsSearchResultsResolver interface {
-	CodeResults(ctx context.Context) []EmbeddingsSearchResultResolver
-	TextResults(ctx context.Context) []EmbeddingsSearchResultResolver
+	CodeResults(ctx context.Context) ([]EmbeddingsSearchResultResolver, error)
+	TextResults(ctx context.Context) ([]EmbeddingsSearchResultResolver, error)
 }
 
 type EmbeddingsSearchResultResolver interface {
