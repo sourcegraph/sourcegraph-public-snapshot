@@ -49,12 +49,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Unused site-config field `api.rateLimit` has been removed. [#51087](https://github.com/sourcegraph/sourcegraph/pull/51087)
 - Legacy (table-based) blob viewer. [#50915](https://github.com/sourcegraph/sourcegraph/pull/50915)
 
-## 5.0.4
-
-### Fixed
-
-- When streaming git blame was enabled, git blame lookups for repositories synced through `src serve-git` pointed to an incorrect URL. This has now been fixed to use the correct URL. [#51525](https://github.com/sourcegraph/sourcegraph/pull/51525)
-
 ## 5.0.3
 
 ### Added
