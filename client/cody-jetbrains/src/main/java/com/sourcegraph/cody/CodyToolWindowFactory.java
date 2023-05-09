@@ -9,10 +9,6 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
-import com.intellij.ui.scale.JBUIScale;
-import com.intellij.uiDesigner.core.Spacer;
-import com.intellij.util.ui.JBInsets;
-import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
@@ -22,7 +18,6 @@ import com.sourcegraph.cody.editor.EditorContextGetter;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,13 +43,11 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
 //        private final ArrayList<ChatMessage> messages = new ArrayList<>();
 
         public CodyToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-            // Chat panel
-            JBScrollPane chatPanel = new JBScrollPane();
-            chatPanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-            chatPanel.setLayout(new ScrollPaneLayout());
-
             messagesPanel = new JPanel();
             messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 10, true, true));
+
+            // Chat panel
+            JBScrollPane chatPanel = new JBScrollPane(messagesPanel, JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
             // Controls panel
             JPanel controlsPanel = new JPanel();
@@ -68,7 +61,7 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
             // Main content panel
             contentPanel.setLayout(new BorderLayout(0, 20));
             contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-            contentPanel.add(chatPanel, BorderLayout.NORTH);
+            contentPanel.add(chatPanel, BorderLayout.CENTER);
             contentPanel.add(controlsPanel, BorderLayout.SOUTH);
 
             // Add welcome message
@@ -83,44 +76,18 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
 
             // Bubble panel
             var bubblePanel = new JPanel();
-            bubblePanel.setLayout(new GridBagLayout());
-            messagesPanel.add(bubblePanel);
-
-            GridBagConstraints c = new GridBagConstraints();
-
-            // Spacer
-            Spacer spacer = new Spacer();
-            spacer.setMinimumSize(new Dimension(0, 400));
-            spacer.setMaximumSize(new Dimension(bubblePanel.getWidth() - JBUIScale.scale(400), 400));
-            c.weightx = 0.2;
-            c.anchor = isHuman ? FlowLayout.LEFT : FlowLayout.RIGHT;
-            bubblePanel.add(spacer, c);
+            bubblePanel.setLayout(new FlowLayout(isHuman ? FlowLayout.RIGHT : FlowLayout.LEFT, 0, 0));
 
             // Chat bubble
-            JBColor backgroundColor = isHuman ? JBColor.BLUE : JBColor.GRAY;
-            ChatBubble bubble = new ChatBubble();
-            System.out.println("bubblePanel sizes:");
-            System.out.println("  width: " + bubblePanel.getWidth());
-            System.out.println("  height: " + bubblePanel.getHeight());
-            bubble.setBorder(new EmptyBorder(new JBInsets(10, 10, 10, 10)));
-            JTextArea bubbleTextArea = new JTextArea(message.getDisplayText());
-            bubbleTextArea.setFont(UIUtil.getLabelFont());
-            bubbleTextArea.setLineWrap(true);
-            bubbleTextArea.setWrapStyleWord(true);
-            bubbleTextArea.setBackground(JBColor.RED);
-            bubbleTextArea.setComponentOrientation(isHuman ? ComponentOrientation.RIGHT_TO_LEFT : ComponentOrientation.LEFT_TO_RIGHT);
-            bubble.add(bubbleTextArea, BorderLayout.NORTH);
-            System.out.println("bubble sizes:");
-            System.out.println("  width: " + bubble.getWidth());
-            System.out.println("  height: " + bubble.getHeight());
-            c.weightx = 0.8;
-            c.anchor = isHuman ? FlowLayout.RIGHT : FlowLayout.LEFT;
-            bubblePanel.add(bubble, c);
+            ChatBubble bubble = new ChatBubble(10, isHuman ? JBColor.BLUE : JBColor.GRAY, message);
+            bubblePanel.add(bubble);
+            messagesPanel.add(bubblePanel);
 
             // Assemble
             messagesPanel.revalidate();
             messagesPanel.repaint();
         }
+
 
         private void sendMessage(@NotNull Project project) {
             EditorContext editorContext = EditorContextGetter.getEditorContext(project);
