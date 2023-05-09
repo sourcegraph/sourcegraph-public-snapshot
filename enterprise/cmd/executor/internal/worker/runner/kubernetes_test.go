@@ -63,13 +63,13 @@ func TestKubernetesRunner_Run(t *testing.T) {
 				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
 				assert.Equal(t, "sg-executor-job-some-queue-42-some-key", actions[0].(k8stesting.CreateAction).GetObject().(*batchv1.Job).Name)
 
-				assert.Equal(t, "list", actions[1].GetVerb())
-				assert.Equal(t, "pods", actions[1].GetResource().Resource)
-				assert.Equal(t, "job-name=sg-executor-job-some-queue-42-some-key", actions[1].(k8stesting.ListAction).GetListRestrictions().Labels.String())
+				assert.Equal(t, "get", actions[1].GetVerb())
+				assert.Equal(t, "jobs", actions[1].GetResource().Resource)
+				assert.Equal(t, "sg-executor-job-some-queue-42-some-key", actions[1].(k8stesting.GetAction).GetName())
 
-				assert.Equal(t, "get", actions[2].GetVerb())
-				assert.Equal(t, "jobs", actions[2].GetResource().Resource)
-				assert.Equal(t, "sg-executor-job-some-queue-42-some-key", actions[2].(k8stesting.GetAction).GetName())
+				assert.Equal(t, "list", actions[2].GetVerb())
+				assert.Equal(t, "pods", actions[2].GetResource().Resource)
+				assert.Equal(t, "job-name=sg-executor-job-some-queue-42-some-key", actions[2].(k8stesting.ListAction).GetListRestrictions().Labels.String())
 
 				assert.Equal(t, "get", actions[3].GetVerb())
 				assert.Equal(t, "pods", actions[3].GetResource().Resource)
@@ -112,19 +112,16 @@ func TestKubernetesRunner_Run(t *testing.T) {
 				})
 			},
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 4)
+				require.Len(t, actions, 3)
 
 				assert.Equal(t, "create", actions[0].GetVerb())
 				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
 
-				assert.Equal(t, "list", actions[1].GetVerb())
-				assert.Equal(t, "pods", actions[1].GetResource().Resource)
+				assert.Equal(t, "get", actions[1].GetVerb())
+				assert.Equal(t, "jobs", actions[1].GetResource().Resource)
 
-				assert.Equal(t, "get", actions[2].GetVerb())
+				assert.Equal(t, "delete", actions[2].GetVerb())
 				assert.Equal(t, "jobs", actions[2].GetResource().Resource)
-
-				assert.Equal(t, "delete", actions[3].GetVerb())
-				assert.Equal(t, "jobs", actions[3].GetResource().Resource)
 			},
 			expectedErr: errors.New("waiting for job sg-executor-job-some-queue-42-some-key to complete: retrieving job: failed"),
 		},
@@ -136,13 +133,16 @@ func TestKubernetesRunner_Run(t *testing.T) {
 				})
 			},
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 3)
+				require.Len(t, actions, 4)
 
 				assert.Equal(t, "create", actions[0].GetVerb())
 				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
 
-				assert.Equal(t, "list", actions[1].GetVerb())
-				assert.Equal(t, "pods", actions[1].GetResource().Resource)
+				assert.Equal(t, "get", actions[1].GetVerb())
+				assert.Equal(t, "jobs", actions[1].GetResource().Resource)
+
+				assert.Equal(t, "list", actions[2].GetVerb())
+				assert.Equal(t, "pods", actions[2].GetResource().Resource)
 
 				assert.Equal(t, "delete", actions[2].GetVerb())
 				assert.Equal(t, "jobs", actions[2].GetResource().Resource)
