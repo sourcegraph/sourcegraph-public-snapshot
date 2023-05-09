@@ -686,6 +686,9 @@ function filePathContains(container: string, contained: string): boolean {
     if (trimmedContained.startsWith(path.sep)) {
         trimmedContained = trimmedContained.slice(path.sep.length)
     }
+    if (trimmedContained.startsWith('.' + path.sep)) {
+        trimmedContained = trimmedContained.slice(1 + path.sep.length)
+    }
     return (
         container.includes(path.sep + trimmedContained + path.sep) || // mid-level directory
         container.endsWith(path.sep + trimmedContained) // child
