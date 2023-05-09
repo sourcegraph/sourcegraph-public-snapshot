@@ -18,7 +18,7 @@ const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock',
  * For example, if the original is "cody" and the stem is "codi", the prefix is "cod"
  * - The count is the number of times the keyword appears in the document/query.
  */
-interface Term {
+export interface Term {
     stem: string
     originals: string[]
     prefix: string
@@ -57,6 +57,21 @@ export function userQueryToKeywordQuery(query: string): Term[] {
     const filteredWords = winkUtils.tokens.removeWords(origWords) as string[]
     const terms: { [stem: string]: Term } = {}
     for (const word of filteredWords) {
+        // Ignore ASCII-only strings of length 2 or less
+        if (word.length <= 2) {
+            let skip = true
+            for (let i = 0; i < word.length; i++) {
+                if (word.charCodeAt(i) >= 128) {
+                    // non-ASCII
+                    skip = false
+                    break
+                }
+            }
+            if (skip) {
+                continue
+            }
+        }
+
         const stem = winkUtils.string.stem(word)
         if (terms[stem]) {
             terms[stem].originals.push(word)

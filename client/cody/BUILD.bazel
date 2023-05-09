@@ -103,5 +103,6 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":cody",
+        "//:node_modules/@types/node",
     ],
 )
