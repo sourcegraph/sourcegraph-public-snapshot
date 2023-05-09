@@ -3,8 +3,8 @@ import { upperFirst, capitalize } from 'lodash'
 /**
  * Formats the days of the week for a rollout window for display.
  *
- * If days are provided, joins them with commas and capitalizes each day name.
- * Otherwise returns 'every other day' as the default.
+ * If days are provided, join them with commas and capitalize each day's name.
+ * Otherwise, returns 'every other day'.
  *
  * @param days The days of the week for the rollout window, e.g. ['monday', 'wednesday']
  * @returns The formatted days for display in the UI
