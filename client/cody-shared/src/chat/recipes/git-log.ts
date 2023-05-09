@@ -42,6 +42,14 @@ export class GitHistory implements Recipe {
                 args: ['log', '-n5', logFormat, '--', selection.fileName],
                 rawDisplayText: `What changed in ${name} in the last 5 commits`,
             })
+            const sel = selection.selectedRange
+            if (sel) {
+                items.push({
+                    label: 'Last 5 items for selected text',
+                    args: ['log', '-n5', logFormat, `-L${sel.lineStart + 1},${sel.lineEnd + 1}:${selection.fileName}`],
+                    rawDisplayText: 'What changed for selected text in the last 5 commits',
+                })
+            }
         }
         const selectedLabel = await context.editor.showQuickPick(items.map(e => e.label))
         if (!selectedLabel) {

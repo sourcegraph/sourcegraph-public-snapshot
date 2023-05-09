@@ -8,6 +8,20 @@ export interface ActiveTextEditorSelection {
     precedingText: string
     selectedText: string
     followingText: string
+
+    selectedRange: ActiveTextEditorSelectionRange | null
+}
+
+export interface ActiveTextEditorSelectionRange {
+    /**
+     * 0-based line number for the start of the selected text.
+     */
+    lineStart: number
+
+    /**
+     * 0-based line number for the start of the selected text.
+     */
+    lineEnd: number
 }
 
 export interface ActiveTextEditorVisibleContent {

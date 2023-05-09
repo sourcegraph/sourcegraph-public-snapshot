@@ -81,6 +81,10 @@ export class VSCodeEditor implements Editor {
             selectedText: activeEditor.document.getText(selection),
             precedingText,
             followingText,
+            selectedRange: selection.isEmpty ? null : {
+                lineStart: selection.start.line,
+                lineEnd: selection.end.line,
+            }
         }
     }
 
