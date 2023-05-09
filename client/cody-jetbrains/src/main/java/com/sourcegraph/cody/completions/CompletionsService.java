@@ -2,14 +2,10 @@ package com.sourcegraph.cody.completions;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.sourcegraph.api.GraphQlClient;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 
 public class CompletionsService {
     private final String instanceUrl;
@@ -27,24 +23,12 @@ public class CompletionsService {
         Gson gson = new Gson();
 
         String query = "query completions($input: CompletionsInput!) { completions(input: $input) }";
-        var wrapper = new GraphQLWrapper(query).withVariable("input", input);
-        if (wrapper == null) {
-            return null;
-        }
-        var json = wrapper.toJsonString();
+        var variables = new JsonObject();
+        variables.add("input", gson.toJsonTree(input));
 
-        URI uri = URI.create(instanceUrl);
-        HttpResponse<String> response = HttpClient.newHttpClient().send(HttpRequest.newBuilder(uri)
-            .timeout(Duration.ofSeconds(20))
-            .POST(HttpRequest.BodyPublishers.ofString(json))
-            .header("Authorization", "token " + token)
-            .build(), HttpResponse.BodyHandlers.ofString());
-        var body = response.body();
-        if (body == null) {
-            return null;
-        }
-
-        return gson.fromJson(body, JsonObject.class)
+        var response = GraphQlClient.callGraphQLService(instanceUrl, token, null, query, variables);
+        return response
+            .getBodyAsJson()
             .getAsJsonObject("data")
             .getAsJsonPrimitive("completions")
             .getAsString();
