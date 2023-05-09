@@ -51,7 +51,7 @@ export function escapeCodyMarkdown(markdown: string, isStreaming: boolean): stri
             default:
                 return {
                     ...token,
-                    // To detect inline code blocks, we need to parse ever block
+                    // To detect inline code blocks, we need to parse every block
                     // level token again and check if it contains inline
                     raw: parseMarkdownInline(token.raw)
                         .map(token => {
