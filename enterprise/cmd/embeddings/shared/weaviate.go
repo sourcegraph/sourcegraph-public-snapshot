@@ -53,12 +53,12 @@ func (w *weaviateClient) Use(ctx context.Context) bool {
 	return featureflag.FromContext(ctx).GetBoolOr("search-weaviate", false)
 }
 
-func (w *weaviateClient) Search(ctx context.Context, params embeddings.EmbeddingsSearchParameters) (codeResults, textResults []embeddings.EmbeddingSearchResult, _ error) {
+func (w *weaviateClient) Search(ctx context.Context, repoName api.RepoName, repoID api.RepoID, query string, codeResultsCount, textResultsCount int) (codeResults, textResults []embeddings.EmbeddingSearchResult, _ error) {
 	if w.clientErr != nil {
 		return nil, nil, w.clientErr
 	}
 
-	embeddedQuery, err := w.getQueryEmbedding(ctx, params.Query)
+	embeddedQuery, err := w.getQueryEmbedding(ctx, query)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "getting query embedding")
 	}
@@ -96,12 +96,12 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 				if revision == "" {
 					revision = rev
 				} else {
-					w.logger.Warn("inconsistent revisions returned for an embedded repository", log.Int("repoid", int(params.RepoID)), log.String("filename", fileName), log.String("revision1", revision), log.String("revision2", rev))
+					w.logger.Warn("inconsistent revisions returned for an embedded repository", log.Int("repoid", int(repoID)), log.String("filename", fileName), log.String("revision1", revision), log.String("revision2", rev))
 				}
 			}
 
 			srs = append(srs, embeddings.EmbeddingSearchResult{
-				RepoName:  params.RepoName,
+				RepoName:  repoName,
 				Revision:  api.CommitID(revision),
 				FileName:  fileName,
 				StartLine: int(cMap["start_line"].(float64)),
@@ -119,12 +119,12 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 	// We partition the indexes by type and repository. Each class in
 	// weaviate is its own index, so we achieve partitioning by a class
 	// per repo and type.
-	codeClass := fmt.Sprintf("Code_%d", params.RepoID)
-	textClass := fmt.Sprintf("Text_%d", params.RepoID)
+	codeClass := fmt.Sprintf("Code_%d", repoID)
+	textClass := fmt.Sprintf("Text_%d", repoID)
 
 	res, err := w.client.GraphQL().MultiClassGet().
-		AddQueryClass(queryBuilder(codeClass, params.CodeResultsCount)).
-		AddQueryClass(queryBuilder(textClass, params.TextResultsCount)).
+		AddQueryClass(queryBuilder(codeClass, codeResultsCount)).
+		AddQueryClass(queryBuilder(textClass, textResultsCount)).
 		Do(ctx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "doing weaviate request")

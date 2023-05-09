@@ -127,7 +127,7 @@ func NewHandler(
 			return
 		}
 
-		var args embeddings.EmbeddingsMultiSearchParameters
+		var args embeddings.EmbeddingsSearchParameters
 		err := json.NewDecoder(r.Body).Decode(&args)
 		if err != nil {
 			http.Error(w, "could not parse request body: "+err.Error(), http.StatusBadRequest)

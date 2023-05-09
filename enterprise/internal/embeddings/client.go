@@ -47,16 +47,6 @@ type Client struct {
 }
 
 type EmbeddingsSearchParameters struct {
-	RepoName         api.RepoName `json:"repoName"`
-	RepoID           api.RepoID   `json:"repoID"`
-	Query            string       `json:"query"`
-	CodeResultsCount int          `json:"codeResultsCount"`
-	TextResultsCount int          `json:"textResultsCount"`
-
-	UseDocumentRanks bool `json:"useDocumentRanks"`
-}
-
-type EmbeddingsMultiSearchParameters struct {
 	RepoNames        []api.RepoName `json:"repoNames"`
 	RepoIDs          []api.RepoID   `json:"repoIDs"`
 	Query            string         `json:"query"`
@@ -76,7 +66,7 @@ type IsContextRequiredForChatQueryResult struct {
 	IsRequired bool `json:"isRequired"`
 }
 
-func (c *Client) Search(ctx context.Context, args EmbeddingsMultiSearchParameters) (*EmbeddingCombinedSearchResults, error) {
+func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error) {
 	partitions, err := c.partition(args.RepoNames, args.RepoIDs)
 	if err != nil {
 		return nil, err
@@ -111,7 +101,7 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsMultiSearchParameter
 	return &combinedResult, nil
 }
 
-func (c *Client) searchPartition(ctx context.Context, endpoint string, args EmbeddingsMultiSearchParameters) (*EmbeddingCombinedSearchResults, error) {
+func (c *Client) searchPartition(ctx context.Context, endpoint string, args EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error) {
 	resp, err := c.httpPost(ctx, "search", endpoint, args)
 	if err != nil {
 		return nil, err

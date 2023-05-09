@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -45,7 +46,7 @@ func Run(searcher embeddingsSearcher) (float64, error) {
 		relevantFile := fields[1]
 
 		args := embeddings.EmbeddingsSearchParameters{
-			RepoName:         "github.com/sourcegraph/sourcegraph",
+			RepoNames:        []api.RepoName{"github.com/sourcegraph/sourcegraph"},
 			Query:            query,
 			CodeResultsCount: 20,
 			TextResultsCount: 2,

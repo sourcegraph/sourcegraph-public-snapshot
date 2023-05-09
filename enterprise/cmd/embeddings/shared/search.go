@@ -19,7 +19,7 @@ type getQueryEmbeddingFn func(ctx context.Context, query string) ([]float32, err
 func searchRepoEmbeddingIndexes(
 	ctx context.Context,
 	logger log.Logger,
-	params embeddings.EmbeddingsMultiSearchParameters,
+	params embeddings.EmbeddingsSearchParameters,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
 	weaviate *weaviateClient,
@@ -43,17 +43,7 @@ func searchRepoEmbeddingIndexes(
 
 	for i, repoName := range params.RepoNames {
 		if weaviate.Use(ctx) {
-			singleParams := embeddings.EmbeddingsSearchParameters{
-				RepoName: repoName,
-				// TODO assert len(multiParams.RepoNames) == len(multiParams.RepoIDs)
-				RepoID:           params.RepoIDs[i],
-				Query:            "",
-				CodeResultsCount: 0,
-				TextResultsCount: 0,
-				UseDocumentRanks: false,
-			}
-
-			codeResults, textResults, err := weaviate.Search(ctx, singleParams)
+			codeResults, textResults, err := weaviate.Search(ctx, repoName, params.RepoIDs[i], params.Query, params.CodeResultsCount, params.TextResultsCount)
 			if err != nil {
 				return nil, err
 			}
