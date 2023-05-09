@@ -64,9 +64,13 @@ func Init(logger log.Logger) {
 	// This defaults to an internal hostname.
 	setDefaultEnv(logger, "SRC_FRONTEND_INTERNAL", "localhost:3090")
 
+	appPath := "sourcegraph"
+	if version.IsDev(version.Version()) {
+		appPath = fmt.Sprintf("%s-dev", appPath)
+	}
 	cacheDir, err := os.UserCacheDir()
 	if err == nil {
-		cacheDir = filepath.Join(cacheDir, "sourcegraph-sp")
+		cacheDir = filepath.Join(cacheDir, appPath)
 		err = os.MkdirAll(cacheDir, 0700)
 	}
 	if err != nil {
@@ -81,7 +85,7 @@ func Init(logger log.Logger) {
 
 	configDir, err := os.UserConfigDir()
 	if err == nil {
-		configDir = filepath.Join(configDir, "sourcegraph-sp")
+		configDir = filepath.Join(configDir, appPath)
 		err = os.MkdirAll(configDir, 0700)
 	}
 	if err != nil {
