@@ -4,14 +4,22 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/Khan/genqlient/graphql"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-const endpoint = "https://sourcegraph.com/.api/graphql"
+var endpoint = env.Get("LLM_PROXY_DOTCOM_API_URL", "https://sourcegraph.com/.api/graphql", "Custom override for the dotcom API endpoint")
+
+func init() {
+	// Poor mans startup verify check.
+	mustParseURL(endpoint)
+}
 
 // NewClient returns a new GraphQL client for the Sourcegraph.com API authenticated
 // with the given Sourcegraph access token.
@@ -74,4 +82,12 @@ type tokenAuthTransport struct {
 func (t *tokenAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Authorization", fmt.Sprintf("token %s", t.token))
 	return t.wrapped.RoundTrip(req)
+}
+
+func mustParseURL(s string) *url.URL {
+	u, err := url.Parse(s)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse URL %q: %s", s, err.Error()))
+	}
+	return u
 }
