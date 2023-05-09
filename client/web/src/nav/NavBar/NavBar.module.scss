@@ -2,7 +2,8 @@
 
 .navbar {
     display: flex;
-    position: relative;
+    position: fixed;
+    z-index: 5;
     height: var(--navbar-height);
     min-height: 40px;
     width: 100%;
