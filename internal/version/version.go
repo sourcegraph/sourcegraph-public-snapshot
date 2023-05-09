@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const LatestReleaseBuild = "5.0.3"
 const devVersion = "0.0.0+dev"                              // version string for unreleased development builds
 var devTimestamp = strconv.FormatInt(time.Now().Unix(), 10) // build timestamp for unreleased development builds
 
