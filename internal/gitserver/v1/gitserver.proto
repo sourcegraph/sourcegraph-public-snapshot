@@ -194,7 +194,7 @@ message CommitMatch {
   repeated string modified_files = 9;
 }
 
-// ArchiveRquest is the options for the Archive func.
+// ArchiveRequest is set of parameters for the Archive RPC.
 message ArchiveRequest {
   // repo is the name of the repo to be archived
   string repo = 1;
