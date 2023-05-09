@@ -58,6 +58,7 @@ contents:
     # Temp, testing server image without pulling from other layers
     - grafana@chainguard
     - prometheus@sourcegraph
+    - syntect-server@sourcegraph
 
 accounts:
   groups:
