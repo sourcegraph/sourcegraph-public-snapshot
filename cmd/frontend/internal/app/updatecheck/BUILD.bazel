@@ -8,9 +8,9 @@ go_library(
         "doc.go",
         "handler.go",
     ],
+    embedsrcs = ["app.update.json"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck",
     visibility = ["//cmd/frontend:__subpackages__"],
-    embedsrcs = ["app.update.json"],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
