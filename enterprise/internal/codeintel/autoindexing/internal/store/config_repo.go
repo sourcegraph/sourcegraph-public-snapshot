@@ -42,6 +42,28 @@ FROM codeintel_autoindexing_exceptions cae
 WHERE cae.repository_id = %s
 `
 
+func (s *store) SetRepositoryExceptions(ctx context.Context, repositoryID int, canSchedule, canInfer bool) (err error) {
+	ctx, _, endObservation := s.operations.setRepositoryExceptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(
+		setRepositoryExceptionsQuery,
+		repositoryID,
+		!canSchedule, !canInfer,
+		!canSchedule, !canInfer,
+	))
+}
+
+const setRepositoryExceptionsQuery = `
+INSERT INTO codeintel_autoindexing_exceptions (repository_id, disable_scheduling, disable_indexing)
+VALUES (%s, %s, %s)
+ON CONFLICT (repository_id) DO UPDATE SET
+	disable_scheduling = %s,
+	disable_indexing = %s
+`
+
 func (s *store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),

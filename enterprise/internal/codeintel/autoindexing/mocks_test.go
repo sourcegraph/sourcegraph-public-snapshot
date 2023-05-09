@@ -74,6 +74,9 @@ type MockStore struct {
 	// SetInferenceScriptFunc is an instance of a mock function object
 	// controlling the behavior of the method SetInferenceScript.
 	SetInferenceScriptFunc *StoreSetInferenceScriptFunc
+	// SetRepositoryExceptionsFunc is an instance of a mock function object
+	// controlling the behavior of the method SetRepositoryExceptions.
+	SetRepositoryExceptionsFunc *StoreSetRepositoryExceptionsFunc
 	// TopRepositoriesToConfigureFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// TopRepositoriesToConfigure.
@@ -167,6 +170,11 @@ func NewMockStore() *MockStore {
 		},
 		SetInferenceScriptFunc: &StoreSetInferenceScriptFunc{
 			defaultHook: func(context.Context, string) (r0 error) {
+				return
+			},
+		},
+		SetRepositoryExceptionsFunc: &StoreSetRepositoryExceptionsFunc{
+			defaultHook: func(context.Context, int, bool, bool) (r0 error) {
 				return
 			},
 		},
@@ -272,6 +280,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.SetInferenceScript")
 			},
 		},
+		SetRepositoryExceptionsFunc: &StoreSetRepositoryExceptionsFunc{
+			defaultHook: func(context.Context, int, bool, bool) error {
+				panic("unexpected invocation of MockStore.SetRepositoryExceptions")
+			},
+		},
 		TopRepositoriesToConfigureFunc: &StoreTopRepositoriesToConfigureFunc{
 			defaultHook: func(context.Context, int) ([]shared1.RepositoryWithCount, error) {
 				panic("unexpected invocation of MockStore.TopRepositoriesToConfigure")
@@ -343,6 +356,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		SetInferenceScriptFunc: &StoreSetInferenceScriptFunc{
 			defaultHook: i.SetInferenceScript,
+		},
+		SetRepositoryExceptionsFunc: &StoreSetRepositoryExceptionsFunc{
+			defaultHook: i.SetRepositoryExceptions,
 		},
 		TopRepositoriesToConfigureFunc: &StoreTopRepositoriesToConfigureFunc{
 			defaultHook: i.TopRepositoriesToConfigure,
@@ -2028,6 +2044,118 @@ func (c StoreSetInferenceScriptFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreSetInferenceScriptFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreSetRepositoryExceptionsFunc describes the behavior when the
+// SetRepositoryExceptions method of the parent MockStore instance is
+// invoked.
+type StoreSetRepositoryExceptionsFunc struct {
+	defaultHook func(context.Context, int, bool, bool) error
+	hooks       []func(context.Context, int, bool, bool) error
+	history     []StoreSetRepositoryExceptionsFuncCall
+	mutex       sync.Mutex
+}
+
+// SetRepositoryExceptions delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) SetRepositoryExceptions(v0 context.Context, v1 int, v2 bool, v3 bool) error {
+	r0 := m.SetRepositoryExceptionsFunc.nextHook()(v0, v1, v2, v3)
+	m.SetRepositoryExceptionsFunc.appendCall(StoreSetRepositoryExceptionsFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SetRepositoryExceptions method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreSetRepositoryExceptionsFunc) SetDefaultHook(hook func(context.Context, int, bool, bool) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetRepositoryExceptions method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreSetRepositoryExceptionsFunc) PushHook(hook func(context.Context, int, bool, bool) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreSetRepositoryExceptionsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, bool, bool) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreSetRepositoryExceptionsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, bool, bool) error {
+		return r0
+	})
+}
+
+func (f *StoreSetRepositoryExceptionsFunc) nextHook() func(context.Context, int, bool, bool) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreSetRepositoryExceptionsFunc) appendCall(r0 StoreSetRepositoryExceptionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreSetRepositoryExceptionsFuncCall
+// objects describing the invocations of this function.
+func (f *StoreSetRepositoryExceptionsFunc) History() []StoreSetRepositoryExceptionsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreSetRepositoryExceptionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreSetRepositoryExceptionsFuncCall is an object that describes an
+// invocation of method SetRepositoryExceptions on an instance of MockStore.
+type StoreSetRepositoryExceptionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreSetRepositoryExceptionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreSetRepositoryExceptionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

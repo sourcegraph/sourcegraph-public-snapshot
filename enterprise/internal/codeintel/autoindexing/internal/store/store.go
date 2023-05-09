@@ -22,6 +22,7 @@ type Store interface {
 
 	// Repository configuration
 	RepositoryExceptions(ctx context.Context, repositoryID int) (canSchedule, canInfer bool, _ error)
+	SetRepositoryExceptions(ctx context.Context, repositoryID int, canSchedule, canInfer bool) error
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (shared.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
 
