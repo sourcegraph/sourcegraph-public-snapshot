@@ -210,7 +210,7 @@ export class CommentController {
         })
 
         const startLine = selection.start.line
-        const newLineCount = replacement.split('\n').length - 1
+        const newLineCount = replacement.split('\n').length - 2
         // Highlight from the start line to the length of the replacement content
         const newRange = new vscode.Range(startLine, 0, startLine + newLineCount, 0)
         await this.setReplacementRange(newRange)
