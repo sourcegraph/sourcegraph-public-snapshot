@@ -110,12 +110,20 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		query := req.URL.Query()
-		gqlID := query.Get("id")
-		if gqlID == "" {
-			http.Error(w, "no id provided in query parameters", http.StatusBadRequest)
+		s, err := randomState(128)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unexpected error when creating redirect URL: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
+
+		gqlID := req.URL.Query().Get("id")
+		if gqlID == "" {
+			cache.Set(s, []byte{1})
+
+			_, _ = w.Write([]byte(s))
+			return
+		}
+
 		id64, err := UnmarshalGitHubAppID(graphql.ID(gqlID))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error while unmarshalling App ID: %s", err.Error()), http.StatusBadRequest)
@@ -123,11 +131,6 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		}
 		id := int(id64)
 
-		s, err := randomState(128)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error when creating redirect URL: %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
 		cache.Set(s, []byte(strconv.Itoa(id)))
 
 		_, _ = w.Write([]byte(s))
