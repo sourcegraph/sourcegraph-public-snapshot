@@ -53,6 +53,10 @@ contents:
     - p4cli@sourcegraph
     - p4-fusion@sourcegraph
 
+    # Temp, testing server image without pulling from other layers
+    - grafana@sourcegraph
+    - prometheus@sourcegraph
+
 accounts:
   groups:
     - groupname: sourcegraph
