@@ -14,6 +14,14 @@ build --host_platform=@rules_nixpkgs_core//platforms:host
 build --extra_toolchains=@nixpkgs_nodejs_toolchain//:nodejs_nix,@nixpkgs_rust_toolchain//:rust_nix
 build --action_env=PATH=$BAZEL_ACTION_PATH
 EOF
+  if [ ! -f /lib64/ld-linux-x86-64.so.2 ]; then
+    echo "---------------------------------------------------------------------------------------------------------------------------------------"
+    echo "⚠️ Bazel provisions binaries that expect the program interpreter (ld.so) at /lib64/ld-linux-x86-64.so.2, but it wasn't found.       ⚠️"
+    echo "⚠️ You may need to enable nix-ld[1] or symlink /lib64/ld-linux-x86-64.so.2 to a glibc's loader[2] if you intend to use bazel.       ⚠️"
+    echo "⚠️ [1] https://nixos.org/manual/nixos/unstable/options.html#opt-programs.nix-ld.enable                                              ⚠️"
+    echo "⚠️ [2] https://sourcegraph.com/github.com/Strum355/nix-dotfiles@7951c755/-/blob/hosts/noah-nixos-desktop/configuration.nix?L272-276 ⚠️"
+    echo "---------------------------------------------------------------------------------------------------------------------------------------"
+  fi
 fi
 
 pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null || exit
