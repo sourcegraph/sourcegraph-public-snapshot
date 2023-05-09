@@ -45,6 +45,9 @@ type GitserverRepoStore interface {
 	// a matching row does not yet exist a new one will be created.
 	// If the error value hasn't changed, the row will not be updated.
 	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
+	// SetLastOutput will attempt to update ONLY the last output of a GitServerRepo.
+	// If a matching row does not exist, a new one will be created.
+	SetLastOutput(ctx context.Context, name api.RepoName, output string) error
 	// SetLastFetched will attempt to update ONLY the last fetched data (last_fetched, last_changed, shard_id) of a GitServerRepo and ensures it is marked as cloned.
 	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
 	// SetRepoSize will attempt to update ONLY the repo size of a GitServerRepo. If
@@ -491,6 +494,22 @@ WHERE
 `, ns, shardID, name, ns))
 	if err != nil {
 		return errors.Wrap(err, "setting last error")
+	}
+
+	return nil
+}
+
+func (s *gitserverRepoStore) SetLastOutput(ctx context.Context, name api.RepoName, output string) error {
+	ns := dbutil.NewNullString(sanitizeToUTF8(output))
+
+	err := s.Exec(ctx, sqlf.Sprintf(`
+INSERT INTO gitserver_repos_clone_output(repo_id, last_output)
+SELECT id, %s FROM repo WHERE name = %s
+ON CONFLICT(repo_id)
+DO UPDATE SET last_output = %s, updated_at = NOW()
+`, ns, name, ns))
+	if err != nil {
+		return errors.Wrap(err, "setting last output")
 	}
 
 	return nil

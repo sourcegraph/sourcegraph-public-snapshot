@@ -1855,6 +1855,19 @@ Indexes:
 
 **total**: Number of repositories in gitserver_repos table on this shard
 
+# Table "public.gitserver_repos_clone_output"
+```
+   Column    |           Type           | Collation | Nullable | Default  
+-------------+--------------------------+-----------+----------+----------
+ repo_id     | integer                  |           | not null | 
+ last_output | text                     |           | not null | ''::text
+ updated_at  | timestamp with time zone |           | not null | now()
+Indexes:
+    "gitserver_repos_clone_output_pkey" PRIMARY KEY, btree (repo_id)
+```
+
+**last_output**: the output from the most recent clone job - available for admins to view if there's an issue with the clone
+
 # Table "public.global_state"
 ```
    Column    |  Type   | Collation | Nullable | Default 

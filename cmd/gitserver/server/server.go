@@ -2066,6 +2066,12 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 	}
 }
 
+func (s *Server) setLastOutput(ctx context.Context, name api.RepoName, output string) {
+	if err := s.DB.GitserverRepos().SetLastOutput(ctx, name, output); err != nil {
+		s.Logger.Warn("Setting last output in DB", log.Error(err))
+	}
+}
+
 func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
 	return s.DB.GitserverRepos().SetCloneStatus(ctx, name, status, s.Hostname)
 }
@@ -2309,7 +2315,8 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
-	if output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
+	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
+	if err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 	}
 
@@ -2368,6 +2375,9 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	if err := s.setRepoSize(ctx, repo); err != nil {
 		logger.Warn("failed setting repo size", log.Error(err))
 	}
+
+	// best-effort update the output of the clone
+	s.setLastOutput(ctx, repo, string(output))
 
 	logger.Info("repo cloned")
 	repoClonedCounter.Inc()
