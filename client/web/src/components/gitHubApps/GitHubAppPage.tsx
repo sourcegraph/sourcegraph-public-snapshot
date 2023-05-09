@@ -19,6 +19,7 @@ import {
     H2,
     Card,
     Link,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { GitHubAppByIDResult, GitHubAppByIDVariables } from '../../graphql-operations'
