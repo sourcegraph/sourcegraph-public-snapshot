@@ -150,7 +150,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 	runArchiveReaderTestfunc := func(t *testing.T, clientFunc func(addr []string) gitserver.Client, name api.RepoName, test test) {
 		t.Run(string(name), func(t *testing.T) {
-
+// Setup: Prepare the test Gitserver server + register the gRPC server
 			s := &server.Server{
 				Logger:   logtest.Scoped(t),
 				ReposDir: filepath.Join(root, "repos"),
