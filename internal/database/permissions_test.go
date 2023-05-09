@@ -23,7 +23,7 @@ func TestPermissionGetByID(t *testing.T) {
 
 	created, err := store.Create(ctx, CreatePermissionOpts{
 		Namespace: rtypes.BatchChangesNamespace,
-		Action:    "READ",
+		Action:    rtypes.BatchChangesReadAction,
 	})
 	if err != nil {
 		t.Fatal(err, "unable to create permission")
@@ -94,7 +94,7 @@ func TestPermissionCreate(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		p, err := store.Create(ctx, CreatePermissionOpts{
 			Namespace: rtypes.BatchChangesNamespace,
-			Action:    "READ",
+			Action:    rtypes.BatchChangesReadAction,
 		})
 
 		require.NotNil(t, p)
@@ -169,7 +169,7 @@ func TestPermissionDelete(t *testing.T) {
 
 	p, err := store.Create(ctx, CreatePermissionOpts{
 		Namespace: rtypes.BatchChangesNamespace,
-		Action:    "READ",
+		Action:    rtypes.BatchChangesReadAction,
 	})
 	require.NoError(t, err)
 

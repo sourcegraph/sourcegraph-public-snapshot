@@ -261,7 +261,8 @@ func TestRolePermissionGetByRoleID(t *testing.T) {
 
 	totalRolePermissions := 2
 	for i := 1; i <= totalRolePermissions; i++ {
-		p := createTestPermissionForRolePermission(ctx, rtypes.BatchChangesReadAction, t, db)
+		action := rtypes.NamespaceAction(fmt.Sprintf("%s-%d", rtypes.BatchChangesReadAction, i))
+		p := createTestPermissionForRolePermission(ctx, action, t, db)
 		err := store.Assign(ctx, AssignRolePermissionOpts{
 			RoleID:       r.ID,
 			PermissionID: p.ID,
@@ -449,7 +450,8 @@ func TestBulkAssignPermissionsToRole(t *testing.T) {
 	numberOfPerms := 4
 	var perms []int32
 	for i := 0; i < numberOfPerms; i++ {
-		perm := createTestPermissionForRolePermission(ctx, rtypes.BatchChangesReadAction, t, db)
+		action := rtypes.NamespaceAction(fmt.Sprintf("%s-%d", rtypes.BatchChangesReadAction, i))
+		perm := createTestPermissionForRolePermission(ctx, action, t, db)
 		perms = append(perms, perm.ID)
 	}
 
