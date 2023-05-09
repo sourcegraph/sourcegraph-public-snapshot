@@ -25,6 +25,11 @@ jobs:
         with:
           version: 8.1.0
           run_install: false
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
       - uses: actions/checkout@v3
@@ -34,25 +39,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
-      - name: install frontend dependencies
-        run: pnpm install
       # setup caches
+      # Note: We donn't use a cache on Mac since it takes forever to restore the cache
       - name: Mount bazel cache  # Optional
         if: matrix.platform == 'ubuntu-20.04'
         uses: actions/cache@v3
         with:
           path: |
             ~/.cache/bazel
-          key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.aspect/bazelrc/*.bazelrc', 'WORKSPACE', '*.bzl','dev/*.bzl') }}
-          restore-keys: |
-            ${{ runner.os }}-bazel-
-      - name: Mount bazel cache (Mac)
-        if: matrix.platform == 'macos-latest'
-        uses: actions/cache@v3
-        with:
-          path: |
-            /private/var/tmp/_bazel_runner/
-          # we can't use **/*.bzl because that is too slow in the mac action
           key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.aspect/bazelrc/*.bazelrc', 'WORKSPACE', '*.bzl','dev/*.bzl') }}
           restore-keys: |
             ${{ runner.os }}-bazel-
@@ -66,6 +60,16 @@ jobs:
             ~/.cargo/git/db/
             src-tauri/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      # pnpm cache is a bit different
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - name: install frontend dependencies
+        run: pnpm install
       # build all the things
       - name: build app-shell, Sourcegraph web and Sourcegraph Backend
         run: |

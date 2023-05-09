@@ -30,24 +30,22 @@ create_version() {
 
     local build="insiders"
     if [[ ${RELEASE_BUILD} == 1 ]]; then
-      build="release"
+      build=${GITHUB_RUN_NUMBER:-"release"}
     fi
     echo "$(date '+%Y.%-m.%-d')+${build}.${sha}"
 }
 
 set_version() {
   if [[ ${CI:-""} == "true" ]]; then
-    # Backend version
-    export VERSION=$(cat ./src-tauri/VERSION)
-    export APP_VERSION=$(create_version)
+    VERSION=${VERSION:-$(create_version)}
   else
-    # Backend version
-    export VERSION=$(git rev-parse HEAD)
-    export APP_VERSION="0.0.0+dev.fakesha"
+    VERSION=${VERSION:-"0.0.0+dev"}
   fi
+  export VERSION
 
+  local tmp
   tmp=$(mktemp)
-  jq --arg version ${APP_VERSION} '.package.version = $version' ./src-tauri/tauri.conf.json > ${tmp}
+  jq --arg version ${VERSION} '.package.version = $version' ./src-tauri/tauri.conf.json > ${tmp}
   mv ${tmp} ./src-tauri/tauri.conf.json
 }
 
@@ -83,6 +81,6 @@ set_platform() {
 set_platform
 set_version
 bazel_build ${PLATFORM}
-echo "[Tauri] Building Application (${APP_VERSION})"]
+echo "[Tauri] Building Application (${VERSION})"]
 NODE_ENV=production pnpm run build-app-shell
 pnpm tauri build
