@@ -176,7 +176,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                 {llmProxyManagementUI && (
                     <CodyServicesSection
                         viewerCanAdminister={true}
-                        sourcegraphAccessToken={productSubscription.sourcegraphAccessToken}
+                        sourcegraphAccessTokens={productSubscription.sourcegraphAccessTokens}
                         accessTokenError={errorForPath(error, accessTokenPath)}
                         llmProxyAccess={productSubscription.llmProxyAccess}
                         productSubscriptionID={productSubscription.id}

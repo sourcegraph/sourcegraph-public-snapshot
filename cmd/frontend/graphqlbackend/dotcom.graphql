@@ -265,10 +265,11 @@ type ProductSubscription implements Node {
         first: Int
     ): ProductLicenseConnection!
     """
-    Access token for authenticating as the subscription holder with managed Sourcegraph services.
-    Null only if creating a token failed, for example when no active license exists.
+    Available access tokens for authenticating as the subscription holder with managed
+    Sourcegraph services.
+    Empty only if creating a token failed, for example when no active license exists.
     """
-    sourcegraphAccessToken: String
+    sourcegraphAccessTokens: [String!]!
     """
     LLM-proxy access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
     """

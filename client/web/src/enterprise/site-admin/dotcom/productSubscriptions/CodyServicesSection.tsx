@@ -35,7 +35,7 @@ import { prettyInterval } from './utils'
 
 interface Props {
     productSubscriptionID: Scalars['ID']
-    sourcegraphAccessToken: string | null
+    sourcegraphAccessTokens: string[]
     accessTokenError?: Error
     viewerCanAdminister: boolean
     refetchSubscription: () => void
@@ -45,7 +45,7 @@ interface Props {
 export const CodyServicesSection: React.FunctionComponent<Props> = ({
     productSubscriptionID,
     viewerCanAdminister,
-    sourcegraphAccessToken,
+    sourcegraphAccessTokens,
     accessTokenError,
     refetchSubscription,
     llmProxyAccess,
@@ -99,18 +99,18 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
             <Container className="mb-3">
                 <H4>Access token</H4>
                 <Text className="mb-2">Access tokens can be used for LLM-proxy access - coming soon!</Text>
-                {sourcegraphAccessToken && (
+                {sourcegraphAccessTokens.length > 0 && (
                     <CopyableText
                         label="Access token"
                         secret={true}
                         flex={true}
-                        text={sourcegraphAccessToken}
+                        text={sourcegraphAccessTokens[0]}
                         className="mb-2"
                     />
                 )}
                 {accessTokenError && <ErrorAlert error={accessTokenError} className="mb-0" />}
 
-                {sourcegraphAccessToken && (
+                {sourcegraphAccessTokens.length > 0 && (
                     <>
                         <H4>Completions</H4>
 

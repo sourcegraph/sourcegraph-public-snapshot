@@ -137,7 +137,7 @@ func (r *productSubscription) LLMProxyAccess() graphqlbackend.LLMProxyAccess {
 	return llmProxyAccessResolver{sub: r}
 }
 
-func (r *productSubscription) SourcegraphAccessToken(ctx context.Context) (*string, error) {
+func (r *productSubscription) SourcegraphAccessTokens(ctx context.Context) (tokens []string, err error) {
 	activeLicense, err := r.computeActiveLicense(ctx)
 	if err != nil {
 		return nil, err
@@ -152,7 +152,19 @@ func (r *productSubscription) SourcegraphAccessToken(ctx context.Context) (*stri
 	}
 
 	token := defaultAccessToken(defaultRawAccessToken([]byte(r.activeLicense.LicenseKey)))
-	return &token, nil
+	tokens = append(tokens, token)
+
+	allLicenses, err := dbLicenses{db: r.db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: r.v.ID})
+	if err != nil {
+		return nil, err
+	}
+	for _, l := range allLicenses {
+		lt := defaultAccessToken(defaultRawAccessToken([]byte(l.LicenseKey)))
+		if lt != token {
+			tokens = append(tokens, lt)
+		}
+	}
+	return tokens, nil
 }
 
 func (r *productSubscription) CreatedAt() gqlutil.DateTime {

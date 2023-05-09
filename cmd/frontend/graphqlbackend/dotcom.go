@@ -45,7 +45,7 @@ type ProductSubscription interface {
 	IsArchived() bool
 	URL(context.Context) (string, error)
 	URLForSiteAdmin(context.Context) *string
-	SourcegraphAccessToken(context.Context) (*string, error)
+	SourcegraphAccessTokens(context.Context) ([]string, error)
 }
 
 type CreateProductSubscriptionArgs struct {

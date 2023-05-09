@@ -55,13 +55,12 @@ func TestLLMProxyAccessResolverRateLimit(t *testing.T) {
 	})
 
 	t.Run("override default rate limit for a plan", func(t *testing.T) {
-		if err := (dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{
+		err := (dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{
 			llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{
 				RateLimit: pointify(int32(123456)),
 			},
-		})); err != nil {
-			t.Fatal(err)
-		}
+		}))
+		require.NoError(t, err)
 
 		sub, err := dbSubscriptions{db: db}.GetByID(ctx, subID)
 		require.NoError(t, err)
