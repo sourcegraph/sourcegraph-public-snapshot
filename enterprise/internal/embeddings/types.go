@@ -2,6 +2,7 @@ package embeddings
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -46,9 +47,18 @@ type ContextDetectionEmbeddingIndex struct {
 	MessagesWithoutAdditionalContextMeanEmbedding []float32
 }
 
-type EmbeddingSearchResults struct {
-	CodeResults []EmbeddingSearchResult `json:"codeResults"`
-	TextResults []EmbeddingSearchResult `json:"textResults"`
+type EmbeddingCombinedSearchResults struct {
+	CodeResults EmbeddingSearchResults `json:"codeResults"`
+	TextResults EmbeddingSearchResults `json:"textResults"`
+}
+
+type EmbeddingSearchResults []EmbeddingSearchResult
+
+func (esrs *EmbeddingSearchResults) MergeTruncate(other EmbeddingSearchResults, max int) {
+	self := *esrs
+	self = append(self, other...)
+	sort.Slice(self, func(i, j int) bool { return self[i].Score() > self[j].Score() })
+	*esrs = self[:max]
 }
 
 type EmbeddingSearchResult struct {

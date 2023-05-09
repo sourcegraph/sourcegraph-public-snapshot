@@ -179,7 +179,7 @@ func (r *Resolver) ScheduleContextDetectionForEmbedding(ctx context.Context) (*g
 }
 
 type embeddingsSearchResultsResolver struct {
-	results   *embeddings.EmbeddingSearchResults
+	results   *embeddings.EmbeddingCombinedSearchResults
 	gitserver gitserver.Client
 	logger    log.Logger
 }

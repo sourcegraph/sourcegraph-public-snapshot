@@ -26,7 +26,7 @@ func searchRepoEmbeddingIndexes(
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
 	weaviate *weaviateClient,
-) (*embeddings.EmbeddingSearchResults, error) {
+) (*embeddings.EmbeddingCombinedSearchResults, error) {
 	floatQuery, err := getQueryEmbedding(ctx, multiParams.Query)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting query embedding")
@@ -79,7 +79,7 @@ func searchRepoEmbeddingIndexes(
 		aggregatedTextResults.Add(embeddingIndex.RepoName, embeddingIndex.Revision, textResults...)
 	}
 
-	return &embeddings.EmbeddingSearchResults{
+	return &embeddings.EmbeddingCombinedSearchResults{
 		CodeResults: aggregatedCodeResults.results,
 		TextResults: aggregatedTextResults.results,
 	}, nil

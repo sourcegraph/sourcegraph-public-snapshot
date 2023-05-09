@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"sort"
 	"strings"
 
 	"github.com/sourcegraph/conc/pool"
@@ -77,7 +76,7 @@ type IsContextRequiredForChatQueryResult struct {
 	IsRequired bool `json:"isRequired"`
 }
 
-func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingSearchResults, error) {
+func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error) {
 	url, err := c.url(args.RepoName)
 	if err != nil {
 		return nil, err
@@ -99,7 +98,7 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*
 		)
 	}
 
-	var response EmbeddingSearchResults
+	var response EmbeddingCombinedSearchResults
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return nil, err
@@ -107,13 +106,13 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*
 	return &response, nil
 }
 
-func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsMultiSearchParameters) (*EmbeddingSearchResults, error) {
+func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsMultiSearchParameters) (*EmbeddingCombinedSearchResults, error) {
 	partitions, err := c.partition(args.RepoNames, args.RepoIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	p := pool.NewWithResults[*EmbeddingSearchResults]().WithContext(ctx)
+	p := pool.NewWithResults[*EmbeddingCombinedSearchResults]().WithContext(ctx)
 
 	for endpoint, partition := range partitions {
 		endpoint := endpoint
@@ -123,7 +122,7 @@ func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsMultiSearchPara
 		args.RepoNames = partition.repoNames
 		args.RepoIDs = partition.repoIDs
 
-		p.Go(func(ctx context.Context) (*EmbeddingSearchResults, error) {
+		p.Go(func(ctx context.Context) (*EmbeddingCombinedSearchResults, error) {
 			return c.multiSearchPartition(ctx, endpoint, args)
 		})
 	}
@@ -133,16 +132,16 @@ func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsMultiSearchPara
 		return nil, err
 	}
 
-	var combinedResult EmbeddingSearchResults
+	var combinedResult EmbeddingCombinedSearchResults
 	for _, result := range allResults {
-		combinedResult.CodeResults = mergeSearchResults(combinedResult.CodeResults, result.CodeResults, args.CodeResultsCount)
-		combinedResult.TextResults = mergeSearchResults(combinedResult.TextResults, result.TextResults, args.TextResultsCount)
+		combinedResult.CodeResults.MergeTruncate(result.CodeResults, args.CodeResultsCount)
+		combinedResult.TextResults.MergeTruncate(result.TextResults, args.TextResultsCount)
 	}
 
 	return &combinedResult, nil
 }
 
-func (c *Client) multiSearchPartition(ctx context.Context, endpoint string, args EmbeddingsMultiSearchParameters) (*EmbeddingSearchResults, error) {
+func (c *Client) multiSearchPartition(ctx context.Context, endpoint string, args EmbeddingsMultiSearchParameters) (*EmbeddingCombinedSearchResults, error) {
 	resp, err := c.httpPost(ctx, "multiSearch", endpoint, args)
 	if err != nil {
 		return nil, err
@@ -159,18 +158,12 @@ func (c *Client) multiSearchPartition(ctx context.Context, endpoint string, args
 		)
 	}
 
-	var response EmbeddingSearchResults
+	var response EmbeddingCombinedSearchResults
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return nil, err
 	}
 	return &response, nil
-}
-
-func mergeSearchResults(a, b []EmbeddingSearchResult, max int) []EmbeddingSearchResult {
-	merged := append(a, b...)
-	sort.Slice(merged, func(i, j int) bool { return merged[i].Score() > merged[j].Score() })
-	return merged[:max]
 }
 
 func (c *Client) IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryParameters) (bool, error) {
