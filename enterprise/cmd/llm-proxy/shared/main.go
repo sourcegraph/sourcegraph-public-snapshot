@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -38,6 +39,11 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	}
 	defer shutdownTracing()
 
+	eventLogger, err := events.NewLogger(config.BigQuery.ProjectID, config.BigQuery.Dataset, config.BigQuery.Table)
+	if err != nil {
+		return errors.Wrap(err, "create event logger")
+	}
+
 	// Supported actor/auth sources
 	sources := actor.Sources{
 		anonymous.NewSource(config.AllowAnonymous),
@@ -48,12 +54,13 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	}
 
 	// Set up our handler chain, which is run from the bottom up
-	handler := newServiceHandler(obctx.Logger, config)
-	handler = rateLimit(obctx.Logger, redispool.Cache, handler)
+	handler := newServiceHandler(obctx.Logger, eventLogger, config)
+	handler = rateLimit(obctx.Logger, eventLogger, redispool.Cache, handler)
 	handler = &auth.Authenticator{
-		Log:     obctx.Logger.Scoped("auth", "authentication middleware"),
-		Sources: sources,
-		Next:    handler,
+		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
+		EventLogger: eventLogger,
+		Sources:     sources,
+		Next:        handler,
 	}
 	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
 
@@ -76,7 +83,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	return nil
 }
 
-func newServiceHandler(logger log.Logger, config *Config) http.Handler {
+func newServiceHandler(logger log.Logger, eventLogger *events.Logger, config *Config) http.Handler {
 	r := mux.NewRouter()
 
 	// For cluster liveness and readiness probes
@@ -103,7 +110,17 @@ func newServiceHandler(logger log.Logger, config *Config) http.Handler {
 	v1router := r.PathPrefix("/v1").Subrouter()
 	v1router.Handle("/completions/anthropic",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
+			err := eventLogger.LogEvent(
+				events.Event{
+					Name:           events.EventNameCompletionsRequest,
+					SubscriptionID: actor.FromContext(r.Context()).UUID,
+				},
+			)
+			if err != nil {
+				logger.Error("failed to log event", log.Error(err))
+			}
+
+			r, err = http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
 			if err != nil {
 				response.JSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to create request: %s", err))
 				return
@@ -134,13 +151,26 @@ func newServiceHandler(logger log.Logger, config *Config) http.Handler {
 	return r
 }
 
-func rateLimit(logger log.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
+func rateLimit(logger log.Logger, eventLogger *events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		l := actor.FromContext(r.Context()).Limiter(cache)
 
 		err := l.TryAcquire(r.Context())
 
 		if err != nil {
+			err := eventLogger.LogEvent(
+				events.Event{
+					Name:           events.EventNameRateLimited,
+					SubscriptionID: actor.FromContext(r.Context()).UUID,
+					Metadata: map[string]any{
+						"error": err.Error(),
+					},
+				},
+			)
+			if err != nil {
+				logger.Error("failed to log event", log.Error(err))
+			}
+
 			var rateLimitExceeded limiter.RateLimitExceededError
 			if errors.As(err, &rateLimitExceeded) {
 				rateLimitExceeded.WriteResponse(w)

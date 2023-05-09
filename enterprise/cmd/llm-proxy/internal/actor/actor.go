@@ -26,6 +26,8 @@ type Actor struct {
 	//
 	// For example, for product subscriptions this is the subscription ID.
 	ID string `json:"id"`
+	// UUID is the subscription UUID.
+	UUID string `json:"uuid"`
 	// AccessEnabled is an evaluated field that summarizes whether or not LLM-proxy access
 	// is enabled.
 	//

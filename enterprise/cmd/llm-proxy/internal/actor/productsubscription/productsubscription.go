@@ -42,7 +42,7 @@ func (s *Source) Name() string { return "sourcegraph.com product subscriptions" 
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	// "sgs_" is productSubscriptionAccessTokenPrefix
-	if token == "" && !strings.HasPrefix(token, "sgs_") {
+	if token == "" || !strings.HasPrefix(token, "sgs_") {
 		return nil, actor.ErrNotFromSource{}
 	}
 
@@ -112,6 +112,7 @@ func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState) *
 	return &actor.Actor{
 		Key:           token,
 		ID:            s.Id,
+		UUID:          s.Uuid,
 		AccessEnabled: !s.IsArchived && s.LlmProxyAccess.Enabled && rateLimit.IsValid(),
 		RateLimit:     rateLimit,
 		LastUpdated:   &now,

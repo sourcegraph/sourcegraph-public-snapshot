@@ -16,6 +16,7 @@ go_library(
         "//enterprise/cmd/llm-proxy/internal/actor/productsubscription",
         "//enterprise/cmd/llm-proxy/internal/auth",
         "//enterprise/cmd/llm-proxy/internal/dotcom",
+        "//enterprise/cmd/llm-proxy/internal/events",
         "//enterprise/cmd/llm-proxy/internal/limiter",
         "//enterprise/cmd/llm-proxy/internal/response",
         "//internal/debugserver",
