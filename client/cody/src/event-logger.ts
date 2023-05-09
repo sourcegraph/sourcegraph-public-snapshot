@@ -15,15 +15,15 @@ export async function updateEventLogger(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
     localStorage: LocalStorage
 ): Promise<void> {
-    let anonymousUserID = localStorage.get(ANONYMOUS_USER_ID_KEY)
+    const anonymousUserID = localStorage.get(ANONYMOUS_USER_ID_KEY)
     if (!anonymousUserID) {
-        anonymousUserID = uuid.v4()
+        const anonymousUserID = uuid.v4()
         await localStorage.set(ANONYMOUS_USER_ID_KEY, anonymousUserID)
     }
     if (!eventLoggerGQLClient) {
         eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
         eventLogger = await EventLogger.create(eventLoggerGQLClient)
-        logCodyInstalled()
+        await logCodyInstalled()
     } else {
         eventLoggerGQLClient.onConfigurationChange(config)
     }
