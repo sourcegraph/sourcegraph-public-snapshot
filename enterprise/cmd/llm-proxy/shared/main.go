@@ -41,9 +41,14 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	}
 	defer shutdownTracing()
 
-	eventLogger, err := events.NewLogger(config.BigQuery.ProjectID, config.BigQuery.Dataset, config.BigQuery.Table)
-	if err != nil {
-		return errors.Wrap(err, "create event logger")
+	var eventLogger events.Logger
+	if config.BigQuery.ProjectID != "" {
+		eventLogger, err = events.NewBigQueryLogger(config.BigQuery.ProjectID, config.BigQuery.Dataset, config.BigQuery.Table)
+		if err != nil {
+			return errors.Wrap(err, "create event logger")
+		}
+	} else {
+		eventLogger = events.NewNoopLogger()
 	}
 
 	// Supported actor/auth sources
@@ -100,7 +105,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	return nil
 }
 
-func newServiceHandler(logger log.Logger, eventLogger *events.Logger, config *Config) http.Handler {
+func newServiceHandler(logger log.Logger, eventLogger events.Logger, config *Config) http.Handler {
 	r := mux.NewRouter()
 
 	// For cluster liveness and readiness probes
@@ -127,17 +132,9 @@ func newServiceHandler(logger log.Logger, eventLogger *events.Logger, config *Co
 	v1router := r.PathPrefix("/v1").Subrouter()
 	v1router.Handle("/completions/anthropic",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			err := eventLogger.LogEvent(
-				events.Event{
-					Name:           events.EventNameCompletionsRequest,
-					SubscriptionID: actor.FromContext(r.Context()).UUID,
-				},
-			)
-			if err != nil {
-				logger.Error("failed to log event", log.Error(err))
-			}
+			act := actor.FromContext(r.Context())
 
-			r, err = http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
+			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
 			if err != nil {
 				response.JSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to create request: %s", err))
 				return
@@ -150,6 +147,22 @@ func newServiceHandler(logger log.Logger, eventLogger *events.Logger, config *Co
 			r.Header.Set("Content-Type", "application/json")
 			r.Header.Set("Client", "sourcegraph-llm-proxy/1.0")
 			r.Header.Set("X-API-Key", config.Anthropic.AccessToken)
+
+			upstreamStarted := time.Now()
+			defer func() {
+				err := eventLogger.LogEvent(
+					events.Event{
+						Name:           events.EventNameCompletionsRequest,
+						SubscriptionID: act.UUID,
+						Metadata: map[string]any{
+							"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
+						},
+					},
+				)
+				if err != nil {
+					logger.Error("failed to log event", log.Error(err))
+				}
+			}()
 
 			resp, err := httpcli.ExternalDoer.Do(r)
 			if err != nil {
@@ -168,7 +181,7 @@ func newServiceHandler(logger log.Logger, eventLogger *events.Logger, config *Co
 	return r
 }
 
-func rateLimit(logger log.Logger, eventLogger *events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
+func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		l := actor.FromContext(r.Context()).Limiter(cache)
 

@@ -14,7 +14,7 @@ import (
 
 type Authenticator struct {
 	Logger      log.Logger
-	EventLogger *events.Logger
+	EventLogger events.Logger
 	Sources     actor.Sources
 	Next        http.Handler
 }

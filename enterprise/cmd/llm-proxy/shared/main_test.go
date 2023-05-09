@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/productsubscription"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
 )
 
 func TestAuthenticateEndToEnd(t *testing.T) {
@@ -28,9 +29,10 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		(&auth.Authenticator{
-			Logger:  logger,
-			Sources: actor.Sources{anonymous.NewSource(true)},
-			Next:    next,
+			Logger:      logger,
+			EventLogger: events.NewNoopLogger(),
+			Sources:     actor.Sources{anonymous.NewSource(true)},
+			Next:        next,
 		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
@@ -39,9 +41,10 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		(&auth.Authenticator{
-			Logger:  logger,
-			Sources: actor.Sources{anonymous.NewSource(false)},
-			Next:    next,
+			Logger:      logger,
+			EventLogger: events.NewNoopLogger(),
+			Sources:     actor.Sources{anonymous.NewSource(false)},
+			Next:        next,
 		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
@@ -75,11 +78,12 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer abc123")
+		r.Header.Set("Authorization", "Bearer sgs_abc123")
 		(&auth.Authenticator{
-			Logger:  logger,
-			Sources: actor.Sources{productsubscription.NewSource(logger, cache, client)},
-			Next:    next,
+			Logger:      logger,
+			EventLogger: events.NewNoopLogger(),
+			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client)},
+			Next:        next,
 		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockrequire.Called(t, client.MakeRequestFunc)
@@ -99,11 +103,12 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer abc123")
+		r.Header.Set("Authorization", "Bearer sgs_abc123")
 		(&auth.Authenticator{
-			Logger:  logger,
-			Sources: actor.Sources{productsubscription.NewSource(logger, cache, client)},
-			Next:    next,
+			Logger:      logger,
+			EventLogger: events.NewNoopLogger(),
+			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client)},
+			Next:        next,
 		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockrequire.NotCalled(t, client.MakeRequestFunc)
@@ -119,11 +124,12 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer abc123")
+		r.Header.Set("Authorization", "Bearer sgs_abc123")
 		(&auth.Authenticator{
-			Logger:  logger,
-			Sources: actor.Sources{productsubscription.NewSource(logger, cache, client)},
-			Next:    next,
+			Logger:      logger,
+			EventLogger: events.NewNoopLogger(),
+			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client)},
+			Next:        next,
 		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})

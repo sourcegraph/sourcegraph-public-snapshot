@@ -10,27 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Logger is a BigQuery event logger.
-// todo make this an interface and add noopLogger
-type Logger struct {
-	client  *bigquery.Client
-	dataset string
-	table   string
-}
-
-// NewLogger returns a new BigQuery event logger.
-func NewLogger(projectID, dataset, table string) (*Logger, error) {
-	client, err := bigquery.NewClient(context.Background(), projectID)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating BigQuery client")
-	}
-	return &Logger{
-		client:  client,
-		dataset: dataset,
-		table:   table,
-	}, nil
-}
-
 type EventName string
 
 const (
@@ -40,7 +19,29 @@ const (
 	EventNameCompletionsRequest EventName = "CompletionsRequest"
 )
 
-// Event contains information to be sent to BigQuery.
+// Logger is an event logger.
+type Logger interface {
+	// LogEvent logs an event.
+	LogEvent(event Event) error
+}
+
+// bigQueryLogger is a BigQuery event logger.
+type bigQueryLogger struct {
+	tableInserter *bigquery.Inserter
+}
+
+// NewBigQueryLogger returns a new BigQuery event logger.
+func NewBigQueryLogger(projectID, dataset, table string) (Logger, error) {
+	client, err := bigquery.NewClient(context.Background(), projectID)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating BigQuery client")
+	}
+	return &bigQueryLogger{
+		tableInserter: client.Dataset(dataset).Table(table).Inserter(),
+	}, nil
+}
+
+// Event contains information to be logged.
 type Event struct {
 	Name           EventName
 	SubscriptionID string
@@ -57,16 +58,19 @@ type bigQueryEvent struct {
 }
 
 func (e bigQueryEvent) Save() (map[string]bigquery.Value, string, error) {
-	return map[string]bigquery.Value{
+	values := map[string]bigquery.Value{
 		"name":            e.Name,
 		"subscription_id": e.SubscriptionID,
-		"metadata":        e.Metadata,
 		"created_at":      e.CreatedAt,
-	}, "", nil
+	}
+	if e.Metadata != nil {
+		values["metadata"] = string(e.Metadata)
+	}
+	return values, "", nil
 }
 
 // LogEvent logs an event to BigQuery.
-func (l *Logger) LogEvent(event Event) error {
+func (l *bigQueryLogger) LogEvent(event Event) error {
 	if event.Name == "" {
 		return errors.New("missing event name")
 	} else if event.SubscriptionID == "" {
@@ -82,7 +86,7 @@ func (l *Logger) LogEvent(event Event) error {
 		}
 	}
 
-	err := l.client.Dataset(l.dataset).Table(l.table).Inserter().Put(
+	err := l.tableInserter.Put(
 		// NOTE: Using context.Background() because we still want to log the event in the
 		// case of a request cancellation.
 		context.Background(),
@@ -92,9 +96,16 @@ func (l *Logger) LogEvent(event Event) error {
 			Metadata:       metadata,
 			CreatedAt:      time.Now(),
 		},
-	) // todo l.tableInserter?
+	)
 	if err != nil {
 		return errors.Wrap(err, "inserting event")
 	}
 	return nil
 }
+
+type noopLogger struct{}
+
+// NewNoopLogger returns a new no-op event logger.
+func NewNoopLogger() Logger { return noopLogger{} }
+
+func (noopLogger) LogEvent(event Event) error { return nil }
