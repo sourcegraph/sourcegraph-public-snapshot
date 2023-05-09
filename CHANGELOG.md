@@ -50,6 +50,30 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 -
+- User tags are removed in favor of the newer feature flags functionality. [#49318](https://github.com/sourcegraph/sourcegraph/pull/49318)
+- Previously deprecated site config `experimentalFeatures.bitbucketServerFastPerm` has been removed. [#50707](https://github.com/sourcegraph/sourcegraph/pull/50707)
+- Unused site-config field `api.rateLimit` has been removed. [#51087](https://github.com/sourcegraph/sourcegraph/pull/51087)
+- Legacy (table-based) blob viewer. [#50915](https://github.com/sourcegraph/sourcegraph/pull/50915)
+
+## Unreleased 5.0.4
+
+### Fixed
+
+- Git blame lookups of repositories synced through `src serve-git` or code hosts using a custom `repositoryPathPattern` will now use the correct URL when streaming git blame is enabled. [#51525](https://github.com/sourcegraph/sourcegraph/pull/51525)
+- Code Insights scoped to a static list of repository names would fail to resolve repositories with permissions enabled, resulting in insights that would not process. [#51657](https://github.com/sourcegraph/sourcegraph/pull/51657)
+
+## 5.0.3
+
+### Added
+
+- Cody aggregated pings. [#50835](https://github.com/sourcegraph/sourcegraph/pull/50835)
+
+### Fixed
+
+- Bitbucket Server adding an error log if there is no account match for the user. #[51030](https://github.com/sourcegraph/sourcegraph/pull/51030)
+- Editing search context with special characters such as `/` resulted in http 404 error. [#51196](https://github.com/sourcegraph/sourcegraph/pull/51196)
+- Significantly improved performance and reduced memory usage of the embeeddings service. [#50953](https://github.com/sourcegraph/sourcegraph/pull/50953), [#51372](https://github.com/sourcegraph/sourcegraph/pull/51372)
+- Fixed an issue where a Code Insights query with structural search type received 0 search results for the latest commit of any matching repo. [#51076](https://github.com/sourcegraph/sourcegraph/pull/51076)
 
 ## 5.0.2
 
