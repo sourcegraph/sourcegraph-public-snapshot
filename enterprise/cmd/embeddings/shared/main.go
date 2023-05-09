@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -123,43 +122,6 @@ func NewHandler(
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
 	mux.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
-			return
-		}
-
-		var args embeddings.EmbeddingsSearchParameters
-		err := json.NewDecoder(r.Body).Decode(&args)
-		if err != nil {
-			http.Error(w, "could not parse request body: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		multiArgs := embeddings.EmbeddingsMultiSearchParameters{
-			RepoNames:        []api.RepoName{args.RepoName},
-			RepoIDs:          []api.RepoID{args.RepoID},
-			Query:            args.Query,
-			CodeResultsCount: args.CodeResultsCount,
-			TextResultsCount: args.TextResultsCount,
-			UseDocumentRanks: args.UseDocumentRanks,
-		}
-
-		res, err := searchRepoEmbeddingIndexes(r.Context(), logger, multiArgs, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
-		if errcode.IsNotFound(err) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		if err != nil {
-			logger.Error("error searching embedding index", log.Error(err))
-			http.Error(w, fmt.Sprintf("error searching embedding index: %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(res)
-	})
-
-	mux.HandleFunc("/multiSearch", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 			return

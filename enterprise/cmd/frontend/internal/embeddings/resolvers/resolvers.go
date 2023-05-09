@@ -59,19 +59,28 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 		return nil, errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
-	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repo)
+	repoIDs := make([]api.RepoID, len(args.Repos))
+	for i, repo := range args.Repos {
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(repo)
+		if err != nil {
+			return nil, err
+		}
+		repoIDs[i] = repoID
+	}
+
+	repos, err := r.db.Repos().GetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
 	}
 
-	repo, err := r.db.Repos().Get(ctx, repoID)
-	if err != nil {
-		return nil, err
+	repoNames := make([]api.RepoName, len(repos))
+	for i, repo := range repos {
+		repoNames[i] = repo.Name
 	}
 
-	results, err := r.embeddingsClient.Search(ctx, embeddings.EmbeddingsSearchParameters{
-		RepoName:         repo.Name,
-		RepoID:           repoID,
+	results, err := r.embeddingsClient.MultiSearch(ctx, embeddings.EmbeddingsMultiSearchParameters{
+		RepoNames:        repoNames,
+		RepoIDs:          repoIDs,
 		Query:            args.Query,
 		CodeResultsCount: int(args.CodeResultsCount),
 		TextResultsCount: int(args.TextResultsCount),

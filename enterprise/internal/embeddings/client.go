@@ -76,37 +76,7 @@ type IsContextRequiredForChatQueryResult struct {
 	IsRequired bool `json:"isRequired"`
 }
 
-func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error) {
-	url, err := c.url(args.RepoName)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.httpPost(ctx, "search", url, args)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return nil, errors.Errorf(
-			"Embeddings.Search http status %d: %s",
-			resp.StatusCode,
-			string(body),
-		)
-	}
-
-	var response EmbeddingCombinedSearchResults
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
-		return nil, err
-	}
-	return &response, nil
-}
-
-func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsMultiSearchParameters) (*EmbeddingCombinedSearchResults, error) {
+func (c *Client) Search(ctx context.Context, args EmbeddingsMultiSearchParameters) (*EmbeddingCombinedSearchResults, error) {
 	partitions, err := c.partition(args.RepoNames, args.RepoIDs)
 	if err != nil {
 		return nil, err
@@ -123,7 +93,7 @@ func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsMultiSearchPara
 		args.RepoIDs = partition.repoIDs
 
 		p.Go(func(ctx context.Context) (*EmbeddingCombinedSearchResults, error) {
-			return c.multiSearchPartition(ctx, endpoint, args)
+			return c.searchPartition(ctx, endpoint, args)
 		})
 	}
 
@@ -141,7 +111,7 @@ func (c *Client) MultiSearch(ctx context.Context, args EmbeddingsMultiSearchPara
 	return &combinedResult, nil
 }
 
-func (c *Client) multiSearchPartition(ctx context.Context, endpoint string, args EmbeddingsMultiSearchParameters) (*EmbeddingCombinedSearchResults, error) {
+func (c *Client) searchPartition(ctx context.Context, endpoint string, args EmbeddingsMultiSearchParameters) (*EmbeddingCombinedSearchResults, error) {
 	resp, err := c.httpPost(ctx, "multiSearch", endpoint, args)
 	if err != nil {
 		return nil, err

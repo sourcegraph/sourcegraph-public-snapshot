@@ -27,7 +27,7 @@ type IsContextRequiredForChatQueryInputArgs struct {
 }
 
 type EmbeddingsSearchInputArgs struct {
-	Repo             graphql.ID
+	Repos            []graphql.ID
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32

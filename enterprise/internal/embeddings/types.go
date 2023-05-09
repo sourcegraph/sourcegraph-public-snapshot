@@ -54,6 +54,7 @@ type EmbeddingCombinedSearchResults struct {
 
 type EmbeddingSearchResults []EmbeddingSearchResult
 
+// MergeTruncate merges other into the search results, keeping only max results with the highest scores
 func (esrs *EmbeddingSearchResults) MergeTruncate(other EmbeddingSearchResults, max int) {
 	self := *esrs
 	self = append(self, other...)

@@ -8,7 +8,7 @@ extend type Query {
         """
         The repository to search.
         """
-        repo: ID!
+        repos: [ID!]!
         """
         The query used for embeddings search.
         """
