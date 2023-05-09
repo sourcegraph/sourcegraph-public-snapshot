@@ -22,6 +22,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Changed
 
+- Promote Cody from experimental to beta [pull/](https://github.com/sourcegraph/sourcegraph/)
 - Various improvements to the experimental completions feature
 
 ## [0.0.10]
