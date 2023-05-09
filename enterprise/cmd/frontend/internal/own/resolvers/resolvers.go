@@ -195,7 +195,7 @@ func (r *ownResolver) ownershipConnection(
 ) (*ownershipConnectionResolver, error) {
 	// 1. Order ownerships for deterministic pagination:
 
-	// TODO: Introduce deterministic ordering based on priority of signals.
+	// TODO(#51636): Introduce deterministic ordering based on priority of signals.
 	sort.Slice(ownerships, func(i, j int) bool {
 		iText := ownerships[i].resolvedOwner.Identifier()
 		jText := ownerships[j].resolvedOwner.Identifier()
