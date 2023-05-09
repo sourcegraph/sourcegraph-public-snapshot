@@ -48,5 +48,6 @@ export async function updateConfiguration(configKey: string, configValue: string
 
 export const getFullConfig = async (secretStorage: SecretStorage): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration(vscode.workspace.getConfiguration())
-    return { ...config, accessToken: await getAccessToken(secretStorage) }
+    const accessToken = (await getAccessToken(secretStorage)) || null
+    return { ...config, accessToken }
 }

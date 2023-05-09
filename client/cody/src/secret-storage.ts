@@ -3,8 +3,13 @@ import * as vscode from 'vscode'
 export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
 export async function getAccessToken(secretStorage: SecretStorage): Promise<string | null> {
-    const token = await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)
-    return token ?? null
+    try {
+        return (await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) || null
+    } catch (error) {
+        await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+        void vscode.window.showErrorMessage(`Failed to retreive access token for Cody: ${error}`)
+        return null
+    }
 }
 
 export interface SecretStorage {
