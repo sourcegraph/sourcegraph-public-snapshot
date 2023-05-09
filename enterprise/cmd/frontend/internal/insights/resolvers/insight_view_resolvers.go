@@ -638,8 +638,20 @@ func validateRepositoryList(ctx context.Context, repos []string, repoStore datab
 		return errors.Wrap(err, "repoStore.List")
 	}
 
-	if len(list) > 0 {
-		return errors.Newf("unable to validate all repositories")
+	var missingRepos []string
+	foundRepos := make(map[string]struct{}, len(list))
+	for _, repo := range list {
+		foundRepos[string(repo.Name)] = struct{}{}
+	}
+
+	for _, repo := range repos {
+		if _, ok := foundRepos[repo]; !ok {
+			missingRepos = append(missingRepos, repo)
+		}
+	}
+
+	if len(missingRepos) > 0 {
+		return errors.Newf("repositories not found")
 	}
 
 	return nil
