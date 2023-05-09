@@ -3,3 +3,7 @@
 export const BatchChangesReadPermission = 'BATCH_CHANGES#READ'
 
 export const BatchChangesWritePermission = 'BATCH_CHANGES#WRITE'
+
+export const SubscriptionsReadPermission = 'SUBSCRIPTIONS#READ'
+
+export const SubscriptionsWritePermission = 'SUBSCRIPTIONS#WRITE'

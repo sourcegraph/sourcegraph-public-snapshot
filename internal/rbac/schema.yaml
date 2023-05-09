@@ -3,3 +3,7 @@ namespaces:
     actions:
       - READ
       - WRITE
+  - name: SUBSCRIPTIONS
+    actions:
+      - READ
+      - WRITE

@@ -1,10 +1,10 @@
 import React from 'react'
 
-import classNames from 'classnames'
+import { mdiCheckCircle, mdiCloseCircle } from '@mdi/js'
 import { parseISO } from 'date-fns'
 import format from 'date-fns/format'
 
-import { Alert, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, Tooltip, Text } from '@sourcegraph/wildcard'
 
 import { ProductLicenseInfoFields } from '../../../graphql-operations'
 import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../../productSubscription/helpers'
@@ -15,30 +15,19 @@ import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../../
 export const ProductLicenseValidity: React.FunctionComponent<
     React.PropsWithChildren<{
         licenseInfo: ProductLicenseInfoFields
-        primary: boolean
         className?: string
     }>
-> = ({ licenseInfo: { expiresAt }, primary, className = '' }) => {
+> = ({ licenseInfo: { expiresAt }, className = '' }) => {
     const isExpired = isProductLicenseExpired(expiresAt)
     const tooltip = format(parseISO(expiresAt), 'PPpp')
-    const validityClass = isExpired ? 'danger' : 'success'
-
-    if (primary) {
-        return (
-            <Tooltip content={tooltip}>
-                <Alert className={classNames(className, 'py-1 px-2')} variant={isExpired ? 'danger' : 'success'}>
-                    <strong>{isExpired ? 'Expired' : 'Valid'}</strong> ({formatRelativeExpirationDate(expiresAt)})
-                </Alert>
-            </Tooltip>
-        )
-    }
 
     return (
         <Tooltip content={tooltip}>
-            <div className={className}>
-                <strong className={`text-${validityClass}`}>{isExpired ? 'Expired' : 'Valid'}</strong> (
-                {formatRelativeExpirationDate(expiresAt)})
-            </div>
+            <Text className={className}>
+                {!isExpired && <Icon svgPath={mdiCheckCircle} aria-hidden={true} className="mr-1 text-success" />}
+                {isExpired && <Icon svgPath={mdiCloseCircle} aria-hidden={true} className="mr-1 text-danger" />}
+                <strong>{isExpired ? 'Expired' : 'Valid'}</strong> ({formatRelativeExpirationDate(expiresAt)})
+            </Text>
         </Tooltip>
     )
 }

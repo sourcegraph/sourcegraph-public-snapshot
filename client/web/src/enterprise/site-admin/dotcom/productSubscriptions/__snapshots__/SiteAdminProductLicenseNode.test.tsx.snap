@@ -6,44 +6,35 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
     class="list-group-item py-2"
   >
     <div
-      class="d-flex align-items-center justify-content-between"
+      class="mr-3 text-truncate"
     >
-      <div
-        class="mr-3 text-truncate"
+      <strong>
+        License in 
+        <a
+          class="anchorLink mr-3"
+          href="/s"
+        >
+          s
+        </a>
+      </strong>
+      <span
+        class="mr-3"
       >
-        <strong>
-          License in 
-          <a
-            class="anchorLink mr-3"
-            href="/s"
-          >
-            s
-          </a>
-        </strong>
-        <span
-          class="mr-3"
-        >
-          <accountname />
-        </span>
-      </div>
-      <div>
-        <span
-          class="mr-3"
-          title="Tags: a"
-        >
-          NB (123 users)
-        </span>
-        <div
-          class="d-inline-block mr-3"
-        >
-          <strong
-            class="text-success"
-          >
-            Valid
-          </strong>
-           (15 years remaining)
-        </div>
-        <span
+        <accountname />
+      </span>
+    </div>
+    <div
+      class="d-flex justify-content-baseline mb-2"
+    >
+      <h3
+        class="h3 mb-0"
+      >
+        NB (123 users)
+      </h3>
+      <p
+        class="ml-2 mb-0"
+      >
+        <small
           class="text-muted"
         >
           Created 
@@ -52,26 +43,53 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           >
             in almost 14 years
           </span>
-        </span>
-      </div>
+        </small>
+      </p>
     </div>
+    <p
+      class="mb-2"
+    >
+      <svg
+        aria-hidden="true"
+        class="mdi-icon iconInline mr-1 text-success"
+        fill="currentColor"
+        height="24"
+        role="img"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
+        />
+      </svg>
+      <strong>
+        Valid
+      </strong>
+       (15 years remaining)
+    </p>
     <div
       aria-live="assertive"
-      class="alert alertWarning mt-3 mb-3"
+      class="alert alertDanger mb-2"
       role="alert"
     >
       License tags contain unknown values (marked red), please check if the tags are correct.
     </div>
-    <div>
-      Tags: 
-      <div
+    <h4
+      class="h4"
+    >
+      Tags
+    </h4>
+    <p
+      class="mb-2"
+    >
+      <span
         class="badge danger mr-1"
       >
         a
-      </div>
-    </div>
+      </span>
+    </p>
     <div
-      class="form-inline mt-2"
+      class="form-inline"
     >
       <div
         class="input-group flex-1"
@@ -123,39 +141,35 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
     class="list-group-item py-2"
   >
     <div
-      class="d-flex align-items-center justify-content-between"
+      class="mr-3 text-truncate"
     >
-      <div
-        class="mr-3 text-truncate"
+      <strong>
+        License in 
+        <a
+          class="anchorLink mr-3"
+          href="/s"
+        >
+          s
+        </a>
+      </strong>
+      <span
+        class="mr-3"
       >
-        <strong>
-          License in 
-          <a
-            class="anchorLink mr-3"
-            href="/s"
-          >
-            s
-          </a>
-        </strong>
-        <span
-          class="mr-3"
-        >
-          <accountname />
-        </span>
-      </div>
-      <div>
-        <span
-          class="mr-3"
-          title="Tags: a"
-        >
-          NB (123 users)
-        </span>
-        <span
-          class="text-warning font-weight-bold mr-3"
-        >
-          Inactive
-        </span>
-        <span
+        <accountname />
+      </span>
+    </div>
+    <div
+      class="d-flex justify-content-baseline mb-2"
+    >
+      <h3
+        class="h3 mb-0"
+      >
+        NB (123 users)
+      </h3>
+      <p
+        class="ml-2 mb-0"
+      >
+        <small
           class="text-muted"
         >
           Created 
@@ -164,26 +178,52 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           >
             in almost 14 years
           </span>
-        </span>
-      </div>
+        </small>
+      </p>
     </div>
+    <p
+      class="mb-2"
+    >
+      <svg
+        aria-hidden="true"
+        class="mdi-icon iconInline text-warning mr-1"
+        fill="currentColor"
+        height="24"
+        role="img"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M1,4.27L2.28,3L20.5,21.22L19.23,22.5L17,20.25C15.57,21.57 13.87,22.54 12,23C6.84,21.74 3,16.55 3,11V6.27L1,4.27M12,1L21,5V11C21,13.28 20.35,15.5 19.23,17.41L5.65,3.82L12,1Z"
+        />
+      </svg>
+      <strong>
+        Inactive
+      </strong>
+    </p>
     <div
       aria-live="assertive"
-      class="alert alertWarning mt-3 mb-3"
+      class="alert alertDanger mb-2"
       role="alert"
     >
       License tags contain unknown values (marked red), please check if the tags are correct.
     </div>
-    <div>
-      Tags: 
-      <div
+    <h4
+      class="h4"
+    >
+      Tags
+    </h4>
+    <p
+      class="mb-2"
+    >
+      <span
         class="badge danger mr-1"
       >
         a
-      </div>
-    </div>
+      </span>
+    </p>
     <div
-      class="form-inline mt-2"
+      class="form-inline"
     >
       <div
         class="input-group flex-1"

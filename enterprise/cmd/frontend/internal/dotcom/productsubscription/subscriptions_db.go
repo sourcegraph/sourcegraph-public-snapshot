@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -211,16 +212,10 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_enabled=%s", *v))
 		}
 		if v := access.RateLimit; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_rate_limit=%s", sql.NullInt64{
-				Int64: int64(*v),
-				Valid: *v != 0,
-			}))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_rate_limit=%s", dbutil.NewNullInt32(*v)))
 		}
 		if v := access.RateLimitIntervalSeconds; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_rate_interval_seconds=%s", sql.NullInt64{
-				Int64: int64(*v),
-				Valid: *v != 0,
-			}))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))
 		}
 	}
 
