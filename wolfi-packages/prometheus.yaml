@@ -29,8 +29,7 @@ pipeline:
     with:
       uri: https://github.com/prometheus/prometheus/releases/download/v${{package.version}}/prometheus-${{package.version}}.linux-amd64.tar.gz
       expected-sha256: 422dab055ed9c7bcaff52b718705f9192c6fac0de6b7e78dd278e70ee2663dcc
-  - runs: |
-      tar zxvf prometheus-${{package.version}}.linux-amd64.tar.gz
+      strip-components: 0
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/bin/
       mkdir -p ${{targets.destdir}}/etc/prometheus/
