@@ -32,6 +32,35 @@ pkg_tar(
     remap_paths = { "/server_linux_amd64": "/server" }
 )
 
+genrule(
+    name = "nginx_tmp_folder",
+    outs = [".keep_tmp"],
+    cmd = "echo keep > $@",
+)
+
+genrule(
+    name = "nginx_run_folder",
+    outs = [".keep_run"],
+    cmd = "echo keep > $@",
+)
+
+pkg_tar(
+    name = "nginx_missing_folders_tar",
+    srcs = [":nginx_tmp_folder", ":nginx_run_folder"],
+    remap_paths = {
+      "/.keep_tmp": "/var/lib/nginx/tmp/.keep",
+      "/.keep_run": "/var/run/.keep",
+    }
+)
+
+# pkg_tar(
+#     name = "tar_prometheus",
+#     srcs = [
+#         "//docker-images/prometheus/cmd/prom-wrapper",
+#         "//monitoring:generate_config"
+#     ],
+# )
+
 DEPS = [
   "//cmd/frontend",
   "//cmd/github-proxy",
@@ -61,7 +90,7 @@ oci_image(
     name = "image",
     architecture = "amd64",
     base = "@wolfi_server_base",
-    tars = dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS) + [":tar_server_linux_amd64"],
+    tars = dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS) + [":tar_server_linux_amd64", ":nginx_missing_folders_tar"],
     entrypoint = ["/server"],
     os = "linux",
 )
