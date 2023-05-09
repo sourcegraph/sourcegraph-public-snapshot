@@ -114,7 +114,6 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 
 	// TODO(mucles): set user agent from all grpc clients
 	return gs.doExec(ss.Context(), gs.Server.Logger, execReq, "unknown-grpc-client", w)
-
 }
 
 // doExec executes the given git command and streams the output to the given writer.
