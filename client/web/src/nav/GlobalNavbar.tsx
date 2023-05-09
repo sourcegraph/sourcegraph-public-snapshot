@@ -17,7 +17,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, ButtonLink, useWindowSize, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize, Tooltip, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { TauriNavigation } from '../app/TauriNavigation'
 import { HistoryStack } from '../app/useHistoryStack'
@@ -183,7 +183,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
             showCody && {
                 path: EnterprisePageRoutes.CodySearch,
-                content: 'Cody',
+                content: (
+                    <>
+                        Natural language search <ProductStatusBadge status="experimental" />
+                    </>
+                ),
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
