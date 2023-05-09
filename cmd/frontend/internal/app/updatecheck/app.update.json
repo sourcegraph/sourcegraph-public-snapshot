@@ -1,0 +1,15 @@
+{
+  "version": "2023.5.8+dev.123.shamd245",
+  "notes": "Test version",
+  "pub_date": "2023-05-07T12:25:57Z",
+  "platforms": {
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTWVByYmswNFZITlB3UDZaQUE1WnlrZEYxMzBZd1hNYVY5U2U0dGJmZzZNUm1aTDdoMzF3TFNoYlo5VFRiblI5NTQzV2NsS1J0TWZUSmFJQXVmejV1U1p2WXo5ZWhDMGc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNjgzNTQzMzgyCWZpbGU6U291cmNlZ3JhcGguQXBwXzEuMC4wLWRldl94NjQuZG1nCmdGM1NDODlWNmJFdEpyUGZNd3orYzdYT1pjOXFjMFJQZXBqNG00ZC9zTC9vajBrakVzSkV5OGRIUE4zak1aSlNVZDN5eXc2YVNRNWs3elovZ3Z1bkJnPT0K",
+      "url": "https://github.com/sourcegraph/sourcegraph/releases/download/untagged-03042cee5585262192cf/Sourcegraph.App_1.0.0-dev_x64.dmg"
+    },
+    "linux-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTWVByYmswNFZITlB3UDZaQUE1WnlrZEYxMzBZd1hNYVY5U2U0dGJmZzZNUm1aTDdoMzF3TFNoYlo5VFRiblI5NTQzV2NsS1J0TWZUSmFJQXVmejV1U1p2WXo5ZWhDMGc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNjgzNTQzMzgyCWZpbGU6U291cmNlZ3JhcGguQXBwXzEuMC4wLWRldl94NjQuZG1nCmdGM1NDODlWNmJFdEpyUGZNd3orYzdYT1pjOXFjMFJQZXBqNG00ZC9zTC9vajBrakVzSkV5OGRIUE4zak1aSlNVZDN5eXc2YVNRNWs3elovZ3Z1bkJnPT0K",
+      "url": "https://github.com/sourcegraph/sourcegraph/releases/download/untagged-03042cee5585262192cf/sourcegraph-app_1.0.0-dev_amd64.deb"
+    }
+  }
+}

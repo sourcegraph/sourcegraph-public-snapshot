@@ -2,6 +2,7 @@ package updatecheck
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,6 +32,9 @@ import (
 
 // pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
 var pubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID is the pub/sub topic id where pings are published.")
+
+//go:embed app.update.json
+var appUpdateJson []byte
 
 var (
 	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
@@ -70,41 +74,65 @@ func getLatestRelease(deployType string) pingResponse {
 
 func AppUpdateHandlerWithLog(logger log.Logger) http.HandlerFunc {
 	scopedLog := logger.Scoped("appupdate.handler", "handler that responds with information about software updates")
+	update := AppUpdate{}
+	err := json.Unmarshal(appUpdateJson, &update)
+	if err != nil {
+		scopedLog.Fatal("failed to unmarshall App update json", log.Error(err))
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		appUpdateHandler(scopedLog, w, r)
+		appUpdateHandler(scopedLog, update, w, r)
 	}
 }
 
-type App struct {
-	target         string
-	currentVersion string
-	arch           string
+type AppVersion struct {
+	target  string
+	version string
+	arch    string
 }
 
-func appUpdateHandler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
-	values := r.URL.Query()
-	var app = App{}
-	fmt.Printf("query: %v\n", values)
-	var varMap = map[string]*string{"target": &app.target, "current_version": &app.currentVersion, "arch": &app.arch}
+type AppUpdate struct {
+	Version   string      `json:"version"`
+	Notes     string      `json:"notes"`
+	PubDate   time.Time   `json:"pub_date"`
+	Platforms AppPlatform `json:"platforms"`
+}
 
-	for queryVar := range varMap {
-		if val, ok := values[queryVar]; ok && len(val) > 0 {
-			var strp *string
-			strp = &val[0]
-			(*varMap[queryVar]) = *strp
+type AppPlatform map[string]AppLocation
+
+type AppLocation struct {
+	Signature string `json:"signature"`
+	Url       string `json:"url"`
+}
+
+func appUpdateHandler(logger log.Logger, update AppUpdate, w http.ResponseWriter, r *http.Request) {
+	queryValues := r.URL.Query()
+	var app = AppVersion{}
+	for key, attr := range map[string]*string{
+		"target":          &app.target,
+		"current_version": &app.version,
+		"arch":            &app.arch,
+	} {
+		if v, ok := queryValues[key]; ok && len(v) > 0 {
+			*attr = v[0]
 		} else {
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "invalid query parameter", http.StatusBadRequest)
 		}
 	}
 
 	logger.Info("app update check", log.Object("App",
 		log.String("target", app.target),
-		log.String("currentVersion", app.target),
-		log.String("arch", app.target),
+		log.String("version", app.version),
+		log.String("arch", app.arch),
 	))
 
-	w.WriteHeader(http.StatusNoContent)
+	if app.version == update.Version {
+		// No update
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 
+	json.NewEncoder(w).Encode(update)
+	w.WriteHeader(http.StatusOK)
 }
 
 // HandlerWithLog creates a HTTP handler that responds with information about software updates for Sourcegraph. Using the given logger, a scoped
