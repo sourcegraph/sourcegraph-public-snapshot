@@ -185,7 +185,6 @@ func (r *ownResolver) GitBlobOwnership(
 		db:             r.db,
 		total:          total,
 		next:           next,
-		resolvedOwners: resolvedOwners,
 		ownerships:     ownerships,
 	}, nil
 }
@@ -219,7 +218,6 @@ type ownershipConnectionResolver struct {
 	db             edb.EnterpriseDB
 	total          int
 	next           *string
-	resolvedOwners []codeowners.ResolvedOwner
 	ownerships     []graphqlbackend.OwnershipResolver
 }
 
