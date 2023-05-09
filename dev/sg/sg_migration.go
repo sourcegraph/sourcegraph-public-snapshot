@@ -233,7 +233,7 @@ func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (cli
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
 	}
-	r, err := connections.RunnerFromDSNsWithSchemas(logger, postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
+	r, err := connections.RunnerFromDSNsWithSchemas(std.Out.Output, logger, postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
 	if err != nil {
 		return nil, err
 	}

@@ -53,11 +53,12 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
+            console.error(error)
+
             if (error.message === 'aborted') {
                 return []
             }
 
-            await this.webviewErrorMessager(`ProvideInlineCompletionItems - ${error}`)
             return []
         }
     }
