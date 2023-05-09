@@ -80,7 +80,7 @@ export const RolloutWindowsConfiguration: React.FunctionComponent = () => {
                                         />
                                         {formatRate(rolloutWindow.rate)}
                                     </Text>
-                                    <small>on: {formatDays(rolloutWindow.days)}</small>
+                                    <small>on {formatDays(rolloutWindow.days)}</small>
                                     <br />
                                     {rolloutWindow.start && rolloutWindow.end && (
                                         <small>
