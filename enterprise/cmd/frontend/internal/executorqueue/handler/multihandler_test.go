@@ -13,42 +13,55 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 )
 
-type dequeueEvent struct {
+type dequeueEvent[T workerutil.Record] struct {
 	queueName            string
-	mockFunc             func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore)
 	expectedStatusCode   int
 	expectedResponseBody string
-	assertionFunc        func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore)
+	mockFunc             func(mockStore *dbworkerstoremocks.MockStore[T], jobTokenStore *executorstore.MockJobTokenStore)
+	transformerFunc      handler.TransformerFunc[T]
+	assertionFunc        func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[T], jobTokenStore *executorstore.MockJobTokenStore)
+}
+
+func transformerFunc[T workerutil.Record](ctx context.Context, version string, t T, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+	return executortypes.Job{ID: t.RecordID()}, nil
+}
+
+type dequeueTestCase struct {
+	name string
+	body string
+
+	// TODO: due to generics, I'm not sure how to provide a single list of sequential dequeues.
+	// Without fairness, these could just be evaluated in the order of the queues as provided in the POST body,
+	// but when fairness comes into play, that will no longer apply. To circumvent this, I add the events with an ID
+	// to determine in which order they should be evaluated. Should be revisited
+	codeintelDequeueEvents map[int]dequeueEvent[uploadsshared.Index]
+	batchesDequeueEvents   map[int]dequeueEvent[*btypes.BatchSpecWorkspaceExecutionJob]
+	totalEvents            int
 }
 
 func TestMultiHandler_HandleDequeue(t *testing.T) {
-	tests := []struct {
-		name            string
-		body            string
-		transformerFunc handler.TransformerFunc[testRecord]
-		dequeueEvents   []dequeueEvent
-	}{
+	tests := []dequeueTestCase{
 		{
 			name: "Dequeue one record for each queue",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB", "queues": ["codeintel", "batches"]}`,
-			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
-				return executortypes.Job{ID: record.RecordID()}, nil
-			},
-			dequeueEvents: []dequeueEvent{
-				{
-					queueName: "codeintel",
-					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-						mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
-						jobTokenStore.CreateFunc.PushReturn("token1", nil)
-					},
+			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
+				0: {
+					queueName:            "codeintel",
 					expectedStatusCode:   http.StatusOK,
 					expectedResponseBody: `{"id":1,"token":"token1","queue":"codeintel","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
-					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
+						jobTokenStore.CreateFunc.PushReturn("token1", nil)
+					},
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
 						require.Len(t, mockStore.DequeueFunc.History(), 1)
 						assert.Equal(t, "test-executor", mockStore.DequeueFunc.History()[0].Arg1)
 						assert.Nil(t, mockStore.DequeueFunc.History()[0].Arg2)
@@ -57,15 +70,17 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 						assert.Equal(t, "codeintel", jobTokenStore.CreateFunc.History()[0].Arg2)
 					},
 				},
-				{
+			},
+			batchesDequeueEvents: map[int]dequeueEvent[*btypes.BatchSpecWorkspaceExecutionJob]{
+				1: {
 					queueName: "batches",
-					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-						mockStore.DequeueFunc.PushReturn(testRecord{id: 2}, true, nil)
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 2}, true, nil)
 						jobTokenStore.CreateFunc.PushReturn("token2", nil)
 					},
 					expectedStatusCode:   http.StatusOK,
 					expectedResponseBody: `{"id":2,"token":"token2","queue":"batches","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
-					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 						require.Len(t, mockStore.DequeueFunc.History(), 1)
 						assert.Equal(t, "test-executor", mockStore.DequeueFunc.History()[0].Arg1)
 						assert.Nil(t, mockStore.DequeueFunc.History()[0].Arg2)
@@ -76,6 +91,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 					},
 				},
 			},
+			totalEvents: 2,
 		},
 	}
 	//	{
@@ -234,46 +250,62 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			jobTokenStore := executorstore.NewMockJobTokenStore()
-			var mockStores = map[string]*dbworkerstoremocks.MockStore[testRecord]{
-				"codeintel": dbworkerstoremocks.NewMockStore[testRecord](),
-				"batches":   dbworkerstoremocks.NewMockStore[testRecord](),
-			}
+			codeIntelMockStore := dbworkerstoremocks.NewMockStore[uploadsshared.Index]()
+			batchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BatchSpecWorkspaceExecutionJob]()
 
 			mh := handler.NewMultiHandler(
 				jobTokenStore,
-				handler.QueueHandler[testRecord]{Store: mockStores["codeintel"], RecordTransformer: test.transformerFunc},
-				handler.QueueHandler[testRecord]{Store: mockStores["batches"], RecordTransformer: test.transformerFunc},
+				handler.QueueHandler[uploadsshared.Index]{Store: codeIntelMockStore, RecordTransformer: transformerFunc[uploadsshared.Index]},
+				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Store: batchesMockStore, RecordTransformer: transformerFunc[*btypes.BatchSpecWorkspaceExecutionJob]},
 			)
 
 			router := mux.NewRouter()
 			router.HandleFunc("/dequeue", mh.ServeHTTP)
 
-			for _, event := range test.dequeueEvents {
-				req, err := http.NewRequest(http.MethodPost, "/dequeue", strings.NewReader(test.body))
-				require.NoError(t, err)
-
-				rw := httptest.NewRecorder()
-
-				if event.mockFunc != nil {
-					event.mockFunc(mockStores[event.queueName], jobTokenStore)
-				}
-
-				router.ServeHTTP(rw, req)
-				assert.Equal(t, event.expectedStatusCode, rw.Code)
-
-				b, err := io.ReadAll(rw.Body)
-				require.NoError(t, err)
-
-				if len(event.expectedResponseBody) > 0 {
-					assert.JSONEq(t, event.expectedResponseBody, string(b))
+			for eventIndex := 0; eventIndex < test.totalEvents; eventIndex++ {
+				if _, ok := test.codeintelDequeueEvents[eventIndex]; ok {
+					event := test.codeintelDequeueEvents[eventIndex]
+					evaluateEvent(test, event, codeIntelMockStore, jobTokenStore, t, router)
 				} else {
-					assert.Empty(t, string(b))
+					event := test.batchesDequeueEvents[eventIndex]
+					evaluateEvent(test, event, batchesMockStore, jobTokenStore, t, router)
 				}
 
-				if event.assertionFunc != nil {
-					event.assertionFunc(t, mockStores[event.queueName], jobTokenStore)
-				}
 			}
 		})
+	}
+}
+
+func evaluateEvent[T workerutil.Record](
+	test dequeueTestCase,
+	event dequeueEvent[T],
+	store *dbworkerstoremocks.MockStore[T],
+	jobTokenStore *executorstore.MockJobTokenStore,
+	t *testing.T,
+	router *mux.Router,
+) {
+	req, err := http.NewRequest(http.MethodPost, "/dequeue", strings.NewReader(test.body))
+	require.NoError(t, err)
+
+	rw := httptest.NewRecorder()
+
+	if event.mockFunc != nil {
+		event.mockFunc(store, jobTokenStore)
+	}
+
+	router.ServeHTTP(rw, req)
+	assert.Equal(t, event.expectedStatusCode, rw.Code)
+
+	b, err := io.ReadAll(rw.Body)
+	require.NoError(t, err)
+
+	if len(event.expectedResponseBody) > 0 {
+		assert.JSONEq(t, event.expectedResponseBody, string(b))
+	} else {
+		assert.Empty(t, string(b))
+	}
+
+	if event.assertionFunc != nil {
+		event.assertionFunc(t, store, jobTokenStore)
 	}
 }

@@ -9,40 +9,28 @@ import (
 	"github.com/sourcegraph/log"
 	"golang.org/x/exp/slices"
 
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type MultiHandler[T workerutil.Record] struct {
+type MultiHandler struct {
 	JobTokenStore         executorstore.JobTokenStore
-	CodeIntelQueueHandler QueueHandler[T]
-	BatchesQueueHandler   QueueHandler[T]
+	CodeIntelQueueHandler QueueHandler[uploadsshared.Index]
+	BatchesQueueHandler   QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]
 	logger                log.Logger
 }
 
-//func NewMultiHandler(
-//	jobTokenStore executorstore.JobTokenStore,
-//	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
-//	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
-//) MultiHandler {
-//	return MultiHandler{
-//		JobTokenStore:         jobTokenStore,
-//		CodeIntelQueueHandler: codeIntelQueueHandler,
-//		BatchesQueueHandler:   batchesQueueHandler,
-//		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
-//	}
-//}
-
-func NewMultiHandler[T workerutil.Record](
+func NewMultiHandler(
 	jobTokenStore executorstore.JobTokenStore,
-	codeIntelQueueHandler QueueHandler[T],
-	batchesQueueHandler QueueHandler[T],
-) MultiHandler[T] {
-	return MultiHandler[T]{
+	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
+	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
+) MultiHandler {
+	return MultiHandler{
 		JobTokenStore:         jobTokenStore,
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
@@ -72,7 +60,7 @@ type dequeueRequest struct {
 	DiskSpace    string   `json:"diskSpace,omitempty"`
 }
 
-func (m *MultiHandler[T]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var req dequeueRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		// TODO: should we also log errors here? Not sure
