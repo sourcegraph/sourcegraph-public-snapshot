@@ -17,10 +17,10 @@ interface HighlightTokensResult {
 
 export async function highlightTokens(
     text: string,
-    fileExists: (filePath: string) => Promise<boolean>
+    filesExist: (filePaths: string[]) => Promise<{ [filePath: string]: boolean }>
 ): Promise<HighlightTokensResult> {
     const markdownTokens = parseMarkdown(text)
-    const tokens = await detectTokens(markdownTokens, fileExists)
+    const tokens = await detectTokens(markdownTokens, filesExist)
 
     const highlightedText = markdownTokens
         .map(token => {
@@ -39,21 +39,43 @@ export async function highlightTokens(
 
 async function detectTokens(
     tokens: marked.Token[],
-    fileExists: (filePath: string) => Promise<boolean>
+    filesExist: (filePaths: string[]) => Promise<{ [filePath: string]: boolean }>
 ): Promise<HighlightedToken[]> {
-    const highlightedTokens: HighlightedToken[] = []
+    // mapping from file path to full match
+    const filePathToFullMatch: { [filePath: string]: Set<string> } = {}
     for (const token of tokens) {
         switch (token.type) {
             case 'code':
             case 'codespan':
                 continue
             default: {
-                const lineTokens = await detectFilePaths(token.raw, fileExists)
-                highlightedTokens.push(...lineTokens)
+                const lines = token.raw.split('\n')
+                for (const line of lines) {
+                    for (const { fullMatch, pathMatch } of findFilePaths(line)) {
+                        if (!filePathToFullMatch[pathMatch]) {
+                            filePathToFullMatch[pathMatch] = new Set<string>()
+                        }
+                        filePathToFullMatch[pathMatch].add(fullMatch)
+                    }
+                }
             }
         }
     }
-    return deduplicateTokens(highlightedTokens)
+
+    const filePathsExist = await filesExist([...Object.keys(filePathToFullMatch)])
+    const highlightedTokens: HighlightedToken[] = []
+    for (const [filePath, fullMatches] of Object.entries(filePathToFullMatch)) {
+        const exists = filePathsExist[filePath]
+        for (const fullMatch of fullMatches) {
+            highlightedTokens.push({
+                type: 'file',
+                outerValue: fullMatch,
+                innerValue: filePath,
+                isHallucinated: !exists,
+            })
+        }
+    }
+    return highlightedTokens
 }
 
 function highlightLine(line: string, tokens: HighlightedToken[]): string {
@@ -69,33 +91,19 @@ function getHighlightedTokenHTML(token: HighlightedToken): string {
     return `<span class="token-${token.type} token-${isHallucinatedClassName}">${token.innerValue}</span>`
 }
 
-function deduplicateTokens(tokens: HighlightedToken[]): HighlightedToken[] {
-    const deduplicatedTokens: HighlightedToken[] = []
-    const values = new Set<string>()
-    for (const token of tokens) {
-        if (!values.has(token.outerValue)) {
-            deduplicatedTokens.push(token)
-            values.add(token.outerValue)
+export function findFilePaths(line: string): { fullMatch: string; pathMatch: string }[] {
+    const matches: { fullMatch: string; pathMatch: string }[] = []
+    for (const m of line.matchAll(filePathRegexp)) {
+        const fullMatch = m[0]
+        const pathMatch = m[1]
+        if (isFilePathLike(fullMatch, pathMatch)) {
+            matches.push({ fullMatch, pathMatch })
         }
     }
-    return deduplicatedTokens
+    return matches
 }
 
-function detectFilePaths(
-    line: string,
-    fileExists: (filePath: string) => Promise<boolean>
-): Promise<HighlightedToken[]> {
-    const filePaths = Array.from(line.matchAll(filePathRegexp))
-        .map(match => ({ fullMatch: match[0], pathMatch: match[1] }))
-        .filter(match => isFilePathLike(match.fullMatch, match.pathMatch))
-        .map(async (match): Promise<HighlightedToken> => {
-            const exists = await fileExists(match.pathMatch)
-            return { type: 'file', outerValue: match.fullMatch, innerValue: match.pathMatch, isHallucinated: !exists }
-        })
-    return Promise.all(filePaths)
-}
-
-const filePathCharacters = '[\\w\\/\\._-]'
+const filePathCharacters = '[\\*\\w\\/\\._-]'
 
 const filePathRegexpParts = [
     // File path can start with a `, ", ', or a whitespace
@@ -110,6 +118,10 @@ const filePathRegexp = new RegExp(filePathRegexpParts.join(''), 'g')
 
 function isFilePathLike(fullMatch: string, pathMatch: string): boolean {
     const parts = pathMatch.split(/[/\\]/)
+    if (pathMatch.includes('*')) {
+        // Probably a glob pattern
+        return false
+    }
 
     if (fullMatch.startsWith(' ') && parts.length <= 2) {
         // Probably a / used as an "or" in a sentence. For example, "This is a cool/awesome function."

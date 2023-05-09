@@ -32,22 +32,6 @@ type DotcomMutation {
         license: ProductLicenseInput!
     ): ProductLicense!
     """
-    Generates an access token for this subscription based on the latest active license on this
-    account. If a token already exists, the existing token is returned.
-
-    It is meant for use for capabilities detection with the productSubscriptionByAccessToken query.
-
-    Only Sourcegraph.com site admins may perform this mutation.
-    FOR INTERNAL USE ONLY.
-    """
-    generateAccessTokenForSubscription(
-        """
-        The product subscription to associate with the access token.
-        """
-        productSubscriptionID: ID!
-    ): ProductSubscriptionAccessToken!
-
-    """
     Applies a partial update to a product subscription.
 
     Only Sourcegraph.com site admins may perform this mutation.
@@ -281,6 +265,12 @@ type ProductSubscription implements Node {
         first: Int
     ): ProductLicenseConnection!
     """
+    Available access tokens for authenticating as the subscription holder with managed
+    Sourcegraph services.
+    Empty only if creating a token failed, for example when no active license exists.
+    """
+    sourcegraphAccessTokens: [String!]!
+    """
     LLM-proxy access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
     """
     llmProxyAccess: LLMProxyAccess!
@@ -304,32 +294,34 @@ type ProductSubscription implements Node {
 }
 
 """
-The access token representing a product subscription that was created on Sourcegraph.com.
-FOR INTERNAL USE ONLY.
-"""
-type ProductSubscriptionAccessToken {
-    """
-    Access token for authenticating as a subscription.
-    """
-    accessToken: String!
-}
-
-"""
 LLM-proxy access granted to a subscription.
 FOR INTERNAL USE ONLY.
 """
 type LLMProxyAccess {
     """
     Whether or not a subscription has LLM-proxy access.
-
-    It may be true, even if a subscription is archived, as a historical record. However,
-    archived subscriptions should not be treated as having access to LLM-proxy.
     """
     enabled: Boolean!
     """
-    Rate limits for LLM-proxy access, if access is enabled.
+    Rate limits for LLM-proxy access, or null if not enabled.
     """
     rateLimit: LLMProxyRateLimit
+}
+
+"""
+The source of the rate limit returned.
+FOR INTERNAL USE ONLY.
+"""
+enum LLMProxyRateLimitSource {
+    """
+    Indicates that a custom override for the rate limit has been stored.
+    """
+    OVERRIDE
+
+    """
+    Indicates that the rate limit is inferred by the subscriptions active plan.
+    """
+    PLAN
 }
 
 """
@@ -337,6 +329,10 @@ LLM-proxy access rate limits for a subscription.
 FOR INTERNAL USE ONLY.
 """
 type LLMProxyRateLimit {
+    """
+    The source of the rate limit configuration.
+    """
+    source: LLMProxyRateLimitSource!
     """
     Requests per time interval.
     """
