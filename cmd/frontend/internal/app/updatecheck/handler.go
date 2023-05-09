@@ -68,6 +68,42 @@ func getLatestRelease(deployType string) pingResponse {
 	}
 }
 
+func AppUpdateHandlerWithLog(logger log.Logger) func(w http.ResponseWriter, r *http.Request) {
+	scopedLog := logger.Scoped("appupdate.handler", "handler that responds with information about software updates")
+	return func(w http.ResponseWriter, r *http.Request) {
+		appUpdateHandler(scopedLog, w, r)
+	}
+}
+
+type App struct {
+	target         string
+	currentVersion string
+	arch           string
+}
+
+func appUpdateHandler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
+	values := r.URL.Query()
+	var app = App{}
+	var varMap = map[string]*string{"target": &app.target, "current_version": &app.currentVersion, "arch": &app.arch}
+
+	for queryVar := range varMap {
+		if val, ok := values[queryVar]; ok && len(val) > 0 {
+			varMap[queryVar] = &val[0]
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+	}
+
+	logger.Info("app update check", log.Object("App",
+		log.String("target", app.target),
+		log.String("currentVersion", app.target),
+		log.String("arch", app.target),
+	))
+
+	w.WriteHeader(http.StatusNoContent)
+
+}
+
 // HandlerWithLog creates a HTTP handler that responds with information about software updates for Sourcegraph. Using the given logger, a scoped
 // logger is created and the handler that is returned uses the logger internally.
 func HandlerWithLog(logger log.Logger) func(w http.ResponseWriter, r *http.Request) {
