@@ -11,9 +11,6 @@ pushd "../.." > /dev/null
 pnpm install && pnpm generate
 popd > /dev/null || exit
 
-# Build the JavaScript artifacts
-pnpm build
-
 # Build the release candidate and publish it onto the registry
 ./gradlew publishPlugin
 

@@ -25,7 +25,6 @@ class CodyToolWindowContent {
     private final @NotNull JPanel messagesPanel;
     private final @NotNull JTextField messageField;
     private boolean needScrollingDown = true;
-    //        private final ArrayList<ChatMessage> messages = new ArrayList<>();
 
     public CodyToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         // Chat panel
