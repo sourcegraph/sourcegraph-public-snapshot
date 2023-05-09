@@ -5,6 +5,7 @@ import { ExplainCodeHighLevel } from './explain-code-high-level'
 import { FindCodeSmells } from './find-code-smells'
 import { Fixup } from './fixup'
 import { GenerateDocstring } from './generate-docstring'
+import { ReleaseNotes } from './generate-release-notes'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
 import { ImproveVariableNames } from './improve-variable-names'
@@ -39,7 +40,11 @@ function init(): void {
         new TranslateToLanguage(),
         new FindCodeSmells(),
         new NextQuestions(),
+<<<<<<< HEAD
         new ContextSearch(),
+=======
+        new ReleaseNotes(),
+>>>>>>> 9e53cd027d (implemented generate release notes recipe)
     ]
 
     for (const recipe of recipes) {
