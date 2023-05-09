@@ -53,7 +53,7 @@ func TestProtoRoundTrip(t *testing.T) {
 	f := func(original gitserver.ArchiveOptions) bool {
 
 		var converted gitserver.ArchiveOptions
-		converted.FromProto(original.ToProto())
+		converted.FromProto(original.ToProto("test"))
 
 		if diff = cmp.Diff(original, converted); diff != "" {
 			return false

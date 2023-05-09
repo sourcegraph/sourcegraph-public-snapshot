@@ -471,7 +471,7 @@ func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
 	}
 }
 
-func (o *ArchiveOptions) ToProto() *proto.ArchiveRequest {
+func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
 	protoPathSpecs := make([]string, 0, len(o.Pathspecs))
 
 	for _, path := range o.Pathspecs {
@@ -479,6 +479,7 @@ func (o *ArchiveOptions) ToProto() *proto.ArchiveRequest {
 	}
 
 	return &proto.ArchiveRequest{
+		Repo:      repo,
 		Treeish:   o.Treeish,
 		Format:    string(o.Format),
 		Pathspecs: protoPathSpecs,

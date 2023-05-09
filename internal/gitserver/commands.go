@@ -2414,8 +2414,7 @@ func (c *clientImplementor) ArchiveReader(
 
 		client := c.gRPCClientSource(conn)
 
-		req := options.ToProto()
-		req.Repo = string(repo) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
+		req := options.ToProto(string(repo)) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
 
 		ctx, cancel := context.WithCancel(ctx)
 
