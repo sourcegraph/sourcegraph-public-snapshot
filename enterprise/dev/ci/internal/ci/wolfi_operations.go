@@ -70,13 +70,13 @@ func WolfiImagesOperations(buildImages []string, version string, tag string, bas
 
 	wolfiImageBuildOps := operations.NewNamedSet("Wolfi image builds")
 
-	// for _, dockerImage := range buildImages {
-	// 	// Don't upload sourcemaps
-	// 	// wolfiImageBuildOps.Append(buildCandidateDockerImage(dockerImage, version, tag, false))
-	// 	wolfiImageBuildOps.Append(
-	// 		buildCandidateWolfiDockerImage(dockerImage, version, tag, false, baseImagesChanged),
-	// 	)
-	// }
+	for _, dockerImage := range buildImages {
+		// Don't upload sourcemaps
+		// wolfiImageBuildOps.Append(buildCandidateDockerImage(dockerImage, version, tag, false))
+		wolfiImageBuildOps.Append(
+			buildCandidateWolfiDockerImage(dockerImage, version, tag, false, baseImagesChanged),
+		)
+	}
 
 	return wolfiImageBuildOps
 }
