@@ -87,6 +87,7 @@ export const treePageRepositoryFragment = gql`
             key
             value
         }
+        sourceType
     }
 `
 

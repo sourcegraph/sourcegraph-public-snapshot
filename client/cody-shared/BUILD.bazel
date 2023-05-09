@@ -34,6 +34,7 @@ ts_project(
         "src/chat/recipes/find-code-smells.ts",
         "src/chat/recipes/fixup.ts",
         "src/chat/recipes/generate-docstring.ts",
+        "src/chat/recipes/generate-release-notes.ts",
         "src/chat/recipes/generate-test.ts",
         "src/chat/recipes/git-log.ts",
         "src/chat/recipes/helpers.ts",
@@ -82,11 +83,13 @@ ts_project(
         ":node_modules/@sourcegraph/http-client",
         "//:node_modules/@microsoft/fetch-event-source",
         "//:node_modules/@types/isomorphic-fetch",
+        "//:node_modules/@types/marked",
         "//:node_modules/@types/node",
         "//:node_modules/@types/uuid",
         "//:node_modules/@types/vscode",  #keep
         "//:node_modules/@vscode",
         "//:node_modules/isomorphic-fetch",
+        "//:node_modules/marked",
         "//:node_modules/uuid",
     ],
 )

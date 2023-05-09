@@ -28,6 +28,7 @@
 .transcript-item p > code {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
+    word-break: break-all;
 }
 
 .transcript-item pre {
@@ -76,7 +77,6 @@
 
 .input-row {
     position: sticky;
-    bottom: 0;
     padding: 0.8rem 1rem;
     border-top: 1px solid var(--border-color);
     background-color: var(--input-bg);

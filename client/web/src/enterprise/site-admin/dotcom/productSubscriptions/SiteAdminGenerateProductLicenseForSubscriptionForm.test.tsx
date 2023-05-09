@@ -1,3 +1,5 @@
+import { noop } from 'lodash'
+
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
@@ -19,11 +21,12 @@ describe('SiteAdminGenerateProductLicenseForSubscriptionForm', () => {
                 <MockedTestProvider mocks={[]}>
                     <SiteAdminGenerateProductLicenseForSubscriptionForm
                         subscriptionID="s"
+                        onCancel={noop}
                         subscriptionAccount="foo"
-                        onGenerate={() => undefined}
+                        onGenerate={noop}
                     />
                 </MockedTestProvider>
-            ).asFragment()
+            ).baseElement
         ).toMatchSnapshot()
     })
 })

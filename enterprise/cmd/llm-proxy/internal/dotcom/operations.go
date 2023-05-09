@@ -160,11 +160,8 @@ func (v *ProductSubscriptionState) GetLlmProxyAccess() ProductSubscriptionStateL
 // FOR INTERNAL USE ONLY.
 type ProductSubscriptionStateLlmProxyAccessLLMProxyAccess struct {
 	// Whether or not a subscription has LLM-proxy access.
-	//
-	// It may be true, even if a subscription is archived, as a historical record. However,
-	// archived subscriptions should not be treated as having access to LLM-proxy.
 	Enabled bool `json:"enabled"`
-	// Rate limits for LLM-proxy access, if access is enabled.
+	// Rate limits for LLM-proxy access, or null if not enabled.
 	RateLimit *ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit `json:"rateLimit"`
 }
 

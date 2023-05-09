@@ -16,7 +16,8 @@ import styles from './ChatUi.module.scss'
 export const SCROLL_THRESHOLD = 100
 
 export const ChatUI = (): JSX.Element => {
-    const { submitMessage, editMessage, messageInProgress, transcript, getChatContext } = useChatStoreState()
+    const { submitMessage, editMessage, messageInProgress, transcript, getChatContext, transcriptId } =
+        useChatStoreState()
 
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
@@ -24,6 +25,7 @@ export const ChatUI = (): JSX.Element => {
 
     return (
         <Chat
+            key={transcriptId}
             messageInProgress={messageInProgress}
             messageBeingEdited={messageBeingEdited}
             setMessageBeingEdited={setMessageBeingEdited}
