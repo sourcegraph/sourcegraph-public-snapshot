@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -61,7 +62,7 @@ func NewScheduler(
 	})
 
 	return goroutine.NewPeriodicGoroutineWithMetrics(
-		context.Background(),
+		actor.WithInternalActor(context.Background()),
 		"codeintel.autoindexing-background-scheduler", "schedule autoindexing jobs in the background using defined or inferred configurations",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
@@ -196,7 +197,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 
 func NewOnDemandScheduler(store store.Store, indexEnqueuer IndexEnqueuer, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
+		actor.WithInternalActor(context.Background()),
 		"codeintel.autoindexing-ondemand-scheduler", "schedule autoindexing jobs for explicitly requested repo+revhash combinations",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {

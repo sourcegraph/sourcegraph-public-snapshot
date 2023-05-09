@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -16,7 +17,7 @@ func NewCommittedAtBackfiller(store store.Store, gitserverClient GitserverClient
 		batchSize:       batchSize,
 	}
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
+		actor.WithInternalActor(context.Background()),
 		"codeintel.committed-at-backfiller", "backfills the committed_at column for code-intel uploads",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
