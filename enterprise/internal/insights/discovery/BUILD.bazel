@@ -36,7 +36,7 @@ go_test(
     ],
     embed = [":discovery"],
     tags = [
-        "requires-network"
+        "requires-network",
     ],
     deps = [
         "//cmd/frontend/globals",
