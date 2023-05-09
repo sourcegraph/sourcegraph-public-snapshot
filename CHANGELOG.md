@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Batches: Rollout configuration is now accessible to all users via the Batch Changes settings page. [#50479](https://github.com/sourcegraph/sourcegraph/pull/50479/files)
 - Batches: Rollout configuration is now accessible to all users via the Batch Changes settings page. [#50479](https://github.com/sourcegraph/sourcegraph/pull/50479)
 - When an admin has configured rollout windows for Batch Changes changesets, the configuration details are now visible to all users on the Batch Changes settings page. [#50479](https://github.com/sourcegraph/sourcegraph/pull/50479)
+- Added the ability to block auto-indexing scheduling and inference via the `codeintel_autoindexing_exceptions` Postgres table. [#51578](https://github.com/sourcegraph/sourcegraph/pull/51578)
 
 ### Changed
 
