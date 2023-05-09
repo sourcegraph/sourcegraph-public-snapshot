@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
 
 func TestCheckCurrentUserHasPermission(t *testing.T) {
@@ -29,7 +29,7 @@ func TestCheckCurrentUserHasPermission(t *testing.T) {
 	require.NoError(t, err)
 
 	p, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: types.BatchChangesNamespace,
+		Namespace: rtypes.BatchChangesNamespace,
 		Action:    "EXECUTE",
 	})
 	require.NoError(t, err)

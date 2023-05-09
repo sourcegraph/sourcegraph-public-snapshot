@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -21,7 +22,7 @@ func TestPermissionGetByID(t *testing.T) {
 	store := db.Permissions()
 
 	created, err := store.Create(ctx, CreatePermissionOpts{
-		Namespace: types.BatchChangesNamespace,
+		Namespace: rtypes.BatchChangesNamespace,
 		Action:    "READ",
 	})
 	if err != nil {
@@ -61,7 +62,7 @@ func TestPermissionCreate(t *testing.T) {
 
 	t.Run("invalid namespace", func(t *testing.T) {
 		p, err := store.Create(ctx, CreatePermissionOpts{
-			Namespace: types.PermissionNamespace("TEST-NAMESPACE"),
+			Namespace: rtypes.PermissionNamespace("TEST-NAMESPACE"),
 			Action:    "READ",
 		})
 
@@ -82,7 +83,7 @@ func TestPermissionCreate(t *testing.T) {
 
 	t.Run("missing action", func(t *testing.T) {
 		p, err := store.Create(ctx, CreatePermissionOpts{
-			Namespace: types.PermissionNamespace("TEST-NAMESPACE"),
+			Namespace: rtypes.PermissionNamespace("TEST-NAMESPACE"),
 		})
 
 		require.Nil(t, p)
@@ -92,7 +93,7 @@ func TestPermissionCreate(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		p, err := store.Create(ctx, CreatePermissionOpts{
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			Action:    "READ",
 		})
 
@@ -167,7 +168,7 @@ func TestPermissionDelete(t *testing.T) {
 	store := db.Permissions()
 
 	p, err := store.Create(ctx, CreatePermissionOpts{
-		Namespace: types.BatchChangesNamespace,
+		Namespace: rtypes.BatchChangesNamespace,
 		Action:    "READ",
 	})
 	require.NoError(t, err)
@@ -205,7 +206,7 @@ func TestPermissionBulkCreate(t *testing.T) {
 
 	t.Run("invalid namespace", func(t *testing.T) {
 		opts := []CreatePermissionOpts{
-			{Action: "READ", Namespace: types.PermissionNamespace("TEST-NAMESPACE")},
+			{Action: "READ", Namespace: rtypes.PermissionNamespace("TEST-NAMESPACE")},
 		}
 
 		ps, err := store.BulkCreate(ctx, opts)
@@ -225,7 +226,7 @@ func TestPermissionBulkCreate(t *testing.T) {
 			}
 			opts = append(opts, CreatePermissionOpts{
 				Action:    fmt.Sprintf("%s-%d", action, i),
-				Namespace: types.BatchChangesNamespace,
+				Namespace: rtypes.BatchChangesNamespace,
 			})
 		}
 
@@ -254,7 +255,7 @@ func TestPermissionBulkDelete(t *testing.T) {
 		}
 		perms = append(perms, CreatePermissionOpts{
 			Action:    fmt.Sprintf("%s-%d", action, i),
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 		})
 	}
 
@@ -346,7 +347,7 @@ func TestGetPermissionForUser(t *testing.T) {
 	permissionAction := "EXECUTE"
 
 	p, err := db.Permissions().Create(ctx, CreatePermissionOpts{
-		Namespace: types.BatchChangesNamespace,
+		Namespace: rtypes.BatchChangesNamespace,
 		Action:    permissionAction,
 	})
 	require.NoError(t, err)
@@ -387,7 +388,7 @@ func TestGetPermissionForUser(t *testing.T) {
 	t.Run("missing action", func(t *testing.T) {
 		perm, err := store.GetPermissionForUser(ctx, GetPermissionForUserOpts{
 			UserID:    u1.ID,
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 		})
 		require.Nil(t, perm)
 		require.ErrorContains(t, err, "missing permission action")
@@ -395,13 +396,13 @@ func TestGetPermissionForUser(t *testing.T) {
 
 	t.Run("user without permission", func(t *testing.T) {
 		expectedErr := &PermissionNotFoundErr{
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			Action:    permissionAction,
 		}
 
 		perm, err := store.GetPermissionForUser(ctx, GetPermissionForUserOpts{
 			UserID:    u1.ID,
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			Action:    permissionAction,
 		})
 		require.Nil(t, perm)
@@ -411,7 +412,7 @@ func TestGetPermissionForUser(t *testing.T) {
 	t.Run("user with permission", func(t *testing.T) {
 		perm, err := store.GetPermissionForUser(ctx, GetPermissionForUserOpts{
 			UserID:    u2.ID,
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			Action:    permissionAction,
 		})
 		require.NoError(t, err)
@@ -459,7 +460,7 @@ func createTestPermissions(ctx context.Context, t *testing.T, store PermissionSt
 	totalPerms := 10
 	for i := 1; i <= totalPerms; i++ {
 		permission, err := store.Create(ctx, CreatePermissionOpts{
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			Action:    fmt.Sprintf("READ-%d", i),
 		})
 		require.NoError(t, err)

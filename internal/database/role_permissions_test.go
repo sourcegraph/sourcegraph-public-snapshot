@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -693,7 +694,7 @@ func TestSetPermissionsForRole(t *testing.T) {
 func createTestPermissionForRolePermission(ctx context.Context, action string, t *testing.T, db DB) *types.Permission {
 	t.Helper()
 	p, err := db.Permissions().Create(ctx, CreatePermissionOpts{
-		Namespace: types.BatchChangesNamespace,
+		Namespace: rtypes.BatchChangesNamespace,
 		Action:    action,
 	})
 	if err != nil {

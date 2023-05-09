@@ -6,14 +6,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
 
 func TestParsePermissionDisplayName(t *testing.T) {
 	tests := []struct {
 		displayName string
 
-		namespace     types.PermissionNamespace
+		namespace     rtypes.PermissionNamespace
 		action        string
 		expectedError error
 
@@ -21,8 +21,8 @@ func TestParsePermissionDisplayName(t *testing.T) {
 	}{
 		{
 			name:          "valid display name",
-			displayName:   fmt.Sprintf("%s#READ", types.BatchChangesNamespace),
-			namespace:     types.BatchChangesNamespace,
+			displayName:   fmt.Sprintf("%s#READ", rtypes.BatchChangesNamespace),
+			namespace:     rtypes.BatchChangesNamespace,
 			action:        "READ",
 			expectedError: nil,
 		},
