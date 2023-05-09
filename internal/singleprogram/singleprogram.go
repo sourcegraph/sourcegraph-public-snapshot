@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/fatih/color"
 	"github.com/sourcegraph/log"
@@ -65,7 +64,6 @@ func Init(logger log.Logger) {
 	// This defaults to an internal hostname.
 	setDefaultEnv(logger, "SRC_FRONTEND_INTERNAL", "localhost:3090")
 
-	time.Sleep(10 * time.Second)
 	appPath := "sg-app"
 	if version.IsDev(version.Version()) {
 		appPath = fmt.Sprintf("%s-dev", appPath)
