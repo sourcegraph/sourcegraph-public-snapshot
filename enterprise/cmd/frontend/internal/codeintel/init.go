@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	autoindexinggraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/transport/graphql"
 	codenavgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/transport/graphql"
+	contextgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/transport/graphql"
 	policiesgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/transport/graphql"
 	sentinelgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/lsifuploadstore"
@@ -117,12 +118,18 @@ func Init(
 		preciseIndexResolverFactory,
 	)
 
+	contextRootResolver := contextgraphql.NewRootResolver(
+		scopedContext("context"),
+		codeIntelServices.ContextService,
+	)
+
 	enterpriseServices.CodeIntelResolver = graphqlbackend.NewCodeIntelResolver(resolvers.NewCodeIntelResolver(
 		autoindexingRootResolver,
 		codenavRootResolver,
 		policyRootResolver,
 		uploadRootResolver,
 		sentinelRootResolver,
+		contextRootResolver,
 	))
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler
 	enterpriseServices.RankingService = codeIntelServices.RankingService

@@ -1,6 +1,10 @@
 package context
 
 import (
+	"context"
+
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -18,4 +22,8 @@ func newService(
 		store:      store,
 		operations: newOperations(observationCtx),
 	}
+}
+
+func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolverstubs.FindMostRelevantSCIPSymbolsArgs) (string, error) {
+	return "", nil
 }

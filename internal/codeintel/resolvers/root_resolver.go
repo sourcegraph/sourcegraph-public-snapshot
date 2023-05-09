@@ -14,6 +14,7 @@ type RootResolver interface {
 	PoliciesServiceResolver
 	SentinelServiceResolver
 	UploadsServiceResolver
+	ContextServiceResolver
 }
 
 type Resolver struct {
@@ -22,6 +23,7 @@ type Resolver struct {
 	policiesRootResolver     PoliciesServiceResolver
 	uploadsRootResolver      UploadsServiceResolver
 	sentinelRootResolver     SentinelServiceResolver
+	contextRootResolver      ContextServiceResolver
 }
 
 func NewCodeIntelResolver(
@@ -30,6 +32,7 @@ func NewCodeIntelResolver(
 	policiesRootResolver PoliciesServiceResolver,
 	uploadsRootResolver UploadsServiceResolver,
 	sentinelRootResolver SentinelServiceResolver,
+	contextRootResolver ContextServiceResolver,
 ) *Resolver {
 	return &Resolver{
 		autoIndexingRootResolver: autoIndexingRootResolver,
@@ -37,6 +40,7 @@ func NewCodeIntelResolver(
 		policiesRootResolver:     policiesRootResolver,
 		uploadsRootResolver:      uploadsRootResolver,
 		sentinelRootResolver:     sentinelRootResolver,
+		contextRootResolver:      contextRootResolver,
 	}
 }
 
@@ -203,4 +207,8 @@ func (r *Resolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, ar
 
 func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) (_ GitObjectFilterPreviewResolver, err error) {
 	return r.policiesRootResolver.PreviewGitObjectFilter(ctx, id, args)
+}
+
+func (r *Resolver) FindMostRelevantSCIPSymbols(ctx context.Context, args *FindMostRelevantSCIPSymbolsArgs) (string, error) {
+	return r.contextRootResolver.FindMostRelevantSCIPSymbols(ctx, args)
 }

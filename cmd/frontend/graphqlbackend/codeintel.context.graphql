@@ -1,0 +1,54 @@
+extend type Query {
+    """
+    Returns the most relevant SCIP symbol information based on a list and the current state of the editor.
+    """
+    findMostRelevantSCIPSymbols(args: RelevantSCIPSymbolsInput!): String!
+}
+
+"""
+The input required to fetch the most relevant SCIP symbols.
+"""
+input RelevantSCIPSymbolsInput {
+    """
+    The list of symbols to consider.
+    """
+    symbols: [String!]
+    """
+    The repository name.
+    """
+    repository: String!
+    """
+    The commit ID.
+    """
+    commitID: String!
+    """
+    The closes remote commit ID.
+    """
+    closestRemoteCommitID: String!
+    """
+    The current editor state.
+    """
+    editorState: EditorStateInput!
+}
+
+"""
+The current editor state.
+"""
+input EditorStateInput {
+    """
+    The name of the active file.
+    """
+    activeFile: String!
+    """
+    The content of the active file.
+    """
+    activeFileContent: String!
+    """
+    The dirty state of the active file.
+    """
+    isActiveFileDirty: Boolean!
+    """
+    The files that are currently open in the user's editor.
+    """
+    openFiles: [String]!
+}
