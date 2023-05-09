@@ -1348,7 +1348,7 @@ func (x *CommitMatch) GetModifiedFiles() []string {
 	return nil
 }
 
-// ArchiveRquest is the options for the Archive func.
+// ArchiveRequest is set of parameters for the Archive RPC.
 type ArchiveRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1360,7 +1360,7 @@ type ArchiveRequest struct {
 	Treeish string `protobuf:"bytes,2,opt,name=treeish,proto3" json:"treeish,omitempty"`
 	// format is the format of the resulting archive (usually "tar" or "zip")
 	Format string `protobuf:"bytes,3,opt,name=format,proto3" json:"format,omitempty"`
-	// pathspecs is the list of pathspecs to include in the archive. If empty,
+	// pathspecs is the list of pathspecs to include in the archive. If empty, all pathspecs are included.
 	Pathspecs []string `protobuf:"bytes,4,rep,name=pathspecs,proto3" json:"pathspecs,omitempty"`
 }
 
@@ -1424,6 +1424,7 @@ func (x *ArchiveRequest) GetPathspecs() []string {
 	return nil
 }
 
+// ArchiveResponse is the response from the Archive RPC that returns a chunk of the archive.
 type ArchiveResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
