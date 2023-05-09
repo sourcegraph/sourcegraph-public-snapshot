@@ -137,6 +137,12 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
         adjustTextAreaHeight()
     }, [adjustTextAreaHeight, value, width])
 
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+        if (onKeyDown) {
+            onKeyDown(event, textAreaRef.current?.selectionStart ?? null)
+        }
+    }
+
     return (
         <TextArea
             ref={textAreaRef}
@@ -146,13 +152,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
             rows={1}
             autoFocus={false}
             required={true}
-            onKeyDown={
-                onKeyDown
-                    ? event => {
-                          onKeyDown(event, textAreaRef.current?.selectionStart ?? null)
-                      }
-                    : undefined
-            }
+            onKeyDown={handleKeyDown}
             onInput={onInput}
         />
     )

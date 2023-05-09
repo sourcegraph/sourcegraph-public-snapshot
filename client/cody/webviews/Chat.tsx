@@ -146,6 +146,12 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         }
     }, [autoFocus])
 
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+        if (onKeyDown) {
+            onKeyDown(event, (inputRef.current as any)?.control.selectionStart)
+        }
+    }
+
     return (
         <VSCodeTextArea
             className={classNames(styles.chatInput, className)}
@@ -160,20 +166,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             autofocus={autoFocus}
             required={required}
             onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
-            onKeyDown={
-                onKeyDown
-                    ? e => {
-                          let newCaretPosition: number | null = null
-                          if (inputRef.current) {
-                              // inputRef isn't actually a HTMLTextAreaElement (though
-                              // that's closest type we can get without entering typing hell)
-                              // so we cast to any and then grab control which is the actual textarea
-                              newCaretPosition = (inputRef.current! as any).control.selectionStart
-                          }
-                          onKeyDown(e, newCaretPosition)
-                      }
-                    : undefined
-            }
+            onKeyDown={handleKeyDown}
         />
     )
 }
