@@ -73,31 +73,29 @@ const AppSettingsLayout: FC = () => {
     )
 }
 
-const LocalRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => {
-    return (
-        <div className={styles.content}>
-            <PageHeader
-                headingElement="h2"
-                path={[{ text: 'Local repositories' }]}
-                description="Add your local repositories"
-                className="mb-3"
-                actions={
-                    <div className={styles.headerActions}>
-                        <Button variant="primary">
-                            <Icon svgPath={mdiGit} aria-hidden={true} /> Add a repository
-                        </Button>
-                        <Button variant="primary">
-                            <Icon svgPath={mdiFolderMultiplePlusOutline} aria-hidden={true} /> Add all repositories from
-                            a folder
-                        </Button>
-                    </div>
-                }
-            />
+const LocalRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => (
+    <div className={styles.content}>
+        <PageHeader
+            headingElement="h2"
+            path={[{ text: 'Local repositories' }]}
+            description="Add your local repositories"
+            className="mb-3"
+            actions={
+                <div className={styles.headerActions}>
+                    <Button variant="primary">
+                        <Icon svgPath={mdiGit} aria-hidden={true} /> Add a repository
+                    </Button>
+                    <Button variant="primary">
+                        <Icon svgPath={mdiFolderMultiplePlusOutline} aria-hidden={true} /> Add all repositories from a
+                        folder
+                    </Button>
+                </div>
+            }
+        />
 
-            <LocalRepositoriesStep description={false} progressBar={false} telemetryService={telemetryService} />
-        </div>
-    )
-}
+        <LocalRepositoriesStep description={false} progressBar={false} telemetryService={telemetryService} />
+    </div>
+)
 
 const RemoteRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => {
     return (
