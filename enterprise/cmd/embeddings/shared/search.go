@@ -39,7 +39,6 @@ func searchRepoEmbeddingIndexes(
 	}
 
 	searchOpts := embeddings.SearchOptions{
-		Debug:            multiParams.Debug,
 		UseDocumentRanks: multiParams.UseDocumentRanks,
 	}
 

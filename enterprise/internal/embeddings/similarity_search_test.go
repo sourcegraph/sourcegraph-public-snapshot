@@ -175,19 +175,11 @@ func TestScore(t *testing.T) {
 	}
 	// embeddings[0] = 64, 83, 70,
 	// queries[0:3] = 53, 61, 97,
-	score, _, _ := index.score(queries[0:columnDimension], 0, SearchOptions{Debug: true, UseDocumentRanks: true})
+	score, _, _ := index.score(queries[0:columnDimension], 0, SearchOptions{UseDocumentRanks: true})
 
 	// Check that the score is correct
 	expectedScore := scoreSimilarityWeight * ((64 * 53) + (83 * 61) + (70 * 97))
 	if math.Abs(float64(score-expectedScore)) > 0.0001 {
 		t.Fatalf("Expected score %d, but got %d", expectedScore, score)
 	}
-}
-
-func simpleCosineSimilarity(a, b []int8) int32 {
-	similarity := int32(0)
-	for i := 0; i < len(a); i++ {
-		similarity += int32(a[i]) * int32(b[i])
-	}
-	return similarity
 }

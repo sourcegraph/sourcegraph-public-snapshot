@@ -231,6 +231,5 @@ func max(a, b int) int {
 }
 
 type SearchOptions struct {
-	Debug            bool
 	UseDocumentRanks bool
 }
