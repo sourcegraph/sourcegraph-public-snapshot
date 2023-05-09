@@ -44,15 +44,21 @@ function logEvent(eventVariable: Event): void {
 
 let eventId = 1
 
+const EXTENSION_DETAILS = { ide: 'JetBrains', ideExtensionType: 'Sourcegraph' }
 // Event Logger for the JetBrains Extension
 export class EventLogger implements TelemetryService {
     private readonly anonymousUserId: string
     private listeners: Set<(eventName: string) => void> = new Set()
+    // this is redudant with the extensionDetails object, but we need to keep it for backwards compatibility
     private readonly editorInfo: { editor: string; version: string }
+    private extensionDetails: { ide: string; ideExtensionType: string }
 
     constructor(anonymousUserId: string, editorInfo: { editor: string; version: string }) {
         this.anonymousUserId = anonymousUserId
         this.editorInfo = editorInfo
+        this.extensionDetails = {
+            ...EXTENSION_DETAILS,
+        }
     }
 
     /**
@@ -88,8 +94,8 @@ export class EventLogger implements TelemetryService {
     ): void {
         this.tracker(
             eventName,
-            { ...eventProperties, ...this.editorInfo },
-            { ...publicArgument, ...this.editorInfo },
+            { ...eventProperties, ...this.editorInfo, ...this.extensionDetails },
+            { ...publicArgument, ...this.editorInfo, ...this.extensionDetails },
             uri
         )
     }

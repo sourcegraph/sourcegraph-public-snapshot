@@ -1608,6 +1608,7 @@ Foreign-key constraints:
  logo              | text                     |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
+ app_url           | text                     |           | not null | ''::text
 Indexes:
     "github_apps_pkey" PRIMARY KEY, btree (id)
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
@@ -3043,7 +3044,7 @@ Indexes:
  license_tags            | text[]                   |           |          | 
  license_user_count      | integer                  |           |          | 
  license_expires_at      | timestamp with time zone |           |          | 
- access_token_enabled    | boolean                  |           | not null | false
+ access_token_enabled    | boolean                  |           | not null | true
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -3064,7 +3065,7 @@ Foreign-key constraints:
  updated_at                      | timestamp with time zone |           | not null | now()
  archived_at                     | timestamp with time zone |           |          | 
  account_number                  | text                     |           |          | 
- llm_proxy_enabled               | boolean                  |           | not null | true
+ llm_proxy_enabled               | boolean                  |           | not null | false
  llm_proxy_rate_limit            | integer                  |           |          | 
  llm_proxy_rate_interval_seconds | integer                  |           |          | 
 Indexes:
@@ -3857,6 +3858,7 @@ Foreign-key constraints:
  tos_accepted            | boolean                  |           | not null | false
  searchable              | boolean                  |           | not null | true
  completions_quota       | integer                  |           |          | 
+ code_completions_quota  | integer                  |           |          | 
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL

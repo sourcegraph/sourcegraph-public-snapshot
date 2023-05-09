@@ -263,6 +263,8 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
+require github.com/go-redsync/redsync/v4 v4.8.1
+
 require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/trace v1.8.0 // indirect
@@ -291,6 +293,8 @@ require (
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2.0.20210128111500-3ff779b52992 // indirect
+	github.com/hashicorp/errwrap v1.1.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect

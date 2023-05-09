@@ -176,6 +176,10 @@ func TestHandlerLoadsEvents(t *testing.T) {
 					123,
 					125,
 				},
+				PublicArgument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:           "test",
 				Version:          "0.0.0+dev",
 				EvaluatedFlagSet: featureflag.EvaluatedFlagSet{"testflag": true},
@@ -187,6 +191,10 @@ func TestHandlerLoadsEvents(t *testing.T) {
 				Name:   "event2",
 				UserID: 2,
 				Argument: json.RawMessage{
+					123,
+					125,
+				},
+				PublicArgument: json.RawMessage{
 					123,
 					125,
 				},
@@ -218,6 +226,10 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			Name:   "event1",
 			UserID: 1,
 			Argument: json.RawMessage{
+				123,
+				125,
+			},
+			PublicArgument: json.RawMessage{
 				123,
 				125,
 			},
@@ -285,6 +297,10 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 					123,
 					125,
 				},
+				PublicArgument: json.RawMessage{
+					123,
+					125,
+				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
 				DeviceID: valast.Addr("device").(*string),
@@ -305,6 +321,10 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 				Name:   "event2",
 				UserID: 2,
 				Argument: json.RawMessage{
+					123,
+					125,
+				},
+				PublicArgument: json.RawMessage{
 					123,
 					125,
 				},
@@ -398,6 +418,10 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 						123,
 						125,
 					},
+					PublicArgument: json.RawMessage{
+						123,
+						125,
+					},
 					Source:   "test",
 					Version:  "0.0.0+dev",
 					DeviceID: valast.Addr("device").(*string),
@@ -408,6 +432,10 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 					Name:   "allowed",
 					UserID: 3,
 					Argument: json.RawMessage{
+						123,
+						125,
+					},
+					PublicArgument: json.RawMessage{
 						123,
 						125,
 					},

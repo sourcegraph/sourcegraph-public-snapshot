@@ -895,6 +895,20 @@ def go_dependencies():
         sum = "h1:e+C0SB5R1pu//O4MQ3f9cFuPGoOVeF2fE4Og9otCc70=",
         version = "v1.0.0",
     )
+    go_repository(
+        name = "com_github_bsm_ginkgo_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/bsm/ginkgo/v2",
+        sum = "h1:aOAnND1T40wEdAtkGSkvSICWeQ8L3UASX7YVCqQx+eQ=",
+        version = "v2.5.0",
+    )
+    go_repository(
+        name = "com_github_bsm_gomega",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/bsm/gomega",
+        sum = "h1:JhAwLmtRzXFTx2AkALSLa8ijZafntmhSoU63Ok18Uq8=",
+        version = "v1.20.0",
+    )
 
     go_repository(
         name = "com_github_bufbuild_buf",
@@ -1727,8 +1741,8 @@ def go_dependencies():
         name = "com_github_dgraph_io_ristretto",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/dgraph-io/ristretto",
-        sum = "h1:Jv3CGQHp9OjuMBSne1485aDpUkTKEcUqF+jm/LuerPI=",
-        version = "v0.1.0",
+        sum = "h1:6CWw5tJNgpegArSHpNHJKldNeq03FQCwYvfMVWajOK8=",
+        version = "v0.1.1",
     )
 
     go_repository(
@@ -2668,15 +2682,30 @@ def go_dependencies():
         name = "com_github_go_redis_redis",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/go-redis/redis",
-        sum = "h1:BKZuG6mCnRj5AOaWJXoCgf6rqTYnYJLe4en2hxT7r9o=",
-        version = "v6.15.8+incompatible",
+        sum = "h1:K0pv1D7EQUjfyoMql+r/jZqCLizCGKFlFgcHWWmHQjg=",
+        version = "v6.15.9+incompatible",
     )
+    go_repository(
+        name = "com_github_go_redis_redis_v7",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/go-redis/redis/v7",
+        sum = "h1:7obg6wUoj05T0EpY0o8B59S9w5yeMWql7sw2kwNW1x4=",
+        version = "v7.4.0",
+    )
+
     go_repository(
         name = "com_github_go_redis_redis_v8",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/go-redis/redis/v8",
         sum = "h1:AcZZR7igkdvfVmQTPnu9WE37LRrO/YrBH5zWyjDC0oI=",
         version = "v8.11.5",
+    )
+    go_repository(
+        name = "com_github_go_redsync_redsync_v4",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/go-redsync/redsync/v4",
+        sum = "h1:rq2RvdTI0obznMdxKUWGdmmulo7lS9yCzb8fgDKOlbM=",
+        version = "v4.8.1",
     )
 
     go_repository(
@@ -5796,6 +5825,13 @@ def go_dependencies():
         sum = "h1:ta7tUOvsPHVHGom5hKW5VXNc2xZIkfCKP8iaqOyYtUQ=",
         version = "v0.0.0-20150907023854-cb7f23ec59be",
     )
+    go_repository(
+        name = "com_github_redis_go_redis_v9",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/redis/go-redis/v9",
+        sum = "h1:BA426Zqe/7r56kCcvxYLWe1mkaz71LKF77GwgFzSxfE=",
+        version = "v9.0.2",
+    )
 
     go_repository(
         name = "com_github_rhnvrm_simples3",
@@ -6411,6 +6447,14 @@ def go_dependencies():
         sum = "h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=",
         version = "v1.8.2",
     )
+    go_repository(
+        name = "com_github_stvp_tempredis",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/stvp/tempredis",
+        sum = "h1:QVqDTf3h2WHt08YuiTGPZLls0Wq99X9bWd0Q5ZSBesM=",
+        version = "v0.0.0-20181119212430-b82af8480203",
+    )
+
     go_repository(
         name = "com_github_subosito_gotenv",
         build_file_proto_mode = "disable_global",
@@ -7921,15 +7965,15 @@ def go_dependencies():
     )
     go_repository(
         name = "com_google_cloud_go_trace",
-        build_file_proto_mode = "disable_global",
-        importpath = "cloud.google.com/go/trace",
-        sum = "h1:GFPLxbp5/FzdgTzor3nlNYNxMd6hLmzkE7sA9F0qQcA=",
-        version = "v1.8.0",
         build_directives = [
             # @go_googleapis is the modern version of @org_golang_google_genproto
             # use @go_googleapis to avoid dependency conflicts between the two
             "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
         ],
+        build_file_proto_mode = "disable_global",
+        importpath = "cloud.google.com/go/trace",
+        sum = "h1:GFPLxbp5/FzdgTzor3nlNYNxMd6hLmzkE7sA9F0qQcA=",
+        version = "v1.8.0",
     )
     go_repository(
         name = "com_google_cloud_go_translate",

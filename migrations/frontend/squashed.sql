@@ -2390,7 +2390,8 @@ CREATE TABLE github_apps (
     encryption_key_id text NOT NULL,
     logo text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    app_url text DEFAULT ''::text NOT NULL
 );
 
 CREATE SEQUENCE github_apps_id_seq
@@ -3776,7 +3777,7 @@ CREATE TABLE product_licenses (
     license_tags text[],
     license_user_count integer,
     license_expires_at timestamp with time zone,
-    access_token_enabled boolean DEFAULT false NOT NULL
+    access_token_enabled boolean DEFAULT true NOT NULL
 );
 
 COMMENT ON COLUMN product_licenses.access_token_enabled IS 'Whether this license key can be used as an access token to authenticate API requests';
@@ -3789,7 +3790,7 @@ CREATE TABLE product_subscriptions (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     archived_at timestamp with time zone,
     account_number text,
-    llm_proxy_enabled boolean DEFAULT true NOT NULL,
+    llm_proxy_enabled boolean DEFAULT false NOT NULL,
     llm_proxy_rate_limit integer,
     llm_proxy_rate_interval_seconds integer
 );
@@ -3828,6 +3829,7 @@ CREATE TABLE users (
     tos_accepted boolean DEFAULT false NOT NULL,
     searchable boolean DEFAULT true NOT NULL,
     completions_quota integer,
+    code_completions_quota integer,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
     CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))

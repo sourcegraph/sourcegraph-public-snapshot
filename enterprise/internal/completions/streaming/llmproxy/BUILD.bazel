@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "llmproxy",
+    srcs = ["llmproxy.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/llmproxy",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/completions/streaming/anthropic",
+        "//enterprise/internal/completions/types",
+        "//internal/httpcli",
+    ],
+)

@@ -27,6 +27,8 @@ The second front determines the set of index jobs that can run over candidate co
 
 This guide shows how to configure policies to control the scheduling of precise code navigation indexing jobs. Indexing jobs [produce a code graph data index](../explanations/precise_code_navigation.md) and uploads it to your Sourcegraph instance for use with code navigation.
 
+> NOTE: See the [best practices guide](policies_best_practices.md) for additional details on how policies affect resource usage.
+
 Each policy has a number of configurable options, including:
 
 - The set of Git branches or tags to which the policy applies

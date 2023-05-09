@@ -7863,6 +7863,9 @@ type MockEnterpriseDB struct {
 	// EventLogsFunc is an instance of a mock function object controlling
 	// the behavior of the method EventLogs.
 	EventLogsFunc *EnterpriseDBEventLogsFunc
+	// EventLogsScrapeStateFunc is an instance of a mock function object
+	// controlling the behavior of the method EventLogsScrapeState.
+	EventLogsScrapeStateFunc *EnterpriseDBEventLogsScrapeStateFunc
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *EnterpriseDBExecContextFunc
@@ -7942,6 +7945,9 @@ type MockEnterpriseDB struct {
 	// object controlling the behavior of the method
 	// RecentContributionSignals.
 	RecentContributionSignalsFunc *EnterpriseDBRecentContributionSignalsFunc
+	// RecentViewSignalFunc is an instance of a mock function object
+	// controlling the behavior of the method RecentViewSignal.
+	RecentViewSignalFunc *EnterpriseDBRecentViewSignalFunc
 	// RedisKeyValueFunc is an instance of a mock function object
 	// controlling the behavior of the method RedisKeyValue.
 	RedisKeyValueFunc *EnterpriseDBRedisKeyValueFunc
@@ -8051,6 +8057,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		EventLogsFunc: &EnterpriseDBEventLogsFunc{
 			defaultHook: func() (r0 database.EventLogStore) {
+				return
+			},
+		},
+		EventLogsScrapeStateFunc: &EnterpriseDBEventLogsScrapeStateFunc{
+			defaultHook: func() (r0 database.EventLogsScrapeStateStore) {
 				return
 			},
 		},
@@ -8181,6 +8192,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		RecentContributionSignalsFunc: &EnterpriseDBRecentContributionSignalsFunc{
 			defaultHook: func() (r0 database.RecentContributionSignalStore) {
+				return
+			},
+		},
+		RecentViewSignalFunc: &EnterpriseDBRecentViewSignalFunc{
+			defaultHook: func() (r0 database.RecentViewSignalStore) {
 				return
 			},
 		},
@@ -8341,6 +8357,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.EventLogs")
 			},
 		},
+		EventLogsScrapeStateFunc: &EnterpriseDBEventLogsScrapeStateFunc{
+			defaultHook: func() database.EventLogsScrapeStateStore {
+				panic("unexpected invocation of MockEnterpriseDB.EventLogsScrapeState")
+			},
+		},
 		ExecContextFunc: &EnterpriseDBExecContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (sql.Result, error) {
 				panic("unexpected invocation of MockEnterpriseDB.ExecContext")
@@ -8469,6 +8490,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 		RecentContributionSignalsFunc: &EnterpriseDBRecentContributionSignalsFunc{
 			defaultHook: func() database.RecentContributionSignalStore {
 				panic("unexpected invocation of MockEnterpriseDB.RecentContributionSignals")
+			},
+		},
+		RecentViewSignalFunc: &EnterpriseDBRecentViewSignalFunc{
+			defaultHook: func() database.RecentViewSignalStore {
+				panic("unexpected invocation of MockEnterpriseDB.RecentViewSignal")
 			},
 		},
 		RedisKeyValueFunc: &EnterpriseDBRedisKeyValueFunc{
@@ -8613,6 +8639,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		EventLogsFunc: &EnterpriseDBEventLogsFunc{
 			defaultHook: i.EventLogs,
 		},
+		EventLogsScrapeStateFunc: &EnterpriseDBEventLogsScrapeStateFunc{
+			defaultHook: i.EventLogsScrapeState,
+		},
 		ExecContextFunc: &EnterpriseDBExecContextFunc{
 			defaultHook: i.ExecContext,
 		},
@@ -8690,6 +8719,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		RecentContributionSignalsFunc: &EnterpriseDBRecentContributionSignalsFunc{
 			defaultHook: i.RecentContributionSignals,
+		},
+		RecentViewSignalFunc: &EnterpriseDBRecentViewSignalFunc{
+			defaultHook: i.RecentViewSignal,
 		},
 		RedisKeyValueFunc: &EnterpriseDBRedisKeyValueFunc{
 			defaultHook: i.RedisKeyValue,
@@ -9551,6 +9583,108 @@ func (c EnterpriseDBEventLogsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBEventLogsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBEventLogsScrapeStateFunc describes the behavior when the
+// EventLogsScrapeState method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBEventLogsScrapeStateFunc struct {
+	defaultHook func() database.EventLogsScrapeStateStore
+	hooks       []func() database.EventLogsScrapeStateStore
+	history     []EnterpriseDBEventLogsScrapeStateFuncCall
+	mutex       sync.Mutex
+}
+
+// EventLogsScrapeState delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) EventLogsScrapeState() database.EventLogsScrapeStateStore {
+	r0 := m.EventLogsScrapeStateFunc.nextHook()()
+	m.EventLogsScrapeStateFunc.appendCall(EnterpriseDBEventLogsScrapeStateFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the EventLogsScrapeState
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBEventLogsScrapeStateFunc) SetDefaultHook(hook func() database.EventLogsScrapeStateStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EventLogsScrapeState method of the parent MockEnterpriseDB instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnterpriseDBEventLogsScrapeStateFunc) PushHook(hook func() database.EventLogsScrapeStateStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBEventLogsScrapeStateFunc) SetDefaultReturn(r0 database.EventLogsScrapeStateStore) {
+	f.SetDefaultHook(func() database.EventLogsScrapeStateStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBEventLogsScrapeStateFunc) PushReturn(r0 database.EventLogsScrapeStateStore) {
+	f.PushHook(func() database.EventLogsScrapeStateStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBEventLogsScrapeStateFunc) nextHook() func() database.EventLogsScrapeStateStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBEventLogsScrapeStateFunc) appendCall(r0 EnterpriseDBEventLogsScrapeStateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBEventLogsScrapeStateFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBEventLogsScrapeStateFunc) History() []EnterpriseDBEventLogsScrapeStateFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBEventLogsScrapeStateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBEventLogsScrapeStateFuncCall is an object that describes an
+// invocation of method EventLogsScrapeState on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBEventLogsScrapeStateFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.EventLogsScrapeStateStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBEventLogsScrapeStateFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBEventLogsScrapeStateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -12214,6 +12348,106 @@ func (c EnterpriseDBRecentContributionSignalsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBRecentContributionSignalsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBRecentViewSignalFunc describes the behavior when the
+// RecentViewSignal method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBRecentViewSignalFunc struct {
+	defaultHook func() database.RecentViewSignalStore
+	hooks       []func() database.RecentViewSignalStore
+	history     []EnterpriseDBRecentViewSignalFuncCall
+	mutex       sync.Mutex
+}
+
+// RecentViewSignal delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) RecentViewSignal() database.RecentViewSignalStore {
+	r0 := m.RecentViewSignalFunc.nextHook()()
+	m.RecentViewSignalFunc.appendCall(EnterpriseDBRecentViewSignalFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecentViewSignal
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBRecentViewSignalFunc) SetDefaultHook(hook func() database.RecentViewSignalStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecentViewSignal method of the parent MockEnterpriseDB instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *EnterpriseDBRecentViewSignalFunc) PushHook(hook func() database.RecentViewSignalStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBRecentViewSignalFunc) SetDefaultReturn(r0 database.RecentViewSignalStore) {
+	f.SetDefaultHook(func() database.RecentViewSignalStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBRecentViewSignalFunc) PushReturn(r0 database.RecentViewSignalStore) {
+	f.PushHook(func() database.RecentViewSignalStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBRecentViewSignalFunc) nextHook() func() database.RecentViewSignalStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBRecentViewSignalFunc) appendCall(r0 EnterpriseDBRecentViewSignalFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBRecentViewSignalFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBRecentViewSignalFunc) History() []EnterpriseDBRecentViewSignalFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBRecentViewSignalFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBRecentViewSignalFuncCall is an object that describes an
+// invocation of method RecentViewSignal on an instance of MockEnterpriseDB.
+type EnterpriseDBRecentViewSignalFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.RecentViewSignalStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBRecentViewSignalFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBRecentViewSignalFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
