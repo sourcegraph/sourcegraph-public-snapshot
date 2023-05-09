@@ -817,10 +817,12 @@
       },
       "group": "External services",
       "examples": [
-        {
-          "from": "^../(?P<name>\\w+)$",
-          "to": "github.com/user/{name}"
-        }
+        [ 
+          {
+            "from": "^../(?P<name>\\w+)$",
+            "to": "github.com/user/{name}"
+          }
+        ]
       ]
     },
     "gitLongCommandTimeout": {
