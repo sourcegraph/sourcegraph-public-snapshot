@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.AdjustmentListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,14 +41,23 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
         private final @NotNull JPanel contentPanel = new JPanel();
         private final @NotNull JPanel messagesPanel;
         private final @NotNull JTextField messageField;
-//        private final ArrayList<ChatMessage> messages = new ArrayList<>();
+        private boolean needScrollingDown = true;
+        //        private final ArrayList<ChatMessage> messages = new ArrayList<>();
 
         public CodyToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+            // Chat panel
             messagesPanel = new JPanel();
             messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 10, true, true));
-
-            // Chat panel
             JBScrollPane chatPanel = new JBScrollPane(messagesPanel, JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+            // Scroll all the way down after each message
+            AdjustmentListener scrollAdjustmentListener = e -> {
+                if (needScrollingDown) {
+                    e.getAdjustable().setValue(e.getAdjustable().getMaximum());
+                    needScrollingDown = false;
+                }
+            };
+            chatPanel.getVerticalScrollBar().addAdjustmentListener(scrollAdjustmentListener);
 
             // Controls panel
             JPanel controlsPanel = new JPanel();
@@ -82,12 +92,16 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
             ChatBubble bubble = new ChatBubble(10, isHuman ? JBColor.BLUE : JBColor.GRAY, message);
             bubblePanel.add(bubble);
             messagesPanel.add(bubblePanel);
-
-            // Assemble
             messagesPanel.revalidate();
             messagesPanel.repaint();
-        }
 
+            // Need this hacky solution to scroll all the way down after each message
+            SwingUtilities.invokeLater(() -> {
+                needScrollingDown = true;
+                messagesPanel.revalidate();
+                messagesPanel.repaint();
+            });
+        }
 
         private void sendMessage(@NotNull Project project) {
             EditorContext editorContext = EditorContextGetter.getEditorContext(project);

@@ -10,11 +10,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class ChatBubble extends JPanel {
-    private int radius;
-
-    public ChatBubble() {
-        super();
-    }
+    private final int radius;
 
     public ChatBubble(int radius, Color background, ChatMessage message) {
         super();
@@ -23,18 +19,14 @@ public class ChatBubble extends JPanel {
         this.radius = radius;
         this.setBackground(background);
         this.setBorder(new EmptyBorder(new JBInsets(10, 10, 10, 10)));
-        JTextArea bubbleTextArea = new JTextArea(message.getDisplayText());
-        bubbleTextArea.setFont(UIUtil.getLabelFont());
-        bubbleTextArea.setLineWrap(true);
-        bubbleTextArea.setWrapStyleWord(true);
-        bubbleTextArea.setBackground(background);
-        bubbleTextArea.setForeground(isHuman ? JBColor.WHITE : JBColor.BLACK);
-        bubbleTextArea.setComponentOrientation(isHuman ? ComponentOrientation.RIGHT_TO_LEFT : ComponentOrientation.LEFT_TO_RIGHT);
-        this.add(bubbleTextArea, BorderLayout.CENTER);
-    }
-
-    public void setRadius(int radius) {
-        this.radius = radius;
+        JTextArea textArea = new JTextArea(message.getDisplayText());
+        textArea.setFont(UIUtil.getLabelFont());
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+        textArea.setBackground(background);
+        textArea.setForeground(isHuman ? JBColor.WHITE : JBColor.BLACK);
+        textArea.setComponentOrientation(isHuman ? ComponentOrientation.RIGHT_TO_LEFT : ComponentOrientation.LEFT_TO_RIGHT);
+        this.add(textArea, BorderLayout.CENTER);
     }
 
     @Override
