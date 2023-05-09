@@ -6334,13 +6334,13 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        patch_args = ["-p1"],
         patches = [
             "//third_party/com_github_sourcegraph_zoekt:zoekt_archive_index.patch",
             "//third_party/com_github_sourcegraph_zoekt:zoekt_git_index.patch",
             "//third_party/com_github_sourcegraph_zoekt:zoekt_webserver.patch",
             "//third_party/com_github_sourcegraph_zoekt:zoekt_indexserver.patch",
         ],
+        patch_args = ["-p1"],
         sum = "h1:lCxBFbLdzt0m789CNyYWEqPURhta69aRA9ixPyWilvI=",
         version = "v0.0.0-20230503105159-f818d968ddad",
     )

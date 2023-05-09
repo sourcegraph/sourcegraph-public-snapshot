@@ -68,6 +68,16 @@ func TestInsertPathCountInputs(t *testing.T) {
 		t.Fatalf("unexpected error inserting definitions: %s", err)
 	}
 
+	// Insert metadata to trigger mapper
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at)
+		VALUES ($1,  1000, 1000, 1000, NOW())
+	`,
+		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
+	); err != nil {
+		t.Fatalf("failed to insert metadata: %s", err)
+	}
+
 	//
 	// Basic test case
 
@@ -180,6 +190,16 @@ func TestInsertInitialPathCounts(t *testing.T) {
 
 	// Creates repository 50
 	insertUploads(t, db, uploadsshared.Upload{ID: 1})
+
+	// Insert metadata to trigger mapper
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at)
+		VALUES ($1,  1000, 1000, 1000, NOW())
+	`,
+		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
+	); err != nil {
+		t.Fatalf("failed to insert metadata: %s", err)
+	}
 
 	mockUploadID := 1
 	mockPathNames := make(chan string, 3)

@@ -25,25 +25,31 @@ type Store interface {
 
 	// Export uploads (metadata tracking) + cleanup
 	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]uploadsshared.ExportedUpload, error)
-	ProcessStaleExportedUploads(ctx context.Context, graphKey string, batchSize int, deleter func(ctx context.Context, objectPrefix string) error) (totalDeleted int, _ error)
+	VacuumAbandonedExportedUploads(ctx context.Context, graphKey string, batchSize int) (int, error)
 
 	// Export definitions + cleanup
-	InsertDefinitionsForRanking(ctx context.Context, rankingGraphKey string, definitions chan shared.RankingDefinitions) error
+	InsertDefinitionsForRanking(ctx context.Context, graphKey string, definitions chan shared.RankingDefinitions) error
 	VacuumAbandonedDefinitions(ctx context.Context, graphKey string, batchSize int) (int, error)
-	VacuumStaleDefinitions(ctx context.Context, graphKey string) (numDefinitionRecordsScanned int, numStaleDefinitionRecordsDeleted int, _ error)
+	SoftDeleteStaleDefinitions(ctx context.Context, graphKey string) (numDefinitionRecordsScanned int, numStaleDefinitionRecordsDeleted int, _ error)
+	VacuumDeletedDefinitions(ctx context.Context, derivativeGraphKey string) (int, error)
 
 	// Export references + cleanup
-	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, batchSize int, uploadID int, references chan string) error
+	InsertReferencesForRanking(ctx context.Context, graphKey string, batchSize int, uploadID int, references chan string) error
 	VacuumAbandonedReferences(ctx context.Context, graphKey string, batchSize int) (int, error)
-	VacuumStaleReferences(ctx context.Context, graphKey string) (numReferenceRecordsScanned int, numStaleReferenceRecordsDeleted int, _ error)
+	SoftDeleteStaleReferences(ctx context.Context, graphKey string) (numReferenceRecordsScanned int, numStaleReferenceRecordsDeleted int, _ error)
+	VacuumDeletedReferences(ctx context.Context, derivativeGraphKey string) (int, error)
 
 	// Export upload paths + cleanup
 	InsertInitialPathRanks(ctx context.Context, uploadID int, documentPaths chan string, batchSize int, graphKey string) error
 	VacuumAbandonedInitialPathCounts(ctx context.Context, graphKey string, batchSize int) (int, error)
-	VacuumStaleInitialPaths(ctx context.Context, graphKey string) (numPathRecordsScanned int, numStalePathRecordsDeleted int, _ error)
+	SoftDeleteStaleInitialPaths(ctx context.Context, graphKey string) (numPathRecordsScanned int, numStalePathRecordsDeleted int, _ error)
+	VacuumDeletedInitialPaths(ctx context.Context, derivativeGraphKey string) (int, error)
+
+	// Coordinates mapper+reducer phases
+	Coordinate(ctx context.Context, derivativeGraphKey string) error
 
 	// Mapper behavior + cleanup
-	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)
+	InsertPathCountInputs(ctx context.Context, derivativeGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)
 	InsertInitialPathCounts(ctx context.Context, derivativeGraphKey string, batchSize int) (numInitialPathsProcessed int, numInitialPathRanksInserted int, err error)
 	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (inputRecordsDeleted int, _ error)
 

@@ -23,11 +23,11 @@ func NewSymbolDefinitionsJanitor(
 
 	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
 		Name:        name,
-		Description: "Removes stale data from the ranking definitions table.",
+		Description: "Soft-deletes stale data from the ranking definitions table.",
 		Interval:    config.Interval,
 		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			return vacuumStaleDefinitions(ctx, store)
+			return softDeleteStaleDefinitions(ctx, store)
 		},
 	})
 }
@@ -41,11 +41,11 @@ func NewSymbolReferencesJanitor(
 
 	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
 		Name:        name,
-		Description: "Removes stale data from the ranking references table.",
+		Description: "Soft-deletes stale data from the ranking references table.",
 		Interval:    config.Interval,
 		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			return vacuumStaleReferences(ctx, store)
+			return softDeleteStaleReferences(ctx, store)
 		},
 	})
 }
@@ -59,11 +59,68 @@ func NewSymbolInitialPathsJanitor(
 
 	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
 		Name:        name,
-		Description: "Removes stale data from the ranking initial paths table.",
+		Description: "Soft-deletes stale data from the ranking initial paths table.",
 		Interval:    config.Interval,
 		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			return vacuumStaleInitialPaths(ctx, store)
+			return softDeleteStaleInitialPaths(ctx, store)
+		},
+	})
+}
+
+func NewDeletedSymbolDefinitionsJanitor(
+	observationCtx *observation.Context,
+	store store.Store,
+	config *Config,
+) goroutine.BackgroundRoutine {
+	name := "codeintel.ranking.deleted-symbol-definitions-janitor"
+
+	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+		Name:        name,
+		Description: "Removes soft-deleted data from the ranking definitions table no longer being read by a mapper process.",
+		Interval:    config.Interval,
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
+			numDeleted, err := vacuumDeletedDefinitions(ctx, store)
+			return numDeleted, numDeleted, err
+		},
+	})
+}
+
+func NewDeletedSymbolReferencesJanitor(
+	observationCtx *observation.Context,
+	store store.Store,
+	config *Config,
+) goroutine.BackgroundRoutine {
+	name := "codeintel.ranking.deleted-symbol-references-janitor"
+
+	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+		Name:        name,
+		Description: "Removes soft-deleted data from the ranking references table no longer being read by a mapper process.",
+		Interval:    config.Interval,
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
+			numDeleted, err := vacuumDeletedReferences(ctx, store)
+			return numDeleted, numDeleted, err
+		},
+	})
+}
+
+func NewDeletedSymbolInitialPathsJanitor(
+	observationCtx *observation.Context,
+	store store.Store,
+	config *Config,
+) goroutine.BackgroundRoutine {
+	name := "codeintel.ranking.deleted-symbol-initial-paths-janitor"
+
+	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+		Name:        name,
+		Description: "Removes soft-deleted data from the ranking initial paths table no longer being read by a seed mapper process.",
+		Interval:    config.Interval,
+		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
+			numDeleted, err := vacuumDeletedInitialPaths(ctx, store)
+			return numDeleted, numDeleted, err
 		},
 	})
 }
@@ -162,31 +219,55 @@ func NewRankJanitor(
 	})
 }
 
-func vacuumStaleDefinitions(ctx context.Context, store store.Store) (int, int, error) {
+func softDeleteStaleDefinitions(ctx context.Context, store store.Store) (int, int, error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
-	numDefinitionRecordsScanned, numDefinitionRecordsRemoved, err := store.VacuumStaleDefinitions(ctx, rankingshared.GraphKey())
+	numDefinitionRecordsScanned, numDefinitionRecordsRemoved, err := store.SoftDeleteStaleDefinitions(ctx, rankingshared.GraphKey())
 	return numDefinitionRecordsScanned, numDefinitionRecordsRemoved, err
 }
 
-func vacuumStaleReferences(ctx context.Context, store store.Store) (int, int, error) {
+func softDeleteStaleReferences(ctx context.Context, store store.Store) (int, int, error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
-	numReferenceRecordsScanned, numReferenceRecordsRemoved, err := store.VacuumStaleReferences(ctx, rankingshared.GraphKey())
+	numReferenceRecordsScanned, numReferenceRecordsRemoved, err := store.SoftDeleteStaleReferences(ctx, rankingshared.GraphKey())
 	return numReferenceRecordsScanned, numReferenceRecordsRemoved, err
 }
 
-func vacuumStaleInitialPaths(ctx context.Context, store store.Store) (int, int, error) {
+func softDeleteStaleInitialPaths(ctx context.Context, store store.Store) (int, int, error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
-	numPathRecordsScanned, numStalePathRecordsDeleted, err := store.VacuumStaleInitialPaths(ctx, rankingshared.GraphKey())
+	numPathRecordsScanned, numStalePathRecordsDeleted, err := store.SoftDeleteStaleInitialPaths(ctx, rankingshared.GraphKey())
 	return numPathRecordsScanned, numStalePathRecordsDeleted, err
+}
+
+func vacuumDeletedDefinitions(ctx context.Context, store store.Store) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	return store.VacuumDeletedDefinitions(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()))
+}
+
+func vacuumDeletedReferences(ctx context.Context, store store.Store) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	return store.VacuumDeletedReferences(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()))
+}
+
+func vacuumDeletedInitialPaths(ctx context.Context, store store.Store) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	return store.VacuumDeletedInitialPaths(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()))
 }
 
 const vacuumBatchSize = 100 // TODO - configure via envvar

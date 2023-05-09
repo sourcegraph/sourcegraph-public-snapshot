@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
+	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -73,6 +74,18 @@ func TestDocumentRanks(t *testing.T) {
 	store := New(&observation.TestContext, db)
 	repoName := api.RepoName("foo")
 
+	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at, reducer_completed_at)
+		VALUES
+			($1,  1000, 1000, 1000, NOW(), NOW())
+	`,
+		key,
+	); err != nil {
+		t.Fatalf("failed to insert metadata: %s", err)
+	}
+
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name, stars) VALUES ('foo', 1000)`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
@@ -82,14 +95,14 @@ func TestDocumentRanks(t *testing.T) {
 		"internal/secret.go": 3,
 		"internal/util.go":   4,
 		"README.md":          5, // no longer referenced
-	}, mockRankingGraphKey+"-123"); err != nil {
+	}, key); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), repoName, map[string]float64{
 		"cmd/args.go":        8, // new
 		"internal/secret.go": 7, // edited
 		"internal/util.go":   6, // edited
-	}, mockRankingGraphKey+"-123"); err != nil {
+	}, key); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 
@@ -117,17 +130,29 @@ func TestGetReferenceCountStatistics(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
+	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at, reducer_completed_at)
+		VALUES
+			($1,  1000, 1000, 1000, NOW(), NOW())
+	`,
+		key,
+	); err != nil {
+		t.Fatalf("failed to insert metadata: %s", err)
+	}
+
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
 
-	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName("foo"), map[string]float64{"foo": 18, "bar": 3985, "baz": 5260}, mockRankingGraphKey); err != nil {
+	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName("foo"), map[string]float64{"foo": 18, "bar": 3985, "baz": 5260}, key); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
-	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName("bar"), map[string]float64{"foo": 5712, "bar": 5902, "baz": 79}, mockRankingGraphKey); err != nil {
+	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName("bar"), map[string]float64{"foo": 5712, "bar": 5902, "baz": 79}, key); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
-	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName("baz"), map[string]float64{"foo": 86, "bar": 89, "baz": 9, "bonk": 918, "quux": 0}, mockRankingGraphKey); err != nil {
+	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName("baz"), map[string]float64{"foo": 86, "bar": 89, "baz": 9, "bonk": 918, "quux": 0}, key); err != nil {
 		t.Fatalf("failed to set document ranks: %s", err)
 	}
 
@@ -150,15 +175,27 @@ func TestLastUpdatedAt(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
+	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at, reducer_completed_at)
+		VALUES
+			($1,  1000, 1000, 1000, NOW(), NOW())
+	`,
+		key,
+	); err != nil {
+		t.Fatalf("failed to insert metadata: %s", err)
+	}
+
 	idFoo := api.RepoID(1)
 	idBar := api.RepoID(2)
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (id, name) VALUES (1, 'foo'), (2, 'bar'), (3, 'baz')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
-	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), "foo", nil, mockRankingGraphKey+"-123"); err != nil {
+	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), "foo", nil, key); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
-	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), "bar", nil, mockRankingGraphKey+"-123"); err != nil {
+	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), "bar", nil, key); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 

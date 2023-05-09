@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
+	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -93,7 +94,7 @@ func TestVacuumAbandonedInitialPathCounts(t *testing.T) {
 	assertCounts(1*30 + 10)
 }
 
-func TestVacuumStaleInitialPaths(t *testing.T) {
+func TestSoftDeleteStaleInitialPaths(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -129,12 +130,30 @@ func TestVacuumStaleInitialPaths(t *testing.T) {
 	insertVisibleAtTip(t, db, 50, 2)
 
 	// remove path counts for non-visible uploads
-	if _, _, err := store.VacuumStaleInitialPaths(ctx, mockRankingGraphKey); err != nil {
+	if _, _, err := store.SoftDeleteStaleInitialPaths(ctx, mockRankingGraphKey); err != nil {
 		t.Fatalf("unexpected error vacuuming stale initial counts: %s", err)
 	}
 
 	// only upload 2's entries remain
 	assertCounts(3)
+}
+
+func TestVacuumDeletedInitialPaths(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+
+	// TODO - setup
+
+	_, err := store.VacuumDeletedInitialPaths(ctx, key)
+	if err != nil {
+		t.Fatalf("unexpected error vacuuming deleted initial paths: %s", err)
+	}
+
+	// TODO - assertions
 }
 
 //
@@ -157,7 +176,7 @@ func getInitialPathRanks(
 				upload_id,
 				unnest(document_paths) AS document_path
 			FROM codeintel_initial_path_ranks
-			WHERE graph_key LIKE %s || '%%'
+			WHERE graph_key LIKE %s || '%%' AND deleted_at IS NULL
 		)s
 		GROUP BY upload_id, document_path
 		ORDER BY upload_id, document_path

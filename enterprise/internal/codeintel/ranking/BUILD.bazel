@@ -11,6 +11,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/ranking/internal/background",
+        "//enterprise/internal/codeintel/ranking/internal/background/coordinator",
         "//enterprise/internal/codeintel/ranking/internal/background/exporter",
         "//enterprise/internal/codeintel/ranking/internal/background/janitor",
         "//enterprise/internal/codeintel/ranking/internal/background/mapper",
