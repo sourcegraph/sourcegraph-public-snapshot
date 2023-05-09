@@ -175,16 +175,12 @@ func TestScore(t *testing.T) {
 	}
 	// embeddings[0] = 64, 83, 70,
 	// queries[0:3] = 53, 61, 97,
-	score, debugInfo := index.score(queries[0:columnDimension], 0, SearchOptions{Debug: true, UseDocumentRanks: true})
+	score, _, _ := index.score(queries[0:columnDimension], 0, SearchOptions{Debug: true, UseDocumentRanks: true})
 
 	// Check that the score is correct
 	expectedScore := scoreSimilarityWeight * ((64 * 53) + (83 * 61) + (70 * 97))
 	if math.Abs(float64(score-expectedScore)) > 0.0001 {
 		t.Fatalf("Expected score %d, but got %d", expectedScore, score)
-	}
-
-	if debugInfo.String() == "" {
-		t.Fatal("Expected a non-empty debug")
 	}
 }
 
