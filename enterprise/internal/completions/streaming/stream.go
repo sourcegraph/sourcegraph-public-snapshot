@@ -42,7 +42,7 @@ type streamHandler struct {
 	rl     RateLimiter
 }
 
-func GetCompletionClient(provider string, accessToken string, model string) (types.CompletionsClient, error) {
+func GetCompletionClient(endpoint, provider, accessToken, model string) (types.CompletionsClient, error) {
 	switch provider {
 	case "anthropic":
 		return anthropic.NewAnthropicClient(httpcli.ExternalDoer, accessToken, model), nil
@@ -51,7 +51,7 @@ func GetCompletionClient(provider string, accessToken string, model string) (typ
 	case dotcom.ProviderName:
 		return dotcom.NewClient(httpcli.ExternalDoer, accessToken, model), nil
 	case llmproxy.ProviderName:
-		return llmproxy.NewClient(httpcli.ExternalDoer, accessToken, model), nil
+		return llmproxy.NewClient(httpcli.ExternalDoer, endpoint, accessToken, model)
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}
@@ -59,6 +59,14 @@ func GetCompletionClient(provider string, accessToken string, model string) (typ
 
 func GetCompletionsConfig() *schema.Completions {
 	completionsConfig := conf.Get().Completions
+
+	if completionsConfig.ChatModel == "" {
+		completionsConfig.ChatModel = completionsConfig.Model
+	}
+
+	if completionsConfig.Provider == llmproxy.ProviderName && completionsConfig.Endpoint == "" {
+		completionsConfig.Endpoint = llmproxy.DefaultEndpoint
+	}
 
 	// When the Completions is present always use it
 	if completionsConfig != nil {
@@ -108,19 +116,19 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	model := completionsConfig.ChatModel
-	if model == "" {
-		model = completionsConfig.Model
-	}
-
 	var err error
-	ctx, done := Trace(ctx, "stream", model).
+	ctx, done := Trace(ctx, "stream", completionsConfig.ChatModel).
 		WithErrorP(&err).
 		WithRequest(r).
 		Build()
 	defer done()
 
-	completionClient, err := GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, model)
+	completionClient, err := GetCompletionClient(
+		completionsConfig.Endpoint,
+		completionsConfig.Provider,
+		completionsConfig.AccessToken,
+		completionsConfig.ChatModel,
+	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
