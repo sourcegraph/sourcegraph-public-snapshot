@@ -90,7 +90,7 @@ export const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
 
 export const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => <>{path}</>
 
-interface AutoResizableTextAreaProps extends ChatUITextAreaProps { }
+interface AutoResizableTextAreaProps extends ChatUITextAreaProps {}
 
 export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
     value,
