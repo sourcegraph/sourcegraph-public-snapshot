@@ -97,22 +97,20 @@ const LocalRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => (
     </div>
 )
 
-const RemoteRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => {
-    return (
-        <div className={styles.content}>
-            <PageHeader
-                headingElement="h2"
-                path={[{ text: 'Remote repositories' }]}
-                description="Add your remote repositories from GitHub, GitLab or Bitbucket"
-                className="mb-3"
-            />
+const RemoteRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => (
+    <div className={styles.content}>
+        <PageHeader
+            headingElement="h2"
+            path={[{ text: 'Remote repositories' }]}
+            description="Add your remote repositories from GitHub, GitLab or Bitbucket"
+            className="mb-3"
+        />
 
-            <RemoteRepositoriesStep
-                baseURL={`app-settings/${AppSettingURL.RemoteRepositories}`}
-                description={false}
-                progressBar={false}
-                telemetryService={telemetryService}
-            />
-        </div>
-    )
-}
+        <RemoteRepositoriesStep
+            baseURL={`app-settings/${AppSettingURL.RemoteRepositories}`}
+            description={false}
+            progressBar={false}
+            telemetryService={telemetryService}
+        />
+    </div>
+)
