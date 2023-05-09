@@ -88,7 +88,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         saveTranscriptHistory([])
     }
     const submitMessage = (text: string): void => {
-        text = escapeCodyMarkdown(text)
+        text = escapeCodyMarkdown(text, false)
         const { client, onEvent, getChatContext } = get()
         if (client && !isErrorLike(client)) {
             const { codebase, filePath } = getChatContext()
