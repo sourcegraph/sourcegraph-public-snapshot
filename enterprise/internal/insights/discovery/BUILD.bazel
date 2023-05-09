@@ -35,6 +35,9 @@ go_test(
         "scoped_repo_iterator_test.go",
     ],
     embed = [":discovery"],
+    tags = [
+        "requires-network"
+    ],
     deps = [
         "//cmd/frontend/globals",
         "//enterprise/internal/database",
