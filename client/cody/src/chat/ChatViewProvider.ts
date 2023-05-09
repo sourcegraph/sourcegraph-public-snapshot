@@ -242,7 +242,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     const { text, displayText } = lastInteraction.getAssistantMessage()
-                    const { text: highlightedDisplayText } = await highlightTokens(displayText || '', fileExists)
+                    const { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                 }
                 void this.onCompletionEnd()
@@ -256,9 +256,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                 text = text.slice(textConsumed)
                 textConsumed += text.length
-                return this.multiplexer.publish(text)
+                void this.multiplexer.publish(text)
             },
-            onComplete: () => this.multiplexer.notifyTurnComplete(),
+            onComplete: () => {
+                void this.multiplexer.notifyTurnComplete()
+            },
             onError: (err, statusCode) => {
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(
@@ -428,9 +430,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                 text = text.slice(textConsumed)
                 textConsumed += text.length
-                return multiplexer.publish(text)
+                void multiplexer.publish(text)
             },
-            onComplete: () => multiplexer.notifyTurnComplete(),
+            onComplete: () => {
+                void multiplexer.notifyTurnComplete()
+            },
             onError: (error, statusCode) => {
                 console.error(error, statusCode)
             },
@@ -674,32 +678,35 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 }
 
-function trimPrefix(text: string, prefix: string): string {
-    if (text.startsWith(prefix)) {
-        return text.slice(prefix.length)
+function filePathContains(container: string, contained: string): boolean {
+    let trimmedContained = contained
+    if (trimmedContained.endsWith(path.sep)) {
+        trimmedContained = trimmedContained.slice(0, -path.sep.length)
     }
-    return text
+    if (trimmedContained.startsWith(path.sep)) {
+        trimmedContained = trimmedContained.slice(path.sep.length)
+    }
+    return (
+        container.includes(path.sep + trimmedContained + path.sep) || // mid-level directory
+        container.endsWith(path.sep + trimmedContained) // child
+    )
 }
 
-function trimSuffix(text: string, suffix: string): string {
-    if (text.endsWith(suffix)) {
-        return text.slice(0, -suffix.length)
-    }
-    return text
-}
-
-async function fileExists(filePath: string): Promise<boolean> {
-    const patterns = [filePath, '**/' + trimSuffix(trimPrefix(filePath, '/'), '/') + '/**']
-    if (!filePath.endsWith('/')) {
-        patterns.push('**/' + trimPrefix(filePath, '/') + '*')
-    }
-    for (const pattern of patterns) {
-        const files = await vscode.workspace.findFiles(pattern, null, 1)
-        if (files.length > 0) {
-            return true
+async function filesExist(filePaths: string[]): Promise<{ [filePath: string]: boolean }> {
+    const searchPath = `{${filePaths.join(',')}}`
+    const realFiles = await vscode.workspace.findFiles(searchPath, null, filePaths.length * 5)
+    const ret: { [filePath: string]: boolean } = {}
+    for (const filePath of filePaths) {
+        let pathExists = false
+        for (const realFile of realFiles) {
+            if (filePathContains(realFile.fsPath, filePath)) {
+                pathExists = true
+                break
+            }
         }
+        ret[filePath] = pathExists
     }
-    return false
+    return ret
 }
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
