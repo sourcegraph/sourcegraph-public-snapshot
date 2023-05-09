@@ -64,6 +64,20 @@ using [Native Execution](native_execution.md) for Batch Changes. To install `src
 See [Native Execution](native_execution.md) for details on how to enable Native Execution. Ensure the
 image `sourcegraph/batcheshelper` is available in the internal Docker Registry.
 
+## Auto Indexing
+
+Auto Indexing requires images to be available in the internal Docker Registry. The images for languages can be found in 
+the [Code Navigation](../../code_navigation/index.md) page.
+
+Once the images are available in the internal Docker Registry, the `executor` can be configured to use the images by 
+updating `codeIntelAutoIndexing.indexerMap` in the **Site configuration**. For example,
+
+```json
+"codeIntelAutoIndexing.indexerMap": {
+  "go": "my.company/lsif-go:custom",
+}
+```
+
 ## Firecracker Setup
 
 See [Firecracker details](./firecracker.md) to determine if firecracker fits your use case. If you are using
