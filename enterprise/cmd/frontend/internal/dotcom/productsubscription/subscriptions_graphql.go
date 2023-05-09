@@ -166,6 +166,7 @@ func (r *productSubscription) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// TODO: accountUser can be nil if the user has been deleted.
 	return *accountUser.SettingsURL() + "/subscriptions/" + r.v.ID, nil
 }
 
