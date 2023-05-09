@@ -212,7 +212,7 @@ func embeddingsSearchResultsToResolvers(
 		output []graphqlbackend.EmbeddingsSearchResultResolver
 	)
 
-	p := pool.New()
+	p := pool.New().WithMaxGoroutines(8)
 	for _, result := range results {
 		result := result
 		p.Go(func() {
