@@ -11,8 +11,12 @@ All notable changes to Sourcegraph Cody will be documented in this file.
   - `/r` or `/reset` to reset chat
   - `/s` or `/search` to perform codebase context search
 - Adds usage metrics to the experimental chat predictions feature [pull/51474](https://github.com/sourcegraph/sourcegraph/pull/51474)
+- Add highlighted code to context message automatically [pull/51585](https://github.com/sourcegraph/sourcegraph/pull/51585)
 
 ### Fixed
+
+- Error notification display pattern for rate limit [pull/51521](https://github.com/sourcegraph/sourcegraph/pull/51521)
+- Fixes issues with branch switching and file deletions when using the experimental completions feature [pull/51565](https://github.com/sourcegraph/sourcegraph/pull/51565)
 
 ### Changed
 

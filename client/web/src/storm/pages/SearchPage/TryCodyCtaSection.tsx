@@ -75,7 +75,7 @@ export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }
     className,
     telemetryService,
 }) => {
-    const [isDismissed, setIsDismissed] = useTemporarySetting('cody.searchPageCta.dismissed', true)
+    const [isDismissed = true, setIsDismissed] = useTemporarySetting('cody.searchPageCta.dismissed', false)
     const onDismiss = (): void => setIsDismissed(true)
     const logEvent = (eventName: EventName): void =>
         telemetryService.log(eventName, { type: 'ComHome' }, { type: 'ComHome' })

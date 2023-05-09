@@ -29,6 +29,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private abortOpenMultilineCompletion: () => void = () => {}
 
     constructor(
+        private webviewErrorMessager: (error: string) => Promise<void>,
         private completionsClient: SourcegraphNodeCompletionsClient,
         private documentProvider: CompletionsDocumentProvider,
         private history: History,
@@ -52,11 +53,12 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
+            console.error(error)
+
             if (error.message === 'aborted') {
                 return []
             }
 
-            await vscode.window.showErrorMessage(`Error in provideInlineCompletionItems: ${error}`)
             return []
         }
     }
@@ -284,7 +286,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 return
             }
 
-            await vscode.window.showErrorMessage(`Error in fetchAndShowCompletions: ${error}`)
+            await this.webviewErrorMessager(`FetchAndShowCompletions - ${error}`)
         }
     }
 }

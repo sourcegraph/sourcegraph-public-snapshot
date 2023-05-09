@@ -29,9 +29,10 @@ type RecentViewSignalStore interface {
 }
 
 type ListRecentViewSignalOpts struct {
-	ViewerID int
-	RepoID   api.RepoID
-	Path     string
+	ViewerUserID int
+	RepoID       api.RepoID
+	Path         string
+	LimitOffset  *LimitOffset
 }
 
 type RecentViewSummary struct {
@@ -41,7 +42,8 @@ type RecentViewSummary struct {
 }
 
 func RecentViewSignalStoreWith(other basestore.ShareableStore, logger log.Logger) RecentViewSignalStore {
-	return &recentViewSignalStore{Store: basestore.NewWithHandle(other.Handle()), Logger: logger}
+	lgr := logger.Scoped("RecentViewSignalStore", "Store for a table containing a number of views of a single file by a given viewer")
+	return &recentViewSignalStore{Store: basestore.NewWithHandle(other.Handle()), Logger: lgr}
 }
 
 type recentViewSignalStore struct {
@@ -76,7 +78,7 @@ const insertRecentViewSignalFmtstr = `
 	INSERT INTO own_aggregate_recent_view(viewer_id, viewed_file_path_id, views_count)
 	VALUES(%s, %s, %s)
 	ON CONFLICT(viewer_id, viewed_file_path_id) DO UPDATE
-	SET views_count = EXCLUDED.views_count
+	SET views_count = EXCLUDED.views_count + own_aggregate_recent_view.views_count
 `
 
 func (s *recentViewSignalStore) Insert(ctx context.Context, userID int32, repoPathID, count int) error {
@@ -88,7 +90,7 @@ const bulkInsertRecentViewSignalsFmtstr = `
 	INSERT INTO own_aggregate_recent_view(viewer_id, viewed_file_path_id, views_count)
 	VALUES %s
 	ON CONFLICT(viewer_id, viewed_file_path_id) DO UPDATE
-	SET views_count = EXCLUDED.views_count
+	SET views_count = EXCLUDED.views_count + own_aggregate_recent_view.views_count
 `
 
 // InsertPaths inserts paths and view counts for a given `userID`. This function
@@ -115,17 +117,19 @@ func (s *recentViewSignalStore) InsertPaths(ctx context.Context, userID int32, r
 	return s.Exec(ctx, q)
 }
 
-// TODO(sashaostrikov): update query with opts
 const listRecentViewSignalsFmtstr = `
-	SELECT viewer_id, viewed_file_path_id, views_count
-	FROM own_aggregate_recent_view
-	ORDER BY id
+	SELECT o.viewer_id, o.viewed_file_path_id, o.views_count
+	FROM own_aggregate_recent_view AS o
+	-- Optional join with repo_paths table
+	%s
+	-- Optional WHERE clauses
+	WHERE %s
+	-- Order, limit
+	ORDER BY o.id
+	%s
 `
 
-func (s *recentViewSignalStore) List(ctx context.Context, _ ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
-	q := sqlf.Sprintf(listRecentViewSignalsFmtstr)
-
-	// TODO(sashaostrikov): implement paging and use opts
+func (s *recentViewSignalStore) List(ctx context.Context, opts ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
 	viewsScanner := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (RecentViewSummary, error) {
 		var summary RecentViewSummary
 		if err := scanner.Scan(&summary.UserID, &summary.FilePathID, &summary.ViewsCount); err != nil {
@@ -133,20 +137,35 @@ func (s *recentViewSignalStore) List(ctx context.Context, _ ListRecentViewSignal
 		}
 		return summary, nil
 	})
+	return viewsScanner(s.Query(ctx, createListQuery(opts)))
+}
 
-	return viewsScanner(s.Query(ctx, q))
+func createListQuery(opts ListRecentViewSignalOpts) *sqlf.Query {
+	joinClause := &sqlf.Query{}
+	if opts.RepoID != 0 || opts.Path != "" {
+		joinClause = sqlf.Sprintf("INNER JOIN repo_paths AS p ON p.id = o.viewed_file_path_id")
+	}
+	whereClause := sqlf.Sprintf("TRUE")
+	wherePredicates := make([]*sqlf.Query, 0)
+	if opts.RepoID != 0 {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.repo_id = %s", opts.RepoID))
+	}
+	if opts.Path != "" {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.absolute_path = %s", opts.Path))
+	}
+	if opts.ViewerUserID != 0 {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.viewer_id = %s", opts.ViewerUserID))
+	}
+	if len(wherePredicates) > 0 {
+		whereClause = sqlf.Sprintf("%s", sqlf.Join(wherePredicates, "AND"))
+	}
+	return sqlf.Sprintf(listRecentViewSignalsFmtstr, joinClause, whereClause, opts.LimitOffset.SQL())
 }
 
 // BuildAggregateFromEvents builds recent view signals from provided "ViewBlob"
 // events. One signal has a userID, repoPathID and a count. This data is derived
 // from the event, please refer to inline comments for more implementation
 // details.
-//
-// TODO(sashaostrikov): BuildAggregateFromEvents should be called from worker,
-// which queries events like so:
-//
-// db := NewDBWith(s.Logger, s)
-// events, err := db.EventLogs().ListEventsByName(ctx, viewBlobEventType, after, limit)
 func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, events []*Event) error {
 	// Map of repo name to repo ID and paths+repoPathIDs of files specified in
 	// "ViewBlob" events. Used to aggregate all the paths for a single repo to then
