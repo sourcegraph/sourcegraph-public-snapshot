@@ -1825,20 +1825,6 @@ Triggers:
 
 **corruption_logs**: Log output of repo corruptions that have been detected - encoded as json
 
-# Table "public.gitserver_repos_clone_output"
-```
-   Column    |           Type           | Collation | Nullable | Default  
--------------+--------------------------+-----------+----------+----------
- repo_id     | integer                  |           | not null | 
- last_output | text                     |           | not null | ''::text
- updated_at  | timestamp with time zone |           | not null | now()
-Indexes:
-    "gitserver_repos_clone_output_pkey" PRIMARY KEY, btree (repo_id)
-
-```
-
-Contains the most recent output from gitserver repository clone jobs.
-
 # Table "public.gitserver_repos_statistics"
 ```
     Column    |  Type  | Collation | Nullable | Default 
@@ -1868,6 +1854,20 @@ Indexes:
 **shard_id**: ID of this gitserver shard. If an empty string then the repositories havent been assigned a shard.
 
 **total**: Number of repositories in gitserver_repos table on this shard
+
+# Table "public.gitserver_repos_sync_output"
+```
+   Column    |           Type           | Collation | Nullable | Default  
+-------------+--------------------------+-----------+----------+----------
+ repo_id     | integer                  |           | not null | 
+ last_output | text                     |           | not null | ''::text
+ updated_at  | timestamp with time zone |           | not null | now()
+Indexes:
+    "gitserver_repos_sync_output_pkey" PRIMARY KEY, btree (repo_id)
+
+```
+
+Contains the most recent output from gitserver repository sync jobs.
 
 # Table "public.global_state"
 ```

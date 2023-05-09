@@ -2675,14 +2675,6 @@ COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corrup
 
 COMMENT ON COLUMN gitserver_repos.corruption_logs IS 'Log output of repo corruptions that have been detected - encoded as json';
 
-CREATE TABLE gitserver_repos_clone_output (
-    repo_id integer NOT NULL,
-    last_output text DEFAULT ''::text NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-COMMENT ON TABLE gitserver_repos_clone_output IS 'Contains the most recent output from gitserver repository clone jobs.';
-
 CREATE TABLE gitserver_repos_statistics (
     shard_id text NOT NULL,
     total bigint DEFAULT 0 NOT NULL,
@@ -2706,6 +2698,14 @@ COMMENT ON COLUMN gitserver_repos_statistics.cloned IS 'Number of repositories i
 COMMENT ON COLUMN gitserver_repos_statistics.failed_fetch IS 'Number of repositories in gitserver_repos table on this shard where last_error is set';
 
 COMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
+
+CREATE TABLE gitserver_repos_sync_output (
+    repo_id integer NOT NULL,
+    last_output text DEFAULT ''::text NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE gitserver_repos_sync_output IS 'Contains the most recent output from gitserver repository sync jobs.';
 
 CREATE TABLE global_state (
     site_id uuid NOT NULL,
@@ -5331,14 +5331,14 @@ ALTER TABLE ONLY github_apps
 ALTER TABLE ONLY gitserver_relocator_jobs
     ADD CONSTRAINT gitserver_relocator_jobs_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY gitserver_repos_clone_output
-    ADD CONSTRAINT gitserver_repos_clone_output_pkey PRIMARY KEY (repo_id);
-
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_pkey PRIMARY KEY (repo_id);
 
 ALTER TABLE ONLY gitserver_repos_statistics
     ADD CONSTRAINT gitserver_repos_statistics_pkey PRIMARY KEY (shard_id);
+
+ALTER TABLE ONLY gitserver_repos_sync_output
+    ADD CONSTRAINT gitserver_repos_sync_output_pkey PRIMARY KEY (repo_id);
 
 ALTER TABLE ONLY global_state
     ADD CONSTRAINT global_state_pkey PRIMARY KEY (site_id);

@@ -9,10 +9,10 @@
 --    associated metadata.yaml file.
 --  * If you are modifying Postgres extensions, you must also declare "privileged: true"
 --    in the associated metadata.yaml file.
-CREATE TABLE IF NOT EXISTS gitserver_repos_clone_output (
+CREATE TABLE IF NOT EXISTS gitserver_repos_sync_output (
     repo_id integer primary key,
     last_output text DEFAULT ''::text NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
-COMMENT ON TABLE gitserver_repos_clone_output IS 'Contains the most recent output from gitserver repository clone jobs.';
+COMMENT ON TABLE gitserver_repos_sync_output IS 'Contains the most recent output from gitserver repository sync jobs.';
