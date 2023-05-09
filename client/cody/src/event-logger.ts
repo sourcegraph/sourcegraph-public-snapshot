@@ -16,9 +16,7 @@ export async function updateEventLogger(
     localStorage: LocalStorage
 ): Promise<void> {
     let anonymousUserID = localStorage.get(ANONYMOUS_USER_ID_KEY)
-    let newInstall = false
     if (!anonymousUserID) {
-        newInstall = true
         anonymousUserID = uuid.v4()
         await localStorage.set(ANONYMOUS_USER_ID_KEY, anonymousUserID)
     }
