@@ -7,6 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Masterminds/semver"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,6 +31,21 @@ func init() {
 // Version returns the version string configured at build time.
 func Version() string {
 	return version
+}
+
+// MigrationEndVersion returns the version to be used as the end point of migrations.
+// For releases, this is the version string itself. For upcoming dev releases, and App
+// this is the last release version plus 1 minor version.
+func MigrationEndVersion() string {
+	if !deploy.IsApp() {
+		return Version()
+	}
+	v, err := semver.NewVersion(LatestReleaseBuild)
+	if err != nil {
+		return Version()
+	}
+	nextMinor := v.IncMinor()
+	return nextMinor.String()
 }
 
 // IsDev reports whether the version string is an unreleased development build.

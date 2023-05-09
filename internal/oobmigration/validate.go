@@ -23,7 +23,7 @@ func ValidateOutOfBandMigrationRunner(ctx context.Context, db database.DB, runne
 		// Skip check in development environments
 		return nil
 	}
-	currentVersionSemver, err := semver.NewVersion(version.Version())
+	currentVersionSemver, err := semver.NewVersion(version.MigrationEndVersion())
 	if err != nil {
 		runner.logger.Warn("Skipping out-of-band migrations check", log.Error(err), log.String("version", version.Version()))
 		return nil
