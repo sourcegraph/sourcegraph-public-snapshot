@@ -19,6 +19,8 @@ interface BatchState {
     range: vscode.Range
 }
 
+const DEBUG = true
+
 // TODO(dpc): This is similar to Cody: Fixup so if it works well, integrate them.
 export class NonStopCody implements Recipe {
     public id = 'non-stop-cody'
@@ -30,6 +32,7 @@ export class NonStopCody implements Recipe {
     // TODO: Generalize this to having multiple in-flight at once.
     private batch?: BatchState
 
+    private debugDecoration: vscode.TextEditorDecorationType
     private fadeDecorations: vscode.TextEditorDecorationType[]
     private fadeAnimation = 0
     private fadeTimer: NodeJS.Timeout | undefined = undefined
@@ -37,6 +40,12 @@ export class NonStopCody implements Recipe {
     constructor() {
         // TODO: Dispose the subscription. Array of disposables?
         const subscription = vscode.workspace.onDidChangeTextDocument(this.textDocumentChanged.bind(this))
+
+        this.debugDecoration = vscode.window.createTextEditorDecorationType({
+            backgroundColor: 'blue',
+            color: 'yellow',
+            rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+        })
 
         this.fadeDecorations = [
             vscode.window.createTextEditorDecorationType({
@@ -101,6 +110,7 @@ export class NonStopCody implements Recipe {
             }
             if (range) {
                 this.batch.range = range
+                this.updateDebugDecorations()
             } else {
                 // TODO: Handle the case where the place Cody is editing has been obliterated.
                 this.batch = undefined
@@ -124,6 +134,16 @@ export class NonStopCody implements Recipe {
                     this.decorations.set(event.document.uri, decorations)
                 }
             }
+        }
+    }
+
+    private updateDebugDecorations(): void {
+        if (DEBUG) {
+            // TODO: Generalize to multiple editors.
+            vscode.window.activeTextEditor?.setDecorations(
+                this.debugDecoration,
+                this.batch?.range ? [this.batch.range] : []
+            )
         }
     }
 
@@ -198,7 +218,7 @@ export class NonStopCody implements Recipe {
         thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
 
         const providedCodeStart = selection.start.translate({
-            lineDelta: Math.max(-50, -selection.start.line),
+            lineDelta: Math.max(-20, -selection.start.line),
             characterDelta: -selection.start.character,
         })
         const providedCodeEnd = editor.document.validatePosition(
@@ -213,6 +233,7 @@ export class NonStopCody implements Recipe {
             original: precedingText + selectedText + followingText,
             range: new vscode.Range(providedCodeStart, providedCodeEnd),
         }
+        this.updateDebugDecorations()
 
         const handleResult = this.handleResult.bind(this)
         context.responseMultiplexer.sub(
@@ -242,9 +263,15 @@ export class NonStopCody implements Recipe {
         }
 
         // TODO: This hardcodes the Anthropic "Assistant:", "Human:" prompts. Need to generalize this.
-        const prompt = `I need your help to improve some code. The area I need help with is highlighted with <cody-help> tags. You are helping me work on that part. Follow the instructions in the prompt attribute and produce a rewritten replacement. You should remove the <cody-help> tags from your replacement. Put the replacement in <cody-replace> tags. I need only the replacement, no other commentary about it. Do not write anything after the closing </cody-replace> tag. If you are adding code, I need you to repeat several lines of my code before and after your new code so I understand where to insert your new code.
+        const prompt = `I need your help to improve some code.
+The area I need help with is highlighted with <cody-help> tags. You are helping me work on that part.
+Follow the instructions in the prompt attribute and produce a rewritten replacement.
+Strip the <cody-help> tags from your reply, just leave the improved content inside the tags.
+Put the replacement in <cody-replace> tags.
+I need only the replacement, no other commentary about it. Do not write anything after the closing </cody-replace> tag.
+If you are adding code, I need you to repeat three lines of my code verbatim, both before and after your new code, so I understand where to insert your new code. You should put that repeated code within the <cody-replace> tags.
 
-Assistant: OK, I understand. I will follow the prompts to improve the code, and only reply with code in <cody-replace> tags. The last thing I write will be the closing </cody-replace> tag.
+Assistant: OK, I understand. I will follow the prompts to improve the code, and only reply with code in <cody-replace> tags. The last thing I write will be the closing </cody-replace> tag. I will not write code outside <cody-replace> tags. I will not write the <cody-help> tags in my reply.
 
 Human: Great, thank you! This is part of the file ${
             editor.document.fileName
