@@ -171,15 +171,15 @@ valid_graph_keys AS (
 ),
 locked_records AS (
 	-- Lock all path rank records that don't have a valid graph key
-	SELECT repository_id
+	SELECT id
 	FROM codeintel_path_ranks
 	WHERE graph_key NOT IN (SELECT graph_key FROM valid_graph_keys)
-	ORDER BY repository_id
+	ORDER BY id
 	FOR UPDATE
 ),
 deleted_records AS (
 	DELETE FROM codeintel_path_ranks
-	WHERE repository_id IN (SELECT repository_id FROM locked_records)
+	WHERE id IN (SELECT id FROM locked_records)
 	RETURNING 1
 )
 SELECT
