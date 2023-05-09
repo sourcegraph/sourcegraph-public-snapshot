@@ -10,7 +10,7 @@ type Permission struct {
 	ID          string
 	Namespace   rtypes.PermissionNamespace
 	DisplayName string
-	Action      rtypes.PermissionAction
+	Action      rtypes.NamespaceAction
 	CreatedAt   gqlutil.DateTime
 }
 

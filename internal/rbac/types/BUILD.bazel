@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "types",
-    srcs = ["namespace.go"],
+    srcs = [
+        "action.go",
+        "namespace.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/rbac/types",
     visibility = ["//:__subpackages__"],
 )

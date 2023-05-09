@@ -867,7 +867,7 @@ func (r Role) IsUser() bool {
 type Permission struct {
 	ID        int32
 	Namespace rtypes.PermissionNamespace
-	Action    rtypes.PermissionAction
+	Action    rtypes.NamespaceAction
 	CreatedAt time.Time
 }
 

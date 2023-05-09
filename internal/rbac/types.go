@@ -11,5 +11,5 @@ type Schema struct {
 // Namespace represents a feature to be guarded by RBAC. (example: Batch Changes, Code Insights e.t.c)
 type Namespace struct {
 	Name    rtypes.PermissionNamespace `json:"name"`
-	Actions []string                   `json:"actions"`
+	Actions []rtypes.NamespaceAction   `json:"actions"`
 }

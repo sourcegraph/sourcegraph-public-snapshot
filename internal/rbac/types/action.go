@@ -2,12 +2,12 @@
 package types
 
 
-// PermissionAction represents the action granted by a RBAC namespace.
-type PermissionAction string
+// NamespaceAction represents the action permitted in a namespace.
+type NamespaceAction string
 
-func (a PermissionAction) String() string {
+func (a NamespaceAction) String() string {
 	return string(a)
 }
 
-const BatchChangesWriteAction PermissionAction = "WRITE"
-const BatchChangesReadAction PermissionAction = "READ"
+const BatchChangesWriteAction NamespaceAction = "WRITE"
+const BatchChangesReadAction NamespaceAction = "READ"

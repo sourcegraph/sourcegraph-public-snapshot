@@ -15,12 +15,12 @@ var invalidPermissionDisplayName = errors.New("permission display name is invali
 
 // ParsePermissionDisplayName parses a permission display name and returns the namespace and action.
 // It returns an error if the displayName is invalid.
-func ParsePermissionDisplayName(displayName string) (namespace rtypes.PermissionNamespace, action string, err error) {
+func ParsePermissionDisplayName(displayName string) (namespace rtypes.PermissionNamespace, action rtypes.NamespaceAction, err error) {
 	if ok := permissionDisplayNameRegex.MatchString(displayName); ok {
 		parts := strings.Split(displayName, "#")
 
 		namespace = rtypes.PermissionNamespace(parts[0])
-		action = parts[1]
+		action = rtypes.NamespaceAction(parts[1])
 	} else {
 		err = invalidPermissionDisplayName
 	}

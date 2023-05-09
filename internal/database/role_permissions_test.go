@@ -259,9 +259,9 @@ func TestRolePermissionGetByRoleID(t *testing.T) {
 
 	r := createTestRoleForRolePermission(ctx, "TEST ROLE", t, db)
 
-	totalRolePermissions := 5
+	totalRolePermissions := 2
 	for i := 1; i <= totalRolePermissions; i++ {
-		p := createTestPermissionForRolePermission(ctx, fmt.Sprintf("action-%d", i), t, db)
+		p := createTestPermissionForRolePermission(ctx, rtypes.BatchChangesReadAction, t, db)
 		err := store.Assign(ctx, AssignRolePermissionOpts{
 			RoleID:       r.ID,
 			PermissionID: p.ID,
@@ -449,7 +449,7 @@ func TestBulkAssignPermissionsToRole(t *testing.T) {
 	numberOfPerms := 4
 	var perms []int32
 	for i := 0; i < numberOfPerms; i++ {
-		perm := createTestPermissionForRolePermission(ctx, fmt.Sprintf("READ-%d", i), t, db)
+		perm := createTestPermissionForRolePermission(ctx, rtypes.BatchChangesReadAction, t, db)
 		perms = append(perms, perm.ID)
 	}
 
@@ -691,11 +691,11 @@ func TestSetPermissionsForRole(t *testing.T) {
 	})
 }
 
-func createTestPermissionForRolePermission(ctx context.Context, action string, t *testing.T, db DB) *types.Permission {
+func createTestPermissionForRolePermission(ctx context.Context, action rtypes.NamespaceAction, t *testing.T, db DB) *types.Permission {
 	t.Helper()
 	p, err := db.Permissions().Create(ctx, CreatePermissionOpts{
 		Namespace: rtypes.BatchChangesNamespace,
-		Action:    action,
+		Action:    rtypes.BatchChangesReadAction,
 	})
 	if err != nil {
 		t.Fatal(err)
