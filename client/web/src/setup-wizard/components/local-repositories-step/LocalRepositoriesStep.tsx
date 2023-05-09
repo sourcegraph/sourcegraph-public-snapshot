@@ -48,9 +48,12 @@ interface LocalRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTML
     progressBar?: boolean
 }
 
-export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = props => {
-    const { telemetryService, description = true, progressBar = true, ...attributes } = props
-
+export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = ({
+    telemetryService,
+    description = true,
+    progressBar = true,
+    ...attributes
+}) => {
     const [directoryPaths, setDirectoryPaths] = useState<string[]>([])
     const [error, setError] = useState<ErrorLike | undefined>()
 

@@ -16,32 +16,26 @@ enum AppSettingURL {
     RemoteRepositories = 'remote-repositories',
 }
 
-interface AppSettingsAreaProps extends TelemetryProps {}
+export const AppSettingsArea: FC<TelemetryProps> = ({ telemetryService }) => (
+    <Routes>
+        <Route path="*" element={<AppSettingsLayout />}>
+            <Route
+                path={AppSettingURL.LocalRepositories}
+                element={<LocalRepositoriesTab telemetryService={telemetryService} />}
+            />
+            <Route
+                path={`${AppSettingURL.RemoteRepositories}/*`}
+                element={<RemoteRepositoriesTab telemetryService={telemetryService} />}
+            />
+            <Route
+                path={AppSettingURL.ConnectToSourcegraphDotCom}
+                element={<H2>Hello Connect to sourcegraph.com</H2>}
+            />
 
-export const AppSettingsArea: FC<AppSettingsAreaProps> = props => {
-    const { telemetryService } = props
-
-    return (
-        <Routes>
-            <Route path="*" element={<AppSettingsLayout />}>
-                <Route
-                    path={AppSettingURL.LocalRepositories}
-                    element={<LocalRepositoriesTab telemetryService={telemetryService} />}
-                />
-                <Route
-                    path={`${AppSettingURL.RemoteRepositories}/*`}
-                    element={<RemoteRepositoriesTab telemetryService={telemetryService} />}
-                />
-                <Route
-                    path={AppSettingURL.ConnectToSourcegraphDotCom}
-                    element={<H2>Hello Connect to sourcegraph.com</H2>}
-                />
-
-                <Route path="*" element={<Navigate to={AppSettingURL.LocalRepositories} replace={true} />} />
-            </Route>
-        </Routes>
-    )
-}
+            <Route path="*" element={<Navigate to={AppSettingURL.LocalRepositories} replace={true} />} />
+        </Route>
+    </Routes>
+)
 
 interface AppSetting {
     url: AppSettingURL
@@ -79,11 +73,7 @@ const AppSettingsLayout: FC = () => {
     )
 }
 
-interface LocalRepositoriesTabProps extends TelemetryProps {}
-
-const LocalRepositoriesTab: FC<LocalRepositoriesTabProps> = props => {
-    const { telemetryService } = props
-
+const LocalRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => {
     return (
         <div className={styles.content}>
             <PageHeader
@@ -109,11 +99,7 @@ const LocalRepositoriesTab: FC<LocalRepositoriesTabProps> = props => {
     )
 }
 
-interface RemoteRepositoriesTabProps extends TelemetryProps {}
-
-const RemoteRepositoriesTab: FC<RemoteRepositoriesTabProps> = props => {
-    const { telemetryService } = props
-
+const RemoteRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => {
     return (
         <div className={styles.content}>
             <PageHeader

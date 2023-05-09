@@ -27,9 +27,14 @@ interface RemoteRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTM
     progressBar?: boolean
 }
 
-export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => {
-    const { className, telemetryService, baseURL, description = true, progressBar = true, ...attributes } = props
-
+export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
+    className,
+    telemetryService,
+    baseURL,
+    description = true,
+    progressBar = true,
+    ...attributes
+}) => {
     const location = useLocation()
     const [codeHostToDelete, setCodeHostToDelete] = useState<CodeHostToDelete | null>(null)
 

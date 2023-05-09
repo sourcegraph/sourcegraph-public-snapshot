@@ -11,9 +11,7 @@ interface SyncRepositoriesStep extends TelemetryProps {
     baseURL: string
 }
 
-export function SyncRepositoriesStep(props: SyncRepositoriesStep): ReactElement {
-    const { telemetryService, baseURL, ...attributes } = props
-
+export function SyncRepositoriesStep({ telemetryService, baseURL, ...attributes }: SyncRepositoriesStep): ReactElement {
     useEffect(() => {
         telemetryService.log('SetupWizardLandedSyncRepositories')
     }, [telemetryService])
