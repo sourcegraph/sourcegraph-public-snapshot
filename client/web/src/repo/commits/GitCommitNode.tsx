@@ -9,13 +9,13 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { Button, ButtonGroup, Link, Icon, Code, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
-import { GitCommitFields } from '../../graphql-operations'
+import { GitCommitFields, RepositoryType } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
 import { DiffMode } from '../commit/RepositoryCommitPage'
 import { Linkified } from '../linkifiy/Linkified'
-import { SourceTypeGitRepository, SourceTypePerforceDepot, getRefType, isPerforceDepotSource } from '../utils'
+import { getRefType, isPerforceDepotSource } from '../utils'
 
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 
@@ -85,7 +85,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
 
-    const sourceType = node.perforceChangelist ? SourceTypePerforceDepot : SourceTypeGitRepository
+    const sourceType = node.perforceChangelist ? RepositoryType.PERFORCE_DEPOT : RepositoryType.GIT_REPOSITORY
     const isPerforceDepot = isPerforceDepotSource(sourceType)
     const abbreviatedRefID = node.perforceChangelist?.cid ?? node.abbreviatedOID
     const refID = node.perforceChangelist?.cid ?? node.oid
