@@ -34,7 +34,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		dequeueEvents   []dequeueEvent
 	}{
 		{
-			name: "Dequeue two records",
+			name: "Dequeue one record for each queue",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB", "queues": ["codeintel", "batches"]}`,
 			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
 				return executortypes.Job{ID: record.RecordID()}, nil
