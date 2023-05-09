@@ -5,6 +5,7 @@ This markdown is used to generate an annotation at the top of every build, displ
 <details>
   <summary>CI Glossary (click here if you don't understand what a given tool is about)</summary>
   <ul>
+    <li><strong>ASDF</strong> is a CLI tool that can manage multiple language runtime versions on a per-project basis</li>
     <li><strong>Bazel</strong> is a build and test tool similar to Make, Maven, and Gradle that supports a wide range of programming languages and platforms, and is designed for scalability and performance.</li>
     <li><strong>Buildkite</strong> is a platform for running fast, secure, and scalable continuous integration pipelines on your own infrastructure.</li>
     <li><strong>Cargo</strong> is the default package manager for the Rust programming language, enabling you to download and compile Rust packages and manage dependencies.</li>
