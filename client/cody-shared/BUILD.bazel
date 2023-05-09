@@ -34,6 +34,7 @@ ts_project(
         "src/chat/recipes/find-code-smells.ts",
         "src/chat/recipes/fixup.ts",
         "src/chat/recipes/generate-docstring.ts",
+        "src/chat/recipes/generate-release-notes.ts",
         "src/chat/recipes/generate-test.ts",
         "src/chat/recipes/git-log.ts",
         "src/chat/recipes/helpers.ts",
