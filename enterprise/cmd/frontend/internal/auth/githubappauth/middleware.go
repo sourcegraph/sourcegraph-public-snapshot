@@ -104,28 +104,24 @@ type GitHubAppResponse struct {
 func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.Handler {
 	r := mux.NewRouter()
 
-	r.HandleFunc(prefix+"/state", func(w http.ResponseWriter, req *http.Request) {
-		if req.Method != "GET" {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-
-		id := 1
-		query := req.URL.Query()
-		gqlID := query.Get("id")
-		if gqlID != "" {
-			id64, err := UnmarshalGitHubAppID(graphql.ID(gqlID))
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Unexpected error while unmarshalling App ID: %s", err.Error()), http.StatusInternalServerError)
-				return
-			}
-			id = int(id64)
-		}
-
+	r.Path(prefix + "/state").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// 🚨 SECURITY: only site admins can create github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
 			return
 		}
+
+		query := req.URL.Query()
+		gqlID := query.Get("id")
+		if gqlID == "" {
+			http.Error(w, "no id provided in query parameters", http.StatusBadRequest)
+			return
+		}
+		id64, err := UnmarshalGitHubAppID(graphql.ID(gqlID))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unexpected error while unmarshalling App ID: %s", err.Error()), http.StatusBadRequest)
+			return
+		}
+		id := int(id64)
 
 		s, err := randomState(128)
 		if err != nil {
@@ -137,12 +133,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		_, _ = w.Write([]byte(s))
 	})
 
-	r.HandleFunc(prefix+"/redirect", func(w http.ResponseWriter, req *http.Request) {
-		if req.Method != "GET" {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-
+	r.Path(prefix + "/redirect").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		state := query.Get("state")
 		code := query.Get("code")
@@ -200,6 +191,9 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		state := query.Get("state")
 		instID := query.Get("installation_id")
 		if state == "" || instID == "" {
+			// If neither state or installation ID is set, we redirect to the GitHub Apps page.
+			// This can happen when someone installs the App directly from GitHub, instead of
+			// following the link from within Sourcegraph.
 			http.Redirect(w, req, "/site-admin/github-apps", http.StatusFound)
 			return
 		}

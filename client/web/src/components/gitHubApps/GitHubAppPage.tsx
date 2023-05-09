@@ -110,7 +110,12 @@ export const GitHubAppPage: FC<Props> = ({
                     <div className="mt-4">
                         <H2>App installations</H2>
                         <div className="list-group mb-3" aria-label="GitHub App Installations">
-                            {app.installations?.length > 0 ? (
+                            {app.installations?.length === 0 ? (
+                                <Text>
+                                    This GitHub App does not have any installations. Install the App to create a new
+                                    connection.
+                                </Text>
+                            ) : (
                                 app.installations?.map(installation => (
                                     <Card
                                         className={classNames(styles.listNode, 'd-flex flex-row align-items-center')}
@@ -149,11 +154,6 @@ export const GitHubAppPage: FC<Props> = ({
                                         </ButtonLink>
                                     </Card>
                                 ))
-                            ) : (
-                                <Text>
-                                    This GitHub App does not have any installations. Install the App to create a new
-                                    connection.
-                                </Text>
                             )}
                         </div>
                         <Button
