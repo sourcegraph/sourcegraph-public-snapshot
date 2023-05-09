@@ -56,14 +56,14 @@ func (w *weaviateClient) Use(ctx context.Context) bool {
 	return featureflag.FromContext(ctx).GetBoolOr("search-weaviate", false)
 }
 
-func (w *weaviateClient) Search(ctx context.Context, params embeddings.EmbeddingsSearchParameters) (codeResults, textResults []embeddings.EmbeddingSearchResult, _ api.CommitID, _ error) {
+func (w *weaviateClient) Search(ctx context.Context, params embeddings.EmbeddingsSearchParameters) (codeResults, textResults []embeddings.EmbeddingSearchResult, _ error) {
 	if w.clientErr != nil {
-		return nil, nil, "", w.clientErr
+		return nil, nil, w.clientErr
 	}
 
 	embeddedQuery, err := w.getQueryEmbedding(ctx, params.Query)
 	if err != nil {
-		return nil, nil, "", errors.Wrap(err, "getting query embedding")
+		return nil, nil, errors.Wrap(err, "getting query embedding")
 	}
 
 	queryBuilder := func(klass string, limit int) *graphql.GetBuilder {
@@ -82,11 +82,11 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 			WithLimit(limit)
 	}
 
-	extractResults := func(res *models.GraphQLResponse, typ string) ([]embeddings.EmbeddingSearchResult, api.CommitID) {
+	extractResults := func(res *models.GraphQLResponse, typ string) []embeddings.EmbeddingSearchResult {
 		get := res.Data["Get"].(map[string]any)
 		code := get[typ].([]any)
 		if len(code) == 0 {
-			return nil, ""
+			return nil
 		}
 
 		srs := make([]embeddings.EmbeddingSearchResult, 0, len(code))
@@ -116,12 +116,7 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 			})
 		}
 
-		commit := api.CommitID(revision)
-		if commit == "" {
-			w.logger.Warn("no revision set for an embedded repository", log.Int("repoid", int(params.RepoID)))
-		}
-
-		return srs, commit
+		return srs
 	}
 
 	// We partition the indexes by type and repository. Each class in
@@ -135,19 +130,14 @@ func (w *weaviateClient) Search(ctx context.Context, params embeddings.Embedding
 		AddQueryClass(queryBuilder(textClass, params.TextResultsCount)).
 		Do(ctx)
 	if err != nil {
-		return nil, nil, "", errors.Wrap(err, "doing weaviate request")
+		return nil, nil, errors.Wrap(err, "doing weaviate request")
 	}
 
 	if len(res.Errors) > 0 {
-		return nil, nil, "", weaviateGraphQLError(res.Errors)
+		return nil, nil, weaviateGraphQLError(res.Errors)
 	}
 
-	codeResults, codeRevision := extractResults(res, codeClass)
-	textResults, textRevision := extractResults(res, textClass)
-	if codeRevision != textRevision {
-		w.logger.Warn("found different revisions for code and text searches", log.Int("repoid", int(params.RepoID)))
-	}
-	return codeResults, textResults, codeRevision, nil
+	return extractResults(res, codeClass), extractResults(res, textClass), nil
 }
 
 type weaviateGraphQLError []*models.GraphQLError
