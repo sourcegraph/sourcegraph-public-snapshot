@@ -21,11 +21,13 @@ export type FeatureFlagName =
     | 'search-ownership'
     | 'search-ranking'
     | 'blob-page-switch-areas-shortcuts'
-    | 'app-connect-dotcom'
     | 'sentinel'
     | 'clone-progress-logging'
     | 'sourcegraph-operator-site-admin-hide-maintenance'
     | 'repository-metadata'
+    | 'llm-proxy-management-ui'
+    | 'cody-web-chat'
+    | 'cody-web-search'
 
 interface OrgFlagOverride {
     orgID: string

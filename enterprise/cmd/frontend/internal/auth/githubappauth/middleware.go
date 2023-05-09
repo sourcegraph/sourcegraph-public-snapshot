@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/graph-gophers/graphql-go"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -103,12 +104,7 @@ type GitHubAppResponse struct {
 func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.Handler {
 	r := mux.NewRouter()
 
-	r.HandleFunc(prefix+"/state", func(w http.ResponseWriter, req *http.Request) {
-		if req.Method != "GET" {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-
+	r.Path(prefix + "/state").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// 🚨 SECURITY: only site admins can create github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
 			return
@@ -119,17 +115,28 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, fmt.Sprintf("Unexpected error when creating redirect URL: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
-		cache.Set(s, []byte{1})
+
+		gqlID := req.URL.Query().Get("id")
+		if gqlID == "" {
+			cache.Set(s, []byte{1})
+
+			_, _ = w.Write([]byte(s))
+			return
+		}
+
+		id64, err := UnmarshalGitHubAppID(graphql.ID(gqlID))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unexpected error while unmarshalling App ID: %s", err.Error()), http.StatusBadRequest)
+			return
+		}
+		id := int(id64)
+
+		cache.Set(s, []byte(strconv.Itoa(id)))
 
 		_, _ = w.Write([]byte(s))
 	})
 
-	r.HandleFunc(prefix+"/redirect", func(w http.ResponseWriter, req *http.Request) {
-		if req.Method != "GET" {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-
+	r.Path(prefix + "/redirect").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		query := req.URL.Query()
 		state := query.Get("state")
 		code := query.Get("code")
@@ -187,7 +194,10 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		state := query.Get("state")
 		instID := query.Get("installation_id")
 		if state == "" || instID == "" {
-			http.Error(w, "Bad request, installation_id and state query params must be present", http.StatusBadRequest)
+			// If neither state or installation ID is set, we redirect to the GitHub Apps page.
+			// This can happen when someone installs the App directly from GitHub, instead of
+			// following the link from within Sourcegraph.
+			http.Redirect(w, req, "/site-admin/github-apps", http.StatusFound)
 			return
 		}
 		idBytes, ok := cache.Get(state)
@@ -202,7 +212,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, "Bad request, cannot parse appID", http.StatusBadRequest)
 		}
 
-		installationID, err := strconv.ParseInt(instID, 10, 64)
+		installationID, err := strconv.Atoi(instID)
 		if err != nil {
 			http.Error(w, "Bad request, cannot parse installation_id", http.StatusBadRequest)
 			return
@@ -210,14 +220,21 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 		action := query.Get("setup_action")
 		if action == "install" {
-			app, err := db.GitHubApps().GetByID(req.Context(), id)
+			ctx := req.Context()
+			app, err := db.GitHubApps().GetByID(ctx, id)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Unexpected error while fetching github app data: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
 
+			err = db.GitHubApps().Install(ctx, id, installationID)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Unexpected error while installing github app: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+
 			// TODO: redirect to github app configuration page once it's ready
-			http.Redirect(w, req, fmt.Sprintf("/site-admin/external-services/new-gh-app?id=%d&installation_id=%d", app.ID, installationID), http.StatusFound)
+			http.Redirect(w, req, fmt.Sprintf("/site-admin/github-apps/%s?installation_id=%d", MarshalGitHubAppID(int64(app.ID)), installationID), http.StatusFound)
 			// return
 		} else {
 			http.Error(w, fmt.Sprintf("Bad request; unsupported setup action: %s", action), http.StatusBadRequest)
@@ -282,6 +299,6 @@ func createGitHubApp(conversionURL string) (*types.GitHubApp, error) {
 		PrivateKey:   response.PEM,
 		BaseURL:      htmlURL.Scheme + "://" + htmlURL.Host,
 		AppURL:       htmlURL.String(),
-		// logo: https://github.com/identicons/app/app/milan-test-app-manifest
+		Logo:         fmt.Sprintf("%s://%s/identicons/app/app/%s", htmlURL.Scheme, htmlURL.Host, response.Slug),
 	}, nil
 }

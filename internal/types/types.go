@@ -874,7 +874,8 @@ func (n PermissionNamespace) String() string {
 // Valid checks if a namespace is valid and supported by the Sourcegraph RBAC system.
 func (n PermissionNamespace) Valid() bool {
 	switch n {
-	case BatchChangesNamespace:
+	case BatchChangesNamespace,
+		SubscriptionsNamespace:
 		return true
 	default:
 		return false
@@ -883,6 +884,7 @@ func (n PermissionNamespace) Valid() bool {
 
 // BatchChangesNamespace represents the Batch Changes namespace.
 const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
+const SubscriptionsNamespace PermissionNamespace = "SUBSCRIPTIONS"
 
 type Permission struct {
 	ID        int32
@@ -978,6 +980,57 @@ type UserDates struct {
 	UserID    int32
 	CreatedAt time.Time
 	DeletedAt time.Time
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyUsageStatistics struct {
+	Daily   []*CodyUsagePeriod
+	Weekly  []*CodyUsagePeriod
+	Monthly []*CodyUsagePeriod
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyUsagePeriod struct {
+	StartTime              time.Time
+	TotalUsers             *CodyCountStatistics
+	TotalRequests          *CodyCountStatistics
+	CodeGenerationRequests *CodyCountStatistics
+	ExplanationRequests    *CodyCountStatistics
+	InvalidRequests        *CodyCountStatistics
+}
+
+type CodyCountStatistics struct {
+	UserCount   *int32
+	EventsCount *int32
+}
+
+// CodyAggregatedEvent represents the total requests, unique users, code
+// generation requests, explanation requests, and invalid requests over
+// the current month, week, and day for a single search event.
+type CodyAggregatedEvent struct {
+	Name                string
+	Month               time.Time
+	Week                time.Time
+	Day                 time.Time
+	TotalMonth          int32
+	TotalWeek           int32
+	TotalDay            int32
+	UniquesMonth        int32
+	UniquesWeek         int32
+	UniquesDay          int32
+	CodeGenerationMonth int32
+	CodeGenerationWeek  int32
+	CodeGenerationDay   int32
+	ExplanationMonth    int32
+	ExplanationWeek     int32
+	ExplanationDay      int32
+	InvalidMonth        int32
+	InvalidWeek         int32
+	InvalidDay          int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change

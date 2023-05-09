@@ -41,7 +41,7 @@ A typical snapshot test might look like this:
 
 - See the [React component snapshot tests documentation](https://jestjs.io/docs/en/tutorial-react).
 - See [existing test files that use `React Testing Library`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:typescript+testing-library/react) for usage examples.
-- Use the jest watcher's <kbd>u</kbd> keyboard shortcut (or `pnpm test --updateSnapshot`) to update all snapshot files. Be sure to review the diff!
+- Use the jest watcher's <kbd>u</kbd> keyboard shortcut (or `pnpm run test -u`) to update all snapshot files. Be sure to review the diff!
 
 ### Behavior tests
 

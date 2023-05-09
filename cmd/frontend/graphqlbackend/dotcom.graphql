@@ -32,27 +32,32 @@ type DotcomMutation {
         license: ProductLicenseInput!
     ): ProductLicense!
     """
-    Generates an access token for this subscription based on the latest active license on this
-    account. If a token already exists, the existing token is returned.
-
-    It is meant for use for capabilities detection with the productSubscriptionByAccessToken query.
+    Applies a partial update to a product subscription.
 
     Only Sourcegraph.com site admins may perform this mutation.
     FOR INTERNAL USE ONLY.
     """
-    generateAccessTokenForSubscription(
+    updateProductSubscription(
         """
-        The product subscription to associate with the access token.
+        The product subscription to update.
         """
-        productSubscriptionID: ID!
-    ): ProductSubscriptionAccessToken!
-
+        id: ID!
+        """
+        Partial update to apply.
+        """
+        update: UpdateProductSubscriptionInput!
+    ): EmptyResponse!
     """
     Archives an existing product subscription.
     Only Sourcegraph.com site admins may perform this mutation.
     FOR INTERNAL USE ONLY.
     """
-    archiveProductSubscription(id: ID!): EmptyResponse!
+    archiveProductSubscription(
+        """
+        The product subscription to archive.
+        """
+        id: ID!
+    ): EmptyResponse!
 }
 
 """
@@ -260,6 +265,16 @@ type ProductSubscription implements Node {
         first: Int
     ): ProductLicenseConnection!
     """
+    Available access tokens for authenticating as the subscription holder with managed
+    Sourcegraph services.
+    Empty only if creating a token failed, for example when no active license exists.
+    """
+    sourcegraphAccessTokens: [String!]!
+    """
+    LLM-proxy access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
+    """
+    llmProxyAccess: LLMProxyAccess!
+    """
     The date when this product subscription was created.
     """
     createdAt: DateTime!
@@ -279,12 +294,83 @@ type ProductSubscription implements Node {
 }
 
 """
-The access token representing a product subscription that was created on Sourcegraph.com.
+LLM-proxy access granted to a subscription.
 FOR INTERNAL USE ONLY.
 """
-type ProductSubscriptionAccessToken {
+type LLMProxyAccess {
     """
-    Access token for authenticating as a subscription.
+    Whether or not a subscription has LLM-proxy access.
     """
-    accessToken: String!
+    enabled: Boolean!
+    """
+    Rate limits for LLM-proxy access, or null if not enabled.
+    """
+    rateLimit: LLMProxyRateLimit
+}
+
+"""
+The source of the rate limit returned.
+FOR INTERNAL USE ONLY.
+"""
+enum LLMProxyRateLimitSource {
+    """
+    Indicates that a custom override for the rate limit has been stored.
+    """
+    OVERRIDE
+
+    """
+    Indicates that the rate limit is inferred by the subscriptions active plan.
+    """
+    PLAN
+}
+
+"""
+LLM-proxy access rate limits for a subscription.
+FOR INTERNAL USE ONLY.
+"""
+type LLMProxyRateLimit {
+    """
+    The source of the rate limit configuration.
+    """
+    source: LLMProxyRateLimitSource!
+    """
+    Requests per time interval.
+    """
+    limit: Int!
+    """
+    Interval for rate limiting.
+    """
+    intervalSeconds: Int!
+}
+
+"""
+Partial update to apply to a subscription. Omitted fields are not applied.
+"""
+input UpdateProductSubscriptionInput {
+    """
+    Partial update to LLM-proxy access granted to this subscription.
+    """
+    llmProxyAccess: UpdateLLMProxyAccessInput
+}
+
+"""
+Partial update to apply to a subscription's LLM-proxy access. Omitted fields are not applied.
+"""
+input UpdateLLMProxyAccessInput {
+    """
+    Enable or disable LLM-proxy access.
+    """
+    enabled: Boolean
+    """
+    Override default requests per time interval.
+
+    Set to 0 to remove the override.
+    """
+    rateLimit: Int
+    """
+    Override default interval for rate limiting.
+
+    Set to 0 to remove the override.
+    """
+    rateLimitIntervalSeconds: Int
 }

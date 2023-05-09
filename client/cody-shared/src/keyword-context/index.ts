@@ -5,4 +5,5 @@ export interface KeywordContextFetcherResult {
 
 export interface KeywordContextFetcher {
     getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]>
+    getSearchContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]>
 }

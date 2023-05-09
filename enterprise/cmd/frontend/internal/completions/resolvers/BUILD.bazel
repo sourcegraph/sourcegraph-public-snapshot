@@ -10,7 +10,6 @@ go_library(
         "//enterprise/internal/completions/streaming",
         "//enterprise/internal/completions/types",
         "//internal/cody",
-        "//internal/conf",
         "//internal/database",
         "//internal/redispool",
         "//lib/errors",

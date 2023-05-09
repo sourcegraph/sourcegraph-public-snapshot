@@ -206,6 +206,14 @@ type HunkReader interface {
 	Close() error
 }
 
+type CommitLog struct {
+	AuthorEmail  string
+	AuthorName   string
+	Timestamp    time.Time
+	SHA          string
+	ChangedFiles []string
+}
+
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(api.RepoName) string
@@ -380,6 +388,8 @@ type Client interface {
 	// be rooted at the given commit. If a non-zero limit is supplied, at most that
 	// many commits will be returned.
 	CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
+
+	CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error)
 
 	// CommitsUniqueToBranch returns a map from commits that exist on a particular
 	// branch in the given repository to their committer date. This set of commits is

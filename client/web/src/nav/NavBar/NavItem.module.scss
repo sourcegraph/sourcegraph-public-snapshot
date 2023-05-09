@@ -51,7 +51,7 @@
 
     @extend .item-focusable;
 
-    &:hover:not(.active) {
+    &:hover:not(.active):not([aria-disabled='true']) {
         border-bottom: 2px solid var(--border-color-2);
         .link-content {
             margin-bottom: -0.125rem;

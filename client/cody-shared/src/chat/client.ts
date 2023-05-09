@@ -21,7 +21,10 @@ export type { TranscriptJSON }
 export { Transcript }
 
 export interface ClientInit {
-    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken'>
+    config: Pick<
+        ConfigurationWithAccessToken,
+        'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
+    >
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: Transcript) => void
     editor: Editor
@@ -49,7 +52,7 @@ export async function createClient({
     editor,
     initialTranscript,
 }: ClientInit): Promise<Client> {
-    const fullConfig = { ...config, debug: false, customHeaders: {} }
+    const fullConfig = { debug: false, ...config }
 
     const completionsClient = new SourcegraphBrowserCompletionsClient(fullConfig)
     const chatClient = new ChatClient(completionsClient)
@@ -113,16 +116,22 @@ export async function createClient({
 
         const prompt = await transcript.toPrompt(getPreamble(config.codebase))
         const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
+        let rawText = ''
 
         chatClient.chat(prompt, {
-            onChange(rawText) {
-                const text = reformatBotMessage(escapeCodyMarkdown(rawText), responsePrefix)
+            onChange(_rawText) {
+                rawText = _rawText
+
+                const text = reformatBotMessage(escapeCodyMarkdown(rawText, true), responsePrefix)
                 transcript.addAssistantResponse(text)
 
                 sendTranscript()
             },
             onComplete() {
                 isMessageInProgress = false
+
+                const text = reformatBotMessage(escapeCodyMarkdown(rawText, false), responsePrefix)
+                transcript.addAssistantResponse(text)
                 sendTranscript()
             },
             onError(error) {

@@ -22,9 +22,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "a592fafd8a27b2828318cebbda0003686c6da3318df366b563e8beeffa05a02c",
-    strip_prefix = "rules_js-1.21.0",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v1.21.0/rules_js-v1.21.0.tar.gz",
+    sha256 = "3e237129b3554373a80c681c4b47348f91c294ff32d4bc8f8297f40511a4eb6c",
+    strip_prefix = "rules_js-1.25.4",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v1.25.4/rules_js-v1.25.4.tar.gz",
 )
 
 http_archive(
@@ -76,6 +76,7 @@ http_archive(
 
 http_archive(
     name = "io_tweag_rules_nixpkgs",
+    sha256 = "cb1030a6134f625e2d30d2a34dcfe7960157ae21ec8f20c2b1adb0665f789f50",
     strip_prefix = "rules_nixpkgs-4dddbafba508cd2dffd95b8562cab91c9336fe36",
     urls = ["https://github.com/tweag/rules_nixpkgs/archive/4dddbafba508cd2dffd95b8562cab91c9336fe36.tar.gz"],
 )

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
@@ -32,18 +33,20 @@ func TestCreateGitHubApp(t *testing.T) {
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
 		Logo:         "logo.png",
+		AppURL:       "https://github.com/apps/testapp",
 	}
 
 	id, err := store.Create(ctx, app)
 	require.NoError(t, err)
 
 	var createdApp types.GitHubApp
-	query := sqlf.Sprintf(`SELECT app_id, name, slug, base_url, client_id, client_secret, private_key, encryption_key_id, logo FROM github_apps WHERE id=%s`, id)
+	query := sqlf.Sprintf(`SELECT app_id, name, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo FROM github_apps WHERE id=%s`, id)
 	err = store.QueryRow(ctx, query).Scan(
 		&createdApp.AppID,
 		&createdApp.Name,
 		&createdApp.Slug,
 		&createdApp.BaseURL,
+		&createdApp.AppURL,
 		&createdApp.ClientID,
 		&createdApp.ClientSecret,
 		&createdApp.PrivateKey,
@@ -102,6 +105,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 		Name:         "Test App",
 		Slug:         "test-app",
 		BaseURL:      "https://example.com",
+		AppURL:       "https://example.com/apps/testapp",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
@@ -118,6 +122,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 		Name:         "Updated Name",
 		Slug:         "updated-slug",
 		BaseURL:      "https://updated-example.com",
+		AppURL:       "https://updated-example.com/apps/updated-app",
 		ClientID:     "def456",
 		ClientSecret: "updated-secret",
 		PrivateKey:   "updated-private-key",
@@ -156,6 +161,7 @@ func TestGetByID(t *testing.T) {
 		Name:         "Test App 1",
 		Slug:         "test-app-1",
 		BaseURL:      "https://github.com",
+		AppURL:       "https://github.com/apps/testapp",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
@@ -167,6 +173,7 @@ func TestGetByID(t *testing.T) {
 		Name:         "Test App 2",
 		Slug:         "test-app-2",
 		BaseURL:      "https://enterprise.github.com",
+		AppURL:       "https://enterprise.github.com/apps/testapp",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
@@ -273,6 +280,7 @@ func TestGetBySlug(t *testing.T) {
 		Name:         "Test App 1",
 		Slug:         "test-app",
 		BaseURL:      "https://github.com",
+		AppURL:       "https://github.com/apps/testapp1",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
@@ -284,6 +292,7 @@ func TestGetBySlug(t *testing.T) {
 		Name:         "Test App",
 		Slug:         "test-app",
 		BaseURL:      "https://enterprise.github.com",
+		AppURL:       "https://enterprise.github.com/apps/testapp",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
@@ -315,4 +324,56 @@ func TestGetBySlug(t *testing.T) {
 	// does not exist
 	_, err = store.GetBySlug(ctx, "foo", "bar")
 	require.Error(t, err)
+}
+
+func TestInstallGitHubApp(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	app := &types.GitHubApp{
+		AppID:        1,
+		Name:         "Test App",
+		Slug:         "test-app",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	id, err := store.Create(ctx, app)
+	require.NoError(t, err)
+
+	installationID := 42
+
+	err = store.Install(ctx, id, installationID)
+	require.NoError(t, err)
+
+	var fetchedID, fetchedInstallID int
+	var createdAt time.Time
+	query := sqlf.Sprintf(`SELECT app_id, installation_id, created_at FROM github_app_installs WHERE app_id=%s AND installation_id = %s`, id, installationID)
+	err = store.QueryRow(ctx, query).Scan(
+		&fetchedID,
+		&fetchedInstallID,
+		&createdAt,
+	)
+	require.NoError(t, err)
+	require.NotZero(t, createdAt)
+
+	// installing with the same ID results in a noop
+	err = store.Install(ctx, id, installationID)
+	require.NoError(t, err)
+
+	var createdAt2 time.Time
+	err = store.QueryRow(ctx, query).Scan(
+		&fetchedID,
+		&fetchedInstallID,
+		&createdAt2,
+	)
+	require.NoError(t, err)
+	require.Equal(t, createdAt, createdAt2)
 }
