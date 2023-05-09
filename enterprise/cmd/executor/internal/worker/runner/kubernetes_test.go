@@ -144,8 +144,8 @@ func TestKubernetesRunner_Run(t *testing.T) {
 				assert.Equal(t, "list", actions[2].GetVerb())
 				assert.Equal(t, "pods", actions[2].GetResource().Resource)
 
-				assert.Equal(t, "delete", actions[2].GetVerb())
-				assert.Equal(t, "jobs", actions[2].GetResource().Resource)
+				assert.Equal(t, "delete", actions[3].GetVerb())
+				assert.Equal(t, "jobs", actions[3].GetResource().Resource)
 			},
 			expectedErr: errors.New("finding pod: failed"),
 		},
