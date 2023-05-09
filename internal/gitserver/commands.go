@@ -2457,7 +2457,7 @@ func (c *clientImplementor) ArchiveReader(
 			err := convertGRPCErrorToGitDomainError(firstError)
 
 			var cse *CommandStatusError
-			if !errors.As(err, &cse) || !cse.isRevisionNotFound() {
+			if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
 				cancel()
 				return nil, handleStreamErr(err)
 			}

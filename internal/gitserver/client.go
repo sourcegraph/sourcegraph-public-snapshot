@@ -70,7 +70,12 @@ func ResetClientMocks() {
 
 var _ Client = &clientImplementor{}
 
-type gRPCClientSource func(cc grpc.ClientConnInterface) proto.GitserverServiceClient
+// GRPCClientSource is a function that returns a new gRPC client for the given connection.
+type GRPCClientSource func(cc grpc.ClientConnInterface) proto.GitserverServiceClient
+
+func DefaultGRPCSource(cc grpc.ClientConnInterface) proto.GitserverServiceClient {
+	return proto.NewGitserverServiceClient(cc)
+}
 
 // NewClient returns a new gitserver.Client.
 func NewClient() Client {
@@ -88,13 +93,9 @@ func NewClient() Client {
 	}
 }
 
-func DefaultGRPCSource(cc grpc.ClientConnInterface) proto.GitserverServiceClient {
-	return proto.NewGitserverServiceClient(cc)
-}
-
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
-func NewTestClient(cli httpcli.Doer, grpcClientFunc gRPCClientSource, addrs []string) Client {
+func NewTestClient(cli httpcli.Doer, grpcClientFunc GRPCClientSource, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger:      logger,
@@ -202,8 +203,8 @@ type clientImplementor struct {
 	// operations are used for internal observability
 	operations *operations
 
-	// grpcClient is a function that returns a gRPC client to use for the given connection
-	gRPCClientSource gRPCClientSource
+	// gRPCClientSource invokes the given GRPCCLientSource to get a gRPC client
+	gRPCClientSource GRPCClientSource
 }
 
 type RawBatchLogResult struct {
@@ -507,7 +508,7 @@ func (a *archiveReader) Read(p []byte) (int, error) {
 	n, err := a.base.Read(p)
 	if err != nil {
 		// handle the special case where git archive failed because of an invalid spec
-		if strings.Contains(err.Error(), "not a valid object") {
+		if isRevisionNotFound(err.Error()) {
 			return 0, &gitdomain.RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
 		}
 	}
@@ -701,8 +702,9 @@ func (c *CommandStatusError) Error() string {
 	return stderr
 }
 
-func (c *CommandStatusError) isRevisionNotFound() bool {
-	loweredErr := strings.ToLower(c.Stderr)
+func isRevisionNotFound(err string) bool {
+	// error message is lowercased in to handle case insensitive error messages
+	loweredErr := strings.ToLower(err)
 	return strings.Contains(loweredErr, "not a valid object")
 }
 
