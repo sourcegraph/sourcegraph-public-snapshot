@@ -656,6 +656,10 @@ func (r *readCloseWrapper) Close() error {
 // convertGRPCErrorToGitDomainError translates a GRPC error to a gitdomain error.
 // If the error is not a GRPC error, it is returned as-is.
 func convertGRPCErrorToGitDomainError(err error) error {
+	if status.Code(err) == codes.Canceled {
+		return context.Canceled
+	}
+
 	st, ok := status.FromError(err)
 	if !ok {
 		return err

@@ -25,8 +25,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -2424,14 +2422,6 @@ func (c *clientImplementor) ArchiveReader(
 			return nil, err
 		}
 
-		handleStreamErr := func(err error) error {
-			if status.Code(err) == codes.Canceled {
-				return context.Canceled
-			}
-
-			return convertGRPCErrorToGitDomainError(err)
-		}
-
 		// first message from the gRPC stream needs to be read to check for errors before continuing
 		// to read the rest of the stream. If the first message is an error, we cancel the stream
 		// and return the error.
@@ -2458,7 +2448,7 @@ func (c *clientImplementor) ArchiveReader(
 			var cse *CommandStatusError
 			if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
 				cancel()
-				return nil, handleStreamErr(err)
+				return nil, convertGRPCErrorToGitDomainError(err)
 			}
 		}
 
@@ -2480,7 +2470,7 @@ func (c *clientImplementor) ArchiveReader(
 			// Receive the next message from the stream.
 			msg, err := stream.Recv()
 			if err != nil {
-				return nil, handleStreamErr(err)
+				return nil, convertGRPCErrorToGitDomainError(err)
 			}
 
 			// Return the data from the received message.
