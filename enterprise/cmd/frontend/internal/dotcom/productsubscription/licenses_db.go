@@ -52,8 +52,8 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		expiresAt = &info.ExpiresAt
 	}
 	if err = s.db.QueryRowContext(ctx, `
-INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at, access_token_enabled)
-VALUES($1, $2, $3, $4, $5, $6, $7, true) RETURNING id
+INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at)
+VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id
 `,
 		newUUID,
 		subscriptionID,

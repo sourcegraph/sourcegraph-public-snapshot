@@ -3,6 +3,7 @@ import { FC } from 'react'
 import { mdiInformation } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text, Container } from '@sourcegraph/wildcard'
 
@@ -10,7 +11,7 @@ import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
 import { ExternalServiceCard } from './ExternalServiceCard'
-import { allExternalServices, AddExternalServiceOptions } from './externalServices'
+import { allExternalServices, AddExternalServiceOptions, gitHubAppConfig } from './externalServices'
 
 import styles from './AddExternalServicesPage.module.scss'
 
@@ -53,10 +54,20 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         setHasDismissedPrivacyWarning(true)
     }
 
-    const id = new URLSearchParams(search).get('id')
+    const params = new URLSearchParams(search)
+    const id = params.get('id')
     if (id) {
-        const externalService = allExternalServices[id]
+        let externalService = allExternalServices[id]
         if (externalService) {
+            if (externalService.kind === ExternalServiceKind.GITHUB) {
+                const appID = params.get('appID')
+                const installationID = params.get('installationID')
+                const baseURL = params.get('url')
+                const org = params.get('org')
+                if (appID && installationID && baseURL && org) {
+                    externalService = gitHubAppConfig(baseURL, appID, installationID, org)
+                }
+            }
             return (
                 <AddExternalServicePage
                     telemetryService={telemetryService}
