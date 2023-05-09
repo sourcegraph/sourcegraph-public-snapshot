@@ -1,10 +1,11 @@
-import { FC, useEffect, useMemo } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
 
 import { mdiCog, mdiGithub, mdiRefresh, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { useParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { ErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -46,6 +47,7 @@ export const GitHubAppPage: FC<Props> = ({
     useEffect(() => {
         telemetryService.logPageView('SiteAdminGitHubApp')
     }, [telemetryService])
+    const [fetchError, setError] = useState<ErrorLike>()
 
     const { data, loading, error } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(GITHUB_APP_BY_ID_QUERY, {
         variables: { id: appID ?? '' },
@@ -60,10 +62,27 @@ export const GitHubAppPage: FC<Props> = ({
         return null
     }
 
+    const handleError = (error: ErrorLike): [] => {
+        setError(error)
+        return []
+    }
+
+    const onAddInstallation = async (app: NonNullable<GitHubAppByIDResult['gitHubApp']>) => {
+        try {
+            const req = await fetch(`/.auth/githubapp/state?id=${app?.id}`)
+            const state = await req.text()
+            window.location.href = app.appURL.endsWith('/')
+                ? app.appURL + 'installations/new?state=' + state
+                : app.appURL + '/installations/new?state=' + state
+        } catch (e) {
+            handleError(e)
+        }
+    }
+
     return (
         <div>
             {app ? <PageTitle title={`GitHub App - ${app.name}`} /> : <PageTitle title="GitHub App" />}
-            {error && <ErrorAlert className="mb-3" error={error} />}
+            {(error || fetchError) && <ErrorAlert className="mb-3" error={error ?? fetchError} />}
             {loading && <LoadingSpinner />}
             {app && (
                 <Container className="mb-3">
@@ -156,16 +175,7 @@ export const GitHubAppPage: FC<Props> = ({
                                 ))
                             )}
                         </div>
-                        <Button
-                            onClick={async () => {
-                                const req = await fetch(`/.auth/githubapp/state?id=${app.id}`)
-                                const state = await req.text()
-                                window.location.href = app.appURL.endsWith('/')
-                                    ? app.appURL + 'installations/new?state=' + state
-                                    : app.appURL + '/installations/new?state=' + state
-                            }}
-                            variant="success"
-                        >
+                        <Button onClick={async () => await onAddInstallation(app)} variant="success">
                             <Icon svgPath={mdiPlus} aria-hidden={true} /> Add installation
                         </Button>
                     </div>
