@@ -68,7 +68,7 @@ func getLatestRelease(deployType string) pingResponse {
 	}
 }
 
-func AppUpdateHandlerWithLog(logger log.Logger) func(w http.ResponseWriter, r *http.Request) {
+func AppUpdateHandlerWithLog(logger log.Logger) http.HandlerFunc {
 	scopedLog := logger.Scoped("appupdate.handler", "handler that responds with information about software updates")
 	return func(w http.ResponseWriter, r *http.Request) {
 		appUpdateHandler(scopedLog, w, r)
@@ -84,11 +84,14 @@ type App struct {
 func appUpdateHandler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 	values := r.URL.Query()
 	var app = App{}
+	fmt.Printf("query: %v\n", values)
 	var varMap = map[string]*string{"target": &app.target, "current_version": &app.currentVersion, "arch": &app.arch}
 
 	for queryVar := range varMap {
 		if val, ok := values[queryVar]; ok && len(val) > 0 {
-			varMap[queryVar] = &val[0]
+			var strp *string
+			strp = &val[0]
+			(*varMap[queryVar]) = *strp
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
 		}

@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/accessrequest"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -88,6 +89,9 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 	// Sourcegraph GitHub App setup (Cloud and on-prem)
 	r.Get(router.SetupGitHubAppCloud).Handler(trace.Route(githubAppSetupHandler))
 	r.Get(router.SetupGitHubApp).Handler(trace.Route(githubAppSetupHandler))
+
+	// Update endpoint for Sourcegraph App
+	r.Get(router.AppUpdateCheck).Handler(trace.Route(updatecheck.AppUpdateHandlerWithLog(logger)))
 
 	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor(db))))
 

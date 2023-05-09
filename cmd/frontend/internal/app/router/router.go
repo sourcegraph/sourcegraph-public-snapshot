@@ -54,6 +54,9 @@ const (
 	GopherconLiveBlog = "gophercon.live.blog"
 
 	UI = "ui"
+
+	// Sourcegraph App routes
+	AppUpdateCheck = "app.update.check"
 )
 
 // Router returns the frontend app router.
@@ -105,6 +108,8 @@ func newRouter() *mux.Router {
 
 	base.Path("/setup/github/app/cloud").Methods("GET").Name(SetupGitHubAppCloud)
 	base.Path("/setup/github/app").Methods("GET").Name(SetupGitHubApp)
+
+	base.Path("/app/check/update").Methods("GET").Name(AppUpdateCheck)
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
