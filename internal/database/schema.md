@@ -881,13 +881,13 @@ Indexes:
  repository_id   | integer                  |           | not null | 
  payload         | jsonb                    |           | not null | 
  updated_at      | timestamp with time zone |           | not null | now()
- graph_key       | text                     |           |          | 
+ graph_key       | text                     |           | not null | 
  num_paths       | integer                  |           |          | 
  refcount_logsum | double precision         |           |          | 
  id              | bigint                   |           | not null | nextval('codeintel_path_ranks_id_seq'::regclass)
 Indexes:
     "codeintel_path_ranks_pkey" PRIMARY KEY, btree (id)
-    "codeintel_path_ranks_repository_id" UNIQUE, btree (repository_id)
+    "codeintel_path_ranks_graph_key_repository_id" UNIQUE, btree (graph_key, repository_id)
     "codeintel_path_ranks_graph_key" btree (graph_key, updated_at NULLS FIRST, id)
     "codeintel_path_ranks_repository_id_updated_at_id" btree (repository_id, updated_at NULLS FIRST, id)
 Triggers:

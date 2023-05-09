@@ -105,7 +105,3 @@ deleted_uploads AS (
 )
 SELECT COUNT(*) FROM deleted_uploads
 `
-
-//
-// TODO - unify deletion of stale records?
-//

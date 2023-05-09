@@ -172,13 +172,12 @@ func setDocumentRanks(ctx context.Context, db *basestore.Store, repoName api.Rep
 		return err
 	}
 
-	return db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, serialized, graphKey))
+	return db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, graphKey, repoName, serialized))
 }
 
 const setDocumentRanksQuery = `
-INSERT INTO codeintel_path_ranks AS pr (repository_id, payload, graph_key)
-VALUES ((SELECT id FROM repo WHERE name = %s), %s, %s)
-ON CONFLICT (repository_id) DO
-UPDATE
-	SET payload = EXCLUDED.payload
+INSERT INTO codeintel_path_ranks AS pr (graph_key, repository_id, payload)
+VALUES (%s, (SELECT id FROM repo WHERE name = %s), %s)
+ON CONFLICT (graph_key, repository_id) DO
+UPDATE SET payload = EXCLUDED.payload
 `

@@ -14,8 +14,6 @@ import (
 
 const recordTypeName = "path count inputs"
 
-// TODO - VacuumAbandonedExportedUploads
-
 func NewSymbolDefinitionsJanitor(
 	observationCtx *observation.Context,
 	store store.Store,

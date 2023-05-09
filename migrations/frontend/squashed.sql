@@ -1704,7 +1704,7 @@ CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
     payload jsonb NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    graph_key text,
+    graph_key text NOT NULL,
     num_paths integer,
     refcount_logsum double precision,
     id bigint NOT NULL
@@ -5369,7 +5369,7 @@ CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON cod
 
 CREATE INDEX codeintel_path_ranks_graph_key ON codeintel_path_ranks USING btree (graph_key, updated_at NULLS FIRST, id);
 
-CREATE UNIQUE INDEX codeintel_path_ranks_repository_id ON codeintel_path_ranks USING btree (repository_id);
+CREATE UNIQUE INDEX codeintel_path_ranks_graph_key_repository_id ON codeintel_path_ranks USING btree (graph_key, repository_id);
 
 CREATE INDEX codeintel_path_ranks_repository_id_updated_at_id ON codeintel_path_ranks USING btree (repository_id, updated_at NULLS FIRST, id);
 
