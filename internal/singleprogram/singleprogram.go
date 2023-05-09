@@ -64,7 +64,7 @@ func Init(logger log.Logger) {
 	// This defaults to an internal hostname.
 	setDefaultEnv(logger, "SRC_FRONTEND_INTERNAL", "localhost:3090")
 
-	appPath := "sg-app"
+	appPath := "sourcegraph"
 	if version.IsDev(version.Version()) {
 		appPath = fmt.Sprintf("%s-dev", appPath)
 	}
