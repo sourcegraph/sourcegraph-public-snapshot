@@ -3,7 +3,7 @@
 set -e
 
 echo "--- :books: Annotating build with Glossary"
-cat ./enterprise/dev/ci/glossary.md | buildkite-agent annotate --style info
+buildkite-agent annotate --style info <./enterprise/dev/ci/glossary.md
 
 echo "--- :bazel: Build pipeline generator"
 bazel \
