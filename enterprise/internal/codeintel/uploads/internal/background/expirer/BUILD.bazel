@@ -15,6 +15,7 @@ go_library(
         "//enterprise/internal/codeintel/policies/shared",
         "//enterprise/internal/codeintel/uploads/internal/store",
         "//enterprise/internal/codeintel/uploads/shared",
+        "//internal/actor",
         "//internal/api",
         "//internal/database",
         "//internal/env",

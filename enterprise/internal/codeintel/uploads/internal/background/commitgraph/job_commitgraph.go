@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
@@ -26,7 +27,7 @@ func NewCommitGraphUpdater(
 	}
 
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
+		actor.WithInternalActor(context.Background()),
 		"codeintel.commitgraph-updater", "updates the visibility commit graph for dirty repos",
 		config.Interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {

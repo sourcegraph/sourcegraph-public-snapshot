@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -12,7 +13,7 @@ func NewCVEMatcher(store store.Store, observationCtx *observation.Context, confi
 	metrics := newMetrics(observationCtx)
 
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
+		actor.WithInternalActor(context.Background()),
 		"codeintel.sentinel-cve-matcher", "Matches SCIP indexes against known vulnerabilities.",
 		config.MatcherInterval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
