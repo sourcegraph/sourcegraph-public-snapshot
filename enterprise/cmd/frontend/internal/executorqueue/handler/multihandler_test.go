@@ -93,17 +93,47 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			},
 			totalEvents: 2,
 		},
+		{
+			name: "Nothing to dequeue",
+			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB", queues: ["codeintel","batches"]}`,
+			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
+				0: {
+					queueName: "codeintel",
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(uploadsshared.Index{}, true, nil)
+					},
+					expectedStatusCode: http.StatusNoContent,
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						require.Len(t, mockStore.DequeueFunc.History(), 1)
+						require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+					},
+				},
+			},
+			batchesDequeueEvents: map[int]dequeueEvent[*btypes.BatchSpecWorkspaceExecutionJob]{
+				1: {
+					queueName: "batches",
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{}, false, nil)
+					},
+					expectedStatusCode: http.StatusNoContent,
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+						require.Len(t, mockStore.DequeueFunc.History(), 1)
+						require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+					},
+				},
+			},
+		},
+		//{
+		//	name:                 "Invalid version",
+		//	body:                 `{"executorName": "test-executor", "version":"\n1.2", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
+		//	expectedStatusCode:   http.StatusInternalServerError,
+		//	expectedResponseBody: `{"error":"Invalid Semantic Version"}`,
+		//	assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
+		//		require.Len(t, mockStore.DequeueFunc.History(), 0)
+		//		require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+		//	},
+		//},
 	}
-	//	{
-	//		name:                 "Invalid version",
-	//		body:                 `{"executorName": "test-executor", "version":"\n1.2", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-	//		expectedStatusCode:   http.StatusInternalServerError,
-	//		expectedResponseBody: `{"error":"Invalid Semantic Version"}`,
-	//		assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			require.Len(t, mockStore.DequeueFunc.History(), 0)
-	//			require.Len(t, jobTokenStore.CreateFunc.History(), 0)
-	//		},
-	//	},
 	//	{
 	//		name: "Dequeue error",
 	//		body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
@@ -112,18 +142,6 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 	//		},
 	//		expectedStatusCode:   http.StatusInternalServerError,
 	//		expectedResponseBody: `{"error":"dbworkerstore.Dequeue: failed to dequeue"}`,
-	//		assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			require.Len(t, mockStore.DequeueFunc.History(), 1)
-	//			require.Len(t, jobTokenStore.CreateFunc.History(), 0)
-	//		},
-	//	},
-	//	{
-	//		name: "Nothing to dequeue",
-	//		body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-	//		mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			mockStore.DequeueFunc.PushReturn(testRecord{}, false, nil)
-	//		},
-	//		expectedStatusCode: http.StatusNoContent,
 	//		assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 	//			require.Len(t, mockStore.DequeueFunc.History(), 1)
 	//			require.Len(t, jobTokenStore.CreateFunc.History(), 0)
