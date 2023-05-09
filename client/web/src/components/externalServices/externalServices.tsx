@@ -561,10 +561,25 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
     editorActions: githubEditorActions(true),
     Instructions: () => <GitHubInstructions isEnterprise={true} />,
 }
-const GITHUB_APP: AddExternalServiceOptions = {
+export const gitHubAppConfig = (
+    baseURL: string,
+    appID: string,
+    installationID: string,
+    org: string
+): AddExternalServiceOptions => ({
     ...GITHUB_DOTCOM,
-    title: 'GitHub App',
-}
+    title: 'GitHub App Installation',
+    defaultConfig: `{
+  "url": "${decodeURI(baseURL)}",
+  "gitHubAppDetails": {
+    "installationID": ${installationID},
+    "appID": ${appID}
+  },
+  "orgs": ["${org}"],
+  "authorization": {}
+}`,
+})
+
 const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.AWSCODECOMMIT,
     title: 'AWS CodeCommit repositories',
@@ -1508,7 +1523,6 @@ const RUBY_PACKAGES: AddExternalServiceOptions = {
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     github: GITHUB_DOTCOM,
     ghe: GITHUB_ENTERPRISE,
-    ghapp: GITHUB_APP,
     gitlabcom: GITLAB_DOTCOM,
     gitlab: GITLAB_SELF_MANAGED,
     bitbucket: BITBUCKET_CLOUD,

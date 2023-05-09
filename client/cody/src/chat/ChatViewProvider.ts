@@ -493,6 +493,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Save Login state to webview
      */
     public async sendLogin(isValid: boolean): Promise<void> {
+        this.sendEvent('token', 'Set')
         await vscode.commands.executeCommand('setContext', 'cody.activated', isValid)
         if (isValid) {
             this.sendEvent('auth', 'login')
@@ -578,6 +579,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public sendEvent(event: string, value: string): void {
         const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href
+        const endpointUri = { serverEndpoint: this.config.serverEndpoint }
         switch (event) {
             case 'feedback':
                 // Only include context for dot com users with connected codebase
@@ -588,14 +590,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 )
                 break
             case 'token':
-                logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`)
+                logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri)
                 break
             case 'auth':
-                logEvent(`CodyVSCodeExtension:${value}:clicked`)
+                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
             // aditya combine this with above statemenet for auth or click
             case 'click':
-                logEvent(`CodyVSCodeExtension:${value}:clicked`)
+                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
         }
     }
@@ -691,6 +693,9 @@ function filePathContains(container: string, contained: string): boolean {
     }
     if (trimmedContained.startsWith(path.sep)) {
         trimmedContained = trimmedContained.slice(path.sep.length)
+    }
+    if (trimmedContained.startsWith('.' + path.sep)) {
+        trimmedContained = trimmedContained.slice(1 + path.sep.length)
     }
     return (
         container.includes(path.sep + trimmedContained + path.sep) || // mid-level directory

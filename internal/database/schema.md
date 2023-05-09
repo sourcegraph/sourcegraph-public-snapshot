@@ -795,6 +795,22 @@ Indexes:
 
 ```
 
+# Table "public.codeintel_autoindexing_exceptions"
+```
+       Column       |  Type   | Collation | Nullable |                            Default                            
+--------------------+---------+-----------+----------+---------------------------------------------------------------
+ id                 | integer |           | not null | nextval('codeintel_autoindexing_exceptions_id_seq'::regclass)
+ repository_id      | integer |           | not null | 
+ disable_scheduling | boolean |           | not null | false
+ disable_inference  | boolean |           | not null | false
+Indexes:
+    "codeintel_autoindexing_exceptions_pkey" PRIMARY KEY, btree (id)
+    "codeintel_autoindexing_exceptions_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
+Foreign-key constraints:
+    "codeintel_autoindexing_exceptions_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+
+```
+
 # Table "public.codeintel_commit_dates"
 ```
     Column     |           Type           | Collation | Nullable | Default 
@@ -836,6 +852,7 @@ Contains auto-index job inference Lua scripts as an alternative to setting via e
  graph_key       | text                     |           | not null | 
  last_scanned_at | timestamp with time zone |           |          | 
  document_paths  | text[]                   |           | not null | '{}'::text[]
+ deleted_at      | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_initial_path_ranks_pkey" PRIMARY KEY, btree (id)
     "codeintel_initial_path_ranks_graph_key_id" btree (graph_key, id)
@@ -880,13 +897,13 @@ Indexes:
  repository_id   | integer                  |           | not null | 
  payload         | jsonb                    |           | not null | 
  updated_at      | timestamp with time zone |           | not null | now()
- graph_key       | text                     |           |          | 
+ graph_key       | text                     |           | not null | 
  num_paths       | integer                  |           |          | 
  refcount_logsum | double precision         |           |          | 
  id              | bigint                   |           | not null | nextval('codeintel_path_ranks_id_seq'::regclass)
 Indexes:
     "codeintel_path_ranks_pkey" PRIMARY KEY, btree (id)
-    "codeintel_path_ranks_repository_id" UNIQUE, btree (repository_id)
+    "codeintel_path_ranks_graph_key_repository_id" UNIQUE, btree (graph_key, repository_id)
     "codeintel_path_ranks_graph_key" btree (graph_key, updated_at NULLS FIRST, id)
     "codeintel_path_ranks_repository_id_updated_at_id" btree (repository_id, updated_at NULLS FIRST, id)
 Triggers:
@@ -906,6 +923,7 @@ Triggers:
  document_path   | text                     |           | not null | 
  graph_key       | text                     |           | not null | 
  last_scanned_at | timestamp with time zone |           |          | 
+ deleted_at      | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_definitions_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
@@ -947,6 +965,26 @@ Indexes:
 
 ```
 
+# Table "public.codeintel_ranking_progress"
+```
+          Column          |           Type           | Collation | Nullable |                        Default                         
+--------------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                       | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
+ graph_key                | text                     |           | not null | 
+ max_definition_id        | integer                  |           | not null | 
+ max_reference_id         | integer                  |           | not null | 
+ max_path_id              | integer                  |           | not null | 
+ mappers_started_at       | timestamp with time zone |           | not null | 
+ mapper_completed_at      | timestamp with time zone |           |          | 
+ seed_mapper_completed_at | timestamp with time zone |           |          | 
+ reducer_started_at       | timestamp with time zone |           |          | 
+ reducer_completed_at     | timestamp with time zone |           |          | 
+Indexes:
+    "codeintel_ranking_progress_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_progress_graph_key_key" UNIQUE CONSTRAINT, btree (graph_key)
+
+```
+
 # Table "public.codeintel_ranking_references"
 ```
      Column      |           Type           | Collation | Nullable |                         Default                          
@@ -956,6 +994,7 @@ Indexes:
  symbol_names    | text[]                   |           | not null | 
  graph_key       | text                     |           | not null | 
  last_scanned_at | timestamp with time zone |           |          | 
+ deleted_at      | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_references_graph_key_id" btree (graph_key, id)
@@ -3210,6 +3249,7 @@ Referenced by:
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "cm_last_searched" CONSTRAINT "cm_last_searched_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "codeintel_autoindexing_exceptions" CONSTRAINT "codeintel_autoindexing_exceptions_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "codeowners" CONSTRAINT "codeowners_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE

@@ -6,6 +6,7 @@ import { FileChat } from './file-chat'
 import { FindCodeSmells } from './find-code-smells'
 import { Fixup } from './fixup'
 import { GenerateDocstring } from './generate-docstring'
+import { ReleaseNotes } from './generate-release-notes'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
 import { ImproveVariableNames } from './improve-variable-names'
@@ -42,6 +43,7 @@ function init(): void {
         new FindCodeSmells(),
         new NextQuestions(),
         new ContextSearch(),
+        new ReleaseNotes(),
     ]
 
     for (const recipe of recipes) {
