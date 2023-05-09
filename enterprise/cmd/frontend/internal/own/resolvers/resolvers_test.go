@@ -635,6 +635,12 @@ func TestOwnership_WithSignals(t *testing.T) {
 							blob(path: $currentPath) {
 								ownership {
 									nodes {
+										owner {
+											...on Person {
+												displayName
+												email
+											}
+										}
 										reasons {
 											...CodeownersFileEntryFields
 											... on RecentContributorOwnershipSignal {
@@ -656,6 +662,10 @@ func TestOwnership_WithSignals(t *testing.T) {
 						"ownership": {
 							"nodes": [
 								{
+									"owner": {
+										"displayName": "js-owner",
+										"email": ""
+									},
 									"reasons": [
 										{
 											"title": "codeowners",
@@ -669,6 +679,10 @@ func TestOwnership_WithSignals(t *testing.T) {
 									]
 								},
 								{
+									"owner": {
+										"displayName": "santa claus",
+										"email": "santa@northpole.com"
+									},
 									"reasons": [
 										{
 											"title": "recent contributor",
