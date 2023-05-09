@@ -795,6 +795,22 @@ Indexes:
 
 ```
 
+# Table "public.codeintel_autoindexing_exceptions"
+```
+       Column       |  Type   | Collation | Nullable |                            Default                            
+--------------------+---------+-----------+----------+---------------------------------------------------------------
+ id                 | integer |           | not null | nextval('codeintel_autoindexing_exceptions_id_seq'::regclass)
+ repository_id      | integer |           | not null | 
+ disable_scheduling | boolean |           | not null | false
+ disable_inference  | boolean |           | not null | false
+Indexes:
+    "codeintel_autoindexing_exceptions_pkey" PRIMARY KEY, btree (id)
+    "codeintel_autoindexing_exceptions_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
+Foreign-key constraints:
+    "codeintel_autoindexing_exceptions_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+
+```
+
 # Table "public.codeintel_commit_dates"
 ```
     Column     |           Type           | Collation | Nullable | Default 
@@ -3210,6 +3226,7 @@ Referenced by:
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "cm_last_searched" CONSTRAINT "cm_last_searched_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "codeintel_autoindexing_exceptions" CONSTRAINT "codeintel_autoindexing_exceptions_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "codeowners" CONSTRAINT "codeowners_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE

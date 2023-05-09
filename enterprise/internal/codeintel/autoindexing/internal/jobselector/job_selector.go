@@ -64,6 +64,13 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 		script = localOverrideScript
 	}
 
+	if _, canInfer, err := s.store.RepositoryExceptions(ctx, repositoryID); err != nil {
+		return nil, err
+	} else if !canInfer {
+		s.logger.Warn("Auto-indexing job inference for this repo is disabled", log.Int("repositoryID", repositoryID), log.String("repoName", string(repo.Name)))
+		return nil, nil
+	}
+
 	indexes, err := s.inferenceSvc.InferIndexJobs(ctx, repo.Name, commit, script)
 	if err != nil {
 		return nil, err
@@ -78,7 +85,14 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 }
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
-func (s *JobSelector) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repoName api.RepoName, commit string) ([]config.IndexJobHint, error) {
+func (s *JobSelector) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, repoName api.RepoName, commit string) ([]config.IndexJobHint, error) {
+	if _, canInfer, err := s.store.RepositoryExceptions(ctx, repositoryID); err != nil {
+		return nil, err
+	} else if !canInfer {
+		s.logger.Warn("Auto-indexing job inference for this repo is disabled", log.Int("repositoryID", repositoryID), log.String("repoName", string(repoName)))
+		return nil, nil
+	}
+
 	indexes, err := s.inferenceSvc.InferIndexJobHints(ctx, repoName, commit, overrideScript)
 	if err != nil {
 		return nil, err
@@ -97,6 +111,13 @@ type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit
 //   - committed to `sourcegraph.yaml` in the repository
 //   - inferred from the repository structure
 func (s *JobSelector) GetIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]uploadsshared.Index, error) {
+	if canSchedule, _, err := s.store.RepositoryExceptions(ctx, repositoryID); err != nil {
+		return nil, err
+	} else if !canSchedule {
+		s.logger.Warn("Auto-indexing scheduling for this repo is disabled", log.Int("repositoryID", repositoryID))
+		return nil, nil
+	}
+
 	fns := []configurationFactoryFunc{
 		makeExplicitConfigurationFactory(configuration),
 		s.getIndexRecordsFromConfigurationInDatabase,
