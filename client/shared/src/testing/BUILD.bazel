@@ -110,6 +110,7 @@ ts_project(
         "//client/shared:node_modules/@sourcegraph/client-api",
         "//client/shared:node_modules/@sourcegraph/common",
         "//client/shared:node_modules/@sourcegraph/http-client",
+        "//client/shared:node_modules/@sourcegraph/testing",
         "//client/shared:shared_lib",
     ],
 )

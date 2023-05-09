@@ -1,6 +1,5 @@
 {
   "extends": "../../tsconfig.base.json",
-  "references": [],
   "compilerOptions": {
     "jsx": "react-jsx",
     "module": "commonjs",
@@ -8,6 +7,14 @@
     "rootDir": ".",
     "outDir": "./out",
     "baseUrl": "./src",
+    "paths": {
+      "*": ["types/*", "*"],
+    },
   },
   "include": ["./src/**/*", "./*.ts"],
+  "references": [
+    {
+      "path": "../build-config",
+    },
+  ],
 }

@@ -9,5 +9,8 @@
   "scripts": {
     "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
     "test": "jest"
+  },
+  "devDependencies": {
+    "@sourcegraph/build-config": "workspace:*"
   }
 }

@@ -1,0 +1,49 @@
+# load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("//dev:defs.bzl", "ts_project")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+# load("//dev:mocha.bzl", "mocha_test", "wow")
+# load("@npm//:@percy/cli/package_json.bzl", percy_bin = "bin")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_run_binary", "js_test")
+
+# integration/ does not contain a src/
+# gazelle:js_files **/*.{ts,tsx}
+
+# gazelle:js_resolve sourcegraph //client/shared:node_modules/@sourcegraph/client-api
+
+# ts_project(
+#     name = "kek",
+#     srcs = [
+#         "kek.ts",
+#     ],
+#     module = "commonjs",
+#     tsconfig = "//client/web/src/integration:tsconfig",
+#     deps = [],
+# )
+
+# percy_bin.percy_binary(
+#     name = "percy",
+#     testonly = True,
+#     visibility = ["//visibility:public"],
+# )
+
+# wow(name = "wow")
+
+js_binary(
+    name = "start-integration-tests",
+    data = [
+        "//:node_modules/@percy/cli",
+        "//:node_modules/mocha",
+        "//:node_modules/puppeteer",
+        "//:node_modules/resolve-bin",
+        "//:node_modules/shelljs",
+        # "//client/web:app-enterprise",
+    ],
+    entry_point = "kek.js",
+    log_level = "info",
+    # env = {
+    #     "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
+    # },
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)

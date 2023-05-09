@@ -1,6 +1,9 @@
 load("@npm//:@percy/cli/package_json.bzl", percy_bin = "bin")
 load("@npm//:mocha/package_json.bzl", mocha_bin = "bin")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("@aspect_bazel_lib//lib:stamping.bzl", "STAMP_ATTRS", "maybe_stamp")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//dev:integration.bzl", "run_integration")
 
 NON_BUNDLED = [
     # Dependencies loaded by mocha itself before the tests.
@@ -19,6 +22,7 @@ NON_BUNDLED = [
 
     # Dependencies with bundling issues
     "@sourcegraph/build-config",
+    "/Users/val/Desktop/sourcegraph-root/sourcegraph/client/testing/src/percySnapshotToDisk2.js",
 ]
 
 # ... some of which are needed at runtime
@@ -54,9 +58,13 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
 
     args = [
         "--config",
-        "$(location //:mocha_config)",
-        "$(location :%s)/**/*.test.js" % bundle_name,
-        "--retries 4",
+        # ".mocharc.js",
+        "$(rootpath //:mocha_config)",
+        # "$(location //:mocha_config)",
+        "$(rootpath :%s)/**/*.test.js" % bundle_name,
+        # "$(execpath :%s)/**/*.test.js" % bundle_name,
+        # "$(location :%s)/**/*.test.js" % bundle_name,
+        "--retries 0",
     ] + args
 
     args_data = [
@@ -89,6 +97,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
 
         # Puppeteer config
         "DISPLAY": ":99",
+        "JS_BINARY__LOG_DEBUG": "true",
     })
 
     if is_percy_enabled:
@@ -100,16 +109,47 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
             "node_modules/mocha/bin/mocha",
         ]
 
-        percy_bin.percy_test(
+        run_integration(
             name = name,
-            args = percy_args + args,
+            # stamp = 1,  # uses BUILDKITE_BRANCH and BUILDKITE_COMMIT in Percy report
+            args = args,
             data = data + args_data + NON_BUNDLED_DEPS + ["//:node_modules/mocha"],
             env = dict(env, **{
                 "PERCY_ON": "true",
                 "PERCY_TOKEN": "$$PERCY_TOKEN",
+                # "PERCY_BROWSER_EXECUTABLE": "/private/var/tmp/_bazel_val/b74f98c07c1f7901aeeb711da373452f/execroot/__main__/bazel-out/darwin_arm64-fastbuild/bin/node_modules/.aspect_rules_js/puppeteer@13.7.0/node_modules/puppeteer/.local-chromium/mac-982053/chrome-mac/Chromium.app/Contents/MacOS/Chromium",
             }),
             **kwargs
         )
+
+        # TODO: continue the work on the PercySnapshotToDisk idea.
+        # exec_name = "%s_exec" % name
+
+        # percy_bin.percy(
+        #     name = exec_name,
+        #     testonly = True,
+        #     outs = ["snapshots.snap"],
+        #     silent_on_success = False,
+        #     use_execroot_entry_point = True,
+        #     # stamp = 1,  # uses BUILDKITE_BRANCH and BUILDKITE_COMMIT in Percy report
+        #     args = percy_args + args,
+        #     # chdir = native.package_name(),
+        #     srcs = data + args_data + NON_BUNDLED_DEPS + ["//:node_modules/mocha"],
+        #     env = dict(env, **{
+        #         "PERCY_ON": "true",
+        #         "PERCY_TOKEN": "$$PERCY_TOKEN",
+        #     }),
+        #     tags = [
+        #         "requires-network",
+        #     ],
+        # )
+
+        # build_test(
+        #     name = name,
+        #     targets = [":%s" % exec_name],
+        #     **kwargs
+        # )
+
     else:
         mocha_bin.mocha_test(
             name = name,

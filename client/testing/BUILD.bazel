@@ -10,6 +10,7 @@ ts_config(
     visibility = ["//client:__subpackages__"],
     deps = [
         "//:tsconfig",
+        "//client/build-config:tsconfig",
     ],
 )
 
@@ -18,10 +19,18 @@ ts_project(
     srcs = [
         "src/aria-asserts.ts",
         "src/index.ts",
+        "src/percySnapshotToDisk.ts",
+        "src/types/@percy/logger/index.d.ts",
+        "src/types/@percy/sdk-utils/index.d.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [
+        ":node_modules/@sourcegraph/build-config",
+        "//:node_modules/@percy/sdk-utils",
         "//:node_modules/@types/jest",  #keep
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/puppeteer",
+        "//:node_modules/puppeteer",
     ],
 )
 

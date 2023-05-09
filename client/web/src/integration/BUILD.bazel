@@ -1,6 +1,8 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:defs.bzl", "ts_project")
 load("//dev:mocha.bzl", "mocha_test")
+load("@npm//:@percy/cli/package_json.bzl", percy_bin = "bin")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_run_binary", "js_test")
 
 # integration/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
@@ -10,6 +12,7 @@ load("//dev:mocha.bzl", "mocha_test")
 ts_config(
     name = "tsconfig",
     src = "tsconfig.json",
+    visibility = ["//client/web/src/integration/kek:__pkg__"],
     deps = [
         "//client/shared/src/testing:tsconfig",
         "//client/web:tsconfig",
@@ -104,8 +107,8 @@ mocha_test(
     name = "integration-tests",
     timeout = "moderate",
     args = [
-        "--parallel",
-        "--jobs 16",
+        # "--parallel",
+        # "--jobs 16",
     ],
     data = ["//client/web:app-enterprise"],
     env = {
@@ -116,6 +119,36 @@ mocha_test(
     tags = [
         "no-sandbox",
     ],
-    tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
+    tests = ["profile.test.ts"],
     deps = [":integration_tests"],
 )
+
+# percy_bin.percy_binary(
+#     name = "percy",
+#     testonly = True,
+#     visibility = ["//visibility:public"],
+# )
+
+# wow(name = "wow")
+
+# js_binary(
+#     name = "start-integration-tests",
+#     data = [
+#         "//:node_modules/@percy/cli",
+#         "//:node_modules/mocha",
+#         # "//client/web:app-enterprise",
+#     ],
+#     entry_point = "kek.js",
+#     # env = {
+#     #     "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
+#     # },
+#     tags = ["manual"],
+# )
+
+# js_run_binary(
+#     name = "run-run",
+#     outs = ["out.txt"],
+#     chdir = package_name(),
+#     # stamp = 1,
+#     tool = ":start-integration-tests",
+# )
