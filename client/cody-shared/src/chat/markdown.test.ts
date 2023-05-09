@@ -1,192 +1,97 @@
-import { parseMarkdown } from './markdown'
+import { escapeCodyMarkdown } from './markdown'
 
-describe('parseMarkdown', () => {
-    it('parses paragraphs', () => {
-        const markdown = 'Paragraph 1\n\nParagraph 2'
-        const result = parseMarkdown(markdown)
+describe('escapeCodyMarkdown', () => {
+    it('escapes paragraphs', () => {
+        const markdown = 'Paragraph &1\n\nParagraph &2'
+        const result = escapeCodyMarkdown(markdown, false)
         expect(result).toMatchInlineSnapshot(`
-            Array [
-              Object {
-                "isCodeBlock": false,
-                "line": "Paragraph 1",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "Paragraph 2",
-              },
-            ]
+            "Paragraph &amp;1
+
+            Paragraph &amp;2"
         `)
     })
 
-    it('parses code blocks', () => {
-        const markdown = '```js\ncode block\n```'
-        const result = parseMarkdown(markdown)
+    it('does not escape inside code blocks', () => {
+        const markdown = '&outside\n```js\ncode &block\n```'
+        const result = escapeCodyMarkdown(markdown, false)
         expect(result).toMatchInlineSnapshot(`
-            Array [
-              Object {
-                "isCodeBlock": true,
-                "line": "\`\`\`js",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "code block",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "\`\`\`",
-              },
-            ]
+            "&amp;outside
+            \`\`\`js
+            code &block
+            \`\`\`"
         `)
     })
 
-    it('parses code blocks with languages', () => {
-        const markdown = '```python\ncode block\n```'
-        const result = parseMarkdown(markdown)
+    it('does not escape inside code blocks with languages', () => {
+        const markdown = '&outside\n```python\ncode &block\n```'
+        const result = escapeCodyMarkdown(markdown, false)
         expect(result).toMatchInlineSnapshot(`
-            Array [
-              Object {
-                "isCodeBlock": true,
-                "line": "\`\`\`python",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "code block",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "\`\`\`",
-              },
-            ]
+            "&amp;outside
+            \`\`\`python
+            code &block
+            \`\`\`"
         `)
     })
 
-    it('parses a mix of elements', () => {
+    it('properly escapes with a mix of elements', () => {
         const markdown = `
-Paragraph
+&Paragraph
 
 \`\`\`js
-code block
+code &block
 \`\`\`
 
-# Header
+# &Header
 
-Paragraph
+&Paragraph
     `
-        const result = parseMarkdown(markdown)
+        const result = escapeCodyMarkdown(markdown, false)
         expect(result).toMatchInlineSnapshot(`
-            Array [
-              Object {
-                "isCodeBlock": false,
-                "line": "",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "Paragraph",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "\`\`\`js",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "code block",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "\`\`\`",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "# Header",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "Paragraph",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "    ",
-              },
-            ]
+            "
+            &amp;Paragraph
+
+            \`\`\`js
+            code &block
+            \`\`\`
+
+            # &amp;Header
+
+            &amp;Paragraph
+                "
         `)
     })
 
-    it('parses tiled code blocks', () => {
+    it('does not escape inside tiled code blocks', () => {
         const markdown = `
       ~~~js
-      code block
+      code &block
       ~~~
 
       Paragraph
 
       ~~~python
-      code block
+      code &block
       ~~~
       `
-        const result = parseMarkdown(markdown)
+        const result = escapeCodyMarkdown(markdown, false)
         expect(result).toMatchInlineSnapshot(`
-            Array [
-              Object {
-                "isCodeBlock": false,
-                "line": "",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "      ~~~js",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "      code block",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "      ~~~",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "      Paragraph",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "      ~~~python",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "      code block",
-              },
-              Object {
-                "isCodeBlock": true,
-                "line": "      ~~~",
-              },
-              Object {
-                "isCodeBlock": false,
-                "line": "      ",
-              },
-            ]
+            "
+                  ~~~js
+                  code &block
+                  ~~~
+
+                  Paragraph
+
+                  ~~~python
+                  code &block
+                  ~~~
+                  "
         `)
+    })
+
+    it('does not escape inside inline code blocks', () => {
+        const markdown = '&outside `code &block`'
+        const result = escapeCodyMarkdown(markdown, false)
+        expect(result).toMatchInlineSnapshot('"&amp;outside `code &block`"')
     })
 })

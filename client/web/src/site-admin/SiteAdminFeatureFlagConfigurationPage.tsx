@@ -404,7 +404,7 @@ const AddFeatureFlagOverride: FunctionComponent<
                             Cancel
                         </Button>
                         <LoaderButton
-                            type="submit"
+                            type="button"
                             variant="primary"
                             disabled={loading || namespaceID === ''}
                             onClick={() => addOverride()}
