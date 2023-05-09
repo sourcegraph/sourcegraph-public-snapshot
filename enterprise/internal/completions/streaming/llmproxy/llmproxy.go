@@ -13,7 +13,7 @@ import (
 
 const ProviderName = "llmproxy"
 
-var llmProxyURL = mustParseURL("https://llm-proxy-ytplpvhyiq-uc.a.run.app/v1/completions/anthropic")
+var llmProxyURL = mustParseURL("https://completions.sgdev.org/v1/completions/anthropic")
 
 type llmProxyAnthropicClient struct {
 	cli             httpcli.Doer
