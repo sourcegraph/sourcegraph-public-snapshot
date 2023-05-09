@@ -248,7 +248,7 @@ the `codeIntelAutoIndexing.indexerMap` to use the custom image. For example,
 
 ```json
 "codeIntelAutoIndexing.indexerMap": {
-"go": "myregistry.company.com/scip-go:custom"
+  "go": "myregistry.company.com/scip-go:custom"
 }
 ```
 
