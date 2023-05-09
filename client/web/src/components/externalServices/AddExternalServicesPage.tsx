@@ -3,6 +3,7 @@ import { FC } from 'react'
 import { mdiInformation } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text, Container } from '@sourcegraph/wildcard'
 
@@ -13,7 +14,6 @@ import { ExternalServiceCard } from './ExternalServiceCard'
 import { allExternalServices, AddExternalServiceOptions } from './externalServices'
 
 import styles from './AddExternalServicesPage.module.scss'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 
 export interface AddExternalServicesPageProps extends TelemetryProps {
     /**
