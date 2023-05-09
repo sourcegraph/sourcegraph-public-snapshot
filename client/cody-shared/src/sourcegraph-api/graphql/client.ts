@@ -35,7 +35,7 @@ interface EmbeddingsSearchResponse {
     embeddingsSearch: EmbeddingsSearchResults
 }
 
-interface LogEventResponse { }
+interface LogEventResponse {}
 
 export interface EmbeddingsSearchResult {
     fileName: string
@@ -71,7 +71,7 @@ export class SourcegraphGraphQLAPIClient {
 
     constructor(
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
-    ) { }
+    ) {}
 
     public onConfigurationChange(newConfig: typeof this.config): void {
         this.config = newConfig
@@ -118,19 +118,19 @@ export class SourcegraphGraphQLAPIClient {
             if (this.config.serverEndpoint === this.dotcomUrl) {
                 await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
                     response => {
-                        extractDataOrError(response, data => { })
+                        extractDataOrError(response, data => {})
                     }
                 )
             } else {
                 await Promise.all([
                     this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
                         response => {
-                            extractDataOrError(response, data => { })
+                            extractDataOrError(response, data => {})
                         }
                     ),
                     this.fetchSourcegraphDotcomAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
                         response => {
-                            extractDataOrError(response, data => { })
+                            extractDataOrError(response, data => {})
                         }
                     ),
                 ])
@@ -198,5 +198,5 @@ function verifyResponseCode(response: Response): Response {
     return response
 }
 
-class RepoNotFoundError extends Error { }
+class RepoNotFoundError extends Error {}
 export const isRepoNotFoundError = (value: unknown): value is RepoNotFoundError => value instanceof RepoNotFoundError
