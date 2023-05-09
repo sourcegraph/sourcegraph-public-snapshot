@@ -1673,7 +1673,8 @@ CREATE TABLE codeintel_initial_path_ranks (
     document_path text DEFAULT ''::text NOT NULL,
     graph_key text NOT NULL,
     last_scanned_at timestamp with time zone,
-    document_paths text[] DEFAULT '{}'::text[] NOT NULL
+    document_paths text[] DEFAULT '{}'::text[] NOT NULL,
+    deleted_at timestamp with time zone
 );
 
 CREATE SEQUENCE codeintel_initial_path_ranks_id_seq
@@ -1720,7 +1721,7 @@ CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
     payload jsonb NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    graph_key text,
+    graph_key text NOT NULL,
     num_paths integer,
     refcount_logsum double precision,
     id bigint NOT NULL
@@ -1741,7 +1742,8 @@ CREATE TABLE codeintel_ranking_definitions (
     symbol_name text NOT NULL,
     document_path text NOT NULL,
     graph_key text NOT NULL,
-    last_scanned_at timestamp with time zone
+    last_scanned_at timestamp with time zone,
+    deleted_at timestamp with time zone
 );
 
 CREATE SEQUENCE codeintel_ranking_definitions_id_seq
@@ -1789,12 +1791,35 @@ CREATE SEQUENCE codeintel_ranking_path_counts_inputs_id_seq
 
 ALTER SEQUENCE codeintel_ranking_path_counts_inputs_id_seq OWNED BY codeintel_ranking_path_counts_inputs.id;
 
+CREATE TABLE codeintel_ranking_progress (
+    id bigint NOT NULL,
+    graph_key text NOT NULL,
+    max_definition_id integer NOT NULL,
+    max_reference_id integer NOT NULL,
+    max_path_id integer NOT NULL,
+    mappers_started_at timestamp with time zone NOT NULL,
+    mapper_completed_at timestamp with time zone,
+    seed_mapper_completed_at timestamp with time zone,
+    reducer_started_at timestamp with time zone,
+    reducer_completed_at timestamp with time zone
+);
+
+CREATE SEQUENCE codeintel_ranking_progress_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_ranking_progress_id_seq OWNED BY codeintel_ranking_progress.id;
+
 CREATE TABLE codeintel_ranking_references (
     id bigint NOT NULL,
     upload_id integer NOT NULL,
     symbol_names text[] NOT NULL,
     graph_key text NOT NULL,
-    last_scanned_at timestamp with time zone
+    last_scanned_at timestamp with time zone,
+    deleted_at timestamp with time zone
 );
 
 COMMENT ON TABLE codeintel_ranking_references IS 'References for a given upload proceduced by background job consuming SCIP indexes.';
@@ -4673,6 +4698,8 @@ ALTER TABLE ONLY codeintel_ranking_exports ALTER COLUMN id SET DEFAULT nextval('
 
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_ranking_progress ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_progress_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_ranking_references ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_references_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_ranking_references_processed ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_references_processed_id_seq'::regclass);
@@ -4962,6 +4989,12 @@ ALTER TABLE ONLY codeintel_ranking_exports
 
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs
     ADD CONSTRAINT codeintel_ranking_path_counts_inputs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_ranking_progress
+    ADD CONSTRAINT codeintel_ranking_progress_graph_key_key UNIQUE (graph_key);
+
+ALTER TABLE ONLY codeintel_ranking_progress
+    ADD CONSTRAINT codeintel_ranking_progress_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_ranking_references
     ADD CONSTRAINT codeintel_ranking_references_pkey PRIMARY KEY (id);
@@ -5445,7 +5478,7 @@ CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON cod
 
 CREATE INDEX codeintel_path_ranks_graph_key ON codeintel_path_ranks USING btree (graph_key, updated_at NULLS FIRST, id);
 
-CREATE UNIQUE INDEX codeintel_path_ranks_repository_id ON codeintel_path_ranks USING btree (repository_id);
+CREATE UNIQUE INDEX codeintel_path_ranks_graph_key_repository_id ON codeintel_path_ranks USING btree (graph_key, repository_id);
 
 CREATE INDEX codeintel_path_ranks_repository_id_updated_at_id ON codeintel_path_ranks USING btree (repository_id, updated_at NULLS FIRST, id);
 

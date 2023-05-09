@@ -24,6 +24,7 @@ func (j *rankingJob) Description() string {
 func (j *rankingJob) Config() []env.Config {
 	return []env.Config{
 		ranking.ExporterConfigInst,
+		ranking.CoordinatorConfigInst,
 		ranking.MapperConfigInst,
 		ranking.ReducerConfigInst,
 		ranking.JanitorConfigInst,
@@ -38,6 +39,7 @@ func (j *rankingJob) Routines(_ context.Context, observationCtx *observation.Con
 
 	routines := []goroutine.BackgroundRoutine{}
 	routines = append(routines, ranking.NewSymbolExporter(observationCtx, services.RankingService))
+	routines = append(routines, ranking.NewCoordinator(observationCtx, services.RankingService))
 	routines = append(routines, ranking.NewMapper(observationCtx, services.RankingService)...)
 	routines = append(routines, ranking.NewReducer(observationCtx, services.RankingService))
 	routines = append(routines, ranking.NewSymbolJanitor(observationCtx, services.RankingService)...)
