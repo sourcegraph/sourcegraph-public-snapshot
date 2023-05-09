@@ -35,7 +35,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", errors.New("completions are not configured or disabled")
 	}
 
-	ctx, done := streaming.Trace(ctx, "resolver", completionsConfig.Model).
+	ctx, done := streaming.Trace(ctx, "resolver", completionsConfig.ChatModel).
 		WithErrorP(&err).
 		Build()
 	defer done()
@@ -44,7 +44,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		completionsConfig.Endpoint,
 		completionsConfig.Provider,
 		completionsConfig.AccessToken,
-		completionsConfig.Model,
+		completionsConfig.ChatModel,
 	)
 	if err != nil {
 		return "", errors.Wrap(err, "GetCompletionStreamClient")
