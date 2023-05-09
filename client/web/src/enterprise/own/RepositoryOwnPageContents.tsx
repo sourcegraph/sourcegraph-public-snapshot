@@ -95,8 +95,8 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
                     {codeownersIngestedFile && (
                         <Text className={styles.commitWarning}>
                             <em>
-                                Any commited CODEOWNERS file in this repository will be ignored unless the uploaded file
-                                is deleted.
+                                Any committed CODEOWNERS file in this repository will be ignored unless the uploaded
+                                file is deleted.
                             </em>
                         </Text>
                     )}

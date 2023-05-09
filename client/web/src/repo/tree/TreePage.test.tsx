@@ -6,7 +6,7 @@ import sinon from 'sinon'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { RepositoryFields } from '../../graphql-operations'
+import { RepositoryFields, RepositoryType } from '../../graphql-operations'
 
 import { Props, TreePage } from './TreePage'
 
@@ -16,6 +16,7 @@ describe('TreePage', () => {
     const repoDefaults = (): RepositoryFields => ({
         id: 'repo-id',
         name: 'repo name',
+        sourceType: RepositoryType.GIT_REPOSITORY,
         url: 'http://repo.url.example.com',
         description: 'Awesome for testing',
         viewerCanAdminister: false,

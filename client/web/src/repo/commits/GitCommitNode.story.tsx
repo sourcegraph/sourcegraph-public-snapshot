@@ -24,6 +24,7 @@ const gitCommitNode: GitCommitFields = {
     id: 'commit123',
     abbreviatedOID: 'abcdefg',
     oid: 'abcdefghijklmnopqrstuvwxyz12345678904321',
+    perforceChangelist: null,
     author: {
         date: subDays(new Date(), 5).toISOString(),
         person: {
@@ -59,6 +60,7 @@ const gitCommitNode: GitCommitFields = {
         {
             abbreviatedOID: '987654',
             oid: '98765432101234abcdefghijklmnopqrstuvwxyz',
+            perforceChangelist: null,
             url: '/commits/987654',
         },
     ],
@@ -181,3 +183,80 @@ export const ExpandCommitMessageButtonHidden: Story = () => (
 )
 
 ExpandCommitMessageButtonHidden.storyName = 'Expand commit message btn hidden'
+
+const perforceChangelistNode: GitCommitFields = {
+    id: 'commit123',
+    abbreviatedOID: 'abcdefg',
+    oid: 'abcdefghijklmnopqrstuvwxyz12345678904321',
+    perforceChangelist: {
+        __typename: 'PerforceChangelist',
+        cid: '12345',
+    },
+    author: {
+        date: subDays(new Date(), 5).toISOString(),
+        person: {
+            avatarURL: 'http://test.test/useravatar',
+            displayName: 'alice',
+            email: 'alice@sourcegraph.com',
+            name: 'Alice',
+            user: {
+                id: 'alice123',
+                url: '/users/alice',
+                displayName: 'Alice',
+                username: 'alice',
+            },
+        },
+    },
+    committer: {
+        date: subDays(new Date(), 5).toISOString(),
+        person: {
+            avatarURL: 'http://test.test/useravatar',
+            displayName: 'alice',
+            email: 'alice@sourcegraph.com',
+            name: 'Alice',
+            user: {
+                id: 'alice123',
+                url: '/users/alice',
+                displayName: 'Alice',
+                username: 'alice',
+            },
+        },
+    },
+    body: 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.',
+    parents: [
+        {
+            abbreviatedOID: '987654',
+            oid: '98765432101234abcdefghijklmnopqrstuvwxyz',
+            perforceChangelist: {
+                __typename: 'PerforceChangelist',
+                cid: '12344',
+            },
+            url: '/commits/987654',
+        },
+    ],
+    subject: 'Super awesome commit',
+    url: '/commits/abcdefg',
+    tree: null,
+    canonicalURL: 'asd',
+    externalURLs: [],
+    message:
+        'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.',
+}
+
+export const PerforceChangelist: Story = () => (
+    <WebStory>
+        {() => (
+            <Card>
+                <GitCommitNode
+                    node={perforceChangelistNode}
+                    compact={false}
+                    expandCommitMessageBody={false}
+                    showSHAAndParentsRow={false}
+                    hideExpandCommitMessageBody={true}
+                />
+            </Card>
+        )}
+    </WebStory>
+)
+
+PerforceChangelist.storyName = 'Perforce changelist'

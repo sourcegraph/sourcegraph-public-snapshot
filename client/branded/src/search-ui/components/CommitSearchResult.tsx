@@ -60,7 +60,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                     {result.oid.slice(0, 7)}
                     <VisuallyHidden>,</VisuallyHidden>
                 </Code>{' '}
-                <VisuallyHidden>Commited</VisuallyHidden>
+                <VisuallyHidden>Committed</VisuallyHidden>
                 {/* Display commit date in UTC to match behavior of before/after filters */}
                 <Timestamp date={result.committerDate} noAbout={true} strict={true} utc={true} />
             </Link>

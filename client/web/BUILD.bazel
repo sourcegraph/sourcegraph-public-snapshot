@@ -1300,6 +1300,7 @@ ts_project(
         "src/repo/tree/TreePage.tsx",
         "src/repo/tree/TreePageContent.tsx",
         "src/repo/tree/TreePagePanels.tsx",
+        "src/repo/utils.tsx",
         "src/routes.constants.ts",
         "src/routes.tsx",
         "src/savedSearches/SavedSearchCreateForm.tsx",
