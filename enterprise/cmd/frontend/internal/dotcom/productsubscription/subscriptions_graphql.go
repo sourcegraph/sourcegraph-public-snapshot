@@ -159,6 +159,9 @@ func (r *productSubscription) SourcegraphAccessTokens(ctx context.Context) (toke
 		return nil, err
 	}
 	for _, l := range allLicenses {
+		if !l.AccessTokenEnabled {
+			continue
+		}
 		lt := defaultAccessToken(defaultRawAccessToken([]byte(l.LicenseKey)))
 		if lt != token {
 			tokens = append(tokens, lt)
