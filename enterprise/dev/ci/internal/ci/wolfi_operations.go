@@ -70,13 +70,13 @@ func WolfiImagesOperations(buildImages []string, version string, tag string, bas
 
 	wolfiImageBuildOps := operations.NewNamedSet("Wolfi image builds")
 
-	for _, dockerImage := range buildImages {
-		// Don't upload sourcemaps
-		// wolfiImageBuildOps.Append(buildCandidateDockerImage(dockerImage, version, tag, false))
-		wolfiImageBuildOps.Append(
-			buildCandidateWolfiDockerImage(dockerImage, version, tag, false, baseImagesChanged),
-		)
-	}
+	// for _, dockerImage := range buildImages {
+	// 	// Don't upload sourcemaps
+	// 	// wolfiImageBuildOps.Append(buildCandidateDockerImage(dockerImage, version, tag, false))
+	// 	wolfiImageBuildOps.Append(
+	// 		buildCandidateWolfiDockerImage(dockerImage, version, tag, false, baseImagesChanged),
+	// 	)
+	// }
 
 	return wolfiImageBuildOps
 }
@@ -119,7 +119,6 @@ func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func
 			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
-			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Key(stepKey),
 		}
 		// If packages have changed, wait for repo to be re-indexed as base images may depend on new packages
