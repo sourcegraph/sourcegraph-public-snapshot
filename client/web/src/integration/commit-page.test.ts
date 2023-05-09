@@ -70,6 +70,7 @@ describe('RepositoryCommitPage', () => {
                             __typename: 'GitCommit',
                             oid: '56ab377d94fe96c87bc8c5e26675c585f9312e64',
                             abbreviatedOID: '56ab377',
+                            perforceChangelist: null,
                             url: '/github.com/sourcegraph/sourcegraph/-/commit/56ab377d94fe96c87bc8c5e26675c585f9312e64',
                         },
                     ],
