@@ -21,4 +21,6 @@ This markdown is used to generate an annotation at the top of every build, displ
     <li><strong>pnpm</strong> is a fast, disk space efficient package manager for JavaScript and Node.js that works in a similar manner to npm and Yarn, but uses a different approach to storing and linking packages.</li>
     <li><strong>Webpack</strong> is a static module bundler for modern JavaScript applications, transforming a multitude of file types into a single output file.</li>
   </ul>
+
+  <p>Want to update the glossary? See the <a href="https://docs.sourcegraph.com/dev/how-to/update_ci_glossary">how-to in the docs.</a></p>
 </details>
