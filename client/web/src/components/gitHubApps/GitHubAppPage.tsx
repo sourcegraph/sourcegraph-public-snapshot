@@ -67,15 +67,15 @@ export const GitHubAppPage: FC<Props> = ({
         return []
     }
 
-    const onAddInstallation = async (app: NonNullable<GitHubAppByIDResult['gitHubApp']>) => {
+    const onAddInstallation = async (app: NonNullable<GitHubAppByIDResult['gitHubApp']>): Promise<void> => {
         try {
             const req = await fetch(`/.auth/githubapp/state?id=${app?.id}`)
             const state = await req.text()
             window.location.href = app.appURL.endsWith('/')
                 ? app.appURL + 'installations/new?state=' + state
                 : app.appURL + '/installations/new?state=' + state
-        } catch (e) {
-            handleError(e)
+        } catch (error) {
+            handleError(error)
         }
     }
 
@@ -175,7 +175,12 @@ export const GitHubAppPage: FC<Props> = ({
                                 ))
                             )}
                         </div>
-                        <Button onClick={async () => await onAddInstallation(app)} variant="success">
+                        <Button
+                            onClick={async () => {
+                                await onAddInstallation(app)
+                            }}
+                            variant="success"
+                        >
                             <Icon svgPath={mdiPlus} aria-hidden={true} /> Add installation
                         </Button>
                     </div>

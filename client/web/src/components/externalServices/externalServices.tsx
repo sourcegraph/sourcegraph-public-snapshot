@@ -566,11 +566,10 @@ export const gitHubAppConfig = (
     appID: string,
     installationID: string,
     org: string
-): AddExternalServiceOptions => {
-    return {
-        ...GITHUB_DOTCOM,
-        title: 'GitHub App Installation',
-        defaultConfig: `{
+): AddExternalServiceOptions => ({
+    ...GITHUB_DOTCOM,
+    title: 'GitHub App Installation',
+    defaultConfig: `{
   "url": "${decodeURI(baseURL)}",
   "gitHubAppDetails": {
     "installationID": ${installationID},
@@ -579,8 +578,7 @@ export const gitHubAppConfig = (
   "orgs": ["${org}"],
   "authorization": {}
 }`,
-    }
-}
+})
 
 const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.AWSCODECOMMIT,
