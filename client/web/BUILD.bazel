@@ -1654,6 +1654,7 @@ ts_project(
         "//:node_modules/@lezer/common",  #keep
         "//:node_modules/@lezer/highlight",
         "//:node_modules/@mdi/js",
+        "//:node_modules/@tauri-apps/api",
         "//:node_modules/@microsoft/fetch-event-source",
         "//:node_modules/@opentelemetry/context-zone",
         "//:node_modules/@opentelemetry/exporter-trace-otlp-http",

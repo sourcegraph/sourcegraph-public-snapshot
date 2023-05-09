@@ -144,8 +144,10 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![get_launch_path])
-        .invoke_handler(tauri::generate_handler![hide_window])
+        .invoke_handler(tauri::generate_handler![
+            get_launch_path,
+            hide_window,
+        ])
         .run(context)
         .expect("error while running tauri application");
 }
