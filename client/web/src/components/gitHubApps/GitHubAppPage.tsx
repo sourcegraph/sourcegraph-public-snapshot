@@ -149,10 +149,10 @@ export const GitHubAppPage: FC<Props> = ({
                                     </Card>
                                 ))
                             ) : (
-                                <p>
+                                <Text>
                                     This GitHub App does not have any installations. Install the App to create a new
                                     connection.
-                                </p>
+                                </Text>
                             )}
                         </div>
                         <Button
