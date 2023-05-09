@@ -1,6 +1,5 @@
 import { ChangeEvent, FC, forwardRef, HTMLAttributes, InputHTMLAttributes, useEffect, useState } from 'react'
 
-import { useLazyQuery } from '@apollo/client'
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -21,17 +20,13 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import {
-    DiscoverLocalRepositoriesResult,
-    DiscoverLocalRepositoriesVariables,
-    GetLocalDirectoryPathResult,
-} from '../../../graphql-operations'
+import { DiscoverLocalRepositoriesResult, DiscoverLocalRepositoriesVariables } from '../../../graphql-operations'
 import { CodeHostExternalServiceAlert } from '../CodeHostExternalServiceAlert'
 import { ProgressBar } from '../ProgressBar'
 import { CustomNextButton, FooterWidget } from '../setup-steps'
 
-import { useLocalRepositoriesPaths, useLocalRepositories } from './hooks'
-import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_DIRECTORY_PATH } from './queries'
+import { useLocalRepositoriesPaths, useLocalRepositories, useLocalPathsPicker } from './hooks'
+import { DISCOVER_LOCAL_REPOSITORIES } from './queries'
 
 import styles from './LocalRepositoriesStep.module.scss'
 
@@ -105,11 +100,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
     const { isFilePickerAvailable, error, directoryPaths, onDirectoryPathsChange } = props
 
     const [internalPaths, setInternalPaths] = useState(directoryPaths)
-    const [queryPath] = useLazyQuery<GetLocalDirectoryPathResult>(GET_LOCAL_DIRECTORY_PATH, {
-        fetchPolicy: 'network-only',
-        onCompleted: data =>
-            data.localDirectoriesPicker?.paths && onDirectoryPathsChange(data.localDirectoriesPicker?.paths),
-    })
+    const { callPathPicker } = useLocalPathsPicker()
 
     const { repositories, loading, loaded } = useLocalRepositories({
         skip: !!error,
@@ -136,6 +127,12 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
         onDirectoryPathsChange(debouncedInternalPaths)
     }, [debouncedInternalPaths, onDirectoryPathsChange])
 
+    const handlePathsPickClick = async (): Promise<void> => {
+        const paths = await callPathPicker()
+
+        onDirectoryPathsChange(paths)
+    }
+
     // Use internal path only if backend-based file picker is unavailable
     const paths = isFilePickerAvailable ? directoryPaths : internalPaths
     const initialState = !loaded && !error && !loading
@@ -154,7 +151,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                     isProcessing={loading}
                     className={styles.filePicker}
                     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                    onPickPath={() => queryPath()}
+                    onPickPath={handlePathsPickClick}
                     onPathReset={handlePathReset}
                     onChange={handleInputChange}
                 />
