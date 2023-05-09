@@ -27,7 +27,6 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -58,7 +57,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	repoEmbeddingJobsStore := repo.NewRepoEmbeddingJobsStore(db)
 
 	// Run setup
-	gitserverClient := gitserver.NewClient()
 	uploadStore, err := embeddings.NewEmbeddingsUploadStore(ctx, observationCtx, config.EmbeddingsUploadStoreConfig)
 	if err != nil {
 		return err
@@ -67,10 +65,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
 	if err != nil {
 		return errors.Wrap(err, "creating sub-repo client")
-	}
-
-	readFile := func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error) {
-		return gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repoName, revision, fileName)
 	}
 
 	indexGetter, err := NewCachedEmbeddingIndexGetter(
@@ -92,7 +86,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	weaviate := newWeaviateClient(
 		logger,
-		readFile,
 		getQueryEmbedding,
 		config.WeaviateURL,
 	)
@@ -100,7 +93,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndex(uploadStore)
 
 	// Create HTTP server
-	handler := NewHandler(logger, readFile, indexGetter.Get, getQueryEmbedding, weaviate, getContextDetectionEmbeddingIndex)
+	handler := NewHandler(logger, indexGetter.Get, getQueryEmbedding, weaviate, getContextDetectionEmbeddingIndex)
 	handler = handlePanic(logger, handler)
 	handler = featureflag.Middleware(db.FeatureFlags(), handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
@@ -122,7 +115,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 func NewHandler(
 	logger log.Logger,
-	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
 	weaviate *weaviateClient,
@@ -152,7 +144,7 @@ func NewHandler(
 			UseDocumentRanks: args.UseDocumentRanks,
 		}
 
-		res, err := searchRepoEmbeddingIndexes(r.Context(), logger, multiArgs, readFile, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
+		res, err := searchRepoEmbeddingIndexes(r.Context(), logger, multiArgs, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
 		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -180,7 +172,7 @@ func NewHandler(
 			return
 		}
 
-		res, err := searchRepoEmbeddingIndexes(r.Context(), logger, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
+		res, err := searchRepoEmbeddingIndexes(r.Context(), logger, args, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
 		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

@@ -19,7 +19,6 @@ import (
 
 type weaviateClient struct {
 	logger            log.Logger
-	readFile          readFileFn
 	getQueryEmbedding getQueryEmbeddingFn
 
 	client    *weaviate.Client
@@ -28,7 +27,6 @@ type weaviateClient struct {
 
 func newWeaviateClient(
 	logger log.Logger,
-	readFile readFileFn,
 	getQueryEmbedding getQueryEmbeddingFn,
 	url *url.URL,
 ) *weaviateClient {
@@ -45,7 +43,6 @@ func newWeaviateClient(
 
 	return &weaviateClient{
 		logger:            logger.Scoped("weaviate", "client for weaviate embedding index"),
-		readFile:          readFile,
 		getQueryEmbedding: getQueryEmbedding,
 		client:            client,
 		clientErr:         err,
