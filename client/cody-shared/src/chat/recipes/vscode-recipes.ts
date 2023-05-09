@@ -40,11 +40,8 @@ function init(): void {
         new TranslateToLanguage(),
         new FindCodeSmells(),
         new NextQuestions(),
-<<<<<<< HEAD
         new ContextSearch(),
-=======
         new ReleaseNotes(),
->>>>>>> 9e53cd027d (implemented generate release notes recipe)
     ]
 
     for (const recipe of recipes) {

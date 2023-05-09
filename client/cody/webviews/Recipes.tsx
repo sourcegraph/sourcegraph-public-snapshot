@@ -14,11 +14,8 @@ export const recipesList = {
     'git-history': 'Summarize recent code changes',
     'find-code-smells': 'Smell code',
     fixup: 'Fixup code from inline instructions',
-<<<<<<< HEAD
     'context-search': 'Codebase context search',
-=======
     'release-notes': 'Generate release notes',
->>>>>>> 9e53cd027d (implemented generate release notes recipe)
 }
 
 export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
