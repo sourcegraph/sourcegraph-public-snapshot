@@ -6,7 +6,8 @@ import classNames from 'classnames'
 import { sortBy } from 'lodash'
 
 import { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/src/search'
-import { appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { appendFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { Badge, Button, Code, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './RepoMetadata.module.scss'
@@ -33,25 +34,40 @@ interface MetaProps {
     meta: RepoMetadataItem
     buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
     queryState?: QueryState
+    queryBuildOptions?: {
+        omitRepoFilter?: boolean
+    }
     onDelete?: (item: RepoMetadataItem) => void
     small?: boolean
 }
 
-const Meta: React.FC<MetaProps> = ({ meta, queryState, buildSearchURLQueryFromQueryState, onDelete, small }) => {
+const Meta: React.FC<MetaProps> = ({
+    meta,
+    queryState,
+    buildSearchURLQueryFromQueryState,
+    onDelete,
+    small,
+    queryBuildOptions,
+}) => {
     const filterLink = useMemo(() => {
         if (!queryState || !buildSearchURLQueryFromQueryState) {
             return undefined
         }
 
-        const query = appendFilter(
-            queryState.query,
-            'repo',
-            meta.value ? `has(${meta.key}:${meta.value})` : `has.key(${meta.key})`
-        )
+        let query = queryState.query
+        // omit repo: filter if omitRepoFilter is true
+        if (queryBuildOptions?.omitRepoFilter) {
+            const repoFilter = findFilter(queryState.query, 'repo', FilterKind.Global)
+            if (repoFilter && !repoFilter.value?.value.startsWith('has')) {
+                query = omitFilter(query, repoFilter)
+            }
+        }
+        // append metadata filter
+        query = appendFilter(query, 'repo', meta.value ? `has(${meta.key}:${meta.value})` : `has.key(${meta.key})`)
 
         const searchParams = buildSearchURLQueryFromQueryState({ query })
         return `/search?${searchParams}`
-    }, [buildSearchURLQueryFromQueryState, meta.key, meta.value, queryState])
+    }, [buildSearchURLQueryFromQueryState, meta.key, meta.value, queryBuildOptions?.omitRepoFilter, queryState])
 
     if (onDelete) {
         return (
@@ -87,19 +103,15 @@ const Meta: React.FC<MetaProps> = ({ meta, queryState, buildSearchURLQueryFromQu
 }
 
 interface RepoMetadataProps
-    extends Pick<MetaProps, 'buildSearchURLQueryFromQueryState' | 'queryState' | 'onDelete' | 'small'> {
+    extends Pick<
+        MetaProps,
+        'buildSearchURLQueryFromQueryState' | 'queryState' | 'onDelete' | 'small' | 'queryBuildOptions'
+    > {
     items: RepoMetadataItem[]
     className?: string
 }
 
-export const RepoMetadata: React.FC<RepoMetadataProps> = ({
-    items,
-    className,
-    onDelete,
-    small,
-    queryState,
-    buildSearchURLQueryFromQueryState,
-}) => {
+export const RepoMetadata: React.FC<RepoMetadataProps> = ({ items, className, onDelete, ...props }) => {
     const sortedItems = useMemo(() => sortBy(items, ['key', 'value']), [items])
     if (sortedItems.length === 0) {
         return null
@@ -109,13 +121,7 @@ export const RepoMetadata: React.FC<RepoMetadataProps> = ({
         <ul className={classNames(styles.container, 'd-flex align-items-start flex-wrap m-0 list-unstyled', className)}>
             {sortedItems.map(item => (
                 <li key={`${item.key}:${item.value}`}>
-                    <Meta
-                        small={small}
-                        meta={item}
-                        onDelete={onDelete}
-                        queryState={queryState}
-                        buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                    />
+                    <Meta meta={item} onDelete={onDelete} {...props} />
                 </li>
             ))}
         </ul>

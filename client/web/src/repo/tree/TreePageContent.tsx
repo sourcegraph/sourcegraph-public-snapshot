@@ -248,6 +248,7 @@ const ExtraInfoSection: React.FC<{
                         <RepoMetadata
                             items={metadataItems}
                             queryState={queryState}
+                            queryBuildOptions={{ omitRepoFilter: true }}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                         />
                     ) : (

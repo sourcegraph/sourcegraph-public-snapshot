@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { highlightNode } from '@sourcegraph/common'
 import { codeHostSubstrLength, displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { QueryState } from '@sourcegraph/shared/src/search'
+import { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/src/search'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Link } from '@sourcegraph/wildcard'
 

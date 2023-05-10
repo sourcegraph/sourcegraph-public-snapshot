@@ -7,7 +7,8 @@
 }
 
 .badge-button {
-    &:focus, &:hover {
+    &:focus,
+    &:hover {
         background-color: var(--badge-dark);
     }
 }
