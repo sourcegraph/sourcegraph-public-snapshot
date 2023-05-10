@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sg-executor
+  name: sg-executor-codeintel
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: sg-executor
+      app: sg-executor-codeintel
   template:
     metadata:
       namespace: default
       labels:
-        app: sg-executor
+        app: sg-executor-codeintel
     spec:
       # For development purposes - lets the executor pod use the namespace of the host system instead of creating a new one.
       hostNetwork: true
-      serviceAccountName: sg-executor-service-account
+      serviceAccountName: sg-executor-codeintel-service-account
       containers:
-        - name: sg-executor
+        - name: sg-executor-codeintel
           image: executor-kubernetes:latest
           imagePullPolicy: IfNotPresent
           env:
@@ -30,7 +30,7 @@ spec:
                   name: executor-frontend-password
                   key: EXECUTOR_FRONTEND_PASSWORD
             - name: EXECUTOR_QUEUE_NAME
-              value: batches
+              value: codeintel
             - name: EXECUTOR_MAXIMUM_NUM_JOBS
               value: "10"
             - name: SRC_LOG_LEVEL
@@ -41,6 +41,9 @@ spec:
               value: "false"
             - name: EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY
               value: 1Gi
+            # Match the name of the volume in executor-batches.PersistentVolumeClaim.yml.
+            - name: EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME
+              value: sg-executor-codeintel-pvc
               # Since the host is 'host.docker.internal', this needs to be true.
             - name: EXECUTOR_DOCKER_ADD_HOST_GATEWAY
               value: "true"
@@ -56,8 +59,8 @@ spec:
 #              value: "true"
           volumeMounts:
             - mountPath: /data
-              name: sg-executor-volume
+              name: sg-executor-codeintel-volume
       volumes:
-        - name: sg-executor-volume
+        - name: sg-executor-codeintel-volume
           persistentVolumeClaim:
-            claimName: sg-executor-pvc
+            claimName: sg-executor-codeintel-pvc

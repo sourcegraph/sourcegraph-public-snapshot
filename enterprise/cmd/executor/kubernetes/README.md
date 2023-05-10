@@ -40,7 +40,7 @@ kubectl create secret generic executor-frontend-password --from-literal=EXECUTOR
 
 ## Deploy
 
-Run the following command to deploy the executor.
+Run the following command in either the `batches` or `codeintel` directory to deploy the executor.
 
 ```bash
 kubectl apply -f .
