@@ -17,7 +17,7 @@ if (typeof localStorage === 'undefined') {
     storage = vscode.workspace.getConfiguration().get<vscode.Memento>('cody.storage')
 } else {
     storage = {
-        get: (key: string) => cookies.get(key),
+        get: (key: string) => cookies.get(key) as string,
         update: (key: string, value: any) =>
             new Promise(resolve => {
                 cookies.set(key, value)
@@ -27,12 +27,12 @@ if (typeof localStorage === 'undefined') {
     }
 }
 
-let anonymousUserID: string
-if (storage) {
-    anonymousUserID = storage.get(ANONYMOUS_USER_ID_KEY)
+let anonymousUserID: string | undefined
+if (storage !== undefined) {
+    anonymousUserID = storage.get(ANONYMOUS_USER_ID_KEY) as string
 }
-if (!anonymousUserID) {
-    anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY)
+if (anonymousUserID == undefined) {
+    anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) as string
 }
 
 export class EventLogger {
