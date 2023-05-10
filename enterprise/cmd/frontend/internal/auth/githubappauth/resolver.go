@@ -236,11 +236,13 @@ func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []
 
 	for _, install := range installs {
 		installations = append(installations, graphqlbackend.GitHubAppInstallation{
-			InstallID: int32(*install.ID),
+			InstallID:  int32(*install.ID),
+			InstallURL: install.GetHTMLURL(),
 			InstallAccount: graphqlbackend.GitHubAppInstallationAccount{
 				AccountLogin:     install.Account.GetLogin(),
 				AccountAvatarURL: install.Account.GetAvatarURL(),
-				AccountURL:       install.Account.GetURL(),
+				AccountURL:       install.Account.GetHTMLURL(),
+				AccountType:      install.Account.GetType(),
 			},
 		})
 	}

@@ -719,33 +719,7 @@ func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requ
 		}
 	}
 
-	// Phase 2: Gather all "remote" locations in dependencies via moniker search. We only do this if
-	// there are no more local results. We'll continue to request additional locations until we fill an
-	// entire page or there are no more local results remaining, just as we did above.
-	if cursor.Phase == "dependencies" {
-		uploads, err := s.getUploadsWithDefinitionsForMonikers(ctx, cursor.OrderedImplementationMonikers, requestState)
-		if err != nil {
-			return nil, cursor, err
-		}
-		trace.AddEvent("TODO Domain Owner",
-			attribute.Int("numGetUploadsWithDefinitionsForMonikers", len(uploads)),
-			attribute.String("getUploadsWithDefinitionsForMonikers", uploadIDsToString(uploads)))
-
-		definitionLocations, _, err := s.getBulkMonikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "definitions", DefinitionsLimit, 0)
-		if err != nil {
-			return nil, cursor, err
-		}
-		locations = append(locations, definitionLocations...)
-
-		implementationLocations, _, err := s.getBulkMonikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "implementations", DefinitionsLimit, 0)
-		if err != nil {
-			return nil, cursor, err
-		}
-		locations = append(locations, implementationLocations...)
-
-		cursor.Phase = "dependents"
-	}
-
+	// Phase 2: Is skipped as it seems redundant to gathering all "dependencies" from a SCIP document.
 	// Phase 3: Gather all "remote" locations in dependents via moniker search.
 	if cursor.Phase == "dependents" {
 		for len(locations) < args.Limit {
@@ -775,6 +749,86 @@ func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requ
 	trace.AddEvent("TODO Domain Owner", attribute.Int("numImplementationsLocations", len(implementationLocations)))
 
 	return implementationLocations, cursor, nil
+}
+
+func (s *Service) GetPrototypes(ctx context.Context, args RequestArgs, requestState RequestState, cursor ImplementationsCursor) (_ []shared.UploadLocation, _ ImplementationsCursor, err error) {
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getImplementations, serviceObserverThreshold, observation.Args{
+		LogFields: []traceLog.Field{
+			traceLog.Int("repositoryID", args.RepositoryID),
+			traceLog.String("commit", args.Commit),
+			traceLog.String("path", args.Path),
+			traceLog.Int("numUploads", len(requestState.GetCacheUploads())),
+			traceLog.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+			traceLog.Int("line", args.Line),
+			traceLog.Int("character", args.Character),
+		},
+	})
+	defer endObservation()
+
+	// Adjust the path and position for each visible upload based on its git difference to
+	// the target commit. This data may already be stashed in the cursor decoded above, in
+	// which case we don't need to hit the database.
+	visibleUploads, cursorsToVisibleUploads, err := s.getVisibleUploadsFromCursor(ctx, args.Line, args.Character, &cursor.CursorsToVisibleUploads, requestState)
+	if err != nil {
+		return nil, cursor, err
+	}
+
+	// Update the cursors with the updated visible uploads.
+	cursor.CursorsToVisibleUploads = cursorsToVisibleUploads
+
+	// Gather all monikers attached to the ranges enclosing the requested position. This data
+	// may already be stashed in the cursor decoded above, in which case we don't need to hit
+	// the database.
+	if cursor.OrderedImplementationMonikers == nil {
+		if cursor.OrderedImplementationMonikers, err = s.getOrderedMonikers(ctx, visibleUploads, precise.Implementation, "import", "export"); err != nil {
+			return nil, cursor, err
+		}
+	}
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numImplementationMonikers", len(cursor.OrderedImplementationMonikers)),
+		attribute.String("implementationMonikers", monikersToString(cursor.OrderedImplementationMonikers)))
+
+	if cursor.OrderedExportMonikers == nil {
+		if cursor.OrderedExportMonikers, err = s.getOrderedMonikers(ctx, visibleUploads, "export"); err != nil {
+			return nil, cursor, err
+		}
+	}
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numExportMonikers", len(cursor.OrderedExportMonikers)),
+		attribute.String("exportMonikers", monikersToString(cursor.OrderedExportMonikers)))
+
+	// Phase 1: Gather all "local" locations via LSIF graph traversal. We'll continue to request additional
+	// locations until we fill an entire page (the size of which is denoted by the given limit) or there are
+	// no more local results remaining.
+	var locations []shared.Location
+	if cursor.Phase == "local" {
+		for len(locations) < args.Limit {
+			localLocations, hasMore, err := s.getPageLocalLocations(ctx, s.lsifstore.GetPrototypeLocations, visibleUploads, &cursor.LocalCursor, args.Limit-len(locations), trace)
+			if err != nil {
+				return nil, cursor, err
+			}
+			locations = append(locations, localLocations...)
+
+			if !hasMore {
+				cursor.Phase = "dependencies"
+				break
+			}
+		}
+	}
+
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
+
+	// Adjust the locations back to the appropriate range in the target commits. This adjusts
+	// locations within the repository the user is browsing so that it appears all implementations
+	// are occurring at the same commit they are looking at.
+
+	prototypeLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
+	if err != nil {
+		return nil, cursor, err
+	}
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numPrototypesLocations", len(prototypeLocations)))
+
+	return prototypeLocations, cursor, nil
 }
 
 // GetDefinitions returns the set of locations defining the symbol at the given position.

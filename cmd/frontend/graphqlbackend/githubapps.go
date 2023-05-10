@@ -63,6 +63,7 @@ type GitHubAppInstallationAccount struct {
 	AccountName      string
 	AccountAvatarURL string
 	AccountURL       string
+	AccountType      string
 }
 
 func (ghai GitHubAppInstallationAccount) Login() string {
@@ -81,13 +82,22 @@ func (ghai GitHubAppInstallationAccount) URL() string {
 	return ghai.AccountURL
 }
 
+func (ghai GitHubAppInstallationAccount) Type() string {
+	return ghai.AccountType
+}
+
 type GitHubAppInstallation struct {
 	InstallID      int32
+	InstallURL     string
 	InstallAccount GitHubAppInstallationAccount
 }
 
 func (ghai GitHubAppInstallation) ID() int32 {
 	return ghai.InstallID
+}
+
+func (ghai GitHubAppInstallation) URL() string {
+	return ghai.InstallURL
 }
 
 func (ghai GitHubAppInstallation) Account() GitHubAppInstallationAccount {
