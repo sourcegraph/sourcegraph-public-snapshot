@@ -51,18 +51,18 @@ func NewDecoder(r io.Reader) *Decoder {
 func (d *Decoder) Scan() bool {
 	for d.scanner.Scan() {
 		// data: json($data)|[DONE]
-		data := d.scanner.Bytes()
-		dataK, data := splitColon(data)
+		line := d.scanner.Bytes()
+		typ, data := splitColon(line)
 		switch {
-		case bytes.Equal(dataK, []byte("data")):
+		case bytes.Equal(typ, []byte("data")):
 			d.data = data
 			return true
-		case bytes.Equal(dataK, []byte("event")):
+		case bytes.Equal(typ, []byte("event")):
 			// Anthropic occasionally sends ping events.
 			// Just ignore these and continue scanning.
 			continue
 		default:
-			d.err = errors.Errorf("malformed data, expected data: %s", dataK)
+			d.err = errors.Errorf("malformed data, expected data: %s", typ)
 			return false
 		}
 	}

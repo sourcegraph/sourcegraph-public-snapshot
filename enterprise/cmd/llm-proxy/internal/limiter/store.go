@@ -1,6 +1,8 @@
 package limiter
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import (
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
 
 // RedisStore is the backend for tracking limiter state.
 type RedisStore interface {
