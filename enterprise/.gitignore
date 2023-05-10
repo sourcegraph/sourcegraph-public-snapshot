@@ -15,3 +15,4 @@ yarn-error.log
 !/ui/assets/img/*
 /.bin
 /vendor/.bin
+/cmd/embeddings/shared/testdata/
