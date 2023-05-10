@@ -5,52 +5,88 @@ set -eu
 GCLOUD_APP_CREDENTIALS_FILE=${GCLOUD_APP_CREDENTIALS_FILE-$HOME/.config/gcloud/application_default_credentials.json}
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
-go_build() {
-
-  if [ -z "${SKIP_BUILD_WEB-}" ]; then
-    # esbuild is faster
-    pnpm install
-    NODE_ENV=production ENTERPRISE=1 SOURCEGRAPH_APP=1 DEV_WEB_BUILDER=esbuild pnpm run build-web
-  fi
-
-  if [ -z "${VERSION-}" ]; then
-    echo "Note: VERSION not set; defaulting to dev version"
-    VERSION="$(date '+%Y.%m.%d+dev')"
-  fi
-
-  export GO111MODULE=on
-  export CGO_ENABLED=1
-
-  ldflags="-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION"
-  ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)"
-  ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app"
-  go build \
-    -o .bin/sourcegraph-backend-aarch64-apple-darwin \
-    -trimpath \
-    -tags dist \
-    -ldflags "$ldflags" \
-    ./enterprise/cmd/sourcegraph
-
-
-}
-
 bazel_build() {
-  bazel build //enterprise/cmd/sourcegraph:sourcegraph \
-  --stamp \
-  --workspace_status_command=./dev/bazel_stamp_vars.sh \
+  local bazel_cmd
+  local platform
+  platform=$1
+  bazel_cmd="bazel"
+  if [[ ${GITHUB_ACTIONS:-""} == "true" ]]; then
+    bazel_cmd="${bazel_cmd} --bazelrc=.aspect/bazelrc/github.bazelrc"
+  fi
 
-    #--//:assets_bundle_type=enterprise
+  echo "[Bazel] Building Sourcegraph Backend (${VERSION}) for platform: ${platform}"
+  ${bazel_cmd} build //enterprise/cmd/sourcegraph:sourcegraph --stamp --workspace_status_command=./enterprise/dev/app/app_stamp_vars.sh
+
   out=$(bazel cquery //enterprise/cmd/sourcegraph:sourcegraph --output=files)
-  cp -vf "${out}" .bin/sourcegraph-backend-aarch64-apple-darwin
-
+  mkdir -p ".bin"
+  cp -vf "${out}" ".bin/sourcegraph-backend-${platform}"
 }
 
-NODE_ENV=production pnpm run build-app-shell
+create_version() {
+    local sha
+    # In a GitHub action this can result in an empty sha
+    sha=$(git rev-parse --short HEAD)
+    if [[ -z ${sha} ]]; then
+      sha=${GITHUB_SHA:-""}
+    fi
 
-if [[ $# -eq 0 ]]; then
-  # Default to "bazel" if no argument was provided
-  bazel_build
-else
-  go_build
-fi
+    local build="insiders"
+    if [[ ${RELEASE_BUILD} == 1 ]]; then
+      build=${GITHUB_RUN_NUMBER:-"release"}
+    fi
+    echo "$(date '+%Y.%-m.%-d')+${build}.${sha}"
+}
+
+set_version() {
+  if [[ ${CI:-""} == "true" ]]; then
+    VERSION=${VERSION:-$(create_version)}
+  else
+    VERSION=${VERSION:-"0.0.0+dev"}
+  fi
+  export VERSION
+
+
+  local tauri_conf
+  local tmp
+  tauri_conf="./src-tauri/tauri.conf.json"
+  tmp=$(mktemp)
+  echo "[Script] updating package version in '${tauri_conf}' to ${VERSION}"
+  jq --arg version "${VERSION}" '.package.version = $version' "${tauri_conf}" > "${tmp}"
+  mv "${tmp}" ./src-tauri/tauri.conf.json
+}
+
+set_platform() {
+  # We need to determine the platform string for the sourcegraph-backend binary
+  local arch=""
+  local platform=""
+  case "$(uname -m)" in
+    "amd64")
+      arch="x86_64"
+      ;;
+    "arm64")
+      arch="aarch64"
+      ;;
+    *)
+      arch=$(uname -m)
+  esac
+
+  case "$(uname -s)" in
+    "Darwin")
+      platform="${arch}-apple-darwin"
+      ;;
+    "Linux")
+      platform="${arch}-unknown-linux-gnu"
+      ;;
+    *)
+      platform="${arch}-unknown-unknown"
+  esac
+
+  export PLATFORM=${platform}
+}
+
+set_platform
+set_version
+bazel_build "${PLATFORM}"
+echo "[Tauri] Building Application (${VERSION})"]
+NODE_ENV=production pnpm run build-app-shell
 pnpm tauri build
