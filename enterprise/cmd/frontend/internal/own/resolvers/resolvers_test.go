@@ -582,8 +582,9 @@ func TestOwnership_WithSignals(t *testing.T) {
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
 	santaEmail := "santa@northpole.com"
+	santaName := "santa claus"
 	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
-		AuthorName:        "santa claus",
+		AuthorName:        santaName,
 		AuthorEmail:       santaEmail,
 		ContributionCount: 5,
 	}}, nil)
@@ -618,7 +619,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 				},
 			}),
 	}
-	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
+	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
@@ -706,16 +707,20 @@ func TestOwnership_WithSignals(t *testing.T) {
 									},
 									"reasons": [
 										{
-											"title": "recent contributor",
-											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+											"title": "recent view",
+											"description": "Owner is associated because they have viewed this file in the last 90 days."
 										}
 									]
 								},
 								{
+									"owner": {
+										"displayName": "santa claus",
+										"email": "santa@northpole.com"
+									},
 									"reasons": [
 										{
-											"title": "recent view",
-											"description": "Owner is associated because they have viewed this file in the last 90 days."
+											"title": "recent contributor",
+											"description": "Owner is associated because they have contributed to this file in the last 90 days."
 										}
 									]
 								}

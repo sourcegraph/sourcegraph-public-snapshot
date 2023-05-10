@@ -76,25 +76,19 @@ func (o *ownershipReasonResolver) Description() (string, error) {
 	return o.resolver.Description()
 }
 
-func (o *ownershipReasonResolver) ToCodeownersFileEntry() (graphqlbackend.CodeownersFileEntryResolver, bool) {
-	if res, ok := o.resolver.(*codeownersFileEntryResolver); ok {
-		return res, true
-	}
-	return nil, false
+func (o *ownershipReasonResolver) ToCodeownersFileEntry() (res graphqlbackend.CodeownersFileEntryResolver, ok bool) {
+	res, ok = o.resolver.(*codeownersFileEntryResolver)
+	return
 }
 
-func (o *ownershipReasonResolver) ToRecentContributorOwnershipSignal() (graphqlbackend.RecentContributorOwnershipSignalResolver, bool) {
-	if res, ok := o.resolver.(*recentContributorOwnershipSignal); ok {
-		return res, true
-	}
-	return nil, false
+func (o *ownershipReasonResolver) ToRecentContributorOwnershipSignal() (res graphqlbackend.RecentContributorOwnershipSignalResolver, ok bool) {
+	res, ok = o.resolver.(*recentContributorOwnershipSignal)
+	return
 }
 
-func (o *ownershipReasonResolver) ToRecentViewOwnershipSignal() (graphqlbackend.RecentViewOwnershipSignalResolver, bool) {
-	if res, ok := o.resolver.(*recentViewOwnershipSignal); ok {
-		return res, true
-	}
-	return nil, false
+func (o *ownershipReasonResolver) ToRecentViewOwnershipSignal() (res graphqlbackend.RecentViewOwnershipSignalResolver, ok bool) {
+	res, ok = o.resolver.(*recentViewOwnershipSignal)
+	return
 }
 
 func ownerText(o *codeownerspb.Owner) string {
@@ -123,7 +117,8 @@ func (r *ownResolver) GitBlobOwnership(
 	}
 
 	// Retrieve recent contributors signals.
-	contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), blob.Repository().IDInt32())
+	repoID := blob.Repository().IDInt32()
+	contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -302,6 +297,9 @@ func (r *ownerResolver) ToPerson() (*graphqlbackend.PersonResolver, bool) {
 	if !ok {
 		return nil, false
 	}
+	if person.User != nil {
+		return graphqlbackend.NewPersonResolverFromUser(r.db, person.GetEmail(), person.User), true
+	}
 	includeUserInfo := true
 	return graphqlbackend.NewPersonResolver(r.db, person.Handle, person.GetEmail(), includeUserInfo), true
 }
@@ -462,7 +460,6 @@ func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.Ent
 			db: db,
 			resolvedOwner: &codeowners.Person{
 				User:         user,
-				Email:        email,
 				PrimaryEmail: &email,
 				Handle:       user.Username,
 			},
