@@ -1,8 +1,9 @@
 import cookies from 'js-cookie'
 import * as vscode from 'vscode'
-import { Memento } from 'vscode'
 
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+
+import { LocalStorage } from './LocalStorageProvider'
 
 function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): string {
     return config.get<string>('cody.serverEndpoint', '')
@@ -11,28 +12,15 @@ function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): st
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 
 const config = vscode.workspace.getConfiguration()
-
-let storage: Memento | undefined
-if (typeof localStorage === 'undefined') {
-    storage = vscode.workspace.getConfiguration().get<vscode.Memento>('cody.storage')
-} else {
-    storage = {
-        get: (key: string) => cookies.get(key) as string,
-        update: (key: string, value: any) =>
-            new Promise(resolve => {
-                cookies.set(key, value)
-                resolve()
-            }),
-        keys: () => Object.keys(cookies.get()),
-    }
+const memento = vscode.workspace.getConfiguration().get<vscode.Memento>('cody.memento')
+let localStorage: LocalStorage | undefined
+if (memento) {
+    localStorage = new LocalStorage(memento)
 }
 
-let anonymousUserID: string | undefined
-if (storage !== undefined) {
-    anonymousUserID = storage.get(ANONYMOUS_USER_ID_KEY) as string
-}
-if (anonymousUserID == undefined) {
-    anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) as string
+let anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY)
+if (anonymousUserID === null && localStorage !== undefined) {
+    anonymousUserID = localStorage.getAnonymousUserID() as string
 }
 
 export class EventLogger {
@@ -49,7 +37,8 @@ export class EventLogger {
      * @param eventName The ID of the action executed.
      */
     public async log(eventName: string, eventProperties?: any, publicProperties?: any): Promise<void> {
-        const anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || storage.get(ANONYMOUS_USER_ID_KEY)
+        const anonymousUserID =
+            cookies.get(ANONYMOUS_USER_ID_KEY) || (localStorage ? localStorage.getAnonymousUserID() : undefined)
 
         // Don't log events if the UID has not yet been generated.
         if (!anonymousUserID) {
