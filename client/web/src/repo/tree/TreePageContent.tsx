@@ -48,6 +48,7 @@ import {
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
+import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
 import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS } from '../blob/own/grapqlQueries'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
