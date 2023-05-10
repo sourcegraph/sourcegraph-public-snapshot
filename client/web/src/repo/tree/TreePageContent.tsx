@@ -10,13 +10,14 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import { RepoMetadata } from '@sourcegraph/branded'
 import { encodeURIPathComponent, numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
+import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -38,6 +39,7 @@ import {
     Scalars,
     TreeCommitsResult,
     TreeCommitsVariables,
+    TreePageOwnershipNodeFields,
     TreePageOwnershipResult,
     TreePageOwnershipVariables,
     TreePageRepositoryContributorsResult,
@@ -528,17 +530,17 @@ const Ownership: React.FC<OwnershipProps> = ({ repo }) => {
                     as="table"
                 >
                     <tbody>
-                        {connection.nodes.map(node => (
-                            <tr>
-                                <td>{node.owner.__typename === 'Person' ? node.owner.displayName : 'Not a person'}</td>
-                            </tr>
-                            // <RepositoryContributorNode
-                            //     key={node.person.email}
-                            //     node={node}
-                            //     repoName={repo.name}
-                            //     sourceType={repo.sourceType}
-                            //     {...spec}
-                            // />
+                        {connection.nodes.map((node: TreePageOwnershipNodeFields) => (
+                            <OwnerNode
+                                key={
+                                    node.owner.__typename === 'Person'
+                                        ? node.owner.email
+                                        : node.owner.__typename === 'Team'
+                                        ? node.owner.name
+                                        : null
+                                }
+                                node={node}
+                            />
                         ))}
                     </tbody>
                 </ConnectionList>
@@ -574,6 +576,47 @@ const Ownership: React.FC<OwnershipProps> = ({ repo }) => {
                 )}
             </SummaryContainer>
         </ConnectionContainer>
+    )
+}
+
+interface OwnerNodeProps {
+    node: TreePageOwnershipNodeFields
+}
+const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
+    const owner = node.owner
+    return (
+        <tr className={classNames('list-group-item', contributorsStyles.repositoryContributorNode)}>
+            <td className={contributorsStyles.person}>
+                {/* TODO: Copy paste from FileOwnershipEntry.tsx */}
+                {owner.__typename === 'Person' && (
+                    <>
+                        <UserAvatar user={owner} className="mx-2" inline={true} />
+                        <PersonLink person={owner} />
+                    </>
+                )}
+                {owner.__typename === 'Team' && (
+                    <>
+                        <TeamAvatar
+                            team={{ ...owner, displayName: owner.teamDisplayName }}
+                            className="mx-2"
+                            inline={true}
+                        />
+                        <Link to={`/teams/${owner.name}`}>{owner.teamDisplayName || owner.name}</Link>
+                    </>
+                )}
+            </td>
+            <td>
+                {node.reasons.map(reason =>
+                    reason?.__typename === 'RecentContributorOwnershipSignal' ? (
+                        <Badge key={reason.title} tooltip={reason.description} className={styles.badge}>
+                            {reason.title}
+                        </Badge>
+                    ) : (
+                        <></>
+                    )
+                )}
+            </td>
+        </tr>
     )
 }
 
