@@ -189,7 +189,6 @@ type ListProductSubscriptionFields struct {
 	ProductSubscriptionState `json:"-"`
 	// Available access tokens for authenticating as the subscription holder with managed
 	// Sourcegraph services.
-	// Empty only if creating a token failed, for example when no active license exists.
 	SourcegraphAccessTokens []string `json:"sourcegraphAccessTokens"`
 }
 
