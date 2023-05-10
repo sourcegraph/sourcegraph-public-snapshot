@@ -239,7 +239,7 @@ func setupAppDir(root string, defaultDirFn func() (string, error)) (string, erro
 		return "", err
 	}
 
-	dir := AppDirectory
+	dir := appDirectory
 	if version.IsDev(version.Version()) {
 		dir = fmt.Sprintf("%s-dev", dir)
 	}
