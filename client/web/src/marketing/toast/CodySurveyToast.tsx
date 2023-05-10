@@ -47,7 +47,7 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void }> = ({ onSubmitE
 
     return (
         <Modal position="center" aria-label="Welcome message">
-            <H3 className="mb-4">Just one more thing...</H3>
+            <H3 className="mb-4">Quick question...</H3>
             <Text className="mb-3">How will you be using Cody, our AI assistant?</Text>
             <Form onSubmit={handleSubmit}>
                 <Checkbox
