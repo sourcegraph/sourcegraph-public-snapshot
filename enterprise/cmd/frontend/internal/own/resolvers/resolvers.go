@@ -124,6 +124,35 @@ func (r *ownResolver) GitBlobOwnership(
 	return r.ownershipConnection(args, ownerships)
 }
 
+// repoRootPath is the path that designates all the aggregate signals
+// for a repository.
+const repoRootPath = ""
+
+// GitCommitOwnership retrieves ownership signals (not CODEOWNERS data)
+// aggregated for the whole repository.
+//
+// It's a commit ownership rather than repo ownership because
+// from the resolution point of view repo needs to be versioned
+// at a certain commit to compute signals. At this point, however
+// signals are not versioned yet, so every commit gets the same data.
+func (r *ownResolver) GitCommitOwnership(
+	ctx context.Context,
+	commit *graphqlbackend.GitCommitResolver,
+	args graphqlbackend.ListOwnershipArgs,
+) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
+
+	// Retrieve recent contributors signals.
+	ownerships, err := computeRecentContributorSignals(ctx, r.db, repoRootPath, commit.Repository().IDInt32())
+	if err != nil {
+		return nil, err
+	}
+
+	return r.ownershipConnection(args, ownerships)
+}
+
 func (r *ownResolver) PersonOwnerField(_ *graphqlbackend.PersonResolver) string {
 	return "owner"
 }

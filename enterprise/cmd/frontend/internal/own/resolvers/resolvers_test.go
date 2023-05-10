@@ -661,7 +661,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 										}
 										reasons {
 											...CodeownersFileEntryFields
-											... on RecentContributorOwnershipSignal {
+											...on RecentContributorOwnershipSignal {
 											  title
 											  description
 											}
@@ -734,6 +734,92 @@ func TestOwnership_WithSignals(t *testing.T) {
 			"repo":        string(relay.MarshalID("Repository", repoID)),
 			"revision":    "revision",
 			"currentPath": "foo/bar.js",
+		},
+	})
+}
+
+func TestCommitOwnershipSignals(t *testing.T) {
+	logger := logtest.Scoped(t)
+	fakeDB := fakedb.New()
+	db := database.NewMockDB()
+
+	recentContribStore := database.NewMockRecentContributionSignalStore()
+	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
+		AuthorName:        "santa claus",
+		AuthorEmail:       "santa@northpole.com",
+		ContributionCount: 5,
+	}}, nil)
+	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
+
+	fakeDB.Wire(db)
+	repoID := api.RepoID(1)
+
+	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	repos := database.NewMockRepoStore()
+	db.ReposFunc.SetDefaultReturn(repos)
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		return "deadbeef", nil
+	}
+	git := fakeGitserver{}
+	own := fakeOwnService{}
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			query FetchOwnership($repo: ID!) {
+				node(id: $repo) {
+					... on Repository {
+						commit(rev: "revision") {
+							ownership {
+								nodes {
+									owner {
+										...on Person {
+											displayName
+											email
+										}
+									}
+									reasons {
+										...on RecentContributorOwnershipSignal {
+											title
+											description
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}`,
+		ExpectedResult: `{
+			"node": {
+				"commit": {
+					"ownership": {
+						"nodes": [
+							{
+								"owner": {
+									"displayName": "santa claus",
+									"email": "santa@northpole.com"
+								},
+								"reasons": [
+									{
+										"title": "recent contributor",
+										"description": "Owner is associated because they are have contributed to this file in the last 90 days."
+									}
+								]
+							}
+						]
+					}
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"repo": string(relay.MarshalID("Repository", repoID)),
 		},
 	})
 }
