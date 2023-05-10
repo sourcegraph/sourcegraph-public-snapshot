@@ -44,7 +44,7 @@ export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, refetch, clas
         } finally {
             refetch()
         }
-    }, [app, deleteGitHubApp])
+    }, [app, deleteGitHubApp, refetch])
 
     return (
         <div className={classNames('d-flex align-items-center p-2 text-body text-decoration-none')}>

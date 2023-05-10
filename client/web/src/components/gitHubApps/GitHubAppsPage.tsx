@@ -18,8 +18,8 @@ export const GitHubAppsPage: React.FC = () => {
     const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {})
     const gitHubApps = useMemo(() => data?.gitHubApps?.nodes ?? [], [data])
 
-    const reloadApps = (): void => {
-        refetch({})
+    const reloadApps = async (): Promise<void> => {
+        await refetch({})
     }
 
     if (loading && !data) {
