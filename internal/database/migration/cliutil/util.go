@@ -190,6 +190,9 @@ func isAirgapped(ctx context.Context) (err error) {
 	url := githubExpectedSchemaPath(filename, version)
 	req, _ := http.NewRequestWithContext(timedCtx, http.MethodHead, url, nil)
 	resp, gherr := http.DefaultClient.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	ghUnreachable := gherr != nil || resp.StatusCode != http.StatusOK
 
 	timedCtx, cancel = context.WithTimeout(ctx, time.Second*3)
@@ -197,6 +200,9 @@ func isAirgapped(ctx context.Context) (err error) {
 	url = gcsExpectedSchemaPath(filename, version)
 	req, _ = http.NewRequestWithContext(timedCtx, http.MethodHead, url, nil)
 	resp, gcserr := http.DefaultClient.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
 	gcsUnreachable := gcserr != nil || resp.StatusCode != http.StatusOK
 
 	switch {
