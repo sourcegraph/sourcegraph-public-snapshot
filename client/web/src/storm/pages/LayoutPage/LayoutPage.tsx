@@ -22,7 +22,7 @@ import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { GlobalAlerts } from '../../../global/GlobalAlerts'
 import { useHandleSubmitFeedback } from '../../../hooks'
 import { LegacyLayoutRouteContext } from '../../../LegacyRouteContext'
-import { SurveyToast } from '../../../marketing/toast'
+import { CodySurveyToast, SurveyToast } from '../../../marketing/toast'
 import { GlobalNavbar } from '../../../nav/GlobalNavbar'
 import { EnterprisePageRoutes, PageRoutes } from '../../../routes.constants'
 import { parseSearchURLQuery } from '../../../search'
@@ -197,6 +197,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}
+            {!isSiteInit && !props.isSourcegraphDotCom && <CodySurveyToast />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
