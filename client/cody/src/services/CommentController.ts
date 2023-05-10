@@ -41,13 +41,6 @@ export class CommentController {
     constructor(private extensionPath: string) {
         this.commentController = vscode.comments.createCommentController(this.id, this.label)
         this.commentController.options = this.options
-        // enable controller if feature flag is on
-        this.commentController.commentingRangeProvider = {
-            provideCommentingRanges: (document: vscode.TextDocument) => {
-                const lineCount = document.lineCount
-                return [new vscode.Range(0, 0, lineCount - 1, 0)]
-            },
-        }
 
         // Track last selection in valid doc
         vscode.window.onDidChangeTextEditorSelection(e => {
@@ -188,7 +181,6 @@ export class CommentController {
     }
 
     public async replaceSelection(replacement: string): Promise<void> {
-        const startTime = performance.now()
         const activeEditor = await this.getEditor()
         if (!activeEditor) {
             console.error('Missing editor')
@@ -215,8 +207,6 @@ export class CommentController {
         const newRange = new vscode.Range(startLine, 0, startLine + newLineCount, 0)
         await this.setReplacementRange(newRange)
 
-        // check performance time
-        console.info('Replacement duration:', performance.now() - startTime)
         this.currentTaskId = ''
         return
     }

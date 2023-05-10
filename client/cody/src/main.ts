@@ -231,6 +231,16 @@ const register = async (
         )
     }
 
+    // Initiate controller when feature flag is on
+    if (initialConfig.experimentalComments) {
+        commentController.get().commentingRangeProvider = {
+            provideCommentingRanges: (document: vscode.TextDocument) => {
+                const lineCount = document.lineCount
+                return [new vscode.Range(0, 0, lineCount - 1, 0)]
+            },
+        }
+    }
+
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {

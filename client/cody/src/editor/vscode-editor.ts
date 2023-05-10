@@ -115,7 +115,6 @@ export class VSCodeEditor implements Editor {
     }
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
-        const startTime = performance.now()
         const activeEditor = this.getActiveTextEditorInstance()
         if (this.controller.isInProgress) {
             await this.controller.replaceSelection(replacement)
@@ -144,8 +143,6 @@ export class VSCodeEditor implements Editor {
             edit.replace(selection, replacement)
         })
 
-        // check performance time
-        console.info('Replacement duration:', performance.now() - startTime)
         return
     }
 

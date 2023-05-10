@@ -8,7 +8,7 @@ export interface Configuration {
     useContext: ConfigurationUseContext
     experimentalSuggest: boolean
     experimentalChatPredictions: boolean
-    anthropicKey: string | null
+    experimentalComments: boolean
     customHeaders: Record<string, string>
 }
 

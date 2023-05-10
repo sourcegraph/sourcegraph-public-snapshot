@@ -377,8 +377,9 @@
           "type": "boolean",
           "default": false
         },
-        "cody.experimental.keys.anthropic": {
-          "type": "string"
+        "cody.experimental.comments": {
+          "type": "boolean",
+          "default": false
         },
         "cody.customHeaders": {
           "type": "object",
