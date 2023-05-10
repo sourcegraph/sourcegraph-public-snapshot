@@ -11,7 +11,10 @@ use scip::types::{descriptor::Suffix, Descriptor};
 use scip_treesitter_languages::parsers::BundledParser;
 use serde::{Deserialize, Serialize};
 
-use crate::{get_globals, globals::Scope};
+use crate::{
+    get_globals,
+    globals::{MemoryBundle, Scope},
+};
 
 #[derive(Debug)]
 pub enum TagKind {
@@ -78,8 +81,9 @@ impl<'a> Reply<'a> {
         language: &'a str,
         tag_scope: Option<&'a str>,
         scope_deduplicator: &mut HashMap<String, ()>,
+        bundle: &MemoryBundle,
     ) {
-        let descriptors = &scope.descriptors;
+        let descriptors = &bundle.descriptors[scope.descriptors.start..scope.descriptors.end];
         let names = descriptors.iter().map(|d| d.name.as_str());
         let name = intersperse(names, ".").collect::<String>();
 
@@ -99,7 +103,7 @@ impl<'a> Reply<'a> {
             path,
             language,
             line: scope.scope_range.start_line as usize + 1,
-            kind: descriptors_to_kind(&scope.descriptors),
+            kind: descriptors_to_kind(descriptors),
             scope: tag_scope,
         };
 
@@ -129,10 +133,11 @@ fn emit_tags_for_scope<W: std::io::Write>(
     scope: &Scope,
     language: &str,
     scope_deduplicator: &mut HashMap<String, ()>,
+    bundle: &MemoryBundle,
 ) {
     let curr_scopes = {
         let mut curr_scopes = parent_scopes.clone();
-        for desc in &scope.descriptors {
+        for desc in &bundle.descriptors[scope.descriptors.start..scope.descriptors.end] {
             curr_scopes.push(desc.name.clone());
         }
         curr_scopes
@@ -152,6 +157,7 @@ fn emit_tags_for_scope<W: std::io::Write>(
             language,
             tag_scope,
             scope_deduplicator,
+            bundle,
         );
     }
 
@@ -163,25 +169,27 @@ fn emit_tags_for_scope<W: std::io::Write>(
             subscope,
             language,
             scope_deduplicator,
+            bundle,
         );
     }
 
     for global in &scope.globals {
         let mut scope_name = curr_scopes.clone();
         scope_name.extend(
-            global
-                .descriptors
+            bundle.descriptors[global.descriptors.start..global.descriptors.end]
                 .iter()
                 .take(global.descriptors.len() - 1)
                 .map(|d| d.name.clone()),
         );
 
         Reply::Tag {
-            name: global.descriptors.last().unwrap().name.clone(),
+            name: bundle.descriptors[global.descriptors.end - 1].name.clone(),
             path,
             language,
             line: global.range.start_line as usize + 1,
-            kind: descriptors_to_kind(&global.descriptors),
+            kind: descriptors_to_kind(
+                &bundle.descriptors[global.descriptors.start..global.descriptors.end],
+            ),
             scope: scope_name
                 .is_empty()
                 .not()
@@ -196,13 +204,14 @@ pub fn generate_tags<W: std::io::Write>(
     buf_writer: &mut BufWriter<W>,
     filename: String,
     file_data: &[u8],
+    bundle: &mut MemoryBundle,
 ) -> Option<()> {
     let path = path::Path::new(&filename);
     let extension = path.extension()?.to_str()?;
     let filepath = path.file_name()?.to_str()?;
 
     let parser = BundledParser::get_parser_from_extension(extension)?;
-    let (root_scope, _) = match get_globals(parser, file_data)? {
+    let (root_scope, _) = match get_globals(parser, file_data, bundle)? {
         Ok(vals) => vals,
         Err(err) => {
             // TODO: Not sure I want to keep this or not
@@ -223,6 +232,7 @@ pub fn generate_tags<W: std::io::Write>(
         &root_scope,
         "go",
         &mut scope_deduplicator,
+        bundle,
     );
     Some(())
 }
@@ -231,6 +241,12 @@ pub fn ctags_runner<R: Read, W: Write>(
     input: &mut BufReader<R>,
     output: &mut std::io::BufWriter<W>,
 ) -> Result<()> {
+    let mut bundle = MemoryBundle {
+        scopes: vec![],
+        globals: vec![],
+        descriptors: vec![],
+    };
+
     Reply::Program {
         name: "SCIP Ctags".to_string(),
         version: "5.9.0".to_string(),
@@ -262,7 +278,7 @@ pub fn ctags_runner<R: Read, W: Write>(
                     .read_exact(&mut file_data)
                     .expect("Could not fill file data exactly");
 
-                generate_tags(output, filename, &file_data);
+                generate_tags(output, filename, &file_data, &mut bundle);
             }
         }
 
