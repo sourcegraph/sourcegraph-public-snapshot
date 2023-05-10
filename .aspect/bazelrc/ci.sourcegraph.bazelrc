@@ -26,8 +26,14 @@ build --test_env=E2E_HEADLESS=false
 build --test_env=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"
 build --test_env=GH_TOKEN
 
+build --define=E2E_HEADLESS=false
+build --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"
+build --define=GH_TOKEN=$GH_TOKEN
+
 # Needed for integration tests
-build --test_env=PERCY_TOKEN
+build --define=PERCY_TOKEN=$PERCY_TOKEN
 
 # temp
 build --test_env=INCLUDE_ADMIN_ONBOARDING=false
+
+build --workspace_status_command=./dev/bazel_buildkite_stamp_vars.sh

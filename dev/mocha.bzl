@@ -1,6 +1,6 @@
-load("@npm//:@percy/cli/package_json.bzl", percy_bin = "bin")
 load("@npm//:mocha/package_json.bzl", mocha_bin = "bin")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("//client/shared/dev:run_mocha_tests_with_percy.bzl", "run_mocha_tests_with_percy")
 
 NON_BUNDLED = [
     # Dependencies loaded by mocha itself before the tests.
@@ -54,18 +54,18 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
 
     args = [
         "--config",
-        "$(location //:mocha_config)",
-        "$(location :%s)/**/*.test.js" % bundle_name,
-        "--retries 4",
+        "$(rootpath //:mocha_config)",
+        "$(rootpath :%s)/**/*.test.js" % bundle_name,
+        "--retries 0",
     ] + args
 
-    args_data = [
+    data = data + NON_BUNDLED_DEPS + [
         "//:mocha_config",
         ":%s" % bundle_name,
     ]
 
     env = dict(env, **{
-        "HEADLESS": "$$E2E_HEADLESS",
+        "HEADLESS": "$(E2E_HEADLESS)",
         # Add environment variable so that mocha writes its test xml
         # to the location Bazel expects.
         "MOCHA_FILE": "$$XML_OUTPUT_FILE",
@@ -73,8 +73,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         # TODO(bazel): e2e test environment
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
-        "SOURCEGRAPH_BASE_URL": "$$E2E_SOURCEGRAPH_BASE_URL",
-        "GH_TOKEN": "$$GH_TOKEN",
+        "SOURCEGRAPH_BASE_URL": "$(E2E_SOURCEGRAPH_BASE_URL)",
+        "GH_TOKEN": "$(GH_TOKEN)",
         "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
         "NO_CLEANUP": "false",
         "KEEP_BROWSER": "false",
@@ -89,24 +89,17 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
 
         # Puppeteer config
         "DISPLAY": ":99",
+        # "JS_BINARY__LOG_DEBUG": "false",
     })
 
     if is_percy_enabled:
-        percy_args = [
-            "exec",
-            "--quiet",
-            "--",
-            # TODO: figure out how to get this path from "//:node_modules/mocha"
-            "node_modules/mocha/bin/mocha",
-        ]
-
-        percy_bin.percy_test(
+        run_mocha_tests_with_percy(
             name = name,
-            args = percy_args + args,
-            data = data + args_data + NON_BUNDLED_DEPS + ["//:node_modules/mocha"],
+            args = args,
+            data = data,
             env = dict(env, **{
                 "PERCY_ON": "true",
-                "PERCY_TOKEN": "$$PERCY_TOKEN",
+                "PERCY_TOKEN": "$(PERCY_TOKEN)",
             }),
             **kwargs
         )
@@ -114,7 +107,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         mocha_bin.mocha_test(
             name = name,
             args = args,
-            data = data + args_data + NON_BUNDLED_DEPS,
+            data = data,
             env = env,
             **kwargs
         )
