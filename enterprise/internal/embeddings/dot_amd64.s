@@ -48,6 +48,10 @@ reduce:
 	// Store the reduced sum
 	VMOVD X0, R8
 
+	// For the remainder of the function, we do not use vector instructions.
+	// Zero the registers to avoid the SSE penalty.
+	VZEROALL
+
 // In tailloop, we add to the dot product one at a time
 tailloop:
 	CMPQ DX, $0
