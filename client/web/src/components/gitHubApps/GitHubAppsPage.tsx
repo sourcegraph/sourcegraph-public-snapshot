@@ -15,8 +15,12 @@ import { GitHubAppCard } from './GitHubAppCard'
 import styles from './GitHubAppCard.module.scss'
 
 export const GitHubAppsPage: React.FC = () => {
-    const { data, loading, error } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {})
+    const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {})
     const gitHubApps = useMemo(() => data?.gitHubApps?.nodes ?? [], [data])
+
+    const reloadApps = async (): Promise<void> => {
+        await refetch({})
+    }
 
     if (loading && !data) {
         return <LoadingSpinner />
@@ -41,7 +45,7 @@ export const GitHubAppsPage: React.FC = () => {
                     <ConnectionList as="ul" className="list-group" aria-label="GitHub Apps">
                         {gitHubApps?.map(app => (
                             <li key={app.id} className={styles.listNode}>
-                                <GitHubAppCard app={app} />
+                                <GitHubAppCard app={app} refetch={reloadApps} />
                             </li>
                         ))}
                     </ConnectionList>
