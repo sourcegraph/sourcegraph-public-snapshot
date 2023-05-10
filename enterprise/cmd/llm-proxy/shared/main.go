@@ -59,7 +59,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		Next:    handler,
 	}
 	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
-	handler = httpLogger(obctx.Logger.Scoped("HTTP API", ""), handler)
+	handler = httpLogger(obctx.Logger.Scoped("httpAPI", ""), handler)
 
 	// Initialize our server
 	server := httpserver.NewFromAddr(config.Address, &http.Server{
