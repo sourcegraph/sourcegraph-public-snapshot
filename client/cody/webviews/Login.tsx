@@ -58,8 +58,9 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         className={styles.input}
                         type={TextFieldType.password}
                         onInput={(e: any) => setToken(e.target.value)}
-                    > 
-                        Access Token (<a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">docs</a>)
+                    >
+                        Access Token (
+                        <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">docs</a>)
                     </VSCodeTextField>
                     <VSCodeButton className={styles.button} type="submit">
                         Sign In
@@ -69,22 +70,19 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <div className={styles.divider}></div>
             <section className={styles.section}>
                 <h2 className={styles.sectionHeader}>Everyone Else</h2>
-                
-                    <p className={styles.openMessage}>
-                        
+
+                <p className={styles.openMessage}>
                     Cody for open source code is available to all users with a Sourcegraph.com account
-                    
-                    </p>
-                    <a href="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY">
-                        <VSCodeButton
-                            className={styles.button}
-                            type="button"
-                            onClick={() => setEndpoint('https://sourcegraph.com')}
-                        >
-                            Continue with Sourcegraph.com
-                        </VSCodeButton>
-                    </a>
-            
+                </p>
+                <a href="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY">
+                    <VSCodeButton
+                        className={styles.button}
+                        type="button"
+                        onClick={() => setEndpoint('https://sourcegraph.com')}
+                    >
+                        Continue with Sourcegraph.com
+                    </VSCodeButton>
+                </a>
             </section>
             <div
                 className={styles.terms}
