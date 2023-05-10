@@ -3,7 +3,7 @@ import { Meta, Story } from '@storybook/react'
 import { WebStory } from '../../components/WebStory'
 
 import { TeamProfilePage } from './TeamProfilePage'
-import { testContext } from './test-utils'
+import { testContext } from './testContext.mock'
 
 const config: Meta = {
     title: 'web/teams/TeamProfilePage',

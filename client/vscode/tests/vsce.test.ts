@@ -1,6 +1,9 @@
 import { downloadAndUnzipVSCode } from '@vscode/test-electron'
 
-import { mixedSearchStreamEvents, highlightFileResult } from '@sourcegraph/shared/src/search/integration'
+import {
+    mixedSearchStreamEvents,
+    highlightFileResult,
+} from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { createVSCodeIntegrationTestContext, VSCodeIntegrationTestContext } from './context'

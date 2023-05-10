@@ -8,7 +8,7 @@ import { ListTeamMembersResult } from '../../graphql-operations'
 import { LIST_TEAM_MEMBERS } from '../members/backend'
 
 import { TeamMembersPage } from './TeamMembersPage'
-import { testContext } from './test-utils'
+import { testContext } from './testContext.mock'
 
 const config: Meta = {
     title: 'web/teams/TeamMembersPage',
