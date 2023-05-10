@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
@@ -19,6 +20,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type IndexJobType struct {
+	Name            string
+	Id              JobTypeID
+	IndexInterval   time.Duration
+	RefreshInterval time.Duration
+}
+
+// QueuePerRepoIndexJobs is a slice of jobs that will automatically initialize and will queue up one index job per repo every IndexInterval.
+var QueuePerRepoIndexJobs = []IndexJobType{{
+	Name:            "recent-contributors",
+	Id:              RecentContributors,
+	IndexInterval:   time.Hour * 24,
+	RefreshInterval: time.Minute * 5,
+}}
+
 var repoCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",
 	Name:      "own_background_index_scheduler_repos_queued_total",
@@ -33,19 +49,72 @@ func GetOwnIndexSchedulerRoutines(db database.DB, observationCtx *observation.Co
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
-	op := func(name string) *observation.Operation {
+	op := func(jobType IndexJobType) *observation.Operation {
 		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("own.background.index.scheduler.%s", name),
-			MetricLabelValues: []string{name},
+			Name:              fmt.Sprintf("own.background.index.scheduler.%s", jobType.Name),
+			MetricLabelValues: []string{jobType.Name},
 			Metrics:           redMetrics,
 		})
 	}
 
-	for _, jobType := range IndexJobTypes {
-		operation := op(jobType.Name)
-		routines = append(routines, goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), jobType.Name, "", jobType.RefreshInterval, newOwnRepoIndexSchedulerJob(db, jobType, operation.Logger), operation))
+	makeRoutine := func(jobType IndexJobType, op *observation.Operation, handler goroutine.Handler) goroutine.BackgroundRoutine {
+		ffw := newFeatureFlagWrapper(db, jobType, op, handler)
+		return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), jobType.Name, "", jobType.RefreshInterval, ffw, op)
 	}
+
+	for _, jobType := range QueuePerRepoIndexJobs {
+		operation := op(jobType)
+		routines = append(routines, makeRoutine(jobType, operation, newOwnRepoIndexSchedulerJob(db, jobType, operation.Logger)))
+	}
+
+	recent := IndexJobType{
+		Name:            "recent-viewers",
+		Id:              RecentViews,
+		RefreshInterval: time.Minute * 5,
+	}
+	routines = append(routines, makeRoutine(recent, op(recent), newRecentViewsIndexer(db, observationCtx.Logger)))
+
 	return routines
+}
+
+type featureFlagWrapper struct {
+	jobType IndexJobType
+	logger  logger.Logger
+	db      database.DB
+	handler goroutine.Handler
+}
+
+func newFeatureFlagWrapper(db database.DB, jobType IndexJobType, op *observation.Operation, handler goroutine.Handler) *featureFlagWrapper {
+	return &featureFlagWrapper{
+		jobType: jobType,
+		logger:  op.Logger,
+		db:      db,
+		handler: handler,
+	}
+}
+
+func (f *featureFlagWrapper) Handle(ctx context.Context) error {
+	logJobDisabled := func() {
+		f.logger.Info("skipping own indexing job, job disabled", logger.String("job-name", f.jobType.Name))
+	}
+
+	flag, err := database.FeatureFlagsWith(f.db).GetFeatureFlag(ctx, featureFlagName(f.jobType))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			logJobDisabled()
+			return nil
+		} else {
+			return errors.Wrap(err, "database.FeatureFlagsWith")
+		}
+	}
+	res, ok := flag.EvaluateGlobal()
+	if !ok || !res {
+		logJobDisabled()
+		return nil
+	}
+	// okay, so the job is enabled - proceed!
+	f.logger.Info("Scheduling repo indexes for own job", logger.String("job-name", f.jobType.Name))
+	return f.handler.Handle(ctx)
 }
 
 type ownRepoIndexSchedulerJob struct {
@@ -61,27 +130,6 @@ func newOwnRepoIndexSchedulerJob(db database.DB, jobType IndexJobType, logger lo
 }
 
 func (o *ownRepoIndexSchedulerJob) Handle(ctx context.Context) error {
-	lgr := o.logger
-	logJobDisabled := func() {
-		lgr.Info("skipping own indexing job, job disabled", logger.String("job-name", o.jobType.Name))
-	}
-
-	flag, err := database.FeatureFlagsWith(o.store).GetFeatureFlag(ctx, featureFlagName(o.jobType))
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			logJobDisabled()
-			return nil
-		} else {
-			return errors.Wrap(err, "database.FeatureFlagsWith")
-		}
-	}
-	res, ok := flag.EvaluateGlobal()
-	if !ok || !res {
-		logJobDisabled()
-		return nil
-	}
-	// okay, so the job is enabled - proceed!
-	lgr.Info("Scheduling repo indexes for own job", logger.String("job-name", o.jobType.Name))
 
 	// convert duration to hours to match the query
 	after := o.clock.Now().Add(-1 * o.jobType.IndexInterval)
@@ -93,7 +141,7 @@ func (o *ownRepoIndexSchedulerJob) Handle(ctx context.Context) error {
 	}
 
 	rows, _ := val.RowsAffected()
-	lgr.Info("Own index job scheduled", logger.String("job-name", o.jobType.Name), logger.Int64("row-count", rows))
+	o.logger.Info("Own index job scheduled", logger.String("job-name", o.jobType.Name), logger.Int64("row-count", rows))
 	repoCounter.WithLabelValues(o.jobType.Name).Add(float64(rows))
 	return nil
 }

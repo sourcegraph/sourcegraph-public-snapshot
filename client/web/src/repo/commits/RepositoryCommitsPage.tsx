@@ -1,8 +1,9 @@
 import { FC, useEffect, useMemo } from 'react'
 
+import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
-import { basename } from '@sourcegraph/common'
+import { basename, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -25,11 +26,13 @@ import {
     RepositoryFields,
     RepositoryGitCommitsResult,
     RepositoryGitCommitsVariables,
+    RepositoryType,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
 import { externalLinkFieldsFragment } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { getRefType, isPerforceDepotSource } from '../utils'
 
 import { GitCommitNode } from './GitCommitNode'
 
@@ -40,6 +43,9 @@ export const gitCommitFragment = gql`
         id
         oid
         abbreviatedOID
+        perforceChangelist {
+            ...PerforceChangelistFields
+        }
         message
         subject
         body
@@ -52,6 +58,9 @@ export const gitCommitFragment = gql`
         parents {
             oid
             abbreviatedOID
+            perforceChangelist {
+                ...PerforceChangelistFields
+            }
             url
         }
         url
@@ -62,6 +71,10 @@ export const gitCommitFragment = gql`
         tree(path: "") {
             canonicalURL
         }
+    }
+
+    fragment PerforceChangelistFields on PerforceChangelist {
+        cid
     }
 
     fragment SignatureFields on Signature {
@@ -79,16 +92,16 @@ export const gitCommitFragment = gql`
         }
         date
     }
-
     ${externalLinkFieldsFragment}
 `
 
 const REPOSITORY_GIT_COMMITS_PER_PAGE = 20
 
-const REPOSITORY_GIT_COMMITS_QUERY = gql`
+export const REPOSITORY_GIT_COMMITS_QUERY = gql`
     query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $afterCursor: String, $filePath: String) {
         node(id: $repo) {
             ... on Repository {
+                sourceType
                 externalURLs {
                     url
                     serviceKind
@@ -117,9 +130,10 @@ export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSett
 // A page that shows a repository's commits at the current revision.
 export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     const { useBreadcrumb, repo } = props
-
     const location = useLocation()
     const { filePath = '' } = parseBrowserRepoURL(location.pathname)
+
+    let sourceType = RepositoryType.GIT_REPOSITORY
 
     const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoryGitCommitsResult,
@@ -145,6 +159,9 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
             if (!node.commit?.ancestors) {
                 return { nodes: [] }
             }
+
+            sourceType = node.sourceType
+
             return node?.commit?.ancestors
         },
         options: {
@@ -152,6 +169,15 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
             useAlternateAfterCursor: true,
         },
     })
+
+    const getPageTitle = (): string => {
+        const repoString = displayRepoName(repo.name)
+        const refType = capitalize(pluralize(getRefType(sourceType), 0))
+        if (filePath) {
+            return `${refType} - ${basename(filePath)} - ${repoString}`
+        }
+        return `${refType} - ${repoString}`
+    }
 
     useEffect(() => {
         eventLogger.logPageView('RepositoryCommits')
@@ -186,17 +212,15 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
             if (!repo) {
                 return
             }
-            return { key: 'commits', element: <>Commits</> }
-        }, [repo])
-    )
 
-    const getPageTitle = (): string => {
-        const repoString = displayRepoName(repo.name)
-        if (filePath) {
-            return `Commits - ${basename(filePath)} - ${repoString}`
-        }
-        return `Commits - ${repoString}`
-    }
+            const refType = getRefType(sourceType)
+
+            return {
+                key: refType,
+                element: <>{capitalize(pluralize(refType, 0))}</>,
+            }
+        }, [repo, sourceType])
+    )
 
     return (
         <div className={styles.repositoryCommitsPage} data-testid="commits-page">
@@ -210,7 +234,10 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                                 View commits inside <Code>{basename(filePath)}</Code>
                             </>
                         ) : (
-                            <>View commits from this repository</>
+                            <>
+                                View {pluralize(getRefType(sourceType), 0)} from this{' '}
+                                {isPerforceDepotSource(sourceType) ? 'depot' : 'repository'}
+                            </>
                         )}
                     </Heading>
 
@@ -231,8 +258,8 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                                 centered={true}
                                 first={REPOSITORY_GIT_COMMITS_PER_PAGE}
                                 connection={connection}
-                                noun="commit"
-                                pluralNoun="commits"
+                                noun={getRefType(sourceType)}
+                                pluralNoun={pluralize(getRefType(sourceType), 0)}
                                 hasNextPage={hasNextPage}
                                 emptyElement={null}
                             />

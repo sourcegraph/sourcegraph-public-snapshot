@@ -183,7 +183,8 @@ Once set up, you can use code navigation with popular development tools:
   - [Adding code graph data to CI workflows](how-to/adding_lsif_to_workflows.md)
   - [Enable auto-indexing](how-to/enable_auto_indexing.md)
   - [Configure auto-indexing](how-to/configure_auto_indexing.md)
-
+- Best practices
+  - [Guide to defining policies](policies_best_practices.md) as it relates to resource usage
 ## [Reference](references/index.md)
 
 - [Requirements](references/requirements.md)

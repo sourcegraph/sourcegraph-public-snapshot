@@ -41371,6 +41371,543 @@ func (c PhabricatorStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// MockRecentContributionSignalStore is a mock implementation of the
+// RecentContributionSignalStore interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockRecentContributionSignalStore struct {
+	// AddCommitFunc is an instance of a mock function object controlling
+	// the behavior of the method AddCommit.
+	AddCommitFunc *RecentContributionSignalStoreAddCommitFunc
+	// ClearSignalsFunc is an instance of a mock function object controlling
+	// the behavior of the method ClearSignals.
+	ClearSignalsFunc *RecentContributionSignalStoreClearSignalsFunc
+	// FindRecentAuthorsFunc is an instance of a mock function object
+	// controlling the behavior of the method FindRecentAuthors.
+	FindRecentAuthorsFunc *RecentContributionSignalStoreFindRecentAuthorsFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *RecentContributionSignalStoreWithTransactFunc
+}
+
+// NewMockRecentContributionSignalStore creates a new mock of the
+// RecentContributionSignalStore interface. All methods return zero values
+// for all results, unless overwritten.
+func NewMockRecentContributionSignalStore() *MockRecentContributionSignalStore {
+	return &MockRecentContributionSignalStore{
+		AddCommitFunc: &RecentContributionSignalStoreAddCommitFunc{
+			defaultHook: func(context.Context, Commit) (r0 error) {
+				return
+			},
+		},
+		ClearSignalsFunc: &RecentContributionSignalStoreClearSignalsFunc{
+			defaultHook: func(context.Context, api.RepoID) (r0 error) {
+				return
+			},
+		},
+		FindRecentAuthorsFunc: &RecentContributionSignalStoreFindRecentAuthorsFunc{
+			defaultHook: func(context.Context, api.RepoID, string) (r0 []RecentContributorSummary, r1 error) {
+				return
+			},
+		},
+		WithTransactFunc: &RecentContributionSignalStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(store RecentContributionSignalStore) error) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockRecentContributionSignalStore creates a new mock of the
+// RecentContributionSignalStore interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockRecentContributionSignalStore() *MockRecentContributionSignalStore {
+	return &MockRecentContributionSignalStore{
+		AddCommitFunc: &RecentContributionSignalStoreAddCommitFunc{
+			defaultHook: func(context.Context, Commit) error {
+				panic("unexpected invocation of MockRecentContributionSignalStore.AddCommit")
+			},
+		},
+		ClearSignalsFunc: &RecentContributionSignalStoreClearSignalsFunc{
+			defaultHook: func(context.Context, api.RepoID) error {
+				panic("unexpected invocation of MockRecentContributionSignalStore.ClearSignals")
+			},
+		},
+		FindRecentAuthorsFunc: &RecentContributionSignalStoreFindRecentAuthorsFunc{
+			defaultHook: func(context.Context, api.RepoID, string) ([]RecentContributorSummary, error) {
+				panic("unexpected invocation of MockRecentContributionSignalStore.FindRecentAuthors")
+			},
+		},
+		WithTransactFunc: &RecentContributionSignalStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(store RecentContributionSignalStore) error) error {
+				panic("unexpected invocation of MockRecentContributionSignalStore.WithTransact")
+			},
+		},
+	}
+}
+
+// NewMockRecentContributionSignalStoreFrom creates a new mock of the
+// MockRecentContributionSignalStore interface. All methods delegate to the
+// given implementation, unless overwritten.
+func NewMockRecentContributionSignalStoreFrom(i RecentContributionSignalStore) *MockRecentContributionSignalStore {
+	return &MockRecentContributionSignalStore{
+		AddCommitFunc: &RecentContributionSignalStoreAddCommitFunc{
+			defaultHook: i.AddCommit,
+		},
+		ClearSignalsFunc: &RecentContributionSignalStoreClearSignalsFunc{
+			defaultHook: i.ClearSignals,
+		},
+		FindRecentAuthorsFunc: &RecentContributionSignalStoreFindRecentAuthorsFunc{
+			defaultHook: i.FindRecentAuthors,
+		},
+		WithTransactFunc: &RecentContributionSignalStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
+		},
+	}
+}
+
+// RecentContributionSignalStoreAddCommitFunc describes the behavior when
+// the AddCommit method of the parent MockRecentContributionSignalStore
+// instance is invoked.
+type RecentContributionSignalStoreAddCommitFunc struct {
+	defaultHook func(context.Context, Commit) error
+	hooks       []func(context.Context, Commit) error
+	history     []RecentContributionSignalStoreAddCommitFuncCall
+	mutex       sync.Mutex
+}
+
+// AddCommit delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRecentContributionSignalStore) AddCommit(v0 context.Context, v1 Commit) error {
+	r0 := m.AddCommitFunc.nextHook()(v0, v1)
+	m.AddCommitFunc.appendCall(RecentContributionSignalStoreAddCommitFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AddCommit method of
+// the parent MockRecentContributionSignalStore instance is invoked and the
+// hook queue is empty.
+func (f *RecentContributionSignalStoreAddCommitFunc) SetDefaultHook(hook func(context.Context, Commit) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AddCommit method of the parent MockRecentContributionSignalStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *RecentContributionSignalStoreAddCommitFunc) PushHook(hook func(context.Context, Commit) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RecentContributionSignalStoreAddCommitFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, Commit) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RecentContributionSignalStoreAddCommitFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, Commit) error {
+		return r0
+	})
+}
+
+func (f *RecentContributionSignalStoreAddCommitFunc) nextHook() func(context.Context, Commit) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RecentContributionSignalStoreAddCommitFunc) appendCall(r0 RecentContributionSignalStoreAddCommitFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RecentContributionSignalStoreAddCommitFuncCall objects describing the
+// invocations of this function.
+func (f *RecentContributionSignalStoreAddCommitFunc) History() []RecentContributionSignalStoreAddCommitFuncCall {
+	f.mutex.Lock()
+	history := make([]RecentContributionSignalStoreAddCommitFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RecentContributionSignalStoreAddCommitFuncCall is an object that
+// describes an invocation of method AddCommit on an instance of
+// MockRecentContributionSignalStore.
+type RecentContributionSignalStoreAddCommitFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 Commit
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RecentContributionSignalStoreAddCommitFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RecentContributionSignalStoreAddCommitFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RecentContributionSignalStoreClearSignalsFunc describes the behavior when
+// the ClearSignals method of the parent MockRecentContributionSignalStore
+// instance is invoked.
+type RecentContributionSignalStoreClearSignalsFunc struct {
+	defaultHook func(context.Context, api.RepoID) error
+	hooks       []func(context.Context, api.RepoID) error
+	history     []RecentContributionSignalStoreClearSignalsFuncCall
+	mutex       sync.Mutex
+}
+
+// ClearSignals delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockRecentContributionSignalStore) ClearSignals(v0 context.Context, v1 api.RepoID) error {
+	r0 := m.ClearSignalsFunc.nextHook()(v0, v1)
+	m.ClearSignalsFunc.appendCall(RecentContributionSignalStoreClearSignalsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ClearSignals method
+// of the parent MockRecentContributionSignalStore instance is invoked and
+// the hook queue is empty.
+func (f *RecentContributionSignalStoreClearSignalsFunc) SetDefaultHook(hook func(context.Context, api.RepoID) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ClearSignals method of the parent MockRecentContributionSignalStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RecentContributionSignalStoreClearSignalsFunc) PushHook(hook func(context.Context, api.RepoID) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RecentContributionSignalStoreClearSignalsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RecentContributionSignalStoreClearSignalsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoID) error {
+		return r0
+	})
+}
+
+func (f *RecentContributionSignalStoreClearSignalsFunc) nextHook() func(context.Context, api.RepoID) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RecentContributionSignalStoreClearSignalsFunc) appendCall(r0 RecentContributionSignalStoreClearSignalsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RecentContributionSignalStoreClearSignalsFuncCall objects describing the
+// invocations of this function.
+func (f *RecentContributionSignalStoreClearSignalsFunc) History() []RecentContributionSignalStoreClearSignalsFuncCall {
+	f.mutex.Lock()
+	history := make([]RecentContributionSignalStoreClearSignalsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RecentContributionSignalStoreClearSignalsFuncCall is an object that
+// describes an invocation of method ClearSignals on an instance of
+// MockRecentContributionSignalStore.
+type RecentContributionSignalStoreClearSignalsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RecentContributionSignalStoreClearSignalsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RecentContributionSignalStoreClearSignalsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RecentContributionSignalStoreFindRecentAuthorsFunc describes the behavior
+// when the FindRecentAuthors method of the parent
+// MockRecentContributionSignalStore instance is invoked.
+type RecentContributionSignalStoreFindRecentAuthorsFunc struct {
+	defaultHook func(context.Context, api.RepoID, string) ([]RecentContributorSummary, error)
+	hooks       []func(context.Context, api.RepoID, string) ([]RecentContributorSummary, error)
+	history     []RecentContributionSignalStoreFindRecentAuthorsFuncCall
+	mutex       sync.Mutex
+}
+
+// FindRecentAuthors delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRecentContributionSignalStore) FindRecentAuthors(v0 context.Context, v1 api.RepoID, v2 string) ([]RecentContributorSummary, error) {
+	r0, r1 := m.FindRecentAuthorsFunc.nextHook()(v0, v1, v2)
+	m.FindRecentAuthorsFunc.appendCall(RecentContributionSignalStoreFindRecentAuthorsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the FindRecentAuthors
+// method of the parent MockRecentContributionSignalStore instance is
+// invoked and the hook queue is empty.
+func (f *RecentContributionSignalStoreFindRecentAuthorsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, string) ([]RecentContributorSummary, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FindRecentAuthors method of the parent MockRecentContributionSignalStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RecentContributionSignalStoreFindRecentAuthorsFunc) PushHook(hook func(context.Context, api.RepoID, string) ([]RecentContributorSummary, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RecentContributionSignalStoreFindRecentAuthorsFunc) SetDefaultReturn(r0 []RecentContributorSummary, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, string) ([]RecentContributorSummary, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RecentContributionSignalStoreFindRecentAuthorsFunc) PushReturn(r0 []RecentContributorSummary, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID, string) ([]RecentContributorSummary, error) {
+		return r0, r1
+	})
+}
+
+func (f *RecentContributionSignalStoreFindRecentAuthorsFunc) nextHook() func(context.Context, api.RepoID, string) ([]RecentContributorSummary, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RecentContributionSignalStoreFindRecentAuthorsFunc) appendCall(r0 RecentContributionSignalStoreFindRecentAuthorsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RecentContributionSignalStoreFindRecentAuthorsFuncCall objects describing
+// the invocations of this function.
+func (f *RecentContributionSignalStoreFindRecentAuthorsFunc) History() []RecentContributionSignalStoreFindRecentAuthorsFuncCall {
+	f.mutex.Lock()
+	history := make([]RecentContributionSignalStoreFindRecentAuthorsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RecentContributionSignalStoreFindRecentAuthorsFuncCall is an object that
+// describes an invocation of method FindRecentAuthors on an instance of
+// MockRecentContributionSignalStore.
+type RecentContributionSignalStoreFindRecentAuthorsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []RecentContributorSummary
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RecentContributionSignalStoreFindRecentAuthorsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RecentContributionSignalStoreFindRecentAuthorsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RecentContributionSignalStoreWithTransactFunc describes the behavior when
+// the WithTransact method of the parent MockRecentContributionSignalStore
+// instance is invoked.
+type RecentContributionSignalStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(store RecentContributionSignalStore) error) error
+	hooks       []func(context.Context, func(store RecentContributionSignalStore) error) error
+	history     []RecentContributionSignalStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockRecentContributionSignalStore) WithTransact(v0 context.Context, v1 func(store RecentContributionSignalStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(RecentContributionSignalStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockRecentContributionSignalStore instance is invoked and
+// the hook queue is empty.
+func (f *RecentContributionSignalStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(store RecentContributionSignalStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockRecentContributionSignalStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RecentContributionSignalStoreWithTransactFunc) PushHook(hook func(context.Context, func(store RecentContributionSignalStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RecentContributionSignalStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(store RecentContributionSignalStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RecentContributionSignalStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(store RecentContributionSignalStore) error) error {
+		return r0
+	})
+}
+
+func (f *RecentContributionSignalStoreWithTransactFunc) nextHook() func(context.Context, func(store RecentContributionSignalStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RecentContributionSignalStoreWithTransactFunc) appendCall(r0 RecentContributionSignalStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RecentContributionSignalStoreWithTransactFuncCall objects describing the
+// invocations of this function.
+func (f *RecentContributionSignalStoreWithTransactFunc) History() []RecentContributionSignalStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]RecentContributionSignalStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RecentContributionSignalStoreWithTransactFuncCall is an object that
+// describes an invocation of method WithTransact on an instance of
+// MockRecentContributionSignalStore.
+type RecentContributionSignalStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(store RecentContributionSignalStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RecentContributionSignalStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RecentContributionSignalStoreWithTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // MockRepoStatisticsStore is a mock implementation of the
 // RepoStatisticsStore interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit

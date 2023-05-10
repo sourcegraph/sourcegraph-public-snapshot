@@ -36,6 +36,11 @@ func TestLLMProxyAccessResolverRateLimit(t *testing.T) {
 	_, err = dbLicenses{db: db}.Create(ctx, subID, "k2", 1, info)
 	require.NoError(t, err)
 
+	// Enable access to LLM proxy.
+	tru := true
+	err = dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{Enabled: &tru}})
+	require.NoError(t, err)
+
 	t.Run("default rate limit for a plan", func(t *testing.T) {
 		sub, err := dbSubscriptions{db: db}.GetByID(ctx, subID)
 		require.NoError(t, err)
@@ -50,11 +55,12 @@ func TestLLMProxyAccessResolverRateLimit(t *testing.T) {
 	})
 
 	t.Run("override default rate limit for a plan", func(t *testing.T) {
-		dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{
+		err := (dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{
 			llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{
 				RateLimit: pointify(int32(123456)),
 			},
-		})
+		}))
+		require.NoError(t, err)
 
 		sub, err := dbSubscriptions{db: db}.GetByID(ctx, subID)
 		require.NoError(t, err)

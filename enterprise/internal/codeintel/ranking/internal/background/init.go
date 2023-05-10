@@ -1,6 +1,7 @@
 package background
 
 import (
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/coordinator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/exporter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/mapper"
@@ -13,6 +14,10 @@ import (
 
 func NewSymbolExporter(observationCtx *observation.Context, store store.Store, lsifstore lsifstore.Store, config *exporter.Config) goroutine.BackgroundRoutine {
 	return exporter.NewSymbolExporter(observationCtx, store, lsifstore, config)
+}
+
+func NewCoordinator(observationCtx *observation.Context, store store.Store, config *coordinator.Config) goroutine.BackgroundRoutine {
+	return coordinator.NewCoordinator(observationCtx, store, config)
 }
 
 func NewMapper(observationCtx *observation.Context, store store.Store, config *mapper.Config) []goroutine.BackgroundRoutine {
@@ -31,6 +36,9 @@ func NewSymbolJanitor(observationCtx *observation.Context, store store.Store, co
 		janitor.NewSymbolDefinitionsJanitor(observationCtx, store, config),
 		janitor.NewSymbolReferencesJanitor(observationCtx, store, config),
 		janitor.NewSymbolInitialPathsJanitor(observationCtx, store, config),
+		janitor.NewDeletedSymbolDefinitionsJanitor(observationCtx, store, config),
+		janitor.NewDeletedSymbolReferencesJanitor(observationCtx, store, config),
+		janitor.NewDeletedSymbolInitialPathsJanitor(observationCtx, store, config),
 		janitor.NewAbandonedDefinitionsJanitor(observationCtx, store, config),
 		janitor.NewAbandonedReferencesJanitor(observationCtx, store, config),
 		janitor.NewAbandonedInitialCountsJanitor(observationCtx, store, config),

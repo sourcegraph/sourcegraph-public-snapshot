@@ -32,23 +32,17 @@ let
     exec ${pkgs.bazelisk}/bin/bazelisk "$@"
   '' else ''
     if [ "$1" == "configure" ]; then
-      exec ${pkgs.bazelisk}/bin/bazelisk "$@"
+      exec env --unset=USE_BAZEL_VERSION ${pkgs.bazelisk}/bin/bazelisk "$@"
     fi
-    exec ${bazel-static}/bin/bazel "$@"
+    exec ${pkgs.bazel_6}/bin/bazel "$@"
   '');
-  bazel-static = pkgs.bazel_6.overrideAttrs (oldAttrs: {
-    preBuildPhase = oldAttrs.preBuildPhase + ''
-      export BAZEL_LINKLIBS=-l%:libstdc++.a:-lm
-      export BAZEL_LINKOPTS=-static-libstdc++:-static-libgcc
-    '';
-  });
   bazel-watcher = pkgs.writeShellScriptBin "ibazel" ''
     exec ${pkgs.bazel-watcher}/bin/ibazel \
-      ${pkgs.lib.optionalString pkgs.hostPlatform.isLinux "-bazel_path=${bazel-static}/bin/bazel"} "$@"
+      ${pkgs.lib.optionalString pkgs.hostPlatform.isLinux "-bazel_path=${pkgs.bazel_6}/bin/bazel"} "$@"
   '';
   # custom cargo-bazel so we can pass down LD_LIBRARY_PATH, see definition of LD_LIBRARY_PATH below
   # for more info.
-  cargo-bazel = pkgs.rustPlatform.buildRustPackage rec {
+  cargo-bazel = pkgs.rustPlatform.buildRustPackage {
     pname = "cargo-bazel";
     version = "0.8.0";
     sourceRoot = "source/crate_universe";
@@ -150,6 +144,11 @@ pkgs.mkShell {
 
   # Tell rules_rust to use our custom cargo-bazel.
   CARGO_BAZEL_GENERATOR_URL = "file://${cargo-bazel}/bin/cargo-bazel";
+
+  # Some of the bazel actions require some tools assumed to be in the PATH defined by the "strict action env" that we enable
+  # through --incompatible_strict_action_env. We can poke a custom PATH through with --action_env=PATH=$BAZEL_ACTION_PATH.
+  # See https://sourcegraph.com/github.com/bazelbuild/bazel@6.1.2/-/blob/src/main/java/com/google/devtools/build/lib/bazel/rules/BazelRuleClassProvider.java?L532-547
+  BAZEL_ACTION_PATH = with pkgs; lib.makeBinPath [ bash stdenv.cc coreutils unzip zip curl ];
 
   # bazel complains when the bazel version differs even by a patch version to whats defined in .bazelversion,
   # so we tell it to h*ck off here.
