@@ -15,4 +15,12 @@
     &.selected:hover {
         background: var(--color-bg-2);
     }
+
+    .delete-button {
+        visibility: hidden;
+    }
+
+    &:hover .delete-button {
+        visibility: visible;
+    }
 }
