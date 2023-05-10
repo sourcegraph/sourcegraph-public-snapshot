@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -314,8 +313,6 @@ func (r *schemaResolver) SubmitCodySurvey(ctx context.Context, args *struct {
 	}); err != nil {
 		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
 		log15.Error("Unable to submit cody survey results to Sourcegraph remote", "error", err)
-		// fixme: remove this log line after we've confirmed that the survey is working
-		fmt.Printf("Unable to submit cody survey results to Sourcegraph remote: Email=%v, isForWork=%v, isForPersonal=%v\n", email, args.IsForWork, args.IsForPersonal)
 	}
 
 	return &EmptyResponse{}, nil
