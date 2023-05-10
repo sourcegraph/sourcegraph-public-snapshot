@@ -18,7 +18,7 @@ export interface ActiveTextEditorVisibleContent {
 export interface Editor {
     getWorkspaceRootPath(): string | null
     getActiveTextEditor(): ActiveTextEditor | null
-    getActiveTextEditorSelection(): ActiveTextEditorSelection | null
+    getActiveTextEditorSelection(requireSelection?: boolean): ActiveTextEditorSelection | null
 
     /**
      * Gets the active text editor's selection, or the entire file if the selected range is empty.

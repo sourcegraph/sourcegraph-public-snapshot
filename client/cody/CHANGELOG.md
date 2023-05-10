@@ -8,6 +8,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
+- Fixes an issue when using cody without selecting text. [pull/51713](https://github.com/sourcegraph/sourcegraph/pull/51713)
+
 ### Changed
 
 ## [0.1.0]

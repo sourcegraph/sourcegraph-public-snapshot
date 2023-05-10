@@ -53,7 +53,7 @@ export class MockEditor implements Editor {
         return this.mocks.getWorkspaceRootPath?.() ?? null
     }
 
-    public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+    public getActiveTextEditorSelection(_requireSelection: boolean): ActiveTextEditorSelection | null {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
