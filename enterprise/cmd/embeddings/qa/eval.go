@@ -20,17 +20,18 @@ import (
 //go:embed context_data.tsv
 var fs embed.FS
 
-func Run(url string) error {
-	if url == "" {
-		return errors.New("url is empty")
-	}
-	c := newClient(url)
+type embeddingsSearcher interface {
+	Search(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingSearchResults, error)
+}
+
+// Run runs the evaluation and returns recall for the test data.
+func Run(searcher embeddingsSearcher) (float64, error) {
 
 	count, recall := 0.0, 0.0
 
 	file, err := fs.Open("context_data.tsv")
 	if err != nil {
-		return errors.Wrap(err, "failed to open file")
+		return -1, errors.Wrap(err, "failed to open file")
 	}
 
 	scanner := bufio.NewScanner(file)
@@ -51,9 +52,9 @@ func Run(url string) error {
 			Debug:            true,
 		}
 
-		results, err := c.search(args)
+		results, err := searcher.Search(args)
 		if err != nil {
-			return errors.Wrap(err, "search failed")
+			return -1, errors.Wrap(err, "search failed")
 		}
 
 		merged := append(results.CodeResults, results.TextResults...)
@@ -82,10 +83,12 @@ func Run(url string) error {
 		count++
 	}
 
-	fmt.Println()
-	fmt.Printf("Recall: %f\n", recall/count)
+	recall = recall / count
 
-	return nil
+	fmt.Println()
+	fmt.Printf("Recall: %f\n", recall)
+
+	return recall, nil
 }
 
 type client struct {
@@ -93,14 +96,14 @@ type client struct {
 	url        string
 }
 
-func newClient(url string) *client {
+func NewClient(url string) *client {
 	return &client{
 		httpClient: http.DefaultClient,
 		url:        url,
 	}
 }
 
-func (c *client) search(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingSearchResults, error) {
+func (c *client) Search(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingSearchResults, error) {
 	b, err := json.Marshal(args)
 	if err != nil {
 		return nil, err
