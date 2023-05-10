@@ -2,15 +2,15 @@ package apitest
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
 
 type Permission struct {
 	Typename    string `json:"__typename"`
 	ID          string
-	Namespace   types.PermissionNamespace
+	Namespace   rtypes.PermissionNamespace
 	DisplayName string
-	Action      string
+	Action      rtypes.NamespaceAction
 	CreatedAt   gqlutil.DateTime
 }
 

@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
 
 func TestRoleResolver(t *testing.T) {
@@ -34,7 +34,7 @@ func TestRoleResolver(t *testing.T) {
 	adminCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
 
 	perm, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: types.BatchChangesNamespace,
+		Namespace: rtypes.BatchChangesNamespace,
 		Action:    "READ",
 	})
 	if err != nil {
