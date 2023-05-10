@@ -41908,6 +41908,540 @@ func (c RecentContributionSignalStoreWithTransactFuncCall) Results() []interface
 	return []interface{}{c.Result0}
 }
 
+// MockRecentViewSignalStore is a mock implementation of the
+// RecentViewSignalStore interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockRecentViewSignalStore struct {
+	// BuildAggregateFromEventsFunc is an instance of a mock function object
+	// controlling the behavior of the method BuildAggregateFromEvents.
+	BuildAggregateFromEventsFunc *RecentViewSignalStoreBuildAggregateFromEventsFunc
+	// InsertFunc is an instance of a mock function object controlling the
+	// behavior of the method Insert.
+	InsertFunc *RecentViewSignalStoreInsertFunc
+	// InsertPathsFunc is an instance of a mock function object controlling
+	// the behavior of the method InsertPaths.
+	InsertPathsFunc *RecentViewSignalStoreInsertPathsFunc
+	// ListFunc is an instance of a mock function object controlling the
+	// behavior of the method List.
+	ListFunc *RecentViewSignalStoreListFunc
+}
+
+// NewMockRecentViewSignalStore creates a new mock of the
+// RecentViewSignalStore interface. All methods return zero values for all
+// results, unless overwritten.
+func NewMockRecentViewSignalStore() *MockRecentViewSignalStore {
+	return &MockRecentViewSignalStore{
+		BuildAggregateFromEventsFunc: &RecentViewSignalStoreBuildAggregateFromEventsFunc{
+			defaultHook: func(context.Context, []*Event) (r0 error) {
+				return
+			},
+		},
+		InsertFunc: &RecentViewSignalStoreInsertFunc{
+			defaultHook: func(context.Context, int32, int, int) (r0 error) {
+				return
+			},
+		},
+		InsertPathsFunc: &RecentViewSignalStoreInsertPathsFunc{
+			defaultHook: func(context.Context, int32, map[int]int) (r0 error) {
+				return
+			},
+		},
+		ListFunc: &RecentViewSignalStoreListFunc{
+			defaultHook: func(context.Context, ListRecentViewSignalOpts) (r0 []RecentViewSummary, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockRecentViewSignalStore creates a new mock of the
+// RecentViewSignalStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockRecentViewSignalStore() *MockRecentViewSignalStore {
+	return &MockRecentViewSignalStore{
+		BuildAggregateFromEventsFunc: &RecentViewSignalStoreBuildAggregateFromEventsFunc{
+			defaultHook: func(context.Context, []*Event) error {
+				panic("unexpected invocation of MockRecentViewSignalStore.BuildAggregateFromEvents")
+			},
+		},
+		InsertFunc: &RecentViewSignalStoreInsertFunc{
+			defaultHook: func(context.Context, int32, int, int) error {
+				panic("unexpected invocation of MockRecentViewSignalStore.Insert")
+			},
+		},
+		InsertPathsFunc: &RecentViewSignalStoreInsertPathsFunc{
+			defaultHook: func(context.Context, int32, map[int]int) error {
+				panic("unexpected invocation of MockRecentViewSignalStore.InsertPaths")
+			},
+		},
+		ListFunc: &RecentViewSignalStoreListFunc{
+			defaultHook: func(context.Context, ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
+				panic("unexpected invocation of MockRecentViewSignalStore.List")
+			},
+		},
+	}
+}
+
+// NewMockRecentViewSignalStoreFrom creates a new mock of the
+// MockRecentViewSignalStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockRecentViewSignalStoreFrom(i RecentViewSignalStore) *MockRecentViewSignalStore {
+	return &MockRecentViewSignalStore{
+		BuildAggregateFromEventsFunc: &RecentViewSignalStoreBuildAggregateFromEventsFunc{
+			defaultHook: i.BuildAggregateFromEvents,
+		},
+		InsertFunc: &RecentViewSignalStoreInsertFunc{
+			defaultHook: i.Insert,
+		},
+		InsertPathsFunc: &RecentViewSignalStoreInsertPathsFunc{
+			defaultHook: i.InsertPaths,
+		},
+		ListFunc: &RecentViewSignalStoreListFunc{
+			defaultHook: i.List,
+		},
+	}
+}
+
+// RecentViewSignalStoreBuildAggregateFromEventsFunc describes the behavior
+// when the BuildAggregateFromEvents method of the parent
+// MockRecentViewSignalStore instance is invoked.
+type RecentViewSignalStoreBuildAggregateFromEventsFunc struct {
+	defaultHook func(context.Context, []*Event) error
+	hooks       []func(context.Context, []*Event) error
+	history     []RecentViewSignalStoreBuildAggregateFromEventsFuncCall
+	mutex       sync.Mutex
+}
+
+// BuildAggregateFromEvents delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockRecentViewSignalStore) BuildAggregateFromEvents(v0 context.Context, v1 []*Event) error {
+	r0 := m.BuildAggregateFromEventsFunc.nextHook()(v0, v1)
+	m.BuildAggregateFromEventsFunc.appendCall(RecentViewSignalStoreBuildAggregateFromEventsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// BuildAggregateFromEvents method of the parent MockRecentViewSignalStore
+// instance is invoked and the hook queue is empty.
+func (f *RecentViewSignalStoreBuildAggregateFromEventsFunc) SetDefaultHook(hook func(context.Context, []*Event) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BuildAggregateFromEvents method of the parent MockRecentViewSignalStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RecentViewSignalStoreBuildAggregateFromEventsFunc) PushHook(hook func(context.Context, []*Event) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RecentViewSignalStoreBuildAggregateFromEventsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []*Event) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RecentViewSignalStoreBuildAggregateFromEventsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []*Event) error {
+		return r0
+	})
+}
+
+func (f *RecentViewSignalStoreBuildAggregateFromEventsFunc) nextHook() func(context.Context, []*Event) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RecentViewSignalStoreBuildAggregateFromEventsFunc) appendCall(r0 RecentViewSignalStoreBuildAggregateFromEventsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RecentViewSignalStoreBuildAggregateFromEventsFuncCall objects describing
+// the invocations of this function.
+func (f *RecentViewSignalStoreBuildAggregateFromEventsFunc) History() []RecentViewSignalStoreBuildAggregateFromEventsFuncCall {
+	f.mutex.Lock()
+	history := make([]RecentViewSignalStoreBuildAggregateFromEventsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RecentViewSignalStoreBuildAggregateFromEventsFuncCall is an object that
+// describes an invocation of method BuildAggregateFromEvents on an instance
+// of MockRecentViewSignalStore.
+type RecentViewSignalStoreBuildAggregateFromEventsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []*Event
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RecentViewSignalStoreBuildAggregateFromEventsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RecentViewSignalStoreBuildAggregateFromEventsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RecentViewSignalStoreInsertFunc describes the behavior when the Insert
+// method of the parent MockRecentViewSignalStore instance is invoked.
+type RecentViewSignalStoreInsertFunc struct {
+	defaultHook func(context.Context, int32, int, int) error
+	hooks       []func(context.Context, int32, int, int) error
+	history     []RecentViewSignalStoreInsertFuncCall
+	mutex       sync.Mutex
+}
+
+// Insert delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRecentViewSignalStore) Insert(v0 context.Context, v1 int32, v2 int, v3 int) error {
+	r0 := m.InsertFunc.nextHook()(v0, v1, v2, v3)
+	m.InsertFunc.appendCall(RecentViewSignalStoreInsertFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Insert method of the
+// parent MockRecentViewSignalStore instance is invoked and the hook queue
+// is empty.
+func (f *RecentViewSignalStoreInsertFunc) SetDefaultHook(hook func(context.Context, int32, int, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Insert method of the parent MockRecentViewSignalStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *RecentViewSignalStoreInsertFunc) PushHook(hook func(context.Context, int32, int, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RecentViewSignalStoreInsertFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, int, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RecentViewSignalStoreInsertFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, int, int) error {
+		return r0
+	})
+}
+
+func (f *RecentViewSignalStoreInsertFunc) nextHook() func(context.Context, int32, int, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RecentViewSignalStoreInsertFunc) appendCall(r0 RecentViewSignalStoreInsertFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RecentViewSignalStoreInsertFuncCall objects
+// describing the invocations of this function.
+func (f *RecentViewSignalStoreInsertFunc) History() []RecentViewSignalStoreInsertFuncCall {
+	f.mutex.Lock()
+	history := make([]RecentViewSignalStoreInsertFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RecentViewSignalStoreInsertFuncCall is an object that describes an
+// invocation of method Insert on an instance of MockRecentViewSignalStore.
+type RecentViewSignalStoreInsertFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RecentViewSignalStoreInsertFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RecentViewSignalStoreInsertFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RecentViewSignalStoreInsertPathsFunc describes the behavior when the
+// InsertPaths method of the parent MockRecentViewSignalStore instance is
+// invoked.
+type RecentViewSignalStoreInsertPathsFunc struct {
+	defaultHook func(context.Context, int32, map[int]int) error
+	hooks       []func(context.Context, int32, map[int]int) error
+	history     []RecentViewSignalStoreInsertPathsFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertPaths delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockRecentViewSignalStore) InsertPaths(v0 context.Context, v1 int32, v2 map[int]int) error {
+	r0 := m.InsertPathsFunc.nextHook()(v0, v1, v2)
+	m.InsertPathsFunc.appendCall(RecentViewSignalStoreInsertPathsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the InsertPaths method
+// of the parent MockRecentViewSignalStore instance is invoked and the hook
+// queue is empty.
+func (f *RecentViewSignalStoreInsertPathsFunc) SetDefaultHook(hook func(context.Context, int32, map[int]int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertPaths method of the parent MockRecentViewSignalStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *RecentViewSignalStoreInsertPathsFunc) PushHook(hook func(context.Context, int32, map[int]int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RecentViewSignalStoreInsertPathsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, map[int]int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RecentViewSignalStoreInsertPathsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, map[int]int) error {
+		return r0
+	})
+}
+
+func (f *RecentViewSignalStoreInsertPathsFunc) nextHook() func(context.Context, int32, map[int]int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RecentViewSignalStoreInsertPathsFunc) appendCall(r0 RecentViewSignalStoreInsertPathsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RecentViewSignalStoreInsertPathsFuncCall
+// objects describing the invocations of this function.
+func (f *RecentViewSignalStoreInsertPathsFunc) History() []RecentViewSignalStoreInsertPathsFuncCall {
+	f.mutex.Lock()
+	history := make([]RecentViewSignalStoreInsertPathsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RecentViewSignalStoreInsertPathsFuncCall is an object that describes an
+// invocation of method InsertPaths on an instance of
+// MockRecentViewSignalStore.
+type RecentViewSignalStoreInsertPathsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 map[int]int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RecentViewSignalStoreInsertPathsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RecentViewSignalStoreInsertPathsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RecentViewSignalStoreListFunc describes the behavior when the List method
+// of the parent MockRecentViewSignalStore instance is invoked.
+type RecentViewSignalStoreListFunc struct {
+	defaultHook func(context.Context, ListRecentViewSignalOpts) ([]RecentViewSummary, error)
+	hooks       []func(context.Context, ListRecentViewSignalOpts) ([]RecentViewSummary, error)
+	history     []RecentViewSignalStoreListFuncCall
+	mutex       sync.Mutex
+}
+
+// List delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockRecentViewSignalStore) List(v0 context.Context, v1 ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
+	r0, r1 := m.ListFunc.nextHook()(v0, v1)
+	m.ListFunc.appendCall(RecentViewSignalStoreListFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the List method of the
+// parent MockRecentViewSignalStore instance is invoked and the hook queue
+// is empty.
+func (f *RecentViewSignalStoreListFunc) SetDefaultHook(hook func(context.Context, ListRecentViewSignalOpts) ([]RecentViewSummary, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// List method of the parent MockRecentViewSignalStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *RecentViewSignalStoreListFunc) PushHook(hook func(context.Context, ListRecentViewSignalOpts) ([]RecentViewSummary, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RecentViewSignalStoreListFunc) SetDefaultReturn(r0 []RecentViewSummary, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RecentViewSignalStoreListFunc) PushReturn(r0 []RecentViewSummary, r1 error) {
+	f.PushHook(func(context.Context, ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
+		return r0, r1
+	})
+}
+
+func (f *RecentViewSignalStoreListFunc) nextHook() func(context.Context, ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RecentViewSignalStoreListFunc) appendCall(r0 RecentViewSignalStoreListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RecentViewSignalStoreListFuncCall objects
+// describing the invocations of this function.
+func (f *RecentViewSignalStoreListFunc) History() []RecentViewSignalStoreListFuncCall {
+	f.mutex.Lock()
+	history := make([]RecentViewSignalStoreListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RecentViewSignalStoreListFuncCall is an object that describes an
+// invocation of method List on an instance of MockRecentViewSignalStore.
+type RecentViewSignalStoreListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListRecentViewSignalOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []RecentViewSummary
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RecentViewSignalStoreListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RecentViewSignalStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockRepoStatisticsStore is a mock implementation of the
 // RepoStatisticsStore interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
