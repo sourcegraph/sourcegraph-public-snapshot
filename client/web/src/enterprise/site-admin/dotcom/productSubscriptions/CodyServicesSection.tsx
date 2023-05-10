@@ -94,7 +94,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
     return (
         <>
             <H3>
-                Cody services <ProductStatusBadge status="experimental" />
+                Cody services <ProductStatusBadge status="beta" />
             </H3>
             <Container className="mb-3">
                 <H4>Access token</H4>
