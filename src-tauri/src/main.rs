@@ -8,10 +8,13 @@ use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
 mod common;
 mod tray;
-use common::{extract_path_from_scheme_url, is_scheme_url, show_window};
+use common::{extract_path_from_scheme_url, show_window};
 use std::sync::RwLock;
 use tauri::Manager;
 use tauri_utils::config::RemoteDomainAccessScope;
+
+#[cfg(not(target_os = "macos"))]
+use common::is_scheme_url;
 
 // The URL to open the frontend on, if launched with a scheme url.
 static LAUNCH_PATH: RwLock<String> = RwLock::new(String::new());
