@@ -123,7 +123,7 @@ export EXECUTOR_FRONTEND_PASSWORD=SUPER_SECRET_SHARED_TOKEN
 
 To be able to run workloads in isolation, a few dependencies need to be installed and configured. The executor CLI can do all of that automatically.
 
-To run all of the required setup steps, just run the following commands as root:
+To run all of the required setup steps, just run the following commands as `root`:
 
 ```bash
 executor install all
