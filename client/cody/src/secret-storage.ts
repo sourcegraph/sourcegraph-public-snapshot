@@ -7,7 +7,7 @@ export async function getAccessToken(secretStorage: SecretStorage): Promise<stri
         return (await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) || null
     } catch (error) {
         await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-        void vscode.window.showErrorMessage(`Failed to retreive access token for Cody: ${error}`)
+        console.error(`Failed to retreive access token for Cody: ${error}`)
         return null
     }
 }
