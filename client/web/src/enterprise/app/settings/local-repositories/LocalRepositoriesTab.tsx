@@ -20,7 +20,7 @@ import { LocalRepository } from '../../../../graphql-operations'
 import {
     useLocalPathsPicker,
     useLocalRepositories,
-    useLocalRepositoriesPaths,
+    useNewLocalRepositoriesPaths,
 } from '../../../../setup-wizard/components'
 
 import styles from './LocalRepositoriesTab.module.scss'
@@ -33,23 +33,33 @@ type Path = string
  * of resolved repositories by a given path.
  */
 export const LocalRepositoriesTab: FC = () => {
-    const { paths, setPaths, loading, loaded, error: pathsError } = useLocalRepositoriesPaths()
-    const { repositories, error: repositoriesError } = useLocalRepositories({
+    const {
         paths,
-        skip: paths.length === 0,
-    })
+        loading: pathsLoading,
+        loaded: pathLoaded,
+        error: pathsError,
+        addNewPaths,
+        deletePath,
+    } = useNewLocalRepositoriesPaths()
 
-    const handleRepositoriesDelete = (pathToDelete: Path): void => {
-        const newPaths = paths.filter(path => path !== pathToDelete)
+    const {
+        repositories,
+        loading: repositoriesLoading,
+        loaded: repositoriesLoaded,
+        error: repositoriesError,
+    } = useLocalRepositories({ paths, skip: paths.length === 0 })
 
-        setPaths(newPaths)
+    const handleRepositoriesDelete = async (pathToDelete: Path): Promise<void> => {
+        await deletePath(pathToDelete)
     }
 
-    const handlePathsAdd = (pathsToAdd: Path[]): void => {
-        setPaths([...paths, ...pathsToAdd])
+    const handlePathsAdd = async (pathsToAdd: Path[]): Promise<void> => {
+        await addNewPaths(pathsToAdd)
     }
 
+    const anyLoading = pathsLoading || repositoriesLoading
     const anyError = pathsError ?? repositoriesError
+    const allLoaded = pathLoaded && repositoriesLoaded
 
     return (
         <div className={styles.root}>
@@ -63,9 +73,10 @@ export const LocalRepositoriesTab: FC = () => {
 
             <Container className={styles.container}>
                 {anyError && <ErrorAlert error={anyError} />}
-                {!anyError && loading && !loaded && <LoadingSpinner />}
-                {!anyError && loaded && paths.length === 0 && <ZeroState />}
-                {!anyError && loaded && (
+
+                {!anyError && anyLoading && !allLoaded && <LoadingSpinner />}
+                {!anyError && allLoaded && repositories.length === 0 && <ZeroState />}
+                {!anyError && allLoaded && (
                     <LocalRepositoriesList
                         paths={paths}
                         repositories={repositories}
@@ -156,6 +167,12 @@ const LocalRepositoriesList: FC<LocalRepositoriesListProps> = ({ paths, reposito
             const repositories = repositoriesTree[path]
 
             if (repositories.length > 1) {
+                folders.push({
+                    path,
+                    repositories,
+                })
+            }
+            if (repositories.length === 1 && repositories[0].path !== path) {
                 folders.push({
                     path,
                     repositories,

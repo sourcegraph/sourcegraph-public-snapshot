@@ -5,6 +5,7 @@ export {
     useLocalRepositories,
     useLocalPathsPicker,
     useLocalRepositoriesPaths,
+    useNewLocalRepositoriesPaths,
 } from './local-repositories-step'
 
 export { RemoteRepositoriesStep } from './remote-repositories-step'

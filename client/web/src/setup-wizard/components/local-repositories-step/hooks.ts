@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useRef, useCallback, useEffect, useState } from 'react'
 
 import { useApolloClient, useLazyQuery } from '@apollo/client'
 import { isEqual } from 'lodash'
@@ -25,6 +25,65 @@ import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_CODE_HOSTS, GET_LOCAL_DIRECTORY_
 
 type Path = string
 
+interface useNewLocalRepositoriesPathsAPI {
+    loading: boolean
+    loaded: boolean
+    error: ErrorLike | undefined
+    paths: Path[]
+    addNewPaths: (paths: Path[]) => Promise<void>
+    deletePath: (path: Path) => Promise<void>
+}
+
+export function useNewLocalRepositoriesPaths(): useNewLocalRepositoriesPathsAPI {
+    const { data, previousData, loading, error } = useQuery<GetLocalCodeHostsResult>(GET_LOCAL_CODE_HOSTS, {
+        fetchPolicy: 'cache-and-network',
+    })
+
+    const apolloClient = useApolloClient()
+    const [addLocalCodeHost] = useMutation<AddRemoteCodeHostResult, AddRemoteCodeHostVariables>(ADD_CODE_HOST)
+    const [deleteLocalCodeHost] = useMutation<DeleteRemoteCodeHostResult, DeleteRemoteCodeHostVariables>(
+        DELETE_CODE_HOST
+    )
+
+    const addNewPaths = async (paths: Path[]): Promise<void> => {
+        for (const path of paths) {
+            // Create a new local external service for this path
+            await addLocalCodeHost({
+                variables: {
+                    input: {
+                        displayName: `Local repositories service (${path})`,
+                        config: createDefaultLocalServiceConfig(path),
+                        kind: ExternalServiceKind.OTHER,
+                    },
+                },
+            })
+        }
+
+        await apolloClient.refetchQueries({ include: ['GetLocalCodeHosts'] })
+    }
+
+    const deletePath = async (path: Path): Promise<void> => {
+        const localServices = getLocalServices(data, false)
+        const localServiceToDelete = localServices.find(localService => localService.path === path)
+
+        if (!localServiceToDelete) {
+            return
+        }
+
+        await deleteLocalCodeHost({ variables: { id: localServiceToDelete.id } })
+        await apolloClient.refetchQueries({ include: ['GetLocalCodeHosts'] })
+    }
+
+    return {
+        error,
+        loading,
+        addNewPaths,
+        deletePath,
+        loaded: !!data || !!previousData,
+        paths: getLocalServicePaths(data),
+    }
+}
+
 interface LocalRepositoriesPathAPI {
     loading: boolean
     loaded: boolean
@@ -42,6 +101,8 @@ interface LocalRepositoriesPathAPI {
 export function useLocalRepositoriesPaths(): LocalRepositoriesPathAPI {
     const apolloClient = useApolloClient()
 
+    const hasLoadedRef = useRef(false)
+
     const [error, setError] = useState<ErrorLike | undefined>()
     const [paths, setPaths] = useState<string[]>([])
 
@@ -54,7 +115,12 @@ export function useLocalRepositoriesPaths(): LocalRepositoriesPathAPI {
     const { data, previousData, loading } = useQuery<GetLocalCodeHostsResult>(GET_LOCAL_CODE_HOSTS, {
         fetchPolicy: 'network-only',
         // Sync local external service paths on first load
-        onCompleted: data => setPaths(getLocalServicePaths(data)),
+        onCompleted: data => {
+            if (!hasLoadedRef.current) {
+                hasLoadedRef.current = true
+                setPaths(getLocalServicePaths(data))
+            }
+        },
         onError: setError,
     })
 
@@ -154,7 +220,7 @@ export function useLocalRepositories({ paths, skip }: LocalRepositoriesInput): L
     return {
         loading,
         error,
-        loaded: !!data,
+        loaded: !!data || !!previousData,
         repositories: data?.localDirectories?.repositories ?? previousData?.localDirectories?.repositories ?? [],
     }
 }
