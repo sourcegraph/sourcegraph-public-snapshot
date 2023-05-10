@@ -60,7 +60,6 @@ const testCmd = `${mochaBin} ${args.join(' ')}`
 // and wraps the Mocha command with Percy's "exec" command
 // https://docs.percy.io/docs/cli-exec
 const finalCmd = `${getEnvVariablesString()} ${percyBin} exec -- ${testCmd}`
-console.log(`${percyBin} exec -- ${testCmd}`)
 
 // Execute the final command, inheriting the stdio settings from the parent process
 execSync(finalCmd, { stdio: 'inherit' })

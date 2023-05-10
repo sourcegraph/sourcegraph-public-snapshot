@@ -56,7 +56,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
     args = [
         "--config",
         "$(rootpath //:mocha_config)",
-        "$(rootpath :%s)/**/*.test.js" % bundle_name,
+        "'$(rootpath :%s)/**/*.test.js'" % bundle_name,
         "--retries 4",
     ] + args
 
@@ -98,7 +98,6 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         timeout = kwargs.pop("timeout")
 
         binary_name = "%s_binary" % name
-        print(args)
 
         # `js_run_binary` is used here in the combination with `build_test` instead of
         # `js_test` because only `js_run_binary` currntly supports the `stamp` attribute.
