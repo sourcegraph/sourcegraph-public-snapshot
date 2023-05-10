@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dotcom",
+    srcs = [
+        "dotcom.go",
+        "gen.go",
+        "operations.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom",
+    visibility = ["//enterprise/cmd/llm-proxy:__subpackages__"],
+    deps = [
+        "@com_github_khan_genqlient//graphql",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)

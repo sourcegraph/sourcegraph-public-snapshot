@@ -41,6 +41,11 @@ go_library(
 go_binary(
     name = "prom-wrapper",
     embed = [":prom-wrapper_lib"],
+    gotags = [
+        "netgo",
+        "dist",
+    ],
+    static = "on",
     visibility = ["//visibility:public"],
 )
 

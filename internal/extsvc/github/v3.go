@@ -808,6 +808,18 @@ func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64)
 	return &ins, nil
 }
 
+// GetAppInstallations fetches a list of GitHub App instalaltions for the
+// authenticated GitHub App.
+//
+// API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app
+func (c *V3Client) GetAppInstallations(ctx context.Context) ([]*github.Installation, error) {
+	var ins []*github.Installation
+	if _, err := c.get(ctx, "app/installations", &ins); err != nil {
+		return nil, err
+	}
+	return ins, nil
+}
+
 // CreateAppInstallationAccessToken creates an access token for the installation.
 //
 // API docs: https://docs.github.com/en/rest/reference/apps#create-an-installation-access-token-for-an-app

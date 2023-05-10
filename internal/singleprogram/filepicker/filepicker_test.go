@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
 )
 
@@ -33,7 +35,7 @@ func TestPicker(t *testing.T) {
 		bin      map[string]string
 		display  bool
 		nopicker bool
-		want     string
+		want     []string
 		wantErr  bool
 	}{{
 		name:     "none",
@@ -70,21 +72,21 @@ func TestPicker(t *testing.T) {
 		bin: map[string]string{
 			"osascript": "echo '/path /with spaces/trailing /'",
 		},
-		want: "/path /with spaces/trailing ",
+		want: []string{"/path /with spaces/trailing "},
 	}, {
 		name: "zenity",
 		bin: map[string]string{
 			"zenity": "echo '/path /with spaces/trailing '",
 		},
 		display: true,
-		want:    "/path /with spaces/trailing ",
+		want:    []string{"/path /with spaces/trailing "},
 	}, {
 		name: "kdialog",
 		bin: map[string]string{
 			"kdialog": fmt.Sprintf("echo %q", kdialogPath),
 		},
 		display: true,
-		want:    kdialogDir,
+		want:    []string{kdialogDir},
 	}}
 
 	for _, tc := range cases {
@@ -110,19 +112,22 @@ func TestPicker(t *testing.T) {
 
 			picker, ok := filepicker.Lookup(logtest.Scoped(t))
 			if ok != !tc.nopicker {
-				t.Fatal("unexpected response from Lookup")
+				t.Fatalf("%q: unexpected response from Lookup", tc.name)
 			}
 			if tc.nopicker {
 				return
 			}
 
-			got, err := picker(context.Background())
+			got, err := picker(context.Background(), true)
 			if (err != nil) != tc.wantErr {
-				t.Fatalf("unexpected error from picker: %v", err)
+				t.Fatalf("%q: unexpected error from picker: %v", tc.name, err)
+			}
+			if tc.wantErr {
+				return
 			}
 
-			if got != tc.want {
-				t.Fatalf("unexpected path from picker.\nwant: %q\ngot:  %q", tc.want, got)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("%q: unexpected path from picker.\nwant: %q\ngot:  %q", tc.name, tc.want, got)
 			}
 		})
 	}

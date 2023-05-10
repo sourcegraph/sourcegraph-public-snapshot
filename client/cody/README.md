@@ -2,7 +2,7 @@
 
 Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
 
-**Status:** experimental ([join the open beta](https://docs.sourcegraph.com/cody))
+**Status:** beta ([join the open beta](https://docs.sourcegraph.com/cody))
 
 [**Full documentation**](https://docs.sourcegraph.com/cody)
 
@@ -71,4 +71,8 @@ We welcome PRs that contribute new, useful recipes.
 
 ## Development
 
-[Cody's code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/cody) is open source (Apache 2). See [CONTRIBUTING.md](./CONTRIBUTING.md).
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## License
+
+[Cody's code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/cody) is open source (Apache 2).

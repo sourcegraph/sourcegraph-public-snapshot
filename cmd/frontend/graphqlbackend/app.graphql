@@ -1,16 +1,16 @@
 extend type Query {
     """
-    Runs a host system native file picker and returns the directory picked. If
-    null the user canceled the operation. This is intended to be used by
-    Sourcegraph App.
+    Runs a host system native file picker and returns the directories picked.
+    If null the user canceled the operation.
+    This is intended to be used by Sourcegraph App.
     """
-    localDirectoryPicker: LocalDirectory
+    localDirectoriesPicker: LocalDirectories
 
     """
-    Returns the local directory at dir. This is intended to be used by
-    Sourcegraph App.
+    Returns the local directory at the given directory or comma-separated list of directories.
+    This is intended to be used by Sourcegraph App.
     """
-    localDirectory(dir: String!): LocalDirectory!
+    localDirectories(paths: [String!]!): LocalDirectories!
 
     """
     Lists external services that are configured for Sourcegraph App local code repositories. This is intended to be used
@@ -20,15 +20,15 @@ extend type Query {
 }
 
 """
-LocalDirectory represents a directory on the host machine. This is an API
+LocalDirectories represents a list of directories on the host machine. This is an API
 specific to Sourcegraph App.
 """
-type LocalDirectory {
+type LocalDirectories {
     """
-    Path is an absolute path to a local directory that exists. If LocalDirectory
-    was created via picker this is the path picked.
+    A list of absolute paths to local directories that exist.
+    If LocalDirectories was created via picker these are the paths picked.
     """
-    path: String!
+    paths: [String!]!
 
     """
     Repositories is the recursive list of repositories found under path.

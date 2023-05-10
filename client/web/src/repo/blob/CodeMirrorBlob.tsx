@@ -26,9 +26,9 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
+import { useEditorStore } from '../../cody/stores/editor'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, Scalars } from '../../graphql-operations'
-import { useEditorStore } from '../../stores/editor'
 import { BlameHunkData } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -97,9 +97,6 @@ export interface BlobPropsFacet extends BlobProps {
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** The raw content of the blob. */
     content: string
-
-    /** The trusted syntax-highlighted code as HTML */
-    html: string
 
     /** LSIF syntax-highlighting data */
     lsif?: string
@@ -193,7 +190,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const location = useLocation()
 
     const [enableBlobPageSwitchAreasShortcuts] = useFeatureFlag('blob-page-switch-areas-shortcuts')
-    const [codyEnabled] = useFeatureFlag('cody-experimental')
     const focusCodeEditorShortcut = useKeyboardShortcut('focusCodeEditor')
 
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
@@ -292,7 +288,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }),
             scipSnapshot(blobInfo.snapshotData),
             codeFoldingExtension(),
-            codyEnabled ? codyWidgetExtension() : [],
+            window.context?.codyEnabled ? codyWidgetExtension() : [],
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
@@ -322,7 +318,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, codyEnabled]
+        [onSelection, blobInfo, extensionsController]
     )
 
     const editorRef = useRef<EditorView | null>(null)

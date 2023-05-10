@@ -10,6 +10,7 @@ import { isError } from '../utils'
 
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
+import { escapeCodyMarkdown } from './markdown'
 import { getPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
 import { Transcript, TranscriptJSON } from './transcript'
@@ -20,7 +21,10 @@ export type { TranscriptJSON }
 export { Transcript }
 
 export interface ClientInit {
-    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken'>
+    config: Pick<
+        ConfigurationWithAccessToken,
+        'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
+    >
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: Transcript) => void
     editor: Editor
@@ -29,6 +33,7 @@ export interface ClientInit {
 
 export interface Client {
     readonly transcript: Transcript
+    readonly isMessageInProgress: boolean
     submitMessage: (text: string) => Promise<void>
     executeRecipe: (
         recipeId: string,
@@ -37,6 +42,7 @@ export interface Client {
         }
     ) => Promise<void>
     reset: () => void
+    codebaseContext: CodebaseContext
 }
 
 export async function createClient({
@@ -46,7 +52,7 @@ export async function createClient({
     editor,
     initialTranscript,
 }: ClientInit): Promise<Client> {
-    const fullConfig = { ...config, debug: false, customHeaders: {} }
+    const fullConfig = { debug: false, ...config }
 
     const completionsClient = new SourcegraphBrowserCompletionsClient(fullConfig)
     const chatClient = new ChatClient(completionsClient)
@@ -62,7 +68,7 @@ export async function createClient({
 
     const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
 
-    const codebaseContext = new CodebaseContext(config, embeddingsSearch, null)
+    const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null)
 
     const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
 
@@ -110,26 +116,43 @@ export async function createClient({
 
         const prompt = await transcript.toPrompt(getPreamble(config.codebase))
         const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
+        let rawText = ''
 
         chatClient.chat(prompt, {
-            onChange(rawText) {
-                const text = reformatBotMessage(rawText, responsePrefix)
+            onChange(_rawText) {
+                rawText = _rawText
+
+                const text = reformatBotMessage(escapeCodyMarkdown(rawText, true), responsePrefix)
                 transcript.addAssistantResponse(text)
 
                 sendTranscript()
             },
             onComplete() {
                 isMessageInProgress = false
+
+                const text = reformatBotMessage(escapeCodyMarkdown(rawText, false), responsePrefix)
+                transcript.addAssistantResponse(text)
                 sendTranscript()
             },
             onError(error) {
-                console.error(error)
+                // Display error message as assistant response
+                transcript.addErrorAsAssistantResponse(
+                    `<div class="cody-chat-error"><span>Request failed: </span>${error}</div>`
+                )
+                isMessageInProgress = false
+                sendTranscript()
+                console.error(`Completion request failed: ${error}`)
             },
         })
     }
 
     return {
-        transcript,
+        get transcript() {
+            return transcript
+        },
+        get isMessageInProgress() {
+            return isMessageInProgress
+        },
         submitMessage(text: string) {
             return executeRecipe('chat-question', { humanChatInput: text })
         },
@@ -139,5 +162,6 @@ export async function createClient({
             transcript.reset()
             sendTranscript()
         },
+        codebaseContext,
     }
 }

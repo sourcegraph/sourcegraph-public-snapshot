@@ -13,16 +13,28 @@ const meta: ComponentMeta<typeof App> = {
     parameters: {
         component: App,
         chromatic: {
-            enableDarkMode: true,
             disableSnapshot: false,
         },
     },
 }
 
+// When this Story is rendered on Chromatic, the below DOM API will error. It
+// doesn't seem necessary for this UI at all and is likely coming from the VS
+// Code component library so we just stub it out for now.
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const originalSetValidity = ElementInternals.prototype.setValidity
+ElementInternals.prototype.setValidity = function () {
+    return originalSetValidity.call(this, {})
+}
+
 export default meta
 
 export const Simple: ComponentStoryObj<typeof App> = {
-    render: () => <App vscodeAPI={dummyVSCodeAPI} />,
+    render: () => (
+        <div style={{ background: 'rgb(28, 33, 40)' }}>
+            <App vscodeAPI={dummyVSCodeAPI} />
+        </div>
+    ),
 }
 
 const dummyVSCodeAPI: VSCodeWrapper = {

@@ -20,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
+const appDirectory = "sourcegraph"
+
 func Init(logger log.Logger) {
 	if deploy.IsApp() {
 		fmt.Fprintln(os.Stderr, "✱ Sourcegraph App version:", version.Version())
@@ -64,14 +66,10 @@ func Init(logger log.Logger) {
 	// This defaults to an internal hostname.
 	setDefaultEnv(logger, "SRC_FRONTEND_INTERNAL", "localhost:3090")
 
-	cacheDir, err := os.UserCacheDir()
-	if err == nil {
-		cacheDir = filepath.Join(cacheDir, "sourcegraph-sp")
-		err = os.MkdirAll(cacheDir, 0700)
-	}
+	cacheDir, err := setupAppDir(os.Getenv("SRC_APP_CACHE"), os.UserCacheDir)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "unable to make user cache directory:", err)
-		os.Exit(1)
+		fmt.Fprintln(os.Stderr, "failed to setup cache directory. Please see log for more details")
+		logger.Fatal("failed to setup cache directory", log.Error(err))
 	}
 
 	setDefaultEnv(logger, "SRC_REPOS_DIR", filepath.Join(cacheDir, "repos"))
@@ -79,13 +77,10 @@ func Init(logger log.Logger) {
 	setDefaultEnv(logger, "SYMBOLS_CACHE_DIR", filepath.Join(cacheDir, "symbols"))
 	setDefaultEnv(logger, "SEARCHER_CACHE_DIR", filepath.Join(cacheDir, "searcher"))
 
-	configDir, err := os.UserConfigDir()
-	if err == nil {
-		configDir = filepath.Join(configDir, "sourcegraph-sp")
-		err = os.MkdirAll(configDir, 0700)
-	}
+	configDir, err := setupAppDir(os.Getenv("SRC_APP_CONFIG"), os.UserConfigDir)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "unable to make user config directory:", err)
+		fmt.Fprintln(os.Stderr, "failed to setup user config directory. Please see log for more details")
+		logger.Fatal("failed to setup config directory", log.Error(err))
 		os.Exit(1)
 	}
 
@@ -108,16 +103,12 @@ func Init(logger log.Logger) {
 
 	siteConfigPath := filepath.Join(configDir, "site-config.json")
 	setDefaultEnv(logger, "SITE_CONFIG_FILE", siteConfigPath)
-	setDefaultEnv(logger, "SITE_CONFIG_ALLOW_EDITS", "true")
 	writeFileIfNotExists(siteConfigPath, []byte(confdefaults.App.Site))
 
 	globalSettingsPath := filepath.Join(configDir, "global-settings.json")
 	setDefaultEnv(logger, "GLOBAL_SETTINGS_FILE", globalSettingsPath)
 	setDefaultEnv(logger, "GLOBAL_SETTINGS_ALLOW_EDITS", "true")
 	writeFileIfNotExists(globalSettingsPath, []byte("{}\n"))
-
-	// Escape hatch isn't needed in local dev since the site config can always just be a file on disk.
-	setDefaultEnv(logger, "NO_SITE_CONFIG_ESCAPE_HATCH", "1")
 
 	// We disable the use of executors passwords, because executors only listen on `localhost` this
 	// is safe to do.
@@ -237,6 +228,25 @@ exec docker run --rm -i \
     --entrypoint /usr/local/bin/universal-ctags \
     slimsag/ctags:latest@sha256:dd21503a3ae51524ab96edd5c0d0b8326d4baaf99b4238dfe8ec0232050af3c7 "$@"
 `
+
+func setupAppDir(root string, defaultDirFn func() (string, error)) (string, error) {
+	var base = root
+	var err error
+	if base == "" {
+		base, err = defaultDirFn()
+	}
+	if err != nil {
+		return "", err
+	}
+
+	dir := appDirectory
+	if version.IsDev(version.Version()) {
+		dir = fmt.Sprintf("%s-dev", dir)
+	}
+
+	path := filepath.Join(base, dir)
+	return path, os.MkdirAll(path, 0700)
+}
 
 // setDefaultEnv will set the environment variable if it is not set.
 func setDefaultEnv(logger log.Logger, k, v string) {

@@ -43,8 +43,6 @@ export class VSCodeEditor implements Editor {
         }
         const selection = activeEditor.selection
         if (!selection || selection?.start.isEqual(selection.end)) {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            vscode.window.showErrorMessage('No code selected. Please select some code and try again.')
             return null
         }
         return this.createActiveTextEditorSelection(activeEditor, selection)
@@ -122,7 +120,7 @@ export class VSCodeEditor implements Editor {
 
         if (activeEditor.document.getText(selection) !== selectedText) {
             // TODO: Be robust to this.
-            await vscode.window.showErrorMessage(
+            await vscode.window.showInformationMessage(
                 'The selection changed while Cody was working. The text will not be edited.'
             )
             return
@@ -141,5 +139,11 @@ export class VSCodeEditor implements Editor {
 
     public async showWarningMessage(message: string): Promise<void> {
         await vscode.window.showWarningMessage(message)
+    }
+
+    public async showInputBox(prompt?: string): Promise<string | undefined> {
+        return vscode.window.showInputBox({
+            placeHolder: prompt || 'Enter here...',
+        })
     }
 }

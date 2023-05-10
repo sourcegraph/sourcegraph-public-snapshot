@@ -13,6 +13,7 @@ export class TranslateToLanguage implements Recipe {
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
+            await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
             return null
         }
 

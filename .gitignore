@@ -3,6 +3,7 @@
 
 # Bazel
 bazel-*
+.bazelrc-nix
 
 # Vim
 *.swp

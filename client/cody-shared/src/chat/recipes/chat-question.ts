@@ -1,9 +1,12 @@
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { Editor } from '../../editor'
+import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
-import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
+import {
+    populateCurrentEditorContextTemplate,
+    populateCurrentEditorSelectedContextTemplate,
+} from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
@@ -19,7 +22,13 @@ export class ChatQuestion implements Recipe {
             new Interaction(
                 { speaker: 'human', text: truncatedText, displayText: humanChatInput },
                 { speaker: 'assistant' },
-                this.getContextMessages(truncatedText, context.editor, context.intentDetector, context.codebaseContext)
+                this.getContextMessages(
+                    truncatedText,
+                    context.editor,
+                    context.intentDetector,
+                    context.codebaseContext,
+                    context.editor.getActiveTextEditorSelection() || null
+                )
             )
         )
     }
@@ -28,9 +37,15 @@ export class ChatQuestion implements Recipe {
         text: string,
         editor: Editor,
         intentDetector: IntentDetector,
-        codebaseContext: CodebaseContext
+        codebaseContext: CodebaseContext,
+        selection: ActiveTextEditorSelection | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
+
+        // Add selected text as context when available
+        if (selection?.selectedText) {
+            contextMessages.push(...this.getEditorSelectionContext(selection))
+        }
 
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
         if (isCodebaseContextRequired) {
@@ -57,6 +72,14 @@ export class ChatQuestion implements Recipe {
         return getContextMessageWithResponse(
             populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName),
             visibleContent.fileName
+        )
+    }
+
+    private getEditorSelectionContext(selection: ActiveTextEditorSelection): ContextMessage[] {
+        const truncatedContent = truncateText(selection.selectedText, MAX_CURRENT_FILE_TOKENS)
+        return getContextMessageWithResponse(
+            populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName),
+            selection.fileName
         )
     }
 }

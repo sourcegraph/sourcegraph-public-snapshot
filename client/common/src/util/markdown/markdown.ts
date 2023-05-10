@@ -73,7 +73,6 @@ export const renderMarkdown = (
     const rendered = marked(markdown, {
         gfm: true,
         breaks: options.breaks,
-        sanitize: false,
         highlight: (code, language) => highlightCodeSafe(code, language),
         renderer: options.renderer,
         headerPrefix: options.headerPrefix ?? '',
@@ -88,7 +87,8 @@ export const renderMarkdown = (
           }
         : {
               USE_PROFILES: { html: true },
-              FORBID_ATTR: ['rel', 'style'],
+              FORBID_TAGS: ['style', 'form', 'input', 'button'],
+              FORBID_ATTR: ['rel', 'style', 'method', 'action'],
           }
 
     return DOMPurify.sanitize(rendered, dompurifyConfig).trim()

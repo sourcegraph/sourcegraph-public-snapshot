@@ -1,6 +1,6 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+load("//dev:defs.bzl", "npm_package", "ts_project")
 
 npm_link_all_packages(name = "node_modules")
 
@@ -28,16 +28,19 @@ ts_project(
         "src/chat/preamble.ts",
         "src/chat/recipes/browser-recipes.ts",
         "src/chat/recipes/chat-question.ts",
+        "src/chat/recipes/context-search.ts",
         "src/chat/recipes/explain-code-detailed.ts",
         "src/chat/recipes/explain-code-high-level.ts",
         "src/chat/recipes/find-code-smells.ts",
         "src/chat/recipes/fixup.ts",
         "src/chat/recipes/generate-docstring.ts",
+        "src/chat/recipes/generate-release-notes.ts",
         "src/chat/recipes/generate-test.ts",
         "src/chat/recipes/git-log.ts",
         "src/chat/recipes/helpers.ts",
         "src/chat/recipes/improve-variable-names.ts",
         "src/chat/recipes/langs.ts",
+        "src/chat/recipes/next-questions.ts",
         "src/chat/recipes/recipe.ts",
         "src/chat/recipes/translate.ts",
         "src/chat/recipes/vscode-recipes.ts",
@@ -82,11 +85,13 @@ ts_project(
         "//:node_modules/@microsoft/fetch-event-source",
         "//:node_modules/@types/isomorphic-fetch",
         "//:node_modules/@types/js-cookie",
+        "//:node_modules/@types/marked",
         "//:node_modules/@types/node",
         "//:node_modules/@types/vscode",  #keep
         "//:node_modules/@vscode",
         "//:node_modules/isomorphic-fetch",
         "//:node_modules/js-cookie",
+        "//:node_modules/marked",
     ],
 )
 
@@ -103,6 +108,7 @@ ts_project(
     testonly = True,
     srcs = [
         "src/chat/bot-response-multiplexer.test.ts",
+        "src/chat/markdown.test.ts",
         "src/chat/transcript/transcript.test.ts",
         "src/hallucinations-detector/index.test.ts",
         "src/sourcegraph-api/utils.test.ts",

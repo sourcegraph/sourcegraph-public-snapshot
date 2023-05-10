@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/log"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -42,7 +44,13 @@ func NewWithService(db database.DB, gitserver gitserver.Client, ownService own.S
 }
 
 var (
-	_ graphqlbackend.OwnResolver = &ownResolver{}
+	_ graphqlbackend.OwnResolver                              = &ownResolver{}
+	_ graphqlbackend.OwnershipReasonResolver                  = &ownershipReasonResolver{}
+	_ graphqlbackend.RecentContributorOwnershipSignalResolver = &recentContributorOwnershipSignal{}
+	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentContributorOwnershipSignal{}
+	_ graphqlbackend.RecentViewOwnershipSignalResolver        = &recentViewOwnershipSignal{}
+	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentViewOwnershipSignal{}
+	_ graphqlbackend.SimpleOwnReasonResolver                  = &codeownersFileEntryResolver{}
 )
 
 type ownResolver struct {
@@ -56,14 +64,31 @@ func (r *ownResolver) ownService() own.Service {
 	return r.ownServiceFn()
 }
 
-func ownerText(o *codeownerspb.Owner) string {
-	if o == nil {
-		return ""
-	}
-	if o.Handle != "" {
-		return o.Handle
-	}
-	return o.Email
+type ownershipReasonResolver struct {
+	resolver graphqlbackend.SimpleOwnReasonResolver
+}
+
+func (o *ownershipReasonResolver) Title() (string, error) {
+	return o.resolver.Title()
+}
+
+func (o *ownershipReasonResolver) Description() (string, error) {
+	return o.resolver.Description()
+}
+
+func (o *ownershipReasonResolver) ToCodeownersFileEntry() (res graphqlbackend.CodeownersFileEntryResolver, ok bool) {
+	res, ok = o.resolver.(*codeownersFileEntryResolver)
+	return
+}
+
+func (o *ownershipReasonResolver) ToRecentContributorOwnershipSignal() (res graphqlbackend.RecentContributorOwnershipSignalResolver, ok bool) {
+	res, ok = o.resolver.(*recentContributorOwnershipSignal)
+	return
+}
+
+func (o *ownershipReasonResolver) ToRecentViewOwnershipSignal() (res graphqlbackend.RecentViewOwnershipSignalResolver, ok bool) {
+	res, ok = o.resolver.(*recentViewOwnershipSignal)
+	return
 }
 
 func (r *ownResolver) GitBlobOwnership(
@@ -74,71 +99,58 @@ func (r *ownResolver) GitBlobOwnership(
 	if err := areOwnEndpointsAvailable(ctx); err != nil {
 		return nil, err
 	}
-	cursor, err := graphqlutil.DecodeCursor(args.After)
+
+	// Evaluate CODEOWNERS rules.
+	ownerships, err := r.computeCodeowners(ctx, blob)
 	if err != nil {
 		return nil, err
 	}
-	repo := blob.Repository()
-	repoID, repoName := repo.IDInt32(), repo.RepoName()
-	commitID := api.CommitID(blob.Commit().OID())
-	ownService := r.ownService()
-	rs, err := ownService.RulesetForRepo(ctx, repoName, repoID, commitID)
+
+	// Retrieve recent contributors signals.
+	repoID := blob.Repository().IDInt32()
+	contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), repoID)
 	if err != nil {
 		return nil, err
 	}
-	// No ruleset found.
-	if rs == nil {
-		return &ownershipConnectionResolver{db: r.db}, nil
-	}
-	rule := rs.Match(blob.Path())
-	// No match found.
-	if rule == nil {
-		return &ownershipConnectionResolver{db: r.db}, nil
-	}
-	owners := rule.GetOwner()
-	sort.Slice(owners, func(i, j int) bool {
-		iText := ownerText(owners[i])
-		jText := ownerText(owners[j])
-		return iText < jText
-	})
-	total := len(owners)
-	for cursor != "" && len(owners) > 0 && ownerText(owners[0]) != cursor {
-		owners = owners[1:]
-	}
-	var next *string
-	if args.First != nil && len(owners) > int(*args.First) {
-		cursor := ownerText(owners[*args.First])
-		next = &cursor
-		owners = owners[:*args.First]
-	}
-	resolvedOwners, err := ownService.ResolveOwnersWithType(ctx, owners)
+	ownerships = append(ownerships, contribResolvers...)
+
+	// Retrieve recent view signals.
+	viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, blob.Path(), repoID)
 	if err != nil {
 		return nil, err
 	}
-	ownerships := make([]graphqlbackend.OwnershipResolver, 0, len(resolvedOwners))
-	for _, ro := range resolvedOwners {
-		reasons := []graphqlbackend.OwnershipReasonResolver{
-			&codeownersFileEntryResolver{
-				db:              r.db,
-				gitserverClient: r.gitserver,
-				source:          rs.GetSource(),
-				repo:            blob.Repository(),
-				matchLineNumber: rule.GetLineNumber(),
-			},
-		}
-		ownerships = append(ownerships, &ownershipResolver{
-			db:            r.db,
-			resolvedOwner: ro,
-			reasons:       reasons,
-		})
+	ownerships = append(ownerships, viewerResolvers...)
+
+	return r.ownershipConnection(args, ownerships)
+}
+
+// repoRootPath is the path that designates all the aggregate signals
+// for a repository.
+const repoRootPath = ""
+
+// GitCommitOwnership retrieves ownership signals (not CODEOWNERS data)
+// aggregated for the whole repository.
+//
+// It's a commit ownership rather than repo ownership because
+// from the resolution point of view repo needs to be versioned
+// at a certain commit to compute signals. At this point, however
+// signals are not versioned yet, so every commit gets the same data.
+func (r *ownResolver) GitCommitOwnership(
+	ctx context.Context,
+	commit *graphqlbackend.GitCommitResolver,
+	args graphqlbackend.ListOwnershipArgs,
+) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
 	}
-	return &ownershipConnectionResolver{
-		db:             r.db,
-		total:          total,
-		next:           next,
-		resolvedOwners: resolvedOwners,
-		ownerships:     ownerships,
-	}, nil
+
+	// Retrieve recent contributors signals.
+	ownerships, err := computeRecentContributorSignals(ctx, r.db, repoRootPath, commit.Repository().IDInt32())
+	if err != nil {
+		return nil, err
+	}
+
+	return r.ownershipConnection(args, ownerships)
 }
 
 func (r *ownResolver) PersonOwnerField(_ *graphqlbackend.PersonResolver) string {
@@ -166,12 +178,95 @@ func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	}
 }
 
+// computeCodeowners evaluates the codeowners file (if any) against given file (blob)
+// and returns resolvers for identified owners.
+func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver) ([]*ownershipResolver, error) {
+	repo := blob.Repository()
+	repoID, repoName := repo.IDInt32(), repo.RepoName()
+	commitID := api.CommitID(blob.Commit().OID())
+	var ownerships []*ownershipResolver
+	rs, err := r.ownService().RulesetForRepo(ctx, repoName, repoID, commitID)
+	if err != nil {
+		return nil, err
+	}
+	var rule *codeownerspb.Rule
+	if rs != nil {
+		rule = rs.Match(blob.Path())
+	}
+	if rule != nil {
+		owners := rule.GetOwner()
+		resolvedOwners, err := r.ownService().ResolveOwnersWithType(ctx, owners)
+		if err != nil {
+			return nil, err
+		}
+		for _, ro := range resolvedOwners {
+			res := &codeownersFileEntryResolver{
+				db:              r.db,
+				gitserverClient: r.gitserver,
+				source:          rs.GetSource(),
+				repo:            blob.Repository(),
+				matchLineNumber: rule.GetLineNumber(),
+			}
+			ownerships = append(ownerships, &ownershipResolver{
+				db:            r.db,
+				resolvedOwner: ro,
+				reasons: []graphqlbackend.OwnershipReasonResolver{
+					&ownershipReasonResolver{res},
+				},
+			})
+		}
+	}
+	return ownerships, nil
+}
+
+// ownershipConnection handles ordering and pagination of given set of ownerships.
+func (r *ownResolver) ownershipConnection(
+	args graphqlbackend.ListOwnershipArgs,
+	ownerships []*ownershipResolver,
+) (*ownershipConnectionResolver, error) {
+	// 1. Order ownerships for deterministic pagination:
+
+	// TODO(#51636): Introduce deterministic ordering based on priority of signals.
+	sort.Slice(ownerships, func(i, j int) bool {
+		iText := ownerships[i].resolvedOwner.Identifier()
+		jText := ownerships[j].resolvedOwner.Identifier()
+		return iText < jText
+	})
+	total := len(ownerships)
+
+	// 2. Apply pagination from the parameter & compute next cursor:
+	cursor, err := graphqlutil.DecodeCursor(args.After)
+	if err != nil {
+		return nil, err
+	}
+	for cursor != "" && len(ownerships) > 0 && ownerships[0].resolvedOwner.Identifier() != cursor {
+		ownerships = ownerships[1:]
+	}
+	var next *string
+	if args.First != nil && len(ownerships) > int(*args.First) {
+		c := ownerships[*args.First].resolvedOwner.Identifier()
+		next = &c
+		ownerships = ownerships[:*args.First]
+	}
+
+	// 3. Assemble the connection resolver object:
+	var rs []graphqlbackend.OwnershipResolver
+	for _, o := range ownerships {
+		rs = append(rs, o)
+	}
+	return &ownershipConnectionResolver{
+		db:         r.db,
+		total:      total,
+		next:       next,
+		ownerships: rs,
+	}, nil
+}
+
 type ownershipConnectionResolver struct {
-	db             edb.EnterpriseDB
-	total          int
-	next           *string
-	resolvedOwners []codeowners.ResolvedOwner
-	ownerships     []graphqlbackend.OwnershipResolver
+	db         edb.EnterpriseDB
+	total      int
+	next       *string
+	ownerships []graphqlbackend.OwnershipResolver
 }
 
 func (r *ownershipConnectionResolver) TotalCount(_ context.Context) (int32, error) {
@@ -221,6 +316,9 @@ func (r *ownerResolver) ToPerson() (*graphqlbackend.PersonResolver, bool) {
 	if !ok {
 		return nil, false
 	}
+	if person.User != nil {
+		return graphqlbackend.NewPersonResolverFromUser(r.db, person.GetEmail(), person.User), true
+	}
 	includeUserInfo := true
 	return graphqlbackend.NewPersonResolver(r.db, person.Handle, person.GetEmail(), includeUserInfo), true
 }
@@ -244,15 +342,11 @@ type codeownersFileEntryResolver struct {
 	gitserverClient gitserver.Client
 }
 
-func (r *codeownersFileEntryResolver) ToCodeownersFileEntry() (graphqlbackend.CodeownersFileEntryResolver, bool) {
-	return r, true
+func (r *codeownersFileEntryResolver) Title() (string, error) {
+	return "codeowners", nil
 }
 
-func (r *codeownersFileEntryResolver) Title(_ context.Context) (string, error) {
-	return "CODEOWNERS", nil
-}
-
-func (r *codeownersFileEntryResolver) Description(_ context.Context) (string, error) {
+func (r *codeownersFileEntryResolver) Description() (string, error) {
 	return "Owner is associated with a rule in a CODEOWNERS file.", nil
 }
 
@@ -289,4 +383,108 @@ func areOwnEndpointsAvailable(ctx context.Context) error {
 		return errors.New("own is not available yet")
 	}
 	return nil
+}
+
+type recentContributorOwnershipSignal struct {
+	total int32
+}
+
+func (g *recentContributorOwnershipSignal) Title() (string, error) {
+	return "recent contributor", nil
+}
+
+func (g *recentContributorOwnershipSignal) Description() (string, error) {
+	return "Owner is associated because they have contributed to this file in the last 90 days.", nil
+}
+
+func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	recentAuthors, err := db.RecentContributionSignals().FindRecentAuthors(ctx, repoID, path)
+	if err != nil {
+		return nil, errors.Wrap(err, "FindRecentAuthors")
+	}
+
+	for _, author := range recentAuthors {
+		res := ownershipResolver{
+			db: db,
+			resolvedOwner: &codeowners.Person{
+				Handle: author.AuthorName,
+				Email:  author.AuthorEmail,
+			},
+			reasons: []graphqlbackend.OwnershipReasonResolver{&ownershipReasonResolver{&recentContributorOwnershipSignal{}}},
+		}
+		user, err := db.Users().GetByVerifiedEmail(ctx, author.AuthorEmail)
+		if err == nil {
+			// if we don't get an error (meaning we can match) we will add it to the resolver, otherwise use the contributor data
+			em := author.AuthorEmail
+			res.resolvedOwner = &codeowners.Person{
+				User:         user,
+				Email:        em,
+				PrimaryEmail: &em,
+				Handle:       author.AuthorName,
+			}
+		}
+		results = append(results, &res)
+	}
+	return results, nil
+}
+
+type recentViewOwnershipSignal struct {
+	total int32
+}
+
+func (v *recentViewOwnershipSignal) Title() (string, error) {
+	return "recent view", nil
+}
+
+func (v *recentViewOwnershipSignal) Description() (string, error) {
+	return "Owner is associated because they have viewed this file in the last 90 days.", nil
+}
+
+func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	summaries, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{Path: path, RepoID: repoID})
+	if err != nil {
+		return nil, errors.Wrap(err, "list recent view signals")
+	}
+
+	fetchedUsers := make(map[int32]*types.User)
+	userEmails := make(map[int32]string)
+
+	for _, summary := range summaries {
+		var user *types.User
+		var email string
+		userID := summary.UserID
+		if fetchedUser, found := fetchedUsers[userID]; found {
+			user = fetchedUser
+			email = userEmails[userID]
+		} else {
+			userFromDB, err := db.Users().GetByID(ctx, userID)
+			if err != nil {
+				return nil, errors.Wrap(err, "getting user")
+			}
+			primaryEmail, _, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
+			if err != nil {
+				if errcode.IsNotFound(err) {
+					logger.Warn("Cannot find a primary email", log.Int32("userID", userID))
+				} else {
+					return nil, errors.Wrap(err, "getting user primary email")
+				}
+			}
+			user = userFromDB
+			email = primaryEmail
+			fetchedUsers[userID] = userFromDB
+			userEmails[userID] = primaryEmail
+		}
+		// TODO(sashaostrikov): what to do if email here is empty
+		res := ownershipResolver{
+			db: db,
+			resolvedOwner: &codeowners.Person{
+				User:         user,
+				PrimaryEmail: &email,
+				Handle:       user.Username,
+			},
+			reasons: []graphqlbackend.OwnershipReasonResolver{&ownershipReasonResolver{&recentViewOwnershipSignal{}}},
+		}
+		results = append(results, &res)
+	}
+	return results, nil
 }

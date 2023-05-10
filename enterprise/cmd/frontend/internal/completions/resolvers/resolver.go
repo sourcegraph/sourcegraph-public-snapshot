@@ -5,10 +5,9 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,7 +21,7 @@ type completionsResolver struct {
 }
 
 func NewCompletionsResolver(db database.DB) graphqlbackend.CompletionsResolver {
-	rl := streaming.NewRateLimiter(db, redispool.Store)
+	rl := streaming.NewRateLimiter(db, redispool.Store, streaming.RateLimitScopeCompletion)
 	return &completionsResolver{rl: rl}
 }
 
@@ -31,17 +30,22 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
-	completionsConfig := conf.Get().Completions
+	completionsConfig := streaming.GetCompletionsConfig()
 	if completionsConfig == nil || !completionsConfig.Enabled {
 		return "", errors.New("completions are not configured or disabled")
 	}
 
-	ctx, done := streaming.Trace(ctx, "resolver", completionsConfig.Model).
+	ctx, done := streaming.Trace(ctx, "resolver", completionsConfig.ChatModel).
 		WithErrorP(&err).
 		Build()
 	defer done()
 
-	client, err := streaming.GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
+	client, err := streaming.GetCompletionClient(
+		completionsConfig.Endpoint,
+		completionsConfig.Provider,
+		completionsConfig.AccessToken,
+		completionsConfig.ChatModel,
+	)
 	if err != nil {
 		return "", errors.Wrap(err, "GetCompletionStreamClient")
 	}

@@ -819,6 +819,46 @@ CREATE FUNCTION update_codeintel_path_ranks_updated_at_column() RETURNS trigger
 END;
 $$;
 
+CREATE FUNCTION update_own_aggregate_recent_contribution() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    WITH RECURSIVE ancestors AS (
+        SELECT id, parent_id, 1 AS level
+        FROM repo_paths
+        WHERE id = NEW.changed_file_path_id
+        UNION ALL
+        SELECT p.id, p.parent_id, a.level + 1
+        FROM repo_paths p
+        JOIN ancestors a ON p.id = a.parent_id
+    )
+    UPDATE own_aggregate_recent_contribution
+    SET contributions_count = contributions_count + 1
+    WHERE commit_author_id = NEW.commit_author_id AND changed_file_path_id IN (
+        SELECT id FROM ancestors
+    );
+
+    WITH RECURSIVE ancestors AS (
+        SELECT id, parent_id, 1 AS level
+        FROM repo_paths
+        WHERE id = NEW.changed_file_path_id
+        UNION ALL
+        SELECT p.id, p.parent_id, a.level + 1
+        FROM repo_paths p
+        JOIN ancestors a ON p.id = a.parent_id
+    )
+    INSERT INTO own_aggregate_recent_contribution (commit_author_id, changed_file_path_id, contributions_count)
+    SELECT NEW.commit_author_id, id, 1
+    FROM ancestors
+    WHERE NOT EXISTS (
+        SELECT 1 FROM own_aggregate_recent_contribution
+        WHERE commit_author_id = NEW.commit_author_id AND changed_file_path_id = ancestors.id
+    );
+
+    RETURN NEW;
+END;
+$$;
+
 CREATE FUNCTION versions_insert_row_trigger() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -1589,6 +1629,23 @@ CREATE SEQUENCE codeintel_autoindex_queue_id_seq
 
 ALTER SEQUENCE codeintel_autoindex_queue_id_seq OWNED BY codeintel_autoindex_queue.id;
 
+CREATE TABLE codeintel_autoindexing_exceptions (
+    id integer NOT NULL,
+    repository_id integer NOT NULL,
+    disable_scheduling boolean DEFAULT false NOT NULL,
+    disable_inference boolean DEFAULT false NOT NULL
+);
+
+CREATE SEQUENCE codeintel_autoindexing_exceptions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_autoindexing_exceptions_id_seq OWNED BY codeintel_autoindexing_exceptions.id;
+
 CREATE TABLE codeintel_commit_dates (
     repository_id integer NOT NULL,
     commit_bytea bytea NOT NULL,
@@ -1616,7 +1673,8 @@ CREATE TABLE codeintel_initial_path_ranks (
     document_path text DEFAULT ''::text NOT NULL,
     graph_key text NOT NULL,
     last_scanned_at timestamp with time zone,
-    document_paths text[] DEFAULT '{}'::text[] NOT NULL
+    document_paths text[] DEFAULT '{}'::text[] NOT NULL,
+    deleted_at timestamp with time zone
 );
 
 CREATE SEQUENCE codeintel_initial_path_ranks_id_seq
@@ -1663,7 +1721,7 @@ CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
     payload jsonb NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    graph_key text,
+    graph_key text NOT NULL,
     num_paths integer,
     refcount_logsum double precision,
     id bigint NOT NULL
@@ -1684,7 +1742,8 @@ CREATE TABLE codeintel_ranking_definitions (
     symbol_name text NOT NULL,
     document_path text NOT NULL,
     graph_key text NOT NULL,
-    last_scanned_at timestamp with time zone
+    last_scanned_at timestamp with time zone,
+    deleted_at timestamp with time zone
 );
 
 CREATE SEQUENCE codeintel_ranking_definitions_id_seq
@@ -1732,12 +1791,35 @@ CREATE SEQUENCE codeintel_ranking_path_counts_inputs_id_seq
 
 ALTER SEQUENCE codeintel_ranking_path_counts_inputs_id_seq OWNED BY codeintel_ranking_path_counts_inputs.id;
 
+CREATE TABLE codeintel_ranking_progress (
+    id bigint NOT NULL,
+    graph_key text NOT NULL,
+    max_definition_id integer NOT NULL,
+    max_reference_id integer NOT NULL,
+    max_path_id integer NOT NULL,
+    mappers_started_at timestamp with time zone NOT NULL,
+    mapper_completed_at timestamp with time zone,
+    seed_mapper_completed_at timestamp with time zone,
+    reducer_started_at timestamp with time zone,
+    reducer_completed_at timestamp with time zone
+);
+
+CREATE SEQUENCE codeintel_ranking_progress_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_ranking_progress_id_seq OWNED BY codeintel_ranking_progress.id;
+
 CREATE TABLE codeintel_ranking_references (
     id bigint NOT NULL,
     upload_id integer NOT NULL,
     symbol_names text[] NOT NULL,
     graph_key text NOT NULL,
-    last_scanned_at timestamp with time zone
+    last_scanned_at timestamp with time zone,
+    deleted_at timestamp with time zone
 );
 
 COMMENT ON TABLE codeintel_ranking_references IS 'References for a given upload proceduced by background job consuming SCIP indexes.';
@@ -1784,6 +1866,22 @@ CREATE SEQUENCE codeowners_id_seq
     CACHE 1;
 
 ALTER SEQUENCE codeowners_id_seq OWNED BY codeowners.id;
+
+CREATE TABLE commit_authors (
+    id integer NOT NULL,
+    email text NOT NULL,
+    name text NOT NULL
+);
+
+CREATE SEQUENCE commit_authors_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE commit_authors_id_seq OWNED BY commit_authors.id;
 
 CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
@@ -2000,6 +2098,26 @@ CREATE SEQUENCE event_logs_scrape_state_id_seq
     CACHE 1;
 
 ALTER SEQUENCE event_logs_scrape_state_id_seq OWNED BY event_logs_scrape_state.id;
+
+CREATE TABLE event_logs_scrape_state_own (
+    id integer NOT NULL,
+    bookmark_id integer NOT NULL,
+    job_type integer NOT NULL
+);
+
+COMMENT ON TABLE event_logs_scrape_state_own IS 'Contains state for own jobs that scrape events if enabled.';
+
+COMMENT ON COLUMN event_logs_scrape_state_own.bookmark_id IS 'Bookmarks the maximum most recent successful event_logs.id that was scraped';
+
+CREATE SEQUENCE event_logs_scrape_state_own_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE event_logs_scrape_state_own_id_seq OWNED BY event_logs_scrape_state_own.id;
 
 CREATE TABLE executor_heartbeats (
     id integer NOT NULL,
@@ -2285,6 +2403,23 @@ COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
 
+CREATE TABLE github_app_installs (
+    id integer NOT NULL,
+    app_id integer NOT NULL,
+    installation_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE github_app_installs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE github_app_installs_id_seq OWNED BY github_app_installs.id;
+
 CREATE TABLE github_apps (
     id integer NOT NULL,
     app_id integer NOT NULL,
@@ -2297,7 +2432,8 @@ CREATE TABLE github_apps (
     encryption_key_id text NOT NULL,
     logo text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    app_url text DEFAULT ''::text NOT NULL
 );
 
 CREATE SEQUENCE github_apps_id_seq
@@ -3465,6 +3601,42 @@ CREATE VIEW outbound_webhooks_with_event_types AS
           WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
    FROM outbound_webhooks;
 
+CREATE TABLE own_aggregate_recent_contribution (
+    id integer NOT NULL,
+    commit_author_id integer NOT NULL,
+    changed_file_path_id integer NOT NULL,
+    contributions_count integer DEFAULT 0
+);
+
+CREATE SEQUENCE own_aggregate_recent_contribution_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_aggregate_recent_contribution_id_seq OWNED BY own_aggregate_recent_contribution.id;
+
+CREATE TABLE own_aggregate_recent_view (
+    id integer NOT NULL,
+    viewer_id integer NOT NULL,
+    viewed_file_path_id integer NOT NULL,
+    views_count integer DEFAULT 0
+);
+
+COMMENT ON TABLE own_aggregate_recent_view IS 'One entry contains a number of views of a single file by a given viewer.';
+
+CREATE SEQUENCE own_aggregate_recent_view_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_aggregate_recent_view_id_seq OWNED BY own_aggregate_recent_view.id;
+
 CREATE TABLE own_background_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
@@ -3492,6 +3664,26 @@ CREATE SEQUENCE own_background_jobs_id_seq
     CACHE 1;
 
 ALTER SEQUENCE own_background_jobs_id_seq OWNED BY own_background_jobs.id;
+
+CREATE TABLE own_signal_recent_contribution (
+    id integer NOT NULL,
+    commit_author_id integer NOT NULL,
+    changed_file_path_id integer NOT NULL,
+    commit_timestamp timestamp without time zone NOT NULL,
+    commit_id bytea NOT NULL
+);
+
+COMMENT ON TABLE own_signal_recent_contribution IS 'One entry per file changed in every commit that classifies as a contribution signal.';
+
+CREATE SEQUENCE own_signal_recent_contribution_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_signal_recent_contribution_id_seq OWNED BY own_signal_recent_contribution.id;
 
 CREATE TABLE package_repo_filters (
     id integer NOT NULL,
@@ -3626,8 +3818,11 @@ CREATE TABLE product_licenses (
     license_version integer,
     license_tags text[],
     license_user_count integer,
-    license_expires_at timestamp with time zone
+    license_expires_at timestamp with time zone,
+    access_token_enabled boolean DEFAULT true NOT NULL
 );
+
+COMMENT ON COLUMN product_licenses.access_token_enabled IS 'Whether this license key can be used as an access token to authenticate API requests';
 
 CREATE TABLE product_subscriptions (
     id uuid NOT NULL,
@@ -3636,8 +3831,17 @@ CREATE TABLE product_subscriptions (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     archived_at timestamp with time zone,
-    account_number text
+    account_number text,
+    llm_proxy_enabled boolean DEFAULT false NOT NULL,
+    llm_proxy_rate_limit integer,
+    llm_proxy_rate_interval_seconds integer
 );
+
+COMMENT ON COLUMN product_subscriptions.llm_proxy_enabled IS 'Whether or not this subscription has access to LLM-proxy';
+
+COMMENT ON COLUMN product_subscriptions.llm_proxy_rate_limit IS 'Custom requests per time interval allowed for LLM-proxy';
+
+COMMENT ON COLUMN product_subscriptions.llm_proxy_rate_interval_seconds IS 'Custom time interval over which the for LLM-proxy rate limit is applied';
 
 CREATE TABLE query_runner_state (
     query text,
@@ -3667,6 +3871,7 @@ CREATE TABLE users (
     tos_accepted boolean DEFAULT false NOT NULL,
     searchable boolean DEFAULT true NOT NULL,
     completions_quota integer,
+    code_completions_quota integer,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
     CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
@@ -3817,6 +4022,25 @@ CREATE TABLE repo_kvps (
     key text NOT NULL,
     value text
 );
+
+CREATE TABLE repo_paths (
+    id integer NOT NULL,
+    repo_id integer NOT NULL,
+    absolute_path text NOT NULL,
+    parent_id integer
+);
+
+COMMENT ON COLUMN repo_paths.absolute_path IS 'Absolute path does not start or end with forward slash. Example: "a/b/c". Root directory is empty path "".';
+
+CREATE SEQUENCE repo_paths_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_paths_id_seq OWNED BY repo_paths.id;
 
 CREATE TABLE repo_pending_permissions (
     repo_id integer NOT NULL,
@@ -4458,6 +4682,8 @@ ALTER TABLE ONLY cm_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_webhooks_id
 
 ALTER TABLE ONLY codeintel_autoindex_queue ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindex_queue_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_autoindexing_exceptions ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindexing_exceptions_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_initial_path_ranks ALTER COLUMN id SET DEFAULT nextval('codeintel_initial_path_ranks_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_initial_path_ranks_processed ALTER COLUMN id SET DEFAULT nextval('codeintel_initial_path_ranks_processed_id_seq'::regclass);
@@ -4472,11 +4698,15 @@ ALTER TABLE ONLY codeintel_ranking_exports ALTER COLUMN id SET DEFAULT nextval('
 
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_ranking_progress ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_progress_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_ranking_references ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_references_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_ranking_references_processed ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_references_processed_id_seq'::regclass);
 
 ALTER TABLE ONLY codeowners ALTER COLUMN id SET DEFAULT nextval('codeowners_id_seq'::regclass);
+
+ALTER TABLE ONLY commit_authors ALTER COLUMN id SET DEFAULT nextval('commit_authors_id_seq'::regclass);
 
 ALTER TABLE ONLY configuration_policies_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('configuration_policies_audit_logs_seq'::regclass);
 
@@ -4496,6 +4726,8 @@ ALTER TABLE ONLY event_logs_export_allowlist ALTER COLUMN id SET DEFAULT nextval
 
 ALTER TABLE ONLY event_logs_scrape_state ALTER COLUMN id SET DEFAULT nextval('event_logs_scrape_state_id_seq'::regclass);
 
+ALTER TABLE ONLY event_logs_scrape_state_own ALTER COLUMN id SET DEFAULT nextval('event_logs_scrape_state_own_id_seq'::regclass);
+
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
 
 ALTER TABLE ONLY executor_job_tokens ALTER COLUMN id SET DEFAULT nextval('executor_job_tokens_id_seq'::regclass);
@@ -4507,6 +4739,8 @@ ALTER TABLE ONLY executor_secrets ALTER COLUMN id SET DEFAULT nextval('executor_
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
+
+ALTER TABLE ONLY github_app_installs ALTER COLUMN id SET DEFAULT nextval('github_app_installs_id_seq'::regclass);
 
 ALTER TABLE ONLY github_apps ALTER COLUMN id SET DEFAULT nextval('github_apps_id_seq'::regclass);
 
@@ -4564,7 +4798,13 @@ ALTER TABLE ONLY outbound_webhook_logs ALTER COLUMN id SET DEFAULT nextval('outb
 
 ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound_webhooks_id_seq'::regclass);
 
+ALTER TABLE ONLY own_aggregate_recent_contribution ALTER COLUMN id SET DEFAULT nextval('own_aggregate_recent_contribution_id_seq'::regclass);
+
+ALTER TABLE ONLY own_aggregate_recent_view ALTER COLUMN id SET DEFAULT nextval('own_aggregate_recent_view_id_seq'::regclass);
+
 ALTER TABLE ONLY own_background_jobs ALTER COLUMN id SET DEFAULT nextval('own_background_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY own_signal_recent_contribution ALTER COLUMN id SET DEFAULT nextval('own_signal_recent_contribution_id_seq'::regclass);
 
 ALTER TABLE ONLY package_repo_filters ALTER COLUMN id SET DEFAULT nextval('package_repo_filters_id_seq'::regclass);
 
@@ -4583,6 +4823,8 @@ ALTER TABLE ONLY registry_extensions ALTER COLUMN id SET DEFAULT nextval('regist
 ALTER TABLE ONLY repo ALTER COLUMN id SET DEFAULT nextval('repo_id_seq'::regclass);
 
 ALTER TABLE ONLY repo_embedding_jobs ALTER COLUMN id SET DEFAULT nextval('repo_embedding_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY repo_paths ALTER COLUMN id SET DEFAULT nextval('repo_paths_id_seq'::regclass);
 
 ALTER TABLE ONLY roles ALTER COLUMN id SET DEFAULT nextval('roles_id_seq'::regclass);
 
@@ -4721,6 +4963,12 @@ ALTER TABLE ONLY cm_webhooks
 ALTER TABLE ONLY codeintel_autoindex_queue
     ADD CONSTRAINT codeintel_autoindex_queue_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY codeintel_autoindexing_exceptions
+    ADD CONSTRAINT codeintel_autoindexing_exceptions_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_autoindexing_exceptions
+    ADD CONSTRAINT codeintel_autoindexing_exceptions_repository_id_key UNIQUE (repository_id);
+
 ALTER TABLE ONLY codeintel_commit_dates
     ADD CONSTRAINT codeintel_commit_dates_pkey PRIMARY KEY (repository_id, commit_bytea);
 
@@ -4742,6 +4990,12 @@ ALTER TABLE ONLY codeintel_ranking_exports
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs
     ADD CONSTRAINT codeintel_ranking_path_counts_inputs_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY codeintel_ranking_progress
+    ADD CONSTRAINT codeintel_ranking_progress_graph_key_key UNIQUE (graph_key);
+
+ALTER TABLE ONLY codeintel_ranking_progress
+    ADD CONSTRAINT codeintel_ranking_progress_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY codeintel_ranking_references
     ADD CONSTRAINT codeintel_ranking_references_pkey PRIMARY KEY (id);
 
@@ -4753,6 +5007,9 @@ ALTER TABLE ONLY codeowners
 
 ALTER TABLE ONLY codeowners
     ADD CONSTRAINT codeowners_repo_id_key UNIQUE (repo_id);
+
+ALTER TABLE ONLY commit_authors
+    ADD CONSTRAINT commit_authors_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY context_detection_embedding_jobs
     ADD CONSTRAINT context_detection_embedding_jobs_pkey PRIMARY KEY (id);
@@ -4777,6 +5034,9 @@ ALTER TABLE ONLY event_logs_export_allowlist
 
 ALTER TABLE ONLY event_logs
     ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY event_logs_scrape_state_own
+    ADD CONSTRAINT event_logs_scrape_state_own_pk PRIMARY KEY (id);
 
 ALTER TABLE ONLY event_logs_scrape_state
     ADD CONSTRAINT event_logs_scrape_state_pk PRIMARY KEY (id);
@@ -4819,6 +5079,9 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
+
+ALTER TABLE ONLY github_app_installs
+    ADD CONSTRAINT github_app_installs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_pkey PRIMARY KEY (id);
@@ -4943,8 +5206,17 @@ ALTER TABLE ONLY outbound_webhook_logs
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY own_aggregate_recent_contribution
+    ADD CONSTRAINT own_aggregate_recent_contribution_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY own_aggregate_recent_view
+    ADD CONSTRAINT own_aggregate_recent_view_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY own_background_jobs
     ADD CONSTRAINT own_background_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY own_signal_recent_contribution
+    ADD CONSTRAINT own_signal_recent_contribution_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY package_repo_filters
     ADD CONSTRAINT package_repo_filters_pkey PRIMARY KEY (id);
@@ -4987,6 +5259,9 @@ ALTER TABLE ONLY repo_kvps
 
 ALTER TABLE ONLY repo
     ADD CONSTRAINT repo_name_unique UNIQUE (name) DEFERRABLE;
+
+ALTER TABLE ONLY repo_paths
+    ADD CONSTRAINT repo_paths_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY repo_pending_permissions
     ADD CONSTRAINT repo_pending_permissions_perm_unique UNIQUE (repo_id, permission);
@@ -5105,6 +5380,8 @@ CREATE INDEX access_requests_status ON access_requests USING btree (status);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
+CREATE INDEX app_id_idx ON github_app_installs USING btree (app_id);
+
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
 
 CREATE INDEX batch_changes_namespace_user_id ON batch_changes USING btree (namespace_user_id);
@@ -5201,7 +5478,7 @@ CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON cod
 
 CREATE INDEX codeintel_path_ranks_graph_key ON codeintel_path_ranks USING btree (graph_key, updated_at NULLS FIRST, id);
 
-CREATE UNIQUE INDEX codeintel_path_ranks_repository_id ON codeintel_path_ranks USING btree (repository_id);
+CREATE UNIQUE INDEX codeintel_path_ranks_graph_key_repository_id ON codeintel_path_ranks USING btree (graph_key, repository_id);
 
 CREATE INDEX codeintel_path_ranks_repository_id_updated_at_id ON codeintel_path_ranks USING btree (repository_id, updated_at NULLS FIRST, id);
 
@@ -5224,6 +5501,8 @@ CREATE UNIQUE INDEX codeintel_ranking_references_processed_graph_key_codeintel_r
 CREATE INDEX codeintel_ranking_references_processed_reference_id ON codeintel_ranking_references_processed USING btree (codeintel_ranking_reference_id);
 
 CREATE INDEX codeintel_ranking_references_upload_id ON codeintel_ranking_references USING btree (upload_id);
+
+CREATE UNIQUE INDEX commit_authors_email_name ON commit_authors USING btree (email, name);
 
 CREATE INDEX configuration_policies_audit_logs_policy_id ON configuration_policies_audit_logs USING btree (policy_id);
 
@@ -5333,6 +5612,8 @@ CREATE INDEX insights_query_runner_jobs_series_id_state ON insights_query_runner
 
 CREATE INDEX insights_query_runner_jobs_state_btree ON insights_query_runner_jobs USING btree (state);
 
+CREATE INDEX installation_id_idx ON github_app_installs USING btree (installation_id);
+
 CREATE UNIQUE INDEX kind_cloud_default ON external_services USING btree (kind, cloud_default) WHERE ((cloud_default = true) AND (deleted_at IS NULL));
 
 CREATE INDEX lsif_configuration_policies_repository_id ON lsif_configuration_policies USING btree (repository_id);
@@ -5429,6 +5710,10 @@ CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs
 
 CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code);
 
+CREATE UNIQUE INDEX own_aggregate_recent_contribution_file_author ON own_aggregate_recent_contribution USING btree (changed_file_path_id, commit_author_id);
+
+CREATE UNIQUE INDEX own_aggregate_recent_view_viewer ON own_aggregate_recent_view USING btree (viewed_file_path_id, viewer_id);
+
 CREATE INDEX own_background_jobs_repo_id_idx ON own_background_jobs USING btree (repo_id);
 
 CREATE INDEX own_background_jobs_state_idx ON own_background_jobs USING btree (state);
@@ -5492,6 +5777,8 @@ CREATE INDEX repo_name_idx ON repo USING btree (lower((name)::text) COLLATE "C")
 CREATE INDEX repo_name_trgm ON repo USING gin (lower((name)::text) gin_trgm_ops);
 
 CREATE INDEX repo_non_deleted_id_name_idx ON repo USING btree (id, name) WHERE (deleted_at IS NULL);
+
+CREATE UNIQUE INDEX repo_paths_index_absolute_path ON repo_paths USING btree (repo_id, absolute_path);
 
 CREATE INDEX repo_permissions_unrestricted_true_idx ON repo_permissions USING btree (unrestricted) WHERE unrestricted;
 
@@ -5628,6 +5915,8 @@ CREATE TRIGGER trigger_package_repo_filters_updated_at BEFORE UPDATE ON package_
 CREATE TRIGGER update_codeintel_path_ranks_statistics BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_statistics_columns();
 
 CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column();
+
+CREATE TRIGGER update_own_aggregate_recent_contribution AFTER INSERT ON own_signal_recent_contribution FOR EACH ROW EXECUTE FUNCTION update_own_aggregate_recent_contribution();
 
 CREATE TRIGGER versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger();
 
@@ -5799,6 +6088,9 @@ ALTER TABLE ONLY cm_webhooks
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_monitor_fkey FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY codeintel_autoindexing_exceptions
+    ADD CONSTRAINT codeintel_autoindexing_exceptions_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL;
 
@@ -5895,6 +6187,9 @@ ALTER TABLE ONLY vulnerability_affected_symbols
 ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY github_app_installs
+    ADD CONSTRAINT github_app_installs_app_id_fkey FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
@@ -5988,6 +6283,24 @@ ALTER TABLE ONLY outbound_webhooks
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
 
+ALTER TABLE ONLY own_aggregate_recent_contribution
+    ADD CONSTRAINT own_aggregate_recent_contribution_changed_file_path_id_fkey FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY own_aggregate_recent_contribution
+    ADD CONSTRAINT own_aggregate_recent_contribution_commit_author_id_fkey FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id);
+
+ALTER TABLE ONLY own_aggregate_recent_view
+    ADD CONSTRAINT own_aggregate_recent_view_viewed_file_path_id_fkey FOREIGN KEY (viewed_file_path_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY own_aggregate_recent_view
+    ADD CONSTRAINT own_aggregate_recent_view_viewer_id_fkey FOREIGN KEY (viewer_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY own_signal_recent_contribution
+    ADD CONSTRAINT own_signal_recent_contribution_changed_file_path_id_fkey FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY own_signal_recent_contribution
+    ADD CONSTRAINT own_signal_recent_contribution_commit_author_id_fkey FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id);
+
 ALTER TABLE ONLY package_repo_versions
     ADD CONSTRAINT package_id_fk FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE;
 
@@ -6020,6 +6333,12 @@ ALTER TABLE ONLY registry_extensions
 
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY repo_paths
+    ADD CONSTRAINT repo_paths_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY repo_paths
+    ADD CONSTRAINT repo_paths_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY role_permissions
     ADD CONSTRAINT role_permissions_permission_id_fkey FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE DEFERRABLE;

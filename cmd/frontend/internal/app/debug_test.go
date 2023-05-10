@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -115,8 +116,12 @@ func TestGrafanaLicensing(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
+		featureFlags := database.NewMockFeatureFlagStore()
+		featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+
 		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
+		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 		PreMountGrafanaHook = func() error { return nil }
 		defer func() { PreMountGrafanaHook = nil }()
@@ -135,8 +140,12 @@ func TestGrafanaLicensing(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
+		featureFlags := database.NewMockFeatureFlagStore()
+		featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+
 		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
+		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 		PreMountGrafanaHook = func() error { return errors.New("test fail") }
 		defer func() { PreMountGrafanaHook = nil }()

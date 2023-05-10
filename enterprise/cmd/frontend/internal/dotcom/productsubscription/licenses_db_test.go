@@ -27,7 +27,7 @@ func TestProductLicenses_Create(t *testing.T) {
 		require.NoError(t, err)
 
 		// This should not happen in practice but just in case to check it won't blow up
-		pl, err := dbLicenses{db: db}.Create(ctx, ps, "k", 0, license.Info{})
+		pl, err := dbLicenses{db: db}.Create(ctx, ps, "k1", 0, license.Info{})
 		require.NoError(t, err)
 
 		got, err := dbLicenses{db: db}.GetByID(ctx, pl)
@@ -47,14 +47,14 @@ func TestProductLicenses_Create(t *testing.T) {
 		UserCount: 10,
 		ExpiresAt: now,
 	}
-	pl, err := dbLicenses{db: db}.Create(ctx, ps, "k", 1, info)
+	pl, err := dbLicenses{db: db}.Create(ctx, ps, "k2", 1, info)
 	require.NoError(t, err)
 
 	got, err := dbLicenses{db: db}.GetByID(ctx, pl)
 	require.NoError(t, err)
 	assert.Equal(t, pl, got.ID)
 	assert.Equal(t, ps, got.ProductSubscriptionID)
-	assert.Equal(t, "k", got.LicenseKey)
+	assert.Equal(t, "k2", got.LicenseKey)
 
 	require.NotNil(t, got.LicenseVersion)
 	assert.Equal(t, 1, *got.LicenseVersion)
@@ -96,7 +96,7 @@ func TestProductLicenses_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = dbLicenses{db: db}.Create(ctx, ps0, "k", 1, license.Info{})
+	_, err = dbLicenses{db: db}.Create(ctx, ps0, "k1", 1, license.Info{})
 	if err != nil {
 		t.Fatal(err)
 	}

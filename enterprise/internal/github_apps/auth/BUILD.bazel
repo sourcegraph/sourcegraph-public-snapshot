@@ -7,10 +7,12 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/github_apps/store",
+        "//internal/encryption",
         "//internal/extsvc/auth",
         "//internal/extsvc/github",
         "//internal/extsvc/github/auth",
         "//internal/httpcli",
+        "//internal/rcache",
         "//lib/errors",
         "//schema",
         "@com_github_golang_jwt_jwt_v4//:jwt",
@@ -21,11 +23,18 @@ go_test(
     name = "auth_test",
     srcs = ["auth_test.go"],
     embed = [":auth"],
+    tags = [
+        # Test requires access to redis
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/github_apps/store",
         "//enterprise/internal/github_apps/types",
+        "//internal/encryption/keyring",
         "//internal/extsvc/auth",
+        "//internal/rcache",
         "//schema",
+        "@com_github_google_uuid//:uuid",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

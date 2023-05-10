@@ -324,6 +324,66 @@ func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, 
 	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
 }
 
+// CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
+// is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
+// into component parts separately.
+func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error) {
+	args := []string{"log", "--pretty=format:%H<!>%ae<!>%an<!>%ad", "--name-only", "--topo-order", "--no-merges"}
+	if !after.IsZero() {
+		args = append(args, fmt.Sprintf("--after=%s", after.Format(time.RFC3339)))
+	}
+
+	cmd := c.gitCommand(repo, args...)
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "gitCommand")
+	}
+
+	var ls []CommitLog
+	lines := strings.Split(string(out), "\n\n")
+
+	for _, logOutput := range lines {
+		partitions := strings.Split(logOutput, "\n")
+		if len(partitions) < 2 {
+			continue
+		}
+		metaLine := partitions[0]
+		var changedFiles []string
+		for _, pt := range partitions[1:] {
+			if pt != "" {
+				changedFiles = append(changedFiles, pt)
+			}
+		}
+
+		parts := strings.Split(metaLine, "<!>")
+		if len(parts) != 4 {
+			continue
+		}
+		sha, authorEmail, authorName, timestamp := parts[0], parts[1], parts[2], parts[3]
+		t, err := parseTimestamp(timestamp)
+		if err != nil {
+			return nil, errors.Wrapf(err, "parseTimestamp %s", timestamp)
+		}
+		ls = append(ls, CommitLog{
+			SHA:          sha,
+			AuthorEmail:  authorEmail,
+			AuthorName:   authorName,
+			Timestamp:    t,
+			ChangedFiles: changedFiles,
+		})
+	}
+	return ls, nil
+}
+
+func parseTimestamp(timestamp string) (time.Time, error) {
+	layout := "Mon Jan 2 15:04:05 2006 -0700"
+	t, err := time.Parse(layout, timestamp)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return t, nil
+}
+
 // DevNullSHA 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t
 // tree /dev/null`, which is used as the base when computing the `git diff` of
 // the root commit.

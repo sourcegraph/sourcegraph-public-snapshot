@@ -16,6 +16,10 @@
 .socials a:hover {
   filter: brightness(0.75);
 }
+.socials a img {
+  width: 100%;
+  height: 100%;
+}
 </style>
 
 # Sourcegraph App
@@ -141,3 +145,6 @@ rm -rf $XDG_CONFIG_HOME/sourcegraph-sp
 rm -rf $HOME/.cache/sourcegraph-sp
 rm -rf $HOME/.config/sourcegraph-sp
 ```
+
+## Troubleshooting
+See [App troubleshooting guide](troubleshooting.md)

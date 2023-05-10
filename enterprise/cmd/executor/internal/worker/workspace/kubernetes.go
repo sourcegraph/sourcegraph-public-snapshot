@@ -11,7 +11,6 @@ import (
 )
 
 type kubernetesWorkspace struct {
-	path            string
 	scriptFilenames []string
 	workspaceDir    string
 	logger          command.Logger
@@ -28,14 +27,10 @@ func NewKubernetesWorkspace(
 	mountPath string,
 	operations *command.Operations,
 ) (Workspace, error) {
-	var path string
-	var workspaceDir string
-	var err error
-	path = fmt.Sprintf("job-%d", job.ID)
-	workspaceDir = filepath.Join(mountPath, path)
+	workspaceDir := filepath.Join(mountPath, fmt.Sprintf("job-%d", job.ID))
 
 	if job.RepositoryName != "" {
-		if err = cloneRepo(ctx, workspaceDir, job, cmd, logger, cloneOpts, operations); err != nil {
+		if err := cloneRepo(ctx, workspaceDir, job, cmd, logger, cloneOpts, operations); err != nil {
 			_ = os.RemoveAll(workspaceDir)
 			return nil, err
 		}
@@ -48,7 +43,6 @@ func NewKubernetesWorkspace(
 	}
 
 	return &kubernetesWorkspace{
-		path:            path,
 		scriptFilenames: scriptPaths,
 		workspaceDir:    workspaceDir,
 		logger:          logger,
@@ -56,7 +50,7 @@ func NewKubernetesWorkspace(
 }
 
 func (w kubernetesWorkspace) Path() string {
-	return w.path
+	return w.workspaceDir
 }
 
 func (w kubernetesWorkspace) ScriptFilenames() []string {

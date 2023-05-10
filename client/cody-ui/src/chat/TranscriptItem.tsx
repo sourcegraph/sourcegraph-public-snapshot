@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps } from '../Chat'
+import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps, CopyButtonProps } from '../Chat'
 import { CodySvg } from '../utils/icons'
 
 import { BlinkingCursor } from './BlinkingCursor'
@@ -41,6 +41,7 @@ export const TranscriptItem: React.FunctionComponent<
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
+        copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
     } & TranscriptItemClassNames
 > = ({
     message,
@@ -60,6 +61,7 @@ export const TranscriptItem: React.FunctionComponent<
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
+    copyButtonOnSubmit,
 }) => {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
@@ -152,6 +154,7 @@ export const TranscriptItem: React.FunctionComponent<
                         <CodeBlocks
                             displayText={message.displayText}
                             copyButtonClassName={codeBlocksCopyButtonClassName}
+                            CopyButtonProps={copyButtonOnSubmit}
                         />
                     )
                 ) : inProgress ? (
