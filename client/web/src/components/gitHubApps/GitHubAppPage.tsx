@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-operations'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { asError, ErrorLike } from '@sourcegraph/common'
+import { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -51,9 +51,8 @@ export const GitHubAppPage: FC<Props> = ({
         telemetryService.logPageView('SiteAdminGitHubApp')
     }, [telemetryService])
     const [fetchError, setError] = useState<ErrorLike>()
-    const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
 
-    const [deleteGitHubApp] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
+    const [deleteGitHubApp, { loading: deleteLoading }] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
         DELETE_GITHUB_APP_BY_ID_QUERY
     )
 
@@ -67,14 +66,10 @@ export const GitHubAppPage: FC<Props> = ({
         if (!window.confirm(`Delete the GitHub App ${app?.name}?`)) {
             return
         }
-        setIsDeleting(true)
         try {
             await deleteGitHubApp({
                 variables: { gitHubApp: app?.id ?? '' },
             })
-            setIsDeleting(false)
-        } catch (error) {
-            setIsDeleting(asError(error))
         } finally {
             navigate('/site-admin/github-apps')
         }
@@ -137,7 +132,7 @@ export const GitHubAppPage: FC<Props> = ({
                                         aria-label="Delete"
                                         className="ml-2"
                                         onClick={onDelete}
-                                        disabled={isDeleting === true}
+                                        disabled={deleteLoading}
                                         variant="danger"
                                         size="sm"
                                     >

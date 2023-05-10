@@ -1,11 +1,10 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 
 import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-operations'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { asError } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { Button, Link, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
 
@@ -25,12 +24,12 @@ interface GitHubApp {
 
 interface GitHubAppCardProps {
     app: GitHubApp
+    refetch: () => void
     className?: string
 }
 
-export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, className = '' }) => {
-    const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
-    const [deleteGitHubApp] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
+export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, refetch, className = '' }) => {
+    const [deleteGitHubApp, { loading }] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
         DELETE_GITHUB_APP_BY_ID_QUERY
     )
 
@@ -38,16 +37,12 @@ export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, className = '
         if (!window.confirm(`Delete the GitHub App ${app.name}?`)) {
             return
         }
-        setIsDeleting(true)
         try {
             await deleteGitHubApp({
                 variables: { gitHubApp: app.id },
             })
-            setIsDeleting(false)
-        } catch (error) {
-            setIsDeleting(asError(error))
         } finally {
-            window.location.reload()
+            refetch()
         }
     }, [app, deleteGitHubApp])
 
@@ -67,13 +62,7 @@ export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, className = '
                 Created <Timestamp date={app.createdAt} />
             </span>
             <Tooltip content="Delete GitHub App">
-                <Button
-                    aria-label="Delete"
-                    onClick={onDelete}
-                    disabled={isDeleting === true}
-                    variant="danger"
-                    size="sm"
-                >
+                <Button aria-label="Delete" onClick={onDelete} disabled={loading} variant="danger" size="sm">
                     <Icon aria-hidden={true} svgPath={mdiDelete} />
                     {' Delete'}
                 </Button>
