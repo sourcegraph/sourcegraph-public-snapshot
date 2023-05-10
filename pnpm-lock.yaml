@@ -1601,11 +1601,7 @@ importers:
 
   client/template-parser: {}
 
-  client/testing:
-    devDependencies:
-      '@sourcegraph/build-config':
-        specifier: workspace:*
-        version: link:../build-config
+  client/testing: {}
 
   client/vscode:
     dependencies:
