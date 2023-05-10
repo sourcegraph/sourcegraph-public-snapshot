@@ -67,7 +67,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                     </VSCodeButton>
                 </form>
             </section>
-            <div className={styles.divider}></div>
+            <div className={styles.divider} />
             <section className={styles.section}>
                 <h2 className={styles.sectionHeader}>Everyone Else</h2>
 
