@@ -178,10 +178,8 @@ const register = async (
                 const params = new URLSearchParams(uri.query)
                 let serverEndpoint = DOTCOM_URL.href
                 if (params.get('type') === 'app') {
-                    console.log('MAREK_DEBUG', 'Setting URL TO APP becuase param was APP')
                     serverEndpoint = LOCAL_APP_URL.href
                 }
-                console.log('MAREK_DEBUG:', 'The endpoint is now:', serverEndpoint)
                 await workspaceConfig.update('cody.serverEndpoint', serverEndpoint, vscode.ConfigurationTarget.Global)
                 const token = params.get('code')
                 if (token && token.length > 8) {
