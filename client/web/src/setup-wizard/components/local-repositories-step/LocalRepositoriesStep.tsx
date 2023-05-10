@@ -135,7 +135,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
 
     // Use internal path only if backend-based file picker is unavailable
     const paths = isFilePickerAvailable ? directoryPaths : internalPaths
-    const initialState = !loaded && !error && !loading
+    const initialState = !error && !loading && paths.length === 0 && repositories.length === 0
     const zeroResultState = loaded && paths.length > 0 && !error && repositories.length === 0
 
     return (

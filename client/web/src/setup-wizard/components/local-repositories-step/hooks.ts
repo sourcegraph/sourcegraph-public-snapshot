@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { useApolloClient, useLazyQuery } from '@apollo/client'
 import { isEqual } from 'lodash'
@@ -101,8 +101,6 @@ interface LocalRepositoriesPathAPI {
 export function useLocalRepositoriesPaths(): LocalRepositoriesPathAPI {
     const apolloClient = useApolloClient()
 
-    const hasLoadedRef = useRef(false)
-
     const [error, setError] = useState<ErrorLike | undefined>()
     const [paths, setPaths] = useState<string[]>([])
 
@@ -116,10 +114,7 @@ export function useLocalRepositoriesPaths(): LocalRepositoriesPathAPI {
         fetchPolicy: 'network-only',
         // Sync local external service paths on first load
         onCompleted: data => {
-            if (!hasLoadedRef.current) {
-                hasLoadedRef.current = true
-                setPaths(getLocalServicePaths(data))
-            }
+            setPaths(getLocalServicePaths(data))
         },
         onError: setError,
     })
