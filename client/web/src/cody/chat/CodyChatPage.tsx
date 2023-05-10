@@ -5,7 +5,6 @@ import classNames from 'classnames'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import {
     Button,
     Icon,
@@ -40,13 +39,10 @@ interface CodyChatPageProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
-const VsCodeExtensionThumbnail = lazyComponent(() => import('./VsCodeExtensionThumbnail'), 'VsCodeExtensionThumbnail')
-const AskCodyThumbnail = lazyComponent(() => import('./AskCodyThumbnail'), 'AskCodyThumbnail')
-
 export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authenticatedUser }) => {
     const { reset, clearHistory } = useChatStore({ codebase: '' })
     const [enabled] = useFeatureFlag('cody-web-chat')
-    const [showVSCodeCTA, ____] = useState<boolean>(Math.random() < 0.5)
+    const [showVSCodeCTA] = useState<boolean>(Math.random() < 0.5 || true)
     const [isCTADismissed = true, setIsCTADismissed] = useTemporarySetting('cody.chatPageCta.dismissed', false)
     const onCTADismiss = (): void => setIsCTADismissed(true)
     const onDownloadVSCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_DOWNLOAD_VSCODE)
@@ -143,7 +139,11 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                                         <Icon svgPath={mdiChevronRight} aria-hidden={true} />
                                     </Link>
                                 </div>
-                                <VsCodeExtensionThumbnail />
+                                <img
+                                    src="https://storage.googleapis.com/sourcegraph-assets/TryCodyVSCodeExtension.png"
+                                    alt="Try Cody VS Code Extension"
+                                    width={666}
+                                />
                                 <Icon
                                     svgPath={mdiClose}
                                     aria-label="Close try Cody widget"
@@ -177,7 +177,11 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                                         <Icon svgPath={mdiChevronRight} aria-hidden={true} />
                                     </Link>
                                 </div>
-                                <AskCodyThumbnail />
+                                <img
+                                    src="https://storage.googleapis.com/sourcegraph-assets/TryCodyOnPublicCode.png"
+                                    alt="Try Cody on Public Code"
+                                    width={666}
+                                />
                                 <Icon
                                     svgPath={mdiClose}
                                     aria-label="Close try Cody widget"
