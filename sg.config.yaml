@@ -396,6 +396,11 @@ commands:
 
       go build -gcflags="$GCFLAGS" -o .bin/llm-proxy github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy
     checkBinary: .bin/llm-proxy
+    env:
+      LLM_PROXY_ANTHROPIC_ACCESS_TOKEN: foobar
+      LLM_PROXY_DOTCOM_ACCESS_TOKEN: foobar
+      LLM_PROXY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
+      SRC_LOG_LEVEL: dbug
     watch:
       - lib
       - internal
@@ -1118,6 +1123,7 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - caddy
+  # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
     requiresDevPrivate: true
     checks:
@@ -1152,7 +1158,32 @@ commandsets:
       EXTSVC_CONFIG_FILE: ''
 
   dotcom:
-    <<: *enterprise_set
+    # This is 95% the enterprise runset, with the addition of LLM-proxy.
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - llm-proxy
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
@@ -1426,9 +1457,6 @@ commandsets:
       - redis
     commands:
       - llm-proxy
-    env:
-      LLM_PROXY_ANTHROPIC_ACCESS_TOKEN: foobar
-      LLM_PROXY_DOTCOM_ACCESS_TOKEN: foobar
 
 tests:
   # These can be run with `sg test [name]`
