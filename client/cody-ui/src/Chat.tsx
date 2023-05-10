@@ -178,19 +178,19 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             }
 
             // Loop through input history on up arrow press
-            if (inputHistory.length) {
+            if (!inputHistory.length) {
+                return
+            }
+
+            if (formInput === inputHistory[historyIndex] || !formInput) {
                 if (event.key === 'ArrowUp' && caretPosition === 0) {
-                    if (formInput === inputHistory[historyIndex] || !formInput) {
-                        const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
-                        setHistoryIndex(newIndex)
-                        setFormInput(inputHistory[newIndex])
-                    }
+                    const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
+                    setHistoryIndex(newIndex)
+                    setFormInput(inputHistory[newIndex])
                 } else if (event.key === 'ArrowDown' && caretPosition === formInput.length) {
-                    if (formInput === inputHistory[historyIndex] || !formInput) {
-                        const newIndex = historyIndex + 1 >= inputHistory.length ? 0 : historyIndex + 1
-                        setHistoryIndex(newIndex)
-                        setFormInput(inputHistory[newIndex])
-                    }
+                    const newIndex = historyIndex + 1 >= inputHistory.length ? 0 : historyIndex + 1
+                    setHistoryIndex(newIndex)
+                    setFormInput(inputHistory[newIndex])
                 }
             }
         },

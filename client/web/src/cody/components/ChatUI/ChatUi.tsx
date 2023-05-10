@@ -27,18 +27,14 @@ export const ChatUI = (): JSX.Element => {
     } = useChatStoreState()
 
     const [formInput, setFormInput] = useState('')
-    const [inputHistory, setInputHistory] = useState<string[] | []>([])
+    const [inputHistory, setInputHistory] = useState<string[] | []>(() =>
+        transcriptHistory
+            .flatMap(entry => entry.interactions)
+            .sort((entryA, entryB) => +new Date(entryA.timestamp) - +new Date(entryB.timestamp))
+            .filter(interaction => interaction.humanMessage.displayText !== undefined)
+            .map(interaction => interaction.humanMessage.displayText!)
+    )
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
-
-    useEffect(() => {
-        setInputHistory(
-            transcriptHistory
-                .flatMap(entry => entry.interactions)
-                .sort((entryA, entryB) => +new Date(entryA.timestamp) - +new Date(entryB.timestamp))
-                .filter(interaction => interaction.humanMessage.displayText !== undefined)
-                .map(interaction => interaction.humanMessage.displayText!)
-        )
-    }, [transcriptHistory])
 
     return (
         <Chat
