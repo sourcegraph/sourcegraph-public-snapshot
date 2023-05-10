@@ -14,72 +14,56 @@ export class PrDescription implements Recipe {
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const dirPath = context.editor.getWorkspaceRootPath()
         if (!dirPath) {
-            return null
+            return Promise.resolve(null)
         }
 
         const logFormat = '--pretty="Commit author: %an%nCommit message: %s%nChange description:%b%n"'
-        const items = [
-            {
-                label: 'Last 5 items',
-                args: ['log', '-n5', logFormat],
-                rawDisplayText: 'What changed in my codebase in the last 5 commits?',
-            },
-            {
-                label: 'Last day',
-                args: ['log', '--since', '1 day', logFormat],
-                rawDisplayText: 'What has changed in my codebase in the last day?',
-            },
-            {
-                label: 'Last week',
-                args: ['log', "--since='1 week'", logFormat],
-                rawDisplayText: 'What changed in my codebase in the last week?',
-            },
-        ]
-        const selectedLabel = await context.editor.showQuickPick(items.map(e => e.label))
-        if (!selectedLabel) {
-            return null
-        }
-        const selected = Object.fromEntries(
-            items.map(({ label, args, rawDisplayText }) => [label, { args, rawDisplayText }])
-        )[selectedLabel]
 
         const rawDisplayText = 'Generating the PR description'
 
         const templateFormatArgs = [
             'pull_request_template.md',
+            'PULL_REQUEST_TEMPLATE.md',
+            'docs/PULL_REQUEST_TEMPLATE.md',
             'docs/pull_request_template.md',
             '.github/pull_request_template.md',
             '.github/PULL_REQUEST_TEMPLATE.md',
         ]
 
-        const gitLogCommand = spawnSync('git', ['ls-files', ...templateFormatArgs], { cwd: dirPath })
-        const gitLogOutput = gitLogCommand.stdout.toString().trim()
+        const checkPrTemplate = spawnSync('git', ['ls-files', ...templateFormatArgs], { cwd: dirPath })
+        const prTemplateOutput = checkPrTemplate.stdout.toString().trim()
 
-        const templatePath = path.join(dirPath.trim(), gitLogOutput)
-        const fileContents = readFileSync(templatePath)
-        console.log(fileContents)
+        let prTemplateContent = ''
 
-        if (!gitLogOutput) {
-            const emptyGitLogMessage = 'No recent changes found'
+        if (prTemplateOutput) {
+            const templatePath = path.join(dirPath.trim(), prTemplateOutput)
+            prTemplateContent = readFileSync(templatePath).toString()
+        }
+
+        const gitCommit = spawnSync('git', ['log', 'origin/HEAD..HEAD', logFormat], { cwd: dirPath })
+        const gitCommitOutput = gitCommit.stdout.toString().trim()
+
+        if (!gitCommitOutput) {
+            const emptyGitCommitMessage = 'No commits history found in the current branch.'
             return new Interaction(
                 { speaker: 'human', displayText: rawDisplayText },
                 {
                     speaker: 'assistant',
-                    prefix: emptyGitLogMessage,
-                    text: emptyGitLogMessage,
+                    prefix: emptyGitCommitMessage,
+                    text: emptyGitCommitMessage,
                 },
                 Promise.resolve([])
             )
         }
 
-        const truncatedGitLogOutput = truncateText(gitLogOutput, MAX_RECIPE_INPUT_TOKENS)
-        let truncatedLogMessage = ''
-        if (truncatedGitLogOutput.length < gitLogOutput.length) {
-            truncatedLogMessage = 'Truncated extra long git log output, so summary may be incomplete.'
+        const truncatedGitCommitOutput = truncateText(gitCommitOutput, MAX_RECIPE_INPUT_TOKENS)
+        let truncatedCommitMessage = ''
+        if (truncatedGitCommitOutput.length < gitCommitOutput.length) {
+            truncatedCommitMessage = 'Truncated extra long git log output, so PR description may be incomplete.'
         }
 
-        const promptMessage = `Summarize these commits:\n${truncatedGitLogOutput}\n\nProvide your response in the form of a bulleted list. Do not mention the commit hashes.`
-        const assistantResponsePrefix = `Here is a summary of recent changes:\n${truncatedLogMessage}`
+        const promptMessage = `Summarise these changes ${gitCommitOutput} done while working in the git branch.\nUse this PR template to ${prTemplateContent} generate a PR description based on the commit changes.\nIf the PR template mention to check the contribution guidelines on making the PR then just summarise the changes in bulletin format.\n If it includes mentioning about the test cases of changes use N/A\n.`
+        const assistantResponsePrefix = `Here is the PR description for the work done in your current branch:\n${truncatedCommitMessage}`
         return new Interaction(
             { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
             {
