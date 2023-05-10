@@ -49,8 +49,9 @@ func (a *Authenticator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		err := a.EventLogger.LogEvent(
 			events.Event{
-				Name:           events.EventNameAccessDenied,
-				SubscriptionID: act.UUID,
+				Name:       events.EventNameAccessDenied,
+				Source:     act.Source.Name(),
+				Identifier: act.ID,
 			},
 		)
 		if err != nil {

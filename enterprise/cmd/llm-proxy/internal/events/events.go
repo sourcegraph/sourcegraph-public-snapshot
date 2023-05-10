@@ -13,10 +13,11 @@ import (
 type EventName string
 
 const (
-	EventNameUnauthorized       EventName = "Unauthorized"
-	EventNameAccessDenied       EventName = "AccessDenied"
-	EventNameRateLimited        EventName = "RateLimited"
-	EventNameCompletionsRequest EventName = "CompletionsRequest"
+	EventNameUnauthorized        EventName = "Unauthorized"
+	EventNameAccessDenied        EventName = "AccessDenied"
+	EventNameRateLimited         EventName = "RateLimited"
+	EventNameCompletionsStarted  EventName = "CompletionsStarted"
+	EventNameCompletionsFinished EventName = "CompletionsFinished"
 )
 
 // Logger is an event logger.
@@ -43,25 +44,28 @@ func NewBigQueryLogger(projectID, dataset, table string) (Logger, error) {
 
 // Event contains information to be logged.
 type Event struct {
-	Name           EventName
-	SubscriptionID string
-	Metadata       map[string]any
+	Name       EventName
+	Source     string
+	Identifier string
+	Metadata   map[string]any
 }
 
 var _ bigquery.ValueSaver = bigQueryEvent{}
 
 type bigQueryEvent struct {
-	Name           string
-	SubscriptionID string
-	Metadata       json.RawMessage
-	CreatedAt      time.Time
+	Name       string
+	Source     string
+	Identifier string
+	Metadata   json.RawMessage
+	CreatedAt  time.Time
 }
 
 func (e bigQueryEvent) Save() (map[string]bigquery.Value, string, error) {
 	values := map[string]bigquery.Value{
-		"name":            e.Name,
-		"subscription_id": e.SubscriptionID,
-		"created_at":      e.CreatedAt,
+		"name":       e.Name,
+		"source":     e.Source,
+		"identifier": e.Identifier,
+		"created_at": e.CreatedAt,
 	}
 	if e.Metadata != nil {
 		values["metadata"] = string(e.Metadata)
@@ -71,10 +75,8 @@ func (e bigQueryEvent) Save() (map[string]bigquery.Value, string, error) {
 
 // LogEvent logs an event to BigQuery.
 func (l *bigQueryLogger) LogEvent(event Event) error {
-	if event.Name == "" {
-		return errors.New("missing event name")
-	} else if event.SubscriptionID == "" {
-		event.SubscriptionID = "anonymous"
+	if event.Name == "" || event.Source == "" || event.Identifier == "" {
+		return errors.New("missing event name, source or identifier")
 	}
 
 	var metadata json.RawMessage
@@ -91,10 +93,11 @@ func (l *bigQueryLogger) LogEvent(event Event) error {
 		// case of a request cancellation.
 		context.Background(),
 		bigQueryEvent{
-			Name:           string(event.Name),
-			SubscriptionID: event.SubscriptionID,
-			Metadata:       metadata,
-			CreatedAt:      time.Now(),
+			Name:       string(event.Name),
+			Source:     event.Source,
+			Identifier: event.Identifier,
+			Metadata:   metadata,
+			CreatedAt:  time.Now(),
 		},
 	)
 	if err != nil {

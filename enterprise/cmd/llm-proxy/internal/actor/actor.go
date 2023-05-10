@@ -24,10 +24,9 @@ type Actor struct {
 	Key string `json:"key"`
 	// ID is the identifier for this actor's rate-limiting pool.
 	//
-	// For example, for product subscriptions this is the subscription ID.
+	// For example, for product subscriptions this is the subscription UUID. For
+	// Sourcegraph.com users, this is the string representation of the user ID.
 	ID string `json:"id"`
-	// UUID is the subscription UUID.
-	UUID string `json:"uuid"`
 	// AccessEnabled is an evaluated field that summarizes whether or not LLM-proxy access
 	// is enabled.
 	//

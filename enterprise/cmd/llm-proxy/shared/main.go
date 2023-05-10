@@ -49,6 +49,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		}
 	} else {
 		eventLogger = events.NewNoopLogger()
+		obctx.Logger.Info("BigQuery logging is disabled")
 	}
 
 	// Supported actor/auth sources
@@ -134,7 +135,18 @@ func newServiceHandler(logger log.Logger, eventLogger events.Logger, config *Con
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			act := actor.FromContext(r.Context())
 
-			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
+			err := eventLogger.LogEvent(
+				events.Event{
+					Name:       events.EventNameCompletionsStarted,
+					Source:     act.Source.Name(),
+					Identifier: act.ID,
+				},
+			)
+			if err != nil {
+				logger.Error("failed to log event", log.Error(err))
+			}
+
+			r, err = http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
 			if err != nil {
 				response.JSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to create request: %s", err))
 				return
@@ -152,8 +164,9 @@ func newServiceHandler(logger log.Logger, eventLogger events.Logger, config *Con
 			defer func() {
 				err := eventLogger.LogEvent(
 					events.Event{
-						Name:           events.EventNameCompletionsRequest,
-						SubscriptionID: act.UUID,
+						Name:       events.EventNameCompletionsFinished,
+						Source:     act.Source.Name(),
+						Identifier: act.ID,
 						Metadata: map[string]any{
 							"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
 						},
@@ -183,15 +196,17 @@ func newServiceHandler(logger log.Logger, eventLogger events.Logger, config *Con
 
 func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		l := actor.FromContext(r.Context()).Limiter(cache)
+		act := actor.FromContext(r.Context())
+		l := act.Limiter(cache)
 
 		err := l.TryAcquire(r.Context())
 
 		if err != nil {
 			err := eventLogger.LogEvent(
 				events.Event{
-					Name:           events.EventNameRateLimited,
-					SubscriptionID: actor.FromContext(r.Context()).UUID,
+					Name:       events.EventNameRateLimited,
+					Source:     act.Source.Name(),
+					Identifier: act.ID,
 					Metadata: map[string]any{
 						"error": err.Error(),
 					},
