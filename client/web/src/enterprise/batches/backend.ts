@@ -1,8 +1,12 @@
-import { QueryResult } from '@apollo/client'
+import { useEffect, useState } from 'react'
+
+import { ApolloError } from '@apollo/client'
+import * as jsonc from 'jsonc-parser'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
+import { BatchChangeRolloutWindow } from '@sourcegraph/shared/src/schema/site.schema'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -12,8 +16,6 @@ import {
     BatchChangeBatchSpecsVariables,
     BatchChangeBatchSpecsResult,
     BatchSpecListConnectionFields,
-    BatchChangesSiteConfigurationResult,
-    BatchChangesSiteConfigurationVariables,
 } from '../../graphql-operations'
 
 export const queryBatchSpecs = ({
@@ -212,10 +214,23 @@ export const BATCH_CHANGES_SITE_CONFIGURATION = gql`
     }
 `
 
-export const useGetBatchChangesSiteConfiguration = (): QueryResult<
-    BatchChangesSiteConfigurationResult,
-    BatchChangesSiteConfigurationVariables
-> =>
-    useQuery(BATCH_CHANGES_SITE_CONFIGURATION, {
+type useGetBatchChangesSiteConfigurationResult = {
+    loading: boolean
+    error: ApolloError | undefined
+    rolloutWindowConfig: BatchChangeRolloutWindow[]
+}
+
+export const useGetBatchesRolloutWindowConfig = (): useGetBatchChangesSiteConfigurationResult => {
+    const [rolloutWindowConfig, setRolloutWindowConfig] = useState<BatchChangeRolloutWindow[]>([])
+    const { loading, error, data } = useQuery(BATCH_CHANGES_SITE_CONFIGURATION, {
         fetchPolicy: 'cache-first',
     })
+    useEffect(() => {
+        if (data) {
+            const siteConfig = jsonc.parse(data.site.configuration.effectiveContents)
+            setRolloutWindowConfig(siteConfig['batchChanges.rolloutWindows'] || [])
+        }
+    }, [data])
+
+    return { loading, error, rolloutWindowConfig }
+}
