@@ -60,6 +60,7 @@ export const FETCH_OWNERS = gql`
                                 reasons {
                                     ...CodeownersFileEntryFields
                                     ...RecentContributorOwnershipSignalFields
+                                    ...RecentViewOwnershipSignalFields
                                 }
                             }
                         }

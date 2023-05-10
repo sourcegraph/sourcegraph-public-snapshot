@@ -210,6 +210,7 @@ const ExtraInfoSection: React.FC<{
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
 
     const metadataItems = useMemo(() => repo.metadata.map(({ key, value }) => ({ key, value })) || [], [repo.metadata])
+    const queryState = useNavbarQueryState(state => state.queryState)
 
     return (
         <Card className={className}>
@@ -248,7 +249,12 @@ const ExtraInfoSection: React.FC<{
                         )}
                     </ExtraInfoSectionItemHeader>
                     {metadataItems.length ? (
-                        <RepoMetadata items={metadataItems} />
+                        <RepoMetadata
+                            items={metadataItems}
+                            queryState={queryState}
+                            queryBuildOptions={{ omitRepoFilter: true }}
+                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                        />
                     ) : (
                         <Text className="text-muted">None</Text>
                     )}

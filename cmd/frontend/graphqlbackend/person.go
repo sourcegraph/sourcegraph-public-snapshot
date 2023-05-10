@@ -33,6 +33,16 @@ func NewPersonResolver(db database.DB, name, email string, includeUserInfo bool)
 	}
 }
 
+func NewPersonResolverFromUser(db database.DB, email string, user *types.User) *PersonResolver {
+	return &PersonResolver{
+		db:    db,
+		user:  user,
+		email: email,
+		// We don't need to query for user.
+		includeUserInfo: false,
+	}
+}
+
 // resolveUser resolves the person to a user (using the email address). Not all persons can be
 // resolved to a user.
 func (r *PersonResolver) resolveUser(ctx context.Context) (*types.User, error) {
