@@ -32,7 +32,7 @@ var errOutOfSync = errors.Newf("database schema is out of sync")
 
 func compareAndDisplaySchemaDescriptions(rawOut *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (err error) {
 	out := &preambledOutput{rawOut, false}
-	for _, drift := range compareSchemaDescriptions(schemaName, version, actual, expected) {
+	for _, drift := range CompareSchemaDescriptions(schemaName, version, actual, expected) {
 		drift.Display(out)
 		err = errOutOfSync
 	}
@@ -65,6 +65,8 @@ type driftSummary struct {
 func wrap(summary DriftSummary) []DriftSummary {
 	return []DriftSummary{summary}
 }
+
+func (s *driftSummary) String() string { return "xXx" + s.name + "xXx" }
 
 func (s *driftSummary) Display(out OutputWriter) {
 	out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, s.problem))
@@ -112,7 +114,7 @@ func (s *driftSummary) withURLHint(url string) *driftSummary {
 	return s
 }
 
-func compareSchemaDescriptions(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary {
+func CompareSchemaDescriptions(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary {
 	s := []DriftSummary{}
 	for _, f := range []func(schemaName, version string, actual, expected schemas.SchemaDescription) []DriftSummary{
 		compareExtensions,
