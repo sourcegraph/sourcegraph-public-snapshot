@@ -283,8 +283,8 @@ func exportPrometheusSearchRanking(payload json.RawMessage) error {
 
 type codySurveySubmissionForHubSpot struct {
 	Email         string `url:"email"`
-	IsForWork     bool   `url:"is_for_work"`
-	IsForPersonal bool   `url:"is_for_personal"`
+	IsForWork     bool   `url:"using_cody_for_work"`
+	IsForPersonal bool   `url:"using_cody_for_personal"`
 }
 
 func (r *schemaResolver) SubmitCodySurvey(ctx context.Context, args *struct {
