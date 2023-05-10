@@ -1,6 +1,7 @@
 load("@npm//:mocha/package_json.bzl", mocha_bin = "bin")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
-load("//client/shared/dev:run_mocha_tests_with_percy.bzl", "run_mocha_tests_with_percy")
+load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 NON_BUNDLED = [
     # Dependencies loaded by mocha itself before the tests.
@@ -93,9 +94,13 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
     })
 
     if is_percy_enabled:
+        flaky = kwargs.pop("flaky")
+        timeout = kwargs.pop("timeout")
+        binary_name = "%s_binary" % name
+
         # TODO: document arguments and purpose
         js_run_binary(
-            name = "%s_binary" % name,
+            name = binary_name,
             args = args,
             env = env,
             srcs = data,
@@ -110,7 +115,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
 
         build_test(
             name = name,
-            targets = [name],
+            targets = [binary_name],
             visibility = ["//visibility:public"],
             timeout = timeout,
             flaky = flaky,
