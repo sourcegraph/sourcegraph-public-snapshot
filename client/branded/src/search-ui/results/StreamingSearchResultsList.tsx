@@ -214,6 +214,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 result={result}
                                 onSelect={() => logSearchResultClicked?.(index, 'repo')}
                                 containerClassName={resultClassName}
+                                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                                queryState={queryState}
                                 enableRepositoryMetadata={enableRepositoryMetadata}
                                 as="li"
                             />
@@ -248,7 +250,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             )
         },
         [
-            enableRepositoryMetadata,
             prefetchFileEnabled,
             prefetchFile,
             location,
@@ -260,6 +261,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             resultClassName,
             platformContext,
             queryState,
+            enableRepositoryMetadata,
             buildSearchURLQueryFromQueryState,
             logSearchResultClicked,
         ]

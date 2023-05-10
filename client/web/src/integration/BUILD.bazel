@@ -20,7 +20,6 @@ ts_project(
     name = "integration",
     srcs = [
         "context.ts",
-        "environment.ts",
         "graphQlResponseHelpers.ts",
         "graphQlResults.ts",
         "insights/utils/override-insights-graphql-api.ts",
