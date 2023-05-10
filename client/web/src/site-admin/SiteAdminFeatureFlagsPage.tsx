@@ -194,11 +194,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
 
             <PageHeader
                 headingElement="h2"
-                path={[
-                    {
-                        text: <>Feature flags</>,
-                    },
-                ]}
+                path={[{ text: 'Feature flags' }]}
                 description={
                     <>
                         Feature flags, as opposed to experimental features, are intended to be strictly short-lived.
@@ -210,7 +206,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
                         .
                     </>
                 }
-                className="mb-3"
+                className={classNames(styles.pageHeader, 'mb-3')}
                 actions={
                     <ButtonLink variant="primary" to="./configuration/new">
                         Create feature flag
@@ -227,6 +223,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
                     queryConnection={queryFeatureFlags}
                     nodeComponent={FeatureFlagNode}
                     filters={filters}
+                    withCenteredSummary={true}
                 />
             </Container>
         </>
