@@ -62,6 +62,7 @@ const Meta: React.FC<MetaProps> = ({ meta, queryState, buildSearchURLQueryFromQu
                     as={Button}
                     onClick={() => onDelete(meta)}
                     aria-label="Delete metadata"
+                    className={styles.badgeButton}
                 >
                     <Icon svgPath={mdiDelete} aria-hidden={true} className="mr-1" />
                     <MetaContent meta={meta} />

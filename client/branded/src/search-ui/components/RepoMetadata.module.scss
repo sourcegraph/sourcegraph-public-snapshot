@@ -5,3 +5,9 @@
 .highlight {
     color: var(--search-filter-keyword-color);
 }
+
+.badge-button {
+    &:focus, &:hover {
+        background-color: var(--badge-dark);
+    }
+}
