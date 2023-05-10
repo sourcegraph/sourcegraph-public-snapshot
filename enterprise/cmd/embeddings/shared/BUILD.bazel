@@ -60,6 +60,7 @@ go_test(
     srcs = [
         "context_detection_test.go",
         "repo_embedding_index_cache_test.go",
+        "search_test.go",
     ],
     embed = [":shared"],
     deps = [
@@ -68,6 +69,7 @@ go_test(
         "//internal/api",
         "//internal/database",
         "//internal/types",
+        "@com_github_sourcegraph_log//:log",
         "@com_github_stretchr_testify//require",
     ],
 )
