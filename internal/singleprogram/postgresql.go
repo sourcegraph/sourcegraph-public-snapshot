@@ -67,6 +67,7 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) error {
 }
 
 func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEnvVars, error) {
+	logger.Debug("database root directory", log.String("path", pgRootDir))
 	// Note: some linux distributions (eg NixOS) do not ship with the dynamic
 	// linker at the "standard" location which the embedded postgres
 	// executables rely on. Give a nice error instead of the confusing "file

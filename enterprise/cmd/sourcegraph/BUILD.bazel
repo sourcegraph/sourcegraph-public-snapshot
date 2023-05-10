@@ -62,5 +62,5 @@ go_test(
     env = {
         "BAZEL": "true",
     },
-    tags = [ "no-sandbox" ],
+    tags = [ "requires-network", "no-sandbox" ],
 )

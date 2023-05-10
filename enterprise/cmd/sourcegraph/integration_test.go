@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,6 +17,7 @@ import (
 )
 
 var AppBinaryPath string
+var AppCmd *App
 
 type App struct {
 	Cmd    *exec.Cmd
@@ -34,7 +35,21 @@ func (app *App) StdErr() (string, error) {
 	return string(data), err
 }
 
-var appCmd *App = nil
+func (app *App) Shutdown() error {
+	return app.Cmd.Process.Kill()
+}
+
+func (app *App) DumpOutput(w io.Writer) error {
+	fmt.Fprintln(w, "Stdout:")
+	if _, err := io.Copy(w, app.stdOut); err != nil {
+		return err
+	}
+	fmt.Fprintln(w, "Stderr:")
+	if _, err := io.Copy(w, app.stdErr); err != nil {
+		return err
+	}
+	return nil
+}
 
 func startApp(ctx context.Context, path string) (*App, error) {
 	testDir := bazel.TestTmpDir()
@@ -63,15 +78,12 @@ func startApp(ctx context.Context, path string) (*App, error) {
 }
 
 func debugf(t *testing.T, msg string, parts ...any) {
-	if os.Getenv("DEBUG") != "1" {
-		return
-	}
 	t.Logf(msg, parts...)
 }
 
 func waitTillAvailable(t *testing.T, timeout time.Duration) error {
 	t.Helper()
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 	timer := time.NewTimer(timeout)
 
 	var lastErr error = nil
@@ -105,65 +117,68 @@ func waitTillAvailable(t *testing.T, timeout time.Duration) error {
 }
 
 func TestMain(m *testing.M) {
-	if len(os.Args) < 1 {
-		fmt.Fprintln(os.Stderr, "Sourcegraph App binary path required as first argument to this test")
-		os.Exit(0)
-	}
-	appPath := os.Args[1]
-
+	flag.StringVar(&AppBinaryPath, "appBinaryPath", "", "Path to Sourcegraph App binary when not running inside Bazel")
+	flag.Parse()
 	// If we're running in bazel we should resolve the arg to a binary path
 	if os.Getenv("BAZEL") == "true" {
-		if p, found := bazel.FindBinary(appPath, "sourcegraph"); !found {
-			fmt.Fprintf(os.Stderr, "failed to find 'sourcegraph' binary inside bazel from path: %s", appPath)
+		if p, found := bazel.FindBinary("", "sourcegraph"); !found {
+			fmt.Fprintf(os.Stderr, "failed to find 'sourcegraph' binary inside bazel from path")
 			os.Exit(1)
 		} else {
-			appPath = p
+			AppBinaryPath = p
 		}
 	}
-
-	AppBinaryPath = appPath
+	cmd, err := startApp(context.Background(), AppBinaryPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to start sourcegraph binary: %s", err)
+		os.Exit(1)
+	}
+	AppCmd = cmd
 	exit := m.Run()
+	if exit != 0 {
+		AppCmd.DumpOutput(os.Stdout)
+	}
+	if err := AppCmd.Shutdown(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to shutdown sourcegraph binary: %s", err)
+	}
 	os.Exit(exit)
 }
 
 func TestTauriSigninURL(t *testing.T) {
-	cmd, err := startApp(context.Background(), AppBinaryPath)
-	if err != nil {
-		t.Fatalf("failed to start sourcegraph binary: %s", err)
-	}
-	if err := waitTillAvailable(t, 30*time.Second); err != nil {
-		debugf(t, "app failed to start up in 30 seconds: %v", err)
-	}
-	// Kill the app since we don't want it to continually output things
-	cmd.Cmd.Process.Kill()
-	// Since the app was up, the tauri signin url should have been printed
-	stdOut, err := cmd.StdOut()
-	if err != nil {
-		t.Fatalf("failed to read command standard out: %s", err)
-	}
-	stdErr, err := cmd.StdErr()
-	if err != nil {
-		t.Fatalf("failed to read command standard err: %s", err)
+	if err := waitTillAvailable(t, 60*time.Second); err != nil {
+		t.Fatalf("app failed to start up in 30 seconds: %v", err)
 	}
 
-	var signInURL string
-	r := bufio.NewReader(bytes.NewBufferString(stdErr))
-	for {
-		line, err := r.ReadString('\n')
-		debugf(t, "Out=%s", line)
-		if err == io.EOF {
+	var buf = bytes.NewBuffer(nil)
+	t.Logf("dumping app output")
+	AppCmd.DumpOutput(buf)
+
+	signinURL := ""
+	for _, line := range strings.Split(buf.String(), "\n") {
+		if strings.HasPrefix(line, "tauri:sign-in-url") {
+			parts := strings.Split(line, " ")
+			signinURL = parts[1]
+		}
+	}
+
+	t.Logf("found signin url: %s", signinURL)
+	// sign in
+	maxRetry := 5
+	var statusCode int
+	var signinErr error
+	for maxRetry > 0 {
+		resp, err := http.Get(signinURL)
+		statusCode = resp.StatusCode
+		if err == nil && statusCode == 200 {
+			t.Log("200 status - we signed in!")
 			break
 		} else if err != nil {
-			t.Fatalf("failed while reading the output of app: %s", err)
-			break
-		}
-		if strings.Contains(line, "tauri:sign-in-url") {
-			signInURL = line
-			break
+			maxRetry -= 1
+			signinErr = err
 		}
 	}
 
-	if signInURL == "" {
-		t.Fatalf("tauri:sign-in-url not found after 30 secs of app startup\nStdOut:%s", stdOut)
+	if signinErr != nil {
+		t.Errorf("failed to sign in with %q: %v", signinURL, signinErr)
 	}
 }
