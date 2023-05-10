@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
@@ -24,6 +25,7 @@ func NewResolver(
 	embeddingsClient *embeddings.Client,
 	repoStore repobg.RepoEmbeddingJobsStore,
 	contextDetectionStore contextdetectionbg.ContextDetectionEmbeddingJobsStore,
+	emails backend.UserEmailsService,
 ) graphqlbackend.EmbeddingsResolver {
 	return &Resolver{
 		db:                        db,
@@ -31,6 +33,7 @@ func NewResolver(
 		embeddingsClient:          embeddingsClient,
 		repoEmbeddingJobsStore:    repoStore,
 		contextDetectionJobsStore: contextDetectionStore,
+		emails:                    emails,
 	}
 }
 
@@ -40,11 +43,20 @@ type Resolver struct {
 	embeddingsClient          *embeddings.Client
 	repoEmbeddingJobsStore    repobg.RepoEmbeddingJobsStore
 	contextDetectionJobsStore contextdetectionbg.ContextDetectionEmbeddingJobsStore
+	emails                    backend.UserEmailsService
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
 	if !conf.EmbeddingsEnabled() {
 		return nil, errors.New("embeddings are not configured or disabled")
+	}
+
+	verified, err := r.emails.HasVerifiedEmail(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !verified {
+		return nil, errors.New("cody requires a verified email address")
 	}
 
 	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
@@ -81,6 +93,13 @@ func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graph
 	}
 	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
 		return false, errors.New("cody experimental feature flag is not enabled for current user")
+	}
+	verified, err := r.emails.HasVerifiedEmail(ctx)
+	if err != nil {
+		return false, err
+	}
+	if !verified {
+		return false, errors.New("cody requires a verified email address")
 	}
 	return r.embeddingsClient.IsContextRequiredForChatQuery(ctx, embeddings.IsContextRequiredForChatQueryParameters{Query: args.Query})
 }

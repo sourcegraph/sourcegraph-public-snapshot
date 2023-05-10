@@ -1179,6 +1179,9 @@ type MockUserEmailsService struct {
 	// AddFunc is an instance of a mock function object controlling the
 	// behavior of the method Add.
 	AddFunc *UserEmailsServiceAddFunc
+	// HasVerifiedEmailFunc is an instance of a mock function object
+	// controlling the behavior of the method HasVerifiedEmail.
+	HasVerifiedEmailFunc *UserEmailsServiceHasVerifiedEmailFunc
 	// RemoveFunc is an instance of a mock function object controlling the
 	// behavior of the method Remove.
 	RemoveFunc *UserEmailsServiceRemoveFunc
@@ -1208,6 +1211,11 @@ func NewMockUserEmailsService() *MockUserEmailsService {
 	return &MockUserEmailsService{
 		AddFunc: &UserEmailsServiceAddFunc{
 			defaultHook: func(context.Context, int32, string) (r0 error) {
+				return
+			},
+		},
+		HasVerifiedEmailFunc: &UserEmailsServiceHasVerifiedEmailFunc{
+			defaultHook: func(context.Context, int32) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -1254,6 +1262,11 @@ func NewStrictMockUserEmailsService() *MockUserEmailsService {
 				panic("unexpected invocation of MockUserEmailsService.Add")
 			},
 		},
+		HasVerifiedEmailFunc: &UserEmailsServiceHasVerifiedEmailFunc{
+			defaultHook: func(context.Context, int32) (bool, error) {
+				panic("unexpected invocation of MockUserEmailsService.HasVerifiedEmail")
+			},
+		},
 		RemoveFunc: &UserEmailsServiceRemoveFunc{
 			defaultHook: func(context.Context, int32, string) error {
 				panic("unexpected invocation of MockUserEmailsService.Remove")
@@ -1294,6 +1307,9 @@ func NewMockUserEmailsServiceFrom(i UserEmailsService) *MockUserEmailsService {
 	return &MockUserEmailsService{
 		AddFunc: &UserEmailsServiceAddFunc{
 			defaultHook: i.Add,
+		},
+		HasVerifiedEmailFunc: &UserEmailsServiceHasVerifiedEmailFunc{
+			defaultHook: i.HasVerifiedEmail,
 		},
 		RemoveFunc: &UserEmailsServiceRemoveFunc{
 			defaultHook: i.Remove,
@@ -1422,6 +1438,117 @@ func (c UserEmailsServiceAddFuncCall) Args() []interface{} {
 // invocation.
 func (c UserEmailsServiceAddFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// UserEmailsServiceHasVerifiedEmailFunc describes the behavior when the
+// HasVerifiedEmail method of the parent MockUserEmailsService instance is
+// invoked.
+type UserEmailsServiceHasVerifiedEmailFunc struct {
+	defaultHook func(context.Context, int32) (bool, error)
+	hooks       []func(context.Context, int32) (bool, error)
+	history     []UserEmailsServiceHasVerifiedEmailFuncCall
+	mutex       sync.Mutex
+}
+
+// HasVerifiedEmail delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserEmailsService) HasVerifiedEmail(v0 context.Context, v1 int32) (bool, error) {
+	r0, r1 := m.HasVerifiedEmailFunc.nextHook()(v0, v1)
+	m.HasVerifiedEmailFunc.appendCall(UserEmailsServiceHasVerifiedEmailFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the HasVerifiedEmail
+// method of the parent MockUserEmailsService instance is invoked and the
+// hook queue is empty.
+func (f *UserEmailsServiceHasVerifiedEmailFunc) SetDefaultHook(hook func(context.Context, int32) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// HasVerifiedEmail method of the parent MockUserEmailsService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserEmailsServiceHasVerifiedEmailFunc) PushHook(hook func(context.Context, int32) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserEmailsServiceHasVerifiedEmailFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserEmailsServiceHasVerifiedEmailFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int32) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserEmailsServiceHasVerifiedEmailFunc) nextHook() func(context.Context, int32) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserEmailsServiceHasVerifiedEmailFunc) appendCall(r0 UserEmailsServiceHasVerifiedEmailFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserEmailsServiceHasVerifiedEmailFuncCall
+// objects describing the invocations of this function.
+func (f *UserEmailsServiceHasVerifiedEmailFunc) History() []UserEmailsServiceHasVerifiedEmailFuncCall {
+	f.mutex.Lock()
+	history := make([]UserEmailsServiceHasVerifiedEmailFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserEmailsServiceHasVerifiedEmailFuncCall is an object that describes an
+// invocation of method HasVerifiedEmail on an instance of
+// MockUserEmailsService.
+type UserEmailsServiceHasVerifiedEmailFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserEmailsServiceHasVerifiedEmailFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserEmailsServiceHasVerifiedEmailFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // UserEmailsServiceRemoveFunc describes the behavior when the Remove method
