@@ -33,18 +33,30 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
         url: baseUrl,
         hook_attributes: {
             url: new URL('/.auth/github/events', baseUrl).href,
+            active: false, // Disable for now
         },
         redirect_url: new URL('/.auth/githubapp/redirect', baseUrl).href,
         setup_url: new URL('/.auth/githubapp/setup', baseUrl).href,
         callback_urls: [new URL('/.auth/github/callback', baseUrl).href],
-        public: true,
-        // TODO: which permissions to include
+        setup_on_update: true,
+        public: false,
         default_permissions: {
-            issues: 'write',
-            checks: 'write',
+            contents: 'read',
+            emails: 'read',
+            members: 'read',
+            metadata: 'read',
         },
-        // TODO: which events to include
-        default_events: ['issues', 'issue_comment', 'check_suite', 'check_run'],
+        default_events: [
+            'repository',
+            'public',
+            'member',
+            'membership',
+            'organization',
+            'team',
+            'team_add',
+            'meta',
+            'push',
+        ],
     })
 
     const createActionUrl = useCallback(
