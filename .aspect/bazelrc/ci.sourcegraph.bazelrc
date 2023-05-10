@@ -1,3 +1,5 @@
+# Provides secrets like GH_TOKEN and PERCY_TOKEN via --define flag.
+# Generated via the `.buildkite/hooks/post-checkout` hook.
 try-import %workspace%/.aspect/bazelrc/ci.generated.bazelrc
 
 # Use repo caching for building and testing.
@@ -32,4 +34,6 @@ build --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"
 # temp
 build --test_env=INCLUDE_ADMIN_ONBOARDING=false
 
+# Provides git commit, branch information to build targets like Percy via status file.
+# https://bazel.build/docs/user-manual#workspace-status
 build --workspace_status_command=./dev/bazel_buildkite_stamp_vars.sh

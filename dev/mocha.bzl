@@ -90,15 +90,18 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
 
         # Puppeteer config
         "DISPLAY": ":99",
-        # "JS_BINARY__LOG_DEBUG": "false",
     })
 
     if is_percy_enabled:
+        # Extract test specific arguments.
         flaky = kwargs.pop("flaky")
         timeout = kwargs.pop("timeout")
+
         binary_name = "%s_binary" % name
 
-        # TODO: document arguments and purpose
+        # `js_run_binary` is used here in the combination with `build_test` instead of
+        # `js_test` because only `js_run_binary` currntly supports the `stamp` attribute.
+        # https://docs.aspect.build/rules/aspect_rules_js/docs/js_run_binary#stamp
         js_run_binary(
             name = binary_name,
             args = args,
@@ -109,9 +112,15 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
             srcs = data,
             out_dirs = ["out"],
             silent_on_success = False,
-            stamp = 1,  # uses BUILDKITE_BRANCH and BUILDKITE_COMMIT in Percy report
+
+            # Used to provide BUILDKITE_BRANCH and BUILDKITE_COMMIT to Percy via
+            # dev/bazel_buildkite_stamp_vars.sh. See the tool implementation for more details.
+            stamp = 1,
+
+            # Executed mocha tests with Percy enabled via `percy exec -- mocha ...`
+            # Prepends volatile env variables to the command to make Percy aware of the
+            # current git branch and commit.
             tool = "//client/shared/dev:run_mocha_tests_with_percy",
-            visibility = ["//visibility:public"],
             testonly = True,
             **kwargs
         )
@@ -119,7 +128,6 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         build_test(
             name = name,
             targets = [binary_name],
-            visibility = ["//visibility:public"],
             timeout = timeout,
             flaky = flaky,
         )
