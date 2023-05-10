@@ -45,8 +45,9 @@ type GitserverRepoStore interface {
 	// a matching row does not yet exist a new one will be created.
 	// If the error value hasn't changed, the row will not be updated.
 	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
-	// SetLastOutput will attempt to update ONLY the last output of a GitServerRepo.
+	// SetLastOutput will attempt to create/update the output of a GitServerRepo clone job.
 	// If a matching row does not exist, a new one will be created.
+	// Only one record will be maintained, so this records only the most recent output.
 	SetLastOutput(ctx context.Context, name api.RepoName, output string) error
 	// SetLastFetched will attempt to update ONLY the last fetched data (last_fetched, last_changed, shard_id) of a GitServerRepo and ensures it is marked as cloned.
 	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
@@ -314,11 +315,13 @@ SELECT
 	gr.repo_size_bytes,
 	gr.updated_at,
 	gr.corrupted_at,
-	gr.corruption_logs
+	gr.corruption_logs,
+	go.last_output
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
+LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id
 WHERE %s
-ORDER BY repo_id ASC
+ORDER BY gr.repo_id ASC
 %s
 `
 
@@ -335,21 +338,23 @@ func (s *gitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types
 
 const getGitserverRepoByIDQueryFmtstr = `
 SELECT
-	repo_id,
+	gr.repo_id,
 	-- We don't need this here, but the scanner needs it.
 	'' as name,
-	clone_status,
-	cloning_progress,
-	shard_id,
-	last_error,
-	last_fetched,
-	last_changed,
-	repo_size_bytes,
-	updated_at,
-	corrupted_at,
-	corruption_logs
-FROM gitserver_repos
-WHERE repo_id = %s
+	gr.clone_status,
+	gr.cloning_progress,
+	gr.shard_id,
+	gr.last_error,
+	gr.last_fetched,
+	gr.last_changed,
+	gr.repo_size_bytes,
+	gr.updated_at,
+	gr.corrupted_at,
+	gr.corruption_logs,
+	go.last_output
+FROM gitserver_repos gr
+LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id
+WHERE gr.repo_id = %s
 `
 
 func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error) {
@@ -377,9 +382,11 @@ SELECT
 	gr.repo_size_bytes,
 	gr.updated_at,
 	gr.corrupted_at,
-	gr.corruption_logs
+	gr.corruption_logs,
+	go.last_output
 FROM gitserver_repos gr
 JOIN repo r ON r.id = gr.repo_id
+LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id
 WHERE r.name = %s
 `
 
@@ -401,9 +408,11 @@ SELECT
 	gr.repo_size_bytes,
 	gr.updated_at,
 	gr.corrupted_at,
-	gr.corruption_logs
+	gr.corruption_logs,
+	go.last_output
 FROM gitserver_repos gr
 JOIN repo r on r.id = gr.repo_id
+LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id
 WHERE r.name = ANY (%s)
 `
 
@@ -445,6 +454,7 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 		&gr.UpdatedAt,
 		&dbutil.NullTime{Time: &gr.CorruptedAt},
 		&rawLogs,
+		&gr.LastSyncOutput,
 	)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "scanning GitserverRepo")

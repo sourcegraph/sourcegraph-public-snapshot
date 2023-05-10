@@ -159,6 +159,15 @@ func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, 
 	return strptr(info.LastError), nil
 }
 
+func (r *repositoryMirrorInfoResolver) LastSyncOutput(ctx context.Context) (*string, error) {
+	info, err := r.computeGitserverRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return strptr(info.LastSyncOutput), nil
+}
+
 func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {

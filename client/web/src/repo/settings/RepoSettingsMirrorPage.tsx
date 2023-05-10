@@ -271,6 +271,21 @@ const CorruptionLogsContainer: FC<CorruptionLogProps> = props => {
     )
 }
 
+interface LastSyncOutputProps {
+    repo: SettingsAreaRepositoryFields
+}
+
+const LastSyncOutputContainer: FC<LastSyncOutputProps> = props => {
+    const output = props.repo.mirrorInfo.lastSyncOutput
+    return (
+        <BaseActionContainer
+            title="Sync output"
+            description={<span>Output from this repository's most recent sync job.</span>}
+            details={<pre className="flex-1">{output}</pre>}
+        />
+    )
+}
+
 interface RepoSettingsMirrorPageProps {
     repo: SettingsAreaRepositoryFields
 }
@@ -404,6 +419,7 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
                     </Alert>
                 )}
                 <CorruptionLogsContainer repo={repo} />
+                <LastSyncOutputContainer repo={repo} />
             </Container>
         </>
     )
