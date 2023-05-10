@@ -377,7 +377,7 @@
           "type": "boolean",
           "default": false
         },
-        "cody.experimental.inlineChat": {
+        "cody.experimental.inline": {
           "type": "boolean",
           "default": false
         },

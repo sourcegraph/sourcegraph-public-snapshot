@@ -73,7 +73,7 @@ const register = async (
 
     await updateEventLogger(initialConfig, localStorage)
 
-    // File Chat Provider
+    // Controller for inline assist
     const commentController = new InlineController(context.extensionPath)
     disposables.push(commentController.get())
 
@@ -231,8 +231,8 @@ const register = async (
         )
     }
 
-    // Initiate controller when feature flag is on
-    if (initialConfig.experimentalInlineChat) {
+    // Initiate inline assist when feature flag is on
+    if (initialConfig.experimentalInline) {
         commentController.get().commentingRangeProvider = {
             provideCommentingRanges: (document: vscode.TextDocument) => {
                 const lineCount = document.lineCount

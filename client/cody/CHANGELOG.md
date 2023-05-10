@@ -6,7 +6,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
-- `Inline Chat`: a new way to interact with Cody inside your files [pull/51679](https://github.com/sourcegraph/sourcegraph/pull/51679)
+- `Inline Assist`: a new way to interact with Cody inside your files. To enable this feature, please set the `cody.experimental.inline` option to true. [pull/51679](https://github.com/sourcegraph/sourcegraph/pull/51679)
 
 ### Fixed
 

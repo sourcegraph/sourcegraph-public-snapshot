@@ -1,16 +1,14 @@
 import * as vscode from 'vscode'
 
 import { DecorationProvider } from './DecorationProvider'
+import { CodyTaskState, singleLineRange } from './InlineController'
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
-    public ranges: vscode.Range | null = null
+    private ranges: vscode.Range | null = null
     private static lenses: CodeLensProvider
 
     private fileUri: vscode.Uri | null = null
-
-    public isPending = false
-    public status = 'none'
-
+    private status = CodyTaskState.idle
     public decorator: DecorationProvider
 
     private _disposables: vscode.Disposable[] = []
@@ -19,32 +17,16 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
 
     constructor(public id = '', private extPath = '') {
         this.decorator = new DecorationProvider(this.id, this.extPath)
-
-        vscode.workspace.onDidCloseTextDocument(e => {
-            if (e.uri.fsPath === this.fileUri?.fsPath) {
-                this.remove()
-            }
-        })
-
-        vscode.workspace.onDidSaveTextDocument(e => {
-            if (e.uri.fsPath === this.fileUri?.fsPath) {
-                this.remove()
-            }
-        })
-
         vscode.workspace.onDidChangeTextDocument(e => {
             if (e.document.uri.fsPath !== this.fileUri?.fsPath) {
                 return
             }
             for (const change of e.contentChanges) {
-                if (!this.ranges) {
+                if (!this.ranges || (change.range.end.line > this.ranges.start.line && this.isPending())) {
                     return
                 }
-                if (change.range.start.line + 1 >= this.ranges?.start.line && !this.isPending) {
+                if (change.range.start.line === this.ranges?.start.line && !this.isPending()) {
                     this.remove()
-                    return
-                }
-                if (change.range.end.line > this.ranges.start.line) {
                     return
                 }
                 let addedLines = 0
@@ -58,44 +40,42 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                     new vscode.Position(this.ranges.end.line + addedLines, 0)
                 )
                 this.ranges = newRange
-                this.decorator.rangeUpdate(newRange)
+                this.decorator.setState(this.status, newRange)
             }
             this._onDidChangeCodeLenses.fire()
         })
+        vscode.workspace.onDidCloseTextDocument(e => this.removeOnFSPath(e.uri))
+        vscode.workspace.onDidSaveTextDocument(e => this.removeOnFSPath(e.uri))
     }
-
+    /**
+     * Getter
+     */
     public static get instance(): CodeLensProvider {
         return (this.lenses ??= new this())
     }
-
-    public updatePendingStatus(pending: boolean, newRange: vscode.Range): void {
-        this.decorator.setStatus(pending ? 'pending' : 'done')
+    /**
+     * Define Current States
+     */
+    public updateState(state: CodyTaskState, newRange: vscode.Range): void {
+        this.status = state
+        this.decorator.setState(state, newRange)
         void this.decorator.decorate(newRange)
-        this.isPending = pending
         this.ranges = newRange
         this._onDidChangeCodeLenses.fire()
     }
-
-    public newRange(range: vscode.Range): void {
-        this.ranges = range
-        this._onDidChangeCodeLenses.fire()
-    }
-
-    public getNewRange(line: number): vscode.Range {
-        return new vscode.Range(line, 0, line, 0)
-    }
-
     /**
      * Remove all lenses and decorations created for task
      */
     public remove(): void {
         this.decorator.remove()
         this.ranges = null
-        this.status = 'none'
+        this.status = CodyTaskState.idle
         this.dispose()
         this._onDidChangeCodeLenses.fire()
     }
-
+    /**
+     * Activate code lenses
+     */
     public provideCodeLenses(
         document: vscode.TextDocument,
         token: vscode.CancellationToken
@@ -104,43 +84,56 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
             return []
         }
         this.fileUri = document.uri
-        this.decorator.fileUri = document.uri
-        return this.makeLenses()
+        this.decorator.setFileUri(document.uri)
+        return this.createCodeLenses()
     }
-
     /**
      * Lenses to display above the code that Cody edited
      */
-    private makeLenses(): vscode.CodeLens[] {
+    private createCodeLenses(): vscode.CodeLens[] {
         const range = this.ranges
         const codeLenses: vscode.CodeLens[] = []
         if (!range) {
-            return []
+            return codeLenses
         }
-        const codeLensRange = this.getNewRange(range.start.line)
+        const codeLensRange = singleLineRange(range.start.line)
         const codeLensTitle = new vscode.CodeLens(codeLensRange)
         // Open Chat View
         codeLensTitle.command = {
-            title: this.isPending ? '$(sync~spin) Processing by Cody' : '✨ Edited by Cody',
-            tooltip: 'Open this in Cody chat view',
+            title: this.isPending() ? '$(sync~spin) Processing by Cody' : '✨ Edited by Cody',
+            tooltip: 'Open Cody chat view',
             command: 'cody.focus',
         }
         codeLenses.push(codeLensTitle)
-
-        if (!this.isPending) {
-            // Remove decorations
+        // Remove decorations
+        if (!this.isPending()) {
             const codeLensSave = new vscode.CodeLens(codeLensRange)
             codeLensSave.command = {
-                title: 'Done',
+                title: 'Save',
                 tooltip: 'Accept and save all changes',
                 command: 'workbench.action.files.save',
             }
-
             codeLenses.push(codeLensSave)
         }
         return codeLenses
     }
-
+    /**
+     * Check if the file path is the same
+     */
+    private removeOnFSPath(uri: vscode.Uri): void {
+        if (uri.fsPath === this.fileUri?.fsPath) {
+            this.remove()
+        }
+    }
+    /**
+     * Check if it is in pending state
+     */
+    public isPending(): boolean {
+        return this.status === CodyTaskState.pending
+    }
+    /**
+     * Dispose the disposables
+     */
     public dispose(): void {
         for (const disposable of this._disposables) {
             disposable.dispose()
