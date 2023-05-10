@@ -2,7 +2,6 @@ name: Sourcegraph App Release
 on:
   push:
     branches:
-      - wb/app/release-*
       - main/app/release-*
 
 jobs:
@@ -30,10 +29,6 @@ jobs:
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-      - name: get release body
-        id: release-body
-        run: |
-          echo "CONTENT=\"$(cat ./src-tauri/RELEASE.md)\"" >> $GITHUB_OUTPUT
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
       - uses: actions/checkout@v3
@@ -87,6 +82,5 @@ jobs:
           projectPath: ./src-tauri
           tagName: app-v__VERSION__
           releaseName: "Sourcegraph App v__VERSION__"
-          releaseBody: ${{ steps.release-body.outputs.CONTENT }}
           releaseDraft: true
           prerelease: true
