@@ -148,6 +148,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"opentelemetry-collector",
 				"cadvisor",
 				"migrator",
+				"blobstore",
+				"postgres-12-alpine",
+				"codeintel-db",
+				"codeinsights-db",
+				"postgres_exporter",
 			}, c.Version,
 				// c.candidateImageTag(),
 				"latest", // TODO: Do not merge; used to simplify dev
