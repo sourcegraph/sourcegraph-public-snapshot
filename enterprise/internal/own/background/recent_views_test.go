@@ -30,10 +30,6 @@ func TestRecentViewsIndexer(t *testing.T) {
 	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
 	require.NoError(t, err)
 
-	// Enabling a feature flag.
-	_, err = db.FeatureFlags().CreateBool(ctx, "own-background-index-repo-recent-views", true)
-	require.NoError(t, err)
-
 	// Assertion function.
 	assertSummaries := func(summariesCount, expectedCount int) {
 		t.Helper()

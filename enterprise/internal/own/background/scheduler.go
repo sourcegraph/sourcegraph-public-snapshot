@@ -68,7 +68,7 @@ func GetOwnIndexSchedulerRoutines(db database.DB, observationCtx *observation.Co
 	}
 
 	recent := IndexJobType{
-		Name:            "recent-viewers",
+		Name:            "recent-views",
 		Id:              RecentViews,
 		RefreshInterval: time.Minute * 5,
 	}
