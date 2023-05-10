@@ -5,7 +5,3 @@ package rbac
 const BatchChangesReadPermission string = "BATCH_CHANGES#READ"
 
 const BatchChangesWritePermission string = "BATCH_CHANGES#WRITE"
-
-const SubscriptionsReadPermission string = "SUBSCRIPTIONS#READ"
-
-const SubscriptionsWritePermission string = "SUBSCRIPTIONS#WRITE"
