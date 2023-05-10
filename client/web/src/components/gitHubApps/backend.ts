@@ -26,6 +26,7 @@ export const GITHUB_APP_BY_ID_QUERY = gql`
         gitHubApp(id: $id) {
             id
             appID
+            baseURL
             name
             slug
             appURL
@@ -49,6 +50,27 @@ export const GITHUB_APP_BY_ID_QUERY = gql`
                     ...ListExternalServiceFields
                 }
                 totalCount
+            }
+        }
+    }
+`
+
+export const GITHUB_APP_CLIENT_SECRET_QUERY = gql`
+    query GitHubAppClientSecret($id: ID!) {
+        gitHubApp(id: $id) {
+            id
+            clientSecret
+        }
+    }
+`
+
+export const SITE_SETTINGS_QUERY = gql`
+    query SiteConfigForApps {
+        site {
+            __typename
+            id
+            configuration {
+                effectiveContents
             }
         }
     }
