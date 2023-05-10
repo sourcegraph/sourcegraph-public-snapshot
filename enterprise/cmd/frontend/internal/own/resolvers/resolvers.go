@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -104,90 +105,21 @@ func (r *ownResolver) GitBlobOwnership(
 	if err := areOwnEndpointsAvailable(ctx); err != nil {
 		return nil, err
 	}
-	cursor, err := graphqlutil.DecodeCursor(args.After)
+
+	// Evaluate CODEOWNERS rules.
+	ownerships, err := r.computeCodeowners(ctx, blob)
 	if err != nil {
 		return nil, err
 	}
-	repo := blob.Repository()
-	repoID, repoName := repo.IDInt32(), repo.RepoName()
-	commitID := api.CommitID(blob.Commit().OID())
-	ownService := r.ownService()
-	rs, err := ownService.RulesetForRepo(ctx, repoName, repoID, commitID)
+
+	// Retrieve recent contributors signals.
+	contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), blob.Repository().IDInt32())
 	if err != nil {
 		return nil, err
 	}
-	// No ruleset found.
-	if rs == nil {
-		return &ownershipConnectionResolver{db: r.db}, nil
-	}
+	ownerships = append(ownerships, contribResolvers...)
 
-	var total int
-	var next *string
-
-	var ownerships []graphqlbackend.OwnershipResolver
-	var resolvedOwners []codeowners.ResolvedOwner
-
-	rule := rs.Match(blob.Path())
-	// No match found.
-	if rule != nil {
-		owners := rule.GetOwner()
-		sort.Slice(owners, func(i, j int) bool {
-			iText := ownerText(owners[i])
-			jText := ownerText(owners[j])
-			return iText < jText
-		})
-		total = len(owners)
-		for cursor != "" && len(owners) > 0 && ownerText(owners[0]) != cursor {
-			owners = owners[1:]
-		}
-		if args.First != nil && len(owners) > int(*args.First) {
-			cursor := ownerText(owners[*args.First])
-			next = &cursor
-			owners = owners[:*args.First]
-		}
-		resolvedOwners, err = ownService.ResolveOwnersWithType(ctx, owners)
-		if err != nil {
-			return nil, err
-		}
-		ownerships = make([]graphqlbackend.OwnershipResolver, 0, len(resolvedOwners))
-		for _, ro := range resolvedOwners {
-
-			res := &codeownersFileEntryResolver{
-				db:              r.db,
-				gitserverClient: r.gitserver,
-				source:          rs.GetSource(),
-				repo:            blob.Repository(),
-				matchLineNumber: rule.GetLineNumber(),
-			}
-
-			reasons := []graphqlbackend.OwnershipReasonResolver{
-				&ownershipReasonResolver{res},
-			}
-
-			ownerships = append(ownerships, &ownershipResolver{
-				db:            r.db,
-				resolvedOwner: ro,
-				reasons:       reasons,
-			})
-		}
-	}
-
-	contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), repoID)
-	if err != nil {
-		return nil, err
-	}
-	for _, resolver := range contribResolvers {
-		ownerships = append(ownerships, resolver)
-	}
-	total += len(contribResolvers)
-
-	return &ownershipConnectionResolver{
-		db:             r.db,
-		total:          total,
-		next:           next,
-		resolvedOwners: resolvedOwners,
-		ownerships:     ownerships,
-	}, nil
+	return r.ownershipConnection(args, ownerships)
 }
 
 func (r *ownResolver) PersonOwnerField(_ *graphqlbackend.PersonResolver) string {
@@ -215,12 +147,95 @@ func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	}
 }
 
+// computeCodeowners evaluates the codeowners file (if any) against given file (blob)
+// and returns resolvers for identified owners.
+func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver) ([]*ownershipResolver, error) {
+	repo := blob.Repository()
+	repoID, repoName := repo.IDInt32(), repo.RepoName()
+	commitID := api.CommitID(blob.Commit().OID())
+	var ownerships []*ownershipResolver
+	rs, err := r.ownService().RulesetForRepo(ctx, repoName, repoID, commitID)
+	if err != nil {
+		return nil, err
+	}
+	var rule *codeownerspb.Rule
+	if rs != nil {
+		rule = rs.Match(blob.Path())
+	}
+	if rule != nil {
+		owners := rule.GetOwner()
+		resolvedOwners, err := r.ownService().ResolveOwnersWithType(ctx, owners)
+		if err != nil {
+			return nil, err
+		}
+		for _, ro := range resolvedOwners {
+			res := &codeownersFileEntryResolver{
+				db:              r.db,
+				gitserverClient: r.gitserver,
+				source:          rs.GetSource(),
+				repo:            blob.Repository(),
+				matchLineNumber: rule.GetLineNumber(),
+			}
+			ownerships = append(ownerships, &ownershipResolver{
+				db:            r.db,
+				resolvedOwner: ro,
+				reasons: []graphqlbackend.OwnershipReasonResolver{
+					&ownershipReasonResolver{res},
+				},
+			})
+		}
+	}
+	return ownerships, nil
+}
+
+// ownershipConnection handles ordering and pagination of given set of ownerships.
+func (r *ownResolver) ownershipConnection(
+	args graphqlbackend.ListOwnershipArgs,
+	ownerships []*ownershipResolver,
+) (*ownershipConnectionResolver, error) {
+	// 1. Order ownerships for deterministic pagination:
+
+	// TODO(#51636): Introduce deterministic ordering based on priority of signals.
+	sort.Slice(ownerships, func(i, j int) bool {
+		iText := ownerships[i].resolvedOwner.Identifier()
+		jText := ownerships[j].resolvedOwner.Identifier()
+		return iText < jText
+	})
+	total := len(ownerships)
+
+	// 2. Apply pagination from the parameter & compute next cursor:
+	cursor, err := graphqlutil.DecodeCursor(args.After)
+	if err != nil {
+		return nil, err
+	}
+	for cursor != "" && len(ownerships) > 0 && ownerships[0].resolvedOwner.Identifier() != cursor {
+		ownerships = ownerships[1:]
+	}
+	var next *string
+	if args.First != nil && len(ownerships) > int(*args.First) {
+		c := ownerships[*args.First].resolvedOwner.Identifier()
+		next = &c
+		ownerships = ownerships[:*args.First]
+	}
+
+	// 3. Assemble the connection resolver object:
+	var rs []graphqlbackend.OwnershipResolver
+	for _, o := range ownerships {
+		rs = append(rs, o)
+	}
+	return &ownershipConnectionResolver{
+		db:         r.db,
+		total:      total,
+		next:       next,
+		ownerships: rs,
+	}, nil
+}
+
 type ownershipConnectionResolver struct {
-	db             edb.EnterpriseDB
-	total          int
-	next           *string
-	resolvedOwners []codeowners.ResolvedOwner
-	ownerships     []graphqlbackend.OwnershipResolver
+	db         edb.EnterpriseDB
+	total      int
+	next       *string
+	ownerships []graphqlbackend.OwnershipResolver
 }
 
 func (r *ownershipConnectionResolver) TotalCount(_ context.Context) (int32, error) {
