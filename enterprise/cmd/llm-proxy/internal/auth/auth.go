@@ -30,7 +30,9 @@ func (a *Authenticator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		err := a.EventLogger.LogEvent(
 			events.Event{
-				Name: events.EventNameUnauthorized,
+				Name:       events.EventNameUnauthorized,
+				Source:     "anonymous",
+				Identifier: "anonymous",
 			},
 		)
 		if err != nil {
