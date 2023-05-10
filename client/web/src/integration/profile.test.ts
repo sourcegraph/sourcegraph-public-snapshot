@@ -53,7 +53,7 @@ describe('User profile page', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    it.only('updates display name', async () => {
+    it('updates display name', async () => {
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
             UserAreaUserProfile: () => ({

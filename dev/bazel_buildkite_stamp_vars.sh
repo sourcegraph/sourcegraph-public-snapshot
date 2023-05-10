@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-stamp_version="${VERSION:-$(git rev-parse HEAD)}"
-
-echo COMMIT "$stamp_version"
-
 echo "BUILDKITE $BUILDKITE"
 echo "BUILDKITE_COMMIT $BUILDKITE_COMMIT"
 echo "BUILDKITE_BRANCH $BUILDKITE_BRANCH"

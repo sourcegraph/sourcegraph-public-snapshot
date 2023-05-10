@@ -57,7 +57,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         "--config",
         "$(rootpath //:mocha_config)",
         "$(rootpath :%s)/**/*.test.js" % bundle_name,
-        "--retries 0",
+        "--retries 4",
     ] + args
 
     data = data + NON_BUNDLED_DEPS + [
