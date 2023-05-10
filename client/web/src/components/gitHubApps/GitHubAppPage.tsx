@@ -56,9 +56,6 @@ export const GitHubAppPage: FC<Props> = ({
 
     const app = useMemo(() => data?.gitHubApp, [data])
 
-    // TODO - make an actual GraphQL request to do it here...
-    const refreshFromGH = (): void => {}
-
     if (!appID) {
         return null
     }
@@ -100,9 +97,6 @@ export const GitHubAppPage: FC<Props> = ({
                         headingElement="h2"
                         actions={
                             <>
-                                <Button onClick={refreshFromGH} variant="info" className="ml-auto">
-                                    <Icon inline={true} svgPath={mdiRefresh} aria-hidden={true} /> Refresh from GitHub
-                                </Button>
                                 <ButtonLink to={app.appURL} variant="info" className="ml-2">
                                     <Icon inline={true} svgPath={mdiGithub} aria-hidden={true} /> Edit
                                 </ButtonLink>
