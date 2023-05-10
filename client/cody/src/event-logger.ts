@@ -22,7 +22,7 @@ export async function updateEventLogger(
     }
     if (!eventLoggerGQLClient) {
         eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
-        eventLogger = await EventLogger.create(eventLoggerGQLClient)
+        eventLogger = EventLogger.create(eventLoggerGQLClient)
         await logCodyInstalled()
     } else {
         eventLoggerGQLClient.onConfigurationChange(config)

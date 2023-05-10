@@ -16,7 +16,7 @@ export class EventLogger {
 
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
 
-    public static async create(gqlAPIClient: SourcegraphGraphQLAPIClient): Promise<EventLogger> {
+    public static create(gqlAPIClient: SourcegraphGraphQLAPIClient): EventLogger {
         return new EventLogger(gqlAPIClient)
     }
 
