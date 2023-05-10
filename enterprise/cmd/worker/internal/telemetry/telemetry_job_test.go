@@ -502,7 +502,7 @@ func TestBuildBigQueryObject(t *testing.T) {
 		URL:              "https://sourcegraph.com/search",
 		UserID:           5,
 		AnonymousUserID:  "anonymous",
-		Argument:         json.RawMessage("argument"),
+		PublicArgument:   json.RawMessage("public_argument"),
 		Source:           "src",
 		Version:          "1.1.1",
 		Timestamp:        atTime,
@@ -539,7 +539,7 @@ func TestBuildBigQueryObject(t *testing.T) {
 		FeatureFlags:      `{"testflag":true}`,
 		CohortID:          valast.Addr("cohort1").(*string),
 		Referrer:          "reff",
-		PublicArgument:    "argument",
+		PublicArgument:    "public_argument",
 		DeviceID:          valast.Addr("devid").(*string),
 		InsertID:          valast.Addr("insertid").(*string),
 	}).Equal(t, got)
