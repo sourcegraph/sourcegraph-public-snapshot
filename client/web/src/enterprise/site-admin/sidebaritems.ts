@@ -47,6 +47,11 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/code-insights-jobs',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
+        {
+            label: 'Own status',
+            to: '/site-admin/own-status-page',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        }
     ],
 }
 

@@ -240,6 +240,14 @@ extend type Query {
     codeownersIngestedFiles returns all existing manually ingested codeowners files.
     """
     codeownersIngestedFiles(first: Int, after: Int): CodeownersIngestedFileConnection!
+
+    signalConfigurations: [SignalConfiguration!]!
+}
+
+type SignalConfiguration {
+    name: String!
+    description: String!
+    isEnabled: Boolean!
 }
 
 """

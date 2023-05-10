@@ -1,0 +1,30 @@
+.job {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    list-style-type: none;  // Add this
+
+}
+
+// Rest of styles...
+
+
+.jobHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.jobName {
+    margin: 0;
+}
+
+.jobStatus {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.jobDescription {
+    margin: 0;
+}

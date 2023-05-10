@@ -2,11 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"sort"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/log"
@@ -487,4 +489,63 @@ func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.Ent
 		results = append(results, &res)
 	}
 	return results, nil
+}
+
+func (r *ownResolver) SignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {
+	ffStore := r.db.FeatureFlags()
+
+	var resolvers []graphqlbackend.SignalConfigurationResolver
+
+	for _, job := range jobs {
+		flag, err := ffStore.GetFeatureFlag(ctx, featureFlagName(job))
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				resolvers = append(resolvers, &signalConfigResolver{job: job, enabled: false})
+				continue
+			} else {
+				return nil, errors.Wrap(err, "GetFeatureFlag")
+			}
+		}
+		res, ok := flag.EvaluateGlobal()
+		if !ok || !res {
+			resolvers = append(resolvers, &signalConfigResolver{job: job, enabled: false})
+			continue
+		}
+		resolvers = append(resolvers, &signalConfigResolver{job: job, enabled: true})
+	}
+	return resolvers, nil
+}
+
+type signalConfigResolver struct {
+	job     signalJob
+	enabled bool
+}
+
+func (s *signalConfigResolver) Name() string {
+	return s.job.Name
+}
+
+func (s *signalConfigResolver) Description() string {
+	return s.job.Description
+}
+
+func (s *signalConfigResolver) IsEnabled() bool {
+	return s.enabled
+}
+
+var jobs = []signalJob{{
+	Name:        "recent-contributors",
+	Description: "Calculates recent contributors one job per repository.",
+}, {
+	Name:        "recent-views",
+	Description: "Calcaultes recent viewers from the events stored inside Sourcegraph.",
+}}
+
+type signalJob struct {
+	Name        string
+	Description string
+}
+
+func featureFlagName(job signalJob) string {
+	return fmt.Sprintf("own-background-index-repo-%s", job.Name)
 }

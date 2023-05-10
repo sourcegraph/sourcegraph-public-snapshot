@@ -34,6 +34,9 @@ type OwnResolver interface {
 	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	UpdateCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	DeleteCodeownersFiles(context.Context, *DeleteCodeownersFileArgs) (*EmptyResponse, error)
+
+	// config
+	SignalConfigurations(ctx context.Context) ([]SignalConfigurationResolver, error)
 }
 
 type OwnershipConnectionResolver interface {
@@ -123,4 +126,10 @@ type CodeownersIngestedFileConnectionResolver interface {
 	Nodes(ctx context.Context) ([]CodeownersIngestedFileResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type SignalConfigurationResolver interface {
+	Name() string
+	Description() string
+	IsEnabled() bool
 }
