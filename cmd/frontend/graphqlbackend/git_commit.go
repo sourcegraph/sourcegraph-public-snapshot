@@ -435,3 +435,7 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 	repoUrl.Path += "@" + string(r.oid)
 	return &repoUrl
 }
+
+func (r *GitCommitResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {
+	return EnterpriseResolvers.ownResolver.GitCommitOwnership(ctx, r, args)
+}

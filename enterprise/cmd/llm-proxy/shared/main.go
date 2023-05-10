@@ -47,7 +47,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		productsubscription.NewSource(
 			obctx.Logger,
 			rcache.New("product-subscriptions"),
-			dotcom.NewClient(config.Dotcom.AccessToken)),
+			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)),
 	}
 
 	// Set up our handler chain, which is run from the bottom up
@@ -89,7 +89,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Block until done
 	goroutine.MonitorBackgroundRoutines(ctx,
 		server,
-		sources.Worker(sourceWorkerMutex, config.SourcesSyncInterval))
+		sources.Worker(obctx.Logger, sourceWorkerMutex, config.SourcesSyncInterval),
+	)
 
 	return nil
 }
