@@ -28,7 +28,7 @@ build --test_env=GH_TOKEN
 
 build --define=E2E_HEADLESS=false
 build --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"
-build --define=GH_TOKEN=$GH_TOKEN
+build --define=GH_TOKEN=$GITHUB_TOKEN
 
 # Needed for integration tests
 build --define=PERCY_TOKEN=$PERCY_TOKEN
