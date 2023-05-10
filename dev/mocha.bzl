@@ -102,7 +102,10 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         js_run_binary(
             name = binary_name,
             args = args,
-            env = env,
+            env = dict(env, **{
+                "PERCY_ON": "true",
+                "PERCY_TOKEN": "$(PERCY_TOKEN)",
+            }),
             srcs = data,
             out_dirs = ["out"],
             silent_on_success = False,

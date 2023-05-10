@@ -30,8 +30,6 @@ function getEnvVariablesString() {
     PERCY_BROWSER_EXECUTABLE: puppeteer.executablePath(),
   }
 
-  console.log('Custom environment variables:', customEnvVariables)
-
   return Object.entries(customEnvVariables)
     .map(([key, value]) => `${key}=${value}`)
     .join(' ')
