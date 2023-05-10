@@ -16,12 +16,11 @@ if (typeof localStorage === 'undefined') {
 } else {
     storage = {
         get: (key: string) => cookies.get(key),
-        update: (key: string, value: any) => {
-            return new Promise(resolve => {
+        update: (key: string, value: any) =>
+            new Promise(resolve => {
                 cookies.set(key, value)
                 resolve()
-            })
-        },
+            }),
         keys: () => Object.keys(cookies.get()),
     }
 }
