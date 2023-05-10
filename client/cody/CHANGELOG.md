@@ -8,6 +8,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
+- False alert on empty selection []()
+
 ### Changed
 
 ## [0.1.0]
