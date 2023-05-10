@@ -24,6 +24,7 @@ import (
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -478,7 +479,7 @@ func TestLoggingMiddleware(t *testing.T) {
 
 		// Check log entries for logged fields about retries
 		logEntries := exportLogs()
-		assert.Len(t, logEntries, 2) // should have a scope debug log, and the entry we want
+		require.Len(t, logEntries, 2) // should have a scope debug log, and the entry we want
 		entry := logEntries[1]
 		assert.Contains(t, entry.Scope, "httpcli")
 		assert.NotEmpty(t, entry.Fields["error"])
