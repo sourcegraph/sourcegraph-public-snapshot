@@ -43,7 +43,7 @@ ts_project(
         "src/main.ts",
         "src/rg.ts",
         "src/services/CodeLensProvider.ts",
-        "src/services/CommentController.ts",
+        "src/services/InlineController.ts",
         "src/services/DecorationProvider.ts",
         "src/services/LocalStorageProvider.ts",
         "src/services/SecretStorageProvider.ts",

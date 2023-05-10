@@ -8,10 +8,10 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { CommentController } from '../services/CommentController'
+import { InlineController } from '../services/InlineController'
 
 export class VSCodeEditor implements Editor {
-    constructor(public controller: CommentController) {}
+    constructor(public controller: InlineController) {}
 
     public getWorkspaceRootPath(): string | null {
         const uri = vscode.window.activeTextEditor?.document?.uri

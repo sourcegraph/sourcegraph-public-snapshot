@@ -321,19 +321,19 @@
 				{
 					"command": "cody.comment.add",
 					"group": "inline",
-          "when": "cody.activated && commentController =~ /^cody-file/"
+          "when": "cody.activated && commentController =~ /^cody-inline/"
 				}
 			],
       "comments/commentThread/title": [
 				{
 					"command": "cody.comment.delete",
 					"group": "inline@1",
-					"when": "cody.activated && commentController =~ /^cody-file/ && cody.replied && !commentThreadIsEmpty"
+					"when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty"
 				},
         {
 					"command": "cody.comment.load",
 					"group": "inline@2",
-					"when": "cody.activated && commentController =~ /^cody-file/ && cody.reply.pending"
+					"when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending"
 				}
 			]
     },
@@ -377,7 +377,7 @@
           "type": "boolean",
           "default": false
         },
-        "cody.experimental.comments": {
+        "cody.experimental.inlineChat": {
           "type": "boolean",
           "default": false
         },

@@ -8,9 +8,9 @@ import { CodeLensProvider } from './CodeLensProvider'
 const initPost = new vscode.Position(0, 0)
 const initRange = new vscode.Range(initPost, initPost)
 
-export class CommentController {
+export class InlineController {
     // Controller init
-    private readonly id = 'cody-file-chat'
+    private readonly id = 'cody-inline-chat'
     private readonly label = 'Cody: File Chat'
     private readonly threadLabel = 'Ask Cody...'
     private options = {
@@ -50,8 +50,8 @@ export class CommentController {
             const selection = e.selections[0]
             if (selection && !this.isInProgress && this.selectionRange.end.line - 2 !== selection.start.line) {
                 const range = new vscode.Range(
-                    new vscode.Position(selection.start.line - 1, 0),
-                    new vscode.Position(selection.end.line + 2, 0)
+                    new vscode.Position(Math.max(0, selection.start.line - 1), 0),
+                    new vscode.Position(Math.max(0, selection.end.line + 2), 0)
                 )
                 this.selectionRange = range
             }

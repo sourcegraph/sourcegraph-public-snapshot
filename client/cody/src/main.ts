@@ -12,7 +12,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { getRgPath } from './rg'
-import { CommentController } from './services/CommentController'
+import { InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
 import {
     CODY_ACCESS_TOKEN_SECRET,
@@ -74,7 +74,7 @@ const register = async (
     await updateEventLogger(initialConfig, localStorage)
 
     // File Chat Provider
-    const commentController = new CommentController(context.extensionPath)
+    const commentController = new InlineController(context.extensionPath)
     disposables.push(commentController.get())
 
     const editor = new VSCodeEditor(commentController)
@@ -140,7 +140,7 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = comment.text.startsWith('/f')
             await commentController.chat(comment, isFixMode)
-            await chatProvider.executeRecipe(isFixMode ? 'fixup' : 'file-chat', comment.text, false)
+            await chatProvider.executeRecipe(isFixMode ? 'fixup' : 'inline-chat', comment.text, false)
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
@@ -232,7 +232,7 @@ const register = async (
     }
 
     // Initiate controller when feature flag is on
-    if (initialConfig.experimentalComments) {
+    if (initialConfig.experimentalInlineChat) {
         commentController.get().commentingRangeProvider = {
             provideCommentingRanges: (document: vscode.TextDocument) => {
                 const lineCount = document.lineCount

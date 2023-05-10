@@ -9,18 +9,18 @@ import { ChatQuestion } from './chat-question'
 import { Fixup } from './fixup'
 import { Recipe, RecipeContext } from './recipe'
 
-export class FileChat implements Recipe {
-    public id = 'file-chat'
+export class InlineChat implements Recipe {
+    public id = 'inline-chat'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.controller?.selection
         if (!humanChatInput || !selection) {
-            await context.editor.showWarningMessage('Failed to start file-chat.')
+            await context.editor.showWarningMessage('Failed to start Inline Chat.')
             return null
         }
         // Check if this is a fix-up request
         if (humanChatInput.startsWith('/fix ') || humanChatInput.startsWith('/f ')) {
-            return new Fixup().getInteraction(humanChatInput, context)
+            return new Fixup().getInteraction(humanChatInput.replace('/fix ', '').replace('/f ', ''), context)
         }
 
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
@@ -28,13 +28,13 @@ export class FileChat implements Recipe {
         const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_CONTENT_TOKENS)
 
         // Prompt for Cody
-        const promptText = FileChat.prompt
+        const promptText = InlineChat.prompt
             .replace('{humanInput}', truncatedText)
             .replace('{selectedText}', truncatedSelectedText)
             .replace('{fileName}', selection.fileName)
 
         // Text display in UI fpr human
-        const displayText = humanChatInput + FileChat.displayPrompt.replace('{selectedText}', selection.selectedText)
+        const displayText = humanChatInput + InlineChat.displayPrompt.replace('{selectedText}', selection.selectedText)
 
         return Promise.resolve(
             new Interaction(

@@ -6,7 +6,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
-- New way to interact with Cody using comment threads [pull/51679](https://github.com/sourcegraph/sourcegraph/pull/51679)
+- `Inline Chat`: a new way to interact with Cody inside your files [pull/51679](https://github.com/sourcegraph/sourcegraph/pull/51679)
 
 ### Fixed
 

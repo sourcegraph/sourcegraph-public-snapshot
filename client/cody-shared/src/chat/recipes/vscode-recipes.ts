@@ -2,7 +2,6 @@ import { ChatQuestion } from './chat-question'
 import { ContextSearch } from './context-search'
 import { ExplainCodeDetailed } from './explain-code-detailed'
 import { ExplainCodeHighLevel } from './explain-code-high-level'
-import { FileChat } from './file-chat'
 import { FindCodeSmells } from './find-code-smells'
 import { Fixup } from './fixup'
 import { GenerateDocstring } from './generate-docstring'
@@ -10,6 +9,7 @@ import { ReleaseNotes } from './generate-release-notes'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
 import { ImproveVariableNames } from './improve-variable-names'
+import { InlineChat } from './inline-chat'
 import { NextQuestions } from './next-questions'
 import { Recipe } from './recipe'
 import { TranslateToLanguage } from './translate'
@@ -33,7 +33,7 @@ function init(): void {
         new ChatQuestion(),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
-        new FileChat(),
+        new InlineChat(),
         new GenerateDocstring(),
         new GenerateTest(),
         new GitHistory(),
