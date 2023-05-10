@@ -27,6 +27,14 @@ import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
 
+/**
+ * Utility function to open the callback URL in Sourcegraph App
+ * @param uri
+ */
+function tauriShellOpen(uri: string): void {
+    ;(window as any).__TAURI__?.shell?.open(uri)
+}
+
 interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
     /**
      * Called when a new access token is created and should be temporarily displayed to the user.
@@ -181,7 +189,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                             const uri = replaceToken(requester?.redirectURL, result.token)
 
                             if (isSourcegraphApp) {
-                                window.__TAURI__.shell.open(uri) // TODO: wrap this in a function
+                                tauriShellOpen(uri)
                                 return
                             }
 
