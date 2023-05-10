@@ -20,9 +20,9 @@ export async function updateEventLogger(
     if (!anonymousUserID) {
         const anonymousUserID = uuid.v4()
         await localStorage.set(ANONYMOUS_USER_ID_KEY, anonymousUserID)
+        // Always set the common domain cookie
+        cookies.set(ANONYMOUS_USER_ID_KEY, anonymousUserID)
     }
-    // Always set the common domain cookie
-    cookies.set(ANONYMOUS_USER_ID_KEY, anonymousUserID)
     if (!eventLoggerGQLClient) {
         eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
         eventLogger = EventLogger.create(eventLoggerGQLClient)

@@ -80,10 +80,12 @@ ts_project(
         ":node_modules/@sourcegraph/http-client",
         "//:node_modules/@microsoft/fetch-event-source",
         "//:node_modules/@types/isomorphic-fetch",
+        "//:node_modules/@types/js-cookie",
         "//:node_modules/@types/node",
         "//:node_modules/@types/vscode",  #keep
         "//:node_modules/@vscode",
         "//:node_modules/isomorphic-fetch",
+        "//:node_modules/js-cookie",
     ],
 )
 
