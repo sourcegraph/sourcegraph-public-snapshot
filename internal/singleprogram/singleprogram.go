@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
-const AppDirectory = "sourcegraph-sp"
+const AppDirectory = "sourcegraph"
 
 func Init(logger log.Logger) {
 	if deploy.IsApp() {
