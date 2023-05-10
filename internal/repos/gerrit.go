@@ -9,6 +9,7 @@ import (
 	"github.com/goware/urlx"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -27,6 +28,7 @@ type GerritSource struct {
 	perPage         int
 	private         bool
 	allowedProjects map[string]struct{}
+	nameTransformations reposource.NameTransformations
 }
 
 // NewGerritSource returns a new GerritSource from the given external service.
@@ -67,6 +69,12 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		allowedProjects[project] = struct{}{}
 	}
 
+	// Validate and cache user-defined name transformations.
+	nts, err := reposource.CompileGerritNameTransformations(c.NameTransformations)
+	if err != nil {
+		return nil, err
+	}
+
 	return &GerritSource{
 		svc:             svc,
 		cli:             cli,
@@ -74,6 +82,7 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		serviceID:       extsvc.NormalizeBaseURL(cli.URL).String(),
 		perPage:         100,
 		private:         c.Authorization != nil,
+		nameTransformations: nts,
 	}, nil
 }
 
@@ -144,7 +153,7 @@ func (s *GerritSource) makeRepo(projectName string, p *gerrit.Project) (*types.R
 		return nil, err
 	}
 
-	name := path.Join(fullURL.Host, fullURL.Path)
+	name := s.nameTransformations.Transform(path.Join(fullURL.Host, fullURL.Path))
 	return &types.Repo{
 		Name:        api.RepoName(name),
 		URI:         name,

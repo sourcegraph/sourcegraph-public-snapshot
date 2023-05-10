@@ -8,6 +8,7 @@ go_library(
         "bitbucketserver.go",
         "common.go",
         "custom.go",
+        "gerrit.go",
         "github.go",
         "gitlab.go",
         "gitolite.go",

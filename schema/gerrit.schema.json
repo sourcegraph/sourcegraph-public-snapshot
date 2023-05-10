@@ -48,6 +48,39 @@
           "type": "string"
         }
       }
+    },
+    "nameTransformations": {
+      "description": "An array of transformations will apply to the repository name. Currently, only regex replacement is supported.",
+      "type": "array",
+      "items": {
+        "title": "GerritNameTransformation",
+        "type": "object",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["regex", "replacement"] }],
+        "properties": {
+          "regex": {
+            "type": "string",
+            "format": "regex",
+            "description": "The regex to match for the occurrences of its replacement."
+          },
+          "replacement": {
+            "type": "string",
+            "description": "The replacement used to replace all matched occurrences by the regex."
+          }
+        }
+      },
+      "examples": [
+        [
+          {
+            "regex": "\\.d/",
+            "replacement": "/"
+          },
+          {
+            "regex": "-git$",
+            "replacement": ""
+          }
+        ]
+      ]
     }
   }
 }

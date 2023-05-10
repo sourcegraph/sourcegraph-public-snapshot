@@ -955,6 +955,8 @@ type GerritAuthorization struct {
 type GerritConnection struct {
 	// Authorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
 	Authorization *GerritAuthorization `json:"authorization,omitempty"`
+	// NameTransformations description: An array of transformations will apply to the repository name. Currently, only regex replacement is supported.
+	NameTransformations []*GerritNameTransformation `json:"nameTransformations,omitempty"`
 	// Password description: The password associated with the Gerrit username used for authentication.
 	Password string `json:"password"`
 	// Projects description: An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.
@@ -963,6 +965,12 @@ type GerritConnection struct {
 	Url string `json:"url"`
 	// Username description: A username for authentication withe the Gerrit code host.
 	Username string `json:"username"`
+}
+type GerritNameTransformation struct {
+	// Regex description: The regex to match for the occurrences of its replacement.
+	Regex string `json:"regex,omitempty"`
+	// Replacement description: The replacement used to replace all matched occurrences by the regex.
+	Replacement string `json:"replacement,omitempty"`
 }
 
 // GitCommitAuthor description: The author of the Git commit.
