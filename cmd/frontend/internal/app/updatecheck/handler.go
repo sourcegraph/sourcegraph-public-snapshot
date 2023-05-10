@@ -30,6 +30,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Sourcegraph App route
+const RouteAppUpdateCheck = "app.update.check"
+
 // pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
 var pubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID is the pub/sub topic id where pings are published.")
 
