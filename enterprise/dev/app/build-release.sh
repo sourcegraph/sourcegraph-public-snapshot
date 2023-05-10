@@ -19,11 +19,13 @@ bazel_build() {
 
   out=$(bazel cquery //enterprise/cmd/sourcegraph:sourcegraph --output=files)
   mkdir -p ".bin"
-  cp -vf "${out}" .bin/sourcegraph-backend-${platform}
+  cp -vf "${out}" ".bin/sourcegraph-backend-${platform}"
 }
 
 create_version() {
-    local sha=$(git rev-parse --short HEAD)
+    local sha
+    # In a GitHub action this can result in an empty sha
+    sha=$(git rev-parse --short HEAD)
     if [[ -z ${sha} ]]; then
       sha=${GITHUB_SHA:-""}
     fi
@@ -49,8 +51,8 @@ set_version() {
   tauri_conf="./src-tauri/tauri.conf.json"
   tmp=$(mktemp)
   echo "[Script] updating package version in '${tauri_conf}' to ${VERSION}"
-  jq --arg version ${VERSION} '.package.version = $version' $tauri_conf > ${tmp}
-  mv ${tmp} ./src-tauri/tauri.conf.json
+  jq --arg version "${VERSION}" '.package.version = $version' "${tauri_conf}" > "${tmp}"
+  mv "${tmp}" ./src-tauri/tauri.conf.json
 }
 
 set_platform() {
@@ -84,7 +86,7 @@ set_platform() {
 
 set_platform
 set_version
-bazel_build ${PLATFORM}
+bazel_build "${PLATFORM}"
 echo "[Tauri] Building Application (${VERSION})"]
 NODE_ENV=production pnpm run build-app-shell
 pnpm tauri build
