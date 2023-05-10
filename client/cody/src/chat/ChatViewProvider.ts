@@ -26,6 +26,7 @@ import { LocalStorage } from '../command/LocalStorageProvider'
 import { getFullConfig, updateConfiguration } from '../configuration'
 import { logEvent } from '../event-logger'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
+import { LocalAppDetector } from '../local-app-detector'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
 import { TestSupport } from '../test-support'
 
@@ -82,7 +83,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         private editor: Editor,
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
-        private rgPath: string
+        private rgPath: string,
+        private localAppDetector: LocalAppDetector
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
@@ -153,6 +155,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.publishConfig()
                 this.sendTranscript()
                 this.sendChatHistory()
+                this.watchLocalAppState()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -602,6 +605,27 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public sendErrorToWebview(errorMsg: string): void {
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
+    }
+
+    public watchLocalAppState(): void {
+        this.updateLocalAppState()
+        const INTERVAL = 5000
+
+        // Poll for app state every 5 seconds
+        const interval = setInterval(() => {
+            this.updateLocalAppState()
+        }, INTERVAL)
+
+        this.disposables.push({
+            dispose: () => {
+                clearInterval(interval)
+            },
+        })
+    }
+
+    public async updateLocalAppState(): Promise<void> {
+        const isInstalled = await this.localAppDetector.detect()
+        void this.webview?.postMessage({ type: 'app-state', isInstalled })
     }
 
     /**

@@ -2,12 +2,9 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 import './Settings.css'
 
-import type { VSCodeWrapper } from './utils/VSCodeApi'
-
 interface SettingsProps {
     onLogout: () => void
     serverEndpoint?: string
-    vscodeAPI: VSCodeWrapper
 }
 
 export const Settings: React.FunctionComponent<React.PropsWithChildren<SettingsProps>> = ({

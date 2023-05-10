@@ -36,6 +36,7 @@ export type ExtensionMessage =
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
+    | { type: 'app-state'; isInstalled: boolean }
 
 /**
  * The subset of configuration that is visible to the webview.

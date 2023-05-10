@@ -12,6 +12,7 @@ import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
+import { LocalAppDetector } from './local-app-detector'
 import { getRgPath } from './rg'
 import { CODY_ACCESS_TOKEN_SECRET, InMemorySecretStorage, SecretStorage, VSCodeSecretStorage } from './secret-storage'
 
@@ -77,6 +78,8 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor)
 
+    const localAppDetector = new LocalAppDetector()
+
     // Create chat webview
     const chatProvider = new ChatViewProvider(
         context.extensionPath,
@@ -87,7 +90,8 @@ const register = async (
         editor,
         secretStorage,
         localStorage,
-        rgPath
+        rgPath,
+        localAppDetector
     )
     disposables.push(chatProvider)
 
@@ -174,19 +178,23 @@ const register = async (
                 const params = new URLSearchParams(uri.query)
                 let serverEndpoint = DOTCOM_URL.href
                 if (params.get('type') === 'app') {
+                    console.log('MAREK_DEBUG', 'Setting URL TO APP becuase param was APP')
                     serverEndpoint = LOCAL_APP_URL.href
                 }
+                console.log('MAREK_DEBUG:', 'The endpoint is now:', serverEndpoint)
                 await workspaceConfig.update('cody.serverEndpoint', serverEndpoint, vscode.ConfigurationTarget.Global)
                 const token = params.get('code')
                 if (token && token.length > 8) {
                     await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
                     const isAuthed = await isValidLogin({
-                        serverEndpoint: DOTCOM_URL.href,
+                        serverEndpoint,
                         accessToken: token,
                         customHeaders: config.customHeaders,
                     })
                     await chatProvider.sendLogin(isAuthed)
-                    void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
+                    if (isAuthed) {
+                        void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
+                    }
                 }
             },
         })

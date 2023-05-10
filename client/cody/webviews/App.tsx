@@ -31,7 +31,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
     const [errorMessage, setErrorMessage] = useState<string>('')
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
-    const isAppInstalled = true // temporary
+    const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -78,6 +78,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     break
                 case 'suggestions':
                     setSuggestions(message.suggestions)
+                    break
+                case 'app-state':
+                    setIsAppInstalled(message.isInstalled)
                     break
             }
         })
