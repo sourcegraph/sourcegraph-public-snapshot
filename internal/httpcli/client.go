@@ -529,6 +529,7 @@ func MaxRetries(n int) int {
 func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.RetryFn {
 	return func(a rehttp.Attempt) (retry bool) {
 		status := 0
+		var retryAfterHeader string
 
 		defer func() {
 			// Avoid trace log spam if we haven't invoked the retry policy.
@@ -541,6 +542,7 @@ func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.Re
 					otlog.String("method", a.Request.Method),
 					otlog.String("url", a.Request.URL.String()),
 					otlog.Int("status", status),
+					otlog.String("retry-after", retryAfterHeader),
 				}
 				if a.Error != nil {
 					fields = append(fields, otlog.Error(a.Error))
@@ -613,32 +615,36 @@ func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.Re
 		if status == http.StatusTooManyRequests {
 			// If a retry-after header exists, we only want to retry if it might resolve
 			// the issue.
-			if a.Response != nil && a.Response.Header.Get("retry-after") != "" {
-				// There are two valid formats for retry-after headers: seconds
-				// until retry in int, or a RFC1123 date string.
-				// First, see if it is denoted in seconds.
-				s, err := strconv.Atoi(a.Response.Header.Get("retry-after"))
-				// If denoted in seconds, only retry if we will get access within
-				// the next retryAfterMaxSleepDuration seconds.
-				if err == nil && s < int(retryAfterMaxSleepDuration/time.Second) {
-					return true
+			if a.Response != nil {
+				retryAfterHeader = a.Response.Header.Get("retry-after")
+				if retryAfterHeader != "" {
+					// There are two valid formats for retry-after headers: seconds
+					// until retry in int, or a RFC1123 date string.
+					// First, see if it is denoted in seconds.
+					s, err := strconv.Atoi(retryAfterHeader)
+					// If denoted in seconds, only retry if we will get access within
+					// the next retryAfterMaxSleepDuration seconds.
+					if err == nil {
+						return s <= int(retryAfterMaxSleepDuration/time.Second)
+					}
+
+					// If we weren't able to parse as seconds, try to parse as RFC1123.
+					if err != nil {
+						after, err := time.Parse(time.RFC1123, retryAfterHeader)
+						if err != nil {
+							// We don't know how to parse this header, so let's just retry.
+							return true
+						}
+						// Check if the date is either in the past, or if within the next
+						// retryAfterMaxSleepDuration we would get access again.
+						in := time.Until(after)
+						return in < 0 || in < retryAfterMaxSleepDuration
+					}
 				}
 
-				// If we weren't able to parse as seconds, try to parse as RFC1123.
-				if err != nil {
-					after, err := time.Parse(time.RFC1123, a.Response.Header.Get("retry-after"))
-					if err != nil {
-						// We don't know how to parse this header, so let's just retry.
-						return true
-					}
-					// Check if the date is either in the past, or if within the next
-					// retryAfterMaxSleepDuration we would get access again.
-					in := time.Until(after)
-					return in < 0 || in < retryAfterMaxSleepDuration
-				}
+				// Otherwise, default to the behavior this function always had: retry 429 errors.
+				return true
 			}
-			// Otherwise, default to the behavior this function always had: retry 429 errors.
-			return true
 		}
 
 		return false
