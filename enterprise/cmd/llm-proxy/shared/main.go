@@ -146,7 +146,7 @@ func newServiceHandler(logger log.Logger, eventLogger events.Logger, config *Con
 				logger.Error("failed to log event", log.Error(err))
 			}
 
-			r, err = http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
+			ar, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
 			if err != nil {
 				response.JSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to create request: %s", err))
 				return
@@ -154,11 +154,11 @@ func newServiceHandler(logger log.Logger, eventLogger events.Logger, config *Con
 
 			// Mimic headers set by the official Anthropic client:
 			// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
-			r.Header.Set("Cache-Control", "no-cache")
-			r.Header.Set("Accept", "application/json")
-			r.Header.Set("Content-Type", "application/json")
-			r.Header.Set("Client", "sourcegraph-llm-proxy/1.0")
-			r.Header.Set("X-API-Key", config.Anthropic.AccessToken)
+			ar.Header.Set("Cache-Control", "no-cache")
+			ar.Header.Set("Accept", "application/json")
+			ar.Header.Set("Content-Type", "application/json")
+			ar.Header.Set("Client", "sourcegraph-llm-proxy/1.0")
+			ar.Header.Set("X-API-Key", config.Anthropic.AccessToken)
 
 			upstreamStarted := time.Now()
 			defer func() {
@@ -177,15 +177,20 @@ func newServiceHandler(logger log.Logger, eventLogger events.Logger, config *Con
 				}
 			}()
 
-			resp, err := httpcli.ExternalDoer.Do(r)
+			resp, err := httpcli.ExternalDoer.Do(ar)
+
 			if err != nil {
 				response.JSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to make request to Anthropic: %s", err))
 				return
 			}
 			defer func() { _ = resp.Body.Close() }()
 
+			for k, vv := range resp.Header {
+				for _, v := range vv {
+					w.Header().Add(k, v)
+				}
+			}
 			w.WriteHeader(resp.StatusCode)
-			_ = resp.Header.Write(w)
 
 			_, _ = io.Copy(w, resp.Body)
 		}),
