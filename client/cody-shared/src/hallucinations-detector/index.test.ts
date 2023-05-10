@@ -63,6 +63,18 @@ describe('Hallucinations detector', () => {
                 input: 'pattern/foo/bar/*.ts',
                 output: [],
             },
+            {
+                input: 'remix-run/react',
+                output: [{ fullMatch: 'remix-run/react', pathMatch: 'remix-run/react' }],
+            },
+            {
+                input: '`@remix-run/react`',
+                output: [],
+            },
+            {
+                input: '@remix-run/react',
+                output: [],
+            },
         ]
         for (const { input, output } of cases) {
             const actualOutput = findFilePaths(input)
