@@ -8,7 +8,7 @@ func (a NamespaceAction) String() string {
 	return string(a)
 }
 
-const SubscriptionsWriteAction NamespaceAction = "WRITE"
 const BatchChangesReadAction NamespaceAction = "READ"
 const BatchChangesWriteAction NamespaceAction = "WRITE"
 const SubscriptionsReadAction NamespaceAction = "READ"
+const SubscriptionsWriteAction NamespaceAction = "WRITE"
