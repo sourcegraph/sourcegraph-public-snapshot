@@ -198,7 +198,6 @@ ts_project(
         "src/cody/search/api.ts",
         "src/cody/search/translateToQuery.ts",
         "src/cody/sidebar/CodySidebar.tsx",
-        "src/cody/sidebar/History.tsx",
         "src/cody/sidebar/index.tsx",
         "src/cody/stores/chat.ts",
         "src/cody/stores/editor.ts",
