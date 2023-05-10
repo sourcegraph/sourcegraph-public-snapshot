@@ -12,12 +12,11 @@ import (
 func TestParsePermissionDisplayName(t *testing.T) {
 	tests := []struct {
 		displayName string
+		name        string
 
 		namespace     rtypes.PermissionNamespace
 		action        rtypes.NamespaceAction
 		expectedError error
-
-		name string
 	}{
 		{
 			name:          "valid display name",
