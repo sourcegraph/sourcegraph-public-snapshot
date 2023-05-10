@@ -74,3 +74,61 @@ end:
 	MOVQ R8, ret+48(FP)
 	RET
 
+TEXT ·dotAVX512(SB), NOSPLIT, $0-56
+	// Offsets based on slice header offsets.
+	// To check, use `GOARCH=amd64 go vet`
+	MOVQ a_base+0(FP), AX
+	MOVQ b_base+24(FP), BX
+	MOVQ a_len+8(FP), DX
+
+    ADDQ AX, DX // end pointer
+
+	// Zero Z0, which will store 8 packed 32-bit sums
+	VPXORD Z0, Z0, Z0 // positive
+	VPXORD Z1, Z1, Z1 // negative
+
+	// Fill Z3 with 128
+	MOVD $0x80808080, R9
+	VPBROADCASTD R9, Z2
+
+#define BLOCKSIZE 64
+
+// In blockloop, we calculate the dot product 32 at a time
+blockloop:
+	CMPQ AX, DX
+	JE reduce
+
+	VMOVDQU8 (AX), Z3
+	VMOVDQU8 (BX), Z4
+
+	// add 128, putting it in unsigned range
+	VPADDB Z3, Z2, Z3
+	VPDPBUSD Z3, Z4, Z0
+	VPDPBUSD Z2, Z4, Z1
+
+	ADDQ $BLOCKSIZE, AX
+	ADDQ $BLOCKSIZE, BX
+	JMP blockloop
+
+reduce:
+	VPSUBD Z1, Z0, Z0
+
+    VEXTRACTI64X4 $1, Z0, Y1
+    VPADDD Y0, Y1, Y0
+
+	VEXTRACTI128 $1, Y0, X1
+	VPADDD X0, X1, X0
+
+	VPSRLDQ $8, X0, X1
+	VPADDD X0, X1, X0
+
+	VPSRLDQ $4, X0, X1
+	VPADDD X0, X1, X0
+
+	// Store the reduced sum
+	VMOVD X0, R8
+
+end:
+	MOVQ R8, ret+48(FP)
+	VZEROALL
+	RET
