@@ -30,7 +30,7 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		(&auth.Authenticator{
 			Logger:      logger,
-			EventLogger: events.NewStdoutLogger(),
+			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{anonymous.NewSource(true)},
 			Next:        next,
 		}).ServeHTTP(w, r)
@@ -42,7 +42,7 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		(&auth.Authenticator{
 			Logger:      logger,
-			EventLogger: events.NewStdoutLogger(),
+			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{anonymous.NewSource(false)},
 			Next:        next,
 		}).ServeHTTP(w, r)
@@ -83,7 +83,7 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		r.Header.Set("Authorization", "Bearer sgs_abc123")
 		(&auth.Authenticator{
 			Logger:      logger,
-			EventLogger: events.NewStdoutLogger(),
+			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client)},
 			Next:        next,
 		}).ServeHTTP(w, r)
@@ -108,7 +108,7 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		r.Header.Set("Authorization", "Bearer sgs_abc123")
 		(&auth.Authenticator{
 			Logger:      logger,
-			EventLogger: events.NewStdoutLogger(),
+			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client)},
 			Next:        next,
 		}).ServeHTTP(w, r)
@@ -129,7 +129,7 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		r.Header.Set("Authorization", "Bearer sgs_abc123")
 		(&auth.Authenticator{
 			Logger:      logger,
-			EventLogger: events.NewStdoutLogger(),
+			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client)},
 			Next:        next,
 		}).ServeHTTP(w, r)
