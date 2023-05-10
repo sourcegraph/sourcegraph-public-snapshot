@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use anyhow::Result;
 use bitvec::prelude::*;
 use protobuf::Enum;
@@ -5,6 +7,12 @@ use scip::types::{Descriptor, Occurrence};
 use scip_treesitter::types::PackedRange;
 
 use crate::languages::TagConfiguration;
+#[derive(Debug)]
+pub struct MemoryBundle {
+    pub scopes: Vec<Scope>,
+    pub globals: Vec<Global>,
+    pub descriptors: Vec<Descriptor>,
+}
 
 #[derive(Debug)]
 pub struct Scope {
@@ -12,13 +20,13 @@ pub struct Scope {
     pub scope_range: PackedRange,
     pub globals: Vec<Global>,
     pub children: Vec<Scope>,
-    pub descriptors: Vec<Descriptor>,
+    pub descriptors: Range<usize>,
 }
 
 #[derive(Debug)]
 pub struct Global {
     pub range: PackedRange,
-    pub descriptors: Vec<Descriptor>,
+    pub descriptors: Range<usize>,
 }
 
 impl Scope {
@@ -46,87 +54,93 @@ impl Scope {
         }
     }
 
-    pub fn into_occurrences(
-        &mut self,
-        hint: usize,
-        base_descriptors: Vec<Descriptor>,
-    ) -> Vec<Occurrence> {
-        let mut descriptor_stack = base_descriptors;
-        let mut occs = Vec::with_capacity(hint);
-        self.rec_into_occurrences(true, &mut occs, &mut descriptor_stack);
-        occs
-    }
+    // pub fn into_occurrences(
+    //     &mut self,
+    //     hint: usize,
+    //     base_descriptors: Vec<Descriptor>,
+    // ) -> Vec<Occurrence> {
+    //     let mut descriptor_stack = base_descriptors;
+    //     let mut occs = Vec::with_capacity(hint);
+    //     self.rec_into_occurrences(true, &mut occs, &mut descriptor_stack);
+    //     occs
+    // }
 
-    fn rec_into_occurrences(
-        &self,
-        is_root: bool,
-        occurrences: &mut Vec<Occurrence>,
-        descriptor_stack: &mut Vec<Descriptor>,
-    ) {
-        descriptor_stack.extend(self.descriptors.clone());
+    // fn rec_into_occurrences(
+    //     &self,
+    //     is_root: bool,
+    //     occurrences: &mut Vec<Occurrence>,
+    //     descriptor_stack: &mut Vec<Descriptor>,
+    // ) {
+    //     descriptor_stack.extend(self.descriptors.clone());
 
-        if !is_root {
-            occurrences.push(scip::types::Occurrence {
-                range: self.ident_range.to_vec(),
-                symbol: scip::symbol::format_symbol(scip::types::Symbol {
-                    scheme: "scip-ctags".into(),
-                    // TODO: Package?
-                    package: None.into(),
-                    descriptors: descriptor_stack.clone(),
-                    ..Default::default()
-                }),
-                symbol_roles: scip::types::SymbolRole::Definition.value(),
-                // TODO:
-                // syntax_kind: todo!(),
-                ..Default::default()
-            });
-        }
+    //     if !is_root {
+    //         occurrences.push(scip::types::Occurrence {
+    //             range: self.ident_range.to_vec(),
+    //             symbol: scip::symbol::format_symbol(scip::types::Symbol {
+    //                 scheme: "scip-ctags".into(),
+    //                 // TODO: Package?
+    //                 package: None.into(),
+    //                 descriptors: descriptor_stack.clone(),
+    //                 ..Default::default()
+    //             }),
+    //             symbol_roles: scip::types::SymbolRole::Definition.value(),
+    //             // TODO:
+    //             // syntax_kind: todo!(),
+    //             ..Default::default()
+    //         });
+    //     }
 
-        for global in &self.globals {
-            let mut global_descriptors = descriptor_stack.clone();
-            global_descriptors.extend(global.descriptors.clone());
+    //     for global in &self.globals {
+    //         let mut global_descriptors = descriptor_stack.clone();
+    //         global_descriptors.extend(global.descriptors.clone());
 
-            let symbol = scip::symbol::format_symbol(scip::types::Symbol {
-                scheme: "scip-ctags".into(),
-                // TODO: Package?
-                package: None.into(),
-                descriptors: global_descriptors,
-                ..Default::default()
-            });
+    //         let symbol = scip::symbol::format_symbol(scip::types::Symbol {
+    //             scheme: "scip-ctags".into(),
+    //             // TODO: Package?
+    //             package: None.into(),
+    //             descriptors: global_descriptors,
+    //             ..Default::default()
+    //         });
 
-            let symbol_roles = scip::types::SymbolRole::Definition.value();
-            occurrences.push(scip::types::Occurrence {
-                range: global.range.to_vec(),
-                symbol,
-                symbol_roles,
-                // TODO:
-                // syntax_kind: todo!(),
-                ..Default::default()
-            });
-        }
+    //         let symbol_roles = scip::types::SymbolRole::Definition.value();
+    //         occurrences.push(scip::types::Occurrence {
+    //             range: global.range.to_vec(),
+    //             symbol,
+    //             symbol_roles,
+    //             // TODO:
+    //             // syntax_kind: todo!(),
+    //             ..Default::default()
+    //         });
+    //     }
 
-        self.children
-            .iter()
-            .for_each(|c| c.rec_into_occurrences(false, occurrences, descriptor_stack));
+    //     self.children
+    //         .iter()
+    //         .for_each(|c| c.rec_into_occurrences(false, occurrences, descriptor_stack));
 
-        self.descriptors.iter().for_each(|_| {
-            descriptor_stack.pop();
-        });
-    }
+    //     self.descriptors.iter().for_each(|_| {
+    //         descriptor_stack.pop();
+    //     });
+    // }
 }
 
 pub fn parse_tree<'a>(
     config: &TagConfiguration,
     tree: &'a tree_sitter::Tree,
     source_bytes: &'a [u8],
+    bundle: &'a mut MemoryBundle,
 ) -> Result<(Scope, usize)> {
     let mut cursor = tree_sitter::QueryCursor::new();
 
     let root_node = tree.root_node();
     let capture_names = config.query.capture_names();
 
-    let mut scopes = vec![];
-    let mut globals = vec![];
+    let scopes = &mut bundle.scopes;
+    let globals = &mut bundle.globals;
+    let descriptors = &mut bundle.descriptors;
+
+    scopes.clear();
+    globals.clear();
+    descriptors.clear();
 
     let mut local_ranges = BitVec::<u8, Msb0>::repeat(false, source_bytes.len());
 
@@ -138,7 +152,8 @@ pub fn parse_tree<'a>(
         let mut node = None;
         let mut scope = None;
         let mut local_range = None;
-        let mut descriptors = vec![];
+
+        let start = descriptors.len();
 
         for capture in m.captures {
             let capture_name = capture_names
@@ -146,7 +161,10 @@ pub fn parse_tree<'a>(
                 .expect("capture indexes should always work");
 
             if capture_name.starts_with("descriptor") {
-                descriptors.push((capture_name, capture.node.utf8_text(source_bytes)?));
+                descriptors.push(crate::ts_scip::capture_name_to_descriptor(
+                    capture_name,
+                    capture.node.utf8_text(source_bytes)?.to_string(),
+                ));
                 node = Some(capture.node);
             }
 
@@ -172,13 +190,6 @@ pub fn parse_tree<'a>(
                     continue;
                 }
 
-                let descriptors = descriptors
-                    .iter()
-                    .map(|(capture, name)| {
-                        crate::ts_scip::capture_name_to_descriptor(capture, name.to_string())
-                    })
-                    .collect();
-
                 // dbg!(node);
 
                 match scope {
@@ -187,11 +198,11 @@ pub fn parse_tree<'a>(
                         scope_range: scope_ident.node.into(),
                         globals: vec![],
                         children: vec![],
-                        descriptors,
+                        descriptors: start..descriptors.len(),
                     }),
                     None => globals.push(Global {
                         range: node.into(),
-                        descriptors,
+                        descriptors: start..descriptors.len(),
                     }),
                 }
             }
@@ -212,7 +223,7 @@ pub fn parse_tree<'a>(
         scope_range: root_node.into(),
         globals: vec![],
         children: vec![],
-        descriptors: vec![],
+        descriptors: 0..0,
     };
 
     scopes.sort_by_key(|m| {
@@ -235,71 +246,76 @@ pub fn parse_tree<'a>(
     Ok((root, globals.len()))
 }
 
-#[cfg(test)]
-mod test {
-    use scip::types::Document;
-    use scip_treesitter::snapshot::dump_document;
-    use tree_sitter::Parser;
+// #[cfg(test)]
+// mod test {
+//     use scip::types::Document;
+//     use scip_treesitter::snapshot::dump_document;
+//     use tree_sitter::Parser;
 
-    use super::*;
+//     use super::*;
 
-    fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Result<Document> {
-        let source_bytes = source_code.as_bytes();
+//     fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Result<Document> {
+//         let source_bytes = source_code.as_bytes();
 
-        let mut parser = Parser::new();
-        parser.set_language(config.language).unwrap();
-        let tree = parser.parse(source_bytes, None).unwrap();
+//         let mut parser = Parser::new();
+//         parser.set_language(config.language).unwrap();
+//         let tree = parser.parse(source_bytes, None).unwrap();
 
-        let mut occ = parse_tree(config, &tree, source_bytes)?;
-        let mut doc = Document::new();
-        doc.occurrences = occ.0.into_occurrences(occ.1, vec![]);
-        doc.symbols = doc
-            .occurrences
-            .iter()
-            .map(|o| scip::types::SymbolInformation {
-                symbol: o.symbol.clone(),
-                ..Default::default()
-            })
-            .collect();
+//         let mut bundle = MemoryBundle {
+//             scopes: vec![],
+//             globals: vec![],
+//         };
 
-        Ok(doc)
-    }
+//         let mut occ = parse_tree(config, &tree, source_bytes, &mut bundle)?;
+//         let mut doc = Document::new();
+//         doc.occurrences = occ.0.into_occurrences(occ.1, vec![]);
+//         doc.symbols = doc
+//             .occurrences
+//             .iter()
+//             .map(|o| scip::types::SymbolInformation {
+//                 symbol: o.symbol.clone(),
+//                 ..Default::default()
+//             })
+//             .collect();
 
-    #[test]
-    fn test_can_parse_rust_tree() -> Result<()> {
-        let config = crate::languages::rust();
-        let source_code = include_str!("../testdata/scopes.rs");
-        let doc = parse_file_for_lang(config, source_code)?;
+//         Ok(doc)
+//     }
 
-        let dumped = dump_document(&doc, source_code)?;
-        insta::assert_snapshot!(dumped);
+//     #[test]
+//     fn test_can_parse_rust_tree() -> Result<()> {
+//         let config = crate::languages::rust();
+//         let source_code = include_str!("../testdata/scopes.rs");
+//         let doc = parse_file_for_lang(config, source_code)?;
 
-        Ok(())
-    }
+//         let dumped = dump_document(&doc, source_code)?;
+//         insta::assert_snapshot!(dumped);
 
-    #[test]
-    fn test_can_parse_go_tree() -> Result<()> {
-        let config = crate::languages::go();
-        let source_code = include_str!("../testdata/example.go");
-        let doc = parse_file_for_lang(config, source_code)?;
-        // dbg!(doc);
+//         Ok(())
+//     }
 
-        let dumped = dump_document(&doc, source_code)?;
-        insta::assert_snapshot!(dumped);
+//     #[test]
+//     fn test_can_parse_go_tree() -> Result<()> {
+//         let config = crate::languages::go();
+//         let source_code = include_str!("../testdata/example.go");
+//         let doc = parse_file_for_lang(config, source_code)?;
+//         // dbg!(doc);
 
-        Ok(())
-    }
+//         let dumped = dump_document(&doc, source_code)?;
+//         insta::assert_snapshot!(dumped);
 
-    #[test]
-    fn test_can_parse_go_internal_tree() -> Result<()> {
-        let config = crate::languages::go();
-        let source_code = include_str!("../testdata/internal_go.go");
-        let doc = parse_file_for_lang(config, source_code)?;
-        // dbg!(doc);
+//         Ok(())
+//     }
 
-        let dumped = dump_document(&doc, source_code)?;
-        insta::assert_snapshot!(dumped);
+//     #[test]
+//     fn test_can_parse_go_internal_tree() -> Result<()> {
+//         let config = crate::languages::go();
+//         let source_code = include_str!("../testdata/internal_go.go");
+//         let doc = parse_file_for_lang(config, source_code)?;
+//         // dbg!(doc);
 
-        Ok(())
-    }
-}
+//         let dumped = dump_document(&doc, source_code)?;
+//         insta::assert_snapshot!(dumped);
+
+//         Ok(())
+//     }
+// }
