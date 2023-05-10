@@ -49,7 +49,7 @@ export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, className = '
         } finally {
             window.location.reload()
         }
-    }, [app])
+    }, [app, deleteGitHubApp])
 
     return (
         <div className={classNames('d-flex align-items-center p-2 text-body text-decoration-none')}>

@@ -51,24 +51,17 @@ export const GitHubAppPage: FC<Props> = ({
         telemetryService.logPageView('SiteAdminGitHubApp')
     }, [telemetryService])
     const [fetchError, setError] = useState<ErrorLike>()
+    const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
+
+    const [deleteGitHubApp] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
+        DELETE_GITHUB_APP_BY_ID_QUERY
+    )
 
     const { data, loading, error } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(GITHUB_APP_BY_ID_QUERY, {
         variables: { id: appID ?? '' },
     })
 
     const app = useMemo(() => data?.gitHubApp, [data])
-
-    // TODO - make an actual GraphQL request to do it here...
-    const refreshFromGH = (): void => {}
-
-    if (!appID) {
-        return null
-    }
-
-    const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
-    const [deleteGitHubApp] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
-        DELETE_GITHUB_APP_BY_ID_QUERY
-    )
 
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         if (!window.confirm(`Delete the GitHub App ${app?.name}?`)) {
@@ -85,7 +78,14 @@ export const GitHubAppPage: FC<Props> = ({
         } finally {
             navigate('/site-admin/github-apps')
         }
-    }, [app])
+    }, [app, deleteGitHubApp, navigate])
+
+    // TODO - make an actual GraphQL request to do it here...
+    const refreshFromGH = (): void => {}
+
+    if (!appID) {
+        return null
+    }
 
     const handleError = (error: ErrorLike): [] => {
         setError(error)
