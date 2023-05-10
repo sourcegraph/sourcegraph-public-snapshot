@@ -10,7 +10,7 @@ function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): st
 
 const config = vscode.workspace.getConfiguration()
 
-let storage: Memento
+let storage: Memento | undefined
 if (typeof localStorage === 'undefined') {
     storage = vscode.workspace.getConfiguration().get<vscode.Memento>('cody.storage')
 } else {
