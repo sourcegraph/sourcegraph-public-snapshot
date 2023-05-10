@@ -897,7 +897,9 @@ type Mutation {
     use the default quota.
     """
     setUserCodeCompletionsQuota(user: ID!, quota: Int): User!
-
+    """
+    Submits a post-signup user survey about intended Cody usage.
+    """
     submitCodySurvey(isForWork: Boolean!, isForPersonal: Boolean!): EmptyResponse!
 }
 
