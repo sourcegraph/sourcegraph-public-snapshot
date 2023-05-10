@@ -41,6 +41,22 @@ extend type GitBlob implements Ownable {
     ): OwnershipConnection!
 }
 
+extend type GitCommit {
+    """
+    Owners of the repository at this commit.
+    """
+    ownership(
+        """
+        Returns the first n ownership records from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): OwnershipConnection!
+}
+
 """
 A list of ownership entries.
 """
