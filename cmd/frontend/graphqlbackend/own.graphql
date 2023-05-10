@@ -88,14 +88,29 @@ enum OwnershipReasonType {
 }
 
 """
-A union of all the different ownership reasons
+A union of all the different ownership reasons.
 """
-union OwnershipReason = CodeownersFileEntry | RecentContributorOwnershipSignal
+union OwnershipReason = CodeownersFileEntry | RecentContributorOwnershipSignal | RecentViewOwnershipSignal
 
 """
-A signal derived from recent code contributors
+A signal derived from recent code contributors.
 """
 type RecentContributorOwnershipSignal {
+    """
+    Descriptive title to display in the UI for the determination.
+    """
+    title: String!
+
+    """
+    More detailed description to display in the UI for the determination.
+    """
+    description: String!
+}
+
+"""
+A signal derived from recent code file views.
+"""
+type RecentViewOwnershipSignal {
     """
     Descriptive title to display in the UI for the determination.
     """
