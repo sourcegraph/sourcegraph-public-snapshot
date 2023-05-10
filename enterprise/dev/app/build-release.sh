@@ -43,9 +43,13 @@ set_version() {
   fi
   export VERSION
 
+
+  local tauri_conf
   local tmp
+  tauri_conf="./src-tauri/tauri.conf.json"
   tmp=$(mktemp)
-  jq --arg version ${VERSION} '.package.version = $version' ./src-tauri/tauri.conf.json > ${tmp}
+  echo "[Script] updating package version in '${tauri_conf}' to ${VERSION}"
+  jq --arg version ${VERSION} '.package.version = $version' $tauri_conf > ${tmp}
   mv ${tmp} ./src-tauri/tauri.conf.json
 }
 

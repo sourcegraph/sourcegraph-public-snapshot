@@ -76,6 +76,10 @@ jobs:
           ./enterprise/dev/app/build-release.sh
         env:
           RELEASE_BUILD: 1
+      - name: get release body
+        id: release-body
+        run: |
+          echo "CONTENT=$(cat ./src-tauri/RELEASE.md)" >> $GITHUB_OUTPUT
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -83,5 +87,6 @@ jobs:
           projectPath: ./src-tauri
           tagName: app-v__VERSION__
           releaseName: "Sourcegraph App v__VERSION__"
+          releaseBody: ${{ steps.release-body.outputs.CONTENT }}
           releaseDraft: true
           prerelease: true
