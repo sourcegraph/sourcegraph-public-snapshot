@@ -42,37 +42,6 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	return gs.doExec(ss.Context(), gs.Server.Logger, &internalReq, "unknown-grpc-client", w)
 }
 
-func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService_SearchServer) error {
-	args, err := protocol.SearchRequestFromProto(req)
-	if err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	onMatch := func(match *protocol.CommitMatch) error {
-		return ss.Send(&proto.SearchResponse{
-			Message: &proto.SearchResponse_Match{Match: match.ToProto()},
-		})
-	}
-
-	limitHit, err := gs.Server.search(ss.Context(), args, onMatch)
-	if err != nil {
-		if notExistError := new(gitdomain.RepoNotExistError); errors.As(err, &notExistError) {
-			st, _ := status.New(codes.NotFound, err.Error()).WithDetails(&proto.NotFoundPayload{
-				Repo:            string(notExistError.Repo),
-				CloneInProgress: notExistError.CloneInProgress,
-				CloneProgress:   notExistError.CloneProgress,
-			})
-			return st.Err()
-		}
-		return err
-	}
-	return ss.Send(&proto.SearchResponse{
-		Message: &proto.SearchResponse_LimitHit{
-			LimitHit: limitHit,
-		},
-	})
-}
-
 func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
 	//TODO(mucles): re-enable access logging (see server.go handleArchive)
 	// Log which which actor is accessing the repo.
@@ -154,4 +123,35 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 	}
 	return nil
 
+}
+
+func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService_SearchServer) error {
+	args, err := protocol.SearchRequestFromProto(req)
+	if err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	onMatch := func(match *protocol.CommitMatch) error {
+		return ss.Send(&proto.SearchResponse{
+			Message: &proto.SearchResponse_Match{Match: match.ToProto()},
+		})
+	}
+
+	limitHit, err := gs.Server.search(ss.Context(), args, onMatch)
+	if err != nil {
+		if notExistError := new(gitdomain.RepoNotExistError); errors.As(err, &notExistError) {
+			st, _ := status.New(codes.NotFound, err.Error()).WithDetails(&proto.NotFoundPayload{
+				Repo:            string(notExistError.Repo),
+				CloneInProgress: notExistError.CloneInProgress,
+				CloneProgress:   notExistError.CloneProgress,
+			})
+			return st.Err()
+		}
+		return err
+	}
+	return ss.Send(&proto.SearchResponse{
+		Message: &proto.SearchResponse_LimitHit{
+			LimitHit: limitHit,
+		},
+	})
 }
