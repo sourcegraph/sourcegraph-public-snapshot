@@ -56,6 +56,13 @@ func (a *openAIChatCompletionStreamClient) Stream(
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
+	if requestParams.TopK < 0 {
+		requestParams.TopK = 0
+	}
+	if requestParams.TopP < 0 {
+		requestParams.TopP = 0
+	}
+
 	// TODO(sqs): make CompletionRequestParameters non-anthropic-specific
 	payload := OpenAIChatCompletionsRequestParameters{
 		Model:       a.model,
