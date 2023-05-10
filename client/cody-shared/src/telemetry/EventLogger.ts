@@ -8,6 +8,8 @@ function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): st
     return config.get<string>('cody.serverEndpoint', '')
 }
 
+export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+
 const config = vscode.workspace.getConfiguration()
 
 let storage: Memento | undefined
@@ -25,7 +27,13 @@ if (typeof localStorage === 'undefined') {
     }
 }
 
-export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+let anonymousUserID: string
+if (storage) {
+    anonymousUserID = storage.get(ANONYMOUS_USER_ID_KEY)
+}
+if (!anonymousUserID) {
+    anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY)
+}
 
 export class EventLogger {
     private serverEndpoint = _getServerEndpointFromConfig(config)
