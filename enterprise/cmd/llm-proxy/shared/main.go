@@ -89,7 +89,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Block until done
 	goroutine.MonitorBackgroundRoutines(ctx,
 		server,
-		sources.Worker(sourceWorkerMutex, config.SourcesSyncInterval))
+		sources.Worker(obctx.Logger, sourceWorkerMutex, config.SourcesSyncInterval),
+	)
 
 	return nil
 }

@@ -57,10 +57,12 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
 						IsArchived: false,
 						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-							Enabled: true,
-							RateLimit: &dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccessRateLimitLLMProxyRateLimit{
-								Limit:           10,
-								IntervalSeconds: 10,
+							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+								Enabled: true,
+								RateLimit: &dotcom.LLMProxyAccessFieldsRateLimitLLMProxyRateLimit{
+									Limit:           10,
+									IntervalSeconds: 10,
+								},
 							},
 						},
 					},
