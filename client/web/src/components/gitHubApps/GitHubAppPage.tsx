@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiCog, mdiDelete, mdiGithub, mdiRefresh, mdiPlus } from '@mdi/js'
+import { mdiCog, mdiDelete, mdiGithub, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-operations'
@@ -30,6 +30,7 @@ import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
 import { ConnectionList, SummaryContainer, ConnectionSummary } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
+import { AuthProviderMessage } from './AuthProviderMessage'
 import { GITHUB_APP_BY_ID_QUERY, DELETE_GITHUB_APP_BY_ID_QUERY } from './backend'
 
 import styles from './GitHubAppCard.module.scss'
@@ -75,9 +76,6 @@ export const GitHubAppPage: FC<Props> = ({
         }
     }, [app, deleteGitHubApp, navigate])
 
-    // TODO - make an actual GraphQL request to do it here...
-    const refreshFromGH = (): void => {}
-
     if (!appID) {
         return null
     }
@@ -121,10 +119,7 @@ export const GitHubAppPage: FC<Props> = ({
                         headingElement="h2"
                         actions={
                             <>
-                                <Button onClick={refreshFromGH} variant="info" className="ml-auto" size="sm">
-                                    <Icon inline={true} svgPath={mdiRefresh} aria-hidden={true} /> Refresh from GitHub
-                                </Button>
-                                <ButtonLink to={app.appURL} variant="info" className="ml-2" size="sm">
+                                <ButtonLink to={app.appURL} variant="info" className="ml-2">
                                     <Icon inline={true} svgPath={mdiGithub} aria-hidden={true} /> Edit
                                 </ButtonLink>
                                 <Tooltip content="Delete GitHub App">
@@ -134,7 +129,6 @@ export const GitHubAppPage: FC<Props> = ({
                                         onClick={onDelete}
                                         disabled={deleteLoading}
                                         variant="danger"
-                                        size="sm"
                                     >
                                         <Icon aria-hidden={true} svgPath={mdiDelete} />
                                         {' Delete'}
@@ -159,6 +153,7 @@ export const GitHubAppPage: FC<Props> = ({
                             </span>
                         </span>
                     </span>
+                    <AuthProviderMessage app={app} id={appID} />
                     <hr />
 
                     <div className="mt-4">

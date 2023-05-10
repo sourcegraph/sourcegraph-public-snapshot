@@ -180,6 +180,10 @@ func (r *gitHubAppResolver) ClientID() string {
 	return r.app.ClientID
 }
 
+func (r *gitHubAppResolver) ClientSecret() string {
+	return r.app.ClientSecret
+}
+
 func (r *gitHubAppResolver) Logo() string {
 	return r.app.Logo
 }

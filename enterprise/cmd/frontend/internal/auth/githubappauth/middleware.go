@@ -137,6 +137,11 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	})
 
 	r.Path(prefix + "/redirect").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// 🚨 SECURITY: only site admins can setup github apps
+		if err := checkSiteAdmin(db, w, req); err != nil {
+			return
+		}
+
 		query := req.URL.Query()
 		state := query.Get("state")
 		code := query.Get("code")

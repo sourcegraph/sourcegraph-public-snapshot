@@ -322,6 +322,7 @@ ts_project(
         "src/components/fuzzyFinder/HighlightedLink.tsx",
         "src/components/fuzzyFinder/LazyFuzzyFinder.tsx",
         "src/components/gitHubApps/AddGitHubAppPage.tsx",
+        "src/components/gitHubApps/AuthProviderMessage.tsx",
         "src/components/gitHubApps/GitHubAppCard.tsx",
         "src/components/gitHubApps/GitHubAppPage.tsx",
         "src/components/gitHubApps/GitHubAppsPage.tsx",
