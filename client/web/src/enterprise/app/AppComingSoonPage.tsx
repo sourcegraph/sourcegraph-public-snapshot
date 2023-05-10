@@ -32,7 +32,7 @@ export const AppComingSoonPage: React.FC = () => {
             <Container className={classNames('mb-3', styles.container)}>
                 <section className={classNames('row', styles.section)}>
                     <div className={classNames('col-12 col-md-5', styles.text)}>
-                        <ProductStatusBadge status="experimental" className="mb-4 text-uppercase" />
+                        <ProductStatusBadge status="beta" className="mb-4 text-uppercase" />
                         <H2 as="h3" className="mb-4">
                             Cody
                         </H2>

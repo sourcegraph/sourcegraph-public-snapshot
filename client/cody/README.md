@@ -2,7 +2,7 @@
 
 Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
 
-**Status:** experimental ([join the open beta](https://docs.sourcegraph.com/cody))
+**Status:** beta ([join the open beta](https://docs.sourcegraph.com/cody))
 
 [**Full documentation**](https://docs.sourcegraph.com/cody)
 
