@@ -205,7 +205,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                     startWith('loading'),
                     catchError(error => [asError(error)])
                 ),
-            [requester, user.id, note, onDidCreateAccessToken]
+            [requester, user.id, note, onDidCreateAccessToken, isSourcegraphApp]
         )
     )
     /**
