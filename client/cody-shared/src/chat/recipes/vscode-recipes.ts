@@ -5,6 +5,7 @@ import { ExplainCodeHighLevel } from './explain-code-high-level'
 import { FindCodeSmells } from './find-code-smells'
 import { Fixup } from './fixup'
 import { GenerateDocstring } from './generate-docstring'
+import { PrDescription } from './generate-pr-description'
 import { ReleaseNotes } from './generate-release-notes'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
@@ -42,6 +43,7 @@ function init(): void {
         new NextQuestions(),
         new ContextSearch(),
         new ReleaseNotes(),
+        new PrDescription(),
     ]
 
     for (const recipe of recipes) {
