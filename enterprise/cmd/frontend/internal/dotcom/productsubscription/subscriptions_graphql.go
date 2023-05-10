@@ -137,7 +137,7 @@ func (r *productSubscription) LLMProxyAccess() graphqlbackend.LLMProxyAccess {
 	return llmProxyAccessResolver{sub: r}
 }
 
-func (r *productSubscription) SourcegraphAccessTokens(ctx context.Context) (tokens []string, err error) {
+func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context) (*string, error) {
 	activeLicense, err := r.computeActiveLicense(ctx)
 	if err != nil {
 		return nil, err
@@ -152,18 +152,31 @@ func (r *productSubscription) SourcegraphAccessTokens(ctx context.Context) (toke
 	}
 
 	token := defaultAccessToken(defaultRawAccessToken([]byte(r.activeLicense.LicenseKey)))
-	tokens = append(tokens, token)
+	return &token, nil
+}
+
+func (r *productSubscription) SourcegraphAccessTokens(ctx context.Context) (tokens []string, err error) {
+	activeLicense, err := r.computeActiveLicense(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var mainToken string
+	if activeLicense != nil && activeLicense.AccessTokenEnabled {
+		mainToken = defaultAccessToken(defaultRawAccessToken([]byte(r.activeLicense.LicenseKey)))
+		tokens = append(tokens, mainToken)
+	}
 
 	allLicenses, err := dbLicenses{db: r.db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: r.v.ID})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "listing subscription licenses")
 	}
 	for _, l := range allLicenses {
 		if !l.AccessTokenEnabled {
 			continue
 		}
 		lt := defaultAccessToken(defaultRawAccessToken([]byte(l.LicenseKey)))
-		if lt != token {
+		if mainToken == "" || lt != mainToken {
 			tokens = append(tokens, lt)
 		}
 	}

@@ -34,7 +34,7 @@ export const USER_PRODUCT_SUBSCRIPTION = gql`
         isArchived
         url
         urlForSiteAdmin
-        sourcegraphAccessTokens
+        currentSourcegraphAccessToken
         llmProxyAccess {
             ...LLMProxyAccessFields
         }
