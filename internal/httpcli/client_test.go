@@ -846,7 +846,7 @@ func TestRetryAfter(t *testing.T) {
 		})
 		t.Run("Exceeds configured limit", func(t *testing.T) {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Add("retry-after", now.Add(2*time.Second).Format(time.RFC1123)) // 2 seconds is larger than the 1s we give the retry policy below.
+				w.Header().Add("retry-after", now.Add(5*time.Second).Format(time.RFC1123)) // 5 seconds is larger than the 1s we give the retry policy below.
 				w.WriteHeader(http.StatusTooManyRequests)
 			}))
 
