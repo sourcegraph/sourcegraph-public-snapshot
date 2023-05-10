@@ -8,7 +8,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
-- False alert on empty selection []()
+- False alert on empty selection [pull/51714](https://github.com/sourcegraph/sourcegraph/pull/51714)
 
 ### Changed
 
