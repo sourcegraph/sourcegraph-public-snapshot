@@ -105,8 +105,10 @@ func (s *redisLockedBackgroundRoutine) Stop() {
 
 	// If we have the lock, release it and let somebody else work
 	if expire := s.rmux.Until(); !expire.IsZero() {
-		// TODO: Error check?
-		_, _ = s.rmux.Unlock()
+		_, err := s.rmux.Unlock()
+		if err != nil {
+			s.logger.Warn("Failed to unlock mutex after work completed", log.Error(err))
+		}
 	}
 }
 
@@ -126,7 +128,7 @@ func (s *sourcesPeriodicHandler) Handle(ctx context.Context) error {
 		// do anything. We should check every time still in case the current worker
 		// goes offline, we want to be ready to pick up the work.
 		if err := s.rmux.LockContext(ctx); errors.HasType(err, &redsync.ErrTaken{}) {
-			s.logger.Info("Not starting a new sync, another one is likely in progress")
+			s.logger.Debug("Not starting a new sync, another one is likely in progress")
 			return nil // ignore lock contention errors
 		} else if err != nil {
 			return errors.Wrap(err, "acquire worker lock")
@@ -141,15 +143,16 @@ func (s *sourcesPeriodicHandler) Handle(ctx context.Context) error {
 	for _, src := range s.sources {
 		if src, ok := src.(SourceSyncer); ok {
 			p.Go(func(ctx context.Context) error {
+				logger := s.logger.With(log.String("syncer", fmt.Sprintf("%T", src)))
 				start := time.Now()
-				syncerField := log.String("syncer", fmt.Sprintf("%T", src))
-				s.logger.Info("Starting a new sync", syncerField)
+
+				logger.Info("Starting a new sync")
 				seen, err := src.Sync(ctx)
 				if err != nil {
-					s.logger.Error("Failed sync", syncerField, log.Error(err))
+					logger.Error("Failed sync", log.Error(err))
 					return errors.Wrapf(err, "failed to sync %s", src.Name())
 				}
-				s.logger.Info("Completed sync", syncerField, log.Duration("sync_duration", time.Since(start)), log.Int("seen", seen))
+				logger.Info("Completed sync", log.Duration("sync_duration", time.Since(start)), log.Int("seen", seen))
 				return nil
 			})
 		}
