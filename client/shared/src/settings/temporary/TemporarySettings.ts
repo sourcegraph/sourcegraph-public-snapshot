@@ -77,6 +77,7 @@ export interface TemporarySettingsSchema {
     'cody.showSidebar': boolean
     'cody.blobPageCta.dismissed': boolean
     'cody.searchPageCta.dismissed': boolean
+    'cody.chatPageCta.dismissed': boolean
 }
 
 /**

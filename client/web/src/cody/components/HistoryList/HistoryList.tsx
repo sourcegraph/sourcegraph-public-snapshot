@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { Text, Button, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Text, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { safeTimestampToDate, useChatStoreState } from '../../stores/chat'
 
@@ -117,20 +117,17 @@ const HistoryListItem: React.FunctionComponent<{
                 return loadTranscriptFromHistory(id)
             }}
         >
-            <div className="d-flex align-items-center mb-1 justify-content-between">
+            <div className="d-flex align-items-center mb-1 justify-content-between w-100">
                 <Text className="mb-1 text-muted" size="small">
                     <Timestamp date={safeTimestampToDate(lastInteractionTimestamp)} />
                 </Text>
                 <Tooltip content="Delete">
-                    <Button
-                        variant="icon"
-                        className="ml-2"
+                    <Icon
                         aria-label="Delete"
+                        svgPath={mdiDelete}
                         onClick={deleteItem}
                         className={styles.deleteButton}
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiDelete} />
-                    </Button>
+                    />
                 </Tooltip>
             </div>
             <Text className="mb-0 truncate text-body">

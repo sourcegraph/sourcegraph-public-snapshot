@@ -69,7 +69,7 @@ export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
                             <Button
                                 variant="icon"
                                 className="mr-2"
-                                aria-label="Chat history"
+                                aria-label="Active chats"
                                 onClick={() => setShowHistory(showing => !showing)}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiFormatListBulleted} />
@@ -81,11 +81,11 @@ export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
                             </Button>
                         </Tooltip>
                         {showHistory && (
-                            <Tooltip content="Delete all converstaions">
+                            <Tooltip content="Clear all chats">
                                 <Button
                                     variant="icon"
                                     className="ml-2"
-                                    aria-label="Delete all conversations"
+                                    aria-label="Clear all chats"
                                     onClick={clearHistory}
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiDelete} />
