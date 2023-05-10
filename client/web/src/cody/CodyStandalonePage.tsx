@@ -5,9 +5,9 @@ import { Label, Select } from '@sourcegraph/wildcard'
 import { invoke } from '@tauri-apps/api/tauri'
 
 import { GetReposForCodyResult, GetReposForCodyVariables } from '../graphql-operations'
-import { useChatStore } from '../stores/codyChat'
+import { useChatStore } from './stores/chat'
 
-import { CodyChat } from './CodyChat'
+import { CodySidebar } from './sidebar/CodySidebar'
 
 interface CodyStandalonePageProps {}
 
@@ -54,7 +54,7 @@ export const CodyStandalonePage: React.FunctionComponent<CodyStandalonePageProps
                 </Select>
             </Label>
 
-            <CodyChat onClose={() => invoke('hide_window')} />
+            <CodySidebar onClose={() => invoke('hide_window')} />
         </div>
     )
 }
