@@ -713,7 +713,7 @@ func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requ
 			locations = append(locations, localLocations...)
 
 			if !hasMore {
-				cursor.Phase = "dependencies"
+				cursor.Phase = "dependents"
 				break
 			}
 		}
@@ -810,7 +810,7 @@ func (s *Service) GetPrototypes(ctx context.Context, args RequestArgs, requestSt
 			locations = append(locations, localLocations...)
 
 			if !hasMore {
-				cursor.Phase = "dependencies"
+				cursor.Phase = "done"
 				break
 			}
 		}
