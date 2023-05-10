@@ -21,7 +21,10 @@ go_library(
 
 go_test(
     name = "internalerrs_test",
-    srcs = ["common_test.go"],
+    srcs = [
+        "common_test.go",
+        "logging_test.go",
+    ],
     embed = [":internalerrs"],
     deps = [
         "@org_golang_google_grpc//:go_default_library",
