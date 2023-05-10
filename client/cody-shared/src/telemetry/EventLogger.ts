@@ -1,5 +1,6 @@
 import cookies from 'js-cookie'
 import * as vscode from 'vscode'
+import { Memento } from 'vscode'
 
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
@@ -9,11 +10,20 @@ function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): st
 
 const config = vscode.workspace.getConfiguration()
 
-let storage: vscode.Memento
-if (!localStorage) {
+let storage: Memento
+if (typeof localStorage === 'undefined') {
     storage = vscode.workspace.getConfiguration().get<vscode.Memento>('cody.storage')
 } else {
-    storage = vscode.workspace.getConfiguration().get<vscode.Memento>('cody.storage')
+    storage = {
+        get: (key: string) => cookies.get(key),
+        update: (key: string, value: any) => {
+            return new Promise(resolve => {
+                cookies.set(key, value)
+                resolve()
+            })
+        },
+        keys: () => Object.keys(cookies.get()),
+    }
 }
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
