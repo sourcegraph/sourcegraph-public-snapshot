@@ -21,21 +21,25 @@ export class Transcript {
                         Promise.resolve(context),
                         timestamp || new Date().toISOString()
                     )
-            )
+            ),
+            json.id
         )
     }
 
     private interactions: Interaction[] = []
 
-    constructor(interactions: Interaction[] = []) {
+    private internalID: string
+
+    constructor(interactions: Interaction[] = [], id?: string) {
         this.interactions = interactions
+        this.internalID =
+            id ||
+            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
+            new Date().toISOString()
     }
 
     public get id(): string {
-        return (
-            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
-            new Date().toISOString()
-        )
+        return this.internalID
     }
 
     public get isEmpty(): boolean {
@@ -127,6 +131,7 @@ export class Transcript {
 
     public reset(): void {
         this.interactions = []
+        this.internalID = new Date().toISOString()
     }
 }
 

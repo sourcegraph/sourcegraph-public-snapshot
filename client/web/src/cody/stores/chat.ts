@@ -44,6 +44,7 @@ interface CodyChatStore {
     getChatContext: () => ChatContextStatus
     loadTranscriptFromHistory: (id: string) => Promise<void>
     clearHistory: () => void
+    deleteHistoryItem: (id: string) => void
 }
 
 const CODY_TRANSCRIPT_HISTORY_KEY = 'cody:transcript-history'
@@ -57,23 +58,38 @@ export const safeTimestampToDate = (timestamp: string = ''): Date => {
     return new Date(timestamp)
 }
 
+const sortSliceTranscriptHistory = (transcriptHistory: TranscriptJSON[]): TranscriptJSON[] =>
+    transcriptHistory
+        .sort(
+            (a, b) =>
+                (safeTimestampToDate(a.lastInteractionTimestamp) as any) -
+                (safeTimestampToDate(b.lastInteractionTimestamp) as any)
+        )
+        .map(transcript => (transcript.id ? transcript : { ...transcript, id: Transcript.fromJSON(transcript).id }))
+        .slice(0, SAVE_MAX_TRANSCRIPT_HISTORY)
+
 export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore => {
     const fetchTranscriptHistory = (): TranscriptJSON[] => {
         try {
-            return JSON.parse(window.localStorage.getItem(CODY_TRANSCRIPT_HISTORY_KEY) || '[]')
+            const json = JSON.parse(
+                window.localStorage.getItem(CODY_TRANSCRIPT_HISTORY_KEY) || '[]'
+            ) as TranscriptJSON[]
+
+            if (!Array.isArray(json)) {
+                return []
+            }
+
+            const sorted = sortSliceTranscriptHistory(json)
+            saveTranscriptHistory(sorted)
+
+            return sorted
         } catch {
             return []
         }
     }
 
     const saveTranscriptHistory = (transcriptHistory: TranscriptJSON[]): void => {
-        const sorted = transcriptHistory
-            .sort(
-                (a, b) =>
-                    (safeTimestampToDate(a.lastInteractionTimestamp) as any) -
-                    (safeTimestampToDate(b.lastInteractionTimestamp) as any)
-            )
-            .slice(0, SAVE_MAX_TRANSCRIPT_HISTORY)
+        const sorted = sortSliceTranscriptHistory(transcriptHistory)
 
         window.localStorage.setItem(CODY_TRANSCRIPT_HISTORY_KEY, JSON.stringify(sorted))
         set({ transcriptHistory: sorted })
@@ -87,6 +103,18 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         }
         saveTranscriptHistory([])
     }
+
+    const deleteHistoryItem = (id: string): void => {
+        const { transcriptId } = get()
+        const transcriptHistory = fetchTranscriptHistory()
+
+        saveTranscriptHistory(transcriptHistory.filter(transcript => transcript.id !== id))
+
+        if (transcriptId === id) {
+            set({ transcript: [], transcriptId: null })
+        }
+    }
+
     const submitMessage = (text: string): void => {
         text = escapeCodyMarkdown(text, false)
         const { client, onEvent, getChatContext } = get()
@@ -292,6 +320,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         getChatContext,
         loadTranscriptFromHistory,
         clearHistory,
+        deleteHistoryItem,
     }
 })
 

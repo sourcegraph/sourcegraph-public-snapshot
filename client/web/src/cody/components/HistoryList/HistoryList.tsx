@@ -1,10 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 
+import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
-import { Text } from '@sourcegraph/wildcard'
+import { Text, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { safeTimestampToDate, useChatStoreState } from '../../stores/chat'
 
@@ -13,9 +14,14 @@ import styles from './HistoryList.module.scss'
 interface HistoryListProps {
     trucateMessageLenght?: number
     onSelect?: (id: string) => void
+    itemClassName?: string
 }
 
-export const HistoryList: React.FunctionComponent<HistoryListProps> = ({ trucateMessageLenght, onSelect }) => {
+export const HistoryList: React.FunctionComponent<HistoryListProps> = ({
+    trucateMessageLenght,
+    onSelect,
+    itemClassName,
+}) => {
     const { transcriptHistory } = useChatStoreState()
     const transcripts = useMemo(
         () =>
@@ -37,6 +43,7 @@ export const HistoryList: React.FunctionComponent<HistoryListProps> = ({ trucate
                     key={transcript.id}
                     transcript={transcript}
                     onSelect={onSelect}
+                    className={itemClassName}
                     truncateMessageLength={trucateMessageLenght}
                 />
             ))}
@@ -48,8 +55,14 @@ const HistoryListItem: React.FunctionComponent<{
     transcript: TranscriptJSON
     truncateMessageLength?: number
     onSelect?: (id: string) => void
-}> = ({ transcript: { id, interactions, lastInteractionTimestamp }, truncateMessageLength = 80, onSelect }) => {
-    const { loadTranscriptFromHistory, transcriptId } = useChatStoreState()
+    className?: string
+}> = ({
+    transcript: { id, interactions, lastInteractionTimestamp },
+    truncateMessageLength = 80,
+    onSelect,
+    className,
+}) => {
+    const { loadTranscriptFromHistory, transcriptId, deleteHistoryItem } = useChatStoreState()
 
     const lastMessage = useMemo(() => {
         let message = null
@@ -71,6 +84,14 @@ const HistoryListItem: React.FunctionComponent<{
         return message
     }, [interactions])
 
+    const deleteItem = useCallback(
+        (event: React.SyntheticEvent) => {
+            event.stopPropagation()
+            deleteHistoryItem(id)
+        },
+        [deleteHistoryItem, id]
+    )
+
     if (!lastMessage?.text) {
         return null
     }
@@ -79,9 +100,14 @@ const HistoryListItem: React.FunctionComponent<{
         <button
             key={id}
             type="button"
-            className={classNames('text-left', styles.historyItem, {
-                [styles.selected]: transcriptId === id,
-            })}
+            className={classNames(
+                'text-left',
+                styles.historyItem,
+                {
+                    [styles.selected]: transcriptId === id,
+                },
+                className
+            )}
             onClick={(): any => {
                 onSelect?.(id)
                 return loadTranscriptFromHistory(id)
@@ -91,9 +117,19 @@ const HistoryListItem: React.FunctionComponent<{
                 return loadTranscriptFromHistory(id)
             }}
         >
-            <Text className="mb-1 text-muted" size="small">
-                <Timestamp date={safeTimestampToDate(lastInteractionTimestamp)} />
-            </Text>
+            <div className="d-flex align-items-center mb-1 justify-content-between w-100">
+                <Text className="mb-1 text-muted" size="small">
+                    <Timestamp date={safeTimestampToDate(lastInteractionTimestamp)} />
+                </Text>
+                <Tooltip content="Delete">
+                    <Icon
+                        aria-label="Delete"
+                        svgPath={mdiDelete}
+                        onClick={deleteItem}
+                        className={styles.deleteButton}
+                    />
+                </Tooltip>
+            </div>
             <Text className="mb-0 truncate text-body">
                 {lastMessage.text.slice(0, truncateMessageLength)}
                 {lastMessage.text.length > truncateMessageLength ? '...' : ''}

@@ -1,4 +1,6 @@
 export const enum EventName {
+    CODY_CHAT_DOWNLOAD_VSCODE = 'web:codyChat:downloadVSCode',
+    CODY_CHAT_TRY_ON_PUBLIC_CODE = 'web:codyChat:tryOnPublicCode',
     CODY_SIDEBAR_SUBMIT = 'web:codySidebar:submit',
     CODY_SIDEBAR_CHAT_OPENED = 'web:codySidebar:chatOpened',
     CODY_SIDEBAR_EDIT = 'web:codySidebar:edit',
