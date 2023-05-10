@@ -2,6 +2,8 @@ package internalerrs
 
 import (
 	"context"
+	"io"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -21,30 +23,78 @@ var metricGRPCMethodStatus = promauto.NewCounterVec(prometheus.CounterOpts{
 	},
 )
 
-func PrometheusUnaryClientInterceptor(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-	err := invoker(ctx, method, req, reply, cc, opts...)
-	doObservation(method, err)
+func PrometheusUnaryClientInterceptor(ctx context.Context, fullMethod string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	serviceName, methodName := splitMethodName(fullMethod)
+
+	err := invoker(ctx, fullMethod, req, reply, cc, opts...)
+	doObservation(serviceName, methodName, err)
 	return err
 }
 
-func doObservation(fullMethod string, rpcErr error) {
+func PrometheusStreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, fullMethod string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	serviceName, methodName := splitMethodName(fullMethod)
+
+	s, err := streamer(ctx, desc, cc, fullMethod, opts...)
+	if err != nil {
+		doObservation(serviceName, methodName, err)
+		return nil, err
+	}
+
+	return newPrometheusServerStream(s, serviceName, methodName), err
+}
+
+// newPrometheusServerStream wraps a grpc.ClientStream to observe the first error
+// encountered during the stream, if any.
+func newPrometheusServerStream(s grpc.ClientStream, serviceName, methodName string) grpc.ClientStream {
+	var observeOnce sync.Once
+
+	return &callBackClientStream{
+		ClientStream: s,
+		postMessageSend: func(err error) {
+			if err != nil {
+				observeOnce.Do(func() {
+					doObservation(serviceName, methodName, err)
+				})
+			}
+		},
+		postMessageReceive: func(err error) {
+			if err != nil {
+				if err == io.EOF {
+					// EOF signals end of stream, not an error. We handle this setting err to nil, because
+					// we want to treat the stream as successfully completed.
+					err = nil
+				}
+
+				observeOnce.Do(func() {
+					doObservation(serviceName, methodName, err)
+				})
+			}
+		},
+	}
+
+}
+
+func doObservation(serviceName, methodName string, rpcErr error) {
 	if rpcErr == nil {
+		// No error occurred, so we record a successful call.
 		metricGRPCMethodStatus.WithLabelValues(serviceName, methodName, codes.OK.String(), "false").Inc()
 		return
 	}
 
 	s, ok := status.FromError(rpcErr)
 	if !ok {
+		// An error occurred, but it was not an error that has a status.Status implementation. We record this as an unknown error.
 		metricGRPCMethodStatus.WithLabelValues(serviceName, methodName, codes.Unknown.String(), "false").Inc()
 		return
 	}
 
 	if !probablyInternalGRPCError(s) {
+		// An error occurred, but it was not an internal gRPC error. We record this as a non-internal error.
 		metricGRPCMethodStatus.WithLabelValues(serviceName, methodName, s.Code().String(), "false").Inc()
 		return
 	}
 
+	// An error occurred, and it looks like an internal gRPC error. We record this as an internal error.
 	metricGRPCMethodStatus.WithLabelValues(serviceName, methodName, s.Code().String(), "true").Inc()
 	return
 }

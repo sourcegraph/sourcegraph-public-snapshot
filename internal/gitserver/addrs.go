@@ -39,10 +39,10 @@ func NewGitserverAddressesFromConf(cfg *conf.Unified) GitserverAddresses {
 	return addrs
 }
 
-func newTestGitserverConns(addrs []string) *GitserverConns {
+func newTestGitserverConns(addrs []string, logger log.Logger) *GitserverConns {
 	conns := make(map[string]connAndErr)
 	for _, addr := range addrs {
-		conn, err := defaults.Dial(addr)
+		conn, err := defaults.Dial(addr, logger)
 		conns[addr] = connAndErr{conn: conn, err: err}
 	}
 	return &GitserverConns{
@@ -149,10 +149,14 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	)
 
 	// Open connections for each address
+	clientLogger := log.Scoped("gitserver.client", "gitserver gRPC client")
+
 	after.grpcConns = make(map[string]connAndErr, len(after.Addresses))
 	for _, addr := range after.Addresses {
 		conn, err := defaults.Dial(
 			addr,
+			clientLogger,
+
 			// Allow large messages to accomodate large diffs
 			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSizeBytes)),
 		)

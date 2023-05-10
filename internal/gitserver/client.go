@@ -91,7 +91,7 @@ func NewTestClient(cli httpcli.Doer, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger:      logger,
-		conns:       func() *GitserverConns { return newTestGitserverConns(addrs) },
+		conns:       func() *GitserverConns { return newTestGitserverConns(addrs, logger) },
 		httpClient:  cli,
 		HTTPLimiter: limiter.New(500),
 		// Use the binary name for userAgent. This should effectively identify
