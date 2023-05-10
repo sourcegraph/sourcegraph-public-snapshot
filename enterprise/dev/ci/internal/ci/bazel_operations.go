@@ -90,6 +90,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
+		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log"),
 	}
 
 	// Test commands

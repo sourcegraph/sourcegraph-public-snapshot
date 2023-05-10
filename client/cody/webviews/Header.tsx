@@ -9,6 +9,6 @@ export const Header: React.FunctionComponent = () => (
         <div className={styles.logo}>
             <CodyColoredSvg />
         </div>
-        <VSCodeTag className={styles.tag}>experimental</VSCodeTag>
+        <VSCodeTag className={styles.tag}>beta</VSCodeTag>
     </div>
 )

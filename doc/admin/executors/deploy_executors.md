@@ -225,6 +225,33 @@ After successfully [deploying binaries](./deploy_executors_binary.md), follow th
 1. If you are using systemd, run `systemctl restart executor`. If not, proceed to the next step. 
 1. Run `executor run` on the VM in order to restart the executor service.
 
+#### Adding certificates with Firecracker
+
+When running executors with the [firecracker runtime](index.md#firecracker), custom certificates need to be added in 
+the container that is running within the Firecracker VM. To add custom certificates, you must create a new Docker image 
+that contains the certificates. For example,
+
+```dockerfile
+FROM upstream:tag
+
+# Copy the certificates into the container
+COPY customcert.crt /usr/local/share/ca-certificates/customcert.crt
+# Update the certificate store
+RUN chmod 644 /usr/local/share/ca-certificates/customcert.crt && update-ca-certificates
+# ...
+```
+
+##### Code Intel
+
+Once the custom image is built, you can configure the executor to use it by setting
+the `codeIntelAutoIndexing.indexerMap` to use the custom image. For example,
+
+```json
+"codeIntelAutoIndexing.indexerMap": {
+  "go": "myregistry.company.com/scip-go:custom"
+}
+```
+
 ### Adding certificates to a Kubernetes deployment using manifests
 
 First, add the certificate data as a secret in your preferred namespace:
