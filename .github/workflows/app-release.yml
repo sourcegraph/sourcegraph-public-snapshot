@@ -2,7 +2,7 @@ name: Sourcegraph App Release
 on:
   push:
     branches:
-      - main/app/release-*
+      - app-release/*
 
 jobs:
   build-app:
