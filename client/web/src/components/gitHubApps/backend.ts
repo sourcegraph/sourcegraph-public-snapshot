@@ -74,3 +74,11 @@ export const SITE_SETTINGS_QUERY = gql`
         }
     }
 `
+
+export const DELETE_GITHUB_APP_BY_ID_QUERY = gql`
+    mutation DeleteGitHubApp($gitHubApp: ID!) {
+        deleteGitHubApp(gitHubApp: $gitHubApp) {
+            alwaysNil
+        }
+    }
+`
