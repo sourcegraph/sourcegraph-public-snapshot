@@ -11,3 +11,5 @@ echo "Running git fetch... done"
 
 # Link command wrapper scripts so we can have more readable steps in the buildkite UI
 ln -s "$(pwd)/enterprise/dev/ci/scripts/annotated-command.sh" an 2>/dev/null || true
+
+echo -e "build --define=GH_TOKEN=$GH_TOKEN\nbuild --define=PERCY_TOKEN=$PERCY_TOKEN" > .aspect/bazelrc/ci.generated.bazelrc
