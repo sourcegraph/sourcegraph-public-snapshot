@@ -42,7 +42,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
         public: false,
         default_permissions: {
             contents: 'read',
-            email: 'read',
+            emails: 'read',
             members: 'read',
             metadata: 'read',
         },
