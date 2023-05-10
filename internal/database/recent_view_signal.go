@@ -203,6 +203,11 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 		if _, found := repoNameToMetadata[r.RepoName]; !found {
 			// If the repo is not present in `repoNameToMetadata`, we need to query it from
 			// the DB.
+			if _, notFound := notFoundRepos[r.RepoName]; notFound {
+				// If we already know that the repo cannot be found in the DB, we don't need to
+				// make an extra unsuccessful query.
+				continue
+			}
 			repo, err := db.Repos().GetByName(ctx, api.RepoName(r.RepoName))
 			if err != nil {
 				if errcode.IsNotFound(err) {
@@ -253,6 +258,8 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 		for rpn, count := range pathAndCount {
 			if pathID, found := repoNameToMetadata[rpn.RepoName].pathToID[rpn.FilePath]; found {
 				repoPathIDToCount[pathID] = count
+			} else if _, notFound := notFoundRepos[rpn.RepoName]; notFound {
+				// repo was not found in the database, that's fine.
 			} else {
 				return errors.Newf("cannot find id of path %q of repo %q: this is a bug", rpn.FilePath, rpn.RepoName)
 			}
