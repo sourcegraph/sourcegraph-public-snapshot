@@ -43,7 +43,6 @@ export class VSCodeEditor implements Editor {
         }
         const selection = activeEditor.selection
         if (!selection || selection?.start.isEqual(selection.end)) {
-            console.error('No code selected. Please select some code and try again.')
             return null
         }
         return this.createActiveTextEditorSelection(activeEditor, selection)

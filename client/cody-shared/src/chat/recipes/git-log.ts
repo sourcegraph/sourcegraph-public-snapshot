@@ -42,8 +42,6 @@ export class GitHistory implements Recipe {
                 args: ['log', '-n5', logFormat, '--', selection.fileName],
                 rawDisplayText: `What changed in ${name} in the last 5 commits`,
             })
-        } else {
-            await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
         }
         const selectedLabel = await context.editor.showQuickPick(items.map(e => e.label))
         if (!selectedLabel) {
