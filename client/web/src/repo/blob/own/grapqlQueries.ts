@@ -34,9 +34,17 @@ export const RECENT_CONTRIBUTOR_FIELDS = gql`
     }
 `
 
+export const RECENT_VIEW_FIELDS = gql`
+    fragment RecentViewOwnershipSignalFields on RecentViewOwnershipSignal {
+        title
+        description
+    }
+`
+
 export const FETCH_OWNERS = gql`
     ${OWNER_FIELDS}
     ${RECENT_CONTRIBUTOR_FIELDS}
+    ${RECENT_VIEW_FIELDS}
 
     fragment CodeownersFileEntryFields on CodeownersFileEntry {
         title
