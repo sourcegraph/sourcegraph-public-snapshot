@@ -30,6 +30,10 @@ jobs:
         shell: bash
         run: |
           echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: get release body
+        id: release-body
+        run: |
+          echo "CONTENT=\"$(cat ./src-tauri/RELEASE.md)\"" >> $GITHUB_OUTPUT
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
       - uses: actions/checkout@v3
@@ -76,10 +80,6 @@ jobs:
           ./enterprise/dev/app/build-release.sh
         env:
           RELEASE_BUILD: 1
-      - name: get release body
-        id: release-body
-        run: |
-          echo "CONTENT=$(cat ./src-tauri/RELEASE.md)" >> $GITHUB_OUTPUT
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
