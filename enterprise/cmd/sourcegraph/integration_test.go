@@ -52,7 +52,10 @@ func (app *App) DumpOutput(w io.Writer) error {
 }
 
 func startApp(ctx context.Context, path string) (*App, error) {
-	testDir := bazel.TestTmpDir()
+	testDir, err := os.MkdirTemp("", "sg-app")
+	if err != nil {
+		return nil, err
+	}
 
 	args := fmt.Sprintf("--cacheDir %s --configDir %s", testDir, testDir)
 	cmd := exec.CommandContext(ctx, path, strings.Split(args, " ")...)

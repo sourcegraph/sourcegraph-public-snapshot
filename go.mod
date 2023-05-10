@@ -262,7 +262,10 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require github.com/go-redsync/redsync/v4 v4.8.1
+require (
+	github.com/bazelbuild/rules_go v0.39.1
+	github.com/go-redsync/redsync/v4 v4.8.1
+)
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
@@ -276,7 +279,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.1.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
-	github.com/bazelbuild/rules_go v0.39.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cloudflare/circl v1.3.2 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect

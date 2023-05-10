@@ -53,14 +53,17 @@ go_binary(
 
 go_test(
     name = "sourcegraph_test",
-    srcs = ["integration_test.go"],
-    embed = [":sourcegraph_lib"],
-    deps = ["@io_bazel_rules_go//go/tools/bazel:go_default_library"],
     timeout = "moderate",
+    srcs = ["integration_test.go"],
     args = ["$(location :sourcegraph)"],
     data = [":sourcegraph"],
+    embed = [":sourcegraph_lib"],
     env = {
         "BAZEL": "true",
     },
-    tags = [ "requires-network", "no-sandbox" ],
+    tags = [
+        "no-sandbox",
+        "requires-network",
+    ],
+    deps = ["@io_bazel_rules_go//go/tools/bazel:go_default_library"],
 )
