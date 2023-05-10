@@ -809,7 +809,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 								"reasons": [
 									{
 										"title": "recent contributor",
-										"description": "Owner is associated because they are have contributed to this file in the last 90 days."
+										"description": "Owner is associated because they have contributed to this file in the last 90 days."
 									}
 								]
 							}
