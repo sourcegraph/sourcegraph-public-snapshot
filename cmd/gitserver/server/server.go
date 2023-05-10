@@ -2724,9 +2724,13 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	err = syncer.Fetch(ctx, remoteURL, dir, revspec)
+	output, err := syncer.Fetch(ctx, remoteURL, dir, revspec)
 	if err != nil {
-		return errors.Wrapf(err, "failed to fetch repo %q", repo)
+		if output != nil {
+			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, newURLRedactor(remoteURL).redact(string(output)))
+		} else {
+			return errors.Wrapf(err, "failed to fetch repo %q", repo)
+		}
 	}
 
 	removeBadRefs(ctx, dir)
