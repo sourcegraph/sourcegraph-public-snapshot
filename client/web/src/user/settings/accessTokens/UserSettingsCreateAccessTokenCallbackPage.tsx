@@ -33,6 +33,7 @@ interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' |
      */
     onDidCreateAccessToken: (value: CreateAccessTokenResult['createAccessToken']) => void
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 interface TokenRequester {
     /** The name of the source */
@@ -106,6 +107,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     onDidCreateAccessToken,
     user,
     isSourcegraphDotCom,
+    isSourcegraphApp,
 }) => {
     const navigate = useNavigate()
     const location = useLocation()
@@ -150,9 +152,17 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                 nextRequester.redirectURL = redirectURL.toString()
             }
         }
+
+        if (isSourcegraphApp) {
+            // Append type=app to the url to indicate to the requester that the callback is fulfilled by App
+            const redirectURL = new URL(nextRequester.redirectURL)
+            redirectURL.searchParams.set('type', 'app')
+            nextRequester.redirectURL = redirectURL.toString()
+        }
+
         setRequester(nextRequester)
         setNote(REQUESTERS[requestFrom].name)
-    }, [isSourcegraphDotCom, location.search, navigate, requestFrom, requester])
+    }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester])
     /**
      * We use this to handle token creation request from redirections.
      * Don't create token if this page wasn't linked to from a valid
@@ -169,6 +179,12 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                             onDidCreateAccessToken(result)
                             setNewToken(result.token)
                             const uri = replaceToken(requester?.redirectURL, result.token)
+
+                            if (isSourcegraphApp) {
+                                window.__TAURI__.shell.open(uri) // TODO: wrap this in a function
+                                return
+                            }
+
                             switch (requester.callbackType) {
                                 case 'new-tab':
                                     window.open(uri, '_blank')
