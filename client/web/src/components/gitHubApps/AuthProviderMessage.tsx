@@ -4,7 +4,7 @@ import { mdiEye, mdiEyeOffOutline } from '@mdi/js'
 import { parse as parseJSONC } from 'jsonc-parser'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Icon, Button, Alert, Text, Link } from '@sourcegraph/wildcard'
+import { Icon, Button, Alert, Text, Link, Code } from '@sourcegraph/wildcard'
 
 import {
     GitHubAppByIDResult,
@@ -67,7 +67,7 @@ const AuthProviderJSON: FC<Props> = ({ app, id }) => {
 
     return (
         <>
-            <code>{providerJson}</code>
+            <Code>{providerJson}</Code>
             <br />
             <Button className="mt-2" size="sm" variant="secondary" onClick={() => setReveal(!reveal)}>
                 <Icon aria-hidden={true} svgPath={reveal ? mdiEyeOffOutline : mdiEye} className="mr-1" />
@@ -78,12 +78,14 @@ const AuthProviderJSON: FC<Props> = ({ app, id }) => {
 }
 
 export const AuthProviderMessage: FC<Props> = ({ app, id }) => {
+    const { data, loading, error } = useQuery<SiteResult, SiteVariables>(SITE_SETTINGS_QUERY, {
+        skip: !app || !id,
+    })
+    const siteConfig = useMemo(() => (data ? parseJSONC(data.site.configuration.effectiveContents) : null), [data])
+
     if (!app || !id) {
         return null
     }
-
-    const { data, loading, error } = useQuery<SiteResult, SiteVariables>(SITE_SETTINGS_QUERY, {})
-    const siteConfig = useMemo(() => (data ? parseJSONC(data.site.configuration.effectiveContents) : null), [data])
 
     const hasProvider = siteConfig?.['auth.providers'].find(
         (provider: { type: string; url: string; clientID: string }) =>
@@ -107,7 +109,7 @@ export const AuthProviderMessage: FC<Props> = ({ app, id }) => {
             <Text>
                 Add the following configuration to the{' '}
                 <Link to="/site-admin/configuration">
-                    <code>"auth.providers"</code> list in site-config
+                    <Code>"auth.providers"</Code> list in site-config
                 </Link>{' '}
                 to make sure that users can login and sync permissions via the GitHub app:
             </Text>
