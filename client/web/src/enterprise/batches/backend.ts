@@ -214,23 +214,21 @@ export const BATCH_CHANGES_SITE_CONFIGURATION = gql`
     }
 `
 
-type useGetBatchChangesSiteConfigurationResult = {
+interface useGetBatchChangesSiteConfigurationResult {
     loading: boolean
     error: ApolloError | undefined
     rolloutWindowConfig: BatchChangeRolloutWindow[]
 }
 
-export const useGetBatchesRolloutWindowConfig = (): useGetBatchChangesSiteConfigurationResult => {
+export const useBatchChangesRolloutWindowConfig = (): useGetBatchChangesSiteConfigurationResult => {
     const [rolloutWindowConfig, setRolloutWindowConfig] = useState<BatchChangeRolloutWindow[]>([])
     const { loading, error, data } = useQuery(BATCH_CHANGES_SITE_CONFIGURATION, {
         fetchPolicy: 'cache-first',
     })
-    useEffect(() => {
-        if (data) {
-            const siteConfig = jsonc.parse(data.site.configuration.effectiveContents)
-            setRolloutWindowConfig(siteConfig['batchChanges.rolloutWindows'] || [])
-        }
-    }, [data])
+    if (data) {
+        const siteConfig = jsonc.parse(data.site.configuration.effectiveContents)
+        setRolloutWindowConfig(siteConfig['batchChanges.rolloutWindows'] || [])
+    }
 
     return { loading, error, rolloutWindowConfig }
 }

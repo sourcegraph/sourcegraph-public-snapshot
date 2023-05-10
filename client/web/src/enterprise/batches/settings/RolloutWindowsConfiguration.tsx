@@ -4,7 +4,7 @@ import { mdiPulse } from '@mdi/js'
 
 import { Text, H3, Container, Icon, LoadingSpinner, ErrorAlert, Link } from '@sourcegraph/wildcard'
 
-import { useGetBatchesRolloutWindowConfig } from '../backend'
+import { useBatchChangesRolloutWindowConfig } from '../backend'
 
 import { formatRate, formatDays } from './format'
 
@@ -12,7 +12,7 @@ import styles from './RolloutWindowsConfiguration.module.scss'
 
 // Displays the rollout window configuration.
 export const RolloutWindowsConfiguration: React.FunctionComponent = () => {
-    const { loading, error, rolloutWindowConfig } = useGetBatchesRolloutWindowConfig()
+    const { loading, error, rolloutWindowConfig } = useBatchChangesRolloutWindowConfig()
     return (
         <Container className="mb-3">
             <H3>Rollout Windows</H3>

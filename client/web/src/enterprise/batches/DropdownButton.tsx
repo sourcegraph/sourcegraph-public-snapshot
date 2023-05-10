@@ -18,7 +18,7 @@ import {
     Icon,
 } from '@sourcegraph/wildcard'
 
-import { useGetBatchesRolloutWindowConfig } from './backend'
+import { useBatchChangesRolloutWindowConfig } from './backend'
 
 import styles from './DropdownButton.module.scss'
 
@@ -171,7 +171,7 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
     action,
     setSelectedType,
 }) => {
-    const { rolloutWindowConfig, loading } = useGetBatchesRolloutWindowConfig()
+    const { rolloutWindowConfig, loading } = useBatchChangesRolloutWindowConfig()
     const onSelect = useCallback(() => {
         setSelectedType(action.type)
     }, [setSelectedType, action.type])
