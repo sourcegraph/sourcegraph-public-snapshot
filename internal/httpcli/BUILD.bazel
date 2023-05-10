@@ -58,6 +58,7 @@ go_test(
         "@com_github_puerkitobio_rehttp//:rehttp",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
         "@io_k8s_utils//strings/slices",
     ],
 )

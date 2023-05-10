@@ -110,10 +110,11 @@ var ExternalClientFactory = NewExternalClientFactory()
 var UncachedExternalClientFactory = newExternalClientFactory(false)
 
 var (
-	externalTimeout, _          = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
-	externalRetryDelayBase, _   = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_BASE", "200ms", "Base retry delay duration for external HTTP requests"))
-	externalRetryDelayMax, _    = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for external HTTP requests"))
-	externalRetryMaxAttempts, _ = strconv.Atoi(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for external HTTP requests"))
+	externalTimeout, _               = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
+	externalRetryDelayBase, _        = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_BASE", "200ms", "Base retry delay duration for external HTTP requests"))
+	externalRetryDelayMax, _         = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for external HTTP requests"))
+	externalRetryMaxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for external HTTP requests"))
+	externalRetryAfterMaxDuration, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Max duration to wait in retry-after header before we won't auto-retry"))
 )
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
@@ -146,7 +147,7 @@ func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 		// not a generic http.RoundTripper.
 		ExternalTransportOpt,
 		NewErrorResilientTransportOpt(
-			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts)),
+			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),
 			ExpJitterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
 		TracedTransportOpt,
@@ -180,10 +181,11 @@ var ExternalClient, _ = ExternalClientFactory.Client()
 var InternalClientFactory = NewInternalClientFactory("internal")
 
 var (
-	internalTimeout, _          = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_TIMEOUT", "0", "Timeout for internal HTTP requests"))
-	internalRetryDelayBase, _   = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_BASE", "50ms", "Base retry delay duration for internal HTTP requests"))
-	internalRetryDelayMax, _    = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_MAX", "1s", "Max retry delay duration for internal HTTP requests"))
-	internalRetryMaxAttempts, _ = strconv.Atoi(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for internal HTTP requests"))
+	internalTimeout, _               = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_TIMEOUT", "0", "Timeout for internal HTTP requests"))
+	internalRetryDelayBase, _        = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_BASE", "50ms", "Base retry delay duration for internal HTTP requests"))
+	internalRetryDelayMax, _         = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_MAX", "1s", "Max retry delay duration for internal HTTP requests"))
+	internalRetryMaxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for internal HTTP requests"))
+	internalRetryAfterMaxDuration, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Max duration to wait in retry-after header before we won't auto-retry"))
 )
 
 // NewInternalClientFactory returns a httpcli.Factory with common options
@@ -200,7 +202,7 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 		NewTimeoutOpt(internalTimeout),
 		NewMaxIdleConnsPerHostOpt(500),
 		NewErrorResilientTransportOpt(
-			NewRetryPolicy(MaxRetries(internalRetryMaxAttempts)),
+			NewRetryPolicy(MaxRetries(internalRetryMaxAttempts), internalRetryAfterMaxDuration),
 			ExpJitterDelay(internalRetryDelayBase, internalRetryDelayMax),
 		),
 		MeteredTransportOpt(subsystem),
@@ -524,9 +526,10 @@ func MaxRetries(n int) int {
 
 // NewRetryPolicy returns a retry policy used in any Doer or Client returned
 // by NewExternalClientFactory.
-func NewRetryPolicy(max int) rehttp.RetryFn {
+func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.RetryFn {
 	return func(a rehttp.Attempt) (retry bool) {
 		status := 0
+		var retryAfterHeader string
 
 		defer func() {
 			// Avoid trace log spam if we haven't invoked the retry policy.
@@ -539,6 +542,7 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 					otlog.String("method", a.Request.Method),
 					otlog.String("url", a.Request.URL.String()),
 					otlog.Int("status", status),
+					otlog.String("retry-after", retryAfterHeader),
 				}
 				if a.Error != nil {
 					fields = append(fields, otlog.Error(a.Error))
@@ -604,8 +608,43 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 			return true
 		}
 
-		if status == 0 || status == http.StatusTooManyRequests || (status >= 500 && status != http.StatusNotImplemented) {
+		if status == 0 || (status >= 500 && status != http.StatusNotImplemented) {
 			return true
+		}
+
+		if status == http.StatusTooManyRequests {
+			// If a retry-after header exists, we only want to retry if it might resolve
+			// the issue.
+			if a.Response != nil {
+				retryAfterHeader = a.Response.Header.Get("retry-after")
+				if retryAfterHeader != "" {
+					// There are two valid formats for retry-after headers: seconds
+					// until retry in int, or a RFC1123 date string.
+					// First, see if it is denoted in seconds.
+					s, err := strconv.Atoi(retryAfterHeader)
+					// If denoted in seconds, only retry if we will get access within
+					// the next retryAfterMaxSleepDuration seconds.
+					if err == nil {
+						return s <= int(retryAfterMaxSleepDuration/time.Second)
+					}
+
+					// If we weren't able to parse as seconds, try to parse as RFC1123.
+					if err != nil {
+						after, err := time.Parse(time.RFC1123, retryAfterHeader)
+						if err != nil {
+							// We don't know how to parse this header, so let's just retry.
+							return true
+						}
+						// Check if the date is either in the past, or if within the next
+						// retryAfterMaxSleepDuration we would get access again.
+						in := time.Until(after)
+						return in <= retryAfterMaxSleepDuration
+					}
+				}
+
+				// Otherwise, default to the behavior this function always had: retry 429 errors.
+				return true
+			}
 		}
 
 		return false
