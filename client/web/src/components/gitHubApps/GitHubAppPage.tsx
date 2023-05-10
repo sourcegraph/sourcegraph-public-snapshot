@@ -28,6 +28,7 @@ import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
 import { ConnectionList, SummaryContainer, ConnectionSummary } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
+import { AuthProviderMessage } from './AuthProviderMessage'
 import { GITHUB_APP_BY_ID_QUERY } from './backend'
 
 import styles from './GitHubAppCard.module.scss'
@@ -124,6 +125,7 @@ export const GitHubAppPage: FC<Props> = ({
                             </span>
                         </span>
                     </span>
+                    <AuthProviderMessage app={app} id={appID} />
                     <hr />
 
                     <div className="mt-4">
