@@ -36,15 +36,17 @@ export class VSCodeEditor implements Editor {
         return activeEditor && activeEditor.document.uri.scheme === 'file' ? activeEditor : null
     }
 
-    public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+    public getActiveTextEditorSelection(requireSelection: boolean = false): ActiveTextEditorSelection | null {
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null
         }
         const selection = activeEditor.selection
         if (!selection || selection?.start.isEqual(selection.end)) {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            vscode.window.showErrorMessage('No code selected. Please select some code and try again.')
+            if (requireSelection) {
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                vscode.window.showErrorMessage('No code selected. Please select some code and try again.')
+            }
             return null
         }
         return this.createActiveTextEditorSelection(activeEditor, selection)
