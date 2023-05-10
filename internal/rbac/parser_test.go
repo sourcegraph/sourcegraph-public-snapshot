@@ -14,7 +14,7 @@ func TestParsePermissionDisplayName(t *testing.T) {
 		displayName string
 
 		namespace     rtypes.PermissionNamespace
-		action        string
+		action        rtypes.NamespaceAction
 		expectedError error
 
 		name string
