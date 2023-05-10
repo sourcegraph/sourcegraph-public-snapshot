@@ -14,6 +14,7 @@ import { BATCH_CHANGES_SITE_CONFIGURATION } from '../backend'
 
 import { USER_CODE_HOSTS } from './backend'
 import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
+import { noRolloutWindowMockResult, rolloutWindowConfigMockResult } from './mocks'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
@@ -41,27 +42,6 @@ const sshCredential = (isSiteCredential: boolean): BatchChangesCredentialFields 
     sshPublicKey:
         'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 })
-
-const noRolloutWindowMockResult = {
-    data: {
-        site: {
-            configuration: {
-                effectiveContents: '{}',
-            },
-        },
-    },
-}
-
-const rolloutWindowConfigMockResult = {
-    data: {
-        site: {
-            configuration: {
-                effectiveContents:
-                    '{"batchChanges.rolloutWindows":[{"rate":"unlimited"},{"rate":"3/hour","days":["monday","wednesday","thursday"]},{"rate":"0/hour","days":["friday"],"start":"08:00","end":"20:00"}]}',
-            },
-        },
-    },
-}
 
 export const Overview: Story = () => (
     <WebStory>
