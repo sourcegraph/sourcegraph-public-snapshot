@@ -45,8 +45,11 @@ genrule(
 )
 
 pkg_tar(
-    name = "nginx_missing_folders_tar",
-    srcs = [":nginx_tmp_folder", ":nginx_run_folder"],
+    name = "static_config_tar",
+    srcs = [
+      ":nginx_tmp_folder",
+      ":nginx_run_folder",
+    ],
     remap_paths = {
       "/.keep_tmp": "/var/lib/nginx/tmp/.keep",
       "/.keep_run": "/var/run/.keep",
@@ -90,7 +93,7 @@ oci_image(
     name = "image",
     architecture = "amd64",
     base = "@wolfi_server_base",
-    tars = dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS) + [":tar_server_linux_amd64", ":nginx_missing_folders_tar"],
+    tars = dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS) + [":tar_server_linux_amd64", ":static_config_tar"],
     entrypoint = ["/server"],
     os = "linux",
 )
