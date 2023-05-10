@@ -46,7 +46,7 @@ As part of this service you will receive a number of benefits from our team, inc
   - [Adding repositories from all of your code hosts to Sourcegraph](../admin/external_service/index.md)
   - [Integrating your single sign-on provider with Sourcegraph](../admin/auth/index.md)
   - [Configuring Sourcegraph](../admin/config/index.md)
-  
+
 ### Access to all Sourcegraph features
 
 All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-box, including but not limited to:
@@ -176,11 +176,11 @@ To opt out of managed SMTP, please let your Sourcegraph Account team know when r
 
 To learn more about how the Sourcegraph team operates managed SMTP internally, refer to [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/managed-smtp/).
 
-### Cody 
+### Cody
 
-<aside class="experimental">
+<aside class="beta">
 <p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+<span class="badge badge-beta">Beta</span> This feature is beta and might change in the future. We've released it to provide a preview of functionality we're working on.
 </p>
 </aside>
 
@@ -204,7 +204,7 @@ Now that Cody is turned on on your Sourcegraph Cloud instance, any user can conf
 <img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
 
 5. In the Cody VS Code extension, set your instance URL and the access token
-    
+
 <img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
 
 You're all set!

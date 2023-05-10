@@ -40,8 +40,12 @@ func (a *Authenticator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !act.AccessEnabled {
-		response.JSONError(a.Logger, w, http.StatusForbidden,
-			errors.New("LLM proxy access not enabled"))
+		response.JSONError(
+			a.Logger,
+			w,
+			http.StatusForbidden,
+			errors.New("LLM proxy access not enabled"),
+		)
 
 		err := a.EventLogger.LogEvent(
 			events.Event{

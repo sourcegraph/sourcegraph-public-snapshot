@@ -57,12 +57,12 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		productsubscription.NewSource(
 			obctx.Logger,
 			rcache.New("product-subscriptions"),
-			dotcom.NewClient(config.Dotcom.AccessToken)),
+			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)),
 	}
 
 	// Set up our handler chain, which is run from the bottom up
 	handler := newServiceHandler(obctx.Logger, eventLogger, config)
-	handler = rateLimit(obctx.Logger, eventLogger, redispool.Cache, handler)
+	handler = rateLimit(obctx.Logger, eventLogger, newPrefixRedisStore("rate_limit:", redispool.Cache), handler)
 	handler = &auth.Authenticator{
 		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
 		EventLogger: eventLogger,
@@ -100,7 +100,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Block until done
 	goroutine.MonitorBackgroundRoutines(ctx,
 		server,
-		sources.Worker(sourceWorkerMutex, config.SourcesSyncInterval))
+		sources.Worker(obctx.Logger, sourceWorkerMutex, config.SourcesSyncInterval),
+	)
 
 	return nil
 }
@@ -125,7 +126,6 @@ func newServiceHandler(logger log.Logger, eventLogger events.Logger, config *Con
 	r.HandleFunc("/-/__version", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(version.Version()))
-		return
 	})
 
 	// V1 service routes
@@ -240,4 +240,28 @@ func healthz(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func newPrefixRedisStore(prefix string, store redispool.KeyValue) limiter.RedisStore {
+	return &prefixRedisStore{
+		prefix: prefix,
+		store:  store,
+	}
+}
+
+type prefixRedisStore struct {
+	prefix string
+	store  redispool.KeyValue
+}
+
+func (s *prefixRedisStore) Incr(key string) (int, error) {
+	return s.store.Incr(s.prefix + key)
+}
+
+func (s *prefixRedisStore) TTL(key string) (int, error) {
+	return s.store.TTL(s.prefix + key)
+}
+
+func (s *prefixRedisStore) Expire(key string, ttlSeconds int) error {
+	return s.store.Expire(s.prefix+key, ttlSeconds)
 }

@@ -892,12 +892,15 @@ type Mutation {
     use the default quota.
     """
     setUserCompletionsQuota(user: ID!, quota: Int): User!
-
     """
     Sets the code completions requests quota for the user per day. Quota: Null means
     use the default quota.
     """
     setUserCodeCompletionsQuota(user: ID!, quota: Int): User!
+    """
+    Submits a post-signup user survey about intended Cody usage.
+    """
+    submitCodySurvey(isForWork: Boolean!, isForPersonal: Boolean!): EmptyResponse!
 }
 
 """
