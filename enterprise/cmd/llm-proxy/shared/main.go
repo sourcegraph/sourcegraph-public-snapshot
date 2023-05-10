@@ -48,8 +48,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			return errors.Wrap(err, "create event logger")
 		}
 	} else {
-		eventLogger = events.NewNoopLogger()
-		obctx.Logger.Info("BigQuery logging is disabled")
+		eventLogger = events.NewStdoutLogger(obctx.Logger)
 	}
 
 	// Supported actor/auth sources

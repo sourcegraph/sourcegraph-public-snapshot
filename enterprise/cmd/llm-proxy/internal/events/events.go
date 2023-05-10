@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -106,9 +107,22 @@ func (l *bigQueryLogger) LogEvent(event Event) error {
 	return nil
 }
 
-type noopLogger struct{}
+type stdoutLogger struct {
+	logger log.Logger
+}
 
-// NewNoopLogger returns a new no-op event logger.
-func NewNoopLogger() Logger { return noopLogger{} }
+// NewStdoutLogger returns a new stdout event logger.
+func NewStdoutLogger(logger log.Logger) Logger {
+	return &stdoutLogger{logger: logger.Scoped("events", "event logger")}
+}
 
-func (noopLogger) LogEvent(event Event) error { return nil }
+func (l *stdoutLogger) LogEvent(event Event) error {
+	l.logger.Debug("LogEvent",
+		log.Object("event",
+			log.String("name", string(event.Name)),
+			log.String("source", event.Source),
+			log.String("identifier", event.Identifier),
+		),
+	)
+	return nil
+}
