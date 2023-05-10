@@ -59,6 +59,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		Next:    handler,
 	}
 	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
+	handler = httpLogger(obctx.Logger.Scoped("httpAPI", ""), handler)
 
 	// Initialize our server
 	server := httpserver.NewFromAddr(config.Address, &http.Server{
@@ -202,6 +203,13 @@ func healthz(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func httpLogger(logger log.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.Debug("Request", log.String("method", r.Method), log.String("path", r.URL.Path))
+		next.ServeHTTP(w, r)
+	})
 }
 
 func newPrefixRedisStore(prefix string, store redispool.KeyValue) limiter.RedisStore {
