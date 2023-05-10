@@ -22,7 +22,10 @@ interface Props {
     reasons: OwnershipReason[]
 }
 
-type OwnershipReason = CodeownersFileEntryFields | RecentContributorOwnershipSignalFields | RecentViewOwnershipSignalFields
+type OwnershipReason =
+    | CodeownersFileEntryFields
+    | RecentContributorOwnershipSignalFields
+    | RecentViewOwnershipSignalFields
 
 export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
