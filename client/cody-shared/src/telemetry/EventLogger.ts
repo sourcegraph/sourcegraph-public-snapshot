@@ -9,6 +9,13 @@ function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): st
 
 const config = vscode.workspace.getConfiguration()
 
+let storage: vscode.Memento
+if (!localStorage) {
+    storage = vscode.workspace.getConfiguration().get<vscode.Memento>('cody.storage')
+} else {
+    storage = vscode.workspace.getConfiguration().get<vscode.Memento>('cody.storage')
+}
+
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 
 export class EventLogger {
@@ -25,7 +32,7 @@ export class EventLogger {
      * @param eventName The ID of the action executed.
      */
     public async log(eventName: string, eventProperties?: any, publicProperties?: any): Promise<void> {
-        const anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.get(ANONYMOUS_USER_ID_KEY)
+        const anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || storage.get(ANONYMOUS_USER_ID_KEY)
 
         // Don't log events if the UID has not yet been generated.
         if (!anonymousUserID) {
