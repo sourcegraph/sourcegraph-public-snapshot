@@ -8,9 +8,13 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
-- Remove system alerts from non-actionable items [pull/51714](https://github.com/sourcegraph/sourcegraph/pull/51714)
-
 ### Changed
+
+## [0.1.1]
+
+### Fixed
+
+- Remove system alerts from non-actionable items [pull/51714](https://github.com/sourcegraph/sourcegraph/pull/51714)
 
 ## [0.1.0]
 
