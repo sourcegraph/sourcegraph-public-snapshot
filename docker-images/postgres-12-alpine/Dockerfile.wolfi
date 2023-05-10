@@ -23,6 +23,11 @@ RUN addgroup -g $PING_UID ping &&\
     mkdir -p /data/pgdata-12 && chown -R postgres:postgres /data
 
 COPY rootfs /
+# Overwrite default postgresql.conf.sample
+COPY config/postgresql.conf.sample /usr/share/postgresql/postgresql.conf.sample
+
+# Used by Postgresql during initdb. Wolfi's default is LANG=C
+ENV LANG=en_US.utf8
 
 USER postgres
 ENTRYPOINT ["/postgres-wolfi.sh"]
