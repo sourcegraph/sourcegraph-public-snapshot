@@ -14,6 +14,7 @@ import (
 
 var metricGRPCMethodStatus = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_grpc_method_status",
+	Help: "Counts the number of gRPC methods that return a given status code, and whether a possible error is an go-grpc internal error.",
 },
 	[]string{
 		"grpc_service",      // e.g. "gitserver.v1.GitserverService"
@@ -23,6 +24,8 @@ var metricGRPCMethodStatus = promauto.NewCounterVec(prometheus.CounterOpts{
 	},
 )
 
+// PrometheusUnaryClientInterceptor returns a grpc.UnaryClientInterceptor that observes the result of
+// the RPC and records it as a Prometheus metric ("src_grpc_method_status").
 func PrometheusUnaryClientInterceptor(ctx context.Context, fullMethod string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 	serviceName, methodName := splitMethodName(fullMethod)
 
@@ -31,6 +34,11 @@ func PrometheusUnaryClientInterceptor(ctx context.Context, fullMethod string, re
 	return err
 }
 
+// PrometheusStreamClientInterceptor returns a grpc.StreamClientInterceptor that observes the result of
+// the RPC and records it as a Prometheus metric ("src_grpc_method_status").
+//
+// If any errors are encountered during the stream, the first error is recorded. Otherwise, the
+// final status of the stream is recorded.
 func PrometheusStreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, fullMethod string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	serviceName, methodName := splitMethodName(fullMethod)
 
@@ -96,5 +104,4 @@ func doObservation(serviceName, methodName string, rpcErr error) {
 
 	// An error occurred, and it looks like an internal gRPC error. We record this as an internal error.
 	metricGRPCMethodStatus.WithLabelValues(serviceName, methodName, s.Code().String(), "true").Inc()
-	return
 }

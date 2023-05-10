@@ -3,11 +3,9 @@ package internalerrs
 import (
 	"context"
 	"io"
-	"strings"
 
 	"github.com/sourcegraph/log"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
@@ -16,14 +14,15 @@ const (
 	logDescription = "logs gRPC errors that appear to come from the go-grpc implementation"
 )
 
-func LoggingUnaryClientInterceptor(logger log.Logger) grpc.UnaryClientInterceptor {
-	logger = logger.Scoped(logScope, logDescription)
+// LoggingUnaryClientInterceptor returns a grpc.UnaryClientInterceptor that logs
+// errors that appear to come from the go-grpc implementation.
+func LoggingUnaryClientInterceptor(l log.Logger) grpc.UnaryClientInterceptor {
+	logger := l.Scoped(logScope, logDescription)
 
-	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		serviceName, methodName := splitMethodName(method)
-
-		err := invoker(ctx, method, req, reply, cc, opts...)
+	return func(ctx context.Context, fullMethod string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		err := invoker(ctx, fullMethod, req, reply, cc, opts...)
 		if err != nil {
+			serviceName, methodName := splitMethodName(fullMethod)
 			doLog(logger, serviceName, methodName, err)
 		}
 
@@ -31,13 +30,15 @@ func LoggingUnaryClientInterceptor(logger log.Logger) grpc.UnaryClientIntercepto
 	}
 }
 
-func LoggingStreamClientInterceptor(logger log.Logger) grpc.StreamClientInterceptor {
-	logger = logger.Scoped(logScope, logDescription)
+// LoggingStreamClientInterceptor returns a grpc.StreamClientInterceptor that logs
+// errors that appear to come from the go-grpc implementation.
+func LoggingStreamClientInterceptor(l log.Logger) grpc.StreamClientInterceptor {
+	logger := l.Scoped(logScope, logDescription)
 
-	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-		serviceName, methodName := splitMethodName(method)
+	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, fullMethod string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		serviceName, methodName := splitMethodName(fullMethod)
 
-		stream, err := streamer(ctx, desc, cc, method, opts...)
+		stream, err := streamer(ctx, desc, cc, fullMethod, opts...)
 		if err != nil {
 			doLog(logger, serviceName, methodName, err)
 			return nil, err
@@ -57,35 +58,12 @@ func newLoggingClientStream(s grpc.ClientStream, logger log.Logger, serviceName,
 			}
 		},
 		postMessageReceive: func(err error) {
-			if err != nil && err != io.EOF {
+			if err != nil && err != io.EOF { // EOF is expected at the end of a stream, so no need to log an error
 				doLog(logger, serviceName, methodName, err)
 			}
 		},
 	}
 }
-
-type callBackClientStream struct {
-	grpc.ClientStream
-
-	postMessageSend    func(error)
-	postMessageReceive func(error)
-}
-
-func (c *callBackClientStream) SendMsg(m interface{}) error {
-	err := c.ClientStream.SendMsg(m)
-	c.postMessageSend(err)
-
-	return err
-}
-
-func (c *callBackClientStream) RecvMsg(m interface{}) error {
-	err := c.ClientStream.RecvMsg(m)
-	c.postMessageReceive(err)
-
-	return err
-}
-
-var _ grpc.ClientStream = &callBackClientStream{}
 
 func doLog(logger log.Logger, serviceName, methodName string, err error) {
 	if err == nil {
@@ -105,19 +83,4 @@ func doLog(logger log.Logger, serviceName, methodName string, err error) {
 		log.String("grpcService", serviceName),
 		log.String("grpcMethod", methodName),
 		log.String("grpcCode", s.Code().String()))
-}
-
-func probablyInternalGRPCError(s *status.Status) bool {
-	return s.Code() != codes.OK && strings.HasPrefix(s.Message(), "grpc:")
-}
-
-// splitMethodName splits a full gRPC method name in to its components (service, method)
-//
-// Copied from github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/reporter.go
-func splitMethodName(fullMethod string) (string, string) {
-	fullMethod = strings.TrimPrefix(fullMethod, "/") // remove leading slash
-	if i := strings.Index(fullMethod, "/"); i >= 0 {
-		return fullMethod[:i], fullMethod[i+1:]
-	}
-	return "unknown", "unknown"
 }
