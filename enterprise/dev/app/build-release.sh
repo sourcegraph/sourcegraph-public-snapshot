@@ -23,18 +23,18 @@ bazel_build() {
 }
 
 create_version() {
-  local sha
-  # In a GitHub action this can result in an empty sha
-  sha=$(git rev-parse --short HEAD)
-  if [[ -z ${sha} ]]; then
-    sha=${GITHUB_SHA:-""}
-  fi
+    local sha
+    # In a GitHub action this can result in an empty sha
+    sha=$(git rev-parse --short HEAD)
+    if [[ -z ${sha} ]]; then
+      sha=${GITHUB_SHA:-""}
+    fi
 
-  local build="insiders"
-  if [[ ${RELEASE_BUILD} == 1 ]]; then
-    build=${GITHUB_RUN_NUMBER:-"release"}
-  fi
-  echo "$(date '+%Y.%-m.%-d')+${build}.${sha}"
+    local build="insiders"
+    if [[ ${RELEASE_BUILD} == 1 ]]; then
+      build=${GITHUB_RUN_NUMBER:-"release"}
+    fi
+    echo "$(date '+%Y.%-m.%-d')+${build}.${sha}"
 }
 
 set_version() {
@@ -45,12 +45,13 @@ set_version() {
   fi
   export VERSION
 
+
   local tauri_conf
   local tmp
   tauri_conf="./src-tauri/tauri.conf.json"
   tmp=$(mktemp)
   echo "[Script] updating package version in '${tauri_conf}' to ${VERSION}"
-  jq --arg version "${VERSION}" '.package.version = $version' "${tauri_conf}" >"${tmp}"
+  jq --arg version "${VERSION}" '.package.version = $version' "${tauri_conf}" > "${tmp}"
   mv "${tmp}" ./src-tauri/tauri.conf.json
 }
 
@@ -67,7 +68,6 @@ set_platform() {
       ;;
     *)
       arch=$(uname -m)
-      ;;
   esac
 
   case "$(uname -s)" in
@@ -79,7 +79,6 @@ set_platform() {
       ;;
     *)
       platform="${arch}-unknown-unknown"
-      ;;
   esac
 
   export PLATFORM=${platform}
