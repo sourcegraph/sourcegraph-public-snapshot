@@ -9,4 +9,5 @@
     margin-bottom: 1rem;
     padding: 0.5rem 0rem;
     font-weight: bold;
+    --button-border: transparent !important;
 }
