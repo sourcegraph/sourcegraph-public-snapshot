@@ -240,7 +240,9 @@ func checkForMigratorUpdate(ctx context.Context) (latest string, hasUpdate bool,
 		return "", false, nil
 	}
 
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "https://github.com/sourcegraph/sourcegraph/releases/latest", nil)
+	timedCtx, cancel := context.WithTimeout(ctx, time.Second*3)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(timedCtx, http.MethodHead, "https://github.com/sourcegraph/sourcegraph/releases/latest", nil)
 	resp, err := (&http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
