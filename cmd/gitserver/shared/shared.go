@@ -144,10 +144,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir, config.CoursierCacheDir)
 		},
-		Hostname:                externalAddress(),
-		DB:                      db,
-		CloneQueue:              server.NewCloneQueue(list.New()),
-		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
+		Hostname:                       externalAddress(),
+		DB:                             db,
+		CloneQueue:                     server.NewCloneQueue(list.New()),
+		GlobalBatchLogSemaphore:        semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
+		PerforceChangelistMappingQueue: server.NewPerforceChangelistMappingQueue(list.New()),
 	}
 
 	configurationWatcher := conf.DefaultClient()
@@ -209,6 +210,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpdatePerSecond)
 
 	gitserver.StartClonePipeline(ctx)
+
+	if conf.ExperimentalFeatures().Perforce == "enabled" {
+		gitserver.StartPerforceChangelistMappingPipeline(ctx)
+	}
 
 	addr := getAddr()
 	srv := &http.Server{
