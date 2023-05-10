@@ -638,7 +638,7 @@ func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.Re
 						// Check if the date is either in the past, or if within the next
 						// retryAfterMaxSleepDuration we would get access again.
 						in := time.Until(after)
-						return in < 0 || in < retryAfterMaxSleepDuration
+						return in <= retryAfterMaxSleepDuration
 					}
 				}
 
