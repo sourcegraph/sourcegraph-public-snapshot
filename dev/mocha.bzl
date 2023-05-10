@@ -93,15 +93,27 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
     })
 
     if is_percy_enabled:
-        run_mocha_tests_with_percy(
-            name = name,
+        # TODO: document arguments and purpose
+        js_run_binary(
+            name = "%s_binary" % name,
             args = args,
-            data = data,
-            env = dict(env, **{
-                "PERCY_ON": "true",
-                "PERCY_TOKEN": "$(PERCY_TOKEN)",
-            }),
+            env = env,
+            srcs = data,
+            out_dirs = ["out"],
+            silent_on_success = False,
+            stamp = 1,  # uses BUILDKITE_BRANCH and BUILDKITE_COMMIT in Percy report
+            tool = "//client/shared/dev:run_mocha_tests_with_percy",
+            visibility = ["//visibility:public"],
+            testonly = True,
             **kwargs
+        )
+
+        build_test(
+            name = name,
+            targets = [name],
+            visibility = ["//visibility:public"],
+            timeout = timeout,
+            flaky = flaky,
         )
     else:
         mocha_bin.mocha_test(

@@ -24,10 +24,8 @@ build --test_env=TESTDB_MAXOPENCONNS=15
 
 # Needed for E2E
 build --test_env=BUILDKITE
-build --test_env=E2E_HEADLESS=false
-build --test_env=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"
-build --test_env=GH_TOKEN
 
+# Needed for mocha tests
 build --define=E2E_HEADLESS=false
 build --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"
 
