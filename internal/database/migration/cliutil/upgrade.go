@@ -68,8 +68,18 @@ func Upgrade(
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		if err := isAirgapped(ctx); err != nil {
-			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, err.Error()))
+		airgapped := isAirgapped(ctx)
+		if airgapped != nil {
+			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, airgapped.Error()))
+		}
+
+		if airgapped == nil {
+			latest, hasUpdate, err := checkForMigratorUpdate(ctx)
+			if err != nil {
+				out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Failed to check for migrator update: %s. Continuing...", err))
+			} else if hasUpdate {
+				out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion, "A new migrator version is available (%s), please consider using it instead.", latest))
+			}
 		}
 
 		runner, err := runnerFactory(schemas.SchemaNames, schemas.Schemas)
