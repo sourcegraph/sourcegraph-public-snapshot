@@ -9700,10 +9700,6 @@ enum PermissionNamespace {
     This represents the Batch Changes namespace.
     """
     BATCH_CHANGES
-    """
-    This represents the subscriptions namespace.
-    """
-    SUBSCRIPTIONS
 }
 
 """
