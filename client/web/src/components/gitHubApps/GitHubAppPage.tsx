@@ -1,12 +1,13 @@
-import { FC, useEffect, useMemo, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiCog, mdiGithub, mdiRefresh, mdiPlus } from '@mdi/js'
+import { mdiCog, mdiDelete, mdiGithub, mdiRefresh, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-operations'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { ErrorLike } from '@sourcegraph/common'
-import { useQuery } from '@sourcegraph/http-client'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -21,6 +22,7 @@ import {
     Card,
     Link,
     Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { GitHubAppByIDResult, GitHubAppByIDVariables } from '../../graphql-operations'
@@ -28,7 +30,7 @@ import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
 import { ConnectionList, SummaryContainer, ConnectionSummary } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
-import { GITHUB_APP_BY_ID_QUERY } from './backend'
+import { GITHUB_APP_BY_ID_QUERY, DELETE_GITHUB_APP_BY_ID_QUERY } from './backend'
 
 import styles from './GitHubAppCard.module.scss'
 
@@ -43,17 +45,35 @@ export const GitHubAppPage: FC<Props> = ({
     allowEditExternalServicesWithFile,
 }) => {
     const { appID } = useParams()
+    const navigate = useNavigate()
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminGitHubApp')
     }, [telemetryService])
     const [fetchError, setError] = useState<ErrorLike>()
 
+    const [deleteGitHubApp, { loading: deleteLoading }] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
+        DELETE_GITHUB_APP_BY_ID_QUERY
+    )
+
     const { data, loading, error } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(GITHUB_APP_BY_ID_QUERY, {
         variables: { id: appID ?? '' },
     })
 
     const app = useMemo(() => data?.gitHubApp, [data])
+
+    const onDelete = useCallback<React.MouseEventHandler>(async () => {
+        if (!window.confirm(`Delete the GitHub App ${app?.name}?`)) {
+            return
+        }
+        try {
+            await deleteGitHubApp({
+                variables: { gitHubApp: app?.id ?? '' },
+            })
+        } finally {
+            navigate('/site-admin/github-apps')
+        }
+    }, [app, deleteGitHubApp, navigate])
 
     // TODO - make an actual GraphQL request to do it here...
     const refreshFromGH = (): void => {}
@@ -71,9 +91,11 @@ export const GitHubAppPage: FC<Props> = ({
         try {
             const req = await fetch(`/.auth/githubapp/state?id=${app?.id}`)
             const state = await req.text()
-            window.location.href = app.appURL.endsWith('/')
-                ? app.appURL + 'installations/new?state=' + state
-                : app.appURL + '/installations/new?state=' + state
+            window.location.assign(
+                app.appURL.endsWith('/')
+                    ? app.appURL + 'installations/new?state=' + state
+                    : app.appURL + '/installations/new?state=' + state
+            )
         } catch (error) {
             handleError(error)
         }
@@ -99,12 +121,25 @@ export const GitHubAppPage: FC<Props> = ({
                         headingElement="h2"
                         actions={
                             <>
-                                <Button onClick={refreshFromGH} variant="info" className="ml-auto">
+                                <Button onClick={refreshFromGH} variant="info" className="ml-auto" size="sm">
                                     <Icon inline={true} svgPath={mdiRefresh} aria-hidden={true} /> Refresh from GitHub
                                 </Button>
-                                <ButtonLink to={app.appURL} variant="info" className="ml-2">
+                                <ButtonLink to={app.appURL} variant="info" className="ml-2" size="sm">
                                     <Icon inline={true} svgPath={mdiGithub} aria-hidden={true} /> Edit
                                 </ButtonLink>
+                                <Tooltip content="Delete GitHub App">
+                                    <Button
+                                        aria-label="Delete"
+                                        className="ml-2"
+                                        onClick={onDelete}
+                                        disabled={deleteLoading}
+                                        variant="danger"
+                                        size="sm"
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                        {' Delete'}
+                                    </Button>
+                                </Tooltip>
                             </>
                         }
                     />
