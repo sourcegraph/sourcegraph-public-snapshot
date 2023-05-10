@@ -1,7 +1,8 @@
+import { QueryResult } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -11,6 +12,8 @@ import {
     BatchChangeBatchSpecsVariables,
     BatchChangeBatchSpecsResult,
     BatchSpecListConnectionFields,
+    BatchChangesSiteConfigurationResult,
+    BatchChangesSiteConfigurationVariables,
 } from '../../graphql-operations'
 
 export const queryBatchSpecs = ({
@@ -198,3 +201,21 @@ export const generateFileDownloadLink = async (fileUrl: string): Promise<string>
     const fileBlob = await file.blob()
     return URL.createObjectURL(fileBlob)
 }
+
+export const BATCH_CHANGES_SITE_CONFIGURATION = gql`
+    query BatchChangesSiteConfiguration {
+        site {
+            configuration {
+                effectiveContents
+            }
+        }
+    }
+`
+
+export const useGetBatchChangesSiteConfiguration = (): QueryResult<
+    BatchChangesSiteConfigurationResult,
+    BatchChangesSiteConfigurationVariables
+> =>
+    useQuery(BATCH_CHANGES_SITE_CONFIGURATION, {
+        fetchPolicy: 'cache-first',
+    })
