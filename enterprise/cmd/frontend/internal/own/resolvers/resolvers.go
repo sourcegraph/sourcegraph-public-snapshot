@@ -91,16 +91,6 @@ func (o *ownershipReasonResolver) ToRecentViewOwnershipSignal() (res graphqlback
 	return
 }
 
-func ownerText(o *codeownerspb.Owner) string {
-	if o == nil {
-		return ""
-	}
-	if o.Handle != "" {
-		return o.Handle
-	}
-	return o.Email
-}
-
 func (r *ownResolver) GitBlobOwnership(
 	ctx context.Context,
 	blob *graphqlbackend.GitTreeEntryResolver,
