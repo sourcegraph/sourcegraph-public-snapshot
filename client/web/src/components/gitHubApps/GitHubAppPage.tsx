@@ -129,7 +129,6 @@ export const GitHubAppPage: FC<Props> = ({
                                         onClick={onDelete}
                                         disabled={deleteLoading}
                                         variant="danger"
-                                        size="sm"
                                     >
                                         <Icon aria-hidden={true} svgPath={mdiDelete} />
                                         {' Delete'}

@@ -31,14 +31,6 @@ const AuthProviderJSON: FC<Props> = ({ app, id }) => {
         }
     )
 
-    if (error) {
-        return (
-            <Alert variant="danger" className="m-3">
-                Error fetching GitHub App client secret: {error.message}
-            </Alert>
-        )
-    }
-
     const clientSecret = useMemo(() => {
         if (loading) {
             return 'LOADING...'
@@ -64,6 +56,14 @@ const AuthProviderJSON: FC<Props> = ({ app, id }) => {
             4
         )
     }, [clientSecret, app])
+
+    if (error) {
+        return (
+            <Alert variant="danger" className="m-3">
+                Error fetching GitHub App client secret: {error.message}
+            </Alert>
+        )
+    }
 
     return (
         <>

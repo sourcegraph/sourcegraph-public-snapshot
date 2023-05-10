@@ -67,6 +67,7 @@ export const GITHUB_APP_CLIENT_SECRET_QUERY = gql`
 export const SITE_SETTINGS_QUERY = gql`
     query SiteConfigForApps {
         site {
+            __typename
             id
             configuration {
                 effectiveContents
