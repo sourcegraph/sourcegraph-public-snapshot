@@ -52,7 +52,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Set up our handler chain, which is run from the bottom up
 	handler := newServiceHandler(obctx.Logger, config)
-	handler = rateLimit(obctx.Logger, redispool.Cache, handler)
+	handler = rateLimit(obctx.Logger, newPrefixRedisStore("rate_limit:", redispool.Cache), handler)
 	handler = &auth.Authenticator{
 		Log:     obctx.Logger.Scoped("auth", "authentication middleware"),
 		Sources: sources,
@@ -115,7 +115,6 @@ func newServiceHandler(logger log.Logger, config *Config) http.Handler {
 	r.HandleFunc("/-/__version", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(version.Version()))
-		return
 	})
 
 	// V1 service routes
@@ -199,4 +198,28 @@ func healthz(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func newPrefixRedisStore(prefix string, store redispool.KeyValue) limiter.RedisStore {
+	return &prefixRedisStore{
+		prefix: prefix,
+		store:  store,
+	}
+}
+
+type prefixRedisStore struct {
+	prefix string
+	store  redispool.KeyValue
+}
+
+func (s *prefixRedisStore) Incr(key string) (int, error) {
+	return s.store.Incr(s.prefix + key)
+}
+
+func (s *prefixRedisStore) TTL(key string) (int, error) {
+	return s.store.TTL(s.prefix + key)
+}
+
+func (s *prefixRedisStore) Expire(key string, ttlSeconds int) error {
+	return s.store.Expire(s.prefix+key, ttlSeconds)
 }
