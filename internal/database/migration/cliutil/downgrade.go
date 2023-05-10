@@ -65,6 +65,10 @@ func Downgrade(
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		if err := isAirgapped(ctx); err != nil {
+			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, err.Error()))
+		}
+
 		from, ok := oobmigration.NewVersionFromString(fromFlag.Get(cmd))
 		if !ok {
 			return errors.New("bad format for -from")

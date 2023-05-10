@@ -68,6 +68,10 @@ func Upgrade(
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		if err := isAirgapped(ctx); err != nil {
+			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, err.Error()))
+		}
+
 		runner, err := runnerFactory(schemas.SchemaNames, schemas.Schemas)
 		if err != nil {
 			return errors.Wrap(err, "new runner")

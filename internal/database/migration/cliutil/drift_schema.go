@@ -77,11 +77,10 @@ func NewExplicitFileSchemaFactory(filename string) ExpectedSchemaFactory {
 
 // fetchSchema makes an HTTP GET request to the given URL and reads the schema description from the response.
 func fetchSchema(ctx context.Context, url string) (descriptions.SchemaDescription, error) {
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return descriptions.SchemaDescription{}, err
 	}
-	req = req.WithContext(ctx)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

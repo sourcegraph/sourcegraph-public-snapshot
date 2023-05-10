@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -175,4 +176,43 @@ func outOfBandMigrationRunner(db database.DB) *oobmigration.Runner {
 
 func outOfBandMigrationRunnerWithStore(store *oobmigration.Store) *oobmigration.Runner {
 	return oobmigration.NewRunner(migratorObservationCtx, store, time.Second)
+}
+
+// checks if a known good version's schema can be reached through either Github
+// or GCS, to report whether the migrator may be operating in an airgapped environment.
+func isAirgapped(ctx context.Context) (err error) {
+	// known good version and filename in both GCS and Github
+	filename, _ := getSchemaJSONFilename("frontend")
+	const version = "v3.41.1"
+
+	timedCtx, cancel := context.WithTimeout(ctx, time.Second*3)
+	defer cancel()
+	url := githubExpectedSchemaPath(filename, version)
+	req, _ := http.NewRequestWithContext(timedCtx, http.MethodHead, url, nil)
+	resp, gherr := http.DefaultClient.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	ghUnreachable := gherr != nil || resp.StatusCode != http.StatusOK
+
+	timedCtx, cancel = context.WithTimeout(ctx, time.Second*3)
+	defer cancel()
+	url = gcsExpectedSchemaPath(filename, version)
+	req, _ = http.NewRequestWithContext(timedCtx, http.MethodHead, url, nil)
+	resp, gcserr := http.DefaultClient.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	gcsUnreachable := gcserr != nil || resp.StatusCode != http.StatusOK
+
+	switch {
+	case ghUnreachable && gcsUnreachable:
+		err = errors.New("Neither Github nor GCS reachable, some features may not work as expected")
+	case ghUnreachable:
+		err = errors.New("Github not reachable, GCS is reachable, some features may not work as expected")
+	case gcsUnreachable:
+		err = errors.New("Github is reachable, GCS not reachable, some features may not work as expected")
+	}
+
+	return err
 }

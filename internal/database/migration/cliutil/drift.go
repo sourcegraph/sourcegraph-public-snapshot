@@ -40,6 +40,10 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		if err := isAirgapped(ctx); err != nil {
+			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, err.Error()))
+		}
+
 		schemaName := TranslateSchemaNames(schemaNameFlag.Get(cmd), out)
 		version := versionFlag.Get(cmd)
 		file := fileFlag.Get(cmd)
