@@ -13,16 +13,20 @@ type operations struct {
 	getReferenceCountStatistics      *observation.Operation
 	lastUpdatedAt                    *observation.Operation
 	getUploadsForRanking             *observation.Operation
-	processStaleExportedUploads      *observation.Operation
+	vacuumAbandonedExportedUploads   *observation.Operation
 	insertDefinitionsForRanking      *observation.Operation
 	vacuumAbandonedDefinitions       *observation.Operation
-	vacuumStaleDefinitions           *observation.Operation
+	softDeleteStaleDefinitions       *observation.Operation
+	vacuumDeletedDefinitions         *observation.Operation
 	insertReferencesForRanking       *observation.Operation
 	vacuumAbandonedReferences        *observation.Operation
-	vacuumStaleReferences            *observation.Operation
+	softDeleteStaleReferences        *observation.Operation
+	vacuumDeletedReferences          *observation.Operation
 	insertInitialPathRanks           *observation.Operation
 	vacuumAbandonedInitialPathCounts *observation.Operation
-	vacuumStaleInitialPaths          *observation.Operation
+	softDeleteStaleInitialPaths      *observation.Operation
+	vacuumDeletedInitialPaths        *observation.Operation
+	coordinate                       *observation.Operation
 	insertPathCountInputs            *observation.Operation
 	insertInitialPathCounts          *observation.Operation
 	vacuumStaleGraphs                *observation.Operation
@@ -56,16 +60,20 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getReferenceCountStatistics:      op("GetReferenceCountStatistics"),
 		lastUpdatedAt:                    op("LastUpdatedAt"),
 		getUploadsForRanking:             op("GetUploadsForRanking"),
-		processStaleExportedUploads:      op("ProcessStaleExportedUploads"),
+		vacuumAbandonedExportedUploads:   op("VacuumAbandonedExportedUploads"),
 		insertDefinitionsForRanking:      op("InsertDefinitionsForRanking"),
 		vacuumAbandonedDefinitions:       op("VacuumAbandonedDefinitions"),
-		vacuumStaleDefinitions:           op("VacuumStaleDefinitions"),
+		softDeleteStaleDefinitions:       op("SoftDeleteStaleDefinitions"),
+		vacuumDeletedDefinitions:         op("VacuumDeletedDefinitions"),
 		insertReferencesForRanking:       op("InsertReferencesForRanking"),
 		vacuumAbandonedReferences:        op("VacuumAbandonedReferences"),
-		vacuumStaleReferences:            op("VacuumStaleReferences"),
+		softDeleteStaleReferences:        op("SoftDeleteStaleReferences"),
+		vacuumDeletedReferences:          op("VacuumDeletedReferences"),
 		insertInitialPathRanks:           op("InsertInitialPathRanks"),
 		vacuumAbandonedInitialPathCounts: op("VacuumAbandonedInitialPathCounts"),
-		vacuumStaleInitialPaths:          op("VacuumStaleInitialPaths"),
+		softDeleteStaleInitialPaths:      op("SoftDeleteStaleInitialPaths"),
+		vacuumDeletedInitialPaths:        op("VacuumDeletedInitialPaths"),
+		coordinate:                       op("Coordinate"),
 		insertPathCountInputs:            op("InsertPathCountInputs"),
 		insertInitialPathCounts:          op("InsertInitialPathCounts"),
 		vacuumStaleGraphs:                op("VacuumStaleGraphs"),

@@ -8,6 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -99,7 +100,7 @@ func NewPipelineJob(ctx context.Context, opts PipelineOptions) goroutine.Backgro
 	pipeline := &pipeline{opts: opts}
 
 	return goroutine.NewPeriodicGoroutineWithMetricsAndDynamicInterval(
-		ctx,
+		actor.WithInternalActor(ctx),
 		opts.Name,
 		opts.Description,
 		pipeline.interval,

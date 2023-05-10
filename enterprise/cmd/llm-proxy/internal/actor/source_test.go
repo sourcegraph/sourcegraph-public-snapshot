@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/conc"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,12 +31,13 @@ func (m *mockSourceSyncer) Get(context.Context, string) (*Actor, error) {
 	return nil, errors.New("unimplemented")
 }
 
-func (m *mockSourceSyncer) Sync(context.Context) error {
+func (m *mockSourceSyncer) Sync(context.Context) (int, error) {
 	m.syncCount++
-	return nil
+	return 10, nil
 }
 
 func TestSourcesWorkers(t *testing.T) {
+	logger := logtest.Scoped(t)
 	// Connect to local redis for testing, this is the same URL used in rcache.SetupForTest
 	p, ok := redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
 		MaxIdle:     3,
@@ -58,7 +60,7 @@ func TestSourcesWorkers(t *testing.T) {
 	s1 := &mockSourceSyncer{}
 	stop1 := make(chan struct{})
 	g.Go(func() {
-		w := (Sources{s1}).Worker(sourceWorkerMutex1, time.Millisecond)
+		w := (Sources{s1}).Worker(logger, sourceWorkerMutex1, time.Millisecond)
 		go func() {
 			<-stop1
 			w.Stop()
@@ -73,7 +75,7 @@ func TestSourcesWorkers(t *testing.T) {
 		sourceWorkerMutex := rs.NewMutex(lockName,
 			// Competing worker should only try once to avoid getting stuck
 			redsync.WithTries(1))
-		w := (Sources{s2}).Worker(sourceWorkerMutex, time.Millisecond)
+		w := (Sources{s2}).Worker(logger, sourceWorkerMutex, time.Millisecond)
 		go func() {
 			<-stop2
 			w.Stop()

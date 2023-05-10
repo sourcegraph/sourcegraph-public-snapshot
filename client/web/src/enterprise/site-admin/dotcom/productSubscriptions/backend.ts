@@ -85,7 +85,7 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
                     licenseKey
                     createdAt
                 }
-                sourcegraphAccessTokens
+                currentSourcegraphAccessToken
                 llmProxyAccess {
                     ...LLMProxyAccessFields
                 }
