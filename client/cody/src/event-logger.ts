@@ -1,3 +1,4 @@
+import cookies from 'js-cookie'
 import * as uuid from 'uuid'
 
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -15,11 +16,13 @@ export async function updateEventLogger(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
     localStorage: LocalStorage
 ): Promise<void> {
-    const anonymousUserID = localStorage.get(ANONYMOUS_USER_ID_KEY)
+    const anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.get(ANONYMOUS_USER_ID_KEY)
     if (!anonymousUserID) {
         const anonymousUserID = uuid.v4()
         await localStorage.set(ANONYMOUS_USER_ID_KEY, anonymousUserID)
     }
+    // Always set the common domain cookie
+    cookies.set(ANONYMOUS_USER_ID_KEY, anonymousUserID)
     if (!eventLoggerGQLClient) {
         eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
         eventLogger = EventLogger.create(eventLoggerGQLClient)

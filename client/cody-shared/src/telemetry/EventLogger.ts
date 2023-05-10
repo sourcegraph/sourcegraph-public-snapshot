@@ -1,3 +1,4 @@
+import cookies from 'js-cookie'
 import * as vscode from 'vscode'
 
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
@@ -24,10 +25,10 @@ export class EventLogger {
      * @param eventName The ID of the action executed.
      */
     public async log(eventName: string, eventProperties?: any, publicProperties?: any): Promise<void> {
-        let anonymousUserID = localStorage.get(ANONYMOUS_USER_ID_KEY)
+        const anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.get(ANONYMOUS_USER_ID_KEY)
 
         // Don't log events if the UID has not yet been generated.
-        if (anonymousUserID === null) {
+        if (!anonymousUserID) {
             return
         }
         const argument = {
