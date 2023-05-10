@@ -39,14 +39,15 @@ interface CodyChatPageProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
+const onDownloadVSCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_DOWNLOAD_VSCODE)
+const onTryOnPublicCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_TRY_ON_PUBLIC_CODE)
+
 export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authenticatedUser }) => {
     const { reset, clearHistory } = useChatStore({ codebase: '' })
     const [enabled] = useFeatureFlag('cody-web-chat')
     const [showVSCodeCTA] = useState<boolean>(Math.random() < 0.5 || true)
     const [isCTADismissed = true, setIsCTADismissed] = useTemporarySetting('cody.chatPageCta.dismissed', false)
     const onCTADismiss = (): void => setIsCTADismissed(true)
-    const onDownloadVSCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_DOWNLOAD_VSCODE)
-    const onTryOnPublicCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_TRY_ON_PUBLIC_CODE)
 
     useEffect(() => {
         eventLogger.logPageView('CodyChat')
