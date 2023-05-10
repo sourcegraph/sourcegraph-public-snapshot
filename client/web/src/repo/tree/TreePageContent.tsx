@@ -16,16 +16,16 @@ import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-o
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Card, CardHeader, Icon, Link, Tooltip, Text, ButtonLink } from '@sourcegraph/wildcard'
+import { ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
     ConnectionContainer,
+    ConnectionError,
     ConnectionList,
     ConnectionLoading,
     ConnectionSummary,
     SummaryContainer,
-    ConnectionError,
 } from '../../components/FilteredConnection/ui'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import {
@@ -35,15 +35,18 @@ import {
     DiffSinceVariables,
     GitCommitFields,
     RepositoryContributorNodeFields,
-    TreePageRepositoryContributorsResult,
-    TreePageRepositoryContributorsVariables,
     Scalars,
     TreeCommitsResult,
-    TreePageRepositoryFields,
     TreeCommitsVariables,
+    TreePageOwnershipResult,
+    TreePageOwnershipVariables,
+    TreePageRepositoryContributorsResult,
+    TreePageRepositoryContributorsVariables,
+    TreePageRepositoryFields,
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
+import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS } from '../blob/own/grapqlQueries'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { getRefType } from '../utils'
@@ -318,10 +321,14 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 )}
 
                 {!isPackage && (
-                    <Card className={styles.contributors}>
-                        <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
-                        <Contributors {...props} />
-                    </Card>
+                    <>
+                        <Card className={styles.contributors}>
+                            <CardHeader className={panelStyles.cardColHeaderWrapper}>Ownership</CardHeader>
+                            <Ownership {...props} />
+                            <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
+                            <Contributors {...props} />
+                        </Card>
+                    </>
                 )}
             </section>
         </>
@@ -456,6 +463,113 @@ const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
                                 </Link>
                             </small>
                         )}
+                    </>
+                )}
+            </SummaryContainer>
+        </ConnectionContainer>
+    )
+}
+
+const OWNERS_QUERY = gql`
+    ${OWNER_FIELDS}
+    ${RECENT_CONTRIBUTOR_FIELDS}
+
+    query TreePageOwnership($repo: ID!, $first: Int, $revision: String!) {
+        node(id: $repo) {
+            ... on Repository {
+                commit(rev: $revision) {
+                    ownership(first: $first) {
+                        ...TreePageOwnershipConnectionFields
+                    }
+                }
+            }
+        }
+    }
+
+    fragment TreePageOwnershipConnectionFields on OwnershipConnection {
+        totalCount
+        pageInfo {
+            hasNextPage
+        }
+        nodes {
+            ...TreePageOwnershipNodeFields
+        }
+    }
+
+    fragment TreePageOwnershipNodeFields on Ownership {
+        owner {
+            ...OwnerFields
+        }
+        reasons {
+            ...RecentContributorOwnershipSignalFields
+        }
+    }
+`
+
+interface OwnershipProps extends TreePageContentProps {}
+const Ownership: React.FC<OwnershipProps> = ({ repo }) => {
+    const { data, error, loading } = useQuery<TreePageOwnershipResult, TreePageOwnershipVariables>(OWNERS_QUERY, {
+        variables: {
+            first: COUNT,
+            repo: repo.id,
+            revision: '',
+        },
+    })
+
+    const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
+    const connection = node?.commit?.ownership?.__typename === 'OwnershipConnection' ? node.commit.ownership : null
+
+    return (
+        <ConnectionContainer>
+            {error && <ConnectionError errors={[error.message]} />}
+            {connection && connection.nodes.length > 0 && (
+                <ConnectionList
+                    className={classNames('test-filtered-contributors-connection', styles.table)}
+                    as="table"
+                >
+                    <tbody>
+                        {connection.nodes.map(node => (
+                            <tr>
+                                <td>{node.owner.__typename === 'Person' ? node.owner.displayName : 'Not a person'}</td>
+                            </tr>
+                            // <RepositoryContributorNode
+                            //     key={node.person.email}
+                            //     node={node}
+                            //     repoName={repo.name}
+                            //     sourceType={repo.sourceType}
+                            //     {...spec}
+                            // />
+                        ))}
+                    </tbody>
+                </ConnectionList>
+            )}
+            {loading && (
+                <div className={contributorsStyles.filteredConnectionLoading}>
+                    <ConnectionLoading />
+                </div>
+            )}
+            <SummaryContainer className={styles.tableSummary}>
+                {connection && (
+                    <>
+                        <ConnectionSummary
+                            compact={true}
+                            connection={connection}
+                            first={COUNT}
+                            noun="owner"
+                            pluralNoun="owners"
+                            hasNextPage={connection.pageInfo.hasNextPage}
+                        />
+                        {/* {connection.pageInfo.hasNextPage && (
+                            <small>
+                                <Link
+                                    to={`${repo.url}/-/stats/contributors?${
+                                        filePath ? 'path=' + encodeURIComponent(filePath) : ''
+                                    }`}
+                                >
+                                    Show more
+                                </Link>
+                            </small>
+                        )} */}
                     </>
                 )}
             </SummaryContainer>

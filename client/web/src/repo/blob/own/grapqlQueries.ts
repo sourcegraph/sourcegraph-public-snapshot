@@ -2,7 +2,7 @@ import { gql } from '@sourcegraph/http-client'
 
 import { gitCommitFragment } from '../../commits/RepositoryCommitsPage'
 
-const OWNER_FIELDS = gql`
+export const OWNER_FIELDS = gql`
     fragment OwnerFields on Owner {
         __typename
         ... on Person {
@@ -27,8 +27,16 @@ const OWNER_FIELDS = gql`
     }
 `
 
+export const RECENT_CONTRIBUTOR_FIELDS = gql`
+    fragment RecentContributorOwnershipSignalFields on RecentContributorOwnershipSignal {
+        title
+        description
+    }
+`
+
 export const FETCH_OWNERS = gql`
     ${OWNER_FIELDS}
+    ${RECENT_CONTRIBUTOR_FIELDS}
 
     fragment CodeownersFileEntryFields on CodeownersFileEntry {
         title
@@ -37,11 +45,6 @@ export const FETCH_OWNERS = gql`
             url
         }
         ruleLineMatch
-    }
-
-    fragment RecentContributorOwnershipSignalFields on RecentContributorOwnershipSignal {
-        title
-        description
     }
 
     query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
