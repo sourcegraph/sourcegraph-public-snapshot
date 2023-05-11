@@ -170,7 +170,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 		id, err := db.GitHubApps().Create(req.Context(), app)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error while storing github app in DB; %s", err.Error()), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Unexpected error while storing github app in DB: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 
@@ -278,15 +278,8 @@ func createGitHubApp(conversionURL string) (*types.GitHubApp, error) {
 
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	fmt.Printf("Body: %s", body)
-	if err != nil {
-		return nil, err
-	}
-
 	var response GitHubAppResponse
-	err = json.Unmarshal(body, &response)
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 

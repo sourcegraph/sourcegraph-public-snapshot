@@ -22,7 +22,7 @@ func (e RateLimitExceededError) WriteResponse(w http.ResponseWriter) {
 	// Rate limit exceeded, write well known headers and return correct status code.
 	w.Header().Set("x-ratelimit-limit", strconv.Itoa(e.Limit))
 	w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(e.Limit-e.Used, 0)))
-	w.Header().Set("retry-after", e.RetryAfter.Format(time.RFC3339))
+	w.Header().Set("retry-after", e.RetryAfter.Format(time.RFC1123))
 	http.Error(w, e.Error(), http.StatusTooManyRequests)
 }
 

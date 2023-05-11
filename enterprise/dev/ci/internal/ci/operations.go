@@ -48,7 +48,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops := operations.NewSet()
 
 	if opts.ForceBazel {
-		ops.Merge(BazelOperations())
+		ops.Append(BazelOperations()...)
 	}
 
 	// Simple, fast-ish linter checks
@@ -501,12 +501,10 @@ func addGoBuild(pipeline *bk.Pipeline) {
 }
 
 // Adds backend integration tests step.
-//
-// Runtime: ~5m
 func backendIntegrationTests(candidateImageTag string, imageDep string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		for _, enableGRPC := range []bool{true, false} {
-			description := ":chains: Backend integration tests"
+			description := ":bazel::docker: :chains: Backend integration tests"
 			if enableGRPC {
 				description += " (gRPC)"
 			}
@@ -514,6 +512,7 @@ func backendIntegrationTests(candidateImageTag string, imageDep string) operatio
 				description,
 				// Run tests against the candidate server image
 				bk.DependsOn(candidateImageStepKey(imageDep)),
+				bk.AutomaticRetry(1), // TODO: @jhchabran, flaky, investigate
 				bk.Env("IMAGE",
 					images.DevRegistryImage("server", candidateImageTag)),
 				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
@@ -662,7 +661,7 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep(":docker::brain: Code Intel QA",
+		p.AddStep(":bazel::docker::brain: Code Intel QA",
 			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
 				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@Noah S-C>",
 				ChannelName: "code-intel-buildkite",
@@ -686,7 +685,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 
 func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep(":docker::packer: Executors E2E",
+		p.AddStep(":bazel::docker::packer: Executors E2E",
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Agent("queue", "bazel"),

@@ -2294,6 +2294,15 @@ type FeatureFlagBoolean {
     Overrides that apply to the feature flag
     """
     overrides: [FeatureFlagOverride!]!
+    """
+    When the feature flag was created.
+    """
+    createdAt: DateTime!
+
+    """
+    When the feature flag was last updated.
+    """
+    updatedAt: DateTime!
 }
 
 """
@@ -2315,6 +2324,15 @@ type FeatureFlagRollout {
     Overrides that apply to the feature flag
     """
     overrides: [FeatureFlagOverride!]!
+    """
+    When the feature flag was created.
+    """
+    createdAt: DateTime!
+
+    """
+    When the feature flag was last updated.
+    """
+    updatedAt: DateTime!
 }
 
 """

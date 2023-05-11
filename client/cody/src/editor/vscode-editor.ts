@@ -6,10 +6,13 @@ import {
     ActiveTextEditorVisibleContent,
     Editor,
 } from '@sourcegraph/cody-shared/src/editor'
+import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-const SURROUNDING_LINES = 50
+import { InlineController } from '../services/InlineController'
 
 export class VSCodeEditor implements Editor {
+    constructor(public controller: InlineController) {}
+
     public getWorkspaceRootPath(): string | null {
         const uri = vscode.window.activeTextEditor?.document?.uri
         if (uri) {
@@ -37,6 +40,9 @@ export class VSCodeEditor implements Editor {
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+        if (this.controller.isInProgress) {
+            return null
+        }
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null
@@ -109,15 +115,20 @@ export class VSCodeEditor implements Editor {
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
         const activeEditor = this.getActiveTextEditorInstance()
+        if (this.controller.isInProgress) {
+            await this.controller.replaceSelection(replacement)
+            return
+        }
         if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {
             // TODO: should return something indicating success or failure
+            console.error('Missing file')
             return
         }
         const selection = activeEditor.selection
         if (!selection) {
+            console.error('Missing selection')
             return
         }
-
         if (activeEditor.document.getText(selection) !== selectedText) {
             // TODO: Be robust to this.
             await vscode.window.showInformationMessage(
@@ -126,9 +137,11 @@ export class VSCodeEditor implements Editor {
             return
         }
 
+        // Editing the document
         await activeEditor.edit(edit => {
             edit.replace(selection, replacement)
         })
+
         return
     }
 

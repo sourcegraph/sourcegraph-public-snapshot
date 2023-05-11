@@ -368,7 +368,7 @@ func serveSignIn(db database.DB) handlerFunc {
 	}
 
 	// For app we use an extra middleware to handle passwordless signin via a
-	// nonce.
+	// in-memory secret.
 	if deploy.IsApp() {
 		return userpasswd.AppSignInMiddleware(db, handler)
 	}

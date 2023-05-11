@@ -1,4 +1,4 @@
-# Cody: AI code assistant
+# Cody AI by Sourcegraph
 
 Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
 
@@ -6,13 +6,15 @@ Cody is an AI code assistant that writes code and answers questions for you by r
 
 [**Full documentation**](https://docs.sourcegraph.com/cody)
 
+Not the extension you're looking for? Download our [Search extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph).
+
 ## Features
 
 <!-- NOTE: These should stay roughly in sync with doc/cody/index.md, although that page needs to be not specific to VS Code. -->
 
 - **🤖 Chatbot that knows _your_ code:** Writes code and answers questions with knowledge of your entire codebase, following your project's code conventions and architecture better than other AI code chatbots.
 - **✨ Fixup code:** Interactively writes and refactors code for you, based on quick natural-language instructions.
-- **🧪 Recipes:** Generates unit tests, documentation, and more, with full codebase awareness.
+- **📖 Recipes:** Generates unit tests, documentation, and more, with full codebase awareness.
 
 ## Usage
 
@@ -52,14 +54,18 @@ Examples of the kinds of fixup instructions Cody can handle:
 - "Add helpful debug log statements"
 - "Make this work" (seriously, it often works--try it!)
 
-### 🧪 Recipes
+### 📖 Recipes
 
-Right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
+Select the recipes tab or right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
 
-- Explain Code
-- Generate Unit Test
-- Generate Docstring
-- Improve Variable Names
+- Explain code
+- Generate unit test
+- Generate docstring
+- Improve variable names
+- Translate to different language
+- Summarize recent code changes
+- Detect code smells
+- Generate release notes
 
 We welcome PRs that contribute new, useful recipes.
 
@@ -75,4 +81,4 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
-[Cody's code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/cody) is open source (Apache 2).
+[Cody's code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/cody) is open source (Apache License 2.0).
