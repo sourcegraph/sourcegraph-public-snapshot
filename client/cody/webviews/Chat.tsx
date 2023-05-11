@@ -194,7 +194,7 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
     <div className={className}>
         <VSCodeButton
             className={classNames(styles.editButton)}
-            appearance="secondary"
+            appearance="icon"
             type="button"
             onClick={() => setMessageBeingEdited(!messageBeingEdited)}
         >
