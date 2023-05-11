@@ -20,4 +20,4 @@ buildchecker/**/* @dev-experience
 ci/**/* @dev-experience
 scaletesting/**/* @dev-experience @sanderginn
 pr-auditor/**/* @dev-experience
-linters/**/* @burmudar @jhchabran
+linters/**/* @sourcegraph/dev-experience @burmudar
