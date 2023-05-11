@@ -787,9 +787,7 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 			}
 
 			// Make up p.PendingUserIDs from the result set.
-			for _, id := range ids {
-				p.PendingUserIDs.Add(id)
-			}
+			p.PendingUserIDs.Add(ids...)
 		}
 
 	}
