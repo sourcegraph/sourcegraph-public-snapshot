@@ -20,7 +20,7 @@ export default meta
 export const Simple: ComponentStoryObj<typeof Login> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <Login onLogin={() => {}} isValidLogin={true} />
+            <Login onLogin={() => {}} isValidLogin={true} isAppInstalled={false} />
         </div>
     ),
 }
@@ -28,7 +28,15 @@ export const Simple: ComponentStoryObj<typeof Login> = {
 export const InvalidLogin: ComponentStoryObj<typeof Login> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <Login onLogin={() => {}} isValidLogin={false} />
+            <Login onLogin={() => {}} isValidLogin={false} isAppInstalled={false} />
+        </div>
+    ),
+}
+
+export const LoginWithAppInstalled: ComponentStoryObj<typeof Login> = {
+    render: () => (
+        <div style={{ background: 'rgb(28, 33, 40)' }}>
+            <Login onLogin={() => {}} isValidLogin={true} isAppInstalled={true} />
         </div>
     ),
 }
