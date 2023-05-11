@@ -9,6 +9,7 @@ URL="http://localhost:$PORT"
 DATA=${DATA:-"/tmp/sourcegraph-data"}
 SOURCEGRAPH_LICENSE_GENERATION_KEY=${SOURCEGRAPH_LICENSE_GENERATION_KEY:-""}
 SG_FEATURE_FLAG_GRPC=${SG_FEATURE_FLAG_GRPC:-"false"}
+DB_STARTUP_TIMEOUT="10s"
 
 echo "--- Checking for existing Sourcegraph instance at $URL"
 if curl --output /dev/null --silent --head --fail "$URL"; then
@@ -44,6 +45,7 @@ docker run "$@" \
   -e DISABLE_OBSERVABILITY=true \
   -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
   -e SG_FEATURE_FLAG_GRPC="$SG_FEATURE_FLAG_GRPC" \
+  -e DB_STARTUP_TIMEOUT="$DB_STARTUP_TIMEOUT" \
   --volume "$DATA/config:/etc/sourcegraph" \
   --volume "$DATA/data:/var/opt/sourcegraph" \
   "$IMAGE"
