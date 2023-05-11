@@ -6,16 +6,18 @@ import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 
+import { AuthStatus } from '../src/chat/protocol'
+
 import styles from './Login.module.css'
 
 interface LoginProps {
-    isValidLogin?: boolean
+    authStatus?: AuthStatus
     onLogin: (token: string, endpoint: string) => void
     serverEndpoint?: string
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
-    isValidLogin,
+    authStatus,
     onLogin,
     serverEndpoint,
 }) => {
@@ -34,9 +36,14 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     return (
         <div className={styles.container}>
-            {isValidLogin === false && (
+            {authStatus?.loggedIn === false && (
                 <p className={styles.error}>
                     Invalid credentials. Please check the Sourcegraph instance URL and access token.
+                </p>
+            )}
+            {authStatus?.loggedIn === true && authStatus?.hasVerifiedEmail === false && (
+                <p className={styles.error}>
+                    Email not verified. Please add a verified email to your Sourcegraph instance account.
                 </p>
             )}
             <section className={styles.section}>

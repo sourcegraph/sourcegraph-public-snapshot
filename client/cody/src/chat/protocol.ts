@@ -28,7 +28,7 @@ export type WebviewMessage =
 export type ExtensionMessage =
     | { type: 'showTab'; tab: string }
     | { type: 'config'; config: ConfigurationSubsetForWebview }
-    | { type: 'login'; isValid: boolean }
+    | { type: 'login'; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean }
     | { type: 'debug'; message: string }
@@ -45,3 +45,12 @@ export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debu
 }
 
 export const DOTCOM_URL = new URL('https://sourcegraph.com')
+
+/**
+ * The status of a users authentication, whether they're logged in and have a
+ * verified email.
+ */
+export interface AuthStatus {
+    loggedIn: boolean
+    hasVerifiedEmail: boolean
+}

@@ -12,6 +12,7 @@ import {
     SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
+    CURRENT_USER_ID_VERIFICATION_STATUS_QUERY,
 } from './queries'
 
 interface APIResponse<T> {
@@ -21,6 +22,10 @@ interface APIResponse<T> {
 
 interface CurrentUserIdResponse {
     currentUser: { id: string } | null
+}
+
+interface CurrentUserIdVerificationStatusResponse {
+    currentUser: { id: string; hasVerifiedEmail: boolean } | null
 }
 
 interface RepositoryIdResponse {
@@ -81,6 +86,17 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
             extractDataOrError(response, data =>
                 data.currentUser ? data.currentUser.id : new Error('current user not found')
+            )
+        )
+    }
+
+    public async getCurrentUserIDAndVerificationStatus(): Promise<{ id: string; hasVerifiedEmail: boolean } | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdVerificationStatusResponse>>(
+            CURRENT_USER_ID_VERIFICATION_STATUS_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser ? data.currentUser : new Error('current user not found')
             )
         )
     }
