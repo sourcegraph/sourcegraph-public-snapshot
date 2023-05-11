@@ -5,7 +5,7 @@ import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselec
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
+import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
@@ -15,6 +15,7 @@ import { getRecipe } from './recipes/browser-recipes'
 import { Transcript, TranscriptJSON } from './transcript'
 import { ChatMessage } from './transcript/messages'
 import { reformatBotMessage } from './viewHelpers'
+import { RecipeID } from './recipes/recipe'
 
 export type { TranscriptJSON }
 export { Transcript }
@@ -35,7 +36,7 @@ export interface Client {
     readonly isMessageInProgress: boolean
     submitMessage: (text: string) => Promise<void>
     executeRecipe: (
-        recipeId: string,
+        recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
         }
@@ -87,7 +88,7 @@ export async function createClient({
     }
 
     async function executeRecipe(
-        recipeId: string,
+        recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
             humanChatInput?: string
