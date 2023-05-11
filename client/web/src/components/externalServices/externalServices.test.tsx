@@ -7,7 +7,8 @@ describe('gitHubAppConfig', () => {
   "url": "https://test.com",
   "gitHubAppDetails": {
     "installationID": 5678,
-    "appID": 1234
+    "appID": 1234,
+    "baseURL": "https://test.com"
   },
   "orgs": ["testUser"],
   "authorization": {}
