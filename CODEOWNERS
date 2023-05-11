@@ -1,5 +1,5 @@
-/.buildkite @dev-experience
-/.github @dev-experience
+/.buildkite/**/* @dev-experience
+/.github/**/* @dev-experience
 
 /.aspect @dev-experience
 /.bazel* @dev-experience
