@@ -2,10 +2,10 @@ package cody
 
 import (
 	"context"
-	"errors"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"

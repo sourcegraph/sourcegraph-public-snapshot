@@ -14,6 +14,7 @@ go_library(
         "//internal/conf/deploy",
         "//internal/database",
         "//internal/featureflag",
+        "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],
 )
