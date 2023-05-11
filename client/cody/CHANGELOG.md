@@ -11,6 +11,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 ### Fixed
 
 - UI bug that capped buttons at 300px max-width with visible border [pull/51726](https://github.com/sourcegraph/sourcegraph/pull/51726)
+- Add error message on top of Cody's response instead of overriding it [pull/51762](https://github.com/sourcegraph/sourcegraph/pull/51762)
 
 ### Changed
 
