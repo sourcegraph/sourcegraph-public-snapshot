@@ -25,7 +25,7 @@ func NewRunner(out *std.Output, annotations bool, targets ...Target) Runner {
 			if err != nil {
 				os.Stderr.WriteString(err.Error() + "\n")
 			}
-			_, err = of.WriteString(fmt.Sprintf("Try `sg lint --fix %s` to fix this issue!", category))
+			_, err = fd.WriteString(fmt.Sprintf("Try `sg lint --fix %s` to fix this issue!", category))
 			if err != nil {
 				os.Stderr.WriteString(err.Error() + "\n")
 			}
