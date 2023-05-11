@@ -15,6 +15,11 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         if (this.config.accessToken) {
             headersInstance.set('Authorization', `token ${this.config.accessToken}`)
         }
+        const parameters = new URLSearchParams(window.location.search)
+        const trace = parameters.get('trace')
+        if (trace) {
+            headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
+        }
         fetchEventSource(this.completionsEndpoint, {
             method: 'POST',
             headers: Object.fromEntries(headersInstance.entries()),
