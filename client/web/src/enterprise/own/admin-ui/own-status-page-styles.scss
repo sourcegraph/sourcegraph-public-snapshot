@@ -4,7 +4,6 @@
     display: flex;
     flex-direction: column;
     list-style-type: none;  // Add this
-
 }
 
 // Rest of styles...
@@ -23,8 +22,37 @@
 .jobStatus {
     font-size: 0.875rem;
     color: var(--text-muted);
+        flex-direction: row;
+
 }
 
 .jobDescription {
     margin: 0;
+}
+
+#job-item {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+}
+
+#excludeRepos {
+    margin-top: 8px;
+}
+//
+// #saveButton {
+//     align-self;
+// }
+
+.topHeader {
+  display: flex;
+  align-items: center;  // Add this
+}
+
+#saveButton {
+  margin-left: auto;  // Add this
+}
+
+#statusText {
+align:center;
 }
