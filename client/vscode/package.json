@@ -1,9 +1,9 @@
 {
   "private": true,
   "name": "@sourcegraph/vscode",
-  "displayName": "Sourcegraph",
+  "displayName": "Search by Sourcegraph",
   "version": "2.2.15",
-  "description": "Sourcegraph for VS Code",
+  "description": "Search all of your repositories across all branches and all code hosts",
   "publisher": "sourcegraph",
   "sideEffects": true,
   "license": "Apache-2.0",
@@ -74,7 +74,7 @@
       "activitybar": [
         {
           "id": "sourcegraph-view",
-          "title": "Sourcegraph",
+          "title": "Sourcegraph Search",
           "icon": "images/logomark_dark.svg"
         }
       ]

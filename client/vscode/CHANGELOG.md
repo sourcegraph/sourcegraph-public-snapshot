@@ -6,6 +6,8 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
+- Change the extension name from "Sourcegraph" to "Search by Sourcegraph" [pull/51790](https://github.com/sourcegraph/sourcegraph/pull/51790)
+
 ### Fixes
 
 - Various UI fixes for dark and light themes [pull/50598](https://github.com/sourcegraph/sourcegraph/pull/50598)

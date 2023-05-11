@@ -12,6 +12,8 @@ Sourcegraph’s Code Intelligence feature provides fast, cross-repository naviga
 
 You can read more about Sourcegraph on our [website](https://about.sourcegraph.com/).
 
+Not the extension you're looking for? Download our [Cody AI extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai).
+
 ## Installation
 
 ### From the Visual Studio Marketplace:
