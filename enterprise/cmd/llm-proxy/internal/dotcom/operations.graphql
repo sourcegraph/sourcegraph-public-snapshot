@@ -1,13 +1,18 @@
+fragment LLMProxyAccessFields on LLMProxyAccess {
+    enabled
+    rateLimit {
+        source
+        limit
+        intervalSeconds
+    }
+}
+
 fragment ProductSubscriptionState on ProductSubscription {
     id
     uuid
     isArchived
     llmProxyAccess {
-        enabled
-        rateLimit {
-            limit
-            intervalSeconds
-        }
+        ...LLMProxyAccessFields
     }
 }
 
@@ -17,6 +22,26 @@ query CheckAccessToken($token: String!) {
     dotcom {
         productSubscriptionByAccessToken(accessToken: $token) {
             ...ProductSubscriptionState
+        }
+    }
+}
+
+fragment ListProductSubscriptionFields on ProductSubscription {
+    ...ProductSubscriptionState
+    sourcegraphAccessTokens
+}
+
+query ListProductSubscriptions {
+    dotcom {
+        productSubscriptions {
+            totalCount
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
+            nodes {
+                ...ListProductSubscriptionFields
+            }
         }
     }
 }

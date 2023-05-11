@@ -14,6 +14,8 @@
     color: var(--vscode-sideBar-foreground);
     background-color: var(--vscode-sideBar-background);
     height: 100%;
+    /* Override VS Code Webview Toolkit elements */
+    --border-width: none;
 }
 
 html,
