@@ -585,17 +585,9 @@ const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
                             pluralNoun="owners"
                             hasNextPage={connection.pageInfo.hasNextPage}
                         />
-                        {/* {connection.pageInfo.hasNextPage && (
-                            <small>
-                                <Link
-                                    to={`${repo.url}/-/stats/contributors?${
-                                        filePath ? 'path=' + encodeURIComponent(filePath) : ''
-                                    }`}
-                                >
-                                    Show more
-                                </Link>
-                            </small>
-                        )} */}
+                        {/* TODO(#51792): Show more button should lead
+                         * to the ownership tab with detailed view for each owner.
+                         */}
                     </>
                 )}
             </SummaryContainer>
@@ -611,7 +603,7 @@ const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
     return (
         <tr className={classNames('list-group-item', contributorsStyles.repositoryContributorNode)}>
             <td className={contributorsStyles.person}>
-                {/* TODO: Copy paste from FileOwnershipEntry.tsx */}
+                {/* TODO(#51791): Unify the component with FileOwnershipEntry. */}
                 {owner.__typename === 'Person' && (
                     <>
                         <UserAvatar user={owner} className="mx-2" inline={true} />
@@ -638,8 +630,7 @@ const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
                             className={styles.badge}
                             variant="secondary"
                         >
-                            {/* TODO: ARIA */}
-                            <Icon aria-hidden={true} svgPath={mdiPencil} />
+                            <Icon aria-label={reason.title} svgPath={mdiPencil} />
                         </Badge>
                     ) : reason?.__typename === 'RecentViewOwnershipSignal' ? (
                         <Badge
@@ -648,8 +639,7 @@ const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
                             className={styles.badge}
                             variant="secondary"
                         >
-                            {/* TODO: ARIA */}
-                            <Icon aria-hidden={true} svgPath={mdiGlasses} />
+                            <Icon aria-label={reason.title} svgPath={mdiGlasses} />
                         </Badge>
                     ) : (
                         <></>
