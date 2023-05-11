@@ -115,6 +115,12 @@ func TestDatabaseReferences(t *testing.T) {
 	// -> `    lru.set(key, value)`
 	//         ^^^
 
+	scipExpected := []shared.Location{
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(10, 12, 10, 15)},
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(12, 19, 12, 22)},
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(15, 8, 15, 11)},
+	}
+
 	// Symbol name search for
 	//
 	// `export interface HoverPayload {`
@@ -137,11 +143,17 @@ func TestDatabaseReferences(t *testing.T) {
 		offset          int
 		expected        []shared.Location
 	}{
+		// SCIP (local)
+		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 3, 5, 0, scipExpected},
+		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 3, 2, 0, scipExpected[:2]},
+		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 3, 2, 1, scipExpected[1:3]},
+		{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21, 3, 5, 5, scipExpected[:0]},
+
 		// SCIP (non-local)
-		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 2, 5, 0, scipNonLocalExpected[3:]},
-		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 2, 2, 1, scipNonLocalExpected[4:]},
-		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 2, 2, 0, scipNonLocalExpected[3:]},
-		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 2, 5, 5, scipNonLocalExpected[:0]},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 5, 5, 0, scipNonLocalExpected},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 5, 2, 0, scipNonLocalExpected[:2]},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 5, 2, 1, scipNonLocalExpected[1:3]},
+		{testSCIPUploadID, "template/src/lsif/ranges.ts", 38, 15, 5, 5, 5, scipNonLocalExpected[:0]},
 	}
 
 	for i, testCase := range testCases {
