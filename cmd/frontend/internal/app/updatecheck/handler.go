@@ -30,14 +30,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Sourcegraph App route
-const RouteAppUpdateCheck = "app.update.check"
-
 // pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
 var pubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID is the pub/sub topic id where pings are published.")
-
-//go:embed app.update.json
-var appUpdateJson []byte
 
 var (
 	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
@@ -73,69 +67,6 @@ func getLatestRelease(deployType string) pingResponse {
 	default:
 		return latestReleaseDockerServerImageBuild
 	}
-}
-
-func AppUpdateHandlerWithLog(logger log.Logger) http.HandlerFunc {
-	scopedLog := logger.Scoped("appupdate.handler", "handler that responds with information about software updates")
-	update := AppUpdate{}
-	err := json.Unmarshal(appUpdateJson, &update)
-	if err != nil {
-		scopedLog.Fatal("failed to unmarshall App update json", log.Error(err))
-	}
-	return func(w http.ResponseWriter, r *http.Request) {
-		appUpdateHandler(scopedLog, update, w, r)
-	}
-}
-
-type AppVersion struct {
-	target  string
-	version string
-	arch    string
-}
-
-type AppUpdate struct {
-	Version   string      `json:"version"`
-	Notes     string      `json:"notes"`
-	PubDate   time.Time   `json:"pub_date"`
-	Platforms AppPlatform `json:"platforms"`
-}
-
-type AppPlatform map[string]AppLocation
-
-type AppLocation struct {
-	Signature string `json:"signature"`
-	Url       string `json:"url"`
-}
-
-func appUpdateHandler(logger log.Logger, update AppUpdate, w http.ResponseWriter, r *http.Request) {
-	queryValues := r.URL.Query()
-	var app = AppVersion{}
-	for key, attr := range map[string]*string{
-		"target":          &app.target,
-		"current_version": &app.version,
-		"arch":            &app.arch,
-	} {
-		if v, ok := queryValues[key]; ok && len(v) > 0 {
-			*attr = v[0]
-		} else {
-			http.Error(w, "invalid query parameter", http.StatusBadRequest)
-		}
-	}
-
-	logger.Info("app update check", log.Object("App",
-		log.String("target", app.target),
-		log.String("version", app.version),
-		log.String("arch", app.arch),
-	))
-
-	if app.version == update.Version {
-		// No update
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	json.NewEncoder(w).Encode(update)
-	w.WriteHeader(http.StatusOK)
 }
 
 // HandlerWithLog creates a HTTP handler that responds with information about software updates for Sourcegraph. Using the given logger, a scoped
