@@ -1,7 +1,11 @@
 package githubapp
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/graph-gophers/graphql-go"
@@ -10,14 +14,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks/resolvers"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	ghauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -65,6 +73,100 @@ func (r *resolver) DeleteGitHubApp(ctx context.Context, args *graphqlbackend.Del
 	}
 
 	if err := r.db.GitHubApps().Delete(ctx, int(appID)); err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *resolver) ConnectWebhookToGitHubApp(ctx context.Context, args *graphqlbackend.ConnectWebhookToGitHubAppArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can delete GitHub Apps.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	appID, err := UnmarshalGitHubAppID(args.GitHubApp)
+	if err != nil {
+		return nil, err
+	}
+
+	app, err := r.db.GitHubApps().GetByID(ctx, int(appID))
+	if err != nil {
+		return nil, err
+	}
+
+	webhookID, err := resolvers.UnmarshalWebhookID(args.Webhook)
+	if err != nil {
+		return nil, err
+	}
+
+	hook, err := r.db.Webhooks(keyring.Default().WebhookKey).GetByID(ctx, webhookID)
+	if err != nil {
+		return nil, err
+	}
+
+	baseURL, err := url.Parse(app.BaseURL)
+	if err != nil {
+		return nil, err
+	}
+	apiURL, _ := github.APIRoot(baseURL)
+
+	auther, err := ghauth.NewGitHubAppAuthenticator(int(app.AppID), []byte(app.PrivateKey))
+	if err != nil {
+		return nil, err
+	}
+
+	webhookEndpoint, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		return nil, err
+	}
+
+	webhookEndpoint.Path = fmt.Sprintf(".api/webhooks/%s", hook.UUID.String())
+
+	type webhookReq struct {
+		ContentType string `json:"content_type"`
+		InsecureSSL string `json:"insecure_ssl"`
+		Secret      string `json:"secret,omitempty"`
+		URL         string `json:"url"`
+	}
+	whReq := webhookReq{
+		ContentType: "json",
+		InsecureSSL: "0",
+		URL:         webhookEndpoint.String(),
+	}
+	if hook.Secret != nil {
+		hookSecret, err := hook.Secret.Decrypt(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		whReq.Secret = hookSecret
+	}
+	whBytes, err := json.Marshal(whReq)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", apiURL.JoinPath("/app/hook/config").String(), bytes.NewReader(whBytes))
+	if err != nil {
+		return nil, err
+	}
+	if err := auther.Authenticate(req); err != nil {
+		return nil, err
+	}
+
+	resp, err := httpcli.ExternalClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(fmt.Sprintf("webhook update failed: %d", resp.StatusCode))
+	}
+
+	hookID := int(hook.ID)
+	app.WebhookID = &hookID
+	if _, err := r.db.GitHubApps().Update(ctx, app.ID, app); err != nil {
 		return nil, err
 	}
 
@@ -252,4 +354,15 @@ func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []
 	}
 
 	return
+}
+
+func (r *gitHubAppResolver) Webhook(ctx context.Context) graphqlbackend.WebhookResolver {
+	if r.app.WebhookID == nil {
+		return nil
+	}
+	hook, err := r.db.Webhooks(keyring.Default().WebhookKey).GetByID(ctx, int32(*r.app.WebhookID))
+	if err != nil {
+		return nil
+	}
+	return resolvers.NewWebhookResolver(r.db, hook)
 }

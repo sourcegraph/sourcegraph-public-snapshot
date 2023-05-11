@@ -162,6 +162,32 @@ func (r *ownResolver) GitCommitOwnership(
 	return r.ownershipConnection(args, ownerships)
 }
 
+func (r *ownResolver) GitTreeOwnership(
+	ctx context.Context,
+	tree *graphqlbackend.GitTreeEntryResolver,
+	args graphqlbackend.ListOwnershipArgs,
+) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
+
+	// Retrieve recent contributors signals.
+	repoID := tree.Repository().IDInt32()
+	ownerships, err := computeRecentContributorSignals(ctx, r.db, tree.Path(), repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Retrieve recent view signals.
+	viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, tree.Path(), repoID)
+	if err != nil {
+		return nil, err
+	}
+	ownerships = append(ownerships, viewerResolvers...)
+
+	return r.ownershipConnection(args, ownerships)
+}
+
 func (r *ownResolver) PersonOwnerField(_ *graphqlbackend.PersonResolver) string {
 	return "owner"
 }

@@ -4,6 +4,10 @@ extend type Mutation {
     authentication provider, will be deleted.
     """
     deleteGitHubApp(gitHubApp: ID!): EmptyResponse
+    """
+    Connects the provided webhook to the provided GitHub App.
+    """
+    connectWebhookToGitHubApp(gitHubApp: ID!, webhook: ID!): EmptyResponse
 }
 
 extend type Query {
@@ -87,6 +91,10 @@ type GitHubApp implements Node {
     Fetches a list of installation IDs for this GitHub App.
     """
     installations: [Installation!]!
+    """
+    Fetches the webhook associated with this GitHub App.
+    """
+    webhook: Webhook
 }
 
 """

@@ -59,6 +59,7 @@ The following snippet shows an example of a valid CODEOWNERS file.
 
 ```
 *.txt @text-team
+# this is a comment explaining why Alice owns this
 /build/logs/ alice@sourcegraph.com 
 /cmd/**/test @qa-team @user
 ```
