@@ -81,6 +81,7 @@ export interface StreamingSearchResultsListProps
     setQueryState?: (queryState: QueryState) => void
     buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
 
+    searchMode?: SearchMode
     setSearchMode?: (mode: SearchMode) => void
     submitSearch?: (parameters: SubmitSearchParameters) => void
     searchQueryFromURL?: string
@@ -119,6 +120,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     queryState,
     setQueryState,
     buildSearchURLQueryFromQueryState,
+    searchMode,
     setSearchMode,
     submitSearch,
     caseSensitive,
@@ -212,6 +214,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 result={result}
                                 onSelect={() => logSearchResultClicked?.(index, 'repo')}
                                 containerClassName={resultClassName}
+                                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                                queryState={queryState}
                                 enableRepositoryMetadata={enableRepositoryMetadata}
                                 as="li"
                             />
@@ -246,7 +250,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             )
         },
         [
-            enableRepositoryMetadata,
             prefetchFileEnabled,
             prefetchFile,
             location,
@@ -258,6 +261,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             resultClassName,
             platformContext,
             queryState,
+            enableRepositoryMetadata,
             buildSearchURLQueryFromQueryState,
             logSearchResultClicked,
         ]
@@ -302,6 +306,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 showSearchContext={searchContextsEnabled}
                                 showQueryExamples={showQueryExamplesOnNoResultsPage}
                                 setQueryState={setQueryState}
+                                searchMode={searchMode}
                                 setSearchMode={setSearchMode}
                                 submitSearch={submitSearch}
                                 caseSensitive={caseSensitive}

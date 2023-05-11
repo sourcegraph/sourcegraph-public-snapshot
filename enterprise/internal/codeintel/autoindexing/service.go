@@ -27,11 +27,9 @@ import (
 type Service struct {
 	store           store.Store
 	repoStore       database.RepoStore
-	inferenceSvc    InferenceService
 	gitserverClient gitserver.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
 	jobSelector     *jobselector.JobSelector
-	logger          log.Logger
 	operations      *operations
 }
 
@@ -70,11 +68,9 @@ func newService(
 	return &Service{
 		store:           store,
 		repoStore:       repoStore,
-		inferenceSvc:    inferenceSvc,
 		gitserverClient: gitserverClient,
 		indexEnqueuer:   indexEnqueuer,
 		jobSelector:     jobSelector,
-		logger:          observationCtx.Logger,
 		operations:      newOperations(observationCtx),
 	}
 }
@@ -121,7 +117,7 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 		return nil, nil, err
 	}
 
-	indexJobHints, err := s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repo.Name, commit)
+	indexJobHints, err := s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, repo.Name, commit)
 	if err != nil {
 		return nil, nil, err
 	}

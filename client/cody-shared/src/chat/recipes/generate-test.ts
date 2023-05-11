@@ -11,13 +11,12 @@ import {
 import { Recipe, RecipeContext } from './recipe'
 
 export class GenerateTest implements Recipe {
-    public getID(): string {
-        return 'generate-unit-test'
-    }
+    public id = 'generate-unit-test'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
+            await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
             return Promise.resolve(null)
         }
 

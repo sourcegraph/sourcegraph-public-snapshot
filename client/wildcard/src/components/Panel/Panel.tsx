@@ -35,6 +35,7 @@ export const Panel: React.FunctionComponent<React.PropsWithChildren<PanelProps>>
     minSize,
     maxSize,
     ariaLabel,
+    onResize,
 }) => {
     const handleReference = useRef<HTMLDivElement | null>(null)
     const panelReference = useRef<HTMLDivElement | null>(null)
@@ -47,6 +48,7 @@ export const Panel: React.FunctionComponent<React.PropsWithChildren<PanelProps>>
         defaultSize,
         minSize,
         maxSize,
+        onResize,
     })
 
     return (

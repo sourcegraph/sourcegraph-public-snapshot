@@ -1,5 +1,7 @@
-load("@npm//:mocha/package_json.bzl", "bin")
+load("@npm//:mocha/package_json.bzl", mocha_bin = "bin")
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 NON_BUNDLED = [
     # Dependencies loaded by mocha itself before the tests.
@@ -29,7 +31,7 @@ NON_BUNDLED_DEPS = [
     "//client/web:node_modules/@sourcegraph/build-config",
 ]
 
-def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs):
+def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_enabled = False, **kwargs):
     bundle_name = "%s_bundle" % name
 
     # Bundle the tests to remove the use of esm modules in tests
@@ -53,18 +55,20 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
 
     args = [
         "--config",
-        "$(location //:mocha_config)",
-        "$(location :%s)/**/*.test.js" % bundle_name,
+        "$(rootpath //:mocha_config)",
+        "'$(rootpath :%s)/**/*.test.js'" % bundle_name,
         "--retries 4",
     ] + args
 
-    args_data = [
+    data = data + NON_BUNDLED_DEPS + [
         "//:mocha_config",
         ":%s" % bundle_name,
     ]
 
+    # `--define` flags are used to set environment variables here because
+    # we use `js_run_binary` as a target and it doesn't work with `--test_env`.
     env = dict(env, **{
-        "HEADLESS": "$$E2E_HEADLESS",
+        "HEADLESS": "$(E2E_HEADLESS)",
         # Add environment variable so that mocha writes its test xml
         # to the location Bazel expects.
         "MOCHA_FILE": "$$XML_OUTPUT_FILE",
@@ -72,8 +76,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
         # TODO(bazel): e2e test environment
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
-        "SOURCEGRAPH_BASE_URL": "$$E2E_SOURCEGRAPH_BASE_URL",
-        "GH_TOKEN": "$$GH_TOKEN",
+        "SOURCEGRAPH_BASE_URL": "$(E2E_SOURCEGRAPH_BASE_URL)",
+        "GH_TOKEN": "$(GH_TOKEN)",
         "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
         "NO_CLEANUP": "false",
         "KEEP_BROWSER": "false",
@@ -90,10 +94,50 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, **kwargs)
         "DISPLAY": ":99",
     })
 
-    bin.mocha_test(
-        name = name,
-        args = args,
-        data = data + args_data + NON_BUNDLED_DEPS,
-        env = env,
-        **kwargs
-    )
+    if is_percy_enabled:
+        # Extract test specific arguments.
+        flaky = kwargs.pop("flaky")
+        timeout = kwargs.pop("timeout")
+
+        binary_name = "%s_binary" % name
+
+        # `js_run_binary` is used here in the combination with `build_test` instead of
+        # `js_test` because only `js_run_binary` currntly supports the `stamp` attribute.
+        # https://docs.aspect.build/rules/aspect_rules_js/docs/js_run_binary#stamp
+        js_run_binary(
+            name = binary_name,
+            args = args,
+            env = dict(env, **{
+                "PERCY_ON": "true",
+                "PERCY_TOKEN": "$(PERCY_TOKEN)",
+            }),
+            srcs = data,
+            out_dirs = ["out"],
+            silent_on_success = False,
+
+            # Used to provide BUILDKITE_BRANCH and BUILDKITE_COMMIT to Percy via
+            # dev/bazel_buildkite_stamp_vars.sh. See the tool implementation for more details.
+            stamp = 1,
+
+            # Executed mocha tests with Percy enabled via `percy exec -- mocha ...`
+            # Prepends volatile env variables to the command to make Percy aware of the
+            # current git branch and commit.
+            tool = "//client/shared/dev:run_mocha_tests_with_percy",
+            testonly = True,
+            **kwargs
+        )
+
+        build_test(
+            name = name,
+            targets = [binary_name],
+            timeout = timeout,
+            flaky = flaky,
+        )
+    else:
+        mocha_bin.mocha_test(
+            name = name,
+            args = args,
+            data = data,
+            env = env,
+            **kwargs
+        )

@@ -129,7 +129,8 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 // after a ping is successful and returns false if a user signal is received.
 func connectToFrontend(logger log.Logger, queueClient *queue.Client, options Options) bool {
 	start := time.Now()
-	logger.Debug("Connecting to Sourcegraph instance", log.String("url", options.QueueOptions.BaseClientOptions.EndpointOptions.URL))
+	logger = logger.With(log.String("url", options.QueueOptions.BaseClientOptions.EndpointOptions.URL))
+	logger.Debug("Connecting to Sourcegraph instance")
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()

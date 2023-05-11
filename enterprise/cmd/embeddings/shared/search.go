@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"runtime"
 	"strings"
@@ -15,7 +16,7 @@ import (
 
 type readFileFn func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error)
 type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
-type getQueryEmbeddingFn func(query string) ([]float32, error)
+type getQueryEmbeddingFn func(ctx context.Context, query string) ([]float32, error)
 
 func searchRepoEmbeddingIndex(
 	ctx context.Context,
@@ -24,30 +25,30 @@ func searchRepoEmbeddingIndex(
 	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
+	weaviate *weaviateClient,
 ) (*embeddings.EmbeddingSearchResults, error) {
-	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting repo embedding index")
+	if weaviate.Use(ctx) {
+		return weaviate.Search(ctx, params)
 	}
 
-	embeddedQuery, err := getQueryEmbedding(params.Query)
+	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting repo embedding index for repo %q", params.RepoName)
+	}
+
+	floatQuery, err := getQueryEmbedding(ctx, params.Query)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting query embedding")
 	}
+	embeddedQuery := embeddings.Quantize(floatQuery)
 
 	opts := embeddings.SearchOptions{
 		Debug:            params.Debug,
 		UseDocumentRanks: params.UseDocumentRanks,
 	}
 
-	var codeResults, textResults []embeddings.EmbeddingSearchResult
-	if params.CodeResultsCount > 0 && len(embeddingIndex.CodeIndex.Embeddings) > 0 {
-		codeResults = searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount, opts)
-	}
-
-	if params.TextResultsCount > 0 && len(embeddingIndex.TextIndex.Embeddings) > 0 {
-		textResults = searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount, opts)
-	}
+	codeResults := searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount, opts)
+	textResults := searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount, opts)
 
 	return &embeddings.EmbeddingSearchResults{CodeResults: codeResults, TextResults: textResults}, nil
 }
@@ -61,32 +62,73 @@ func searchEmbeddingIndex(
 	revision api.CommitID,
 	index *embeddings.EmbeddingIndex,
 	readFile readFileFn,
-	query []float32,
+	query []int8,
 	nResults int,
 	opts embeddings.SearchOptions,
 ) []embeddings.EmbeddingSearchResult {
 	numWorkers := runtime.GOMAXPROCS(0)
-	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT}, opts)
+	results := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT}, opts)
 
-	// Hydrate content
-	for idx, row := range rows {
-		fileContent, err := readFile(ctx, repoName, revision, row.FileName)
+	return filterAndHydrateContent(
+		ctx,
+		logger,
+		repoName,
+		revision,
+		readFile,
+		opts.Debug,
+		results,
+	)
+}
+
+// filterAndHydrateContent will mutate unfiltered to populate the Content
+// field. If we fail to read a file (eg permission issues) we will remove the
+// result. As such the returned slice should be used.
+func filterAndHydrateContent(
+	ctx context.Context,
+	logger log.Logger,
+	repoName api.RepoName,
+	revision api.CommitID,
+	readFile readFileFn,
+	debug bool,
+	unfiltered []embeddings.SimilaritySearchResult,
+) []embeddings.EmbeddingSearchResult {
+	filtered := make([]embeddings.EmbeddingSearchResult, 0, len(unfiltered))
+
+	for _, result := range unfiltered {
+		fileContent, err := readFile(ctx, repoName, revision, result.FileName)
 		if err != nil {
 			if !os.IsNotExist(err) {
-				logger.Error("error reading file", log.String("repoName", string(repoName)), log.String("revision", string(revision)), log.String("fileName", row.FileName), log.Error(err))
+				logger.Error("error reading file", log.String("repoName", string(repoName)), log.String("revision", string(revision)), log.String("fileName", result.FileName), log.Error(err))
 			}
 			continue
 		}
 		lines := strings.Split(string(fileContent), "\n")
 
 		// Sanity check: check that startLine and endLine are within 0 and len(lines).
-		startLine := max(0, min(len(lines), row.StartLine))
-		endLine := max(0, min(len(lines), row.EndLine))
+		startLine := max(0, min(len(lines), result.StartLine))
+		endLine := max(0, min(len(lines), result.EndLine))
 
-		rows[idx].Content = strings.Join(lines[startLine:endLine], "\n")
+		content := strings.Join(lines[startLine:endLine], "\n")
+
+		var debugString string
+		if debug {
+			debugString = fmt.Sprintf("score:%d, similarity:%d, rank:%d", result.Score(), result.SimilarityScore, result.RankScore)
+		}
+
+		filtered = append(filtered, embeddings.EmbeddingSearchResult{
+			RepoName: repoName,
+			Revision: revision,
+			RepoEmbeddingRowMetadata: embeddings.RepoEmbeddingRowMetadata{
+				FileName:  result.FileName,
+				StartLine: startLine,
+				EndLine:   endLine,
+			},
+			Debug:   debugString,
+			Content: content,
+		})
 	}
 
-	return rows
+	return filtered
 }
 
 func min(a, b int) int {

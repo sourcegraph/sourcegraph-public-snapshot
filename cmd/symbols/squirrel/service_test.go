@@ -179,8 +179,8 @@ func TestNonLocalDefinition(t *testing.T) {
 
 				t.Errorf("wrong symbolInfo for %q\n", symbol)
 				want := defAnn.repoCommitPathPoint
-				t.Errorf("want: %s%s/%s:%d:%d\n", itermSource(filepath.Join(cwd, "test_repos", want.Repo, want.Path), want.Point.Row, "src"), want.Repo, want.Path, want.Point.Row, want.Point.Column)
-				t.Errorf("got : %s%s/%s:%d:%d\n", itermSource(filepath.Join(cwd, "test_repos", got.Repo, got.Path), got.Point.Row, "src"), got.Repo, got.Path, got.Point.Row, got.Point.Column)
+				t.Errorf("want: %s%s/%s:%d:%d\n", itermSource(filepath.Join(cwd, "test_repos", want.Repo, want.Path), want.Point.Row), want.Repo, want.Path, want.Point.Row, want.Point.Column)
+				t.Errorf("got : %s%s/%s:%d:%d\n", itermSource(filepath.Join(cwd, "test_repos", got.Repo, got.Path), got.Point.Row), got.Repo, got.Path, got.Point.Row, got.Point.Column)
 			}
 
 			testCount += 1

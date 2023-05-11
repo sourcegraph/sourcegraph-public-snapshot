@@ -223,9 +223,13 @@ nogo(
         "//dev/linters/forbidigo",
         "//dev/linters/gocritic",
         "//dev/linters/ineffassign",
+        "//dev/linters/unparam",
     ] + STATIC_CHECK_ANALYZERS,
 )
 
 exports_files([
     "go.mod",
+    # Used for when copy_to_directory might reference an empty filegroup
+    # under certain conditions. See //ui/assets/...
+    "CHANGELOG.md",
 ])

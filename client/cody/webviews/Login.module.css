@@ -1,23 +1,37 @@
 .container {
-    padding: 1rem;
+    padding: 1.25rem;
+    color: var(--vscode-editor-foreground);
 }
 
-.label {
-    font-weight: bold;
+.divider {
+    height: 1px;
+    border-top: 1px solid var(--vscode-activityBar-border);
+    margin-bottom: 1.25rem;
+}
+
+.section {
+    margin-bottom: 1.25rem;
+}
+
+.section-header {
+    font-weight: 600;
+    color: var(--vscode-editor-foreground);
+    font-size: calc(1.15*var(--vscode-editor-font-size));
+    margin: 0 0 0.65rem 0;
+}
+
+.open-message {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
 }
 
 .input {
     width: 100%;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .button {
     justify-content: center;
-    width: 100%;
-
-    /* @vscode/webview-ui sets a 300px max-width. If we exceed that, the button will display a
-    glitchy-looking internal border. */
-    max-width: 300px;
 }
 
 .error {
@@ -28,5 +42,5 @@
 }
 
 .terms {
-    font-size: 85%;
+    font-size: 90%;
 }

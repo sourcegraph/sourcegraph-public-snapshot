@@ -7,11 +7,15 @@ import { SiteAdminRepositoriesContainer } from '../../site-admin/SiteAdminReposi
 
 import { CustomNextButton } from './setup-steps'
 
-interface SyncRepositoriesStep extends TelemetryProps {}
+interface SyncRepositoriesStepProps extends TelemetryProps {
+    baseURL: string
+}
 
-export function SyncRepositoriesStep(props: SyncRepositoriesStep): ReactElement {
-    const { telemetryService, ...attributes } = props
-
+export function SyncRepositoriesStep({
+    telemetryService,
+    baseURL,
+    ...attributes
+}: SyncRepositoriesStepProps): ReactElement {
     useEffect(() => {
         telemetryService.log('SetupWizardLandedSyncRepositories')
     }, [telemetryService])
@@ -25,7 +29,7 @@ export function SyncRepositoriesStep(props: SyncRepositoriesStep): ReactElement 
             <Text className="mb-2">
                 It may take a few moments to clone and index each repository. View statuses below.
             </Text>
-            <SiteAdminRepositoriesContainer />
+            <SiteAdminRepositoriesContainer alwaysPoll={true} />
 
             <CustomNextButton label="Start searching" disabled={false} onClick={handleFinishButtonClick} />
         </section>

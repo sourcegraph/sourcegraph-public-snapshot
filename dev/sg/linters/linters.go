@@ -36,7 +36,6 @@ var Targets = []Target{
 		Checks: []*linter{
 			goFmt,
 			goGenerateLinter,
-			goLint(),
 			goDBConnImport,
 			goEnterpriseImport,
 			noLocalHost,

@@ -1,31 +1,12 @@
-<p align="center">
-<a href="https://about.sourcegraph.com/cody" target="_blank">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-white.svg" width="300">
-  <source media="(prefers-color-scheme: light)" srcset="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-black.svg" width="300">
-  <img src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-black.png" width="300">
-</picture>
-</a>
-</p>
-
-<div align="center">
-    <a href="https://docs.sourcegraph.com/cody">Docs</a> •
-    <a href="https://discord.gg/s2qDtYGnAE">Discord</a> •
-    <a href="https://twitter.com/sourcegraph">Twitter</a>
-    <br /><br />
-    <a href="https://srcgr.ph/discord">
-        <img src="https://img.shields.io/discord/969688426372825169?color=5765F2" alt="Discord" />
-    </a>
-    <a href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
-        <img src="https://img.shields.io/vscode-marketplace/v/sourcegraph.cody-ai.svg?label=vs%20marketplace" alt="VS Marketplace" />
-    </a>
-</div>
-
-# Cody: AI code assistant
+# Cody AI by Sourcegraph
 
 Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
 
-**Status:** experimental ([join the open beta](https://docs.sourcegraph.com/cody))
+**Status:** beta ([join the open beta](https://docs.sourcegraph.com/cody))
+
+[**Full documentation**](https://docs.sourcegraph.com/cody)
+
+Not the extension you're looking for? Download our [Search extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph).
 
 ## Features
 
@@ -33,14 +14,13 @@ Cody is an AI code assistant that writes code and answers questions for you by r
 
 - **🤖 Chatbot that knows _your_ code:** Writes code and answers questions with knowledge of your entire codebase, following your project's code conventions and architecture better than other AI code chatbots.
 - **✨ Fixup code:** Interactively writes and refactors code for you, based on quick natural-language instructions.
-- **🧪 Recipes:** Generates unit tests, documentation, and more, with full codebase awareness.
+- **📖 Recipes:** Generates unit tests, documentation, and more, with full codebase awareness.
 
 ## Usage
 
-### Installation
-
 1. Install the [Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai).
-1. [Join the open beta](https://docs.sourcegraph.com/cody) to get access. Once you're in, follow the rest of the steps on that page to set up Cody.
+1. Open Cody (from the activity bar or by pressing <kbd>Alt+/</kbd>/<kbd>Opt+/</kbd>) and sign in.
+1. Start using it! Read on to learn about the chatbot, fixups, and recipes.
 
 ### 🤖 Chatbot that knows _your_ code
 
@@ -74,14 +54,18 @@ Examples of the kinds of fixup instructions Cody can handle:
 - "Add helpful debug log statements"
 - "Make this work" (seriously, it often works--try it!)
 
-### 🧪 Recipes
+### 📖 Recipes
 
-Right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
+Select the recipes tab or right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
 
-- Explain Code
-- Generate Unit Test
-- Generate Docstring
-- Improve Variable Names
+- Explain code
+- Generate unit test
+- Generate docstring
+- Improve variable names
+- Translate to different language
+- Summarize recent code changes
+- Detect code smells
+- Generate release notes
 
 We welcome PRs that contribute new, useful recipes.
 
@@ -93,4 +77,8 @@ We welcome PRs that contribute new, useful recipes.
 
 ## Development
 
-[Cody's code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/cody) is open source (Apache 2). See [CONTRIBUTING.md](./CONTRIBUTING.md).
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## License
+
+[Cody's code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/cody) is open source (Apache License 2.0).

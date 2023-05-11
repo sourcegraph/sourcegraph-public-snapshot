@@ -124,6 +124,8 @@ env:
   # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
+  LLM_PROXY_ALLOW_ANONYMOUS: true
+
 commands:
   server:
     description: Run an all-in-one sourcegraph/server image
@@ -385,6 +387,26 @@ commands:
       - internal
       - enterprise/cmd/embeddings
       - enterprise/internal/embeddings
+
+  llm-proxy:
+    cmd: |
+      .bin/llm-proxy
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      go build -gcflags="$GCFLAGS" -o .bin/llm-proxy github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy
+    checkBinary: .bin/llm-proxy
+    env:
+      LLM_PROXY_ANTHROPIC_ACCESS_TOKEN: foobar
+      LLM_PROXY_DOTCOM_ACCESS_TOKEN: foobar
+      LLM_PROXY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
+      SRC_LOG_LEVEL: dbug
+    watch:
+      - lib
+      - internal
+      - enterprise/cmd/llm-proxy
 
   searcher:
     cmd: .bin/searcher
@@ -879,6 +901,10 @@ commands:
       - lib
       - schema
 
+  tauri:
+    description: App shell (Tauri)
+    cmd: pnpm tauri dev --config src-tauri/tauri.dev.conf.json
+
   sourcegraph-oss:
     description: Single program (Go static binary) distribution, OSS variant
     cmd: |
@@ -1101,6 +1127,7 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - caddy
+  # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
     requiresDevPrivate: true
     checks:
@@ -1135,7 +1162,32 @@ commandsets:
       EXTSVC_CONFIG_FILE: ''
 
   dotcom:
-    <<: *enterprise_set
+    # This is 95% the enterprise runset, with the addition of LLM-proxy.
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - llm-proxy
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
@@ -1399,8 +1451,16 @@ commandsets:
       - docsite
       - web
       - caddy
+      - tauri
     env:
       DISABLE_CODE_INSIGHTS: false
+      SOURCEGRAPH_APP: 1
+
+  llm-proxy:
+    checks:
+      - redis
+    commands:
+      - llm-proxy
 
 tests:
   # These can be run with `sg test [name]`

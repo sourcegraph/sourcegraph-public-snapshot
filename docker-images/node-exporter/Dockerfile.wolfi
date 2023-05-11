@@ -1,0 +1,16 @@
+# hadolint ignore=DL3007
+FROM us.gcr.io/sourcegraph-dev/wolfi-node-exporter-base:latest
+# hadolint ignore=DL3048
+LABEL com.sourcegraph.node_exporter.version=v1.5.0
+
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+
+EXPOSE      9100
+USER        nobody
+ENTRYPOINT  [ "/usr/bin/node_exporter" ]

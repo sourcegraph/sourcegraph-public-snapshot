@@ -100,21 +100,6 @@
     }
 }
 
-.repo-metadata {
-    gap: 0.5rem;
-    font-size: 0.75rem;
-
-    &-key {
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
-    }
-
-    &-value {
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
-    }
-}
-
 .header-description {
     line-height: (14/11);
 }

@@ -86,10 +86,6 @@ func New(ctx context.Context, store *basestore.Store, repos []int32) (*Persisten
 
 // NewWithClock returns a new (durable) repo iterator starting from cursor position 0 and optionally overrides the internal clock. Useful for tests.
 func NewWithClock(ctx context.Context, store *basestore.Store, clock glock.Clock, repos []int32) (*PersistentRepoIterator, error) {
-	if len(repos) == 0 {
-		return nil, errors.New("unable to construct a repo iterator for an empty set")
-	}
-
 	q := "INSERT INTO repo_iterator(repos, total_count, created_at) VALUES (%S, %S, %S) RETURNING Id"
 	id, err := basestore.ScanInt(store.QueryRow(ctx, sqlf.Sprintf(q, pq.Int32Array(repos), len(repos), clock.Now())))
 	if err != nil {

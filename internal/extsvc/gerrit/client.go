@@ -190,8 +190,7 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (proje
 	return c.listAllProjects(ctx, opts.Cursor)
 }
 
-//nolint:unparam // http.Response is never used, but it makes sense API wise.
-func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) { //nolint:unparam // http.Response is never used, but it makes sense API wise.
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// Authenticate request with auther

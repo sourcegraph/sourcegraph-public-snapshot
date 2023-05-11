@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { noop } from 'lodash'
+
 import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
@@ -10,7 +12,11 @@ import styles from './Chat.module.css'
 export const Chat: React.FunctionComponent<
     Omit<
         React.ComponentPropsWithoutRef<typeof ChatUI>,
-        'textAreaComponent' | 'submitButtonComponent' | 'fileLinkComponent'
+        | 'textAreaComponent'
+        | 'submitButtonComponent'
+        | 'fileLinkComponent'
+        | 'messageBeingEdited'
+        | 'setMessageBeingEdited'
     >
 > = ({
     messageInProgress,
@@ -23,6 +29,8 @@ export const Chat: React.FunctionComponent<
     onSubmit,
 }) => (
     <ChatUI
+        messageBeingEdited={false}
+        setMessageBeingEdited={noop}
         messageInProgress={messageInProgress}
         transcript={transcript}
         contextStatus={contextStatus}

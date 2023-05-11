@@ -15,16 +15,17 @@ fi
 
 # Normalise name by adding .yaml if necessary
 name=${1%/}
-name=$(echo "$name" | sed -r 's/^([a-zA-Z0-9_-]+)$/\1.yaml/')
+file_name=$(echo "$name" | sed -r 's/^([a-zA-Z0-9_-]+)$/\1.yaml/')
+image_name=$(echo "$name" | sed -r 's/^([a-zA-Z0-9_-]+)$/\1.yaml/')
 
-if [ ! -f "$name" ]; then
-  echo "File '$name' does not exist"
+if [ ! -f "$file_name" ]; then
+  echo "File '$file_name' does not exist"
   exit 1
 fi
 
-echo "Building package '$name'"
+echo "Building package '$image_name'"
 
 # Mounting /tmp can be useful for debugging: -v "$HOME/tmp":/tmp \
 docker run --privileged \
   -v "$PWD":/work \
-  cgr.dev/chainguard/melange build "$name" --arch x86_64
+  cgr.dev/chainguard/melange build "$file_name" --arch x86_64

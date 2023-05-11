@@ -3,6 +3,8 @@ import React, { useState } from 'react'
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
+import { Icon } from '../../utils/Icon'
+
 import styles from './TranscriptAction.module.css'
 
 export interface TranscriptActionStep {
@@ -54,9 +56,3 @@ export const TranscriptAction: React.FunctionComponent<{
         </div>
     )
 }
-
-const Icon: React.FunctionComponent<{ svgPath: string; className?: string }> = ({ svgPath, className }) => (
-    <svg role="img" height={24} width={24} viewBox="0 0 24 24" fill="currentColor" className={className}>
-        <path d={svgPath} />
-    </svg>
-)

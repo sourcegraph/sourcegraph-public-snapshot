@@ -1,2 +1,46 @@
+load("//dev:defs.bzl", "ts_project")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+
+# config/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
-# gazelle:ignore
+# gazelle:js_test_files there-are-no-tests
+# gazelle:js_ignore_imports ../../src/browser-extension/manifest.spec.json
+
+ts_project(
+    name = "config",
+    srcs = [
+        "webpack/auto-reloading.ts",
+        "webpack/base.config.bazel.ts",
+        "webpack/base.config.ts",
+        "webpack/development.config.ts",
+        "webpack/production.config.bazel.ts",
+        "webpack/production.config.ts",
+        "webpack/utils.ts",
+    ],
+    module = "commonjs",
+    tsconfig = "//client/browser:tsconfig",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:node_modules/@babel/runtime",  #keep
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/socket.io-client",
+        "//:node_modules/css-loader",  #keep
+        "//:node_modules/css-minimizer-webpack-plugin",
+        "//:node_modules/mini-css-extract-plugin",
+        # HACKS: bundle-time css import
+        "//:node_modules/open-color",  #keep
+        "//:node_modules/path-browserify",  #keep
+        "//:node_modules/socket.io-client",
+        "//:node_modules/style-loader",  #keep
+        "//:node_modules/terser-webpack-plugin",
+        "//:node_modules/webpack",
+        "//:node_modules/worker-loader",  #keep
+        "//client/browser:node_modules/@sourcegraph/build-config",
+    ],
+)
+
+js_library(
+    name = "webpack-config",
+    srcs = ["webpack/production.config.bazel.js"],
+    visibility = ["//client:__subpackages__"],
+)

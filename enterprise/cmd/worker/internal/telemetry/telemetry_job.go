@@ -300,7 +300,7 @@ func buildBigQueryObject(event *database.Event, metadata *instanceMetadata) *big
 		URL:               "", // omitting URL intentionally
 		Source:            event.Source,
 		Timestamp:         event.Timestamp.Format(time.RFC3339),
-		PublicArgument:    string(event.Argument),
+		PublicArgument:    string(event.PublicArgument),
 		Version:           event.Version, // sending event Version since these events could be scraped from the past
 		SiteID:            metadata.SiteID,
 		LicenseKey:        metadata.LicenseKey,

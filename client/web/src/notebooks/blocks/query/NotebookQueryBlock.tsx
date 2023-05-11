@@ -84,6 +84,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
 
         const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
+        const searchMode = useNavbarQueryState(state => state.searchMode)
         const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
 
         const onInputChange = useCallback(
@@ -209,6 +210,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 platformContext={props.platformContext}
                                 openMatchesInNewTab={true}
                                 executedQuery={executedQuery}
+                                searchMode={searchMode}
                                 setSearchMode={setSearchMode}
                                 submitSearch={submitSearch}
                                 caseSensitive={caseSensitive}

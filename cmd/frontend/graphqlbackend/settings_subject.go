@@ -144,7 +144,7 @@ func (s *settingsSubject) ViewerCanAdminister(ctx context.Context) (bool, error)
 	case s.org != nil:
 		return s.org.ViewerCanAdminister(ctx)
 	case s.user != nil:
-		return s.user.ViewerCanAdminister()
+		return s.user.viewerCanAdministerSettings()
 	default:
 		return false, errUnknownSettingsSubject
 	}

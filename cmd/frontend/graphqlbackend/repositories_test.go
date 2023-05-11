@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -42,6 +43,64 @@ func buildCursorBySize(node *types.Repo, size int64) *string {
 	)
 
 	return &cursor
+}
+
+func TestRepositoriesSourceType(t *testing.T) {
+	r1 := types.Repo{
+		ID:           1,
+		Name:         "repo1",
+		ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypeGitHub},
+	}
+	r2 := types.Repo{
+		ID:           2,
+		Name:         "repo2",
+		ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
+	}
+
+	repos := database.NewMockRepoStore()
+	repos.ListFunc.SetDefaultReturn([]*types.Repo{&r1, &r2}, nil)
+	repos.GetFunc.SetDefaultHook(func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
+		if repoID == 1 {
+			return &r1, nil
+		}
+
+		return &r2, nil
+	})
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					repositories(first: 10) {
+						nodes {
+						  name
+						  sourceType
+						}
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+				  "repositories": {
+					"nodes": [
+					  {
+						"name": "repo1",
+						"sourceType": "GIT_REPOSITORY"
+					  },
+					  {
+						"name": "repo2",
+						"sourceType": "PERFORCE_DEPOT"
+					  }
+					]
+				  }
+				}
+			`,
+		},
+	})
 }
 
 func TestRepositoriesCloneStatusFiltering(t *testing.T) {

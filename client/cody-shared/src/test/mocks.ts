@@ -40,6 +40,10 @@ export class MockKeywordContextFetcher implements KeywordContextFetcher {
     public getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
         return this.mocks.getContext?.(query, numResults) ?? Promise.resolve([])
     }
+
+    public getSearchContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
+        return this.mocks.getSearchContext?.(query, numResults) ?? Promise.resolve([])
+    }
 }
 
 export class MockEditor implements Editor {
@@ -76,6 +80,10 @@ export class MockEditor implements Editor {
     public showWarningMessage(message: string): Promise<void> {
         return this.mocks.showWarningMessage?.(message) ?? Promise.resolve()
     }
+
+    public showInputBox(prompt?: string): Promise<string | undefined> {
+        return this.mocks.showInputBox?.(prompt) ?? Promise.resolve(undefined)
+    }
 }
 
 export const defaultEmbeddingsClient = new MockEmbeddingsClient()
@@ -93,7 +101,12 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
         intentDetector: args.intentDetector || defaultIntentDetector,
         codebaseContext:
             args.codebaseContext ||
-            new CodebaseContext({ useContext: 'none' }, defaultEmbeddingsClient, defaultKeywordContextFetcher),
+            new CodebaseContext(
+                { useContext: 'none', serverEndpoint: 'https://example.com' },
+                'dummy-codebase',
+                defaultEmbeddingsClient,
+                defaultKeywordContextFetcher
+            ),
         responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
     }
 }

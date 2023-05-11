@@ -59,6 +59,7 @@
 
 ## [SQL](sql/index.md)
 
+- [Migrations overview](sql/migrations_overview.md)
 - [Migrations](sql/migrations.md)
 - High-performance guides
   - [Batch operations](sql/batch_operations.md)

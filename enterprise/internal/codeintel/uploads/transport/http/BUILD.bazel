@@ -34,7 +34,7 @@ go_library(
 
 go_test(
     name = "http_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = [
         "handler_test.go",
         "mocks_test.go",

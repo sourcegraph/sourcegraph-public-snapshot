@@ -10,11 +10,12 @@ describe('getConfiguration', () => {
         expect(getConfiguration(config)).toEqual({
             enabled: true,
             serverEndpoint: '',
-            codebase: undefined,
+            codebase: '',
             debug: false,
             useContext: 'embeddings',
             experimentalSuggest: false,
-            anthropicKey: null,
+            experimentalChatPredictions: false,
+            experimentalInline: false,
             customHeaders: {},
         })
     })
@@ -35,8 +36,10 @@ describe('getConfiguration', () => {
                         return 'keyword'
                     case 'cody.experimental.suggestions':
                         return true
-                    case 'cody.experimental.keys.anthropic':
-                        return 'sk-YYY'
+                    case 'cody.experimental.chatPredictions':
+                        return true
+                    case 'cody.experimental.inline':
+                        return true
                     case 'cody.customHeaders':
                         return {
                             'Cache-Control': 'no-cache',
@@ -54,7 +57,8 @@ describe('getConfiguration', () => {
             debug: true,
             useContext: 'keyword',
             experimentalSuggest: true,
-            anthropicKey: 'sk-YYY',
+            experimentalChatPredictions: true,
+            experimentalInline: true,
             customHeaders: {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',

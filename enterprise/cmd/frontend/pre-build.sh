@@ -3,6 +3,10 @@
 set -exuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
 
+if [[ "$DOCKER_BAZEL" == "true" ]]; then
+  exit 0
+fi
+
 parallel_run() {
   ./dev/ci/parallel_run.sh "$@"
 }

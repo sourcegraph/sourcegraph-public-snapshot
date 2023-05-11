@@ -10,6 +10,7 @@ import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
+import { useHistoryStack } from './app/useHistoryStack'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { RouteError } from './components/ErrorBoundary'
@@ -22,7 +23,7 @@ import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
 import { LegacyLayoutRouteContext } from './LegacyRouteContext'
-import { SurveyToast } from './marketing/toast'
+import { CodySurveyToast, SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
@@ -117,6 +118,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
 
     useScrollToLocationHash(location)
 
+    const historyStack = useHistoryStack()
+
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
     // useEffect(() => setTosAccepted(!props.authenticatedUser || props.authenticatedUser.tosAccepted), [
@@ -187,6 +190,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}
+            {props.isSourcegraphDotCom && props.authenticatedUser && <CodySurveyToast />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
@@ -202,6 +206,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                     showFeedbackModal={showFeedbackModal}
+                    historyStack={historyStack}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
@@ -240,7 +245,10 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 platformContext={props.platformContext}
             />
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
-                <NotepadContainer userId={props.authenticatedUser?.id} />
+                <NotepadContainer
+                    userId={props.authenticatedUser?.id}
+                    isRepositoryRelatedPage={isRepositoryRelatedPage}
+                />
             )}
             {fuzzyFinder && (
                 <LazyFuzzyFinder

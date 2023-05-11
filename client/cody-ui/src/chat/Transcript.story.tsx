@@ -41,12 +41,15 @@ export const Simple: ComponentStoryObj<typeof Transcript> = {
     render: args => (
         <Transcript
             messageInProgress={{ speaker: 'assistant' }}
+            messageBeingEdited={false}
+            setMessageBeingEdited={() => {}}
             transcript={args.transcript}
             fileLinkComponent={FileLink}
             transcriptItemClassName={styles.transcriptItem}
             humanTranscriptItemClassName={styles.humanTranscriptItem}
             transcriptItemParticipantClassName={styles.transcriptItemParticipant}
             transcriptActionClassName={styles.transcriptAction}
+            copyButtonOnSubmit={args.copyButtonOnSubmit}
         />
     ),
 }

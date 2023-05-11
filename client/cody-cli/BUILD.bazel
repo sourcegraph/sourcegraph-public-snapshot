@@ -1,0 +1,36 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "ts_project")
+
+npm_link_all_packages(name = "node_modules")
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/cody-shared:tsconfig",
+        "//client/common:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "cody-cli",
+    srcs = [
+        "src/app.ts",
+        "src/completions.ts",
+        "src/config.ts",
+        "src/context.ts",
+        "src/interactions.ts",
+        "src/preamble.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":node_modules/@sourcegraph/cody-shared",
+        ":node_modules/@types/prompts",
+        ":node_modules/commander",
+        ":node_modules/prompts",
+        "//:node_modules/envalid",
+    ],
+)

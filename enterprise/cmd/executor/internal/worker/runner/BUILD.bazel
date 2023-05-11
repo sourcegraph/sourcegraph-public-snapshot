@@ -8,6 +8,7 @@ go_library(
         "kubernetes.go",
         "runner.go",
         "shell.go",
+        "skip.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner",
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
@@ -31,6 +32,7 @@ go_test(
         "kubernetes_test.go",
         "mocks_test.go",
         "shell_test.go",
+        "skip_test.go",
     ],
     embed = [":runner"],
     deps = [

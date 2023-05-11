@@ -158,7 +158,7 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     variant="primary"
                 >
                     {loading && <LoadingSpinner />}
-                    {submitName ?? 'Add repositories'}
+                    {submitName ?? 'Add connection'}
                 </Button>
             )}
         </Form>

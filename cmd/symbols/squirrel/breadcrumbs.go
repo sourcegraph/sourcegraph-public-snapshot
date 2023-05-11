@@ -105,11 +105,11 @@ func (bs *Breadcrumbs) pretty(w *strings.Builder, readFile readFileFunc) {
 	fmt.Fprintln(w)
 
 	for _, b := range *bs {
-		fmt.Fprintf(w, "%s%s%s %s\n", strings.Repeat("| ", b.depth), itermSource(b.file, b.line, "src"), color.RedString("%d", b.number), b.message())
+		fmt.Fprintf(w, "%s%s%s %s\n", strings.Repeat("| ", b.depth), itermSource(b.file, b.line), color.RedString("%d", b.number), b.message())
 	}
 }
 
-func itermSource(absPath string, line int, msg string) string {
+func itermSource(absPath string, line int) string {
 	if os.Getenv("SRC_LOG_SOURCE_LINK") == "true" {
 		// Link to open the file:line in VS Code.
 		url := fmt.Sprintf("vscode://file%s:%d", absPath, line)

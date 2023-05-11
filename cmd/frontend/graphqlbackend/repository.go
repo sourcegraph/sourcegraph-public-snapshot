@@ -142,6 +142,19 @@ func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
 	return repo.URI, err
 }
 
+func (r *RepositoryResolver) SourceType(ctx context.Context) (*SourceType, error) {
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve innerRepo")
+	}
+
+	if repo.ExternalRepo.ServiceType == extsvc.TypePerforce {
+		return &PerforceDepotSourceType, nil
+	}
+
+	return &GitRepositorySourceType, nil
+}
+
 func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 	repo, err := r.repo(ctx)
 	return repo.Description, err
@@ -371,7 +384,12 @@ func (r *RepositoryResolver) Stars(ctx context.Context) (int32, error) {
 	return int32(repo.Stars), nil
 }
 
+// Deprecated: Use RepositoryResolver.Metadata instead.
 func (r *RepositoryResolver) KeyValuePairs(ctx context.Context) ([]KeyValuePair, error) {
+	return r.Metadata(ctx)
+}
+
+func (r *RepositoryResolver) Metadata(ctx context.Context) ([]KeyValuePair, error) {
 	repo, err := r.repo(ctx)
 	if err != nil {
 		return nil, err
@@ -640,7 +658,17 @@ func (k KeyValuePair) Value() *string {
 	return k.value
 }
 
+// Deprecated: Use AddRepoMetadata instead.
 func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+},
+) (*EmptyResponse, error) {
+	return r.AddRepoMetadata(ctx, args)
+}
+
+func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
 	Repo  graphql.ID
 	Key   string
 	Value *string
@@ -662,7 +690,17 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
 }
 
+// Deprecated: Use UpdateRepoMetadata instead.
 func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+},
+) (*EmptyResponse, error) {
+	return r.UpdateRepoMetadata(ctx, args)
+}
+
+func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
 	Repo  graphql.ID
 	Key   string
 	Value *string
@@ -685,7 +723,16 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 	return &EmptyResponse{}, err
 }
 
+// Deprecated: Use DeleteRepoMetadata instead.
 func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
+	Repo graphql.ID
+	Key  string
+},
+) (*EmptyResponse, error) {
+	return r.DeleteRepoMetadata(ctx, args)
+}
+
+func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 	Repo graphql.ID
 	Key  string
 },
@@ -708,4 +755,17 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 
 func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {
 	return EnterpriseResolvers.ownResolver.RepoIngestedCodeowners(ctx, r.IDInt32())
+}
+
+// isPerforceDepot is a helper to avoid the repetitive error handling of calling r.SourceType, and
+// where we want to only take a custom action if this function returns true. For false we want to
+// ignore and continue on the default behaviour.
+func (r *RepositoryResolver) isPerforceDepot(ctx context.Context) bool {
+	s, err := r.SourceType(ctx)
+	if err != nil {
+		r.logger.Error("failed to retrieve sourceType of repository", log.Error(err))
+		return false
+	}
+
+	return s == &PerforceDepotSourceType
 }

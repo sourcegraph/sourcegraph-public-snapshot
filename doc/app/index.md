@@ -16,6 +16,10 @@
 .socials a:hover {
   filter: brightness(0.75);
 }
+.socials a img {
+  width: 100%;
+  height: 100%;
+}
 </style>
 
 # Sourcegraph App
@@ -34,7 +38,13 @@ It runs alongside your IDE, to provide a better way to understand, browse, and s
 
 Ensure you have `git` installed / on your path, then install.
 
+**macOS:** via the app .dmg installer:
+
+Download the <a data-download-name="app-download-mac-dmg" href="https://storage.googleapis.com/sourcegraph-app-releases/latest/Sourcegraph%20App.dmg">Sourcegraph App .dmg installer</a> and run it.
+
 **macOS:** via homebrew:
+
+The homebrew installation is an alternative to the .dmg installer. If in doubt, use the .dmg installer above.
 
 ```sh
 brew install sourcegraph/app/sourcegraph
@@ -85,6 +95,7 @@ Sourcegraph app is early-stages, if you run into any trouble or have ideas/feedb
 
 Navigate to your Applications directory using Finder, and delete the old version of Sourcegraph. Then [download and run the latest version](https://about.sourcegraph.com/app).
 
+
 #### macOS (homebrew)
 
 ```
@@ -134,3 +145,6 @@ rm -rf $XDG_CONFIG_HOME/sourcegraph-sp
 rm -rf $HOME/.cache/sourcegraph-sp
 rm -rf $HOME/.config/sourcegraph-sp
 ```
+
+## Troubleshooting
+See [App troubleshooting guide](troubleshooting.md)

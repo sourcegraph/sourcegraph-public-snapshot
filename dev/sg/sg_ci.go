@@ -781,35 +781,58 @@ func printBuildOverview(build *buildkite.Build) {
 	}
 }
 
+func agentKind(job *buildkite.Job) string {
+	for _, rule := range job.AgentQueryRules {
+		if strings.Contains(rule, "bazel") {
+			return "bazel"
+		}
+	}
+	return "stateless"
+}
+
+func formatBuildResult(result string) (string, output.Style) {
+	var style output.Style
+	var emoji string
+
+	switch result {
+	case "passed":
+		style = output.StyleSuccess
+		emoji = output.EmojiSuccess
+	case "waiting", "blocked", "scheduled":
+		style = output.StyleSuggestion
+	case "skipped", "not_run", "broken":
+		style = output.StyleReset
+		emoji = output.EmojiOk
+	case "running":
+		style = output.StylePending
+		emoji = output.EmojiInfo
+	case "failed":
+		emoji = output.EmojiFailure
+		style = output.StyleFailure
+	case "soft failed":
+		emoji = output.EmojiOk
+		style = output.StyleSearchLink
+	default:
+		style = output.StyleWarning
+	}
+
+	return emoji, style
+}
+
 func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, notify bool) (failed bool) {
 	std.Out.Writef("Started:\t%s", build.StartedAt)
 	if build.FinishedAt != nil {
 		std.Out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
 	}
 
+	var statelessDuration time.Duration
+	var bazelDuration time.Duration
+	var totalDuration time.Duration
+
 	// Check build state
 	// Valid states: running, scheduled, passed, failed, blocked, canceled, canceling, skipped, not_run, waiting
 	// https://buildkite.com/docs/apis/rest-api/builds
-	var style output.Style
-	var emoji string
-	switch *build.State {
-	case "passed":
-		style = output.StyleSuccess
-		emoji = output.EmojiSuccess
-	case "waiting", "blocked", "scheduled":
-		style = output.StyleSuggestion
-	case "skipped", "not_run":
-		style = output.StyleReset
-	case "running":
-		style = output.StylePending
-		emoji = output.EmojiInfo
-	case "failed":
-		failed = true
-		emoji = output.EmojiFailure
-		style = output.StyleFailure
-	default:
-		style = output.StyleWarning
-	}
+	emoji, style := formatBuildResult(*build.State)
 	block := std.Out.Block(output.Styledf(style, "Status:\t\t%s %s", emoji, *build.State))
 
 	// Inspect jobs individually.
@@ -819,13 +842,16 @@ func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, no
 		if job.State == nil || job.Name == nil {
 			continue
 		}
+		if *job.State == "failed" && job.SoftFailed {
+			*job.State = "soft failed"
+		}
+
+		_, style := formatBuildResult(*job.State)
 		// Check job state.
 		switch *job.State {
 		case "passed":
-			style = output.StyleSuccess
 			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
 		case "waiting", "blocked", "scheduled", "assigned":
-			style = output.StyleSuggestion
 		case "broken":
 			// State 'broken' happens when a conditional is not met, namely the 'if' block
 			// on a job. Why is it 'broken' and not 'skipped'? We don't think it be like
@@ -834,35 +860,45 @@ func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, no
 			*job.State = "skipped"
 			fallthrough
 		case "skipped", "not_run":
-			style = output.StyleReset
 		case "running":
 			elapsed = time.Since(job.StartedAt.Time)
-			style = output.StylePending
 		case "failed":
 			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
-			if job.SoftFailed {
-				*job.State = "soft failed"
-				style = output.StyleReset
-				break
-			}
 			failedSummary = append(failedSummary, fmt.Sprintf("- %s", *job.Name))
-			style = output.StyleFailure
 			failed = true
 		default:
 			style = output.StyleWarning
 		}
+
 		if elapsed > 0 {
 			block.WriteLine(output.Styledf(style, "- [%s] %s (%s)", *job.State, *job.Name, elapsed))
 		} else {
 			block.WriteLine(output.Styledf(style, "- [%s] %s", *job.State, *job.Name))
 		}
 
+		totalDuration += elapsed
+		if agentKind(job) == "bazel" {
+			bazelDuration += elapsed
+		} else {
+			statelessDuration += elapsed
+		}
 		if annotation, exist := annotations[*job.ID]; exist {
 			block.WriteMarkdown(annotation.Content, output.MarkdownNoMargin, output.MarkdownIndent(2))
 		}
 	}
 
 	block.Close()
+
+	if build.FinishedAt != nil {
+		statusStr := fmt.Sprintf("Status:\t\t%s %s\n", emoji, *build.State)
+		std.Out.Write(strings.Repeat("-", len(statusStr)+8*2)) // 2 * \t
+		std.Out.WriteLine(output.Linef(emoji, output.StyleReset, statusStr))
+		std.Out.WriteLine(output.Linef("", output.StyleReset, "Finished at: %s", build.FinishedAt))
+		std.Out.WriteLine(output.Linef("", output.StyleReset, "- ⏲️  Wall-clock time: %s", build.FinishedAt.Sub(build.StartedAt.Time)))
+		std.Out.WriteLine(output.Linef("", output.StyleReset, "- 🗒️ CI agents time:  %s", totalDuration))
+		std.Out.WriteLine(output.Linef("", output.StyleReset, "  - Bazel: %s", bazelDuration))
+		std.Out.WriteLine(output.Linef("", output.StyleReset, "  - Stateless: %s", statelessDuration))
+	}
 
 	if notify {
 		if failed {

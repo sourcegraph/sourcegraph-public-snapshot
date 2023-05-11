@@ -50,6 +50,7 @@ interface NoResultsPageProps extends TelemetryProps, Pick<SearchContextProps, 's
     showSearchContext: boolean
     showQueryExamples?: boolean
     setQueryState?: (query: QueryState) => void
+    searchMode?: SearchMode
     setSearchMode?: (mode: SearchMode) => void
     submitSearch?: (parameters: SubmitSearchParameters) => void
     searchQueryFromURL?: string
@@ -65,6 +66,7 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
     showSearchContext,
     showQueryExamples,
     setQueryState,
+    searchMode,
     setSearchMode,
     submitSearch,
     caseSensitive,
@@ -89,14 +91,18 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
 
     return (
         <div className={styles.root}>
-            {setSearchMode && submitSearch && typeof caseSensitive === 'boolean' && searchQueryFromURL && (
-                <SmartSearchPreview
-                    setSearchMode={setSearchMode}
-                    submitSearch={submitSearch}
-                    caseSensitive={caseSensitive}
-                    searchQueryFromURL={searchQueryFromURL}
-                />
-            )}
+            {searchMode !== SearchMode.SmartSearch &&
+                setSearchMode &&
+                submitSearch &&
+                typeof caseSensitive === 'boolean' &&
+                searchQueryFromURL && (
+                    <SmartSearchPreview
+                        setSearchMode={setSearchMode}
+                        submitSearch={submitSearch}
+                        caseSensitive={caseSensitive}
+                        searchQueryFromURL={searchQueryFromURL}
+                    />
+                )}
 
             {showQueryExamples && setQueryState && (
                 <>

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -818,7 +817,7 @@ VALUES
 
 func benchmarkAuthzQuery(b *testing.B, numRepos, numUsers, reposPerUser int) {
 	// disable security access logs, which pollute the output of benchmark
-	os.Setenv("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS", "true")
+	b.Setenv("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS", "true")
 
 	logger := logtest.Scoped(b)
 	db := NewDB(logger, dbtest.NewDB(logger, b))

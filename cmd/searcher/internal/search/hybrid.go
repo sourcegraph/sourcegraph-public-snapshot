@@ -128,7 +128,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 
 		logger.Debug("starting zoekt search")
 
-		retryReason, err := zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
+		retryReason, err := zoektSearchIgnorePaths(ctx, logger, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
 			recordHybridFinalState("zoekt-search-error")
 			return nil, false, err
@@ -152,7 +152,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 //
 // If we did not search the correct commit or we don't know if we did, a
 // non-empty retryReason is returned.
-func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *protocol.Request, sender matchSender, indexed api.CommitID, ignoredPaths []string) (retryReason string, err error) {
+func zoektSearchIgnorePaths(ctx context.Context, logger log.Logger, client zoekt.Streamer, p *protocol.Request, sender matchSender, indexed api.CommitID, ignoredPaths []string) (retryReason string, err error) {
 	qText, err := zoektCompile(&p.PatternInfo)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to compile query for zoekt")
@@ -166,7 +166,7 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 	opts := (&zoektutil.Options{
 		NumRepos:       1,
 		FileMatchLimit: int32(p.Limit),
-	}).ToSearch(ctx)
+	}).ToSearch(ctx, logger)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
 	}

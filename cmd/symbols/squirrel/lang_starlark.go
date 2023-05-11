@@ -15,7 +15,7 @@ func (s *SquirrelService) getDefStarlark(ctx context.Context, node Node) (ret *N
 	defer s.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
 	switch node.Type() {
 	case "identifier":
-		return starlarkBindingNamed(node.Node.Content(node.Contents), swapNode(node, getRoot(node.Node)))
+		return starlarkBindingNamed(node.Node.Content(node.Contents), swapNode(node, getRoot(node.Node))), nil
 	case "string":
 		return s.getDefStarlarkString(ctx, node)
 	default:
@@ -72,21 +72,18 @@ func (s *SquirrelService) getDefStarlarkString(ctx context.Context, node Node) (
 		if err != nil {
 			return nil, err
 		}
-		return starlarkBindingNamed(symbol, *destinationRoot) //nolint:staticcheck
+		return starlarkBindingNamed(symbol, *destinationRoot), nil //nolint:staticcheck
 	}
 }
 
-func starlarkBindingNamed(name string, node Node) (*Node, error) {
-	captures, err := allCaptures(starlarkExportQuery, node)
-	if err != nil {
-		return nil, err
-	}
+func starlarkBindingNamed(name string, node Node) *Node {
+	captures := allCaptures(starlarkExportQuery, node)
 	for _, capture := range captures {
 		if capture.Node.Content(capture.Contents) == name {
-			return swapNodePtr(node, capture.Node), nil
+			return swapNodePtr(node, capture.Node)
 		}
 	}
-	return nil, nil
+	return nil
 }
 
 func getStringContents(node Node) string {
