@@ -18,7 +18,7 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
 }
 
 export function getNormalizedLanguageName(extension: string): string {
-    return extension ? (EXTENSION_TO_LANGUAGE[extension] ?? extension.charAt(0).toUpperCase() + extension.slice(1)) : ''
+    return extension ? EXTENSION_TO_LANGUAGE[extension] ?? extension.charAt(0).toUpperCase() + extension.slice(1) : ''
 }
 
 export async function getContextMessagesFromSelection(

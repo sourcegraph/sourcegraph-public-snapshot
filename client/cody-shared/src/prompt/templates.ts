@@ -6,8 +6,7 @@ const CODE_CONTEXT_TEMPLATE = `Use following code snippet from file \`{filePath}
 \`\`\``
 
 export function populateCodeContextTemplate(code: string, filePath: string): string {
-    return CODE_CONTEXT_TEMPLATE
-        .replace('{filePath}', filePath)
+    return CODE_CONTEXT_TEMPLATE.replace('{filePath}', filePath)
         .replace('{language}', getExtension(filePath))
         .replace('{text}', code)
 }
@@ -15,9 +14,7 @@ export function populateCodeContextTemplate(code: string, filePath: string): str
 const MARKDOWN_CONTEXT_TEMPLATE = 'Use the following text from file `{filePath}`:\n{text}'
 
 export function populateMarkdownContextTemplate(markdown: string, filePath: string): string {
-    return MARKDOWN_CONTEXT_TEMPLATE
-        .replace('{filePath}', filePath)
-        .replace('{text}', markdown)
+    return MARKDOWN_CONTEXT_TEMPLATE.replace('{filePath}', filePath).replace('{text}', markdown)
 }
 
 const CURRENT_EDITOR_CODE_TEMPLATE = 'I have the `{filePath}` file opened in my editor. '
@@ -47,4 +44,3 @@ export function isMarkdownFile(filePath: string): boolean {
 function getExtension(filePath: string): string {
     return path.extname(filePath).slice(1)
 }
-

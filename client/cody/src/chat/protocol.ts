@@ -1,5 +1,5 @@
-import { RecipeID } from '@sourcegraph/cody-shared/out/src/chat/recipes/recipe'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 

@@ -3,10 +3,10 @@ import path from 'path'
 
 import * as vscode from 'vscode'
 
-import { RecipeID } from '@sourcegraph/cody-shared/out/src/chat/recipes/recipe'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { RecipeID } from '@sourcegraph/cody-shared/out/src/chat/recipes/recipe'
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'

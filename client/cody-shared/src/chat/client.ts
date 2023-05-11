@@ -12,10 +12,10 @@ import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
 import { getPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
+import { RecipeID } from './recipes/recipe'
 import { Transcript, TranscriptJSON } from './transcript'
 import { ChatMessage } from './transcript/messages'
 import { reformatBotMessage } from './viewHelpers'
-import { RecipeID } from './recipes/recipe'
 
 export type { TranscriptJSON }
 export { Transcript }
