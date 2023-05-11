@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 // @ts-check
 
 const path = require('path')
@@ -38,6 +39,7 @@ function getEnvVariablesString() {
   // https://docs.percy.io/docs/skipping-asset-discovery-browser-download#using-an-environment-variable
   const customEnvVariables = {
     ...volatileEnvVariables,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     PERCY_BROWSER_EXECUTABLE: puppeteer.executablePath(),
   }

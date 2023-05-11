@@ -15,8 +15,8 @@ import (
 
 func BazelOperations() *operations.Set {
 	ops := operations.NewNamedSet("Bazel")
-	// ops.Append(bazelConfigure())
-	ops.Append(bazelTest("//client/web/src/integration:integration-tests"))
+	ops.Append(bazelConfigure())
+	ops.Append(bazelTest("//...", "//client/web:test"))
 	ops.Append(bazelBackCompatTest(
 		"@sourcegraph_back_compat//cmd/...",
 		"@sourcegraph_back_compat//lib/...",
@@ -87,7 +87,7 @@ func bazelAnnouncef(format string, args ...any) bk.StepOpt {
 
 func bazelTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
-		// bk.DependsOn("bazel-configure"),
+		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
 		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log"),
@@ -123,7 +123,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 
 func bazelBackCompatTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
-		// bk.DependsOn("bazel-configure"),
+		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 
 		// Generate a patch that backports the migration from the new code into the old one.
