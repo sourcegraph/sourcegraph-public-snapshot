@@ -22,7 +22,7 @@ import (
 var fs embed.FS
 
 type embeddingsSearcher interface {
-	Search(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingSearchResults, error)
+	Search(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingCombinedSearchResults, error)
 }
 
 // Run runs the evaluation and returns recall for the test data.
