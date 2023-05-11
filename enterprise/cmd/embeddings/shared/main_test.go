@@ -97,10 +97,7 @@ func TestEmbeddingsSearchE2E(t *testing.T) {
 		getContextDetectionEmbeddingIndex,
 	))
 
-	client := &embeddings.Client{
-		Endpoints:  endpoint.Static(server1.URL, server2.URL),
-		HTTPClient: http.DefaultClient,
-	}
+	client := embeddings.NewClient(endpoint.Static(server1.URL, server2.URL), http.DefaultClient)
 
 	{
 		// First test: we should return results for file1 based on the query.

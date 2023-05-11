@@ -28,7 +28,7 @@ func NewResolver(
 	db database.DB,
 	logger log.Logger,
 	gitserverClient gitserver.Client,
-	embeddingsClient *embeddings.Client,
+	embeddingsClient embeddings.Client,
 	repoStore repobg.RepoEmbeddingJobsStore,
 	contextDetectionStore contextdetectionbg.ContextDetectionEmbeddingJobsStore,
 ) graphqlbackend.EmbeddingsResolver {
@@ -46,7 +46,7 @@ type Resolver struct {
 	db                        database.DB
 	logger                    log.Logger
 	gitserverClient           gitserver.Client
-	embeddingsClient          *embeddings.Client
+	embeddingsClient          embeddings.Client
 	repoEmbeddingJobsStore    repobg.RepoEmbeddingJobsStore
 	contextDetectionJobsStore contextdetectionbg.ContextDetectionEmbeddingJobsStore
 }
