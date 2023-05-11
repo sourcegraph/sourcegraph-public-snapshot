@@ -89,16 +89,12 @@
             margin-top: 0;
         }
     }
-    .link-content {
-        margin-bottom: -0.125rem;
-    }
+
     @media (--xs-breakpoint-down) {
-        .link-content {
-            margin-bottom: 0;
-        }
         border: 0;
         background-color: var(--link-color);
     }
+
     .text,
     .icon {
         @media (--xs-breakpoint-down) {

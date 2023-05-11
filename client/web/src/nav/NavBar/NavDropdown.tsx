@@ -13,24 +13,27 @@ import navItemStyles from './NavItem.module.scss'
 
 export interface NavDropdownItem {
     content: React.ReactNode | string
-    path: string // To match against the current path to determine if the item is active
+
+    /** To match against the current path to determine if the item is active */
+    path: string
+
     target?: '_blank'
 }
 
 interface NavDropdownProps {
     toggleItem: NavDropdownItem & {
         icon: React.ComponentType<{ className?: string }>
-        // Alternative path to match against if item is active
+        /** Alternative path to match against if item is active */
         altPath?: string
     } & Pick<NavLinkProps, 'variant'>
-    // The first item in the dropdown menu that serves as the "home" item.
-    // It uses the path from the toggleItem.
+    /** The first item in the dropdown menu that serves as the "home" item.
+        It uses the path from the toggleItem. */
     homeItem?: Omit<NavDropdownItem, 'path'>
-    // Items to display in the dropdown.
+    /** Items to display in the dropdown */
     items: NavDropdownItem[]
-    // A current react router route match
+    /** A current react router route match */
     routeMatch?: string
-    // The name of the dropdown to use for accessible labels
+    /** The name of the dropdown to use for accessible labels */
     name: string
 }
 
@@ -54,12 +57,7 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
     // and then use CSS @media queries to toggle between them.
     return (
         <>
-            {/*
-                Add `position-relative` here for `absolute` position of `MenuButton` below
-                => `MenuButton` won't change its height when hovering + indicator
-                => `MenuList` won't change its position when opening
-            */}
-            <NavItem className="d-none d-sm-flex position-relative">
+            <NavItem className={classNames('d-none d-sm-flex', styles.wrapper)}>
                 <Menu>
                     {({ isExpanded }) => (
                         <>
@@ -75,7 +73,7 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                 data-test-active={isItemSelected}
                             >
                                 <MenuButton
-                                    className={classNames(navItemStyles.itemFocusable, styles.navDropdownButton)}
+                                    className={classNames(navItemStyles.itemFocusable, styles.button)}
                                     aria-label={isExpanded ? `Hide ${name} menu` : `Show ${name} menu`}
                                 >
                                     <span className={navItemStyles.itemFocusableContent}>
@@ -96,9 +94,9 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                 </MenuButton>
                             </div>
 
-                            <MenuList className={styles.navDropdownContainer} targetPadding={EMPTY_RECTANGLE}>
+                            <MenuList className={styles.menuList} targetPadding={EMPTY_RECTANGLE}>
                                 {homeItem && (
-                                    <MenuLink as={Link} key={toggleItem.path} to={toggleItem.path} index={-1}>
+                                    <MenuLink as={Link} key={toggleItem.path} to={toggleItem.path}>
                                         {homeItem.content}
                                     </MenuLink>
                                 )}

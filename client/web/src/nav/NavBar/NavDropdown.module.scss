@@ -1,9 +1,13 @@
-.nav-dropdown {
-    &-container {
-        margin-left: -0.625rem;
-    }
+.wrapper {
+    isolation: isolate;
+}
 
-    &-button {
-        padding: 0;
-    }
+.menu-list {
+    margin-left: -0.625rem;
+}
+
+.button {
+    padding: 0;
+    font-weight: normal;
+    border: none;
 }
