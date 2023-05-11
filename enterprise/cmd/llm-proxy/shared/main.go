@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-redsync/redsync/v4"
+	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
-	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/redigo"
-
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -41,6 +41,16 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	}
 	defer shutdownTracing()
 
+	var eventLogger events.Logger
+	if config.BigQuery.ProjectID != "" {
+		eventLogger, err = events.NewBigQueryLogger(config.BigQuery.ProjectID, config.BigQuery.Dataset, config.BigQuery.Table)
+		if err != nil {
+			return errors.Wrap(err, "create event logger")
+		}
+	} else {
+		eventLogger = events.NewStdoutLogger(obctx.Logger)
+	}
+
 	// Supported actor/auth sources
 	sources := actor.Sources{
 		anonymous.NewSource(config.AllowAnonymous),
@@ -51,14 +61,16 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	}
 
 	// Set up our handler chain, which is run from the bottom up
-	handler := newServiceHandler(obctx.Logger, config)
-	handler = rateLimit(obctx.Logger, redispool.Cache, handler)
+	handler := newServiceHandler(obctx.Logger, eventLogger, config)
+	handler = rateLimit(obctx.Logger, eventLogger, newPrefixRedisStore("rate_limit:", redispool.Cache), handler)
 	handler = &auth.Authenticator{
-		Log:     obctx.Logger.Scoped("auth", "authentication middleware"),
-		Sources: sources,
-		Next:    handler,
+		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
+		EventLogger: eventLogger,
+		Sources:     sources,
+		Next:        handler,
 	}
 	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
+	handler = httpLogger(obctx.Logger.Scoped("httpAPI", ""), handler)
 
 	// Initialize our server
 	server := httpserver.NewFromAddr(config.Address, &http.Server{
@@ -95,7 +107,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	return nil
 }
 
-func newServiceHandler(logger log.Logger, config *Config) http.Handler {
+func newServiceHandler(logger log.Logger, eventLogger events.Logger, config *Config) http.Handler {
 	r := mux.NewRouter()
 
 	// For cluster liveness and readiness probes
@@ -115,14 +127,26 @@ func newServiceHandler(logger log.Logger, config *Config) http.Handler {
 	r.HandleFunc("/-/__version", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(version.Version()))
-		return
 	})
 
 	// V1 service routes
 	v1router := r.PathPrefix("/v1").Subrouter()
 	v1router.Handle("/completions/anthropic",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
+			act := actor.FromContext(r.Context())
+
+			err := eventLogger.LogEvent(
+				events.Event{
+					Name:       events.EventNameCompletionsStarted,
+					Source:     act.Source.Name(),
+					Identifier: act.ID,
+				},
+			)
+			if err != nil {
+				logger.Error("failed to log event", log.Error(err))
+			}
+
+			ar, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
 			if err != nil {
 				response.JSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to create request: %s", err))
 				return
@@ -130,21 +154,43 @@ func newServiceHandler(logger log.Logger, config *Config) http.Handler {
 
 			// Mimic headers set by the official Anthropic client:
 			// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
-			r.Header.Set("Cache-Control", "no-cache")
-			r.Header.Set("Accept", "application/json")
-			r.Header.Set("Content-Type", "application/json")
-			r.Header.Set("Client", "sourcegraph-llm-proxy/1.0")
-			r.Header.Set("X-API-Key", config.Anthropic.AccessToken)
+			ar.Header.Set("Cache-Control", "no-cache")
+			ar.Header.Set("Accept", "application/json")
+			ar.Header.Set("Content-Type", "application/json")
+			ar.Header.Set("Client", "sourcegraph-llm-proxy/1.0")
+			ar.Header.Set("X-API-Key", config.Anthropic.AccessToken)
 
-			resp, err := httpcli.ExternalDoer.Do(r)
+			upstreamStarted := time.Now()
+			defer func() {
+				err := eventLogger.LogEvent(
+					events.Event{
+						Name:       events.EventNameCompletionsFinished,
+						Source:     act.Source.Name(),
+						Identifier: act.ID,
+						Metadata: map[string]any{
+							"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
+						},
+					},
+				)
+				if err != nil {
+					logger.Error("failed to log event", log.Error(err))
+				}
+			}()
+
+			resp, err := httpcli.ExternalDoer.Do(ar)
+
 			if err != nil {
 				response.JSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to make request to Anthropic: %s", err))
 				return
 			}
 			defer func() { _ = resp.Body.Close() }()
 
+			for k, vv := range resp.Header {
+				for _, v := range vv {
+					w.Header().Add(k, v)
+				}
+			}
 			w.WriteHeader(resp.StatusCode)
-			_ = resp.Header.Write(w)
 
 			_, _ = io.Copy(w, resp.Body)
 		}),
@@ -153,13 +199,28 @@ func newServiceHandler(logger log.Logger, config *Config) http.Handler {
 	return r
 }
 
-func rateLimit(logger log.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
+func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		l := actor.FromContext(r.Context()).Limiter(cache)
+		act := actor.FromContext(r.Context())
+		l := act.Limiter(cache)
 
 		err := l.TryAcquire(r.Context())
 
 		if err != nil {
+			err := eventLogger.LogEvent(
+				events.Event{
+					Name:       events.EventNameRateLimited,
+					Source:     act.Source.Name(),
+					Identifier: act.ID,
+					Metadata: map[string]any{
+						"error": err.Error(),
+					},
+				},
+			)
+			if err != nil {
+				logger.Error("failed to log event", log.Error(err))
+			}
+
 			var rateLimitExceeded limiter.RateLimitExceededError
 			if errors.As(err, &rateLimitExceeded) {
 				rateLimitExceeded.WriteResponse(w)
@@ -199,4 +260,35 @@ func healthz(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func httpLogger(logger log.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.Debug("Request", log.String("method", r.Method), log.String("path", r.URL.Path))
+		next.ServeHTTP(w, r)
+	})
+}
+
+func newPrefixRedisStore(prefix string, store redispool.KeyValue) limiter.RedisStore {
+	return &prefixRedisStore{
+		prefix: prefix,
+		store:  store,
+	}
+}
+
+type prefixRedisStore struct {
+	prefix string
+	store  redispool.KeyValue
+}
+
+func (s *prefixRedisStore) Incr(key string) (int, error) {
+	return s.store.Incr(s.prefix + key)
+}
+
+func (s *prefixRedisStore) TTL(key string) (int, error) {
+	return s.store.TTL(s.prefix + key)
+}
+
+func (s *prefixRedisStore) Expire(key string, ttlSeconds int) error {
+	return s.store.Expire(s.prefix+key, ttlSeconds)
 }
