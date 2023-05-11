@@ -150,15 +150,15 @@ func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 }
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
-func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, _ string) error {
+func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, _ string) ([]byte, error) {
 	username, password, host, depot, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
-		return errors.Wrap(err, "decompose")
+		return nil, errors.Wrap(err, "decompose")
 	}
 
 	err = p4testWithTrust(ctx, host, username, password)
 	if err != nil {
-		return errors.Wrap(err, "test with trust")
+		return nil, errors.Wrap(err, "test with trust")
 	}
 
 	var cmd *wrexec.Cmd
@@ -174,8 +174,9 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 	cmd.Env = s.p4CommandEnv(host, username, password)
 	dir.Set(cmd.Cmd)
 
-	if output, err := runWith(ctx, cmd, false, nil); err != nil {
-		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
+	output, err := runWith(ctx, cmd, false, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
 	}
 
 	if !s.FusionConfig.Enabled {
@@ -188,11 +189,11 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 		)
 		dir.Set(cmd.Cmd)
 		if output, err := runWith(ctx, cmd, false, nil); err != nil {
-			return errors.Wrapf(err, "failed to force update branch with output %q", string(output))
+			return nil, errors.Wrapf(err, "failed to force update branch with output %q", string(output))
 		}
 	}
 
-	return nil
+	return output, nil
 }
 
 // RemoteShowCommand returns the command to be executed for showing Git remote of a Perforce depot.

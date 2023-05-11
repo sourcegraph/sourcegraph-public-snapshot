@@ -45,7 +45,7 @@ func NewMockVCSSyncer() *MockVCSSyncer {
 			},
 		},
 		FetchFunc: &VCSSyncerFetchFunc{
-			defaultHook: func(context.Context, *vcs.URL, GitDir, string) (r0 error) {
+			defaultHook: func(context.Context, *vcs.URL, GitDir, string) (o0 []byte, r0 error) {
 				return
 			},
 		},
@@ -77,7 +77,7 @@ func NewStrictMockVCSSyncer() *MockVCSSyncer {
 			},
 		},
 		FetchFunc: &VCSSyncerFetchFunc{
-			defaultHook: func(context.Context, *vcs.URL, GitDir, string) error {
+			defaultHook: func(context.Context, *vcs.URL, GitDir, string) ([]byte, error) {
 				panic("unexpected invocation of MockVCSSyncer.Fetch")
 			},
 		},
@@ -235,23 +235,23 @@ func (c VCSSyncerCloneCommandFuncCall) Results() []interface{} {
 // VCSSyncerFetchFunc describes the behavior when the Fetch method of the
 // parent MockVCSSyncer instance is invoked.
 type VCSSyncerFetchFunc struct {
-	defaultHook func(context.Context, *vcs.URL, GitDir, string) error
-	hooks       []func(context.Context, *vcs.URL, GitDir, string) error
+	defaultHook func(context.Context, *vcs.URL, GitDir, string) ([]byte, error)
+	hooks       []func(context.Context, *vcs.URL, GitDir, string) ([]byte, error)
 	history     []VCSSyncerFetchFuncCall
 	mutex       sync.Mutex
 }
 
 // Fetch delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockVCSSyncer) Fetch(v0 context.Context, v1 *vcs.URL, v2 GitDir, v3 string) error {
-	r0 := m.FetchFunc.nextHook()(v0, v1, v2, v3)
+func (m *MockVCSSyncer) Fetch(v0 context.Context, v1 *vcs.URL, v2 GitDir, v3 string) ([]byte, error) {
+	_, r0 := m.FetchFunc.nextHook()(v0, v1, v2, v3)
 	m.FetchFunc.appendCall(VCSSyncerFetchFuncCall{v0, v1, v2, r0})
-	return r0
+	return nil, r0
 }
 
 // SetDefaultHook sets function that is called when the Fetch method of the
 // parent MockVCSSyncer instance is invoked and the hook queue is empty.
-func (f *VCSSyncerFetchFunc) SetDefaultHook(hook func(context.Context, *vcs.URL, GitDir, string) error) {
+func (f *VCSSyncerFetchFunc) SetDefaultHook(hook func(context.Context, *vcs.URL, GitDir, string) ([]byte, error)) {
 	f.defaultHook = hook
 }
 
@@ -259,7 +259,7 @@ func (f *VCSSyncerFetchFunc) SetDefaultHook(hook func(context.Context, *vcs.URL,
 // Fetch method of the parent MockVCSSyncer instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *VCSSyncerFetchFunc) PushHook(hook func(context.Context, *vcs.URL, GitDir, string) error) {
+func (f *VCSSyncerFetchFunc) PushHook(hook func(context.Context, *vcs.URL, GitDir, string) ([]byte, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -268,19 +268,19 @@ func (f *VCSSyncerFetchFunc) PushHook(hook func(context.Context, *vcs.URL, GitDi
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *VCSSyncerFetchFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *vcs.URL, GitDir, string) error {
-		return r0
+	f.SetDefaultHook(func(context.Context, *vcs.URL, GitDir, string) ([]byte, error) {
+		return nil, r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *VCSSyncerFetchFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *vcs.URL, GitDir, string) error {
-		return r0
+	f.PushHook(func(context.Context, *vcs.URL, GitDir, string) ([]byte, error) {
+		return nil, r0
 	})
 }
 
-func (f *VCSSyncerFetchFunc) nextHook() func(context.Context, *vcs.URL, GitDir, string) error {
+func (f *VCSSyncerFetchFunc) nextHook() func(context.Context, *vcs.URL, GitDir, string) ([]byte, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 

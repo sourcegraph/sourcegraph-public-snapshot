@@ -90,7 +90,7 @@ func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	}
 
 	// The Fetch method is responsible for cleaning up temporary directories.
-	if err := s.Fetch(ctx, remoteURL, GitDir(bareGitDirectory), ""); err != nil {
+	if _, err := s.Fetch(ctx, remoteURL, GitDir(bareGitDirectory), ""); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch repo for %s", remoteURL)
 	}
 
@@ -98,24 +98,24 @@ func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	return exec.CommandContext(ctx, "git", "--version"), nil
 }
 
-func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, revspec string) (err error) {
+func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, revspec string) ([]byte, error) {
 	var pkg reposource.Package
-	pkg, err = s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
+	pkg, err := s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	name := pkg.PackageSyntax()
 
 	versions, err := s.versions(ctx, name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if revspec != "" {
-		return s.fetchRevspec(ctx, name, dir, versions, revspec)
+		return nil, s.fetchRevspec(ctx, name, dir, versions, revspec)
 	}
 
-	return s.fetchVersions(ctx, name, dir, versions)
+	return nil, s.fetchVersions(ctx, name, dir, versions)
 }
 
 // fetchRevspec fetches the given revspec if it's not contained in
