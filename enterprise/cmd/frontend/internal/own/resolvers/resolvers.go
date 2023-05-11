@@ -144,20 +144,12 @@ func (r *ownResolver) GitCommitOwnership(
 	if err := areOwnEndpointsAvailable(ctx); err != nil {
 		return nil, err
 	}
-	repoID := commit.Repository().IDInt32()
 
 	// Retrieve recent contributors signals.
-	ownerships, err := computeRecentContributorSignals(ctx, r.db, repoRootPath, repoID)
+	ownerships, err := computeRecentContributorSignals(ctx, r.db, repoRootPath, commit.Repository().IDInt32())
 	if err != nil {
 		return nil, err
 	}
-
-	// Retrieve recent view signals.
-	viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, repoRootPath, repoID)
-	if err != nil {
-		return nil, err
-	}
-	ownerships = append(ownerships, viewerResolvers...)
 
 	return r.ownershipConnection(args, ownerships)
 }
@@ -259,38 +251,12 @@ func (r *ownResolver) ownershipConnection(
 	args graphqlbackend.ListOwnershipArgs,
 	ownerships []*ownershipResolver,
 ) (*ownershipConnectionResolver, error) {
-	// 0. Union ownerships by identifier
-	ownersByID := map[string][]*ownershipResolver{}
-	for _, o := range ownerships {
-		id := o.resolvedOwner.Identifier()
-		os := ownersByID[id]
-		ownersByID[id] = append(os, o)
-	}
-	ownerships = []*ownershipResolver{}
-	for _, os := range ownersByID {
-		var merged *ownershipResolver
-		for _, o := range os {
-			if merged == nil {
-				merged = o
-			} else {
-				merged.reasons = append(merged.reasons, o.reasons...)
-			}
-		}
-		if merged != nil {
-			ownerships = append(ownerships, merged)
-		}
-	}
-
 	// 1. Order ownerships for deterministic pagination:
 
 	// TODO(#51636): Introduce deterministic ordering based on priority of signals.
 	sort.Slice(ownerships, func(i, j int) bool {
-		o, p := ownerships[i], ownerships[j]
-		if x, y := o.order(), p.order(); x != y {
-			return x < y
-		}
-		iText := o.resolvedOwner.Identifier()
-		jText := p.resolvedOwner.Identifier()
+		iText := ownerships[i].resolvedOwner.Identifier()
+		jText := ownerships[j].resolvedOwner.Identifier()
 		return iText < jText
 	})
 	total := len(ownerships)
@@ -360,18 +326,6 @@ func (r *ownershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerReso
 
 func (r *ownershipResolver) Reasons(_ context.Context) ([]graphqlbackend.OwnershipReasonResolver, error) {
 	return r.reasons, nil
-}
-
-func (r *ownershipResolver) order() int {
-	reasonsCount := 0
-	codeownersCount := 0
-	for _, r := range r.reasons {
-		reasonsCount++
-		if _, ok := r.ToCodeownersFileEntry(); ok {
-			codeownersCount++
-		}
-	}
-	return 10*codeownersCount + reasonsCount
 }
 
 type ownerResolver struct {
