@@ -90,8 +90,6 @@ const register = async (
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor)
 
-    const localAppDetector = new LocalAppDetector()
-
     // Create chat webview
     const chatProvider = new ChatViewProvider(
         context.extensionPath,
@@ -102,8 +100,7 @@ const register = async (
         editor,
         secretStorage,
         localStorage,
-        rgPath,
-        localAppDetector
+        rgPath
     )
     disposables.push(chatProvider)
 
