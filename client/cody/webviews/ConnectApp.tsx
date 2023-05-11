@@ -1,24 +1,27 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { getVSCodeAPI } from './utils/VSCodeApi'
+import { VSCodeWrapper } from './utils/VSCodeApi'
 
 interface ConnectAppProps {
     isAppInstalled: boolean
+    vscodeAPI: VSCodeWrapper
 }
 
 export const ConnectApp: React.FunctionComponent<ConnectAppProps> = props => {
-    const vscodeAPI = getVSCodeAPI()
+    // Use postMessage to open because it won't open otherwise due to the sourcegraph:// scheme.
+    const openLink = (url: string): void => {
+        props.vscodeAPI.postMessage({
+            command: 'links',
+            value: url,
+        })
+    }
+
     return (
         <p>
             {props.isAppInstalled ? (
                 <VSCodeButton
                     type="button"
-                    onClick={e =>
-                        vscodeAPI.postMessage({
-                            command: 'links',
-                            value: 'sourcegraph://user/settings/tokens/new/callback?requestFrom=CODY',
-                        })
-                    }
+                    onClick={e => openLink('sourcegraph://user/settings/tokens/new/callback?requestFrom=CODY')}
                 >
                     Connect Sourcegraph App
                 </VSCodeButton>

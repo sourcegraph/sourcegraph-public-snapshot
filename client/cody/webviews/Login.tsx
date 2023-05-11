@@ -7,6 +7,7 @@ import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 
 import { ConnectApp } from './ConnectApp'
+import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Login.module.css'
 
@@ -15,6 +16,7 @@ interface LoginProps {
     onLogin: (token: string, endpoint: string) => void
     serverEndpoint?: string
     isAppInstalled: boolean
+    vscodeAPI: VSCodeWrapper
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
@@ -22,6 +24,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     onLogin,
     serverEndpoint,
     isAppInstalled,
+    vscodeAPI,
 }) => {
     const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState(serverEndpoint)
@@ -86,7 +89,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         Continue with Sourcegraph.com
                     </VSCodeButton>
                 </a>
-                <ConnectApp isAppInstalled={isAppInstalled} />
+                <ConnectApp isAppInstalled={isAppInstalled} vscodeAPI={vscodeAPI} />
             </section>
             <div
                 className={styles.terms}

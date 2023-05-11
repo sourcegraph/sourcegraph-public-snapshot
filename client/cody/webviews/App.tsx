@@ -119,6 +119,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     isValidLogin={isValidLogin}
                     serverEndpoint={config?.serverEndpoint}
                     isAppInstalled={isAppInstalled}
+                    vscodeAPI={vscodeAPI}
                 />
             )}
             {view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
