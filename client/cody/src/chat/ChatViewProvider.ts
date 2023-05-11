@@ -245,7 +245,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     const { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                 }
-                this.transcript.addErrorAsAssistantResponse('testing')
                 void this.onCompletionEnd()
             },
         })
