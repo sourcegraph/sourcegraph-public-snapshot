@@ -48,7 +48,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops := operations.NewSet()
 
 	if opts.ForceBazel {
-		ops.Merge(BazelOperations())
+		ops.Append(BazelOperations()...)
 	}
 
 	// Simple, fast-ish linter checks
@@ -506,7 +506,7 @@ func addGoBuild(pipeline *bk.Pipeline) {
 func backendIntegrationTests(candidateImageTag string, imageDep string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		for _, enableGRPC := range []bool{true, false} {
-			description := ":chains: Backend integration tests"
+			description := ":bazel:+:docker: :chains: Backend integration tests"
 			if enableGRPC {
 				description += " (gRPC)"
 			}
@@ -686,7 +686,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 
 func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep(":docker::packer: Executors E2E",
+		p.AddStep(":bazel::docker::packer: Executors E2E",
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Agent("queue", "bazel"),

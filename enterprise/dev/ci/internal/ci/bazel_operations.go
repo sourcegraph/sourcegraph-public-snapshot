@@ -13,11 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
-func BazelOperations() *operations.Set {
-	ops := operations.NewNamedSet("Bazel")
-	ops.Append(bazelConfigure())
-	ops.Append(bazelTest("//...", "//client/web:test"))
-	ops.Append(bazelBackCompatTest(
+func BazelOperations() []operations.Operation {
+	ops := []operations.Operation{}
+	ops = append(ops, bazelConfigure())
+	ops = append(ops, bazelTest("//...", "//client/web:test"))
+	ops = append(ops, bazelBackCompatTest(
 		"@sourcegraph_back_compat//cmd/...",
 		"@sourcegraph_back_compat//lib/...",
 		"@sourcegraph_back_compat//internal/...",
