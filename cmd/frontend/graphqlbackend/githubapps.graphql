@@ -19,6 +19,10 @@ extend type Query {
     Looks up a GitHub App by its ID.
     """
     gitHubApp(id: ID!): GitHubApp
+    """
+    Looks up a GitHub App by its AppID and BaseURL.
+    """
+    gitHubAppByAppID(appID: Int!, baseURL: String!): GitHubApp
 }
 
 """
