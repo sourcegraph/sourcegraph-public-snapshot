@@ -19,6 +19,7 @@ type GitHubAppsResolver interface {
 	// Queries
 	GitHubApps(ctx context.Context) (GitHubAppConnectionResolver, error)
 	GitHubApp(ctx context.Context, args *GitHubAppArgs) (GitHubAppResolver, error)
+	GitHubAppByAppID(ctx context.Context, args *GitHubAppByAppIDArgs) (GitHubAppResolver, error)
 
 	// Mutations
 	DeleteGitHubApp(ctx context.Context, args *DeleteGitHubAppArgs) (*EmptyResponse, error)
@@ -64,6 +65,11 @@ type GitHubAppsArgs struct {
 
 type GitHubAppArgs struct {
 	ID graphql.ID
+}
+
+type GitHubAppByAppIDArgs struct {
+	AppID   int32
+	BaseURL string
 }
 
 type GitHubAppInstallationAccount struct {
