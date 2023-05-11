@@ -318,48 +318,50 @@
         }
       ],
       "comments/commentThread/context": [
-				{
-					"command": "cody.comment.add",
-					"group": "inline",
-          "when": "cody.activated && commentController =~ /^cody-inline/"
-				}
-			],
-      "comments/commentThread/title": [
-				{
-					"command": "cody.comment.delete",
-					"group": "inline@1",
-					"when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty"
-				},
         {
-					"command": "cody.comment.load",
-					"group": "inline@2",
-					"when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending"
-				}
-			]
+          "command": "cody.comment.add",
+          "group": "inline",
+          "when": "cody.activated && commentController =~ /^cody-inline/"
+        }
+      ],
+      "comments/commentThread/title": [
+        {
+          "command": "cody.comment.delete",
+          "group": "inline@1",
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty"
+        },
+        {
+          "command": "cody.comment.load",
+          "group": "inline@2",
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending"
+        }
+      ]
     },
     "configuration": {
       "type": "object",
-      "title": "Cody settings",
+      "title": "Cody",
       "properties": {
         "cody.enabled": {
+          "order": 1,
           "type": "boolean",
           "default": true,
           "description": "Enable Cody"
         },
         "cody.serverEndpoint": {
+          "order": 2,
           "type": "string",
           "default": "https://sourcegraph.com",
           "example": "https://example.sourcegraph.com",
           "description": "URL to the Sourcegraph instance."
         },
         "cody.codebase": {
+          "order": 3,
           "type": "string",
+          "markdownDescription": "Repo path that cody will use to gather context for the answers. Example: 'github.com/sourcegraph/sourcegraph' . This is automatically inferred from your git setup but you can use this option if you need to overwrite the default",
           "example": "github.com/sourcegraph/sourcegraph"
         },
-        "cody.debug": {
-          "type": "boolean"
-        },
         "cody.useContext": {
+          "order": 4,
           "type": "string",
           "enum": [
             "embeddings",
@@ -367,22 +369,31 @@
             "none",
             "blended"
           ],
-          "default": "embeddings"
+          "default": "embeddings",
+          "markdownDescription": "If embeddings for a repo are present, Cody will use them to set the context for Sourcegraph search (best scneario). If not, it will automatically fall back to keyword based search"
         },
         "cody.experimental.suggestions": {
+          "order": 5,
           "type": "boolean",
+          "markdownDescription": "Enables code completions while typing in the code editor window",
           "default": false
         },
         "cody.experimental.chatPredictions": {
+          "order": 6,
           "type": "boolean",
-          "default": false
+          "default": false,
+          "markdownDescription": "Adds sugestions of possible relevant messages in the chat window"
         },
         "cody.experimental.inline": {
+          "order": 7,
           "type": "boolean",
+          "markdownDescription": "Enables inline chat with cody inside the code editor window",
           "default": false
         },
         "cody.customHeaders": {
+          "order": 8,
           "type": "object",
+          "markdownDescription": "Adds custom HTTP headers to all network requests. Usefull if you are behind a proxy server that requires custom headers",
           "default": {},
           "examples": [
             {
@@ -390,6 +401,11 @@
               "Proxy-Authenticate": "Basic"
             }
           ]
+        },
+        "cody.debug": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "(Only relevant for the team developing and improving Cody)"
         }
       }
     }
