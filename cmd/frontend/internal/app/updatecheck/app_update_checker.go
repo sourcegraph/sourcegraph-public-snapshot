@@ -19,10 +19,10 @@ import (
 const RouteAppUpdateCheck = "app.update.check"
 
 // ManifestBucket the name of the bucket where the Sourcegraph App update manifest is stored
-const ManifestBucket = "sourcegraph-app"
+const ManifestBucket = "sourcegraph_app"
 
 // ManifestName is the name of the manifest object that is in the ManifestBucket
-const ManifestName = "update.manifest.json"
+const ManifestName = "update.test.manifest.json"
 
 type AppVersion struct {
 	Target  string

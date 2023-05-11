@@ -1,7 +1,9 @@
 package updatecheck
 
 import (
+	"context"
 	"encoding/json"
+	"flag"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -10,6 +12,8 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 )
+
+var integrationTest = flag.Bool("IntegrationTest", false, "access external services like GCP")
 
 func TestReadAppClientVersion(t *testing.T) {
 	var tt = []struct {
@@ -152,4 +156,48 @@ func TestAppUpdateCheckHandler(t *testing.T) {
 			}
 		}
 	})
+}
+func TestGCSResolver(t *testing.T) {
+	flag.Parse()
+
+	if !*integrationTest {
+		t.Skip("integration testing is not enabled - to enable this test pass the flag '-IntegrationTest'")
+		return
+	}
+
+	ctx := context.Background()
+	resolver, err := NewGCSManifestResolver(ctx, ManifestBucket, ManifestName)
+	if err != nil {
+		t.Fatalf("failed to create GCS manifest resolver: %v", err)
+	}
+
+	gcsManifest, err := resolver.Resolve(ctx)
+	if err != nil {
+		t.Fatalf("failed to get manifest using GCS resolver: %v", err)
+	}
+
+	if gcsManifest == nil {
+		t.Errorf("got nil Version Manifest")
+	}
+
+	if gcsManifest.Version == "" {
+		t.Errorf("GCS Manifest Version is empty")
+	}
+	if gcsManifest.PubDate.IsZero() {
+		t.Errorf("GCS Manifest PubDate is Zero: %s", gcsManifest.PubDate.String())
+	}
+
+	if len(gcsManifest.Platforms) == 0 {
+		t.Errorf("GCS Manifest has zero platforms: %v", gcsManifest)
+	}
+
+	for keyPlatform, got := range gcsManifest.Platforms {
+		if got.Signature == "" {
+			t.Errorf("%s platform has an empty signature", keyPlatform)
+		}
+		if got.Url == "" {
+			t.Errorf("%s platform has an empty url", keyPlatform)
+		}
+	}
+
 }
