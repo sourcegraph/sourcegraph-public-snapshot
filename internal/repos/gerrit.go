@@ -22,12 +22,12 @@ import (
 // A GerritSource yields repositories from a single Gerrit connection configured
 // in Sourcegraph via the external services configuration.
 type GerritSource struct {
-	svc             *types.ExternalService
-	cli             *gerrit.Client
-	serviceID       string
-	perPage         int
-	private         bool
-	allowedProjects map[string]struct{}
+	svc                 *types.ExternalService
+	cli                 *gerrit.Client
+	serviceID           string
+	perPage             int
+	private             bool
+	allowedProjects     map[string]struct{}
 	nameTransformations reposource.NameTransformations
 }
 
@@ -76,12 +76,12 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 	}
 
 	return &GerritSource{
-		svc:             svc,
-		cli:             cli,
-		allowedProjects: allowedProjects,
-		serviceID:       extsvc.NormalizeBaseURL(cli.URL).String(),
-		perPage:         100,
-		private:         c.Authorization != nil,
+		svc:                 svc,
+		cli:                 cli,
+		allowedProjects:     allowedProjects,
+		serviceID:           extsvc.NormalizeBaseURL(cli.URL).String(),
+		perPage:             100,
+		private:             c.Authorization != nil,
 		nameTransformations: nts,
 	}, nil
 }
