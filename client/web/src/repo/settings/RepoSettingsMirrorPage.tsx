@@ -276,12 +276,21 @@ interface LastSyncOutputProps {
 }
 
 const LastSyncOutputContainer: FC<LastSyncOutputProps> = props => {
-    const output = props.repo.mirrorInfo.lastSyncOutput
+    const output = props.repo.mirrorInfo.lastSyncOutput || 'No output found.'
     return (
         <BaseActionContainer
             title="Sync output"
-            description={<span>Output from this repository's most recent sync job.</span>}
-            details={<pre className="flex-1">{output}</pre>}
+            description={
+                <div>
+                    <span>Output from this repository's most recent sync job.</span>
+                    <hr />
+                </div>
+            }
+            details={
+                <pre className={classNames(styles.log)}>
+                    <Code>{output}</Code>
+                </pre>
+            }
         />
     )
 }
