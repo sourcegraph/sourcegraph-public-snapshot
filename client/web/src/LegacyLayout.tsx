@@ -187,14 +187,12 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            {!isCodyStandalonePage && (
-                <GlobalAlerts
-                    authenticatedUser={props.authenticatedUser}
-                    isSourcegraphDotCom={props.isSourcegraphDotCom}
-                />
+            {!isCodyStandalonePage && <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphDotCom={props.isSourcegraphDotCom} /> }
+            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && !isCodyStandalonePage && (
+                <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}
-            {props.isSourcegraphDotCom && props.authenticatedUser && !isCodyStandalonePage && <CodySurveyToast />}
-            {!isSiteInit && !isSignInOrUp && !isCodyStandalonePage && (
+            {props.isSourcegraphDotCom && props.authenticatedUser && <CodySurveyToast />}
+            {!isSiteInit && !isSignInOrUp && !isCodyStandalonePage (
                 <GlobalNavbar
                     {...props}
                     showSearchBox={
