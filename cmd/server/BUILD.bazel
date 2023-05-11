@@ -78,6 +78,7 @@ DEPS = [
   "//cmd/searcher",
   "//cmd/symbols",
   "//cmd/worker",
+  "//docker-images/prometheus/cmd/prom-wrapper",
   "//cmd/blobstore", # TODO wolfi package it
 ]
 
