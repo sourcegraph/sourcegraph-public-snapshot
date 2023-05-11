@@ -135,7 +135,8 @@ func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Vers
 	for _, migration := range migrations {
 		currentVersionCmpIntroduced := CompareVersions(currentVersion, migration.Introduced)
 		if currentVersionCmpIntroduced == VersionOrderBefore {
-			progress, err := r.migrators[migration.ID].Progress(ctx, true)
+			migration.ApplyReverse = true
+			progress, err := updateProgress(ctx, r.store, &migration, r.migrators[migration.ID].Migrator)
 			if err != nil {
 				errs = append(errs, errors.Newf("failed to get progress status for migration %d", migration.ID))
 				continue
@@ -158,7 +159,8 @@ func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Vers
 
 		currentVersionCmpDeprecated := CompareVersions(currentVersion, *migration.Deprecated)
 		if currentVersionCmpDeprecated != VersionOrderBefore {
-			progress, err := r.migrators[migration.ID].Progress(ctx, false)
+			migration.ApplyReverse = false
+			progress, err := updateProgress(ctx, r.store, &migration, r.migrators[migration.ID].Migrator)
 			if err != nil {
 				errs = append(errs, errors.Newf("failed to get progress status for migration %d", migration.ID))
 				continue
@@ -367,7 +369,7 @@ func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migra
 	}
 
 	// We're just starting up - refresh our progress before migrating
-	if err := updateProgress(ctx, store, &migration, migrator); err != nil {
+	if _, err := updateProgress(ctx, store, &migration, migrator); err != nil {
 		if !errors.Is(err, ctx.Err()) {
 			logger.Error("Failed to determine migration progress", log.Error(err), log.Int("migrationID", migration.ID))
 		}
@@ -383,7 +385,7 @@ func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migra
 			// We just got a new version of the migration from the database. We need to check
 			// the actual progress based on the migrator in case the progress as stored in the
 			// migrations table has been de-synchronized from the actual progress.
-			if err := updateProgress(ctx, store, &migration, migrator); err != nil {
+			if _, err := updateProgress(ctx, store, &migration, migrator); err != nil {
 				if !errors.Is(err, ctx.Err()) {
 					logger.Error("Failed to determine migration progress", log.Error(err), log.Int("migrationID", migration.ID))
 				}
@@ -429,23 +431,24 @@ func runMigrationFunction(ctx context.Context, store storeIface, migration *Migr
 		}
 	}
 
-	return updateProgress(ctx, store, migration, migrator)
+	_, err := updateProgress(ctx, store, migration, migrator)
+	return err
 }
 
 // updateProgress invokes the Progress method on the given migrator, updates the Progress field of the
 // given migration record, and updates the record in the database.
-func updateProgress(ctx context.Context, store storeIface, migration *Migration, migrator Migrator) error {
+func updateProgress(ctx context.Context, store storeIface, migration *Migration, migrator Migrator) (float64, error) {
 	progress, err := migrator.Progress(ctx, migration.ApplyReverse)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if err := store.UpdateProgress(ctx, migration.ID, progress); err != nil {
-		return err
+		return 0, err
 	}
 
 	migration.Progress = progress
-	return nil
+	return progress, nil
 }
 
 func runMigrationUp(ctx context.Context, migration *Migration, migrator Migrator, logger log.Logger, operations *operations) (err error) {
