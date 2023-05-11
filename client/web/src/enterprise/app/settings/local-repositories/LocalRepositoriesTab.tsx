@@ -98,17 +98,12 @@ interface PathsPickerActionsProps {
  * they have in the file picker.
  */
 const PathsPickerActions: FC<PathsPickerActionsProps> = ({ onPathsChange }) => {
-    const handleClickCallPathPicker = async (): Promise<void> => {
-        const selected = await open({
-            directory: true,
-            multiple: true,
-        })
+    const { callPathPicker } = useLocalPathsPicker()
 
-        if (Array.isArray(selected)) {
-            onPathsChange(selected)
-        } else if (selected !== null) {
-            onPathsChange([selected])
-        }
+    const handleClickCallPathPicker = async (): Promise<void> => {
+        const paths = await callPathPicker()
+
+        onPathsChange(paths)
     }
 
     return (
