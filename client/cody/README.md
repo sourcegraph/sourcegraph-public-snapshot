@@ -1,10 +1,12 @@
-# Cody: AI code assistant
+# Cody AI by Sourcegraph
 
 Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
 
 **Status:** beta ([join the open beta](https://docs.sourcegraph.com/cody))
 
 [**Full documentation**](https://docs.sourcegraph.com/cody)
+
+Not the extension you're looking for? Download our [Search extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph).
 
 ## Features
 
