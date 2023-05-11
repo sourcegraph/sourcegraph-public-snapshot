@@ -119,7 +119,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                         </Menu>
                     </div>
                     <div className={classNames('h-100 mb-4', styles.sidebar)}>
-                        <HistoryList trucateMessageLenght={60} />
+                        <HistoryList truncateMessageLength={60} />
                     </div>
                     {!isCTADismissed &&
                         (showVSCodeCTA ? (
