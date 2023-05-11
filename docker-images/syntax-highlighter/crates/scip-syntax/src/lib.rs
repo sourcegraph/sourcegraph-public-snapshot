@@ -14,7 +14,7 @@ pub fn get_globals(
     parser: BundledParser,
     source_bytes: &[u8],
     bundle: &mut MemoryBundle,
-) -> Option<Result<(globals::Scope, usize)>> {
+) -> Option<Result<()>> {
     let config = languages::get_tag_configuration(parser)?;
     let mut parser = Parser::new();
     parser.set_language(config.language).unwrap();
@@ -35,6 +35,9 @@ macro_rules! generate_tags_and_snapshot {
             scopes: vec![],
             globals: vec![],
             descriptors: vec![],
+
+            children: vec![],
+            scope_stack: vec![],
         };
 
         let mut buffer = vec![0u8; 1024];

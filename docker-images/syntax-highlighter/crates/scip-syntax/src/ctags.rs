@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     get_globals,
-    globals::{MemoryBundle, Scope},
+    globals::{iterate_children_indices, MemoryBundle, Scope},
 };
 
 #[derive(Debug)]
@@ -83,7 +83,8 @@ impl<'a> Reply<'a> {
         scope_deduplicator: &mut HashMap<String, ()>,
         bundle: &MemoryBundle,
     ) {
-        let descriptors = &bundle.descriptors[scope.descriptors.start..scope.descriptors.end];
+        let descriptors =
+            &bundle.descriptors[scope.descriptors.start as usize..scope.descriptors.end as usize];
         let names = descriptors.iter().map(|d| d.name.as_str());
         let name = intersperse(names, ".").collect::<String>();
 
@@ -130,14 +131,18 @@ fn emit_tags_for_scope<W: std::io::Write>(
     buf_writer: &mut BufWriter<W>,
     path: &str,
     parent_scopes: Vec<String>,
-    scope: &Scope,
+    scope_idx: usize,
     language: &str,
     scope_deduplicator: &mut HashMap<String, ()>,
     bundle: &MemoryBundle,
 ) {
+    let scope = &bundle.scopes[scope_idx];
+
     let curr_scopes = {
         let mut curr_scopes = parent_scopes.clone();
-        for desc in &bundle.descriptors[scope.descriptors.start..scope.descriptors.end] {
+        for desc in
+            &bundle.descriptors[scope.descriptors.start as usize..scope.descriptors.end as usize]
+        {
             curr_scopes.push(desc.name.clone());
         }
         curr_scopes
@@ -161,7 +166,7 @@ fn emit_tags_for_scope<W: std::io::Write>(
         );
     }
 
-    for subscope in &scope.children {
+    for subscope in iterate_children_indices(&bundle.children, scope.children) {
         emit_tags_for_scope(
             buf_writer,
             path,
@@ -173,7 +178,8 @@ fn emit_tags_for_scope<W: std::io::Write>(
         );
     }
 
-    for global in &scope.globals {
+    for global_idx in iterate_children_indices(&bundle.children, scope.globals) {
+        let global = &bundle.globals[global_idx];
         let mut scope_name = curr_scopes.clone();
         scope_name.extend(
             bundle.descriptors[global.descriptors.start..global.descriptors.end]
@@ -211,7 +217,7 @@ pub fn generate_tags<W: std::io::Write>(
     let filepath = path.file_name()?.to_str()?;
 
     let parser = BundledParser::get_parser_from_extension(extension)?;
-    let (root_scope, _) = match get_globals(parser, file_data, bundle)? {
+    match get_globals(parser, file_data, bundle)? {
         Ok(vals) => vals,
         Err(err) => {
             // TODO: Not sure I want to keep this or not
@@ -229,7 +235,7 @@ pub fn generate_tags<W: std::io::Write>(
         buf_writer,
         filepath,
         vec![],
-        &root_scope,
+        0,
         "go",
         &mut scope_deduplicator,
         bundle,
@@ -242,9 +248,12 @@ pub fn ctags_runner<R: Read, W: Write>(
     output: &mut std::io::BufWriter<W>,
 ) -> Result<()> {
     let mut bundle = MemoryBundle {
-        scopes: vec![],
-        globals: vec![],
-        descriptors: vec![],
+        scopes: Vec::with_capacity(64),
+        globals: Vec::with_capacity(64),
+        descriptors: Vec::with_capacity(256),
+
+        children: Vec::with_capacity(256),
+        scope_stack: Vec::with_capacity(64),
     };
 
     Reply::Program {
