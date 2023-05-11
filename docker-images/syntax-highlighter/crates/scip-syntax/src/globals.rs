@@ -1,26 +1,36 @@
-use std::ops::Range;
+use std::ops::{Range, RangeInclusive};
 
 use anyhow::Result;
 use bitvec::prelude::*;
-use protobuf::Enum;
+use protobuf::{Enum, Message};
 use scip::types::{Descriptor, Occurrence};
 use scip_treesitter::types::PackedRange;
 
 use crate::languages::TagConfiguration;
+
 #[derive(Debug)]
 pub struct MemoryBundle {
     pub scopes: Vec<Scope>,
     pub globals: Vec<Global>,
     pub descriptors: Vec<Descriptor>,
+
+    pub children: Vec<Child>,
+    pub scope_stack: Vec<u32>,
+}
+
+#[derive(Debug)]
+pub struct Child {
+    index: u32,
+    prev: u32,
 }
 
 #[derive(Debug)]
 pub struct Scope {
     pub ident_range: PackedRange,
     pub scope_range: PackedRange,
-    pub globals: Vec<Global>,
-    pub children: Vec<Scope>,
-    pub descriptors: Range<usize>,
+    pub globals: u32,
+    pub children: u32,
+    pub descriptors: Range<u32>,
 }
 
 #[derive(Debug)]
@@ -29,30 +39,51 @@ pub struct Global {
     pub descriptors: Range<usize>,
 }
 
-impl Scope {
-    pub fn insert_scope(&mut self, scope: Scope) {
-        if let Some(child) = self
-            .children
-            .iter_mut()
-            .find(|child| child.scope_range.contains(&scope.scope_range))
-        {
-            child.insert_scope(scope);
-        } else {
-            self.children.push(scope);
-        }
-    }
+pub struct ScopeChildrenIterator<'a> {
+    current: u32,
+    children: &'a Vec<Child>,
+}
 
-    pub fn insert_global(&mut self, global: Global) {
-        if let Some(child) = self
-            .children
-            .iter_mut()
-            .find(|child| child.scope_range.contains(&global.range))
-        {
-            child.insert_global(global)
-        } else {
-            self.globals.push(global);
+impl<'a> Iterator for ScopeChildrenIterator<'a> {
+    // We can refer to this type using Self::Item
+    type Item = usize;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // current is dead (but don't kill populated root children)
+        if self.current == u32::MAX {
+            return None;
         }
+
+        let current_child = &self.children[self.current as usize];
+        let result = current_child.index;
+        self.current = current_child.prev;
+
+        return Some(result as usize);
     }
+}
+
+pub fn iterate_children_indices<'a>(
+    children: &'a Vec<Child>,
+    children_or_globals: u32,
+) -> ScopeChildrenIterator {
+    return ScopeChildrenIterator::<'a> {
+        current: children_or_globals,
+        children,
+    };
+}
+
+impl Scope {
+    // pub fn insert_global(&mut self, global: Global) {
+    //     if let Some(child) = self
+    //         .children
+    //         .iter_mut()
+    //         .find(|child| child.scope_range.contains(&global.range))
+    //     {
+    //         child.insert_global(global)
+    //     } else {
+    //         self.globals.push(global);
+    //     }
+    // }
 
     // pub fn into_occurrences(
     //     &mut self,
@@ -128,7 +159,7 @@ pub fn parse_tree<'a>(
     tree: &'a tree_sitter::Tree,
     source_bytes: &'a [u8],
     bundle: &'a mut MemoryBundle,
-) -> Result<(Scope, usize)> {
+) -> Result<()> {
     let mut cursor = tree_sitter::QueryCursor::new();
 
     let root_node = tree.root_node();
@@ -138,9 +169,25 @@ pub fn parse_tree<'a>(
     let globals = &mut bundle.globals;
     let descriptors = &mut bundle.descriptors;
 
+    let children = &mut bundle.children;
+    let scope_stack = &mut bundle.scope_stack;
+
     scopes.clear();
     globals.clear();
     descriptors.clear();
+
+    children.clear();
+    scope_stack.clear();
+
+    scopes.push(Scope {
+        ident_range: root_node.into(),
+        scope_range: root_node.into(),
+        globals: u32::MAX,
+        children: u32::MAX,
+        descriptors: 0..0,
+    });
+
+    scope_stack.push(0);
 
     let mut local_ranges = BitVec::<u8, Msb0>::repeat(false, source_bytes.len());
 
@@ -190,20 +237,56 @@ pub fn parse_tree<'a>(
                     continue;
                 }
 
-                // dbg!(node);
+                {
+                    let mut i: i64 = (scope_stack.len() - 1) as i64;
+                    while i >= 0 {
+                        if !scopes[scope_stack[i as usize] as usize]
+                            .scope_range
+                            .contains(&node.into())
+                        {
+                            scope_stack.pop();
+                            i -= 1;
+                        } else {
+                            break;
+                        }
+
+                        i -= 1;
+                    }
+                }
+
+                let current_scope = *scope_stack.last().unwrap() as usize;
 
                 match scope {
-                    Some(scope_ident) => scopes.push(Scope {
-                        ident_range: node.into(),
-                        scope_range: scope_ident.node.into(),
-                        globals: vec![],
-                        children: vec![],
-                        descriptors: start..descriptors.len(),
-                    }),
-                    None => globals.push(Global {
-                        range: node.into(),
-                        descriptors: start..descriptors.len(),
-                    }),
+                    Some(scope_ident) => {
+                        scopes.push(Scope {
+                            ident_range: node.into(),
+                            scope_range: scope_ident.node.into(),
+                            globals: u32::MAX,
+                            children: u32::MAX,
+                            descriptors: start as u32..descriptors.len() as u32,
+                        });
+
+                        children.push(Child {
+                            index: (scopes.len() - 1) as u32,
+                            prev: scopes[current_scope].children,
+                        });
+
+                        scopes[current_scope].children = (children.len() - 1) as u32;
+                        scope_stack.push((scopes.len() - 1) as u32);
+                    }
+                    None => {
+                        globals.push(Global {
+                            range: node.into(),
+                            descriptors: start..descriptors.len(),
+                        });
+
+                        children.push(Child {
+                            index: (globals.len() - 1) as u32,
+                            prev: scopes[current_scope].globals,
+                        });
+
+                        scopes[current_scope].globals = (children.len() - 1) as u32;
+                    }
                 }
             }
             None => {
@@ -218,32 +301,7 @@ pub fn parse_tree<'a>(
         }
     }
 
-    let mut root = Scope {
-        ident_range: root_node.into(),
-        scope_range: root_node.into(),
-        globals: vec![],
-        children: vec![],
-        descriptors: 0..0,
-    };
-
-    scopes.sort_by_key(|m| {
-        std::cmp::Reverse((
-            m.scope_range.start_line,
-            m.scope_range.end_line,
-            m.scope_range.start_col,
-        ))
-    });
-
-    // Add all the scopes to our tree
-    while let Some(m) = scopes.pop() {
-        root.insert_scope(m);
-    }
-
-    while let Some(m) = globals.pop() {
-        root.insert_global(m);
-    }
-
-    Ok((root, globals.len()))
+    Ok(())
 }
 
 // #[cfg(test)]
