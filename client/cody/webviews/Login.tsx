@@ -93,7 +93,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <div
                 className={styles.terms}
                 dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(CODY_TERMS_MARKDOWN) }}
-            />
+            ></div>
         </div>
     )
 }
