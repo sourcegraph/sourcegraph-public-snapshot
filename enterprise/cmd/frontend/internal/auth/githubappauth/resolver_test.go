@@ -268,3 +268,74 @@ func TestResolver_GitHubApp(t *testing.T) {
 		}},
 	}})
 }
+
+func TestResolver_GitHubAppByAppID(t *testing.T) {
+	logger := logtest.Scoped(t)
+	id := 1
+	appID := 1234
+	baseURL := "https://github.com"
+	name := "Horsegraph App"
+
+	userStore := database.NewMockUserStore()
+	userStore.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+		a := actor.FromContext(ctx)
+		if a.UID == 1 {
+			return &types.User{ID: 1, SiteAdmin: true}, nil
+		}
+		if a.UID == 2 {
+			return &types.User{ID: 2, SiteAdmin: false}, nil
+		}
+		return nil, errors.New("not found")
+	})
+
+	gitHubAppsStore := store.NewStrictMockGitHubAppsStore()
+	gitHubAppsStore.GetByAppIDFunc.SetDefaultReturn(&ghtypes.GitHubApp{
+		ID:      id,
+		AppID:   appID,
+		BaseURL: baseURL,
+		Name:    name,
+	}, nil)
+
+	db := edb.NewStrictMockEnterpriseDB()
+
+	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
+	db.UsersFunc.SetDefaultReturn(userStore)
+
+	adminCtx := userCtx(1)
+	userCtx := userCtx(2)
+
+	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(), nil, graphqlbackend.OptionalResolver{GitHubAppsResolver: NewResolver(logger, db)})
+	require.NoError(t, err)
+
+	graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+		Schema:  schema,
+		Context: adminCtx,
+		Query: fmt.Sprintf(`
+			query {
+				gitHubAppByAppID(appID: %d, baseURL: "%s") {
+					id
+					name
+				}
+			}`, appID, baseURL),
+		ExpectedResult: fmt.Sprintf(`{
+			"gitHubAppByAppID": {
+				"id": "%s",
+				"name": "%s"
+			}
+		}`, MarshalGitHubAppID(int64(id)), name),
+	}, {
+		Schema:  schema,
+		Context: userCtx,
+		Query: fmt.Sprintf(`
+			query {
+				gitHubAppByAppID(appID: %d, baseURL: "%s") {
+					id
+				}
+			}`, appID, baseURL),
+		ExpectedResult: `{"gitHubAppByAppID": null}`,
+		ExpectedErrors: []*gqlerrors.QueryError{{
+			Message: "must be site admin",
+			Path:    []any{string("gitHubAppByAppID")},
+		}},
+	}})
+}

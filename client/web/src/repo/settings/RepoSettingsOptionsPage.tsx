@@ -76,7 +76,7 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo }) => {
             <Container className="repo-settings-options-page">
                 <H2 className="mb-3">Repository name</H2>
                 <CopyableText className="mb-3" text={repo.name} size={repo.name.length} />
-                <H2 className="mb-3">Code hosts</H2>
+                <H2 className="mb-3">Code host connections</H2>
                 {loading && <LoadingSpinner />}
                 {error && <ErrorAlert error={error} />}
                 {services && services.length > 0 && (
@@ -95,8 +95,9 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo }) => {
                         {services.length > 1 && (
                             <>
                                 <Text>
-                                    This repository is mirrored by multiple code hosts. To change access, disable, or
-                                    remove this repository, the configuration must be updated on all code hosts.
+                                    This repository is mirrored by multiple code host connections. To change access,
+                                    disable, or remove this repository, the configuration must be updated on all code
+                                    host connections.
                                 </Text>
                                 <Button
                                     variant="primary"
@@ -121,7 +122,7 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo }) => {
                                     disabled={excludingDisabled || (exclusionInProgress && !isExcluding)}
                                 >
                                     <span className={exclusionInProgress && isExcluding ? styles.invisibleText : ''}>
-                                        Exclude repository from all code hosts
+                                        Exclude repository from all code host connections
                                     </span>
                                     {exclusionInProgress && isExcluding && <LoadingSpinner className={styles.loader} />}
                                 </Button>

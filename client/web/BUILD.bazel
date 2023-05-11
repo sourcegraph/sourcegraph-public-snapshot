@@ -303,6 +303,7 @@ ts_project(
         "src/components/externalServices/ExternalServicesPage.tsx",
         "src/components/externalServices/GerritIcon.tsx",
         "src/components/externalServices/backend.ts",
+        "src/components/externalServices/breadCrumbs.tsx",
         "src/components/externalServices/externalServices.tsx",
         "src/components/externalServices/index.ts",
         "src/components/fuzzyFinder/FuzzyActions.tsx",

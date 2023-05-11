@@ -7,15 +7,14 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
-import { ExternalServiceResult, ExternalServiceVariables } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../../site/backend'
 import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
+import { useFetchGithubAppForES } from '../gitHubApps/backend'
 import { HeroPage } from '../HeroPage'
 import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
@@ -23,10 +22,12 @@ import { PageTitle } from '../PageTitle'
 import {
     useSyncExternalService,
     queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs,
-    FETCH_EXTERNAL_SERVICE,
     deleteExternalService,
     useExternalServiceCheckConnectionByIdLazyQuery,
+    ExternalServiceFieldsWithConfig,
+    useFetchExternalService,
 } from './backend'
+import { getBreadCrumbs } from './breadCrumbs'
 import { ExternalServiceInformation } from './ExternalServiceInformation'
 import { resolveExternalServiceCategory } from './externalServices'
 import { ExternalServiceSyncJobsList } from './ExternalServiceSyncJobsList'
@@ -71,18 +72,10 @@ export const ExternalServicePage: FC<Props> = props => {
         setSyncInProgress(updatedSyncInProgress)
     }, [])
 
-    const {
-        data: externalServiceData,
-        error: fetchError,
-        loading: fetchLoading,
-    } = useQuery<ExternalServiceResult, ExternalServiceVariables>(FETCH_EXTERNAL_SERVICE, {
-        variables: { id: externalServiceID! },
-        notifyOnNetworkStatusChange: false,
-        fetchPolicy: 'no-cache',
-    })
+    const [externalService, setExternalService] = useState<ExternalServiceFieldsWithConfig>()
 
-    const externalService =
-        externalServiceData?.node?.__typename === 'ExternalService' ? externalServiceData.node : undefined
+    const { error: fetchError, loading: fetchLoading } = useFetchExternalService(externalServiceID!, setExternalService)
+    const { error: fetchGHAppError, data: ghAppData } = useFetchGithubAppForES(externalService)
 
     const [numberOfRepos, setNumberOfRepos] = useState<number>(externalService?.repoCount ?? 0)
     // Callback used in ExternalServiceSyncJobsList to update the number of repos in current component.
@@ -168,6 +161,10 @@ export const ExternalServicePage: FC<Props> = props => {
         )
     }
 
+    const path = useMemo(() => getBreadCrumbs(externalService, ghAppData), [externalService, ghAppData])
+
+    const mergedError = fetchError || fetchGHAppError
+
     return (
         <div className={styles.externalServicePage}>
             {externalService ? (
@@ -175,30 +172,12 @@ export const ExternalServicePage: FC<Props> = props => {
             ) : (
                 <PageTitle title="Code host" />
             )}
-            {fetchError !== undefined && !fetchLoading && <ErrorAlert className="mb-3" error={fetchError} />}
+            {mergedError && <ErrorAlert className="mb-3" error={fetchError} />}
             {!fetchLoading && !externalService && !fetchError && <NotFoundPage />}
             {externalService && (
                 <Container className="mb-3">
                     <PageHeader
-                        path={[
-                            { icon: mdiCog },
-                            { to: '/site-admin/external-services', text: 'Code hosts' },
-                            {
-                                text: (
-                                    <>
-                                        {externalServiceCategory && (
-                                            <Icon
-                                                inline={true}
-                                                as={externalServiceCategory.icon}
-                                                aria-label="Code host logo"
-                                                className="mr-2"
-                                            />
-                                        )}
-                                        {externalService.displayName}
-                                    </>
-                                ),
-                            },
-                        ]}
+                        path={path}
                         byline={
                             <CreatedByAndUpdatedByInfoByline
                                 createdAt={externalService.createdAt}
