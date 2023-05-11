@@ -38,7 +38,6 @@ func (s *store) InsertPathCountInputs(
 		derivativeGraphKey,
 		derivativeGraphKey,
 		graphKey,
-		graphKey,
 		derivativeGraphKey,
 	))
 	if err != nil {
@@ -152,48 +151,50 @@ referenced_symbols AS (
 ),
 referenced_definitions AS (
 	SELECT
-		u.repository_id,
-		rd.document_path,
+		s.repository_id,
+		s.document_path,
 		COUNT(*) AS count
-	FROM codeintel_ranking_definitions rd
-	JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
-	JOIN lsif_uploads u ON u.id = rd.upload_id
-	JOIN progress p ON TRUE
-	WHERE
-		rd.graph_key = %s AND
+	FROM (
+		SELECT
+			u.repository_id,
+			rd.document_path,
 
-		-- Ensure that the record is within the bounds where it would be visible
-		-- to the current "snapshot" defined by the ranking computation state row.
-		rd.id <= p.max_definition_id AND
-		(rd.deleted_at IS NULL OR rd.deleted_at > p.started_at) AND
+			-- Group by repository/root/indexer and order by descending ids. We
+			-- will only count the rows with rank = 1 in the outer query in order
+			-- to break ties when shadowed definitions are present.
+			RANK() OVER (
+				PARTITION BY u.repository_id, u.root, u.indexer
+				ORDER BY u.id DESC
+			) AS rank
+		FROM codeintel_ranking_definitions rd
+		JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
+		JOIN lsif_uploads u ON u.id = rd.upload_id
+		JOIN progress p ON TRUE
+		WHERE
+			rd.graph_key = %s AND
 
-		-- If there are multiple uploads in the same repository/root/indexer, only
-		-- consider definition records attached to the one with the highest id. This
-		-- should prevent over-counting definitions when there are multiple uploads
-		-- in the exported set, but the shadowed (newly non-visible) uploads have not
-		-- yet been removed by the janitor processes.
-		NOT EXISTS (
-			SELECT 1
-			FROM lsif_uploads u2
-			JOIN codeintel_ranking_definitions rd2 ON rd2.upload_id = u2.id
-			WHERE
-				rd2.graph_key = %s AND
-				u.repository_id = u2.repository_id AND
-				u.root = u2.root AND
-				u.indexer = u2.indexer AND
-				u.id > u2.id
-		)
-	GROUP BY u.repository_id, rd.document_path, rd.graph_key
+			-- Ensure that the record is within the bounds where it would be visible
+			-- to the current "snapshot" defined by the ranking computation state row.
+			rd.id <= p.max_definition_id AND
+			(rd.deleted_at IS NULL OR rd.deleted_at > p.started_at)
+	) s
+
+	-- For multiple uploads in the same repository/root/indexer, only consider
+	-- definition records attached to the one with the highest id. This should
+	-- prevent over-counting definitions when there are multiple uploads in the
+	-- exported set, but the shadowed (newly non-visible) uploads have not yet
+	-- been removed by the janitor processes.
+	WHERE s.rank = 1
+	GROUP BY s.repository_id, s.document_path
 ),
 ins AS (
 	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
 	SELECT
 		rx.repository_id,
 		rx.document_path,
-		SUM(rx.count),
+		rx.count,
 		%s
 	FROM referenced_definitions rx
-	GROUP BY rx.repository_id, rx.document_path
 	RETURNING 1
 ),
 set_progress AS (
