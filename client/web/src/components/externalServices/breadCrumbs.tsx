@@ -13,8 +13,6 @@ export const getBreadCrumbs = (
     ghAppData?: GitHubAppByAppIDResult,
     isEdit: boolean = false
 ): BreadcrumbItem[] => {
-    let path = [{ icon: mdiCog }, { to: '/site-admin/external-services', text: 'Code host connections' }]
-
     if (externalService) {
         const externalServiceCategory = resolveExternalServiceCategory(externalService)
         if (ghAppData?.gitHubAppByAppID?.id) {
@@ -64,5 +62,5 @@ export const getBreadCrumbs = (
         ]
     }
 
-    return path
+    return [{ icon: mdiCog }, { to: '/site-admin/external-services', text: 'Code host connections' }]
 }

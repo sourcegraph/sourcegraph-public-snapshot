@@ -32,11 +32,8 @@ import {
     ExternalServiceFields,
     ExternalServiceResult,
     ExternalServiceVariables,
-    GitHubAppByAppIDResult,
-    GitHubAppByAppIDVariables,
 } from '../../graphql-operations'
 import { useShowMorePagination, UseShowMorePaginationResult } from '../FilteredConnection/hooks/useShowMorePagination'
-import { GITHUB_APP_BY_APP_ID_QUERY } from '../gitHubApps/backend'
 
 export const externalServiceFragment = gql`
     fragment ExternalServiceFields on ExternalService {
@@ -325,8 +322,8 @@ export const getExternalService = (
 export const useFetchExternalService = (
     externalServiceID: string,
     setExternalService: Dispatch<SetStateAction<ExternalServiceFieldsWithConfig | undefined>>
-): QueryResult<ExternalServiceResult, ExternalServiceVariables> => {
-    return useQuery<ExternalServiceResult, ExternalServiceVariables>(FETCH_EXTERNAL_SERVICE, {
+): QueryResult<ExternalServiceResult, ExternalServiceVariables> =>
+    useQuery<ExternalServiceResult, ExternalServiceVariables>(FETCH_EXTERNAL_SERVICE, {
         variables: { id: externalServiceID },
         notifyOnNetworkStatusChange: false,
         fetchPolicy: 'no-cache',
@@ -340,7 +337,6 @@ export const useFetchExternalService = (
             }
         },
     })
-}
 export interface GitHubAppDetails {
     appID: number
     baseURL: string

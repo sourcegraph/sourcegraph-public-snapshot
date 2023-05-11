@@ -1,3 +1,5 @@
+import { QueryResult } from '@apollo/client'
+
 import { gql, useQuery } from '@sourcegraph/http-client'
 
 import { GitHubAppByAppIDResult, GitHubAppByAppIDVariables } from '../../graphql-operations'
@@ -94,11 +96,13 @@ export const DELETE_GITHUB_APP_BY_ID_QUERY = gql`
     }
 `
 
-export const useFetchGithubAppForES = (externalService?: ExternalServiceFieldsWithConfig) =>
+export const useFetchGithubAppForES = (
+    externalService?: ExternalServiceFieldsWithConfig
+): QueryResult<GitHubAppByAppIDResult, GitHubAppByAppIDVariables> =>
     useQuery<GitHubAppByAppIDResult, GitHubAppByAppIDVariables>(GITHUB_APP_BY_APP_ID_QUERY, {
         skip: !externalService?.parsedConfig?.gitHubAppDetails,
         variables: {
-            appID: externalService?.parsedConfig?.gitHubAppDetails?.appID!,
-            baseURL: externalService?.parsedConfig?.gitHubAppDetails?.baseURL!,
+            appID: externalService?.parsedConfig?.gitHubAppDetails?.appID || 0,
+            baseURL: externalService?.parsedConfig?.gitHubAppDetails?.baseURL || '',
         },
     })
