@@ -303,6 +303,8 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     const [recentContributorsComputed] = useFeatureFlag('own-background-index-repo-recent-contributors', false)
     const [recentViewsComputed] = useFeatureFlag('own-background-index-repo-recent-views', false)
 
+    const ownEnabled = recentContributorsComputed || recentViewsComputed
+
     return (
         <>
             <section className={classNames('container mb-3 px-0', styles.section)}>
@@ -334,13 +336,13 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
                 {!isPackage && (
                     <div className={styles.contributors}>
-                        {(recentContritutorsComputed || recentViewsComputed) && (
+                        {ownEnabled && (
                             <Card>
                                 <CardHeader className={panelStyles.cardColHeaderWrapper}>Ownership</CardHeader>
                                 <Ownership {...props} />
                             </Card>
                         )}
-                        <Card className="mt-3">
+                        <Card className={ownEnabled ? 'mt-3' : undefined}>
                             <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
                             <Contributors {...props} />
                         </Card>
