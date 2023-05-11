@@ -115,6 +115,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.localAppDetector = new LocalAppDetector({
             onChange: isInstalled => {
                 void this.webview?.postMessage({ type: 'app-state', isInstalled })
+
+                // If app has been detected, we can stop the local app detector.
+                if (isInstalled) {
+                    this.localAppDetector.stop()
+                }
             },
         })
         this.disposables.push(this.localAppDetector)

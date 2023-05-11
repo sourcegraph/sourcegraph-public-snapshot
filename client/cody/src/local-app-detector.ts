@@ -58,11 +58,11 @@ export class LocalAppDetector implements Disposable {
             return
         }
 
-        this.detect().catch(error => console.error(error))
-
         this.intervalHandle = setInterval(() => {
-            this.detect().catch(error => console.error(error))
+            void this.detect()
         }, INTERVAL)
+
+        void this.detect()
     }
 
     public stop(): void {
