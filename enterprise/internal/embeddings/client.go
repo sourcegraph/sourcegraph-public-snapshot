@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -121,6 +122,7 @@ func (c *Client) searchPartition(ctx context.Context, endpoint string, args Embe
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("%s, %#v\n", endpoint, response)
 	return &response, nil
 }
 
