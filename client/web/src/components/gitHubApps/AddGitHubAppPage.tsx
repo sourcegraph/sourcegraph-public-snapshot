@@ -32,8 +32,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
         name: name.trim(),
         url: baseUrl,
         hook_attributes: {
-            url: new URL('/.auth/github/events', baseUrl).href,
-            active: false, // Disable for now
+            url: baseUrl,
         },
         redirect_url: new URL('/.auth/githubapp/redirect', baseUrl).href,
         setup_url: new URL('/.auth/githubapp/setup', baseUrl).href,

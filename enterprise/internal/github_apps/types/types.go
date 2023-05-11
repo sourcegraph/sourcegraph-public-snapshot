@@ -12,6 +12,7 @@ type GitHubApp struct {
 	AppURL        string
 	ClientID      string
 	ClientSecret  string
+	WebhookID     *int
 	PrivateKey    string
 	EncryptionKey string
 	Logo          string
