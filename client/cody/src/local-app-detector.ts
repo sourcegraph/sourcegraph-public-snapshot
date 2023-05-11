@@ -43,8 +43,10 @@ export class LocalAppDetector implements Disposable {
         for (const marker of LOCAL_APP_LOCATIONS) {
             if (await pathExists(marker)) {
                 detected = true
+                break
             }
         }
+
         if (detected !== this.lastState) {
             this.lastState = detected
             this.onChange(detected)
@@ -56,8 +58,10 @@ export class LocalAppDetector implements Disposable {
             return
         }
 
-        this.intervalHandle = setInterval(async () => {
-            await this.detect()
+        this.detect().catch(error => console.error(error))
+
+        this.intervalHandle = setInterval(() => {
+            this.detect().catch(error => console.error(error))
         }, INTERVAL)
     }
 
