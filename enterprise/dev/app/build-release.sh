@@ -22,19 +22,43 @@ bazel_build() {
   cp -vf "${out}" ".bin/sourcegraph-backend-${platform}"
 }
 
-create_version() {
-    local sha
-    # In a GitHub action this can result in an empty sha
-    sha=$(git rev-parse --short HEAD)
-    if [[ -z ${sha} ]]; then
-      sha=${GITHUB_SHA:-""}
-    fi
+pre_codesign() {
+  # Tauri won't code sign our sidecar sourcegraph-backend Go binary for us, so we need to do it on
+  # our own. https://github.com/tauri-apps/tauri/discussions/2269
+  # For details on code signing, see doc/dev/background-information/app/codesigning.md
+  if [[ ${PLATFORM_IS_MACOS} == 1 ]]; then
+    # We expect the same APPLE_ env vars that Tauri does here, see https://tauri.app/v1/guides/distribution/sign-macos
+    security create-keychain -p my_temporary_keychain_password my_temporary_keychain.keychain
+    security set-keychain-settings my_temporary_keychain.keychain
+    security unlock-keychain -p my_temporary_keychain_password my_temporary_keychain.keychain
+    security list-keychains -d user -s my_temporary_keychain.keychain $(security list-keychains -d user | sed 's/["]//g')
 
-    local build="insiders"
-    if [[ ${RELEASE_BUILD} == 1 ]]; then
-      build=${GITHUB_RUN_NUMBER:-"release"}
-    fi
-    echo "$(date '+%Y.%-m.%-d')+${build}.${sha}"
+    echo "$APPLE_CERTIFICATE" >cert.p12.base64
+    base64 -d -i cert.p12.base64 -o cert.p12
+
+    security import ./cert.p12 -k my_temporary_keychain.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+    security set-key-partition-list -S apple-tool:,apple:, -s -k my_temporary_keychain_password -D "$APPLE_SIGNING_IDENTITY" -t private my_temporary_keychain.keychain
+
+    codesign --force -s "$APPLE_SIGNING_IDENTITY" --keychain my_temporary_keychain.keychain --deep .bin/sourcegraph-backend-aarch64-apple-darwin
+
+    security delete-keychain my_temporary_keychain.keychain
+    security list-keychains -d user -s login.keychain
+  fi
+}
+
+create_version() {
+  local sha
+  # In a GitHub action this can result in an empty sha
+  sha=$(git rev-parse --short HEAD)
+  if [[ -z ${sha} ]]; then
+    sha=${GITHUB_SHA:-""}
+  fi
+
+  local build="insiders"
+  if [[ ${RELEASE_BUILD} == 1 ]]; then
+    build=${GITHUB_RUN_NUMBER:-"release"}
+  fi
+  echo "$(date '+%Y.%-m.%-d')+${build}.${sha}"
 }
 
 set_version() {
@@ -45,13 +69,12 @@ set_version() {
   fi
   export VERSION
 
-
   local tauri_conf
   local tmp
   tauri_conf="./src-tauri/tauri.conf.json"
   tmp=$(mktemp)
   echo "[Script] updating package version in '${tauri_conf}' to ${VERSION}"
-  jq --arg version "${VERSION}" '.package.version = $version' "${tauri_conf}" > "${tmp}"
+  jq --arg version "${VERSION}" '.package.version = $version' "${tauri_conf}" >"${tmp}"
   mv "${tmp}" ./src-tauri/tauri.conf.json
 }
 
@@ -59,6 +82,7 @@ set_platform() {
   # We need to determine the platform string for the sourcegraph-backend binary
   local arch=""
   local platform=""
+  local macos=0
   case "$(uname -m)" in
     "amd64")
       arch="x86_64"
@@ -68,25 +92,37 @@ set_platform() {
       ;;
     *)
       arch=$(uname -m)
+      ;;
   esac
 
   case "$(uname -s)" in
     "Darwin")
       platform="${arch}-apple-darwin"
+      macos=1
       ;;
     "Linux")
       platform="${arch}-unknown-linux-gnu"
       ;;
     *)
       platform="${arch}-unknown-unknown"
+      ;;
   esac
 
   export PLATFORM=${platform}
+  export PLATFORM_IS_MACOS=${macos}
 }
 
 set_platform
 set_version
 bazel_build "${PLATFORM}"
+if [[ ${CODESIGNING} == 1 ]]; then
+  # If on a macOS host, Tauri will invoke the base64 command as part of the code signing process.
+  # it expects the macOS base64 command, not the gnutils one provided by homebrew, so we prefer
+  # that one here:
+  export PATH="/usr/bin/:$PATH"
+
+  pre_codesign "${PLATFORM}"
+fi
 echo "[Tauri] Building Application (${VERSION})"]
 NODE_ENV=production pnpm run build-app-shell
 pnpm tauri build
