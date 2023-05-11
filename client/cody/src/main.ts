@@ -169,7 +169,10 @@ const register = async (
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
-        vscode.commands.registerCommand('cody.interactive.clear', () => chatProvider.clearAndRestartSession()),
+        vscode.commands.registerCommand('cody.interactive.clear', async () => {
+            await chatProvider.clearAndRestartSession()
+            chatProvider.setWebviewView('chat')
+        }),
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
             executeRecipe('explain-code-high-level')
