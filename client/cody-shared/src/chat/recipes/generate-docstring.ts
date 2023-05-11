@@ -8,10 +8,10 @@ import {
     getContextMessagesFromSelection,
     getFileExtension,
 } from './helpers'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class GenerateDocstring implements Recipe {
-    public id = 'generate-docstring'
+    public id: RecipeID = 'generate-docstring'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
