@@ -1,13 +1,14 @@
 import { useState } from 'react'
 
-import { gql, useQuery } from '@sourcegraph/http-client'
-import { Label, Select } from '@sourcegraph/wildcard'
 import { invoke } from '@tauri-apps/api/tauri'
 
+import { gql, useQuery } from '@sourcegraph/http-client'
+import { Label, Select } from '@sourcegraph/wildcard'
+
 import { GetReposForCodyResult, GetReposForCodyVariables } from '../graphql-operations'
-import { useChatStore } from './stores/chat'
 
 import { CodySidebar } from './sidebar/CodySidebar'
+import { useChatStore } from './stores/chat'
 
 interface CodyStandalonePageProps {}
 
