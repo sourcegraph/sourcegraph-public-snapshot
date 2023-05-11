@@ -108,6 +108,7 @@ const findAncestorPathsFmtstr = `
 	)
 	SELECT id, parent_id
 	FROM ancestor_paths
+	WHERE parent_id IS NOT NULL
   `
 
 // InsertPaths inserts paths and view counts for a given `userID`. This function
@@ -150,13 +151,13 @@ func (s *recentViewSignalStore) InsertPaths(ctx context.Context, userID int32, r
 	augmentedCounts := map[int]int{}
 	for leafID, count := range repoPathIDToCount {
 		for pathID := leafID; pathID != 0; pathID = parentIDs[pathID] {
-			augmentedCounts[leafID] = augmentedCounts[leafID] + count
+			augmentedCounts[pathID] = augmentedCounts[pathID] + count
 		}
 	}
 
 	// Inser paths in batches.
 	values := make([]*sqlf.Query, 0, batchSize)
-	for pathID, count := range repoPathIDToCount {
+	for pathID, count := range augmentedCounts {
 		values = append(values, sqlf.Sprintf("(%s, %s, %s)", userID, pathID, count))
 		if len(values) == batchSize {
 			q := sqlf.Sprintf(bulkInsertRecentViewSignalsFmtstr, sqlf.Join(values, ","))
