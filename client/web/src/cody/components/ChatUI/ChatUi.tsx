@@ -108,7 +108,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ feedba
         <div className={classNames('d-flex', styles.feedbackButtonsWrapper)}>
             {feedbackSubmitted ? (
                 <Button title="Feedback submitted." disabled={true} className="ml-1 p-1">
-                    <Icon aria-label="Scroll down" svgPath={mdiCheck} />
+                    <Icon aria-label="Feedback submitted" svgPath={mdiCheck} />
                 </Button>
             ) : (
                 <>
