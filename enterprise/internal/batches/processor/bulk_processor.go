@@ -76,6 +76,7 @@ func (b *bulkProcessor) Process(ctx context.Context, job *btypes.ChangesetJob) (
 
 	// Load repo.
 	b.repo, err = b.tx.Repos().Get(ctx, b.ch.RepoID)
+	fmt.Println(b.repo.ExternalServiceIDs())
 	if err != nil {
 		return nil, errors.Wrap(err, "loading repo")
 	}

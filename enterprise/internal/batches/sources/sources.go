@@ -9,7 +9,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
+	ghastore "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -47,6 +50,7 @@ type SourcerStore interface {
 	Repos() database.RepoStore
 	ExternalServices() database.ExternalServiceStore
 	UserCredentials() database.UserCredentialsStore
+	GitHubAppsStore() ghastore.GitHubAppsStore
 }
 
 // Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or
@@ -201,6 +205,11 @@ func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.Pus
 		if err := setBasicAuth(cloneURL, extSvcType, av.Username, av.Password); err != nil {
 			return nil, err
 		}
+	case *ghaauth.InstallationAuthenticator:
+		av.Refresh(context.Background(), httpcli.ExternalClient)
+		if err := setOAuthTokenAuth(cloneURL, extSvcType, av.GetToken().Token); err != nil {
+			return nil, err
+		}
 	default:
 		return nil, ErrNoPushCredentials{CredentialsType: fmt.Sprintf("%T", au)}
 	}
@@ -242,6 +251,48 @@ func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*btypes
 // fallback to site credentials. If none of these exist, ErrMissingCredentials
 // is returned.
 func withAuthenticatorForUser(ctx context.Context, tx SourcerStore, css ChangesetSource, userID int32, repo *types.Repo) (ChangesetSource, error) {
+	for _, esid := range repo.ExternalServiceIDs() {
+		es, err := tx.ExternalServices().GetByID(ctx, esid)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		if es.Kind != extsvc.KindGitHub {
+			continue
+		}
+
+		cfg, err := es.Configuration(ctx)
+		if err != nil {
+			continue
+		}
+		config, ok := cfg.(*schema.GitHubConnection)
+		if !ok {
+			continue
+		}
+
+		if config.GitHubAppDetails == nil {
+			continue
+		}
+
+		app, err := tx.GitHubAppsStore().GetByAppID(ctx, config.GitHubAppDetails.AppID, config.Url)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+
+		appAuther, err := ghaauth.NewGitHubAppAuthenticator(config.GitHubAppDetails.AppID, []byte(app.PrivateKey))
+		if err != nil {
+			continue
+		}
+
+		baseURL, err := url.Parse(app.BaseURL)
+		if err != nil {
+			continue
+		}
+		installationAuther := ghaauth.NewInstallationAccessToken(baseURL, config.GitHubAppDetails.InstallationID, appAuther, keyring.Default().GitHubAppKey)
+
+		return css.WithAuthenticator(installationAuther)
+	}
 	cred, err := loadUserCredential(ctx, tx, userID, repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading user credential")
@@ -354,7 +405,7 @@ func loadSiteCredential(ctx context.Context, s SourcerStore, opts store.GetSiteC
 func setOAuthTokenAuth(u *vcs.URL, extSvcType, token string) error {
 	switch extSvcType {
 	case extsvc.TypeGitHub:
-		u.User = url.User(token)
+		u.User = url.UserPassword("x-access-token", token)
 
 	case extsvc.TypeGitLab:
 		u.User = url.UserPassword("git", token)

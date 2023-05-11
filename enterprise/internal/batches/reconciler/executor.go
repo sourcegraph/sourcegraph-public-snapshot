@@ -686,13 +686,6 @@ func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *pro
 		// So when we retry publishing a changeset, this will overwrite what we
 		// pushed before.
 		UniqueRef: false,
-
-		CommitInfo: protocol.PatchCommitInfo{
-			Message:     spec.CommitMessage,
-			AuthorName:  spec.CommitAuthorName,
-			AuthorEmail: spec.CommitAuthorEmail,
-			Date:        spec.CreatedAt,
-		},
 		// We use unified diffs, not git diffs, which means they're missing the
 		// `a/` and `b/` filename prefixes. `-p0` tells `git apply` to not
 		// expect and strip prefixes.

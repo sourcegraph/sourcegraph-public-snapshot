@@ -200,34 +200,12 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if message == "" {
 		message = "<Sourcegraph> Creating commit from patch"
 	}
-	authorName := req.CommitInfo.AuthorName
-	if authorName == "" {
-		authorName = "Sourcegraph"
-	}
-	authorEmail := req.CommitInfo.AuthorEmail
-	if authorEmail == "" {
-		authorEmail = "support@sourcegraph.com"
-	}
-	committerName := req.CommitInfo.CommitterName
-	if committerName == "" {
-		committerName = authorName
-	}
-	committerEmail := req.CommitInfo.CommitterEmail
-	if committerEmail == "" {
-		committerEmail = authorEmail
-	}
 
 	cmd = exec.CommandContext(ctx, "git", "commit", "-m", fmt.Sprintf("%q", message))
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), []string{
 		tmpGitPathEnv,
 		altObjectsEnv,
-		fmt.Sprintf("GIT_COMMITTER_NAME=%s", committerName),
-		fmt.Sprintf("GIT_COMMITTER_EMAIL=%s", committerEmail),
-		fmt.Sprintf("GIT_AUTHOR_NAME=%s", authorName),
-		fmt.Sprintf("GIT_AUTHOR_EMAIL=%s", authorEmail),
-		fmt.Sprintf("GIT_COMMITTER_DATE=%v", req.CommitInfo.Date),
-		fmt.Sprintf("GIT_AUTHOR_DATE=%v", req.CommitInfo.Date),
 	}...)
 
 	if out, err := run(cmd, "committing patch"); err != nil {

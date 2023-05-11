@@ -16,10 +16,12 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -93,6 +95,10 @@ func NewWithClock(db database.DB, observationCtx *observation.Context, key encry
 // observationCtx returns the observation context wrapped in this store.
 func (s *Store) ObservationCtx() *observation.Context {
 	return s.observationCtx
+}
+
+func (s *Store) GitHubAppsStore() store.GitHubAppsStore {
+	return store.GitHubAppsWith(s.Store).WithEncryptionKey(keyring.Default().GitHubAppKey)
 }
 
 // Clock returns the clock used by the Store.
