@@ -193,7 +193,7 @@ export const GitHubAppPage: FC<Props> = ({
                         <>
                             <Text>
                                 This GitHub App does not have Webhooks set up. Connect a webhook from the list below, or{' '}
-                                <a href="/site-admin/webhooks/incoming">create a new webhook</a>.
+                                <Link to="/site-admin/webhooks/incoming">create a new webhook</Link>.
                             </Text>
                             {webhooksLoading && <LoadingSpinner />}
                             {!webhooksLoading && webhooks && webhooks.webhooks.nodes.length > 0 ? (
