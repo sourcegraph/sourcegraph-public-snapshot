@@ -362,26 +362,25 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (!interaction) {
             return
         }
+
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
-        this.showTab('chat')
-
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
-        const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
-
-        switch (recipeId) {
-            case 'context-search':
-                this.onCompletionEnd()
-                break
-            default:
-                this.sendTranscript()
-                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
-                await this.saveTranscriptToChatHistory()
+        if (recipeId === 'context-search') {
+            this.onCompletionEnd()
+            return
         }
 
-        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+        this.sendTranscript()
+        this.showTab('chat')
+
+        const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
+        this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
+
+        void this.saveTranscriptToChatHistory()
+        void logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
     }
 
     private async runRecipeForSuggestion(recipeId: string, humanChatInput: string = ''): Promise<void> {
