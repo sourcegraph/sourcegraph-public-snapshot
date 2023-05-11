@@ -304,6 +304,7 @@
     "puppeteer": "^13.5.1",
     "react-refresh": "^0.10.0",
     "regenerator-runtime": "^0.13.7",
+    "resolve-bin": "^1.0.1",
     "rimraf": "^3.0.2",
     "sass": "^1.32.4",
     "sass-loader": "^13.2.0",
