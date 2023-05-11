@@ -87,7 +87,7 @@ class CodyToolWindowContent {
     private void sendMessage(@NotNull Project project) {
         // Build message
         EditorContext editorContext = EditorContextGetter.getEditorContext(project);
-        var chat = new Chat();
+        var chat = new Chat("", "https://sourcegraph.sourcegraph.com/", "TODO: API key");
         ArrayList<String> contextFiles = editorContext == null ? new ArrayList<>() : new ArrayList<>(Collections.singletonList(editorContext.getCurrentFileContent()));
         ChatMessage humanMessage = ChatMessage.createHumanMessage(messageField.getText(), contextFiles);
         addMessage(humanMessage);

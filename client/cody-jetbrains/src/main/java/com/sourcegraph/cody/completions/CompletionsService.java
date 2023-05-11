@@ -9,11 +9,11 @@ import java.io.IOException;
 
 public class CompletionsService {
     private final String instanceUrl;
-    private final String token;
+    private final String accessToken;
 
-    public CompletionsService(@NotNull String instanceUrl, @NotNull String token) {
+    public CompletionsService(@NotNull String instanceUrl, @NotNull String accessToken) {
         this.instanceUrl = instanceUrl;
-        this.token = token;
+        this.accessToken = accessToken;
     }
 
     /**
@@ -26,7 +26,7 @@ public class CompletionsService {
         var variables = new JsonObject();
         variables.add("input", gson.toJsonTree(input));
 
-        var response = GraphQlClient.callGraphQLService(instanceUrl, token, null, query, variables);
+        var response = GraphQlClient.callGraphQLService(instanceUrl, accessToken, null, query, variables);
         return response
             .getBodyAsJson()
             .getAsJsonObject("data")
