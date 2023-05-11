@@ -77,7 +77,7 @@
       "activitybar": [
         {
           "id": "cody",
-          "title": "Cody",
+          "title": "Cody AI by Sourcegraph",
           "icon": "resources/cody.svg"
         }
       ]
