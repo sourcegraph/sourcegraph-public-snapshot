@@ -31,8 +31,9 @@ spec:
                   key: EXECUTOR_FRONTEND_PASSWORD
             - name: EXECUTOR_QUEUE_NAME
               value: codeintel
+            # Each job will consume 1Gi of memory. Need to make sure not to consume the whole node's memory.
             - name: EXECUTOR_MAXIMUM_NUM_JOBS
-              value: "10"
+              value: "5"
             - name: SRC_LOG_LEVEL
               value: info
             - name: SRC_LOG_FORMAT
