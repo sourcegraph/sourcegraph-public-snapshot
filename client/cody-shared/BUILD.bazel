@@ -39,6 +39,7 @@ ts_project(
         "src/chat/recipes/git-log.ts",
         "src/chat/recipes/helpers.ts",
         "src/chat/recipes/improve-variable-names.ts",
+        "src/chat/recipes/inline-chat.ts",
         "src/chat/recipes/langs.ts",
         "src/chat/recipes/next-questions.ts",
         "src/chat/recipes/recipe.ts",

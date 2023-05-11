@@ -37,6 +37,7 @@ type GitHubAppResolver interface {
 	BaseURL() string
 	AppURL() string
 	ClientID() string
+	ClientSecret() string
 	Logo() string
 	CreatedAt() gqlutil.DateTime
 	UpdatedAt() gqlutil.DateTime
