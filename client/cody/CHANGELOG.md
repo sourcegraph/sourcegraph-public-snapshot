@@ -9,6 +9,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 ### Fixed
 
 - UI bug that capped buttons at 300px max-width with visible border [pull/51726](https://github.com/sourcegraph/sourcegraph/pull/51726)
+- Fixes anonymous user id resetting after logout [pull/51532](https://github.com/sourcegraph/sourcegraph/pull/51532)
 
 ### Changed
 
