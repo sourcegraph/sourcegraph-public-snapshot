@@ -279,7 +279,7 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 				// bk.AutomaticRetryStatus(3, 222),
 			)
 		}
-		pipeline.AddStep(":docker: :construction: Build Docker images", cmds...)
+		pipeline.AddStep(":bazel::docker: :construction: Build Docker images", cmds...)
 	}
 }
 
@@ -378,7 +378,7 @@ func bazelBuildCandidateDockerImage(app string, version string, tag string, rt r
 			// Retry in case of flakes when pushing
 			// bk.AutomaticRetryStatus(3, 222),
 		)
-		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":bazel::docker: :construction: Build %s", app), cmds...)
 	}
 }
 
