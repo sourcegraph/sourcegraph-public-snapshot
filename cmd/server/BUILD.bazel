@@ -61,13 +61,13 @@ pkg_tar(
     srcs = ["postgres_exporter.yaml"],
 )
 
-# pkg_tar(
-#     name = "tar_prometheus",
-#     srcs = [
-#         "//docker-images/prometheus/cmd/prom-wrapper",
-#         "//monitoring:generate_config"
-#     ],
-# )
+pkg_tar(
+    name = "tar_monitoring_config",
+    srcs = ["//monitoring:generate_config"],
+    remap_paths = {
+      "/monitoring/prometheous": "/path/to/prom_config/inside_image", # TODO
+    }
+)
 
 DEPS = [
   "//cmd/frontend",
@@ -99,7 +99,12 @@ oci_image(
     name = "image",
     architecture = "amd64",
     base = "@wolfi_server_base",
-    tars = dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS) + [":tar_server_linux_amd64", ":static_config_tar","tar_postgres_exporter_config"],
+    tars = [
+        ":tar_server_linux_amd64",
+        ":static_config_tar",
+        "tar_postgres_exporter_config",
+        ":tar_monitoring_config",
+        ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     entrypoint = ["/server"],
     os = "linux",
 )

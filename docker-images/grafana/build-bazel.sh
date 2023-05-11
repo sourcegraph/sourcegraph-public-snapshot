@@ -11,8 +11,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-./dev/ci/bazel.sh build //monitoring:generate_config
-monitoring_cfg=$(./dev/ci/bazel.sh cquery //monitoring:generate_config --output=files)
+./dev/ci/bazel.sh build //monitoring:generate_config_zip
+monitoring_cfg=$(./dev/ci/bazel.sh cquery //monitoring:generate_config_zip --output=files)
 
 cp "$monitoring_cfg" "$TMP"
 pushd "$TMP"
