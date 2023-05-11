@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -93,23 +92,6 @@ func (r *GCSManifestResolver) Resolve(ctx context.Context) (*AppUpdateManifest, 
 	manifest := AppUpdateManifest{}
 	err = json.Unmarshal(data, &manifest)
 	return &manifest, err
-}
-
-func NewStaticResolverFromFile(_ context.Context, filename string) (UpdateManifestResolver, error) {
-	data, err := os.ReadFile(filename)
-
-	if err != nil {
-		return nil, err
-	}
-
-	manifest := AppUpdateManifest{}
-	err = json.Unmarshal(data, &manifest)
-	if err != nil {
-		return nil, err
-	}
-	return &StaticManifestResolver{
-		manifest: manifest,
-	}, nil
 }
 
 func (r *StaticManifestResolver) Resolve(_ context.Context) (*AppUpdateManifest, error) {
