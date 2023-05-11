@@ -1,5 +1,5 @@
 {
-  "checksum": "fa10060dbb7881598e6978331eb9f345a77cabd712b028b033020bccc98f073d",
+  "checksum": "accd1061d8c824eeda3349449aff88d08d2e90b2cfc35b5b93c62a9b0f9f5b93",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -9803,6 +9803,10 @@
               "target": "tree_sitter_jsonnet"
             },
             {
+              "id": "tree-sitter-kotlin 0.2.11",
+              "target": "tree_sitter_kotlin"
+            },
+            {
               "id": "tree-sitter-nickel 0.0.1",
               "target": "tree_sitter_nickel"
             },
@@ -11386,6 +11390,10 @@
         "deps": {
           "common": [
             {
+              "id": "base64 0.13.0",
+              "target": "base64"
+            },
+            {
               "id": "clap 4.1.11",
               "target": "clap"
             },
@@ -11400,6 +11408,10 @@
             {
               "id": "futures-util 0.3.27",
               "target": "futures_util"
+            },
+            {
+              "id": "protobuf 3.2.0",
+              "target": "protobuf"
             },
             {
               "id": "rocket 0.5.0-rc.1",
@@ -13331,6 +13343,74 @@
         },
         "edition": "2018",
         "version": "0.0.1"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.73",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        }
+      },
+      "license": "MIT"
+    },
+    "tree-sitter-kotlin 0.2.11": {
+      "name": "tree-sitter-kotlin",
+      "version": "0.2.11",
+      "repository": {
+        "Git": {
+          "remote": "https://github.com/fwcd/tree-sitter-kotlin",
+          "commitish": {
+            "Rev": "100d79fd96b56a1b99099a8d2f3c114b8687acfb"
+          }
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tree_sitter_kotlin",
+            "crate_root": "bindings/rust/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "bindings/rust/build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tree_sitter_kotlin",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "tree-sitter 0.20.9",
+              "target": "tree_sitter"
+            },
+            {
+              "id": "tree-sitter-kotlin 0.2.11",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.2.11"
       },
       "build_script_attrs": {
         "data_glob": [
