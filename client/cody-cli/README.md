@@ -19,3 +19,4 @@ In the root of the repository, run this:
 ```
 pnpm --filter @sourcegraph/cody-cli run start
 ```
+Hello World

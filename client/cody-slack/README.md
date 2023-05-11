@@ -21,3 +21,4 @@ Is there a better way to approach the local development of the Slack bot with th
 ## Deployment
 
 The production deployment is rather simple: all code is bundled together using esbuild into a single JavaScript file (`pnpm build`), which is then uploaded to a Heroku eco dyno (`pnpm release`). The second command works only for @valerybugakov locally since the deployment is configured for his account. While this approach is suitable for prototyping with a 5-second re-deployment time, it would be great to host the Slack bot on Sourcegraph infrastructure (help wanted 👋).
+Hello World

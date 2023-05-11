@@ -13,3 +13,4 @@ Contains the [cody-icons](font) font, used by the VS Code extension to show Cody
 ```sh
 pnpm run font
 ```
+Hello World
