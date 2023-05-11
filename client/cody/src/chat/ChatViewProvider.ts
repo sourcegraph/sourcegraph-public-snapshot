@@ -617,12 +617,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     public watchLocalAppState(): void {
-        this.updateLocalAppState()
+        void this.updateLocalAppState()
         const pollInterval = 5000
 
         // Poll for app state every 5 seconds
         const intervalHandle = setInterval(() => {
-            this.updateLocalAppState()
+            void this.updateLocalAppState()
         }, pollInterval)
 
         this.disposables.push({

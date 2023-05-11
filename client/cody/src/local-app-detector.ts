@@ -11,7 +11,7 @@ async function pathExists(path: string): Promise<boolean> {
     try {
         await fs.access(path)
         return true
-    } catch (err) {
+    } catch {
         return false
     }
 }
@@ -27,7 +27,7 @@ function expandHomeDir(path: string): string {
  * Detects whether the user has the Sourcegraph app installed locally.
  */
 export class LocalAppDetector {
-    async detect(): Promise<boolean> {
+    public async detect(): Promise<boolean> {
         for (const marker of LOCAL_APP_LOCATIONS) {
             if (await pathExists(marker)) {
                 return true
