@@ -49,8 +49,6 @@ const DOMPURIFY_CONFIG = {
 export function renderCodyMarkdown(markdown: string): string {
     registerHighlightContributions()
 
-    console.log(markdown)
-
     // Add Cody-specific Markdown rendering if needed.
     return renderMarkdownCommon(markdown, {
         breaks: true,

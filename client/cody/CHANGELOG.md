@@ -17,7 +17,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 ### Changed
 
 - Rename the extension from "Sourcegraph Cody" to "Cody AI by Sourcegraph" [pull/51702](https://github.com/sourcegraph/sourcegraph/pull/51702)
-- Remove HTML escaping artifacts [pull/](https://github.com/sourcegraph/sourcegraph/pull/)
+- Remove HTML escaping artifacts [pull/51797](https://github.com/sourcegraph/sourcegraph/pull/51797)
 
 ## [0.1.1]
 
