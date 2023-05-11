@@ -24,58 +24,46 @@ func TestDot(t *testing.T) {
 		}
 
 		cases := []struct {
-			a    []int8
-			b    []int8
-			want int32
+			a []int8
+			b []int8
 		}{
-			{[]int8{}, []int8{}, 0},
-			{[]int8{1}, []int8{1}, 1},
-			{append(repeat(0, 16), 1), append(repeat(0, 16), 2), 2},
-			{
-				[]int8{10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-				[]int8{10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
-				102,
-			},
-			{repeat(0, 16), repeat(0, 16), 0},
-			{repeat(0, 16), repeat(1, 16), 0},
-			{repeat(1, 16), repeat(1, 16), 16},
-			{repeat(1, 16), repeat(2, 16), 32},
-			{repeat(1, 17), repeat(1, 17), 17},
+			{[]int8{}, []int8{}},
+			{[]int8{1}, []int8{1}},
+			{append(repeat(0, 16), 1), append(repeat(0, 16), 2)},
+			{repeat(0, 16), repeat(0, 16)},
+			{repeat(0, 16), repeat(1, 16)},
+			{repeat(1, 16), repeat(1, 16)},
+			{repeat(1, 16), repeat(2, 16)},
+			{repeat(1, 17), repeat(1, 17)},
 
 			// Some non-constant tests
-			{interval(0, 99), repeat(0, 99), 0},
-			{interval(0, 99), repeat(1, 99), 4851},
+			{interval(0, 99), repeat(0, 99)},
+			{interval(0, 99), repeat(1, 99)},
 
 			// A couple of large ones to ensure no weird behavior at scale
-			{repeat(1, 1000000), repeat(1, 1000000), 1000000},
-			{repeat(1, 1000000), repeat(2, 1000000), 2000000},
+			{repeat(1, 1000000), repeat(1, 1000000)},
+			{repeat(1, 1000000), repeat(2, 1000000)},
 
 			// This will come very close to overflowing an int32.
 			// Make sure nothing crashes.
-			{repeat(127, 133000), repeat(127, 133000), 2145157000},
+			{repeat(127, 133000), repeat(127, 133000)},
 
 			// This will overflow an int32 and return garbage.
 			// Just make sure nothing crashes.
-			{repeat(127, 134000), repeat(127, 134000), -2133681296},
+			{repeat(127, 134000), repeat(127, 134000)},
 
 			// These will overflow if we don't multiply into larger ints
-			{repeat(127, 40), repeat(127, 40), 645160},
-			{repeat(-128, 40), repeat(-128, 40), 655360},
-			{repeat(-128, 40), repeat(127, 40), -650240},
+			{repeat(127, 40), repeat(127, 40)},
+			{repeat(-128, 40), repeat(-128, 40)},
+			{repeat(-128, 40), repeat(127, 40)},
 		}
 
 		for _, tc := range cases {
 			t.Run("dot", func(t *testing.T) {
 				got := Dot(tc.a, tc.b)
-				if tc.want != got {
-					t.Fatalf("want: %d, got: %d", tc.want, got)
-				}
-			})
-
-			t.Run("naive", func(t *testing.T) {
-				got := dotPortable(tc.a, tc.b)
-				if tc.want != got {
-					t.Fatalf("want: %d, got: %d", tc.want, got)
+				want := dotNaive(tc.a, tc.b)
+				if want != got {
+					t.Fatalf("want: %d, got: %d", want, got)
 				}
 			})
 		}
@@ -89,7 +77,7 @@ func TestDot(t *testing.T) {
 				b = b[:len(a)]
 			}
 
-			want := dotPortable(a, b)
+			want := dotNaive(a, b)
 			got := Dot(a, b)
 
 			if want != got {
@@ -101,4 +89,12 @@ func TestDot(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+}
+
+func dotNaive(a, b []int8) int32 {
+	sum := int32(0)
+	for i := 0; i < len(a); i++ {
+		sum += int32(a[i]) * int32(b[i])
+	}
+	return sum
 }

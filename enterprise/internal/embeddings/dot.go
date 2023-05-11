@@ -1,14 +1,40 @@
 package embeddings
 
+import "github.com/sourcegraph/sourcegraph/internal/env"
+
+var (
+	simdEnabled = env.MustGetBool("ENABLE_EMBEDDINGS_SEARCH_SIMD", false, "Enable SIMD dot product for embeddings search")
+
+	// dotArch is a dot product function that may have architecture-specific
+	// optimizations. Its inputs are expected to be the same length, which must
+	// be a multiple of 64, which is least common multiple of all the implementations.
+	dotArch func([]int8, []int8) int32 = dotPortable
+)
+
 // Dot computes the dot product of the two vectors:
 // sum_i(a_i * b_i) for i in [0, len(a)).
 //
 // Precondition: len(a) == len(b)
 func Dot(a, b []int8) int32 {
-	if haveDotArch {
-		return dotArch(a, b)
+	if len(a) != len(b) {
+		panic("mismatched lengths")
 	}
-	return dotPortable(a, b)
+
+	if len(a) == 0 {
+		return 0
+	}
+
+	rem := len(a) % 64
+	blockA := a[:len(a)-rem]
+	blockB := b[:len(b)-rem]
+
+	sum := dotArch(blockA, blockB)
+
+	for i := len(a) - rem; i < len(a); i++ {
+		sum += int32(a[i]) * int32(b[i])
+	}
+
+	return sum
 }
 
 func dotPortable(a, b []int8) int32 {
@@ -21,17 +47,12 @@ func dotPortable(a, b []int8) int32 {
 		panic("mismatched vector lengths")
 	}
 
-	i := 0
-	for ; i+3 < count; i += 4 {
+	for i := 0; i+3 < count; i += 4 {
 		m0 := int32(a[i]) * int32(b[i])
 		m1 := int32(a[i+1]) * int32(b[i+1])
 		m2 := int32(a[i+2]) * int32(b[i+2])
 		m3 := int32(a[i+3]) * int32(b[i+3])
 		similarity += (m0 + m1 + m2 + m3)
-	}
-
-	for ; i < count; i++ {
-		similarity += int32(a[i]) * int32(b[i])
 	}
 
 	return similarity

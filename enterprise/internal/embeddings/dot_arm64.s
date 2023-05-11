@@ -6,7 +6,7 @@
 //
 // The vectors must be of the same length, and that length
 // must be a multiple of 16.
-TEXT ·dotSIMD(SB), NOSPLIT, $0-56
+TEXT ·dotSIMD(SB), NOSPLIT, $0-52
 	// Offsets based on slice header offsets.
 	// To check, use `GOARCH=arm64 go vet`
 	MOVD a_base+0(FP), R4
