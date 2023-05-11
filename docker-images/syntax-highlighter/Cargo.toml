@@ -15,8 +15,10 @@ scip.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 syntect.workspace = true
+protobuf.workspace = true
 
 rustyline = "9.1.2"
+base64 = "0.13.0"
 
 sg-syntax = { path = "./crates/sg-syntax" }
 scip-treesitter = { path = "./crates/scip-treesitter" }
