@@ -33,7 +33,8 @@ Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/
 
 - **🤖 Chatbot that knows _your_ code:** Writes code and answers questions with knowledge of your entire codebase, following your project's code conventions and architecture better than other AI code chatbots.
 - **✨ Fixup code:** Interactively writes and refactors code for you, based on quick natural-language instructions.
-- **🧪 Recipes:** Generates unit tests, documentation, and more, with full codebase awareness.
+- **📖 Recipes:** Generates unit tests, documentation, and more, with full codebase awareness.
+- **🧪 Experimental Completions:** Get suggestions from Cody as you're coding.
 
 ### 🤖 Chatbot that knows _your_ code
 
@@ -65,14 +66,18 @@ Examples of the kinds of fixup instructions Cody can handle:
 - "Add helpful debug log statements"
 - "Make this work" (seriously, it often works--try it!)
 
-### 🧪 Recipes
+### 📖 Recipes
 
-In VS Code, right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
+In VS Code, select the recipes tab or  right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
 
-- Explain Code
-- Generate Unit Test
-- Generate Docstring
-- Improve Variable Names
+- Explain code
+- Generate unit test
+- Generate docstring
+- Improve variable names
+- Translate to different language
+- Summarize recent code changes
+- Detect code smells
+- Generate release notes
 
 ## Troubleshooting
 
