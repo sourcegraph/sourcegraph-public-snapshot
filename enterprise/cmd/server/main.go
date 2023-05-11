@@ -10,13 +10,13 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
 )
 
-                     func main() {
+func main() {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		log.Println("enterprise edition")
 	}
 
- 				shared.ProcfileAdditions = append(
+	shared.ProcfileAdditions = append(
 		shared.ProcfileAdditions,
 		`precise-code-intel-worker: precise-code-intel-worker`,
 	)
