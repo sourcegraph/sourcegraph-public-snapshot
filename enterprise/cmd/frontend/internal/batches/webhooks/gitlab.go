@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"context"
+	"crypto/subtle"
 	"fmt"
 	"io"
 	"net/http"
@@ -331,7 +332,7 @@ func validateGitLabSecret(ctx context.Context, extSvc *types.ExternalService, se
 	// number of webhooks in an external service should be small enough that a
 	// linear search like this is sufficient.
 	for _, webhook := range config.Webhooks {
-		if webhook.Secret == secret {
+		if subtle.ConstantTimeCompare([]byte(webhook.Secret), []byte(secret)) == 1 {
 			return true, nil
 		}
 	}
