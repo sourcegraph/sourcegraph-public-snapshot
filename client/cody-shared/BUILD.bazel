@@ -74,7 +74,6 @@ ts_project(
         "src/sourcegraph-api/index.ts",
         "src/sourcegraph-api/utils.ts",
         "src/telemetry/EventLogger.ts",
-        "src/telemetry/LocalStorageProvider.ts",
         "src/utils.ts",
     ],
     tsconfig = ":tsconfig",
@@ -84,13 +83,11 @@ ts_project(
         ":node_modules/@sourcegraph/http-client",
         "//:node_modules/@microsoft/fetch-event-source",
         "//:node_modules/@types/isomorphic-fetch",
-        "//:node_modules/@types/js-cookie",
         "//:node_modules/@types/marked",
         "//:node_modules/@types/node",
         "//:node_modules/@types/vscode",  #keep
         "//:node_modules/@vscode",
         "//:node_modules/isomorphic-fetch",
-        "//:node_modules/js-cookie",
         "//:node_modules/marked",
     ],
 )

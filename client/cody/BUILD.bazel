@@ -74,7 +74,6 @@ ts_project(
         "//:node_modules/@storybook/react",  #keep
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/jest",  #keep
-        "//:node_modules/@types/js-cookie",
         "//:node_modules/@types/lru-cache",
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
@@ -85,7 +84,6 @@ ts_project(
         "//:node_modules/@vscode",
         "//:node_modules/@vscode/webview-ui-toolkit",
         "//:node_modules/classnames",
-        "//:node_modules/js-cookie",
         "//:node_modules/react",
         "//:node_modules/react-dom",
         "//:node_modules/stream-json",
