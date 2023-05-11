@@ -22,6 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -467,6 +468,7 @@ func TracedTransportOpt(cli *http.Client) error {
 	}
 
 	cli.Transport = &policy.Transport{RoundTripper: cli.Transport}
+	cli.Transport = otelhttp.NewTransport(cli.Transport)
 	return nil
 }
 

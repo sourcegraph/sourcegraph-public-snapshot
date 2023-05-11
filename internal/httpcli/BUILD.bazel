@@ -32,6 +32,7 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_puerkitobio_rehttp//:rehttp",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )
