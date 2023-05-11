@@ -5,6 +5,7 @@
 /.bazel* @dev-experience
 /BUILD.bazel @dev-experience
 /deps.bzl @dev-experience
+/linter_deps.bzl @dev-experience @burmudar
 /WORKSPACE @dev-experience
 
 **/*.nix @Strum355 @keegancsmith
