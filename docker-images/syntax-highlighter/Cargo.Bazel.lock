@@ -1,5 +1,5 @@
 {
-  "checksum": "91500ff2dd3fc0cfb2535fbc16a924bcaa9cb382e21b91005f7d968136274df7",
+  "checksum": "accd1061d8c824eeda3349449aff88d08d2e90b2cfc35b5b93c62a9b0f9f5b93",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -11390,6 +11390,10 @@
         "deps": {
           "common": [
             {
+              "id": "base64 0.13.0",
+              "target": "base64"
+            },
+            {
               "id": "clap 4.1.11",
               "target": "clap"
             },
@@ -11404,6 +11408,10 @@
             {
               "id": "futures-util 0.3.27",
               "target": "futures_util"
+            },
+            {
+              "id": "protobuf 3.2.0",
+              "target": "protobuf"
             },
             {
               "id": "rocket 0.5.0-rc.1",
