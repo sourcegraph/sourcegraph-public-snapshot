@@ -149,6 +149,9 @@ func (r *resolver) ConnectWebhookToGitHubApp(ctx context.Context, args *graphqlb
 	}
 
 	req, err := http.NewRequest("POST", apiURL.JoinPath("/app/hook/config").String(), bytes.NewReader(whBytes))
+	if err != nil {
+		return nil, err
+	}
 	if err := auther.Authenticate(req); err != nil {
 		return nil, err
 	}
@@ -157,12 +160,9 @@ func (r *resolver) ConnectWebhookToGitHubApp(ctx context.Context, args *graphqlb
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		return nil, errors.New(fmt.Sprintf("webhook update failed: %d %s", resp.StatusCode, string(body)))
+		return nil, errors.New(fmt.Sprintf("webhook update failed: %d", resp.StatusCode))
 	}
 
 	hookID := int(hook.ID)

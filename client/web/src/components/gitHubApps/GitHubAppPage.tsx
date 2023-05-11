@@ -188,7 +188,7 @@ export const GitHubAppPage: FC<Props> = ({
                     <AuthProviderMessage app={app} id={appID} />
                     <H3>Webhooks</H3>
                     {app.webhook ? (
-                        <a href={`/site-admin/webhooks/incoming/${app.webhook.id}`}>View webhook logs</a>
+                        <Link to={`/site-admin/webhooks/incoming/${app.webhook.id}`}>View webhook logs</Link>
                     ) : (
                         <>
                             <Text>
@@ -212,7 +212,9 @@ export const GitHubAppPage: FC<Props> = ({
                                                     item.codeHostURN === app.baseURL + '/'
                                             )
                                             .map(item => (
-                                                <option value={item.id}>{item.name}</option>
+                                                <option key={item.id} value={item.id}>
+                                                    {item.name}
+                                                </option>
                                             ))}
                                     </Select>
                                     <div>
