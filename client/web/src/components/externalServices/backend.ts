@@ -314,6 +314,9 @@ export function queryExternalServiceSyncJobs(
 export const getExternalService = (
     data?: ExternalServiceFields | null
 ): ExternalServiceFieldsWithConfig | undefined => {
+    if (!data) {
+        return undefined
+    }
     const node: ExternalServiceFieldsWithConfig = data
     node.parsedConfig = parse(node.config) as ExternalServiceFieldsWithConfig['parsedConfig']
     return node

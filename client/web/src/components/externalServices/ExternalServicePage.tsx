@@ -75,11 +75,7 @@ export const ExternalServicePage: FC<Props> = props => {
     const [externalService, setExternalService] = useState<ExternalServiceFieldsWithConfig>()
 
     const { error: fetchError, loading: fetchLoading } = useFetchExternalService(externalServiceID!, setExternalService)
-    const {
-        error: fetchGHAppError,
-        loading: fetchGHAppLoading,
-        data: ghAppData,
-    } = useFetchGithubAppForES(externalService)
+    const { error: fetchGHAppError, data: ghAppData } = useFetchGithubAppForES(externalService)
 
     const [numberOfRepos, setNumberOfRepos] = useState<number>(externalService?.repoCount ?? 0)
     // Callback used in ExternalServiceSyncJobsList to update the number of repos in current component.
