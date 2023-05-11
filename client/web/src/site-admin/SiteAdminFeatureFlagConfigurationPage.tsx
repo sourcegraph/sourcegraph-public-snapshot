@@ -29,6 +29,7 @@ import {
     Form,
 } from '@sourcegraph/wildcard'
 
+import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
 import { Collapsible } from '../components/Collapsible'
 import { LoaderButton } from '../components/LoaderButton'
 import { PageTitle } from '../components/PageTitle'
@@ -169,7 +170,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                                 ...flagValue,
                             },
                         }).then(() => {
-                            navigate(`/site-admin/feature-flags/configuration/${flagName}`)
+                            navigate(0)
                         })
                     }
                 >
@@ -233,6 +234,17 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                               ]
                     }
                     className="mb-3"
+                    byline={
+                        featureFlagOrError &&
+                        !isErrorLike(featureFlagOrError) &&
+                        !isCreateFeatureFlag && (
+                            <CreatedByAndUpdatedByInfoByline
+                                createdAt={featureFlagOrError.createdAt}
+                                updatedAt={featureFlagOrError.updatedAt}
+                                noAuthor={true}
+                            />
+                        )
+                    }
                 />
                 {createFlagError && <ErrorAlert prefix="Error creating feature flag" error={createFlagError} />}
                 {updateFlagError && <ErrorAlert prefix="Error updating feature flag" error={updateFlagError} />}
@@ -281,6 +293,7 @@ interface FeatureFlagRolloutValue {
 interface CreateFeatureFlagOverrideResult {
     createFeatureFlagOverride: FeatureFlagOverride
 }
+
 interface CreateFeatureFlagOverrideVariables {
     namespace: string
     flagName: string

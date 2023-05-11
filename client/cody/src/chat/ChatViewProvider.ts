@@ -5,7 +5,6 @@ import * as vscode from 'vscode'
 
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
-import { escapeCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
@@ -22,11 +21,12 @@ import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/source
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../webviews/NavBar'
-import { LocalStorage } from '../command/LocalStorageProvider'
 import { getFullConfig, updateConfiguration } from '../configuration'
+import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
-import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
+import { LocalStorage } from '../services/LocalStorageProvider'
+import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, WebviewMessage } from './protocol'
@@ -79,7 +79,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
-        private editor: Editor,
+        private editor: VSCodeEditor,
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
         private rgPath: string
@@ -234,22 +234,24 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
         this.cancelCompletion()
+        void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
 
         let text = ''
 
         this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
             onResponse: (content: string) => {
                 text += content
-                this.transcript.addAssistantResponse(reformatBotMessage(escapeCodyMarkdown(text, true), responsePrefix))
+                this.transcript.addAssistantResponse(reformatBotMessage(text, responsePrefix))
                 this.sendTranscript()
                 return Promise.resolve()
             },
             onTurnComplete: async () => {
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
-                    const displayText = reformatBotMessage(escapeCodyMarkdown(text, false), responsePrefix)
+                    const displayText = reformatBotMessage(text, responsePrefix)
                     const { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
+                    this.editor.controller.reply(highlightedDisplayText)
                 }
                 void this.onCompletionEnd()
             },
@@ -269,9 +271,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             },
             onError: (err, statusCode) => {
                 // Display error message as assistant response
-                this.transcript.addErrorAsAssistantResponse(
-                    `<div class="cody-chat-error"><span>Request failed: </span>${err}</div>`
-                )
+                this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     void this.sendLogin(false)
@@ -293,6 +293,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.cancelCompletionCallback = null
         this.sendTranscript()
         void this.saveTranscriptToChatHistory()
+        void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
@@ -346,9 +347,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.publishContextStatus()
     }
 
-    public async executeRecipe(recipeId: string, humanChatInput: string = ''): Promise<void> {
+    public async executeRecipe(recipeId: string, humanChatInput: string = '', showTab = true): Promise<void> {
         if (this.isMessageInProgress) {
             this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
+            return
         }
 
         const recipe = getRecipe(recipeId)
@@ -371,20 +373,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
-        this.showTab('chat')
+        if (showTab) {
+            this.showTab('chat')
+        }
 
         // Check whether or not to connect to LLM backend for responses
         // Ex: performing fuzzy / context-search does not require responses from LLM backend
-        const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
-
         switch (recipeId) {
             case 'context-search':
                 this.onCompletionEnd()
                 break
-            default:
+            default: {
                 this.sendTranscript()
+
+                const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
                 await this.saveTranscriptToChatHistory()
+            }
         }
 
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)

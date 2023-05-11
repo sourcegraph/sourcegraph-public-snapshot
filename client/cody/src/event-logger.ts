@@ -4,7 +4,7 @@ import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { version as packageVersion } from '../package.json'
 
-import { LocalStorage } from './command/LocalStorageProvider'
+import { LocalStorage } from './services/LocalStorageProvider'
 
 let eventLoggerGQLClient: SourcegraphGraphQLAPIClient
 let eventLogger: EventLogger | null = null

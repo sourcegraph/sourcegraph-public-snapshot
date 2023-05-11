@@ -190,7 +190,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
 
 function getAddURL(id: string): string {
     if (id === 'ghapp') {
-        return '../../github-apps/new'
+        return '../../github-apps'
     }
 
     const parameters = new URLSearchParams()
