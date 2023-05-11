@@ -7,6 +7,10 @@ import (
 	"testing"
 )
 
+func Test_Demo(t *testing.T) {
+	println("foobar")
+}
+
 func Test_FIFOList_All_OK(t *testing.T) {
 	SetupForTest(t)
 
