@@ -19,6 +19,7 @@ type ListOwnershipArgs struct {
 type OwnResolver interface {
 	GitBlobOwnership(ctx context.Context, blob *GitTreeEntryResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
 	GitCommitOwnership(ctx context.Context, commit *GitCommitResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
+	GitTreeOwnership(ctx context.Context, tree *GitTreeEntryResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
 
 	PersonOwnerField(person *PersonResolver) string
 	UserOwnerField(user *UserResolver) string

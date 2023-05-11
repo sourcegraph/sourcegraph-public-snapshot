@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -88,9 +89,26 @@ func (g fakeGitserver) ReadFile(_ context.Context, _ authz.SubRepoPermissionChec
 }
 
 // Stat is a fake implementation that returns a FileInfo
-// indicating a regular file for every path it is given.
-func (g fakeGitserver) Stat(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, path string) (fs.FileInfo, error) {
-	return graphqlbackend.CreateFileInfo(path, false), nil
+// indicating a regular file for every path it is given,
+// except the ones that are actual ancestor paths of some file
+// in fakeGitServer.files.
+func (g fakeGitserver) Stat(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, path string) (fs.FileInfo, error) {
+	isDir := false
+	p := repoPath{
+		Repo:     repoName,
+		CommitID: commitID,
+		Path:     path,
+	}
+	if p.Path == "" {
+		isDir = true
+	} else {
+		for q := range g.files {
+			if p.Repo == q.Repo && p.CommitID == q.CommitID && strings.HasPrefix(q.Path, p.Path+"/") && q.Path != p.Path {
+				isDir = true
+			}
+		}
+	}
+	return graphqlbackend.CreateFileInfo(path, isDir), nil
 }
 
 // TestBlobOwnershipPanelQueryPersonUnresolved mimics the blob ownership panel graphQL
@@ -734,6 +752,151 @@ func TestOwnership_WithSignals(t *testing.T) {
 			"repo":        string(relay.MarshalID("Repository", repoID)),
 			"revision":    "revision",
 			"currentPath": "foo/bar.js",
+		},
+	})
+}
+
+func TestTreeOwnershipSignals(t *testing.T) {
+	logger := logtest.Scoped(t)
+	fakeDB := fakedb.New()
+	db := database.NewMockDB()
+
+	recentContribStore := database.NewMockRecentContributionSignalStore()
+	santaEmail := "santa@northpole.com"
+	santaName := "santa claus"
+	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
+		AuthorName:        santaName,
+		AuthorEmail:       santaEmail,
+		ContributionCount: 5,
+	}}, nil)
+	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
+
+	recentViewStore := database.NewMockRecentViewSignalStore()
+	recentViewStore.ListFunc.SetDefaultReturn([]database.RecentViewSummary{{
+		UserID:     1,
+		FilePathID: 1,
+		ViewsCount: 10,
+	}}, nil)
+	db.RecentViewSignalFunc.SetDefaultReturn(recentViewStore)
+
+	userEmails := database.NewMockUserEmailsStore()
+	userEmails.GetPrimaryEmailFunc.SetDefaultReturn(santaEmail, true, nil)
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+	fakeDB.Wire(db)
+	repoID := api.RepoID(1)
+	own := fakeOwnService{
+		Ruleset: codeowners.NewRuleset(
+			codeowners.IngestedRulesetSource{ID: int32(repoID)},
+			&codeownerspb.File{
+				Rule: []*codeownerspb.Rule{
+					{
+						Pattern: "*.js",
+						Owner: []*codeownerspb.Owner{
+							{Handle: "js-owner"},
+						},
+						LineNumber: 1,
+					},
+				},
+			}),
+	}
+	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	repos := database.NewMockRepoStore()
+	db.ReposFunc.SetDefaultReturn(repos)
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		return "deadbeef", nil
+	}
+	git := fakeGitserver{
+		files: repoFiles{
+			repoPath{
+				Repo:     "github.com/sourcegraph/own",
+				CommitID: "deadbeef",
+				Path:     "foo/bar.js",
+			}: "some JS code",
+		},
+	}
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+				node(id: $repo) {
+					...on Repository {
+						commit(rev: $revision) {
+							path(path: $currentPath) {
+								...on GitTree {
+									ownership {
+										nodes {
+											owner {
+												...on Person {
+													displayName
+													email
+												}
+											}
+											reasons {
+												...on RecentContributorOwnershipSignal {
+													title
+													description
+												}
+												...on RecentViewOwnershipSignal {
+													title
+													description
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}`,
+		ExpectedResult: `{
+			"node": {
+				"commit": {
+					"path": {
+						"ownership": {
+							"nodes": [
+								{
+									"owner": {
+										"displayName": "santa claus",
+										"email": "santa@northpole.com"
+									},
+									"reasons": [
+										{
+											"title": "recent view",
+											"description": "Owner is associated because they have viewed this file in the last 90 days."
+										}
+									]
+								},
+								{
+									"owner": {
+										"displayName": "santa claus",
+										"email": "santa@northpole.com"
+									},
+									"reasons": [
+										{
+											"title": "recent contributor",
+											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+										}
+									]
+								}
+							]
+						}
+					}
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"repo":        string(relay.MarshalID("Repository", repoID)),
+			"revision":    "revision",
+			"currentPath": "foo",
 		},
 	})
 }
