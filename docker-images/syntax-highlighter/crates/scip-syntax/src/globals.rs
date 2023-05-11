@@ -1,9 +1,8 @@
-use std::ops::{Range, RangeInclusive};
+use std::ops::Range;
 
 use anyhow::Result;
 use bitvec::prelude::*;
-use protobuf::{Enum, Message};
-use scip::types::{Descriptor, Occurrence};
+use scip::types::Descriptor;
 use scip_treesitter::types::PackedRange;
 
 use crate::languages::TagConfiguration;
@@ -72,88 +71,6 @@ pub fn iterate_children_indices<'a>(
     };
 }
 
-impl Scope {
-    // pub fn insert_global(&mut self, global: Global) {
-    //     if let Some(child) = self
-    //         .children
-    //         .iter_mut()
-    //         .find(|child| child.scope_range.contains(&global.range))
-    //     {
-    //         child.insert_global(global)
-    //     } else {
-    //         self.globals.push(global);
-    //     }
-    // }
-
-    // pub fn into_occurrences(
-    //     &mut self,
-    //     hint: usize,
-    //     base_descriptors: Vec<Descriptor>,
-    // ) -> Vec<Occurrence> {
-    //     let mut descriptor_stack = base_descriptors;
-    //     let mut occs = Vec::with_capacity(hint);
-    //     self.rec_into_occurrences(true, &mut occs, &mut descriptor_stack);
-    //     occs
-    // }
-
-    // fn rec_into_occurrences(
-    //     &self,
-    //     is_root: bool,
-    //     occurrences: &mut Vec<Occurrence>,
-    //     descriptor_stack: &mut Vec<Descriptor>,
-    // ) {
-    //     descriptor_stack.extend(self.descriptors.clone());
-
-    //     if !is_root {
-    //         occurrences.push(scip::types::Occurrence {
-    //             range: self.ident_range.to_vec(),
-    //             symbol: scip::symbol::format_symbol(scip::types::Symbol {
-    //                 scheme: "scip-ctags".into(),
-    //                 // TODO: Package?
-    //                 package: None.into(),
-    //                 descriptors: descriptor_stack.clone(),
-    //                 ..Default::default()
-    //             }),
-    //             symbol_roles: scip::types::SymbolRole::Definition.value(),
-    //             // TODO:
-    //             // syntax_kind: todo!(),
-    //             ..Default::default()
-    //         });
-    //     }
-
-    //     for global in &self.globals {
-    //         let mut global_descriptors = descriptor_stack.clone();
-    //         global_descriptors.extend(global.descriptors.clone());
-
-    //         let symbol = scip::symbol::format_symbol(scip::types::Symbol {
-    //             scheme: "scip-ctags".into(),
-    //             // TODO: Package?
-    //             package: None.into(),
-    //             descriptors: global_descriptors,
-    //             ..Default::default()
-    //         });
-
-    //         let symbol_roles = scip::types::SymbolRole::Definition.value();
-    //         occurrences.push(scip::types::Occurrence {
-    //             range: global.range.to_vec(),
-    //             symbol,
-    //             symbol_roles,
-    //             // TODO:
-    //             // syntax_kind: todo!(),
-    //             ..Default::default()
-    //         });
-    //     }
-
-    //     self.children
-    //         .iter()
-    //         .for_each(|c| c.rec_into_occurrences(false, occurrences, descriptor_stack));
-
-    //     self.descriptors.iter().for_each(|_| {
-    //         descriptor_stack.pop();
-    //     });
-    // }
-}
-
 pub fn parse_tree<'a>(
     config: &TagConfiguration,
     tree: &'a tree_sitter::Tree,
@@ -164,6 +81,10 @@ pub fn parse_tree<'a>(
 
     let root_node = tree.root_node();
     let capture_names = config.query.capture_names();
+
+    // Reusing vecs allows us to reduce the number of alloc/realloc syscalls we send out
+    // This leads to a small (few ms) improvement on small files which adds up
+    // TODO: Apply similar optimization (arena would work) on tag emission
 
     let scopes = &mut bundle.scopes;
     let globals = &mut bundle.globals;
@@ -193,9 +114,11 @@ pub fn parse_tree<'a>(
 
     let matches = cursor.matches(&config.query, root_node, source_bytes);
 
-    for m in matches {
-        // eprintln!("\n==== NEW MATCH ====");
+    // According to some quick testing, tree-sitter returns query results
+    // in order, so we can do everything in one loop rather than aggregating first
+    // and then sorting/processing
 
+    for m in matches {
         let mut node = None;
         let mut scope = None;
         let mut local_range = None;
@@ -223,12 +146,6 @@ pub fn parse_tree<'a>(
             if capture_name.starts_with("local") {
                 local_range = Some(capture.node.byte_range());
             }
-
-            // eprintln!(
-            //     "{}: {}",
-            //     capture_name,
-            //     capture.node.utf8_text(source_bytes).unwrap()
-            // );
         }
 
         match node {
