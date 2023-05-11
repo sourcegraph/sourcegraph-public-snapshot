@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { useApolloClient, useLazyQuery } from '@apollo/client'
+import { useApolloClient } from '@apollo/client'
+import { open } from '@tauri-apps/api/dialog'
 import { isEqual } from 'lodash'
 
 import { ErrorLike } from '@sourcegraph/common'
@@ -15,13 +16,12 @@ import {
     DiscoverLocalRepositoriesVariables,
     ExternalServiceKind,
     GetLocalCodeHostsResult,
-    GetLocalDirectoryPathResult,
     LocalRepository,
 } from '../../../graphql-operations'
 import { ADD_CODE_HOST, DELETE_CODE_HOST } from '../../queries'
 
 import { createDefaultLocalServiceConfig, getLocalServicePaths, getLocalServices } from './helpers'
-import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_CODE_HOSTS, GET_LOCAL_DIRECTORY_PATH } from './queries'
+import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_CODE_HOSTS } from './queries'
 
 type Path = string
 
@@ -221,25 +221,26 @@ export function useLocalRepositories({ paths, skip }: LocalRepositoriesInput): L
 }
 
 interface LocalPathPickerAPI {
-    callPathPicker: () => Promise<Path[]>
+    callPathPicker: () => Promise<Path[] | null>
 }
 
 export function useLocalPathsPicker(): LocalPathPickerAPI {
-    const [queryPath] = useLazyQuery<GetLocalDirectoryPathResult>(GET_LOCAL_DIRECTORY_PATH, {
-        fetchPolicy: 'network-only',
-    })
+    const callPathPicker = useCallback(async () => {
+        const selected = await open({
+            directory: true,
+            multiple: true,
+        })
 
-    const callPathPicker = useCallback(
-        () =>
-            queryPath().then(({ data, error }) => {
-                if (error) {
-                    throw new Error(error.message)
-                }
+        if (Array.isArray(selected)) {
+            return selected
+        }
 
-                return data?.localDirectoriesPicker?.paths ?? []
-            }),
-        [queryPath]
-    )
+        if (selected !== null) {
+            return [selected]
+        }
+
+        return null
+    }, [])
 
     return { callPathPicker }
 }

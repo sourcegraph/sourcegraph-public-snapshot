@@ -130,7 +130,9 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
     const handlePathsPickClick = async (): Promise<void> => {
         const paths = await callPathPicker()
 
-        onDirectoryPathsChange(paths)
+        if (paths !== null) {
+            onDirectoryPathsChange(paths)
+        }
     }
 
     // Use internal path only if backend-based file picker is unavailable

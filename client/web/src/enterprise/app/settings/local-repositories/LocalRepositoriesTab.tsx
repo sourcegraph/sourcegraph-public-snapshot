@@ -103,7 +103,9 @@ const PathsPickerActions: FC<PathsPickerActionsProps> = ({ onPathsChange }) => {
     const handleClickCallPathPicker = async (): Promise<void> => {
         const paths = await callPathPicker()
 
-        onPathsChange(paths)
+        if (paths !== null) {
+            onPathsChange(paths)
+        }
     }
 
     return (
