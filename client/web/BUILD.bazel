@@ -2094,7 +2094,7 @@ build_test(
     ],
 )
 
-bundlesize_bin.bundlesize_binary(
+bundlesize_bin.bundlesize_test(
     name = "bundlesize-report",
     args = [
         "--config",
@@ -2105,6 +2105,7 @@ bundlesize_bin.bundlesize_binary(
         ":bundle-enterprise",
     ],
     env = {
+        "INTERNAL_SKIP_CACHE": "true",
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle-enterprise)",
     },
 )
