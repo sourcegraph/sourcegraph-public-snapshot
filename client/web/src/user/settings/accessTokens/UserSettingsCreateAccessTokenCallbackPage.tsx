@@ -27,12 +27,21 @@ import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
 
+/**
+ * Utility function to open the callback URL in Sourcegraph App. Used where
+ * window.open or target="_blank" cannot be used.
+ */
+function tauriShellOpen(uri: string): void {
+    ;(window as any).__TAURI__?.shell?.open(uri)
+}
+
 interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
     /**
      * Called when a new access token is created and should be temporarily displayed to the user.
      */
     onDidCreateAccessToken: (value: CreateAccessTokenResult['createAccessToken']) => void
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 interface TokenRequester {
     /** The name of the source */
@@ -106,6 +115,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     onDidCreateAccessToken,
     user,
     isSourcegraphDotCom,
+    isSourcegraphApp,
 }) => {
     const navigate = useNavigate()
     const location = useLocation()
@@ -150,9 +160,17 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                 nextRequester.redirectURL = redirectURL.toString()
             }
         }
+
+        if (isSourcegraphApp) {
+            // Append type=app to the url to indicate to the requester that the callback is fulfilled by App
+            const redirectURL = new URL(nextRequester.redirectURL)
+            redirectURL.searchParams.set('type', 'app')
+            nextRequester.redirectURL = redirectURL.toString()
+        }
+
         setRequester(nextRequester)
         setNote(REQUESTERS[requestFrom].name)
-    }, [isSourcegraphDotCom, location.search, navigate, requestFrom, requester])
+    }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester])
     /**
      * We use this to handle token creation request from redirections.
      * Don't create token if this page wasn't linked to from a valid
@@ -169,6 +187,15 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                             onDidCreateAccessToken(result)
                             setNewToken(result.token)
                             const uri = replaceToken(requester?.redirectURL, result.token)
+
+                            // If we're in App, override the callbackType
+                            // because we need to use tauriShellOpen to open the
+                            // callback in a browser.
+                            if (isSourcegraphApp) {
+                                tauriShellOpen(uri)
+                                return
+                            }
+
                             switch (requester.callbackType) {
                                 case 'new-tab':
                                     window.open(uri, '_blank')
@@ -181,7 +208,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                     startWith('loading'),
                     catchError(error => [asError(error)])
                 ),
-            [requester, user.id, note, onDidCreateAccessToken]
+            [requester, user.id, note, onDidCreateAccessToken, isSourcegraphApp]
         )
     )
     /**
