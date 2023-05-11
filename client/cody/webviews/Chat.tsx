@@ -4,7 +4,6 @@ import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { escapeCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import {
     Chat as ChatUI,
@@ -52,7 +51,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 }) => {
     const onSubmit = useCallback(
         (text: string, submitType: 'user' | 'suggestion') => {
-            vscodeAPI.postMessage({ command: 'submit', text: escapeCodyMarkdown(text, false), submitType })
+            vscodeAPI.postMessage({ command: 'submit', text, submitType })
         },
         [vscodeAPI]
     )
