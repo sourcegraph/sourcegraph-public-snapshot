@@ -108,7 +108,7 @@ The docs detail how to use the UI or `src-cli` to upload `CODEOWNERS` files to S
 
 ## Limitations
 
-- Sourcegraph Own is being released as an MVP for 5.0. In the future of the product we intend to infer ownership beyond `CODEOWNERS` data.
+- Sourcegraph Own has been released as an MVP for 5.0. In the future of the product we intend to infer ownership beyond `CODEOWNERS` data.
 - The feature has not been fully validated to work well on large repositories or large `CODEOWNERS` rulesets. This is a future area of improvement, but please contact us if you run into issues.
 
 ## Browsing ownership
