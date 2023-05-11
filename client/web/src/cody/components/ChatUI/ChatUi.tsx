@@ -1,19 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiClose, mdiSend, mdiArrowDown, mdiPencil } from '@mdi/js'
+import { mdiClose, mdiSend, mdiArrowDown, mdiPencil, mdiThumbUp, mdiThumbDown, mdiCheck } from '@mdi/js'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { Chat, ChatUISubmitButtonProps, ChatUITextAreaProps, EditButtonProps } from '@sourcegraph/cody-ui/src/Chat'
+import {
+    Chat,
+    ChatUISubmitButtonProps,
+    ChatUITextAreaProps,
+    EditButtonProps,
+    FeedbackButtonsProps,
+} from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 import { Button, Icon, TextArea } from '@sourcegraph/wildcard'
 
+import { eventLogger } from '../../../tracking/eventLogger'
 import { useChatStoreState } from '../../stores/chat'
 
 import styles from './ChatUi.module.scss'
 
 export const SCROLL_THRESHOLD = 100
+
+const onFeedbackSubmit = (feedback: string) => eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
 
 export const ChatUI = (): JSX.Element => {
     const { submitMessage, editMessage, messageInProgress, transcript, getChatContext, transcriptId } =
@@ -50,6 +59,8 @@ export const ChatUI = (): JSX.Element => {
             textAreaComponent={AutoResizableTextArea}
             codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
             transcriptActionClassName={styles.transcriptAction}
+            FeedbackButtonsContainer={FeedbackButtons}
+            feedbackButtonsOnSubmit={onFeedbackSubmit}
         />
     )
 }
@@ -81,6 +92,37 @@ export const EditButton: React.FunctionComponent<EditButtonProps> = ({
         </button>
     </div>
 )
+
+const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ feedbackButtonsOnSubmit }) => {
+    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+
+    const onFeedbackBtnSubmit = useCallback(
+        (text: string) => {
+            feedbackButtonsOnSubmit(text)
+            setFeedbackSubmitted(true)
+        },
+        [feedbackButtonsOnSubmit]
+    )
+
+    return (
+        <div className={classNames('d-flex', styles.feedbackButtonsWrapper)}>
+            {feedbackSubmitted ? (
+                <Button title="Feedback submitted." disabled={true}>
+                    <Icon aria-label="Scroll down" svgPath={mdiCheck} />
+                </Button>
+            ) : (
+                <>
+                    <Button type="button" onClick={() => onFeedbackBtnSubmit('positive')}>
+                        <Icon aria-label="Scroll down" svgPath={mdiThumbUp} />
+                    </Button>
+                    <Button type="button" onClick={() => onFeedbackBtnSubmit('negative')}>
+                        <Icon aria-label="Scroll down" svgPath={mdiThumbDown} />
+                    </Button>
+                </>
+            )}
+        </div>
+    )
+}
 
 export const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <button className={classNames(className, styles.submitButton)} type="submit" disabled={disabled} onClick={onClick}>
