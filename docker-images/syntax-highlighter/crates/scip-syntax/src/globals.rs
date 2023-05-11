@@ -2,7 +2,8 @@ use std::ops::Range;
 
 use anyhow::Result;
 use bitvec::prelude::*;
-use scip::types::Descriptor;
+use protobuf::Enum;
+use scip::types::{Descriptor, Occurrence};
 use scip_treesitter::types::PackedRange;
 
 use crate::languages::TagConfiguration;
@@ -69,6 +70,85 @@ pub fn iterate_children_indices<'a>(
         current: children_or_globals,
         children,
     };
+}
+
+impl MemoryBundle {
+    pub fn into_occurrences(&mut self, base_descriptors: Vec<Descriptor>) -> Vec<Occurrence> {
+        let mut descriptor_stack = base_descriptors;
+        let mut occs = Vec::with_capacity(self.globals.len());
+        self.rec_into_occurrences(0, true, &mut occs, &mut descriptor_stack);
+        occs
+    }
+
+    fn rec_into_occurrences(
+        &self,
+        scope_idx: usize,
+        is_root: bool,
+        occurrences: &mut Vec<Occurrence>,
+        descriptor_stack: &mut Vec<Descriptor>,
+    ) {
+        let scope = &self.scopes[scope_idx];
+
+        descriptor_stack.extend(
+            (&self.descriptors[scope.descriptors.start as usize..scope.descriptors.end as usize])
+                .to_vec(),
+        );
+
+        if !is_root {
+            occurrences.push(scip::types::Occurrence {
+                range: scope.ident_range.to_vec(),
+                symbol: scip::symbol::format_symbol(scip::types::Symbol {
+                    scheme: "scip-ctags".into(),
+                    // TODO: Package?
+                    package: None.into(),
+                    descriptors: descriptor_stack.clone(),
+                    ..Default::default()
+                }),
+                symbol_roles: scip::types::SymbolRole::Definition.value(),
+                // TODO:
+                // syntax_kind: todo!(),
+                ..Default::default()
+            });
+        }
+
+        for global_idx in iterate_children_indices(&self.children, scope.globals) {
+            let global = &self.globals[global_idx];
+            let mut global_descriptors = descriptor_stack.clone();
+            global_descriptors.extend(
+                (&self.descriptors
+                    [global.descriptors.start as usize..global.descriptors.end as usize])
+                    .to_vec(),
+            );
+
+            let symbol = scip::symbol::format_symbol(scip::types::Symbol {
+                scheme: "scip-ctags".into(),
+                // TODO: Package?
+                package: None.into(),
+                descriptors: global_descriptors,
+                ..Default::default()
+            });
+
+            let symbol_roles = scip::types::SymbolRole::Definition.value();
+            occurrences.push(scip::types::Occurrence {
+                range: global.range.to_vec(),
+                symbol,
+                symbol_roles,
+                // TODO:
+                // syntax_kind: todo!(),
+                ..Default::default()
+            });
+        }
+
+        // self.children
+        //     .iter()
+        //     .for_each(|c| self.rec_into_occurrences(false, occurrences, descriptor_stack));
+        iterate_children_indices(&self.children, scope.children)
+            .for_each(|c| self.rec_into_occurrences(c, false, occurrences, descriptor_stack));
+
+        self.descriptors.iter().for_each(|_| {
+            descriptor_stack.pop();
+        });
+    }
 }
 
 pub fn parse_tree<'a>(

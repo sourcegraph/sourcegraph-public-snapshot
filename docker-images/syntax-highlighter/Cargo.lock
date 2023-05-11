@@ -2078,11 +2078,13 @@ dependencies = [
 name = "syntect_server"
 version = "1.0.1"
 dependencies = [
+ "base64",
  "clap 4.1.11",
  "criterion",
  "futures",
  "futures-task",
  "futures-util",
+ "protobuf",
  "rocket",
  "rustyline",
  "scip",

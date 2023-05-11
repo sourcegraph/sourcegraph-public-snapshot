@@ -3,7 +3,14 @@
 #[macro_use]
 extern crate rocket;
 
+use std::path;
+
+use ::scip::types::Document;
+use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
+use scip_syntax::{get_globals, globals::MemoryBundle};
+use scip_treesitter_languages::parsers::BundledParser;
+use serde::Deserialize;
 use sg_syntax::{ScipHighlightQuery, SourcegraphQuery};
 
 #[post("/", format = "application/json", data = "<q>")]
@@ -38,6 +45,71 @@ fn scip(q: Json<ScipHighlightQuery>) -> JsonValue {
     }
 }
 
+#[derive(Deserialize, Default, Debug)]
+pub struct SymbolQuery {
+    filename: String,
+    content: String,
+}
+
+pub fn jsonify_err(e: impl ToString) -> JsonValue {
+    json!({"error": e.to_string()})
+}
+
+#[post("/symbols", format = "application/json", data = "<q>")]
+fn symbols(q: Json<SymbolQuery>) -> JsonValue {
+    let mut bundle = MemoryBundle {
+        scopes: Vec::with_capacity(64),
+        globals: Vec::with_capacity(64),
+        descriptors: Vec::with_capacity(256),
+
+        children: Vec::with_capacity(256),
+        scope_stack: Vec::with_capacity(64),
+    };
+
+    let path = path::Path::new(&q.filename);
+    let extension = match match path.extension() {
+        Some(vals) => vals,
+        None => {
+            return json!({"error": "Extensionless file"});
+        }
+    }
+    .to_str()
+    {
+        Some(vals) => vals,
+        None => {
+            return json!({"error": "Invalid codepoint"});
+        }
+    };
+    let parser = match BundledParser::get_parser_from_extension(extension) {
+        Some(parser) => parser,
+        None => return json!({"error": "Could not infer parser from extension"}),
+    };
+
+    match match get_globals(parser, q.content.as_bytes(), &mut bundle) {
+        Some(globals) => globals,
+        None => return json!({"error": "Failed to get globals"}),
+    } {
+        Ok(vals) => vals,
+        Err(err) => {
+            return jsonify_err(err);
+        }
+    };
+
+    let mut document = Document::default();
+
+    document.occurrences = bundle.into_occurrences(vec![]);
+
+    eprintln!("{:?}", document.occurrences);
+
+    let encoded = match document.write_to_bytes() {
+        Ok(vals) => vals,
+        Err(err) => {
+            return jsonify_err(err);
+        }
+    };
+    json!({"scip": base64::encode(encoded), "plaintext": false})
+}
+
 #[get("/health")]
 fn health() -> &'static str {
     "OK"
@@ -63,6 +135,6 @@ fn rocket() -> _ {
     };
 
     rocket::build()
-        .mount("/", routes![syntect, lsif, scip, health])
+        .mount("/", routes![syntect, lsif, scip, symbols, health])
         .register("/", catchers![not_found])
 }
