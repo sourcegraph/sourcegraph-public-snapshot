@@ -302,7 +302,7 @@ export const GitHubAppPage: FC<Props> = ({
                         <H2>Code host connections</H2>
                         <ConnectionList as="ul" className="list-group" aria-label="Code Host Connections">
                             {app.externalServices?.nodes?.map(node => (
-                                <ExternalServiceNode key={node.id} node={node} editingDisabled={true} />
+                                <ExternalServiceNode key={node.id} node={node} editingDisabled={false} />
                             ))}
                         </ConnectionList>
                         {app.externalServices && (
