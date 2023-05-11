@@ -4,8 +4,6 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,7 +16,6 @@ type getQueryEmbeddingFn func(ctx context.Context, query string) ([]float32, err
 
 func searchRepoEmbeddingIndexes(
 	ctx context.Context,
-	logger log.Logger,
 	params embeddings.EmbeddingsSearchParameters,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,

@@ -13,8 +13,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/qa"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -34,7 +32,6 @@ func TestRecall(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	logger := log.NoOp()
 
 	// Set up mock functions
 	queryEmbeddings, err := loadQueryEmbeddings(t)
@@ -65,7 +62,6 @@ func TestRecall(t *testing.T) {
 	searcher := func(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingCombinedSearchResults, error) {
 		return searchRepoEmbeddingIndexes(
 			ctx,
-			logger,
 			args,
 			getRepoEmbeddingIndex,
 			getQueryEmbedding,

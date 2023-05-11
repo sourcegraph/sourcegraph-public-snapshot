@@ -134,7 +134,7 @@ func NewHandler(
 			return
 		}
 
-		res, err := searchRepoEmbeddingIndexes(r.Context(), logger, args, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
+		res, err := searchRepoEmbeddingIndexes(r.Context(), args, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
 		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
