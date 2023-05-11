@@ -4,8 +4,8 @@
 }
 
 .divider {
-    border-top: 1px solid var(--vscode-activityBar-border);
     height: 1px;
+    border-top: 1px solid var(--vscode-activityBar-border);
     margin-bottom: 1.25rem;
 }
 
