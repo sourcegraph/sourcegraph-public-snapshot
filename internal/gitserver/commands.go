@@ -2410,7 +2410,7 @@ func (c *clientImplementor) ArchiveReader(
 			return nil, err
 		}
 
-		client, err := c.grpc.ClientForRepo(c.userAgent, repo)
+		client, err := c.clientSource.ClientForRepo(c.userAgent, repo)
 		if err != nil {
 			return nil, err
 		}

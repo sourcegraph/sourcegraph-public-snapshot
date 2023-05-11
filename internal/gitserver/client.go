@@ -23,7 +23,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -49,16 +48,10 @@ import (
 const git = "git"
 
 var (
-	clientFactory     = httpcli.NewInternalClientFactory("gitserver")
-	defaultDoer, _    = clientFactory.Doer()
-	defaultLimiter    = limiter.New(500)
-	conns             = &atomicGitServerConns{}
-	DefaultGRPCSource = GRPCClientImplementor{
-		conns: func() *GitserverConns { return conns.get() },
-		Source: func(cc grpc.ClientConnInterface) proto.GitserverServiceClient {
-			return proto.NewGitserverServiceClient(cc)
-		},
-	}
+	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
+	defaultDoer, _ = clientFactory.Doer()
+	defaultLimiter = limiter.New(500)
+	conns          = &atomicGitServerConns{}
 )
 
 var ClientMocks, emptyClientMocks struct {
@@ -76,25 +69,10 @@ func ResetClientMocks() {
 
 var _ Client = &clientImplementor{}
 
-// GRPCClientSource is a function that returns a new gRPC client for the given connection.
-type GRPCClientSource func(cc grpc.ClientConnInterface) proto.GitserverServiceClient
-
-type GRPCClient interface {
-	ClientForRepo(repo api.RepoName) (proto.GitserverServiceClient, error)
-}
-
-type GRPCClientImplementor struct {
-	cc     grpc.ClientConnInterface
-	conns  func() *GitserverConns
-	Source GRPCClientSource
-}
-
-func (c *GRPCClientImplementor) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	conns, err := c.conns().ConnForRepo(userAgent, repo)
-	if err != nil {
-		return nil, err
-	}
-	return c.Source(conns), nil
+type ClientSource interface {
+	ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
+	AddrForRepo(userAgent string, repo api.RepoName) string
+	Addresses() []string
 }
 
 // NewClient returns a new gitserver.Client.
@@ -106,21 +84,16 @@ func NewClient() Client {
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		userAgent:  filepath.Base(os.Args[0]),
-		operations: getOperations(),
-		grpc:       DefaultGRPCSource,
+		userAgent:    filepath.Base(os.Args[0]),
+		operations:   getOperations(),
+		clientSource: conns,
 	}
 }
 
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
-func NewTestClient(cli httpcli.Doer, grpcClient GRPCClientImplementor, addrs []string) Client {
+func NewTestClient(cli httpcli.Doer, clientSource ClientSource) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
-	testGRPCClient := &GRPCClientImplementor{
-		cc:     grpcClient.cc,
-		conns:  func() *GitserverConns { return newTestGitserverConns(addrs) },
-		Source: grpcClient.Source,
-	}
 
 	return &clientImplementor{
 		logger:      logger,
@@ -129,9 +102,9 @@ func NewTestClient(cli httpcli.Doer, grpcClient GRPCClientImplementor, addrs []s
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		userAgent:  filepath.Base(os.Args[0]),
-		operations: newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
-		grpc:       *testGRPCClient,
+		userAgent:    filepath.Base(os.Args[0]),
+		operations:   newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
+		clientSource: clientSource,
 	}
 }
 
@@ -224,8 +197,8 @@ type clientImplementor struct {
 	// operations are used for internal observability
 	operations *operations
 
-	// gRPCClientSource invokes the given GRPCCLientSource to get a gRPC client
-	grpc GRPCClientImplementor
+	// clientSource is used to get the corresponding gprc client or address for a given repository
+	clientSource ClientSource
 }
 
 type RawBatchLogResult struct {
@@ -459,15 +432,15 @@ type Client interface {
 }
 
 func (c *clientImplementor) Addrs() []string {
-	return c.grpc.conns().Addresses
+	return c.clientSource.Addresses()
 }
 
 func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
-	return c.grpc.conns().AddrForRepo(c.userAgent, repo)
+	return c.clientSource.AddrForRepo(c.userAgent, repo)
 }
 
-func (c *clientImplementor) ConnForRepo(repo api.RepoName) (*grpc.ClientConn, error) {
-	return c.grpc.conns().ConnForRepo(c.userAgent, repo)
+func (c *clientImplementor) ClientForRepo(repo api.RepoName) (proto.GitserverServiceClient, error) {
+	return c.clientSource.ClientForRepo(c.userAgent, repo)
 }
 
 // ArchiveOptions contains options for the Archive func.
@@ -589,11 +562,10 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 	}
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
-		conn, err := c.execer.ConnForRepo(repoName)
+		client, err := c.execer.ClientForRepo(repoName)
 		if err != nil {
 			return nil, err
 		}
-		client := proto.NewGitserverServiceClient(conn)
 
 		req := &proto.ExecRequest{
 			Repo:           string(repoName),
@@ -751,12 +723,11 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	repoName := protocol.NormalizeRepo(args.Repo)
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
-		conn, err := c.ConnForRepo(repoName)
+		client, err := c.ClientForRepo(repoName)
 		if err != nil {
 			return false, err
 		}
 
-		client := proto.NewGitserverServiceClient(conn)
 		cs, err := client.Search(ctx, args.ToProto())
 		if err != nil {
 			return false, convertGitserverError(err)
