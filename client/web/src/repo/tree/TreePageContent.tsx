@@ -300,6 +300,9 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         return () => subscription.unsubscribe()
     }, [repo.name, revision, filePath])
 
+    const [recentContributorsComputed] = useFeatureFlag('own-background-index-repo-recent-contributors', false)
+    const [recentViewsComputed] = useFeatureFlag('own-background-index-repo-recent-views', false)
+
     return (
         <>
             <section className={classNames('container mb-3 px-0', styles.section)}>
@@ -331,10 +334,12 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
                 {!isPackage && (
                     <div className={styles.contributors}>
-                        <Card>
-                            <CardHeader className={panelStyles.cardColHeaderWrapper}>Ownership</CardHeader>
-                            <Ownership {...props} />
-                        </Card>
+                        {(recentContritutorsComputed || recentViewsComputed) && (
+                            <Card>
+                                <CardHeader className={panelStyles.cardColHeaderWrapper}>Ownership</CardHeader>
+                                <Ownership {...props} />
+                            </Card>
+                        )}
                         <Card className="mt-3">
                             <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
                             <Contributors {...props} />
@@ -486,12 +491,16 @@ const OWNERS_QUERY = gql`
     ${RECENT_CONTRIBUTOR_FIELDS}
     ${RECENT_VIEW_FIELDS}
 
-    query TreePageOwnership($repo: ID!, $first: Int, $revision: String!) {
+    query TreePageOwnership($repo: ID!, $first: Int, $revision: String!, $filePath: String!) {
         node(id: $repo) {
             ... on Repository {
                 commit(rev: $revision) {
-                    ownership(first: $first) {
-                        ...TreePageOwnershipConnectionFields
+                    path(path: $filePath) {
+                        ... on GitTree {
+                            ownership(first: $first) {
+                                ...TreePageOwnershipConnectionFields
+                            }
+                        }
                     }
                 }
             }
@@ -520,17 +529,19 @@ const OWNERS_QUERY = gql`
 `
 
 interface OwnershipProps extends TreePageContentProps {}
-const Ownership: React.FC<OwnershipProps> = ({ repo }) => {
+const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
     const { data, error, loading } = useQuery<TreePageOwnershipResult, TreePageOwnershipVariables>(OWNERS_QUERY, {
         variables: {
             first: 5,
             repo: repo.id,
             revision: '',
+            filePath,
         },
     })
 
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
-    const connection = node?.commit?.ownership?.__typename === 'OwnershipConnection' ? node.commit.ownership : null
+    const connection =
+        node?.commit?.path?.ownership?.__typename === 'OwnershipConnection' ? node.commit.path.ownership : null
 
     return (
         <ConnectionContainer>
