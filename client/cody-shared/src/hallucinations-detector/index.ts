@@ -81,14 +81,14 @@ async function detectTokens(
 function highlightLine(line: string, tokens: HighlightedToken[]): string {
     let highlightedLine = line
     for (const token of tokens) {
-        highlightedLine = highlightedLine.replaceAll(token.innerValue, getHighlightedTokenHTML(token))
+        highlightedLine = highlightedLine.replaceAll(token.outerValue, getHighlightedTokenHTML(token))
     }
     return highlightedLine
 }
 
 function getHighlightedTokenHTML(token: HighlightedToken): string {
     const isHallucinatedClassName = token.isHallucinated ? 'hallucinated' : 'not-hallucinated'
-    return `<span class="token-${token.type} token-${isHallucinatedClassName}">${token.innerValue}</span>`
+    return ` <span class="token-${token.type} token-${isHallucinatedClassName}">${token.outerValue.trim()}</span> `
 }
 
 export function findFilePaths(line: string): { fullMatch: string; pathMatch: string }[] {
