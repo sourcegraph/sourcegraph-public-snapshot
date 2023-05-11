@@ -17,15 +17,21 @@ import (
 
 var timeNow = time.Now
 
-func (r *UserResolver) RequiresVerifiedEmailForCody(ctx context.Context) (bool, error) {
+func (r *UserResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 	// We only require this on dotcom
 	if !envvar.SourcegraphDotComMode() {
-		return false, nil
+		return false
 	}
-	// 🚨 SECURITY: Only the authenticated user and site admins can check
-	// whether the user has a verified email. That's checked in here.
-	emails := backend.NewUserEmailsService(r.db, r.logger)
-	return emails.HasVerifiedEmail(ctx, r.user.ID)
+
+	isAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
+	return !isAdmin
+}
+
+func (r *UserResolver) HasVerifiedEmail(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: In the UserEmailsService we check that only the
+	// authenticated user and site admins can check
+	// whether the user has a verified email.
+	return backend.NewUserEmailsService(r.db, r.logger).HasVerifiedEmail(ctx, r.user.ID)
 }
 
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {

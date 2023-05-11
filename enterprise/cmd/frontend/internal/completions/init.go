@@ -41,7 +41,7 @@ func Init(
 
 func requireVerifiedEmailMiddleware(db database.DB, logger log.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := cody.RequiresVerifiedEmail(r.Context(), db, logger); err != nil {
+		if err := cody.CheckVerifiedEmailRequirement(r.Context(), db, logger); err != nil {
 			// Report HTTP 403 Forbidden if user has no verified email address.
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return

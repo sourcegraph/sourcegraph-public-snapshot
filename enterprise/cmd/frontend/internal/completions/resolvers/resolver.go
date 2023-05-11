@@ -34,7 +34,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
-	if err := cody.RequiresVerifiedEmail(ctx, c.db, c.logger); err != nil {
+	if err := cody.CheckVerifiedEmailRequirement(ctx, c.db, c.logger); err != nil {
 		return "", err
 	}
 

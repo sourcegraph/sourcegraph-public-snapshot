@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -75,12 +76,14 @@ func isCodyEnabledInApp() bool {
 
 var ErrRequiresVerifiedEmailAddress = errors.New("cody requires a verified email address")
 
-func RequiresVerifiedEmail(ctx context.Context, db database.DB, logger log.Logger) error {
+func CheckVerifiedEmailRequirement(ctx context.Context, db database.DB, logger log.Logger) error {
+	// Only check on dotcom
 	if !envvar.SourcegraphDotComMode() {
 		return nil
 	}
 
-	if deploy.IsApp() {
+	// Do not require if user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err == nil {
 		return nil
 	}
 

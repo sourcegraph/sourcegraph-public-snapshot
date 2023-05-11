@@ -57,7 +57,7 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 		return nil, errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
-	if err := cody.RequiresVerifiedEmail(ctx, r.db, r.logger); err != nil {
+	if err := cody.CheckVerifiedEmailRequirement(ctx, r.db, r.logger); err != nil {
 		return nil, err
 	}
 
@@ -93,7 +93,7 @@ func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graph
 		return false, errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
-	if err := cody.RequiresVerifiedEmail(ctx, r.db, r.logger); err != nil {
+	if err := cody.CheckVerifiedEmailRequirement(ctx, r.db, r.logger); err != nil {
 		return false, err
 	}
 
