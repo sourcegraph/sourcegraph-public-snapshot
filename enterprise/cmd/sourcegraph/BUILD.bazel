@@ -25,6 +25,7 @@ go_library(
         "//enterprise/cmd/worker/shared",
         "//internal/sanitycheck",
         "//internal/service",
+        "//internal/service/localcodehost",
         "//internal/service/servegit",
         "//ui/assets",
         "//ui/assets/enterprise",

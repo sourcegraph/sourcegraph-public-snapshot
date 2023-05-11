@@ -75,7 +75,7 @@ var RubyPackagesSchemaJSON string
 //go:embed other_external_service.schema.json
 var OtherExternalServiceSchemaJSON string
 
-// OtherExternalServiceSchemaJSON is the content of the file "other_external_service.schema.json".
+// LocalExternalServiceSchemaJSON is the content of the file "local.schema.json".
 //
 //go:embed local.schema.json
 var LocalExternalServiceSchemaJSON string
