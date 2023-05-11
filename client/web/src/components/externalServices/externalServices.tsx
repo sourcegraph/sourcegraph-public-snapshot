@@ -577,7 +577,8 @@ export const gitHubAppConfig = (
   "url": "${decodeURI(baseURL)}",
   "gitHubAppDetails": {
     "installationID": ${installationID},
-    "appID": ${appID}
+    "appID": ${appID},
+    "baseURL": "${baseURL}"
   },
   "orgs": ["${org}"],
   "authorization": {}
