@@ -54,7 +54,7 @@ func (r *webhooksResolver) DeleteWebhook(ctx context.Context, args *graphqlbacke
 		return nil, auth.ErrMustBeSiteAdmin
 	}
 
-	id, err := unmarshalWebhookID(args.ID)
+	id, err := UnmarshalWebhookID(args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbacke
 		return nil, auth.ErrMustBeSiteAdmin
 	}
 
-	whID, err := unmarshalWebhookID(args.ID)
+	whID, err := UnmarshalWebhookID(args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func webhookByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhoo
 		return nil, err
 	}
 
-	id, err := unmarshalWebhookID(gqlID)
+	id, err := UnmarshalWebhookID(gqlID)
 	if err != nil {
 		return nil, err
 	}
@@ -248,6 +248,13 @@ type webhookResolver struct {
 	hook *types.Webhook
 }
 
+func NewWebhookResolver(db database.DB, hook *types.Webhook) *webhookResolver {
+	return &webhookResolver{
+		db:   db,
+		hook: hook,
+	}
+}
+
 func (r *webhookResolver) ID() graphql.ID {
 	return marshalWebhookID(r.hook.ID)
 }
@@ -336,7 +343,7 @@ func marshalWebhookID(id int32) graphql.ID {
 	return relay.MarshalID("Webhook", id)
 }
 
-func unmarshalWebhookID(id graphql.ID) (hookID int32, err error) {
+func UnmarshalWebhookID(id graphql.ID) (hookID int32, err error) {
 	err = relay.UnmarshalSpec(id, &hookID)
 	return
 }

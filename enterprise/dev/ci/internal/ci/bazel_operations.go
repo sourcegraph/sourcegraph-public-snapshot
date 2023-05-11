@@ -103,17 +103,6 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	}
 	cmds = append(cmds, bazelTestCmds...)
 
-	// Run commands
-	runTargets := []string{
-		"//client/web:bundlesize-report",
-	}
-	bazelRunCmd := bazelCmd(fmt.Sprintf("run %s", strings.Join(runTargets, " ")))
-	cmds = append(cmds,
-		bazelAnnouncef("bazel run %s", strings.Join(runTargets, " ")),
-		bk.Cmd(bazelRunCmd),
-		bazelAnnouncef("✅"),
-	)
-
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":bazel: Tests",
 			cmds...,
