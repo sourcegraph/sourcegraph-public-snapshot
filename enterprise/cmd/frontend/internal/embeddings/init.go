@@ -3,7 +3,6 @@ package embeddings
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
@@ -17,7 +16,7 @@ import (
 )
 
 func Init(
-	ctx context.Context,
+	_ context.Context,
 	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
@@ -28,7 +27,15 @@ func Init(
 	contextDetectionEmbeddingsStore := contextdetection.NewContextDetectionEmbeddingJobsStore(db)
 	gitserverClient := gitserver.NewClient()
 	embeddingsClient := embeddings.NewClient()
-	emails := backend.NewUserEmailsService(db, observationCtx.Logger)
-	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(db, gitserverClient, embeddingsClient, repoEmbeddingsStore, contextDetectionEmbeddingsStore, emails)
+
+	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(
+		db,
+		observationCtx.Logger,
+		gitserverClient,
+		embeddingsClient,
+		repoEmbeddingsStore,
+		contextDetectionEmbeddingsStore,
+	)
+
 	return nil
 }

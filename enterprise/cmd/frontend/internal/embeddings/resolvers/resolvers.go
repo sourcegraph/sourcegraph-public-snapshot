@@ -3,10 +3,11 @@ package resolvers
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
@@ -22,11 +23,11 @@ import (
 
 func NewResolver(
 	db database.DB,
+	logger log.Logger,
 	gitserverClient gitserver.Client,
 	embeddingsClient *embeddings.Client,
 	repoStore repobg.RepoEmbeddingJobsStore,
 	contextDetectionStore contextdetectionbg.ContextDetectionEmbeddingJobsStore,
-	emails backend.UserEmailsService,
 ) graphqlbackend.EmbeddingsResolver {
 	return &Resolver{
 		db:                        db,
@@ -34,12 +35,12 @@ func NewResolver(
 		embeddingsClient:          embeddingsClient,
 		repoEmbeddingJobsStore:    repoStore,
 		contextDetectionJobsStore: contextDetectionStore,
-		emails:                    emails,
 	}
 }
 
 type Resolver struct {
 	db                        database.DB
+	logger                    log.Logger
 	gitserverClient           gitserver.Client
 	embeddingsClient          *embeddings.Client
 	repoEmbeddingJobsStore    repobg.RepoEmbeddingJobsStore
@@ -52,18 +53,12 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 		return nil, errors.New("embeddings are not configured or disabled")
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		verified, err := r.emails.CurrentActorHasVerifiedEmail(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !verified {
-			return nil, errors.New("cody requires a verified email address")
-		}
-	}
-
 	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
 		return nil, errors.New("cody experimental feature flag is not enabled for current user")
+	}
+
+	if err := cody.RequiresVerifiedEmail(ctx, r.db, r.logger); err != nil {
+		return nil, err
 	}
 
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repo)
@@ -98,14 +93,8 @@ func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graph
 		return false, errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		verified, err := r.emails.CurrentActorHasVerifiedEmail(ctx)
-		if err != nil {
-			return false, err
-		}
-		if !verified {
-			return false, errors.New("cody requires a verified email address")
-		}
+	if err := cody.RequiresVerifiedEmail(ctx, r.db, r.logger); err != nil {
+		return false, err
 	}
 
 	return r.embeddingsClient.IsContextRequiredForChatQuery(ctx, embeddings.IsContextRequiredForChatQueryParameters{Query: args.Query})

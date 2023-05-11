@@ -6,8 +6,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
@@ -22,13 +20,13 @@ var _ graphqlbackend.CompletionsResolver = &completionsResolver{}
 // completionsResolver provides chat completions
 type completionsResolver struct {
 	rl     streaming.RateLimiter
-	emails backend.UserEmailsService
+	db     database.DB
+	logger log.Logger
 }
 
 func NewCompletionsResolver(db database.DB, logger log.Logger) graphqlbackend.CompletionsResolver {
 	rl := streaming.NewRateLimiter(db, redispool.Store, streaming.RateLimitScopeCompletion)
-	emails := backend.NewUserEmailsService(db, logger)
-	return &completionsResolver{rl: rl, emails: emails}
+	return &completionsResolver{rl: rl, db: db, logger: logger}
 }
 
 func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (_ string, err error) {
@@ -36,14 +34,8 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		verified, err := c.emails.CurrentActorHasVerifiedEmail(ctx)
-		if err != nil {
-			return "", err
-		}
-		if !verified {
-			return "", errors.New("cody requires a verified email address")
-		}
+	if err := cody.RequiresVerifiedEmail(ctx, c.db, c.logger); err != nil {
+		return "", err
 	}
 
 	completionsConfig := streaming.GetCompletionsConfig()
