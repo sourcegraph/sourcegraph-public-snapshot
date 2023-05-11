@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEmbeddingsSearch(t *testing.T) {
+func TestEmbeddingsSearchE2E(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	makeIndex := func(name api.RepoName, w int8) *embeddings.RepoEmbeddingIndex {
