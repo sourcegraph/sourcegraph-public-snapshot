@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
 type Config struct {
@@ -34,6 +35,8 @@ type Config struct {
 		Dataset   string
 		Table     string
 	}
+
+	TracePolicy policy.TracePolicy
 }
 
 func (c *Config) Load() {
@@ -50,6 +53,8 @@ func (c *Config) Load() {
 	c.BigQuery.ProjectID = c.Get("LLM_PROXY_BIGQUERY_PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT"), "The project ID for the BigQuery events.")
 	c.BigQuery.Dataset = c.Get("LLM_PROXY_BIGQUERY_DATASET", "llm_proxy", "The dataset for the BigQuery events.")
 	c.BigQuery.Table = c.Get("LLM_PROXY_BIGQUERY_TABLE", "events", "The table for the BigQuery events.")
+
+	c.TracePolicy = policy.TracePolicy(c.Get("LLM_PROXY_TRACE_POLICY", "all", "Trace policy, one of 'all', 'selective', 'none'."))
 }
 
 func (c *Config) Validate() error {

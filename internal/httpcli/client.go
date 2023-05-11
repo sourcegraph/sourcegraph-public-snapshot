@@ -466,7 +466,7 @@ func TracedTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &policy.Transport{RoundTripper: cli.Transport}
+	cli.Transport = policy.NewTransport(cli.Transport)
 	return nil
 }
 

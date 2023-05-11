@@ -7,7 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/atomic"
 )
 
@@ -67,15 +68,26 @@ const (
 )
 
 // Transport wraps an underlying HTTP RoundTripper, injecting the X-Sourcegraph-Should-Trace header
-// into outgoing requests whenever the shouldTraceKey context value is true.
+// into outgoing requests whenever the shouldTraceKey context value is true. It also propagates
+// trace context in all our commonly used propagation formats (OpenTelemetry, W3c, Jaeger, etc)
+// if tracing is initialized.
 type Transport struct {
-	http.RoundTripper
+	rt http.RoundTripper
+}
+
+func NewTransport(rt http.RoundTripper) *Transport {
+	return &Transport{
+		rt: otelhttp.NewTransport(rt,
+			// make sure we use the global propagator, which should be set up on
+			// service initialization to support all our commonly used propagation
+			// formats (OpenTelemetry, W3c, Jaeger, etc)
+			otelhttp.WithPropagators(otel.GetTextMapPropagator())),
+	}
 }
 
 func (r *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set(traceHeader, strconv.FormatBool(ShouldTrace(req.Context())))
-	t := nethttp.Transport{RoundTripper: r.RoundTripper}
-	return t.RoundTrip(req)
+	return r.rt.RoundTrip(req)
 }
 
 // requestWantsTrace returns true if a request is opting into tracing either

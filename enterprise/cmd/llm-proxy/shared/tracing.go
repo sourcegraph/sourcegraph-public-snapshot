@@ -6,6 +6,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
+	"github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -22,16 +24,26 @@ import (
 // and the use case is more niche as a standalone service.
 //
 // Based on https://cloud.google.com/trace/docs/setup/go-ot
-func maybeEnableTracing(ctx context.Context, logger log.Logger) (func(), error) {
+func maybeEnableTracing(ctx context.Context, logger log.Logger, tracePolicy policy.TracePolicy) (func(), error) {
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	if projectID == "" {
 		logger.Debug("GOOGLE_CLOUD_PROJECT not set, not enabling tracing")
 		return func() {}, nil
 	}
 
-	exporter, err := gcptraceexporter.New(gcptraceexporter.WithProjectID(projectID))
+	// Set globals
+	policy.SetTracePolicy(tracePolicy)
+	otel.SetTextMapPropagator(oteldefaults.Propagator())
+
+	// Initialize exporter
+	exporter, err := gcptraceexporter.New(
+		gcptraceexporter.WithProjectID(projectID),
+		gcptraceexporter.WithErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+			logger.Warn("gcptraceexporter error", log.Error(err))
+		})),
+	)
 	if err != nil {
-		return nil, errors.Wrap(err, "texporter.New")
+		return nil, errors.Wrap(err, "gcptraceexporter.New")
 	}
 
 	// Identify your application using resource detection
@@ -50,6 +62,7 @@ func maybeEnableTracing(ctx context.Context, logger log.Logger) (func(), error) 
 		return nil, errors.Wrap(err, "resource.New")
 	}
 
+	// Create and set global tracer
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(res),
@@ -57,5 +70,9 @@ func maybeEnableTracing(ctx context.Context, logger log.Logger) (func(), error) 
 	otel.SetTracerProvider(tp)
 
 	logger.Info("tracing configured")
-	return func() { tp.ForceFlush(ctx) }, nil
+	return func() {
+		if err := tp.ForceFlush(ctx); err != nil {
+			logger.Warn("error occurred shutting down tracing", log.Error(err))
+		}
+	}, nil
 }
