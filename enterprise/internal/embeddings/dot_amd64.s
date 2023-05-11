@@ -48,12 +48,9 @@ reduce:
 	// Store the reduced sum
 	VMOVD X0, R8
 
-	// For the remainder of the function, we do not use vector instructions.
-	// Zero the registers to avoid the SSE penalty.
-	VZEROALL
-
 end:
-	MOVD R8, ret+48(FP)
+	MOVL R8, ret+48(FP)
+	VZEROALL
 	RET
 
 TEXT ·dotAVX512(SB), NOSPLIT, $0-52
@@ -116,6 +113,6 @@ reduce:
 	VMOVD X0, R8
 
 end:
-	MOVD R8, ret+48(FP)
+	MOVL R8, ret+48(FP)
 	VZEROALL
 	RET
