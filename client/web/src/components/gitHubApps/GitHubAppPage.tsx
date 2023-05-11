@@ -187,7 +187,9 @@ export const GitHubAppPage: FC<Props> = ({
                     </span>
                     <AuthProviderMessage app={app} id={appID} />
                     <H3>Webhooks</H3>
-                    {!app.webhook ? (
+                    {app.webhook ? (
+                        <a href={`/site-admin/webhooks/incoming/${app.webhook.id}`}>View webhook logs</a>
+                    ) : (
                         <>
                             <Text>
                                 This GitHub App does not have Webhooks set up. Connect a webhook from the list below, or{' '}
@@ -232,8 +234,6 @@ export const GitHubAppPage: FC<Props> = ({
                                 </span>
                             ) : null}
                         </>
-                    ) : (
-                        <a href={`/site-admin/webhooks/incoming/${app.webhook.id}`}>View webhook logs</a>
                     )}
                     <hr />
 
