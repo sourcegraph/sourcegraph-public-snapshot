@@ -44,6 +44,22 @@ func parseP4FusionCommitSubject(subject string) (string, error) {
 	return matches[2], nil
 }
 
+// Either git-p4 or p4-fusion could have been used to convert a perforce depot to a git repo. In
+// which case the commit message would look like:
+//
+// [git-p4: depot-paths = "//test-perms/": change = 83725]
+// [p4-fusion: depot-paths = "//test-perms/": change = 80972]
+var gitP4Pattern = lazyregexp.New(`\[(?:git-p4|p4-fusion): depot-paths = "(.*?)"\: change = (\d+)\]`)
+
+func getP4ChangelistID(body string) (string, error) {
+	matches := gitP4Pattern.FindStringSubmatch(body)
+	if len(matches) != 3 {
+		return "", errors.Newf("failed to retrieve changelist ID from commit body: %q", body)
+	}
+
+	return matches[2], nil
+}
+
 // maybeTransformP4Subject is used for special handling of perforce depots converted to git using
 // p4-fusion. We want to parse and use the subject from the original changelist and not the subject
 // that is generated during the conversion.

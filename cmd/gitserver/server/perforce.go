@@ -3,10 +3,18 @@ package server
 import (
 	"container/list"
 	"context"
+	"fmt"
+	"os/exec"
 	"sync"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type perforceChangelistMappingJob struct {
@@ -113,13 +121,115 @@ func (s *Server) changelistMappingConsumer(ctx context.Context, jobs <-chan *per
 }
 
 func (s *Server) doChangelistMapping(ctx context.Context, job *perforceChangelistMappingJob) error {
+	logger := s.Logger.Scoped("doChangelistMapping", "").With(
+		log.String("repo", string(job.repo)),
+	)
+
 	repo, err := s.DB.Repos().GetByName(ctx, job.repo)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Repos.GetByName")
 	}
 
-	err = s.DB.RepoCommits().BatchInsertCommitSHAsWithPerforceChangelistID(ctx, repo.ID, map[string]string{})
+	dir := s.dir(protocol.NormalizeRepo(repo.Name))
+
+	latestRowCommit, err := s.DB.RepoCommits().GetLatestForRepo(ctx, repo.ID)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "RepoCommits.GetLatestForRepo")
 	}
+
+	var commitsMap []types.PerforceChangelist
+	// This repo has not been imported into the RepoCommits table yet. Start from the beginning.
+	if latestRowCommit != nil {
+		head, err := headCommitSHA(ctx, logger, dir)
+		if err != nil {
+			return errors.Wrap(err, "headCommitSHA")
+		}
+
+		if latestRowCommit.CommitSHA == head {
+			logger.Info("repo commits already mapped upto HEAD, skipping", log.String("HEAD", head))
+			return nil
+		}
+
+		commitsMap, err = newMappableCommits(ctx, logger, dir, latestRowCommit.CommitSHA, head)
+		if err != nil {
+			return nil
+		}
+	} else {
+		commitsMap, err = newMappableCommits(ctx, logger, dir, "", "")
+		if err != nil {
+			return nil
+		}
+	}
+
+	totalCommits := len(commitsMap)
+
+	// TODO: Do we want to make this configurable?
+	step := 1000
+	for i := 0; i < totalCommits; i += step {
+		seek := i + step
+		if seek > totalCommits {
+			seek = totalCommits
+		}
+
+		chunk := commitsMap[i:seek]
+
+		err = s.DB.RepoCommits().BatchInsertCommitSHAsWithPerforceChangelistID(ctx, repo.ID, chunk)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func headCommitSHA(ctx context.Context, logger log.Logger, dir GitDir) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
+	dir.Set(cmd)
+	output, err := runWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, nil)
+	if err != nil {
+		return "", &GitCommandError{Err: err, Output: string(output)}
+	}
+
+	return string(output), nil
+}
+
+func newMappableCommits(ctx context.Context, logger log.Logger, dir GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
+	cmd := exec.CommandContext(ctx, "git", "log")
+	if lastMappedCommit != "" {
+		cmd.Args = append(cmd.Args, fmt.Sprintf("%s..%s", lastMappedCommit, head))
+	}
+
+	dir.Set(cmd)
+	output, err := runWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, nil)
+	if err != nil {
+		return nil, &GitCommandError{Err: err, Output: string(output)}
+	}
+
+	commits, err := gitserver.ParseGitLogOutput(output)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse git log output")
+	}
+
+	data := make([]types.PerforceChangelist, len(commits))
+	for i, commit := range commits {
+		cid, err := getP4ChangelistID(commit.Message.Body())
+		if err != nil {
+			return nil, errors.Wrap(err, "getP4ChangelistID")
+		}
+
+		data[i] = types.PerforceChangelist{CommitSHA: commit.ID, ChangelistID: cid}
+	}
+
+	return data, nil
+}
+
+var gitP4Pattern = lazyregexp.New(`\[(?:git-p4|p4-fusion): depot-paths = "(.*?)"\: change = (\d+)\]`)
+
+func getP4ChangelistID(body string) (string, error) {
+	matches := gitP4Pattern.FindStringSubmatch(body)
+	if len(matches) != 3 {
+		return "", errors.Newf("failed to retrieve changelist ID from commit body: %q", body)
+	}
+
+	return matches[2], nil
 }
