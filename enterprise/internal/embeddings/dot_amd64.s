@@ -83,17 +83,14 @@ TEXT ·dotAVX512(SB), NOSPLIT, $0-56
 
     ADDQ AX, DX // end pointer
 
-	// Zero Z0, which will store 8 packed 32-bit sums
-	VPXORD Z0, Z0, Z0 // positive
-	VPXORD Z1, Z1, Z1 // negative
+	// Zero our accumulators
+	VPXORQ Z0, Z0, Z0 // positive
+	VPXORQ Z1, Z1, Z1 // negative
 
 	// Fill Z3 with 128
 	MOVD $0x80808080, R9
 	VPBROADCASTD R9, Z2
 
-#define BLOCKSIZE 64
-
-// In blockloop, we calculate the dot product 32 at a time
 blockloop:
 	CMPQ AX, DX
 	JE reduce
@@ -101,13 +98,21 @@ blockloop:
 	VMOVDQU8 (AX), Z3
 	VMOVDQU8 (BX), Z4
 
-	// add 128, putting it in unsigned range
+	// The VPDPBUSD instruction calculates of the dot product of 4 lanes at a
+	// time, accumulating into an i32 vector. The problem is it expects one
+	// vector to be unsigned bytes and one to be signed bytes. To make this
+	// work, we make one of our vectors unsigned by adding 128 to each element.
+	// This causes us to overshoot, so we keep track of the amount we need
+	// to compensate by so we can subtract it from the sum at the end.
+	//
+	// Effectively, we are calculating SUM((Z3 + 128) * Z4) - SUM(128 * Z4).
+
 	VPADDB Z3, Z2, Z3
 	VPDPBUSD Z3, Z4, Z0
 	VPDPBUSD Z2, Z4, Z1
 
-	ADDQ $BLOCKSIZE, AX
-	ADDQ $BLOCKSIZE, BX
+	ADDQ $64, AX
+	ADDQ $64, BX
 	JMP blockloop
 
 reduce:

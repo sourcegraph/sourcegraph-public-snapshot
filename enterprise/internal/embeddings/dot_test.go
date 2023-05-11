@@ -15,6 +15,14 @@ func TestDot(t *testing.T) {
 			return res
 		}
 
+		interval := func(start int8, size int) []int8 {
+			res := make([]int8, size)
+			for i := 0; i < size; i++ {
+				res[i] = start + int8(i)
+			}
+			return res
+		}
+
 		cases := []struct {
 			a    []int8
 			b    []int8
@@ -33,6 +41,10 @@ func TestDot(t *testing.T) {
 			{repeat(1, 16), repeat(1, 16), 16},
 			{repeat(1, 16), repeat(2, 16), 32},
 			{repeat(1, 17), repeat(1, 17), 17},
+
+			// Some non-constant tests
+			{interval(0, 99), repeat(0, 99), 0},
+			{interval(0, 99), repeat(1, 99), 4851},
 
 			// A couple of large ones to ensure no weird behavior at scale
 			{repeat(1, 1000000), repeat(1, 1000000), 1000000},
