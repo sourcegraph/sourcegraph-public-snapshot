@@ -90,6 +90,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
+		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log"),
 	}
 
 	// Test commands
@@ -101,22 +102,6 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 			bk.Cmd(cmd))
 	}
 	cmds = append(cmds, bazelTestCmds...)
-
-	// DISABLED: https://sourcegraph.slack.com/archives/C02FLQDD3TQ/p1683634881118919
-	// this command makes an external request to https://bundlesize-cache.vercel.app
-	// which is not acceptable for such a task.
-	// TODO: @jhchabran
-	//
-	// Run commands
-	// runTargets := []string{
-	// 	"//client/web:bundlesize-report",
-	// }
-	// bazelRunCmd := bazelCmd(fmt.Sprintf("run %s", strings.Join(runTargets, " ")))
-	cmds = append(cmds,
-		// bazelAnnouncef("bazel run %s", strings.Join(runTargets, " ")),
-		// bk.Cmd(bazelRunCmd),
-		bazelAnnouncef("✅"),
-	)
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":bazel: Tests",

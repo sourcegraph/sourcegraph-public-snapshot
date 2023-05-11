@@ -15,16 +15,18 @@ In order to run executors on your machine, a few things need to be set up correc
 - Executors only support linux-based machine with amd64 processors
 - Docker has to be installed on the machine (`curl -fsSL https://get.docker.com | sh`)
 - Git has to be installed at a version `>= v2.26`
+- The ability to run commands as `root` on the host machine and configure networking routes
 
 If [Firecracker isolation will be used](index.md#how-it-works): _(recommended)_
 
-- The host has to support KVM (for AWS that means a metal instance, on GCP that means [enabling nested virtualization](https://cloud.google.com/compute/docs/instances/nested-virtualization/enabling))
+- The host has to support KVM (for AWS that means a [metal instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html), on GCP that means [enabling nested virtualization](https://cloud.google.com/compute/docs/instances/nested-virtualization/enabling))
 - The following additional dependencies need to be installed:
   - `dmsetup`
   - `losetup`
   - `mkfs.ext4`
   - `iptables`
   - `strings` (part of binutils)
+  - `systemd` (optional)
 
 ## Installation
 
@@ -121,7 +123,7 @@ export EXECUTOR_FRONTEND_PASSWORD=SUPER_SECRET_SHARED_TOKEN
 
 To be able to run workloads in isolation, a few dependencies need to be installed and configured. The executor CLI can do all of that automatically.
 
-To run all of the required setup steps, just run
+To run all of the required setup steps, just run the following commands as `root`:
 
 ```bash
 executor install all
@@ -182,4 +184,4 @@ systemctl enable executor
 
 ### **Step 6:** Start receiving workloads
 
-If you use the systemd service, simply run `systemctl start executor`, otherwise run `executor run`. Your executor should start listening for jobs now! All done!
+If you use the systemd service, simply run `systemctl start executor`, otherwise run `executor run`. Your executor should start listening for jobs now and be visible under the `Executors > Instances` section of the Site Configuration.

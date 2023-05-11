@@ -1,4 +1,5 @@
 import { spawnSync } from 'child_process'
+import path from 'path'
 
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
@@ -33,6 +34,15 @@ export class GitHistory implements Recipe {
                 rawDisplayText: 'What changed in my codebase in the last week?',
             },
         ]
+        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
+        if (selection) {
+            const name = path.basename(selection.fileName)
+            items.push({
+                label: `Last 5 items for ${name}`,
+                args: ['log', '-n5', logFormat, '--', selection.fileName],
+                rawDisplayText: `What changed in ${name} in the last 5 commits`,
+            })
+        }
         const selectedLabel = await context.editor.showQuickPick(items.map(e => e.label))
         if (!selectedLabel) {
             return null

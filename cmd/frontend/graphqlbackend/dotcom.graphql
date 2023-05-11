@@ -265,9 +265,14 @@ type ProductSubscription implements Node {
         first: Int
     ): ProductLicenseConnection!
     """
+    The most preferable Sourcegraph access token to use for authenticating as the
+    subscription holder with managed Sourcegraph services.
+    Null only if creating a token failed, for example when no active license exists.
+    """
+    currentSourcegraphAccessToken: String
+    """
     Available access tokens for authenticating as the subscription holder with managed
     Sourcegraph services.
-    Empty only if creating a token failed, for example when no active license exists.
     """
     sourcegraphAccessTokens: [String!]!
     """

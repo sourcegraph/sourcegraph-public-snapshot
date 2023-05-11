@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -81,63 +80,28 @@ var scanUploads = basestore.NewSliceScanner(func(s dbutil.Scanner) (u shared.Exp
 	return u, err
 })
 
-func (s *store) ProcessStaleExportedUploads(
-	ctx context.Context,
-	graphKey string,
-	batchSize int,
-	deleter func(ctx context.Context, objectPrefix string) error,
-) (totalDeleted int, err error) {
-	ctx, _, endObservation := s.operations.processStaleExportedUploads.With(ctx, &err, observation.Args{})
+func (s *store) VacuumAbandonedExportedUploads(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {
+	ctx, _, endObservation := s.operations.vacuumAbandonedExportedUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	var a int
-	err = s.withTransaction(ctx, func(tx *store) error {
-		prefixByIDs, err := scanIntStringMap(tx.db.Query(ctx, sqlf.Sprintf(selectStaleExportedUploadsQuery, graphKey, batchSize)))
-		if err != nil {
-			return err
-		}
-
-		ids := make([]int, 0, len(prefixByIDs))
-		for id, prefix := range prefixByIDs {
-			if err := deleter(ctx, prefix); err != nil {
-				return err
-			}
-
-			ids = append(ids, id)
-		}
-
-		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteStaleExportedUploadsQuery, pq.Array(ids))); err != nil {
-			return err
-		}
-
-		a = len(ids)
-		return nil
-	})
-	return a, err
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedExportedUploadsQuery, graphKey, graphKey, batchSize)))
+	return count, err
 }
 
-var scanIntStringMap = basestore.NewMapScanner(func(s dbutil.Scanner) (k int, v string, _ error) {
-	err := s.Scan(&k, &v)
-	return k, v, err
-})
-
-const selectStaleExportedUploadsQuery = `
-SELECT
-	re.id,
-	re.object_prefix
-FROM codeintel_ranking_exports re
-WHERE
-	re.graph_key = %s AND (re.upload_id IS NULL OR re.upload_id NOT IN (
-		SELECT uvt.upload_id
-		FROM lsif_uploads_visible_at_tip uvt
-		WHERE uvt.is_default_branch
-	))
-ORDER BY re.upload_id DESC
-LIMIT %s
-FOR UPDATE OF re SKIP LOCKED
-`
-
-const deleteStaleExportedUploadsQuery = `
-DELETE FROM codeintel_ranking_exports re
-WHERE re.id = ANY(%s)
+const vacuumAbandonedExportedUploadsQuery = `
+WITH
+locked_exported_uploads AS (
+	SELECT id
+	FROM codeintel_ranking_exports
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_uploads AS (
+	DELETE FROM codeintel_ranking_exports
+	WHERE id IN (SELECT id FROM locked_exported_uploads)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_uploads
 `

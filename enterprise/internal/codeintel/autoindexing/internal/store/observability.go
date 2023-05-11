@@ -13,6 +13,8 @@ import (
 type operations struct {
 	getInferenceScript                     *observation.Operation
 	setInferenceScript                     *observation.Operation
+	repositoryExceptions                   *observation.Operation
+	setRepositoryExceptions                *observation.Operation
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	topRepositoriesToConfigure             *observation.Operation
@@ -67,6 +69,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 	return &operations{
 		getInferenceScript:                     op("GetInferenceScript"),
 		setInferenceScript:                     op("SetInferenceScript"),
+		repositoryExceptions:                   op("RepositoryExceptions"),
+		setRepositoryExceptions:                op("SetRepositoryExceptions"),
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		topRepositoriesToConfigure:             op("TopRepositoriesToConfigure"),
