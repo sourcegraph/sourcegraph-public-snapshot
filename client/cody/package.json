@@ -357,7 +357,7 @@
         "cody.codebase": {
           "order": 3,
           "type": "string",
-          "markdownDescription": "Repo path that cody will use to gather context for the answers. Example: 'github.com/sourcegraph/sourcegraph' ",
+          "markdownDescription": "Repo path that cody will use to gather context for the answers. Example: 'github.com/sourcegraph/sourcegraph' . This is automatically inferred from your git setup but you can use this option if you need to overwrite the default",
           "example": "github.com/sourcegraph/sourcegraph"
         },
         "cody.useContext": {
