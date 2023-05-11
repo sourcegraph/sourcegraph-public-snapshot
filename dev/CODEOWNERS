@@ -1,0 +1,22 @@
+babel.bzl @dev-experience @valerybugakov
+mocha.bzl @dev-experience @valerybugakov
+sass.bzl @dev-experience @valerybugakov
+defs.bzl @dev-experience @valerybugakov
+webpack.bzl @dev-experience @valerybugakov
+
+proto.bzl @jhchabran
+
+bazel_stamp_vars.sh @dev-experience
+
+nix.bzl @Strum355 @keegancsmith
+
+adr-docs/**/* @jhchabran
+sg/**/* @dev-experience
+team/**/* @dev-experience
+
+bkstats/**/* @dev-experience
+build-tracker/**/* @dev-experience @burmudar
+buildchecker/**/* @dev-experience
+ci/**/* @dev-experience
+scaletesting/**/* @dev-experience @sanderginn
+pr-auditor/**/* @dev-experience
