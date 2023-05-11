@@ -15,7 +15,7 @@ describe('getConfiguration', () => {
             useContext: 'embeddings',
             experimentalSuggest: false,
             experimentalChatPredictions: false,
-            anthropicKey: null,
+            experimentalInline: false,
             customHeaders: {},
         })
     })
@@ -38,8 +38,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.chatPredictions':
                         return true
-                    case 'cody.experimental.keys.anthropic':
-                        return 'sk-YYY'
+                    case 'cody.experimental.inline':
+                        return true
                     case 'cody.customHeaders':
                         return {
                             'Cache-Control': 'no-cache',
@@ -58,7 +58,7 @@ describe('getConfiguration', () => {
             useContext: 'keyword',
             experimentalSuggest: true,
             experimentalChatPredictions: true,
-            anthropicKey: 'sk-YYY',
+            experimentalInline: true,
             customHeaders: {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',

@@ -21,3 +21,35 @@
     align-items: center;
     padding-bottom: 0.3125rem;
 }
+
+.cta-wrapper {
+    position: relative;
+    padding: 0.75rem;
+    background-color: var(--input-bg);
+
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .cta-link {
+        font-size: 0.75rem;
+        font-weight: 600;
+
+        &:hover {
+            text-decoration: none;
+        }
+
+        svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+    }
+    .close-button {
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 1rem;
+        height: 1rem;
+        cursor: pointer;
+    }
+}

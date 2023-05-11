@@ -64,6 +64,10 @@ type GitHubApp implements Node {
     """
     clientID: String!
     """
+    The client secret of the GitHub App
+    """
+    clientSecret: String!
+    """
     The logo URL of the GitHub App
     """
     logo: String!

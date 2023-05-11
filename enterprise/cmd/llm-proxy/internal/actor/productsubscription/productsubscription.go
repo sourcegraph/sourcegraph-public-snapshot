@@ -29,6 +29,7 @@ type Source struct {
 
 var _ actor.Source = &Source{}
 var _ actor.SourceUpdater = &Source{}
+var _ actor.SourceSyncer = &Source{}
 
 func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client) *Source {
 	return &Source{
@@ -54,6 +55,10 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	var act *actor.Actor
 	if err := json.Unmarshal(data, &act); err != nil {
 		s.log.Error("failed to unmarshal subscription", log.Error(err))
+
+		// Delete the corrupted record.
+		s.cache.Delete(token)
+
 		return s.fetchAndCache(ctx, token)
 	}
 
@@ -73,6 +78,32 @@ func (s *Source) Update(ctx context.Context, actor *actor.Actor) {
 	if _, err := s.fetchAndCache(ctx, actor.Key); err != nil {
 		s.log.Info("failed to update actor", log.Error(err))
 	}
+}
+
+// Sync retrieves all known actors from this source and updates its cache.
+// All Sync implementations are called periodically - implementations can decide
+// to skip syncs if the frequency is too high.
+func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
+	resp, err := dotcom.ListProductSubscriptions(ctx, s.dotcom)
+	if err != nil {
+		return seen, errors.Wrap(err, "failed to list subscriptions from dotcom")
+	}
+	for _, sub := range resp.Dotcom.ProductSubscriptions.Nodes {
+		for _, token := range sub.SourcegraphAccessTokens {
+			act := NewActor(s, token, sub.ProductSubscriptionState)
+			data, err := json.Marshal(act)
+			if err != nil {
+				s.log.Error("failed to marshal actor", log.Error(err))
+				errs = errors.Append(errs, err)
+				continue
+			}
+			s.cache.Set(token, data)
+			seen++
+		}
+	}
+	// TODO: Here we should prune all cache keys that we haven't seen in the sync
+	// loop.
+	return seen, errs
 }
 
 func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor, error) {
