@@ -253,7 +253,6 @@ This command is useful when:
 
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
-* bzl - Bazel Exp Branch
 * wolfi - Wolfi Exp Branch
 * main-dry-run - Main dry run
 * docker-images-patch - Patch image

@@ -97,8 +97,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	//
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
-	case runtype.BazelExpBranch:
-		ops.Merge(BazelOperations())
 	case runtype.WolfiExpBranch:
 		// Rebuild packages if package configs have changed
 		updatePackages := c.Diff.Has(changed.WolfiPackages)
