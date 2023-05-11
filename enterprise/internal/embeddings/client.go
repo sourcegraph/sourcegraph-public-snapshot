@@ -37,7 +37,7 @@ func NewDefaultClient() Client {
 }
 
 func NewClient(endpoints *endpoint.Map, doer httpcli.Doer) Client {
-	return &ClientImplementor{
+	return &client{
 		Endpoints:  endpoints,
 		HTTPClient: doer,
 	}
@@ -48,7 +48,7 @@ type Client interface {
 	IsContextRequiredForChatQuery(context.Context, IsContextRequiredForChatQueryParameters) (bool, error)
 }
 
-type ClientImplementor struct {
+type client struct {
 	// Endpoints to embeddings service.
 	Endpoints *endpoint.Map
 
@@ -74,7 +74,7 @@ type IsContextRequiredForChatQueryResult struct {
 	IsRequired bool `json:"isRequired"`
 }
 
-func (c *ClientImplementor) Search(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error) {
+func (c *client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error) {
 	partitions, err := c.partition(args.RepoNames, args.RepoIDs)
 	if err != nil {
 		return nil, err
@@ -109,7 +109,7 @@ func (c *ClientImplementor) Search(ctx context.Context, args EmbeddingsSearchPar
 	return &combinedResult, nil
 }
 
-func (c *ClientImplementor) searchPartition(ctx context.Context, endpoint string, args EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error) {
+func (c *client) searchPartition(ctx context.Context, endpoint string, args EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error) {
 	resp, err := c.httpPost(ctx, "search", endpoint, args)
 	if err != nil {
 		return nil, err
@@ -135,7 +135,7 @@ func (c *ClientImplementor) searchPartition(ctx context.Context, endpoint string
 	return &response, nil
 }
 
-func (c *ClientImplementor) IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryParameters) (bool, error) {
+func (c *client) IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryParameters) (bool, error) {
 	resp, err := c.httpPost(ctx, "isContextRequiredForChatQuery", "", args)
 	if err != nil {
 		return false, err
@@ -160,7 +160,7 @@ func (c *ClientImplementor) IsContextRequiredForChatQuery(ctx context.Context, a
 	return response.IsRequired, nil
 }
 
-func (c *ClientImplementor) url(repo api.RepoName) (string, error) {
+func (c *client) url(repo api.RepoName) (string, error) {
 	if c.Endpoints == nil {
 		return "", errors.New("an embeddings service has not been configured")
 	}
@@ -173,7 +173,7 @@ type repoPartition struct {
 }
 
 // returns a partition of the input repos by the endpoint their requests should be routed to
-func (c *ClientImplementor) partition(repos []api.RepoName, repoIDs []api.RepoID) (map[string]repoPartition, error) {
+func (c *client) partition(repos []api.RepoName, repoIDs []api.RepoID) (map[string]repoPartition, error) {
 	if c.Endpoints == nil {
 		return nil, errors.New("an embeddings service has not been configured")
 	}
@@ -198,7 +198,7 @@ func (c *ClientImplementor) partition(repos []api.RepoName, repoIDs []api.RepoID
 	return res, nil
 }
 
-func (c *ClientImplementor) httpPost(
+func (c *client) httpPost(
 	ctx context.Context,
 	method string,
 	url string,
