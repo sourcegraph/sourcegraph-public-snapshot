@@ -22,7 +22,7 @@ import styles from './ChatUi.module.scss'
 
 export const SCROLL_THRESHOLD = 100
 
-const onFeedbackSubmit = (feedback: string) => eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
+const onFeedbackSubmit = (feedback: string): void => eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
 
 export const ChatUI = (): JSX.Element => {
     const { submitMessage, editMessage, messageInProgress, transcript, getChatContext, transcriptId } =
@@ -107,16 +107,26 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ feedba
     return (
         <div className={classNames('d-flex', styles.feedbackButtonsWrapper)}>
             {feedbackSubmitted ? (
-                <Button title="Feedback submitted." disabled={true}>
+                <Button title="Feedback submitted." disabled={true} className="ml-1 p-1">
                     <Icon aria-label="Scroll down" svgPath={mdiCheck} />
                 </Button>
             ) : (
                 <>
-                    <Button type="button" onClick={() => onFeedbackBtnSubmit('positive')}>
-                        <Icon aria-label="Scroll down" svgPath={mdiThumbUp} />
+                    <Button
+                        title="Thumbs up"
+                        className="ml-1 p-1"
+                        type="button"
+                        onClick={() => onFeedbackBtnSubmit('positive')}
+                    >
+                        <Icon aria-label="Thumbs up" svgPath={mdiThumbUp} />
                     </Button>
-                    <Button type="button" onClick={() => onFeedbackBtnSubmit('negative')}>
-                        <Icon aria-label="Scroll down" svgPath={mdiThumbDown} />
+                    <Button
+                        title="Thumbs up"
+                        className="ml-1 p-1"
+                        type="button"
+                        onClick={() => onFeedbackBtnSubmit('negative')}
+                    >
+                        <Icon aria-label="Thumbs down" svgPath={mdiThumbDown} />
                     </Button>
                 </>
             )}
