@@ -2099,7 +2099,6 @@ bundlesize_bin.bundlesize_binary(
     args = [
         "--config",
         "$(location bundlesize.config.js)",
-        "--enable-github-checks",
     ],
     data = [
         "bundlesize.config.js",
