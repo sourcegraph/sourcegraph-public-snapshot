@@ -276,7 +276,10 @@ interface LastSyncOutputProps {
 }
 
 const LastSyncOutputContainer: FC<LastSyncOutputProps> = props => {
-    const output = props.repo.mirrorInfo.lastSyncOutput || 'No output found.'
+    const output =
+        (props.repo.mirrorInfo.cloneInProgress && 'Cloning in progress...') ||
+        props.repo.mirrorInfo.lastSyncOutput ||
+        'No output yet.'
     return (
         <BaseActionContainer
             title="Sync output"
