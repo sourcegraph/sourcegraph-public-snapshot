@@ -9,7 +9,6 @@ env:
   PGSSLMODE: disable
   SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
   INSECURE_DEV: true
-
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
   SRC_LOG_FORMAT: condensed
@@ -400,7 +399,7 @@ commands:
       LLM_PROXY_ANTHROPIC_ACCESS_TOKEN: foobar
       LLM_PROXY_DOTCOM_ACCESS_TOKEN: foobar
       LLM_PROXY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
-      SRC_LOG_LEVEL: dbug
+      SRC_LOG_LEVEL: debug
     watch:
       - lib
       - internal
