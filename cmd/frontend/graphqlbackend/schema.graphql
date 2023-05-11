@@ -6119,11 +6119,6 @@ type User implements Node & SettingsSubject & Namespace {
     """
     hasVerifiedEmail: Boolean!
     """
-    Whether the user is required to have a verified email to access Cody.
-    """
-    requiresVerifiedEmailForCody: Boolean!
-
-    """
     The user's verified primary email address (if any).
     On dotcom only the user and site admins can access this field.
     """
@@ -6227,6 +6222,11 @@ type User implements Node & SettingsSubject & Namespace {
     Null, if not overwritten.
     """
     codeCompletionsQuotaOverride: Int
+    """
+    Whether users are required to have a verified email in order to access Cody.
+    """
+    requiresVerifiedEmailForCody: Boolean!
+
 }
 
 """

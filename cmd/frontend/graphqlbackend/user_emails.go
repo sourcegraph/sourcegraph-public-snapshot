@@ -17,16 +17,6 @@ import (
 
 var timeNow = time.Now
 
-func (r *UserResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
-	// We only require this on dotcom
-	if !envvar.SourcegraphDotComMode() {
-		return false
-	}
-
-	isAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
-	return !isAdmin
-}
-
 func (r *UserResolver) HasVerifiedEmail(ctx context.Context) (bool, error) {
 	// 🚨 SECURITY: In the UserEmailsService we check that only the
 	// authenticated user and site admins can check
