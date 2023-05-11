@@ -6114,6 +6114,11 @@ type User implements Node & SettingsSubject & Namespace {
     """
     emails: [UserEmail!]!
     """
+    Whether the user has a verified email or not.
+    Only the user and site admins can access this field.
+    """
+    requiresVerifiedEmailForCody: Boolean!
+    """
     The user's verified primary email address (if any).
     On dotcom only the user and site admins can access this field.
     """

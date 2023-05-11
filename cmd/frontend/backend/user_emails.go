@@ -33,7 +33,8 @@ type UserEmailsService interface {
 	Remove(ctx context.Context, userID int32, email string) error
 	SetPrimaryEmail(ctx context.Context, userID int32, email string) error
 	SetVerified(ctx context.Context, userID int32, email string, verified bool) error
-	HasVerifiedEmail(ctx context.Context) (bool, error)
+	HasVerifiedEmail(ctx context.Context, userID int32) (bool, error)
+	CurrentActorHasVerifiedEmail(ctx context.Context) (bool, error)
 	ResendVerificationEmail(ctx context.Context, userID int32, email string, now time.Time) error
 	SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error
 	SendUserEmailOnAccessTokenChange(ctx context.Context, id int32, tokenName string, deleted bool) error
@@ -235,12 +236,23 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 	return nil
 }
 
-// HasVerifiedEmail returns whether the actor associated with the given
+// CurrentActorHasVerifiedEmail returns whether the actor associated with the given
 // context.Context has a verified email.
-func (e *userEmails) HasVerifiedEmail(ctx context.Context) (bool, error) {
+func (e *userEmails) CurrentActorHasVerifiedEmail(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: We require an authenticated, non-internal actor
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() || a.IsInternal() {
+		return false, auth.ErrNotAuthenticated
+	}
+
+	return e.HasVerifiedEmail(ctx, a.UID)
+}
+
+// HasVerifiedEmail returns whether the user with the given userID has a
+// verified email.
+func (e *userEmails) HasVerifiedEmail(ctx context.Context, userID int32) (bool, error) {
 	// 🚨 SECURITY: Only the authenticated user and site admins can check
 	// whether the user has verified email.
-	userID := actor.FromContext(ctx).UID
 	if err := auth.CheckSiteAdminOrSameUser(ctx, e.db, userID); err != nil {
 		return false, err
 	}

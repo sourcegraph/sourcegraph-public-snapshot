@@ -17,6 +17,17 @@ import (
 
 var timeNow = time.Now
 
+func (r *UserResolver) RequiresVerifiedEmailForCody(ctx context.Context) (bool, error) {
+	// We only require this on dotcom
+	if !envvar.SourcegraphDotComMode() {
+		return false, nil
+	}
+	// 🚨 SECURITY: Only the authenticated user and site admins can check
+	// whether the user has a verified email. That's checked in here.
+	emails := backend.NewUserEmailsService(r.db, r.logger)
+	return emails.HasVerifiedEmail(ctx, r.user.ID)
+}
+
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
 	// 🚨 SECURITY: Only the authenticated user and site admins can list user's
 	// emails on Sourcegraph.com.

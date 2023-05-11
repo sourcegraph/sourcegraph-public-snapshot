@@ -1179,6 +1179,10 @@ type MockUserEmailsService struct {
 	// AddFunc is an instance of a mock function object controlling the
 	// behavior of the method Add.
 	AddFunc *UserEmailsServiceAddFunc
+	// CurrentActorHasVerifiedEmailFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CurrentActorHasVerifiedEmail.
+	CurrentActorHasVerifiedEmailFunc *UserEmailsServiceCurrentActorHasVerifiedEmailFunc
 	// HasVerifiedEmailFunc is an instance of a mock function object
 	// controlling the behavior of the method HasVerifiedEmail.
 	HasVerifiedEmailFunc *UserEmailsServiceHasVerifiedEmailFunc
@@ -1214,8 +1218,13 @@ func NewMockUserEmailsService() *MockUserEmailsService {
 				return
 			},
 		},
-		HasVerifiedEmailFunc: &UserEmailsServiceHasVerifiedEmailFunc{
+		CurrentActorHasVerifiedEmailFunc: &UserEmailsServiceCurrentActorHasVerifiedEmailFunc{
 			defaultHook: func(context.Context) (r0 bool, r1 error) {
+				return
+			},
+		},
+		HasVerifiedEmailFunc: &UserEmailsServiceHasVerifiedEmailFunc{
+			defaultHook: func(context.Context, int32) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -1262,8 +1271,13 @@ func NewStrictMockUserEmailsService() *MockUserEmailsService {
 				panic("unexpected invocation of MockUserEmailsService.Add")
 			},
 		},
-		HasVerifiedEmailFunc: &UserEmailsServiceHasVerifiedEmailFunc{
+		CurrentActorHasVerifiedEmailFunc: &UserEmailsServiceCurrentActorHasVerifiedEmailFunc{
 			defaultHook: func(context.Context) (bool, error) {
+				panic("unexpected invocation of MockUserEmailsService.CurrentActorHasVerifiedEmail")
+			},
+		},
+		HasVerifiedEmailFunc: &UserEmailsServiceHasVerifiedEmailFunc{
+			defaultHook: func(context.Context, int32) (bool, error) {
 				panic("unexpected invocation of MockUserEmailsService.HasVerifiedEmail")
 			},
 		},
@@ -1307,6 +1321,9 @@ func NewMockUserEmailsServiceFrom(i UserEmailsService) *MockUserEmailsService {
 	return &MockUserEmailsService{
 		AddFunc: &UserEmailsServiceAddFunc{
 			defaultHook: i.Add,
+		},
+		CurrentActorHasVerifiedEmailFunc: &UserEmailsServiceCurrentActorHasVerifiedEmailFunc{
+			defaultHook: i.CurrentActorHasVerifiedEmail,
 		},
 		HasVerifiedEmailFunc: &UserEmailsServiceHasVerifiedEmailFunc{
 			defaultHook: i.HasVerifiedEmail,
@@ -1440,28 +1457,137 @@ func (c UserEmailsServiceAddFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// UserEmailsServiceCurrentActorHasVerifiedEmailFunc describes the behavior
+// when the CurrentActorHasVerifiedEmail method of the parent
+// MockUserEmailsService instance is invoked.
+type UserEmailsServiceCurrentActorHasVerifiedEmailFunc struct {
+	defaultHook func(context.Context) (bool, error)
+	hooks       []func(context.Context) (bool, error)
+	history     []UserEmailsServiceCurrentActorHasVerifiedEmailFuncCall
+	mutex       sync.Mutex
+}
+
+// CurrentActorHasVerifiedEmail delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockUserEmailsService) CurrentActorHasVerifiedEmail(v0 context.Context) (bool, error) {
+	r0, r1 := m.CurrentActorHasVerifiedEmailFunc.nextHook()(v0)
+	m.CurrentActorHasVerifiedEmailFunc.appendCall(UserEmailsServiceCurrentActorHasVerifiedEmailFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CurrentActorHasVerifiedEmail method of the parent MockUserEmailsService
+// instance is invoked and the hook queue is empty.
+func (f *UserEmailsServiceCurrentActorHasVerifiedEmailFunc) SetDefaultHook(hook func(context.Context) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CurrentActorHasVerifiedEmail method of the parent MockUserEmailsService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *UserEmailsServiceCurrentActorHasVerifiedEmailFunc) PushHook(hook func(context.Context) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserEmailsServiceCurrentActorHasVerifiedEmailFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserEmailsServiceCurrentActorHasVerifiedEmailFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserEmailsServiceCurrentActorHasVerifiedEmailFunc) nextHook() func(context.Context) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserEmailsServiceCurrentActorHasVerifiedEmailFunc) appendCall(r0 UserEmailsServiceCurrentActorHasVerifiedEmailFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UserEmailsServiceCurrentActorHasVerifiedEmailFuncCall objects describing
+// the invocations of this function.
+func (f *UserEmailsServiceCurrentActorHasVerifiedEmailFunc) History() []UserEmailsServiceCurrentActorHasVerifiedEmailFuncCall {
+	f.mutex.Lock()
+	history := make([]UserEmailsServiceCurrentActorHasVerifiedEmailFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserEmailsServiceCurrentActorHasVerifiedEmailFuncCall is an object that
+// describes an invocation of method CurrentActorHasVerifiedEmail on an
+// instance of MockUserEmailsService.
+type UserEmailsServiceCurrentActorHasVerifiedEmailFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserEmailsServiceCurrentActorHasVerifiedEmailFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserEmailsServiceCurrentActorHasVerifiedEmailFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // UserEmailsServiceHasVerifiedEmailFunc describes the behavior when the
 // HasVerifiedEmail method of the parent MockUserEmailsService instance is
 // invoked.
 type UserEmailsServiceHasVerifiedEmailFunc struct {
-	defaultHook func(context.Context) (bool, error)
-	hooks       []func(context.Context) (bool, error)
+	defaultHook func(context.Context, int32) (bool, error)
+	hooks       []func(context.Context, int32) (bool, error)
 	history     []UserEmailsServiceHasVerifiedEmailFuncCall
 	mutex       sync.Mutex
 }
 
 // HasVerifiedEmail delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUserEmailsService) HasVerifiedEmail(v0 context.Context) (bool, error) {
-	r0, r1 := m.HasVerifiedEmailFunc.nextHook()(v0)
-	m.HasVerifiedEmailFunc.appendCall(UserEmailsServiceHasVerifiedEmailFuncCall{v0, r0, r1})
+func (m *MockUserEmailsService) HasVerifiedEmail(v0 context.Context, v1 int32) (bool, error) {
+	r0, r1 := m.HasVerifiedEmailFunc.nextHook()(v0, v1)
+	m.HasVerifiedEmailFunc.appendCall(UserEmailsServiceHasVerifiedEmailFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the HasVerifiedEmail
 // method of the parent MockUserEmailsService instance is invoked and the
 // hook queue is empty.
-func (f *UserEmailsServiceHasVerifiedEmailFunc) SetDefaultHook(hook func(context.Context) (bool, error)) {
+func (f *UserEmailsServiceHasVerifiedEmailFunc) SetDefaultHook(hook func(context.Context, int32) (bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -1470,7 +1596,7 @@ func (f *UserEmailsServiceHasVerifiedEmailFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UserEmailsServiceHasVerifiedEmailFunc) PushHook(hook func(context.Context) (bool, error)) {
+func (f *UserEmailsServiceHasVerifiedEmailFunc) PushHook(hook func(context.Context, int32) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1479,19 +1605,19 @@ func (f *UserEmailsServiceHasVerifiedEmailFunc) PushHook(hook func(context.Conte
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *UserEmailsServiceHasVerifiedEmailFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context) (bool, error) {
+	f.SetDefaultHook(func(context.Context, int32) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *UserEmailsServiceHasVerifiedEmailFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context) (bool, error) {
+	f.PushHook(func(context.Context, int32) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *UserEmailsServiceHasVerifiedEmailFunc) nextHook() func(context.Context) (bool, error) {
+func (f *UserEmailsServiceHasVerifiedEmailFunc) nextHook() func(context.Context, int32) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1528,6 +1654,9 @@ type UserEmailsServiceHasVerifiedEmailFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -1539,7 +1668,7 @@ type UserEmailsServiceHasVerifiedEmailFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c UserEmailsServiceHasVerifiedEmailFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

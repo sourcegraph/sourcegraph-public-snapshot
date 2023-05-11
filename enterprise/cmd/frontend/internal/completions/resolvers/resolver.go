@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
@@ -35,12 +36,14 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
-	verified, err := c.emails.HasVerifiedEmail(ctx)
-	if err != nil {
-		return "", err
-	}
-	if !verified {
-		return "", errors.New("cody requires a verified email address")
+	if envvar.SourcegraphDotComMode() {
+		verified, err := c.emails.CurrentActorHasVerifiedEmail(ctx)
+		if err != nil {
+			return "", err
+		}
+		if !verified {
+			return "", errors.New("cody requires a verified email address")
+		}
 	}
 
 	completionsConfig := streaming.GetCompletionsConfig()
