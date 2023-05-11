@@ -22,6 +22,7 @@ type GitHubAppsResolver interface {
 
 	// Mutations
 	DeleteGitHubApp(ctx context.Context, args *DeleteGitHubAppArgs) (*EmptyResponse, error)
+	ConnectWebhookToGitHubApp(ctx context.Context, args *ConnectWebhookToGitHubAppArgs) (*EmptyResponse, error)
 }
 
 type GitHubAppConnectionResolver interface {
@@ -37,15 +38,22 @@ type GitHubAppResolver interface {
 	BaseURL() string
 	AppURL() string
 	ClientID() string
+	ClientSecret() string
 	Logo() string
 	CreatedAt() gqlutil.DateTime
 	UpdatedAt() gqlutil.DateTime
 	ExternalServices(context.Context, *struct{ graphqlutil.ConnectionArgs }) *ComputedExternalServiceConnectionResolver
 	Installations(context.Context) []GitHubAppInstallation
+	Webhook(context.Context) WebhookResolver
 }
 
 type DeleteGitHubAppArgs struct {
 	GitHubApp graphql.ID
+}
+
+type ConnectWebhookToGitHubAppArgs struct {
+	GitHubApp graphql.ID
+	Webhook   graphql.ID
 }
 
 type GitHubAppsArgs struct {
