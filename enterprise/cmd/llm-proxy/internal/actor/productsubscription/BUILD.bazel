@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "productsubscription",
@@ -12,5 +12,16 @@ go_library(
         "@com_github_gregjones_httpcache//:httpcache",
         "@com_github_khan_genqlient//graphql",
         "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_exp//slices",
+    ],
+)
+
+go_test(
+    name = "productsubscription_test",
+    srcs = ["productsubscription_test.go"],
+    embed = [":productsubscription"],
+    deps = [
+        "//enterprise/cmd/llm-proxy/internal/dotcom",
+        "@com_github_stretchr_testify//assert",
     ],
 )

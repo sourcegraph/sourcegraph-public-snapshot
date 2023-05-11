@@ -14,6 +14,11 @@ fragment ProductSubscriptionState on ProductSubscription {
     llmProxyAccess {
         ...LLMProxyAccessFields
     }
+    activeLicense {
+        info {
+            tags
+        }
+    }
 }
 
 # CheckAccessToken returns traits of the product subscription associated with
