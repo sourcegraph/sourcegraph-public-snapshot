@@ -1,11 +1,11 @@
-/.buildkite/**/* @dev-experience
-/.github/**/* @dev-experience
+/.buildkite/**/* @sourcegraph/dev-experience
+/.github/**/* @sourcegraph/dev-experience
 
-/.aspect @dev-experience
-/.bazel* @dev-experience
-/BUILD.bazel @dev-experience
-/deps.bzl @dev-experience
-/linter_deps.bzl @dev-experience @burmudar
-/WORKSPACE @dev-experience
+/.aspect/**/* @sourcegraph/dev-experience
+/.bazel* @sourcegraph/dev-experience
+/BUILD.bazel @sourcegraph/dev-experience
+/deps.bzl @sourcegraph/dev-experience
+/linter_deps.bzl @sourcegraph/dev-experience @burmudar
+/WORKSPACE @sourcegraph/dev-experience
 
 **/*.nix @Strum355 @keegancsmith
