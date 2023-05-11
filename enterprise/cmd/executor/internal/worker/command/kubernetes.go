@@ -40,6 +40,9 @@ type KubernetesContainerOptions struct {
 	NodeName              string
 	NodeSelector          map[string]string
 	RequiredNodeAffinity  KubernetesNodeAffinity
+	PodAffinity           []corev1.PodAffinityTerm
+	PodAntiAffinity       []corev1.PodAffinityTerm
+	Tolerations           []corev1.Toleration
 	PersistenceVolumeName string
 	ResourceLimit         KubernetesResource
 	ResourceRequest       KubernetesResource
@@ -199,6 +202,38 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 					},
 				},
 			},
+			PodAffinity: &corev1.PodAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: nil,
+						TopologyKey:   "",
+					},
+				},
+			},
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: nil,
+						TopologyKey:   "",
+					},
+				},
+			},
+		}
+	}
+	if len(options.PodAffinity) > 0 {
+		if affinity == nil {
+			affinity = &corev1.Affinity{}
+		}
+		affinity.PodAffinity = &corev1.PodAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: options.PodAffinity,
+		}
+	}
+	if len(options.PodAntiAffinity) > 0 {
+		if affinity == nil {
+			affinity = &corev1.Affinity{}
+		}
+		affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: options.PodAntiAffinity,
 		}
 	}
 
@@ -232,6 +267,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 					},
 					Affinity:      affinity,
 					RestartPolicy: corev1.RestartPolicyNever,
+					Tolerations:   options.Tolerations,
 					Containers: []corev1.Container{
 						{
 							Name:       KubernetesContainerName,

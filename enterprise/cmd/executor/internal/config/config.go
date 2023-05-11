@@ -57,6 +57,9 @@ type Config struct {
 	KubernetesNodeSelector                         string
 	KubernetesNodeRequiredAffinityMatchExpressions []corev1.NodeSelectorRequirement
 	KubernetesNodeRequiredAffinityMatchFields      []corev1.NodeSelectorRequirement
+	KubernetesPodAffinity                          []corev1.PodAffinityTerm
+	KubernetesPodAntiAffinity                      []corev1.PodAffinityTerm
+	KubernetesNodeTolerations                      []corev1.Toleration
 	KubernetesNamespace                            string
 	KubernetesPersistenceVolumeName                string
 	KubernetesResourceLimitCPU                     string
@@ -76,6 +79,12 @@ type Config struct {
 	kubernetesNodeRequiredAffinityMatchExpressionsUnmarshalError error
 	kubernetesNodeRequiredAffinityMatchFields                    string
 	kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError      error
+	kubernetesPodAffinity                                        string
+	kubernetesPodAffinityUnmarshalError                          error
+	kubernetesPodAntiAffinity                                    string
+	kubernetesPodAntiAffinityUnmarshalError                      error
+	kubernetesNodeTolerations                                    string
+	kubernetesNodeTolerationsUnmarshalError                      error
 
 	defaultFrontendPassword string
 }
@@ -117,6 +126,9 @@ func (c *Config) Load() {
 	c.KubernetesNodeSelector = c.GetOptional("EXECUTOR_KUBERNETES_NODE_SELECTOR", "A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. foo=bar,app=my-app")
 	c.kubernetesNodeRequiredAffinityMatchExpressions = c.GetOptional("EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS", "The JSON encoded required affinity match expressions for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]")
 	c.kubernetesNodeRequiredAffinityMatchFields = c.GetOptional("EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS", "The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]")
+	c.kubernetesPodAffinity = c.GetOptional("EXECUTOR_KUBERNETES_POD_AFFINITY", "The JSON encoded pod affinity for Kubernetes Jobs. e.g. {\"requiredDuringSchedulingIgnoredDuringExecution\": [{\"labelSelector\": {\"matchExpressions\": [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]}, \"topologyKey\": \"kubernetes.io/hostname\"}]}")
+	c.kubernetesPodAntiAffinity = c.GetOptional("EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY", "The JSON encoded pod anti-affinity for Kubernetes Jobs. e.g. {\"requiredDuringSchedulingIgnoredDuringExecution\": [{\"labelSelector\": {\"matchExpressions\": [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]}, \"topologyKey\": \"kubernetes.io/hostname\"}]}")
+	c.kubernetesNodeTolerations = c.GetOptional("EXECUTOR_KUBERNETES_NODE_TOLERATIONS", "The JSON encoded tolerations for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"Equal\", \"value\": \"bar\", \"effect\": \"NoSchedule\"}]")
 	c.KubernetesNamespace = c.Get("EXECUTOR_KUBERNETES_NAMESPACE", "default", "The namespace to run executor jobs in.")
 	c.KubernetesPersistenceVolumeName = c.Get("EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME", "sg-executor-pvc", "The name of the Kubernetes persistence volume to use for executor jobs.")
 	c.KubernetesResourceLimitCPU = c.GetOptional("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU", "The maximum CPU resource for Kubernetes Jobs.")
@@ -141,6 +153,15 @@ func (c *Config) Load() {
 	}
 	if c.kubernetesNodeRequiredAffinityMatchFields != "" {
 		c.kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError = json.Unmarshal([]byte(c.kubernetesNodeRequiredAffinityMatchFields), &c.KubernetesNodeRequiredAffinityMatchFields)
+	}
+	if c.kubernetesPodAffinity != "" {
+		c.kubernetesPodAffinityUnmarshalError = json.Unmarshal([]byte(c.kubernetesPodAffinity), &c.KubernetesPodAffinity)
+	}
+	if c.kubernetesPodAntiAffinity != "" {
+		c.kubernetesPodAntiAffinityUnmarshalError = json.Unmarshal([]byte(c.kubernetesPodAntiAffinity), &c.KubernetesPodAntiAffinity)
+	}
+	if c.kubernetesNodeTolerations != "" {
+		c.kubernetesNodeTolerationsUnmarshalError = json.Unmarshal([]byte(c.kubernetesNodeTolerations), &c.KubernetesNodeTolerations)
 	}
 
 	if c.KubernetesConfigPath == "" {
@@ -185,6 +206,34 @@ func (c *Config) Validate() error {
 
 	if c.kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError != nil {
 		c.AddError(errors.Wrap(c.kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError, "invalid EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS, failed to parse"))
+	}
+
+	if c.kubernetesPodAffinityUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesPodAffinityUnmarshalError, "invalid EXECUTOR_KUBERNETES_POD_AFFINITY, failed to parse"))
+	}
+
+	if len(c.KubernetesPodAffinity) > 0 {
+		for _, podAffinity := range c.KubernetesPodAffinity {
+			if len(podAffinity.TopologyKey) == 0 {
+				c.AddError(errors.New("EXECUTOR_KUBERNETES_POD_AFFINITY must contain a topologyKey"))
+			}
+		}
+	}
+
+	if c.kubernetesPodAntiAffinityUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesPodAntiAffinityUnmarshalError, "invalid EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY, failed to parse"))
+	}
+
+	if len(c.KubernetesPodAntiAffinity) > 0 {
+		for _, podAntiAffinity := range c.KubernetesPodAntiAffinity {
+			if len(podAntiAffinity.TopologyKey) == 0 {
+				c.AddError(errors.New("EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY must contain a topologyKey"))
+			}
+		}
+	}
+
+	if c.kubernetesNodeTolerationsUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesNodeTolerationsUnmarshalError, "invalid EXECUTOR_KUBERNETES_NODE_TOLERATIONS, failed to parse"))
 	}
 
 	if c.UseFirecracker {
