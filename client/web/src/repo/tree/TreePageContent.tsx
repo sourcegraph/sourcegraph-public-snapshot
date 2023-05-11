@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiCog, mdiInformationOutline } from '@mdi/js'
+import { mdiCog, mdiGlasses, mdiInformationOutline, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import { capitalize, escapeRegExp } from 'lodash'
@@ -49,7 +49,7 @@ import {
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
-import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS } from '../blob/own/grapqlQueries'
+import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS, RECENT_VIEW_FIELDS } from '../blob/own/grapqlQueries'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { getRefType } from '../utils'
@@ -330,14 +330,16 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 )}
 
                 {!isPackage && (
-                    <>
-                        <Card className={styles.contributors}>
+                    <div className={styles.contributors}>
+                        <Card>
                             <CardHeader className={panelStyles.cardColHeaderWrapper}>Ownership</CardHeader>
                             <Ownership {...props} />
+                        </Card>
+                        <Card className="mt-3">
                             <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
                             <Contributors {...props} />
                         </Card>
-                    </>
+                    </div>
                 )}
             </section>
         </>
@@ -482,6 +484,7 @@ const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
 const OWNERS_QUERY = gql`
     ${OWNER_FIELDS}
     ${RECENT_CONTRIBUTOR_FIELDS}
+    ${RECENT_VIEW_FIELDS}
 
     query TreePageOwnership($repo: ID!, $first: Int, $revision: String!) {
         node(id: $repo) {
@@ -511,6 +514,7 @@ const OWNERS_QUERY = gql`
         }
         reasons {
             ...RecentContributorOwnershipSignalFields
+            ...RecentViewOwnershipSignalFields
         }
     }
 `
@@ -519,7 +523,7 @@ interface OwnershipProps extends TreePageContentProps {}
 const Ownership: React.FC<OwnershipProps> = ({ repo }) => {
     const { data, error, loading } = useQuery<TreePageOwnershipResult, TreePageOwnershipVariables>(OWNERS_QUERY, {
         variables: {
-            first: COUNT,
+            first: 5,
             repo: repo.id,
             revision: '',
         },
@@ -612,11 +616,27 @@ const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
                     </>
                 )}
             </td>
-            <td>
+            <td className={contributorsStyles.commits}>
                 {node.reasons.map(reason =>
                     reason?.__typename === 'RecentContributorOwnershipSignal' ? (
-                        <Badge key={reason.title} tooltip={reason.description} className={styles.badge}>
-                            {reason.title}
+                        <Badge
+                            key={reason.title}
+                            tooltip={reason.description}
+                            className={styles.badge}
+                            variant="secondary"
+                        >
+                            {/* TODO: ARIA */}
+                            <Icon aria-hidden={true} svgPath={mdiPencil} />
+                        </Badge>
+                    ) : reason?.__typename === 'RecentViewOwnershipSignal' ? (
+                        <Badge
+                            key={reason.title}
+                            tooltip={reason.description}
+                            className={styles.badge}
+                            variant="secondary"
+                        >
+                            {/* TODO: ARIA */}
+                            <Icon aria-hidden={true} svgPath={mdiGlasses} />
                         </Badge>
                     ) : (
                         <></>
