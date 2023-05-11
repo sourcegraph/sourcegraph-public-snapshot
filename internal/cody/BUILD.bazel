@@ -9,6 +9,7 @@ go_library(
         "//cmd/frontend/backend",
         "//cmd/frontend/envvar",
         "//internal/actor",
+        "//internal/auth",
         "//internal/conf",
         "//internal/conf/deploy",
         "//internal/database",
