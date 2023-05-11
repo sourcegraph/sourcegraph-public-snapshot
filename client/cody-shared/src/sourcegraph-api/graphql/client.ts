@@ -13,6 +13,7 @@ import {
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
+    AUTH_STATUS_QUERY as CURRENT_USER_ID_AND_VERIFIED_EMAIL,
 } from './queries'
 
 interface APIResponse<T> {
@@ -22,6 +23,10 @@ interface APIResponse<T> {
 
 interface CurrentUserIdResponse {
     currentUser: { id: string } | null
+}
+
+interface CurrentUserIdAndVerifiedEmailResponse {
+    currentUser: { id: string; hasVerifiedEmail: boolean } | null
 }
 
 interface RepositoryIdResponse {
@@ -84,10 +89,25 @@ export class SourcegraphGraphQLAPIClient {
         this.config = newConfig
     }
 
+    public isDotCom(): boolean {
+        return this.config.serverEndpoint === this.dotcomUrl
+    }
+
     public async getCurrentUserId(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
             extractDataOrError(response, data =>
                 data.currentUser ? data.currentUser.id : new Error('current user not found')
+            )
+        )
+    }
+
+    public async getCurrentUserIdAndVerifiedEmail(): Promise<{ id: string; hasVerifiedEmail: boolean } | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdAndVerifiedEmailResponse>>(
+            CURRENT_USER_ID_AND_VERIFIED_EMAIL,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
             )
         )
     }

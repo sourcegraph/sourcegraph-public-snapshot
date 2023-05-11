@@ -5,6 +5,14 @@ query CurrentUser {
     }
 }`
 
+export const AUTH_STATUS_QUERY = `
+query CurrentUser {
+    currentUser {
+        id
+		hasVerifiedEmail
+    }
+}`
+
 export const REPOSITORY_ID_QUERY = `
 query Repository($name: String!) {
 	repository(name: $name) {
