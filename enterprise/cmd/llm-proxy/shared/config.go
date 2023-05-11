@@ -2,6 +2,7 @@ package shared
 
 import (
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -24,6 +25,12 @@ type Config struct {
 	AllowAnonymous bool
 
 	SourcesSyncInterval time.Duration
+
+	BigQuery struct {
+		ProjectID string
+		Dataset   string
+		Table     string
+	}
 }
 
 func (c *Config) Load() {
@@ -33,6 +40,10 @@ func (c *Config) Load() {
 	c.Anthropic.AccessToken = c.Get("LLM_PROXY_ANTHROPIC_ACCESS_TOKEN", "", "The Anthropic access token to be used.")
 	c.AllowAnonymous = c.GetBool("LLM_PROXY_ALLOW_ANONYMOUS", "false", "Allow anonymous access to LLM proxy.")
 	c.SourcesSyncInterval = c.GetInterval("LLM_PROXY_SOURCES_SYNC_INTERVAL", "2m", "The interval at which to sync actor sources.")
+
+	c.BigQuery.ProjectID = c.Get("LLM_PROXY_BIGQUERY_PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT"), "The project ID for the BigQuery events.")
+	c.BigQuery.Dataset = c.Get("LLM_PROXY_BIGQUERY_DATASET", "llm_proxy", "The dataset for the BigQuery events.")
+	c.BigQuery.Table = c.Get("LLM_PROXY_BIGQUERY_TABLE", "events", "The table for the BigQuery events.")
 }
 
 func (c *Config) Validate() error {

@@ -64,6 +64,7 @@ replace (
 )
 
 require (
+	cloud.google.com/go/bigquery v1.44.0
 	cloud.google.com/go/kms v1.6.0
 	cloud.google.com/go/monitoring v1.12.0
 	cloud.google.com/go/profiler v0.3.1

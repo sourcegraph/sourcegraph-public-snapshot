@@ -39,11 +39,11 @@ func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Cl
 	}
 }
 
-func (s *Source) Name() string { return "sourcegraph.com product subscriptions" }
+func (s *Source) Name() string { return "dotcom-product-subscriptions" }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	// "sgs_" is productSubscriptionAccessTokenPrefix
-	if token == "" && !strings.HasPrefix(token, "sgs_") {
+	if token == "" || !strings.HasPrefix(token, "sgs_") {
 		return nil, actor.ErrNotFromSource{}
 	}
 
@@ -66,6 +66,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 		return s.fetchAndCache(ctx, token)
 	}
 
+	act.Source = s
 	return act, nil
 }
 
@@ -142,7 +143,7 @@ func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState) *
 	now := time.Now()
 	return &actor.Actor{
 		Key:           token,
-		ID:            s.Id,
+		ID:            s.Uuid,
 		AccessEnabled: !s.IsArchived && s.LlmProxyAccess.Enabled && rateLimit.IsValid(),
 		RateLimit:     rateLimit,
 		LastUpdated:   &now,
