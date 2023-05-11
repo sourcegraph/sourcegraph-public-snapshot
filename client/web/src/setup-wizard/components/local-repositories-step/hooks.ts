@@ -215,7 +215,7 @@ export function useLocalRepositories({ paths, skip }: LocalRepositoriesInput): L
     return {
         loading,
         error,
-        loaded: !!data || !!previousData,
+        loaded: skip || !!data || !!previousData,
         repositories: data?.localDirectories?.repositories ?? previousData?.localDirectories?.repositories ?? [],
     }
 }

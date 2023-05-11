@@ -58,7 +58,7 @@ export const LocalRepositoriesTab: FC = () => {
     }
 
     const anyLoading = pathsLoading || repositoriesLoading
-    const anyError = pathsError ?? repositoriesError
+    const anyError = pathsError || repositoriesError
     const allLoaded = pathLoaded && repositoriesLoaded
 
     return (
@@ -98,12 +98,17 @@ interface PathsPickerActionsProps {
  * they have in the file picker.
  */
 const PathsPickerActions: FC<PathsPickerActionsProps> = ({ onPathsChange }) => {
-    const { callPathPicker } = useLocalPathsPicker()
-
     const handleClickCallPathPicker = async (): Promise<void> => {
-        const paths = await callPathPicker()
+        const selected = await open({
+            directory: true,
+            multiple: true,
+        })
 
-        onPathsChange(paths)
+        if (Array.isArray(selected)) {
+            onPathsChange(selected)
+        } else if (selected !== null) {
+            onPathsChange([selected])
+        }
     }
 
     return (
