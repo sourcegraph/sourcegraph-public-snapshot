@@ -375,7 +375,7 @@
         "cody.experimental.suggestions": {
           "order": 5,
           "type": "boolean",
-          "markdownDescription": "Enables code suggestions while typing in the code editor window",
+          "markdownDescription": "Enables code completions while typing in the code editor window",
           "default": false
         },
         "cody.experimental.chatPredictions": {
