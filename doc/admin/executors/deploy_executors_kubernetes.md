@@ -120,6 +120,8 @@ See other possible Environment Variables [here](./deploy_executors_binary.md#ste
 
 ### Job Scheduling
 
+> Note: Kubernetes has a max of 110 pods per node. If you run into this limit, you can lower the number of Job Pods running on a node by setting the environment variable `EXECUTOR_MAXIMUM_NUM_JOBS`.
+
 Executors deployed on Kubernetes require Jobs to be scheduled on the same Node as the Executor. This is to ensure that
 Jobs are able to access the same Persistence Volume as the Executor.
 
