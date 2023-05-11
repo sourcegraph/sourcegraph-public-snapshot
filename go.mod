@@ -278,7 +278,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/cloudflare/circl v1.3.2 // indirect
+	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dghubble/sling v1.4.1 // indirect
