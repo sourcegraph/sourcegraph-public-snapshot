@@ -303,7 +303,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     const [recentContributorsComputed] = useFeatureFlag('own-background-index-repo-recent-contributors', false)
     const [recentViewsComputed] = useFeatureFlag('own-background-index-repo-recent-views', false)
 
-    const ownEnabled = recentContributorsComputed || recentViewsComputed
+    const ownSignalsEnabled = recentContributorsComputed || recentViewsComputed
 
     return (
         <>
@@ -336,13 +336,13 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
                 {!isPackage && (
                     <div className={styles.contributors}>
-                        {ownEnabled && (
+                        {ownSignalsEnabled && (
                             <Card>
                                 <CardHeader className={panelStyles.cardColHeaderWrapper}>Ownership</CardHeader>
                                 <Ownership {...props} />
                             </Card>
                         )}
-                        <Card className={ownEnabled ? 'mt-3' : undefined}>
+                        <Card className={ownSignalsEnabled ? 'mt-3' : undefined}>
                             <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
                             <Contributors {...props} />
                         </Card>
@@ -543,7 +543,10 @@ const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
 
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
     const connection =
-        node?.commit?.path?.ownership?.__typename === 'OwnershipConnection' ? node.commit.path.ownership : null
+        node?.commit?.path?.__typename === 'GitTree' &&
+        node?.commit?.path?.ownership?.__typename === 'OwnershipConnection'
+            ? node.commit.path.ownership
+            : null
 
     return (
         <ConnectionContainer>
@@ -599,7 +602,7 @@ interface OwnerNodeProps {
     node: TreePageOwnershipNodeFields
 }
 const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
-    const owner = node.owner
+    const owner = node?.owner
     return (
         <tr className={classNames('list-group-item', contributorsStyles.repositoryContributorNode)}>
             <td className={contributorsStyles.person}>
