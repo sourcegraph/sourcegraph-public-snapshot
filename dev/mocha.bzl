@@ -65,6 +65,8 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
         ":%s" % bundle_name,
     ]
 
+    # `--define` flags are used to set environment variables here because
+    # we use `js_run_binary` as a target and it doesn't work with `--test_env`.
     env = dict(env, **{
         "HEADLESS": "$(E2E_HEADLESS)",
         # Add environment variable so that mocha writes its test xml
