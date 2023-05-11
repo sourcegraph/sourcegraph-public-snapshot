@@ -134,9 +134,16 @@ func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Vers
 	errs := make([]error, 0, len(migrations))
 	for _, migration := range migrations {
 		currentVersionCmpIntroduced := CompareVersions(currentVersion, migration.Introduced)
-		if currentVersionCmpIntroduced == VersionOrderBefore && migration.Progress != 0 {
-			// Unfinished rollback: currentVersion before introduced version and progress > 0
-			errs = append(errs, newMigrationStatusError(migration.ID, 0, migration.Progress))
+		if currentVersionCmpIntroduced == VersionOrderBefore {
+			progress, err := r.migrators[migration.ID].Progress(ctx, true)
+			if err != nil {
+				errs = append(errs, errors.Newf("failed to get progress status for migration %d", migration.ID))
+				continue
+			}
+			if progress != 0 {
+				// Unfinished rollback: currentVersion before introduced version and progress > 0
+				errs = append(errs, newMigrationStatusError(migration.ID, 0, migration.Progress))
+			}
 		}
 
 		if migration.Deprecated == nil {
@@ -150,9 +157,16 @@ func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Vers
 		}
 
 		currentVersionCmpDeprecated := CompareVersions(currentVersion, *migration.Deprecated)
-		if currentVersionCmpDeprecated != VersionOrderBefore && migration.Progress != 1 {
-			// Unfinished migration: currentVersion on or after deprecated version, progress < 1
-			errs = append(errs, newMigrationStatusError(migration.ID, 1, migration.Progress))
+		if currentVersionCmpDeprecated != VersionOrderBefore {
+			progress, err := r.migrators[migration.ID].Progress(ctx, false)
+			if err != nil {
+				errs = append(errs, errors.Newf("failed to get progress status for migration %d", migration.ID))
+				continue
+			}
+			if progress != 1 {
+				// Unfinished migration: currentVersion on or after deprecated version, progress < 1
+				errs = append(errs, newMigrationStatusError(migration.ID, 1, migration.Progress))
+			}
 		}
 	}
 
