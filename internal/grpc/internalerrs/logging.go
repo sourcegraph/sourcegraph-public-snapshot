@@ -2,6 +2,7 @@ package internalerrs
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -15,13 +16,14 @@ const (
 	logScope       = "gRPC.internal.error.reporter"
 	logDescription = "logs gRPC errors that appear to come from the go-grpc implementation"
 
-	envDisableGRPCInternalErrorLogging = "SRC_DISABLE_GRPC_INTERNAL_ERROR_LOGGING"
+	envDisableLogging = "SRC_GRPC_DISABLE_INTERNAL_ERROR_LOGGING"
+	envLogStackTraces = "SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_STACK_TRACES"
 )
 
 // LoggingUnaryClientInterceptor returns a grpc.UnaryClientInterceptor that logs
 // errors that appear to come from the go-grpc implementation.
 func LoggingUnaryClientInterceptor(l log.Logger) grpc.UnaryClientInterceptor {
-	if !isLoggingEnabled() {
+	if !loggingIsEnabled() {
 		// Just return the default invoker if logging is disabled.
 		return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 			return invoker(ctx, method, req, reply, cc, opts...)
@@ -43,7 +45,7 @@ func LoggingUnaryClientInterceptor(l log.Logger) grpc.UnaryClientInterceptor {
 // LoggingStreamClientInterceptor returns a grpc.StreamClientInterceptor that logs
 // errors that appear to come from the go-grpc implementation.
 func LoggingStreamClientInterceptor(l log.Logger) grpc.StreamClientInterceptor {
-	if !isLoggingEnabled() {
+	if !loggingIsEnabled() {
 		// Just return the default streamer if logging is disabled.
 		return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 			return streamer(ctx, desc, cc, method, opts...)
@@ -96,25 +98,40 @@ func doLog(logger log.Logger, serviceName, methodName string, err error) {
 		return
 	}
 
-	logger.Error(s.Message(),
+	fields := []log.Field{
 		log.String("grpcService", serviceName),
 		log.String("grpcMethod", methodName),
-		log.String("grpcCode", s.Code().String()))
+		log.String("grpcCode", s.Code().String()),
+	}
 
+	if shouldLogStackTraces() {
+		fields = append(fields, log.String("errWithStack", fmt.Sprintf("%+v", err)))
+	}
+
+	logger.Error(s.Message(), fields...)
 }
 
-// isLoggingEnabled returns true if logging of internal gRPC errors is enabled.
-func isLoggingEnabled() bool {
-	disabledStr, exists := os.LookupEnv(envDisableGRPCInternalErrorLogging)
-	if !exists {
-		return true
+// loggingIsEnabled returns true if logging of internal gRPC errors is enabled.
+func loggingIsEnabled() bool {
+	return !getEnvWithDefaultBool(envDisableLogging, false)
+}
+
+// shouldLogStackTraces returns true if stack traces should be logged for internal gRPC errors.
+func shouldLogStackTraces() bool {
+	return getEnvWithDefaultBool(envLogStackTraces, false)
+}
+
+func getEnvWithDefaultBool(k string, defaultVal bool) bool {
+	v := os.Getenv(k)
+	if v == "" {
+		return defaultVal
 	}
 
-	disabled, parseErr := strconv.ParseBool(disabledStr)
-	if parseErr != nil {
-		// If the environment variable is set to an invalid value, we consider logging to be enabled.
-		return true
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		// If the environment variable is set to an invalid value, we return the default.
+		return defaultVal
 	}
 
-	return !disabled
+	return b
 }

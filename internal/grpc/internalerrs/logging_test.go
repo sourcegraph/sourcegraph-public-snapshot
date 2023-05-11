@@ -4,39 +4,65 @@ import (
 	"testing"
 )
 
-func TestIsLoggingEnabled(t *testing.T) {
-	tests := []struct {
-		name   string
-		envVar string
-		want   bool
+func TestGetEnvWithDefaultBool(t *testing.T) {
+	testCases := []struct {
+		name           string
+		envValue       string
+		defaultValue   bool
+		expectedResult bool
 	}{
 		{
-			name: "env var not set",
-			want: true,
+			name: "Valid env value true",
+
+			envValue:       "true",
+			defaultValue:   false,
+			expectedResult: true,
 		},
 		{
-			name:   "env var set to true",
-			envVar: "true",
-			want:   false,
+			name: "Valid env value false",
+
+			envValue:       "false",
+			defaultValue:   true,
+			expectedResult: false,
 		},
 		{
-			name:   "env var set to false",
-			envVar: "false",
-			want:   true,
+			name: "Invalid env value, default true",
+
+			envValue:       "invalid",
+			defaultValue:   true,
+			expectedResult: true,
 		},
 		{
-			name:   "env var set to invalid value",
-			envVar: "foo",
-			want:   true,
+			name: "Invalid env value, default false",
+
+			envValue:       "invalid",
+			defaultValue:   false,
+			expectedResult: false,
+		},
+		{
+			name: "Empty env value, default true",
+
+			envValue:       "",
+			defaultValue:   true,
+			expectedResult: true,
+		},
+		{
+			name: "Empty env value, default false",
+
+			envValue:       "",
+			defaultValue:   false,
+			expectedResult: false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.envVar != "" {
-				t.Setenv(envDisableGRPCInternalErrorLogging, tt.envVar)
-			}
-			if got := isLoggingEnabled(); got != tt.want {
-				t.Errorf("isLoggingEnabled() = %v, want %v", got, tt.want)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			envVar := "EXAMPLE_ENV_VAR"
+			t.Setenv(envVar, tc.envValue)
+
+			result := getEnvWithDefaultBool(envVar, tc.defaultValue)
+			if result != tc.expectedResult {
+				t.Errorf("Expected %v, got %v", tc.expectedResult, result)
 			}
 		})
 	}
