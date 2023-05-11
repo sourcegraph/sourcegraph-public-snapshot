@@ -130,7 +130,7 @@ interface LocalRepositoriesListProps {
 }
 
 /**
- * Fetches a and renders list of local repositories by a list of specified
+ * Fetches and renders a list of local repositories by a list of specified
  * local paths, it also aggregates list of resolved repositories and group them
  * by directories if repositories are in the same directory.
  *
