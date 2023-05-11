@@ -266,9 +266,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             },
             onError: (err, statusCode) => {
                 // Display error message as assistant response
-                this.transcript.addErrorAsAssistantResponse(
-                    `<div class="cody-chat-error"><span>Request failed: </span>${err}</div>`
-                )
+                this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     void this.sendLogin(false)
@@ -347,6 +345,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     public async executeRecipe(recipeId: string, humanChatInput: string = '', showTab = true): Promise<void> {
         if (this.isMessageInProgress) {
             this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
+            return
         }
 
         const recipe = getRecipe(recipeId)

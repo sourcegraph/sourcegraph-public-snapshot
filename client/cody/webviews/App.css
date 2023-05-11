@@ -25,6 +25,12 @@ button {
     flex: 1;
 }
 
+.error-container {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+}
+
 .error {
     flex-direction: row;
     display: flex;
@@ -34,7 +40,7 @@ button {
     align-items: center;
     min-height: 2rem;
     position: relative;
-    overflow: scroll;
+    overflow: auto;
     align-items: baseline;
 }
 
