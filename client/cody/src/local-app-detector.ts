@@ -8,7 +8,6 @@ const LOCAL_APP_LOCATIONS = [
 
 async function pathExists(path: string): Promise<boolean> {
     path = expandHomeDir(path)
-    console.log('MAREK_DEBUG pathExists?', path)
     try {
         await fs.access(path)
         return true

@@ -50,6 +50,7 @@ type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'experimentalChatPredictions'
+    | 'experimentalConnectToApp'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -156,7 +157,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.publishConfig()
                 this.sendTranscript()
                 this.sendChatHistory()
-                this.watchLocalAppState()
+                if (this.config.experimentalConnectToApp) {
+                    this.watchLocalAppState()
+                }
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -615,16 +618,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     public watchLocalAppState(): void {
         this.updateLocalAppState()
-        const INTERVAL = 5000
+        const pollInterval = 5000
 
         // Poll for app state every 5 seconds
-        const interval = setInterval(() => {
+        const intervalHandle = setInterval(() => {
             this.updateLocalAppState()
-        }, INTERVAL)
+        }, pollInterval)
 
         this.disposables.push({
             dispose: () => {
-                clearInterval(interval)
+                clearInterval(intervalHandle)
             },
         })
     }

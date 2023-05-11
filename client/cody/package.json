@@ -381,6 +381,10 @@
           "type": "boolean",
           "default": false
         },
+        "cody.experimental.connectToApp": {
+          "type": "boolean",
+          "default": false
+        },
         "cody.customHeaders": {
           "type": "object",
           "default": {},
