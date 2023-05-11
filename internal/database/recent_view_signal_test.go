@@ -3,16 +3,18 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math"
-	"strconv"
+	"sort"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestRecentViewSignalStore_BuildAggregateFromEvents(t *testing.T) {
@@ -202,6 +204,15 @@ func TestRecentViewSignalStore_Insert(t *testing.T) {
 	})
 }
 
+func storeFrom(t *testing.T, d DB) *basestore.Store {
+	t.Helper()
+	casted, ok := d.(*db)
+	if !ok {
+		t.Fatal("cannot cast DB down to retrieve store")
+	}
+	return casted.Store
+}
+
 func TestRecentViewSignalStore_InsertPaths(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -221,22 +232,52 @@ func TestRecentViewSignalStore_InsertPaths(t *testing.T) {
 	require.NoError(t, err)
 
 	// Creating 4 paths.
-	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1), (1, 'src/abc', 2), (1, 'src/cde', 2)")
+	pathIDs, err := ensureRepoPaths(ctx, storeFrom(t, db), []string{
+		"foo",
+		"src/cde",
+		// To also get parent and root ID.
+		"src",
+		"",
+	}, 1)
 	require.NoError(t, err)
 
 	store := RecentViewSignalStoreWith(db, logger)
 
-	err = store.InsertPaths(ctx, 1, map[int]int{1: 10, 2: 100, 3: 1000})
+	err = store.InsertPaths(ctx, 1, map[int]int{
+		pathIDs[0]: 100,  // file foo
+		pathIDs[1]: 1000, // file src/cde
+	})
 	require.NoError(t, err)
-	summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+	got, err := store.List(ctx, ListRecentViewSignalOpts{})
 	require.NoError(t, err)
-	assert.Len(t, summaries, 3)
-	for _, summary := range summaries {
-		assert.Equal(t, int(math.Pow(float64(10), float64(summary.FilePathID))), summary.ViewsCount)
+	want := []RecentViewSummary{
+		{
+			UserID:     1,
+			FilePathID: pathIDs[0], // foo
+			ViewsCount: 100,        // Leaf: Return the views inserted for foo
+		},
+		{
+			UserID:     1,
+			FilePathID: pathIDs[1], // src/cde
+			ViewsCount: 1000,       // Leaf: Return the views inserted for src/cde
+		},
+		{
+			UserID:     1,
+			FilePathID: pathIDs[2], // src
+			ViewsCount: 1000,       // Sum for the only file with views - src/cde
+		},
+		{
+			UserID:     1,
+			FilePathID: pathIDs[3], // "" - root
+			ViewsCount: 1000 + 100, // Sum for foo and src/cde
+		},
 	}
+	sort.Slice(got, func(i, j int) bool { return got[i].FilePathID < got[j].FilePathID })
+	sort.Slice(want, func(i, j int) bool { return want[i].FilePathID < want[j].FilePathID })
+	assert.Equal(t, want, got)
 }
 
-func TestRecentViewSignalStore_InsertPaths_HardLimit(t *testing.T) {
+func TestRecentViewSignalStore_InsertPaths_OverBatchSize(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -255,27 +296,25 @@ func TestRecentViewSignalStore_InsertPaths_HardLimit(t *testing.T) {
 	require.NoError(t, err)
 
 	// Creating 5500 paths.
-	inserts := []*sqlf.Query{sqlf.Sprintf("(1, '', NULL)"), sqlf.Sprintf("(1, 'src', 1)"), sqlf.Sprintf("(1, 'src/abc', 2)"), sqlf.Sprintf("(1, 'src/cde', 2)")}
-	for i := 0; i < 5496; i++ {
-		inserts = append(inserts, sqlf.Sprintf("(1, %s, 1)", strconv.Itoa(i)))
+	var paths []string
+	for i := 1; i <= 5500; i++ {
+		paths = append(paths, fmt.Sprintf("src/file%d", i))
 	}
-	query := sqlf.Sprintf("INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES %s", sqlf.Join(inserts, ","))
-	_, err = db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	pathIDs, err := ensureRepoPaths(ctx, storeFrom(t, db), paths, 1)
 	require.NoError(t, err)
 
 	store := RecentViewSignalStoreWith(db, logger)
 
-	paths := make(map[int]int)
-	for i := 1; i < 5500; i++ {
-		paths[i] = i
+	counts := map[int]int{}
+	for _, id := range pathIDs {
+		counts[id] = 10
 	}
 
-	// Inserting 5499 paths, but only 5000 should be inserted.
-	err = store.InsertPaths(ctx, 1, paths)
+	err = store.InsertPaths(ctx, 1, counts)
 	require.NoError(t, err)
 	summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
 	require.NoError(t, err)
-	require.Len(t, summaries, 5000)
+	require.Len(t, summaries, 5502) // Two extra entries - repo root and 'src' directory
 }
 
 func TestRecentViewSignalStore_List(t *testing.T) {

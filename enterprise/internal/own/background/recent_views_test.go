@@ -3,14 +3,17 @@ package background
 import (
 	"context"
 	"encoding/json"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRecentViewsIndexer(t *testing.T) {
@@ -36,9 +39,6 @@ func TestRecentViewsIndexer(t *testing.T) {
 		summaries, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{})
 		require.NoError(t, err)
 		assert.Len(t, summaries, summariesCount)
-		for _, summary := range summaries {
-			assert.Equal(t, expectedCount, summary.ViewsCount)
-		}
 	}
 
 	// Creating a worker.
@@ -54,10 +54,52 @@ func TestRecentViewsIndexer(t *testing.T) {
 	// Adding events.
 	insertEvents(ctx, t, db)
 
+	sortSummaries := func(ss []database.RecentViewSummary) {
+		sort.Slice(ss, func(i, j int) bool { return ss[i].FilePathID < ss[j].FilePathID })
+	}
+
+	// expectedSummaries is the recent view summaries we intend to see
+	// for two relevant events inserted by given number of runs of `insertEvents`.
+	expectedSummaries := func(handlerRuns int) []database.RecentViewSummary {
+		rs, err := db.QueryContext(ctx, "SELECT id, absolute_path FROM repo_paths")
+		require.NoError(t, err)
+		defer rs.Close()
+		// `insertEvents` inserts two relevant events for paths:
+		// - cmd/gitserver/server/main.go
+		// - cmd/gitserver/server/patch.go
+		// Since these are in the same directory:
+		// - every summary record that indicates a file, will have a count
+		//   corresponding to the number of handlerRuns
+		// - and every record corresponding to a parent/ancestor directory
+		//   will have a count twice as big.
+		// We recognize whether a path is a leaf file, by checking for .go suffix.
+		var summaries []database.RecentViewSummary
+		for rs.Next() {
+			var id int
+			var absolutePath string
+			require.NoError(t, rs.Scan(&id, &absolutePath))
+			count := handlerRuns
+			if !strings.HasSuffix(absolutePath, ".go") {
+				count = 2 * count
+			}
+			summaries = append(summaries, database.RecentViewSummary{
+				UserID:     1,
+				FilePathID: id,
+				ViewsCount: count,
+			})
+		}
+		return summaries
+	}
+
 	// First round of handling: we should have all counts equal to 1.
 	err = indexer.Handle(ctx)
 	require.NoError(t, err)
-	assertSummaries(2, 1)
+	got, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{})
+	require.NoError(t, err)
+	want := expectedSummaries(1)
+	sortSummaries(got)
+	sortSummaries(want)
+	assert.Equal(t, want, got)
 
 	// Now we can insert some more events.
 	insertEvents(ctx, t, db)
@@ -65,7 +107,12 @@ func TestRecentViewsIndexer(t *testing.T) {
 	// Second round of handling: we should have all counts equal to 2.
 	err = indexer.Handle(ctx)
 	require.NoError(t, err)
-	assertSummaries(2, 2)
+	got, err = db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{})
+	require.NoError(t, err)
+	want = expectedSummaries(2)
+	sortSummaries(got)
+	sortSummaries(want)
+	assert.Equal(t, want, got)
 }
 
 func insertEvents(ctx context.Context, t *testing.T, db database.DB) {
