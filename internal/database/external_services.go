@@ -212,6 +212,7 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindJVMPackages:     {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
 	extsvc.KindNpmPackages:     {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
 	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
+	extsvc.VariantLocalGit.AsKind(): {CodeHost: true, JSONSchema: schema.LocalExternalServiceSchemaJSON},
 	extsvc.KindPagure:          {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
 	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
 	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
