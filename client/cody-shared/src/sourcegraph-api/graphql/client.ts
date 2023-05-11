@@ -166,6 +166,7 @@ export class SourcegraphGraphQLAPIClient {
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
         }
+        headers.set('X-Sourcegraph-Should-Trace', new URLSearchParams(window.location.search).get('trace') || 'false')
 
         const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
         return fetch(url, {
