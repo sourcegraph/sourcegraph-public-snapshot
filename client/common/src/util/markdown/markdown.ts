@@ -81,7 +81,7 @@ export const renderMarkdown = (
     })
 
     const dompurifyConfig: DOMPurifyConfig & { RETURN_DOM_FRAGMENT?: false; RETURN_DOM?: false } =
-        options.dompurifyConfig
+        typeof options.dompurifyConfig === 'object'
             ? options.dompurifyConfig
             : options.plainText
             ? {
