@@ -28,6 +28,7 @@ go_library(
         "//internal/observation",
         "//internal/rcache",
         "//internal/redispool",
+        "//internal/requestclient",
         "//internal/service",
         "//internal/version",
         "//lib/errors",
