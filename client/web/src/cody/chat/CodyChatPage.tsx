@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
+    Badge,
     Button,
     Icon,
     Menu,
@@ -78,7 +79,14 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                 className="mb-3"
             >
                 <PageHeader.Heading as="h2" styleAs="h1">
-                    <PageHeader.Breadcrumb icon={CodyColorIcon}> Cody Chat</PageHeader.Breadcrumb>
+                    <PageHeader.Breadcrumb icon={CodyColorIcon}>
+                        <div className="d-inline-flex align-items-center">
+                            Cody Chat
+                            <Badge variant="info" className="ml-2">
+                                Beta
+                            </Badge>
+                        </div>
+                    </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
 
