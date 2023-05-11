@@ -22,7 +22,7 @@ func NewRunner(out *std.Output, annotations bool, targets ...Target) Runner {
 		}
 		if annotations {
 			path := fmt.Sprintf("../../%s.md", category)
-			of, err := os.Create(path)
+			fd, err := os.Create(path)
 			if err != nil {
 				log.Print(err)
 			}
