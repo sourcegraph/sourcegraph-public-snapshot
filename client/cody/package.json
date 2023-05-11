@@ -166,6 +166,23 @@
         "title": "Cody: Chat History",
         "group": "Cody",
         "icon": "$(history)"
+      },
+      {
+        "command": "cody.comment.add",
+        "title": "Ask Cody",
+        "enablement": "!commentIsEmpty"
+      },
+      {
+        "command": "cody.comment.delete",
+        "title": "Cody: Remove chat",
+        "enablement": "!commentThreadIsEmpty",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "cody.comment.load",
+        "title": "Cody: Loading",
+        "enablement": "!commentThreadIsEmpty",
+        "icon": "$(sync~spin)"
       }
     ],
     "keybindings": [
@@ -229,6 +246,18 @@
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
+        },
+        {
+          "command": "cody.comment.add",
+          "when": "false"
+        },
+        {
+          "command": "cody.comment.delete",
+          "when": "false"
+        },
+        {
+          "command": "cody.comment.load",
+          "when": "false"
         }
       ],
       "editor/context": [
@@ -287,7 +316,26 @@
           "when": "view == cody.chat && cody.activated",
           "group": "navigation"
         }
-      ]
+      ],
+      "comments/commentThread/context": [
+				{
+					"command": "cody.comment.add",
+					"group": "inline",
+          "when": "cody.activated && commentController =~ /^cody-inline/"
+				}
+			],
+      "comments/commentThread/title": [
+				{
+					"command": "cody.comment.delete",
+					"group": "inline@1",
+					"when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty"
+				},
+        {
+					"command": "cody.comment.load",
+					"group": "inline@2",
+					"when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending"
+				}
+			]
     },
     "configuration": {
       "type": "object",
@@ -329,8 +377,9 @@
           "type": "boolean",
           "default": false
         },
-        "cody.experimental.keys.anthropic": {
-          "type": "string"
+        "cody.experimental.inline": {
+          "type": "boolean",
+          "default": false
         },
         "cody.customHeaders": {
           "type": "object",
