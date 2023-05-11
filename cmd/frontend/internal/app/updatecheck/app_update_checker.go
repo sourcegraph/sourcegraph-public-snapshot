@@ -3,7 +3,6 @@ package updatecheck
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -12,6 +11,8 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
 	"google.golang.org/api/option"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RouteAppUpdateCheck is the name of the route that the Sourcegraph App will use to check if there are updates
