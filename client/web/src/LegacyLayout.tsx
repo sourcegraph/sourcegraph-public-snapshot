@@ -187,29 +187,38 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            {!isCodyStandalonePage && <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphDotCom={props.isSourcegraphDotCom} /> }
-            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && !isCodyStandalonePage && (
-                <SurveyToast authenticatedUser={props.authenticatedUser} />
-            )}
-            {props.isSourcegraphDotCom && props.authenticatedUser && <CodySurveyToast />}
-            {!isSiteInit && !isSignInOrUp && !isCodyStandalonePage (
-                <GlobalNavbar
-                    {...props}
-                    showSearchBox={
-                        isSearchRelatedPage &&
-                        !isSearchHomepage &&
-                        !isCommunitySearchContextPage &&
-                        !isSearchConsolePage &&
-                        !isSearchNotebooksPage &&
-                        !isCodySearchPage
-                    }
-                    setFuzzyFinderIsVisible={setFuzzyFinderVisible}
-                    isRepositoryRelatedPage={isRepositoryRelatedPage}
-                    showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
-                    showFeedbackModal={showFeedbackModal}
-                    historyStack={historyStack}
+            {!isCodyStandalonePage && (
+                <GlobalAlerts
+                    authenticatedUser={props.authenticatedUser}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
             )}
+            {!isSiteInit &&
+                !isSignInOrUp &&
+                !props.isSourcegraphDotCom &&
+                !disableFeedbackSurvey &&
+                !isCodyStandalonePage && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {props.isSourcegraphDotCom && props.authenticatedUser && <CodySurveyToast />}
+            {!isSiteInit &&
+                !isSignInOrUp &&
+                !isCodyStandalonePage(
+                    <GlobalNavbar
+                        {...props}
+                        showSearchBox={
+                            isSearchRelatedPage &&
+                            !isSearchHomepage &&
+                            !isCommunitySearchContextPage &&
+                            !isSearchConsolePage &&
+                            !isSearchNotebooksPage &&
+                            !isCodySearchPage
+                        }
+                        setFuzzyFinderIsVisible={setFuzzyFinderVisible}
+                        isRepositoryRelatedPage={isRepositoryRelatedPage}
+                        showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
+                        showFeedbackModal={showFeedbackModal}
+                        historyStack={historyStack}
+                    />
+                )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
             <Suspense
                 fallback={
