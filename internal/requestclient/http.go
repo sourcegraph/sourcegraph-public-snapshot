@@ -41,8 +41,8 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 //
 // This is meant to be used by http handlers which sit behind a reverse proxy
 // receiving user traffic. IE sourcegraph-frontend.
-func ExternalHTTPMiddleware(next http.Handler, isDotCom bool) http.Handler {
-	return httpMiddleware(next, isDotCom)
+func ExternalHTTPMiddleware(next http.Handler, hasCloudflareProxy bool) http.Handler {
+	return httpMiddleware(next, hasCloudflareProxy)
 }
 
 // InternalHTTPMiddleware wraps the given handle func and attaches client IP
@@ -56,9 +56,9 @@ func InternalHTTPMiddleware(next http.Handler) http.Handler {
 
 // httpMiddleware wraps the given handle func and attaches client IP data indicated in
 // incoming requests to the request header.
-func httpMiddleware(next http.Handler, isDotCom bool) http.Handler {
+func httpMiddleware(next http.Handler, hasCloudflareProxy bool) http.Handler {
 	forwardedForHeaders := []string{headerKeyForwardedFor}
-	if isDotCom {
+	if hasCloudflareProxy {
 		// On Sourcegraph.com we have a more reliable header from cloudflare,
 		// since x-forwarded-for can be spoofed. So use that if available.
 		forwardedForHeaders = []string{"Cf-Connecting-Ip", headerKeyForwardedFor}
