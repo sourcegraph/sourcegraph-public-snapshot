@@ -18,18 +18,18 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = props => {
 
     return (
         <p>
-            {props.isAppInstalled ? (
-                <VSCodeButton
-                    type="button"
-                    onClick={e => openLink('sourcegraph://user/settings/tokens/new/callback?requestFrom=CODY')}
-                >
-                    Connect Sourcegraph App
-                </VSCodeButton>
-            ) : (
-                <a href="https://about.sourcegraph.com/app">
-                    <VSCodeButton type="button">Get Sourcegraph App</VSCodeButton>
-                </a>
-            )}
+            <VSCodeButton
+                type="button"
+                onClick={() =>
+                    openLink(
+                        props.isAppInstalled
+                            ? 'sourcegraph://user/settings/tokens/new/callback?requestFrom=CODY'
+                            : 'https://about.sourcegraph.com/app'
+                    )
+                }
+            >
+                {props.isAppInstalled ? 'Connect Sourcegraph App' : 'Get Sourcegraph App'}
+            </VSCodeButton>
         </p>
     )
 }
