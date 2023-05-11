@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { ApolloError } from '@apollo/client'
 import * as jsonc from 'jsonc-parser'
