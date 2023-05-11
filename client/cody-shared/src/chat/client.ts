@@ -10,7 +10,6 @@ import { isError } from '../utils'
 
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
-import { escapeCodyMarkdown } from './markdown'
 import { getPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
 import { Transcript, TranscriptJSON } from './transcript'
@@ -122,7 +121,7 @@ export async function createClient({
             onChange(_rawText) {
                 rawText = _rawText
 
-                const text = reformatBotMessage(escapeCodyMarkdown(rawText, true), responsePrefix)
+                const text = reformatBotMessage(rawText, responsePrefix)
                 transcript.addAssistantResponse(text)
 
                 sendTranscript()
@@ -130,7 +129,7 @@ export async function createClient({
             onComplete() {
                 isMessageInProgress = false
 
-                const text = reformatBotMessage(escapeCodyMarkdown(rawText, false), responsePrefix)
+                const text = reformatBotMessage(rawText, responsePrefix)
                 transcript.addAssistantResponse(text)
                 sendTranscript()
             },

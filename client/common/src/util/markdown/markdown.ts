@@ -59,6 +59,7 @@ export const renderMarkdown = (
         headerPrefix?: string
         /** Strip off any HTML and return a plain text string, useful for previews */
         plainText?: boolean
+        dompurifyConfig?: DOMPurifyConfig & { RETURN_DOM_FRAGMENT?: false; RETURN_DOM?: false }
     } = {}
 ): string => {
     const tokenizer = new marked.Tokenizer()
@@ -79,17 +80,20 @@ export const renderMarkdown = (
         tokenizer,
     })
 
-    const dompurifyConfig: DOMPurifyConfig & { RETURN_DOM_FRAGMENT?: false; RETURN_DOM?: false } = options.plainText
-        ? {
-              ALLOWED_TAGS: [],
-              ALLOWED_ATTR: [],
-              KEEP_CONTENT: true,
-          }
-        : {
-              USE_PROFILES: { html: true },
-              FORBID_TAGS: ['style', 'form', 'input', 'button'],
-              FORBID_ATTR: ['rel', 'style', 'method', 'action'],
-          }
+    const dompurifyConfig: DOMPurifyConfig & { RETURN_DOM_FRAGMENT?: false; RETURN_DOM?: false } =
+        typeof options.dompurifyConfig === 'object'
+            ? options.dompurifyConfig
+            : options.plainText
+            ? {
+                  ALLOWED_TAGS: [],
+                  ALLOWED_ATTR: [],
+                  KEEP_CONTENT: true,
+              }
+            : {
+                  USE_PROFILES: { html: true },
+                  FORBID_TAGS: ['style', 'form', 'input', 'button'],
+                  FORBID_ATTR: ['rel', 'style', 'method', 'action'],
+              }
 
     return DOMPurify.sanitize(rendered, dompurifyConfig).trim()
 }
