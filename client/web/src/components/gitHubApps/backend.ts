@@ -113,7 +113,8 @@ export const useFetchGithubAppForES = (
     useQuery<GitHubAppByAppIDResult, GitHubAppByAppIDVariables>(GITHUB_APP_BY_APP_ID_QUERY, {
         skip: !externalService?.parsedConfig?.gitHubAppDetails,
         variables: {
-            appID: externalService?.parsedConfig?.gitHubAppDetails?.appID || 0,
-            baseURL: externalService?.parsedConfig?.gitHubAppDetails?.baseURL || '',
+            appID: externalService?.parsedConfig?.gitHubAppDetails?.appID ?? 0,
+            baseURL:
+                externalService?.parsedConfig?.gitHubAppDetails?.baseURL ?? externalService?.parsedConfig?.url ?? '',
         },
     })

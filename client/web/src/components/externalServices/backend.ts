@@ -346,5 +346,8 @@ export interface GitHubAppDetails {
     installationID: number
 }
 export interface ExternalServiceFieldsWithConfig extends ExternalServiceFields {
-    parsedConfig?: { gitHubAppDetails?: GitHubAppDetails }
+    parsedConfig?: {
+        gitHubAppDetails?: GitHubAppDetails
+        url: string
+    }
 }
