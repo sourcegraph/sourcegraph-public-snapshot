@@ -12360,7 +12360,7 @@
           "ConstraintType": "f",
           "RefTableName": "webhooks",
           "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (webhook_id) REFERENCES webhooks(id)"
+          "ConstraintDefinition": "FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL"
         }
       ],
       "Triggers": []
