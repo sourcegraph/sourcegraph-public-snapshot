@@ -2433,7 +2433,8 @@ CREATE TABLE github_apps (
     logo text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    app_url text DEFAULT ''::text NOT NULL
+    app_url text DEFAULT ''::text NOT NULL,
+    webhook_id integer
 );
 
 CREATE SEQUENCE github_apps_id_seq
@@ -6189,6 +6190,9 @@ ALTER TABLE ONLY vulnerability_matches
 
 ALTER TABLE ONLY github_app_installs
     ADD CONSTRAINT github_app_installs_app_id_fkey FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY github_apps
+    ADD CONSTRAINT github_apps_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
