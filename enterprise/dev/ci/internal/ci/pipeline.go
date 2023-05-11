@@ -153,6 +153,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"codeintel-db",
 				"codeinsights-db",
 				"postgres_exporter",
+				"node-exporter",
 			}, c.Version,
 				// c.candidateImageTag(),
 				"latest", // TODO: Do not merge; used to simplify dev
