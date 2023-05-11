@@ -154,6 +154,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"codeinsights-db",
 				"postgres_exporter",
 				"node-exporter",
+				"redis-cache",
+				"redis-store",
 			}, c.Version,
 				// c.candidateImageTag(),
 				"latest", // TODO: Do not merge; used to simplify dev
