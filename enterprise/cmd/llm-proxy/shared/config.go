@@ -37,7 +37,7 @@ type Config struct {
 }
 
 func (c *Config) Load() {
-	c.InsecureDev = c.GetBool("INSECURE_DEV", "false", "The good old-fashioned Sourcegraph way to indicate we are in local dev.")
+	c.InsecureDev = env.InsecureDev
 	c.Address = c.Get("LLM_PROXY_ADDR", ":9992", "Address to serve LLM proxy on.")
 	c.Dotcom.AccessToken = c.Get("LLM_PROXY_DOTCOM_ACCESS_TOKEN", "", "The Sourcegraph.com access token to be used.")
 	c.Dotcom.URL = c.Get("LLM_PROXY_DOTCOM_API_URL", "https://sourcegraph.com/.api/graphql", "Custom override for the dotcom API endpoint")
