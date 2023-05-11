@@ -15,7 +15,7 @@ func init() {
 	)
 
 	if simdEnabled && hasAVX512 {
-		dotArch = dotAVX2
+		dotArch = dotAVX512
 	} else if simdEnabled && hasAVX2 {
 		dotArch = dotAVX2
 	}
