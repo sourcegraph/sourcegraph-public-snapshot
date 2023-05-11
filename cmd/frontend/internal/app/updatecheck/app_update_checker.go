@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -117,6 +118,7 @@ func (r *StaticManifestResolver) Resolve(_ context.Context) (*AppUpdateManifest,
 
 func NewAppUpdateChecker(logger log.Logger, resolver UpdateManifestResolver) *AppUpdateChecker {
 	return &AppUpdateChecker{
+		logger:           logger,
 		manifestResolver: resolver,
 	}
 }
@@ -136,7 +138,7 @@ func (a *AppVersion) validate() error {
 
 func (checker *AppUpdateChecker) Handler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		appClientVersion := readClientAppVersion(r)
+		appClientVersion := readClientAppVersion(r.URL)
 		if err := appClientVersion.validate(); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -157,7 +159,7 @@ func (checker *AppUpdateChecker) Handler() http.HandlerFunc {
 			log.String("arch", appClientVersion.Arch),
 		))
 
-		if checker.canUpdate(appClientVersion, manifest) {
+		if !checker.canUpdate(appClientVersion, manifest) {
 			// No update
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -169,8 +171,8 @@ func (checker *AppUpdateChecker) Handler() http.HandlerFunc {
 	}
 }
 
-func readClientAppVersion(r *http.Request) *AppVersion {
-	queryValues := r.URL.Query()
+func readClientAppVersion(reqURL *url.URL) *AppVersion {
+	queryValues := reqURL.Query()
 	var appClientVersion = AppVersion{}
 	for key, attr := range map[string]*string{
 		"target":          &appClientVersion.Target,
