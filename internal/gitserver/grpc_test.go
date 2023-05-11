@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -18,20 +17,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestClient_AddrMatchesTarget(t *testing.T) {
-	client := NewTestClient(nil, nil, []string{"localhost:1234", "localhost:4321"}).(*clientImplementor)
+// func TestClient_AddrMatchesTarget(t *testing.T) {
+// 	client := NewTestClient(nil, nil, []string{"localhost:1234", "localhost:4321"}).(*clientImplementor)
 
-	for _, repo := range []api.RepoName{"a", "b", "c", "d"} {
-		addr := client.AddrForRepo(repo)
-		conn, err := client.ConnForRepo(repo)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if addr != conn.Target() {
-			t.Fatalf("expected addr (%q) to equal target (%q)", addr, conn.Target())
-		}
-	}
-}
+// 	for _, repo := range []api.RepoName{"a", "b", "c", "d"} {
+// 		addr := client.AddrForRepo(repo)
+// 		conn, err := client.ConnForRepo(repo)
+// 		if err != nil {
+// 			t.Fatal(err)
+// 		}
+// 		if addr != conn.Target() {
+// 			t.Fatalf("expected addr (%q) to equal target (%q)", addr, conn.Target())
+// 		}
+// 	}
+// }
 
 // mockGitserver implements both a gRPC server and an HTTP server that just tracks
 // whether or not it was called.

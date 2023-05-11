@@ -261,9 +261,11 @@ func TestClient_ArchiveReader(t *testing.T) {
 				spyGitserverService = &spyGitserverServiceClient{base: proto.NewGitserverServiceClient(conns)}
 				return spyGitserverService
 			}
-
+			GRPCSource := gitserver.GRPCClientImplementor{
+				Source: spy,
+			}
 			mkClient := func(addrs []string) gitserver.Client {
-				return gitserver.NewTestClient(&http.Client{}, spy, addrs)
+				return gitserver.NewTestClient(&http.Client{}, GRPCSource, addrs)
 			}
 
 			runArchiveReaderTestfunc(t, mkClient, repoName, test)
@@ -284,9 +286,13 @@ func TestClient_ArchiveReader(t *testing.T) {
 				spyGitserverService = &spyGitserverServiceClient{base: proto.NewGitserverServiceClient(conns)}
 				return spyGitserverService
 			}
+			GRPCSource := gitserver.GRPCClientImplementor{
+				Source: spy,
+			}
 
+			fmt.Printf("GRPCSource: %+v\n", GRPCSource)
 			mkClient := func(addrs []string) gitserver.Client {
-				return gitserver.NewTestClient(&http.Client{}, spy, addrs)
+				return gitserver.NewTestClient(&http.Client{}, GRPCSource, addrs)
 			}
 
 			runArchiveReaderTestfunc(t, mkClient, repoName, test)

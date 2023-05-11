@@ -2405,12 +2405,15 @@ func (c *clientImplementor) ArchiveReader(
 	}
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
-		conn, err := c.ConnForRepo(repo)
+		//conn, err := c.ConnForRepo(repo)
 		if err != nil {
 			return nil, err
 		}
 
-		client := c.gRPCClientSource(conn)
+		client, err := c.grpc.ClientForRepo(c.userAgent, repo)
+		if err != nil {
+			return nil, err
+		}
 
 		req := options.ToProto(string(repo)) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
 

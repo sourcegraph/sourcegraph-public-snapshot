@@ -49,10 +49,16 @@ import (
 const git = "git"
 
 var (
-	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
-	defaultDoer, _ = clientFactory.Doer()
-	defaultLimiter = limiter.New(500)
-	conns          = &atomicGitServerConns{}
+	clientFactory     = httpcli.NewInternalClientFactory("gitserver")
+	defaultDoer, _    = clientFactory.Doer()
+	defaultLimiter    = limiter.New(500)
+	conns             = &atomicGitServerConns{}
+	DefaultGRPCSource = GRPCClientImplementor{
+		conns: func() *GitserverConns { return conns.get() },
+		Source: func(cc grpc.ClientConnInterface) proto.GitserverServiceClient {
+			return proto.NewGitserverServiceClient(cc)
+		},
+	}
 )
 
 var ClientMocks, emptyClientMocks struct {
@@ -73,41 +79,59 @@ var _ Client = &clientImplementor{}
 // GRPCClientSource is a function that returns a new gRPC client for the given connection.
 type GRPCClientSource func(cc grpc.ClientConnInterface) proto.GitserverServiceClient
 
-func DefaultGRPCSource(cc grpc.ClientConnInterface) proto.GitserverServiceClient {
-	return proto.NewGitserverServiceClient(cc)
+type GRPCClient interface {
+	ClientForRepo(repo api.RepoName) (proto.GitserverServiceClient, error)
+}
+
+type GRPCClientImplementor struct {
+	cc     grpc.ClientConnInterface
+	conns  func() *GitserverConns
+	Source GRPCClientSource
+}
+
+func (c *GRPCClientImplementor) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conns, err := c.conns().ConnForRepo(userAgent, repo)
+	if err != nil {
+		return nil, err
+	}
+	return c.Source(conns), nil
 }
 
 // NewClient returns a new gitserver.Client.
 func NewClient() Client {
 	return &clientImplementor{
 		logger:      sglog.Scoped("NewClient", "returns a new gitserver.Client"),
-		conns:       conns.get,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		userAgent:        filepath.Base(os.Args[0]),
-		operations:       getOperations(),
-		gRPCClientSource: DefaultGRPCSource,
+		userAgent:  filepath.Base(os.Args[0]),
+		operations: getOperations(),
+		grpc:       DefaultGRPCSource,
 	}
 }
 
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
-func NewTestClient(cli httpcli.Doer, grpcClientFunc GRPCClientSource, addrs []string) Client {
+func NewTestClient(cli httpcli.Doer, grpcClient GRPCClientImplementor, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
+	testGRPCClient := &GRPCClientImplementor{
+		cc:     grpcClient.cc,
+		conns:  func() *GitserverConns { return newTestGitserverConns(addrs) },
+		Source: grpcClient.Source,
+	}
+
 	return &clientImplementor{
 		logger:      logger,
-		conns:       func() *GitserverConns { return newTestGitserverConns(addrs) },
 		httpClient:  cli,
 		HTTPLimiter: limiter.New(500),
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		userAgent:        filepath.Base(os.Args[0]),
-		operations:       newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
-		gRPCClientSource: grpcClientFunc,
+		userAgent:  filepath.Base(os.Args[0]),
+		operations: newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
+		grpc:       *testGRPCClient,
 	}
 }
 
@@ -197,14 +221,11 @@ type clientImplementor struct {
 	// logger is used for all logging and logger creation
 	logger sglog.Logger
 
-	// conns is a function that returns the current set of gitserver addresses and connections
-	conns func() *GitserverConns
-
 	// operations are used for internal observability
 	operations *operations
 
 	// gRPCClientSource invokes the given GRPCCLientSource to get a gRPC client
-	gRPCClientSource GRPCClientSource
+	grpc GRPCClientImplementor
 }
 
 type RawBatchLogResult struct {
@@ -438,15 +459,15 @@ type Client interface {
 }
 
 func (c *clientImplementor) Addrs() []string {
-	return c.conns().Addresses
+	return c.grpc.conns().Addresses
 }
 
 func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
-	return c.conns().AddrForRepo(c.userAgent, repo)
+	return c.grpc.conns().AddrForRepo(c.userAgent, repo)
 }
 
 func (c *clientImplementor) ConnForRepo(repo api.RepoName) (*grpc.ClientConn, error) {
-	return c.conns().ConnForRepo(c.userAgent, repo)
+	return c.grpc.conns().ConnForRepo(c.userAgent, repo)
 }
 
 // ArchiveOptions contains options for the Archive func.
