@@ -76,3 +76,34 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	require.Equal(t, "test\nfirst\nfour\nlines", codeResults[0].Content(ctx))
 
 }
+
+func Test_extractLineRange(t *testing.T) {
+	cases := []struct {
+		input      []byte
+		start, end int
+		output     []byte
+	}{{
+		[]byte("zero\none\ntwo\nthree\n"),
+		0, 2,
+		[]byte("zero\none"),
+	}, {
+		[]byte("zero\none\ntwo\nthree\n"),
+		1, 2,
+		[]byte("one"),
+	}, {
+		[]byte("zero\none\ntwo\nthree\n"),
+		1, 2,
+		[]byte("one"),
+	}, {
+		[]byte(""),
+		1, 2,
+		[]byte(""),
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			got := extractLineRange(tc.input, tc.start, tc.end)
+			require.Equal(t, tc.output, got)
+		})
+	}
+}
