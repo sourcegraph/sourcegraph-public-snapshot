@@ -9,29 +9,29 @@ type ContextServiceResolver interface {
 }
 
 type FindMostRelevantSCIPSymbolsArgs struct {
-	Args *RelevantSCIPSymbolsArgs
+	Args RelevantSCIPSymbolsArgs
 }
 
 type RelevantSCIPSymbolsArgs struct {
 	// The symbol names to search for
 	Symbols *[]string
 	// The repository the user is in
-	Repository *string
+	Repository string
 	// The commit of the repository the user is in
-	CommitID *string
+	CommitID string
 	// The closest remote commit of the repository the user is in
-	ClosestRemoteCommitID *string
+	ClosestRemoteCommitID string
 	// The state of the editor for the user
 	EditorState *EditorState
 }
 
 type EditorState struct {
 	// The file that is currently open in the editor
-	ActiveFile *string
+	ActiveFile string
 	// The contents of the file that is currently open in the editor
-	ActiveFileContent *string
+	ActiveFileContent string
 	// Whether the file that is currently open in the editor has unsaved changes
-	IsActiveFileDirty *bool
+	IsActiveFileDirty bool
 	// The files that are currently open in the editor
 	OpenFiles []*string
 }
