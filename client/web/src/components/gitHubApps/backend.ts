@@ -1,6 +1,7 @@
-import { gql } from '@sourcegraph/http-client'
+import { gql, useQuery } from '@sourcegraph/http-client'
 
-import { LIST_EXTERNAL_SERVICE_FRAGMENT } from '../externalServices/backend'
+import { GitHubAppByAppIDResult, GitHubAppByAppIDVariables } from '../../graphql-operations'
+import { ExternalServiceFieldsWithConfig, LIST_EXTERNAL_SERVICE_FRAGMENT } from '../externalServices/backend'
 
 export const GITHUB_APPS_QUERY = gql`
     query GitHubApps {
@@ -55,6 +56,15 @@ export const GITHUB_APP_BY_ID_QUERY = gql`
     }
 `
 
+export const GITHUB_APP_BY_APP_ID_QUERY = gql`
+    query GitHubAppByAppID($appID: Int!, $baseURL: String!) {
+        gitHubAppByAppID(appID: $appID, baseURL: $baseURL) {
+            id
+            name
+        }
+    }
+`
+
 export const GITHUB_APP_CLIENT_SECRET_QUERY = gql`
     query GitHubAppClientSecret($id: ID!) {
         gitHubApp(id: $id) {
@@ -83,3 +93,12 @@ export const DELETE_GITHUB_APP_BY_ID_QUERY = gql`
         }
     }
 `
+
+export const useFetchGithubAppForES = (externalService?: ExternalServiceFieldsWithConfig) =>
+    useQuery<GitHubAppByAppIDResult, GitHubAppByAppIDVariables>(GITHUB_APP_BY_APP_ID_QUERY, {
+        skip: !externalService?.parsedConfig?.gitHubAppDetails,
+        variables: {
+            appID: externalService?.parsedConfig?.gitHubAppDetails?.appID!,
+            baseURL: externalService?.parsedConfig?.gitHubAppDetails?.baseURL!,
+        },
+    })
