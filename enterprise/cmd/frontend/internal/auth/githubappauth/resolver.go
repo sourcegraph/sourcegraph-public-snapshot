@@ -199,18 +199,23 @@ func (r *resolver) GitHubApps(ctx context.Context) (graphqlbackend.GitHubAppConn
 
 func (r *resolver) GitHubApp(ctx context.Context, args *graphqlbackend.GitHubAppArgs) (graphqlbackend.GitHubAppResolver, error) {
 	// 🚨 SECURITY: Check whether user is site-admin
-	return r.GitHubAppByID(ctx, args.ID)
+	return r.gitHubAppByID(ctx, args.ID)
+}
+
+func (r *resolver) GitHubAppByAppID(ctx context.Context, args *graphqlbackend.GitHubAppByAppIDArgs) (graphqlbackend.GitHubAppResolver, error) {
+	// 🚨 SECURITY: Check whether user is site-admin
+	return r.gitHubAppByAppID(ctx, int(args.AppID), args.BaseURL)
 }
 
 func (r *resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{
 		gitHubAppIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.GitHubAppByID(ctx, id)
+			return r.gitHubAppByID(ctx, id)
 		},
 	}
 }
 
-func (r *resolver) GitHubAppByID(ctx context.Context, id graphql.ID) (*gitHubAppResolver, error) {
+func (r *resolver) gitHubAppByID(ctx context.Context, id graphql.ID) (*gitHubAppResolver, error) {
 	// 🚨 SECURITY: Check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -220,6 +225,23 @@ func (r *resolver) GitHubAppByID(ctx context.Context, id graphql.ID) (*gitHubApp
 		return nil, err
 	}
 	app, err := r.db.GitHubApps().GetByID(ctx, int(gitHubAppID))
+	if err != nil {
+		return nil, err
+	}
+
+	return &gitHubAppResolver{
+		app: app,
+		db:  r.db,
+	}, nil
+}
+
+func (r *resolver) gitHubAppByAppID(ctx context.Context, appID int, baseURL string) (*gitHubAppResolver, error) {
+	// 🚨 SECURITY: Check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	app, err := r.db.GitHubApps().GetByAppID(ctx, appID, baseURL)
 	if err != nil {
 		return nil, err
 	}
