@@ -1,6 +1,10 @@
 import { promises as fs } from 'fs'
 import { homedir } from 'os'
 
+import { Disposable } from 'vscode'
+
+const INTERVAL = 5000
+
 const LOCAL_APP_LOCATIONS = [
     '~/Library/Application Support/sourcegraph-sp',
     '~/Library/Application Support/sourcegraph',
@@ -23,16 +27,50 @@ function expandHomeDir(path: string): string {
     return path
 }
 
+type OnChangeCallback = (value: boolean) => void
+
 /**
  * Detects whether the user has the Sourcegraph app installed locally.
  */
-export class LocalAppDetector {
-    public async detect(): Promise<boolean> {
+export class LocalAppDetector implements Disposable {
+    private intervalHandle: ReturnType<typeof setInterval> | undefined
+    private onChange: OnChangeCallback
+    private lastState = false
+
+    constructor(options: { onChange: OnChangeCallback }) {
+        this.onChange = options.onChange
+    }
+
+    public async detect(): Promise<void> {
+        let detected = false
         for (const marker of LOCAL_APP_LOCATIONS) {
             if (await pathExists(marker)) {
-                return true
+                detected = true
             }
         }
-        return false
+        if (detected !== this.lastState) {
+            this.lastState = detected
+            this.onChange(detected)
+        }
+    }
+
+    public start(): void {
+        if (this.intervalHandle !== undefined) {
+            return
+        }
+
+        this.intervalHandle = setInterval(async () => {
+            await this.detect()
+        }, INTERVAL)
+    }
+
+    public stop(): void {
+        if (this.intervalHandle !== undefined) {
+            clearInterval(this.intervalHandle)
+        }
+    }
+
+    public dispose(): void {
+        this.stop()
     }
 }

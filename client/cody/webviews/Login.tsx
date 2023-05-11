@@ -17,6 +17,7 @@ interface LoginProps {
     serverEndpoint?: string
     isAppInstalled: boolean
     vscodeAPI: VSCodeWrapper
+    enableConnectToApp?: boolean
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
@@ -25,6 +26,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     serverEndpoint,
     isAppInstalled,
     vscodeAPI,
+    enableConnectToApp,
 }) => {
     const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState(serverEndpoint)
@@ -89,7 +91,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         Continue with Sourcegraph.com
                     </VSCodeButton>
                 </a>
-                <ConnectApp isAppInstalled={isAppInstalled} vscodeAPI={vscodeAPI} />
+                {enableConnectToApp && <ConnectApp isAppInstalled={isAppInstalled} vscodeAPI={vscodeAPI} />}
             </section>
             <div
                 className={styles.terms}

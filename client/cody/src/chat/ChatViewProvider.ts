@@ -76,6 +76,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     // Codebase-context-related state
     private currentWorkspaceRoot: string
 
+    private localAppDetector: LocalAppDetector
+
     constructor(
         private extensionPath: string,
         private config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
@@ -85,8 +87,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         private editor: VSCodeEditor,
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
-        private rgPath: string,
-        private localAppDetector: LocalAppDetector
+        private rgPath: string
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
@@ -110,6 +111,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
             })
         )
+
+        this.localAppDetector = new LocalAppDetector({
+            onChange: isInstalled => {
+                void this.webview?.postMessage({ type: 'app-state', isInstalled })
+            },
+        })
+        this.disposables.push(this.localAppDetector)
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -157,9 +165,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.publishConfig()
                 this.sendTranscript()
                 this.sendChatHistory()
-                if (this.config.experimentalConnectToApp) {
-                    this.watchLocalAppState()
-                }
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -567,10 +572,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 accessToken: this.config.accessToken,
                 customHeaders: this.config.customHeaders,
             })
+
+            // Ensure local app detector is running
+            if (this.config.experimentalConnectToApp && !isAuthed) {
+                this.localAppDetector.start()
+            } else {
+                this.localAppDetector.stop()
+            }
+
             const configForWebview: ConfigurationSubsetForWebview = {
                 debug: this.config.debug,
                 serverEndpoint: this.config.serverEndpoint,
                 hasAccessToken: isAuthed,
+                experimentalConnectToApp: this.config.experimentalConnectToApp,
             }
             void vscode.commands.executeCommand('setContext', 'cody.activated', isAuthed)
             void this.webview?.postMessage({ type: 'config', config: configForWebview })
@@ -614,27 +628,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public sendErrorToWebview(errorMsg: string): void {
         void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
-    }
-
-    public watchLocalAppState(): void {
-        void this.updateLocalAppState()
-        const pollInterval = 5000
-
-        // Poll for app state every 5 seconds
-        const intervalHandle = setInterval(() => {
-            void this.updateLocalAppState()
-        }, pollInterval)
-
-        this.disposables.push({
-            dispose: () => {
-                clearInterval(intervalHandle)
-            },
-        })
-    }
-
-    public async updateLocalAppState(): Promise<void> {
-        const isInstalled = await this.localAppDetector.detect()
-        void this.webview?.postMessage({ type: 'app-state', isInstalled })
     }
 
     /**

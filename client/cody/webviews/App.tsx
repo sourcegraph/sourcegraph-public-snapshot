@@ -18,7 +18,10 @@ import { UserHistory } from './UserHistory'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<Pick<Configuration, 'debug' | 'serverEndpoint'> | null>(null)
+    const [config, setConfig] = useState<Pick<
+        Configuration,
+        'debug' | 'serverEndpoint' | 'experimentalConnectToApp'
+    > | null>(null)
     const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -120,6 +123,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     serverEndpoint={config?.serverEndpoint}
                     isAppInstalled={isAppInstalled}
                     vscodeAPI={vscodeAPI}
+                    enableConnectToApp={config?.experimentalConnectToApp}
                 />
             )}
             {view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
