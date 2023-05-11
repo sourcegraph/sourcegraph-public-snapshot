@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import { ApolloError } from '@apollo/client'
 import * as jsonc from 'jsonc-parser'
@@ -225,10 +225,12 @@ export const useBatchChangesRolloutWindowConfig = (): useGetBatchChangesSiteConf
     const { loading, error, data } = useQuery(BATCH_CHANGES_SITE_CONFIGURATION, {
         fetchPolicy: 'cache-first',
     })
-    if (data) {
-        const siteConfig = jsonc.parse(data.site.configuration.effectiveContents)
-        setRolloutWindowConfig(siteConfig['batchChanges.rolloutWindows'] || [])
-    }
+    useEffect(() => {
+        if (data) {
+            const siteConfig = jsonc.parse(data.site.configuration.effectiveContents)
+            setRolloutWindowConfig(siteConfig['batchChanges.rolloutWindows'] || [])
+        }
+    }, [data])
 
     return { loading, error, rolloutWindowConfig }
 }
