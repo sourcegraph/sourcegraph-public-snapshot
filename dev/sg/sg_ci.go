@@ -819,24 +819,6 @@ func formatBuildResult(result string) (string, output.Style) {
 	return emoji, style
 }
 
-var costPerHour = map[string]float64{
-	// How to get the price per hour:
-	// https://console.cloud.google.com/billing/017005-C370B2-0E3030/estimate?organizationId=244397465763&project=sourcegraph-ci
-	// - set machine type to custom
-	// - adjust ram + cpu
-	// - 24h per day
-	// - 5 days per week
-	// - take a look at estimate summary, look for "that's about $X hourly"
-	"bazel":     0.60,
-	"stateless": 0.33 / 3, // we average 3 jobs per node
-}
-
-func estimateCost(cumulativeElapsed time.Duration, kind string) float64 {
-	minutes := cumulativeElapsed.Minutes()
-	cpm := costPerHour[kind] / 60
-	return cpm * minutes
-}
-
 func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, notify bool) (failed bool) {
 	std.Out.Writef("Started:\t%s", build.StartedAt)
 	if build.FinishedAt != nil {
@@ -908,20 +890,14 @@ func printBuildResults(build *buildkite.Build, annotations bk.JobAnnotations, no
 	block.Close()
 
 	if build.FinishedAt != nil {
-		bazelCost := estimateCost(bazelDuration, "bazel")
-		statelessCost := estimateCost(statelessDuration, "stateless")
-		totalCost := bazelCost + statelessCost
-
-		statusStr := fmt.Sprintf("Status:\t\t%s %s", emoji, *build.State)
+		statusStr := fmt.Sprintf("Status:\t\t%s %s\n", emoji, *build.State)
 		std.Out.Write(strings.Repeat("-", len(statusStr)+8*2)) // 2 * \t
 		std.Out.WriteLine(output.Linef(emoji, output.StyleReset, statusStr))
-		std.Out.WriteLine(output.Linef(output.EmojiHourglass, output.StyleReset, "Finished at: %s", build.FinishedAt))
-		std.Out.WriteLine(output.Linef(" ", output.StyleReset, "- Took %s to complete", build.FinishedAt.Sub(build.StartedAt.Time)))
-		std.Out.WriteLine(output.Linef(" ", output.StyleReset, "- Consumed %s of CI time to complete", totalDuration))
-		std.Out.WriteLine(output.Linef("💰", output.StyleReset, "Cost (rough estimation based on time spent using a node by the agent):"))
-		std.Out.WriteLine(output.Linef(" ", output.StyleReset, "- Bazel: $%.2f (%s) -- 1 job per node", bazelCost, bazelDuration))
-		std.Out.WriteLine(output.Linef(" ", output.StyleReset, "- Stateless: $%.2f (%s) -- assuming 3 jobs per node", statelessCost, statelessDuration))
-		std.Out.WriteLine(output.Linef(" ", output.StyleBold, "= Total: $%.2f (%s)", totalCost, totalDuration))
+		std.Out.WriteLine(output.Linef("", output.StyleReset, "Finished at: %s", build.FinishedAt))
+		std.Out.WriteLine(output.Linef("", output.StyleReset, "- ⏲️  Wall-clock time: %s", build.FinishedAt.Sub(build.StartedAt.Time)))
+		std.Out.WriteLine(output.Linef("", output.StyleReset, "- 🗒️ CI agents time:  %s", totalDuration))
+		std.Out.WriteLine(output.Linef("", output.StyleReset, "  - Bazel: %s", bazelDuration))
+		std.Out.WriteLine(output.Linef("", output.StyleReset, "  - Stateless: %s", statelessDuration))
 	}
 
 	if notify {
