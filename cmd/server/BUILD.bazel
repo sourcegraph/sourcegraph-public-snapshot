@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_cross_binary")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("macro.bzl", "container_dependencies", "dependencies_tars")
@@ -21,15 +21,15 @@ go_binary(
 )
 
 go_cross_binary(
-  name = "server_linux_amd64",
-  platform = "@zig_sdk//platform:linux_amd64",
-  target = "server",
+    name = "server_linux_amd64",
+    platform = "@zig_sdk//platform:linux_amd64",
+    target = "server",
 )
 
 pkg_tar(
     name = "tar_server_linux_amd64",
     srcs = [":server_linux_amd64"],
-    remap_paths = { "/server_linux_amd64": "/server" }
+    remap_paths = {"/server_linux_amd64": "/server"},
 )
 
 genrule(
@@ -47,13 +47,13 @@ genrule(
 pkg_tar(
     name = "static_config_tar",
     srcs = [
-      ":nginx_tmp_folder",
-      ":nginx_run_folder",
+        ":nginx_run_folder",
+        ":nginx_tmp_folder",
     ],
     remap_paths = {
-      "/.keep_tmp": "/var/lib/nginx/tmp/.keep",
-      "/.keep_run": "/var/run/.keep",
-    }
+        "/.keep_tmp": "/var/lib/nginx/tmp/.keep",
+        "/.keep_run": "/var/run/.keep",
+    },
 )
 
 pkg_tar(
@@ -65,32 +65,33 @@ pkg_tar(
     name = "tar_monitoring_config",
     srcs = ["//monitoring:generate_config"],
     remap_paths = {
-      "/monitoring/prometheous": "/path/to/prom_config/inside_image", # TODO
-    }
+        "/monitoring/prometheous": "/path/to/prom_config/inside_image",  # TODO
+    },
 )
 
 DEPS = [
-  "//cmd/frontend",
-  "//cmd/github-proxy",
-  "//cmd/gitserver",
-  "//cmd/migrator",
-  "//cmd/repo-updater",
-  "//cmd/searcher",
-  "//cmd/symbols",
-  "//cmd/worker",
-  "//docker-images/prometheus/cmd/prom-wrapper",
-  "//cmd/blobstore", # TODO wolfi package it
+    "//cmd/frontend",
+    "//cmd/github-proxy",
+    "//cmd/gitserver",
+    "//cmd/migrator",
+    "//cmd/repo-updater",
+    "//cmd/searcher",
+    "//cmd/symbols",
+    "//cmd/worker",
+    "//docker-images/prometheus/cmd/prom-wrapper",
+    "//cmd/blobstore",  # TODO wolfi package it
 ]
 
 ZOEKT_DEPS = [
-  "@com_github_sourcegraph_zoekt//cmd/zoekt-archive-index",
-  "@com_github_sourcegraph_zoekt//cmd/zoekt-git-index",
-  "@com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver",
-  "@com_github_sourcegraph_zoekt//cmd/zoekt-webserver",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-archive-index",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-git-index",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-webserver",
 ]
 
 # Declares rules for building go_cross_binary + pkg_tar for each dep in DEPS
 container_dependencies(DEPS)
+
 container_dependencies(ZOEKT_DEPS)
 
 # Tip: to view exactly what gets built here, you can run:
@@ -99,18 +100,18 @@ oci_image(
     name = "image",
     architecture = "amd64",
     base = "@wolfi_server_base",
+    entrypoint = ["/server"],
+    os = "linux",
     tars = [
         ":tar_server_linux_amd64",
         ":static_config_tar",
         "tar_postgres_exporter_config",
         ":tar_monitoring_config",
-        ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
-    entrypoint = ["/server"],
-    os = "linux",
+    ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
 )
 
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repotags = ["server:candidate"]
+    repotags = ["server:candidate"],
 )

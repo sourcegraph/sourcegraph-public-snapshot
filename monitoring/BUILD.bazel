@@ -106,7 +106,13 @@ genrule(
 sh_test(
     name = "generate_config_test",
     size = "small",
-    args = ["$(location :monitoring)", "$(locations :generate_config)", ],
     srcs = ["generate_config_test.sh"],
-    data = [":monitoring", ":generate_config"]
+    args = [
+        "$(location :monitoring)",
+        "$(locations :generate_config)",
+    ],
+    data = [
+        ":generate_config",
+        ":monitoring",
+    ],
 )
