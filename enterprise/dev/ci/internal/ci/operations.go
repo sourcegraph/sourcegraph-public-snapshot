@@ -48,7 +48,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops := operations.NewSet()
 
 	if opts.ForceBazel {
-		ops.Merge(BazelOperations())
+		ops.Append(BazelOperations()...)
 	}
 
 	// Simple, fast-ish linter checks
@@ -504,7 +504,7 @@ func addGoBuild(pipeline *bk.Pipeline) {
 func backendIntegrationTests(candidateImageTag string, imageDep string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		for _, enableGRPC := range []bool{true, false} {
-			description := ":chains: Backend integration tests"
+			description := ":bazel::docker: :chains: Backend integration tests"
 			if enableGRPC {
 				description += " (gRPC)"
 			}
@@ -661,7 +661,7 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep(":docker::brain: Code Intel QA",
+		p.AddStep(":bazel::docker::brain: Code Intel QA",
 			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
 				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@Noah S-C>",
 				ChannelName: "code-intel-buildkite",
@@ -685,7 +685,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 
 func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep(":docker::packer: Executors E2E",
+		p.AddStep(":bazel::docker::packer: Executors E2E",
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Agent("queue", "bazel"),
