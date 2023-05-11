@@ -1648,9 +1648,12 @@ Foreign-key constraints:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  app_url           | text                     |           | not null | ''::text
+ webhook_id        | integer                  |           |          | 
 Indexes:
     "github_apps_pkey" PRIMARY KEY, btree (id)
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
+Foreign-key constraints:
+    "github_apps_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL
 Referenced by:
     TABLE "github_app_installs" CONSTRAINT "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
 
@@ -4131,6 +4134,7 @@ Foreign-key constraints:
     "webhooks_created_by_user_id_fkey" FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
     "webhooks_updated_by_user_id_fkey" FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 Referenced by:
+    TABLE "github_apps" CONSTRAINT "github_apps_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL
     TABLE "webhook_logs" CONSTRAINT "webhook_logs_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE
 
 ```
