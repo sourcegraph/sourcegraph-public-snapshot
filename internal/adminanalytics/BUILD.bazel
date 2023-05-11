@@ -33,9 +33,9 @@ go_library(
 go_test(
     name = "adminanalytics_test",
     timeout = "short",
-    flaky = True,
     srcs = ["users_test.go"],
     embed = [":adminanalytics"],
+    flaky = True,
     tags = [
         # Test requires localhost for database
         "requires-network",
