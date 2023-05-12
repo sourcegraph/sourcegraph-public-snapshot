@@ -128,7 +128,7 @@ if [[ ${CODESIGNING} == 1 ]]; then
   # that one here:
   export PATH="/usr/bin/:$PATH"
 
-  pre_codesign "${PLATFORM}" "${target_path}"
+  pre_codesign "${target_path}"
 fi
 echo "[Tauri] Building Application (${VERSION})"]
 NODE_ENV=production pnpm run build-app-shell
