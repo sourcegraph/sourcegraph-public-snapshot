@@ -6,7 +6,7 @@
 CONFIG_DIR=${PGDATA:-/data/pgdata-12}
 
 conf_file="$CONFIG_DIR/postgresql.conf"
-new_socket_dir="/var/run/postgres"
+new_socket_dir="/var/run/postgresql"
 
 # Check if the parameter already exists in the file
 if grep -q "^\s*unix_socket_directories" "$conf_file"; then
