@@ -8,7 +8,6 @@ import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-ope
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
