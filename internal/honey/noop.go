@@ -1,6 +1,8 @@
 package honey
 
-import "github.com/opentracing/opentracing-go/log"
+import (
+	"go.opentelemetry.io/otel/attribute"
+)
 
 type noopEvent struct{}
 
@@ -14,7 +16,7 @@ func (noopEvent) Dataset() string { return "" }
 
 func (noopEvent) AddField(_ string, _ any) {}
 
-func (noopEvent) AddLogFields(_ []log.Field) {}
+func (noopEvent) AddAttributes(_ []attribute.KeyValue) {}
 
 func (noopEvent) Add(_ any) error { return nil }
 

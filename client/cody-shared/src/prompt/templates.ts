@@ -25,6 +25,15 @@ export function populateCurrentEditorContextTemplate(code: string, filePath: str
     return CURRENT_EDITOR_CODE_TEMPLATE.replace(/{filePath}/g, filePath) + context
 }
 
+const CURRENT_EDITOR_SELECTED_CODE_TEMPLATE = 'I am currently looking at this part of the code from `{filePath}`. '
+
+export function populateCurrentEditorSelectedContextTemplate(code: string, filePath: string): string {
+    const context = isMarkdownFile(filePath)
+        ? populateMarkdownContextTemplate(code, filePath)
+        : populateCodeContextTemplate(code, filePath)
+    return CURRENT_EDITOR_SELECTED_CODE_TEMPLATE.replace(/{filePath}/g, filePath) + context
+}
+
 const MARKDOWN_EXTENSIONS = new Set(['md', 'markdown'])
 
 export function isMarkdownFile(filePath: string): boolean {

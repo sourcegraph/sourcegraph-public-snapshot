@@ -2,7 +2,7 @@ import assert from 'assert'
 
 import expect from 'expect'
 
-import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration'
+import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'

@@ -12,7 +12,9 @@ go_library(
         "//enterprise/cmd/llm-proxy/internal/limiter",
         "//internal/goroutine",
         "//lib/errors",
+        "@com_github_go_redsync_redsync_v4//:redsync",
         "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -20,8 +22,19 @@ go_test(
     name = "actor_test",
     srcs = ["source_test.go"],
     embed = [":actor"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
+        "//internal/redispool",
         "//lib/errors",
+        "@com_github_go_redsync_redsync_v4//:redsync",
+        "@com_github_go_redsync_redsync_v4//redis/redigo",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_sourcegraph_conc//:conc",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )
