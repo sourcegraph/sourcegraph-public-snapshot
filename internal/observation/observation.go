@@ -383,7 +383,7 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []otlog.
 		tr.SetError(*err)
 	}
 
-	tr.AddEvent("done", trace.OTLogFieldsToOTelAttrs(logFields)...) //nolint:staticcheck // TODO when updating the observation package
+	tr.AddEvent("done", trace.OTLogFieldsToOTelAttrs(logFields)...)
 	tr.Finish()
 }
 
