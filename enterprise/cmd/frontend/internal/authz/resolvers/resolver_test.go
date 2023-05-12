@@ -362,7 +362,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 
 	t.Run("authenticated as non-admin and not the same user", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 123}, nil)
+		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 123}, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
@@ -377,7 +377,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	})
 
 	users := database.NewStrictMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 123, SiteAdmin: true}, nil)
+	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 123, SiteAdmin: true}, nil)
 
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
