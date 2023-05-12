@@ -50,3 +50,13 @@ export async function getContextMessagesFromSelection(
 export function getFileExtension(fileName: string): string {
     return path.extname(fileName).slice(1).toLowerCase()
 }
+
+// This cleans up the code returned by Cody based on current behavior
+// ex. Remove  `tags:` that Cody sometimes include in the returned content
+export function contentSanitizer(text: string): string {
+    const tagsIndex = text.indexOf('tags:')
+    if (tagsIndex !== -1) {
+        return text.trim().slice(tagsIndex + 6) + '\n'
+    }
+    return text.trim() + '\n'
+}

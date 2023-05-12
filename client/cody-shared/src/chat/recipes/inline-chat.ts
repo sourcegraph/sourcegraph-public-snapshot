@@ -15,10 +15,13 @@ export class InlineChat implements Recipe {
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.controller?.selection
         if (!humanChatInput || !selection) {
-            await context.editor.showWarningMessage('Failed to start Inline Chat.')
+            await context.editor.showWarningMessage(
+                'Failed to start Inline Assist. Please highlight a small section of code in your file to try again.'
+            )
             return null
         }
-        // Check if this is a fix-up request
+
+        // Redirect fix-up requests
         if (humanChatInput.startsWith('/fix ') || humanChatInput.startsWith('/f ')) {
             return new Fixup().getInteraction(humanChatInput.replace('/fix ', '').replace('/f ', ''), context)
         }
@@ -27,13 +30,14 @@ export class InlineChat implements Recipe {
         const MAX_RECIPE_CONTENT_TOKENS = MAX_RECIPE_INPUT_TOKENS + MAX_RECIPE_SURROUNDING_TOKENS * 2
         const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_CONTENT_TOKENS)
 
-        // Prompt for Cody
+        // Reconstruct Cody's prompt using user's context
+        // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
         const promptText = InlineChat.prompt
             .replace('{humanInput}', truncatedText)
             .replace('{selectedText}', truncatedSelectedText)
             .replace('{fileName}', selection.fileName)
 
-        // Text display in UI fpr human
+        // Text display in UI fpr human that includes the selected code
         const displayText = humanChatInput + InlineChat.displayPrompt.replace('{selectedText}', selection.selectedText)
 
         return Promise.resolve(
@@ -68,9 +72,11 @@ export class InlineChat implements Recipe {
     - Do not suggest anything that would break the working code.
     `
 
+    // Prompt template for displaying the prompt to users in chat view
     public static readonly displayPrompt = `
     \nQuestions based on the code below:\n\`\`\`\n{selectedText}\n\`\`\`\n`
 
+    // Get context from editor
     private async getContextMessages(
         text: string,
         codebaseContext: CodebaseContext,
