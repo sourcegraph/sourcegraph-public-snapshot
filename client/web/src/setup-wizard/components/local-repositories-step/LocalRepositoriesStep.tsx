@@ -62,7 +62,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = ({
             <Container className={styles.content}>
                 {!loading && (
                     <LocalRepositoriesForm
-                        isFilePickerAvailable={window.context.localFilePickerAvailable}
+                        isFilePickerAvailable={true}
                         error={error}
                         directoryPaths={paths}
                         onDirectoryPathsChange={setPaths}
