@@ -1,28 +1,23 @@
 package com.sourcegraph.cody.chat;
 
-import com.sourcegraph.cody.completions.CompletionsInput;
-import com.sourcegraph.cody.completions.CompletionsService;
-import com.sourcegraph.cody.completions.Message;
-import com.sourcegraph.cody.completions.Speaker;
+import com.sourcegraph.cody.UpdatableChat;
+import com.sourcegraph.cody.completions.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Chat {
     private final @Nullable String codebase;
-    private final @NotNull String instanceUrl;
-    private final @NotNull String accessToken;
+    private final @NotNull CompletionsService completionsService;
 
     public Chat(@Nullable String codebase, @NotNull String instanceUrl, @NotNull String accessToken) {
         this.codebase = codebase;
-        this.instanceUrl = instanceUrl;
-        this.accessToken = accessToken;
+        completionsService = new CompletionsService(instanceUrl, accessToken);
     }
 
-    public @NotNull ChatMessage sendMessage(@NotNull ChatMessage humanMessage) throws IOException, InterruptedException {
+    public void sendMessage(@NotNull ChatMessage humanMessage, @Nullable String prefix, @NotNull UpdatableChat chat) {
         List<Message> preamble = Preamble.getPreamble(codebase);
 
         // TODO: Use the context getting logic from VS Code
@@ -43,8 +38,8 @@ public class Chat {
         input.messages.forEach(System.out::println);
 
         // ConfigUtil.getAccessToken(project) TODO: Get the access token from the plugin config
-        String result = new CompletionsService(instanceUrl, accessToken).getCompletion(input); // TODO: Don't create this each time
+        // TODO: Don't create this each time
 
-        return ChatMessage.createAssistantMessage(result);
+        completionsService.streamCompletion(input, new ChatUpdaterCallbacks(chat, prefix));
     }
 }
