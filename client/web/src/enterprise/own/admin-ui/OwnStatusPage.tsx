@@ -50,16 +50,6 @@ export const OwnStatusPage: FC = () => {
             }}
     )
 
-    //
-    // useEffect(() => {
-    //     if (remoteData) {
-    //         console.log("FINDME")
-    //         const jobs = remoteData.signalConfigurations.map(sc => ({...sc} as Job))
-    //         setLocalData(jobs)
-    //     }
-    //     console.log("BLAH")
-    // }, [remoteData, loading, error])
-
     function onUpdateJob(index: number, newJob: Job): void {
         setHasLocalChanges(true)
         const newData = localData.map((job, ind) => {
