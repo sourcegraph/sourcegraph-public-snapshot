@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -117,13 +119,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			job, err = m.BatchesQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
 			if err != nil {
-				var markErr error
-				if _, markErr = m.BatchesQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); markErr != nil {
-					logger.Error("Failed to mark record as failed",
-						log.String("queue", queue),
-						log.Int("recordID", record.RecordID()),
-						log.Error(markErr))
-				}
+				markErr := markRecordAsFailed(r.Context(), m.BatchesQueueHandler.Store, record.RecordID(), err, logger)
 				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
 				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
 				return
@@ -143,12 +139,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			job, err = m.CodeIntelQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
 			if err != nil {
-				var markErr error
-				if _, markErr = m.CodeIntelQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); markErr != nil {
-					logger.Error("Failed to mark record as failed",
-						log.Int("recordID", record.RecordID()),
-						log.Error(markErr))
-				}
+				markErr := markRecordAsFailed(r.Context(), m.CodeIntelQueueHandler.Store, record.RecordID(), err, logger)
 				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
 				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
 				return
@@ -198,6 +189,16 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		m.logger.Error(err.Error())
 		m.marshalAndRespondError(w, err, http.StatusInternalServerError)
 	}
+}
+
+func markRecordAsFailed[T workerutil.Record](context context.Context, store dbworkerstore.Store[T], recordID int, err error, logger log.Logger) error {
+	_, markErr := store.MarkFailed(context, recordID, fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{})
+	if markErr != nil {
+		logger.Error("Failed to mark record as failed",
+			log.Int("recordID", recordID),
+			log.Error(markErr))
+	}
+	return markErr
 }
 
 func (m *MultiHandler) marshalAndRespondError(w http.ResponseWriter, err error, statusCode int) {
