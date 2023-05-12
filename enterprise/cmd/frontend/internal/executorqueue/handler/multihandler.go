@@ -184,7 +184,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	job.Token = token
 
-	if err := json.NewEncoder(w).Encode(job); err != nil {
+	if err = json.NewEncoder(w).Encode(job); err != nil {
 		err = errors.Wrap(err, "Failed to serialize payload")
 		m.logger.Error(err.Error())
 		m.marshalAndRespondError(w, err, http.StatusInternalServerError)
