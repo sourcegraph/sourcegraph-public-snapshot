@@ -3,7 +3,8 @@
   "build": {
     "beforeBuildCommand": "./src-tauri/compose-assets.sh",
     "devPath": "http://localhost:3080/sign-in?secret=foobar&returnTo=/",
-    "distDir": "./assets"
+    "distDir": "./assets",
+    "withGlobalTauri": true
   },
   "package": {
     "productName": "Sourcegraph App",
@@ -12,7 +13,6 @@
   "tauri": {
     "allowlist": {
       "shell": {
-        "open": true,
         "sidecar": true,
         "scope": [
           {
@@ -20,7 +20,7 @@
             "sidecar": true
           }
         ],
-        "open": "^https?:|com.sourcegraph.app/.*.log$"
+        "open": "^(vscode:|https?:)|com.sourcegraph.app/.*.log$"
       },
       "window": {
         "startDragging": true

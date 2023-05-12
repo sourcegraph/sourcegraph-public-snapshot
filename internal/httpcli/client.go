@@ -17,11 +17,13 @@ import (
 
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -466,7 +468,18 @@ func TracedTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
+	// Propagate trace policy
 	cli.Transport = &policy.Transport{RoundTripper: cli.Transport}
+
+	// Keep the legacy nethttp transport for now that was used before - otelhttp
+	// should propagate traces in the same way, but we keep this just in case.
+	// This used to be in policy.Transport, but is clearer here.
+	cli.Transport = &nethttp.Transport{RoundTripper: cli.Transport}
+
+	// Collect and propagate OpenTelemetry trace (among other formats initialized
+	// in internal/tracer)
+	cli.Transport = otelhttp.NewTransport(cli.Transport)
+
 	return nil
 }
 

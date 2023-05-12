@@ -12,15 +12,20 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	authcheck "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -136,6 +141,46 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		_, _ = w.Write([]byte(s))
 	})
 
+	r.Path(prefix + "/new-app-state").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// 🚨 SECURITY: only site admins can create github apps
+		if err := checkSiteAdmin(db, w, req); err != nil {
+			return
+		}
+
+		webhookURN := req.URL.Query().Get("webhookURN")
+		appName := req.URL.Query().Get("appName")
+		var webhookUUID string
+		if webhookURN != "" {
+			ws := backend.NewWebhookService(db, keyring.Default())
+			hook, err := ws.CreateWebhook(req.Context(), appName, extsvc.KindGitHub, webhookURN, nil)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Unexpected error while setting up webhook endpiont: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+			webhookUUID = hook.UUID.String()
+		}
+
+		s, err := randomState(128)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unexpected error when creating redirectURL: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		cache.Set(s, []byte(webhookUUID))
+
+		resp := struct {
+			State       string `json:"state"`
+			WebhookUUID string `json:"webhookUUID,omitempty"`
+		}{
+			State:       s,
+			WebhookUUID: webhookUUID,
+		}
+
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			http.Error(w, fmt.Sprintf("Unexpected error while writing response: %s", err.Error()), http.StatusInternalServerError)
+		}
+	})
+
 	r.Path(prefix + "/redirect").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// 🚨 SECURITY: only site admins can setup github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
@@ -150,12 +195,18 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		_, ok := cache.Get(state)
+		stateValue, ok := cache.Get(state)
 		if !ok {
 			http.Error(w, "Bad request, state query param does not match", http.StatusBadRequest)
 			return
 		}
 		cache.Delete(state)
+
+		webhookUUID, err := uuid.Parse(string(stateValue))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Bad request, could not parse webhook UUID: %s", err.Error()), http.StatusBadRequest)
+			return
+		}
 
 		u, err := getAPIUrl(req, code)
 		if err != nil {
@@ -171,6 +222,19 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		id, err := db.GitHubApps().Create(req.Context(), app)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error while storing github app in DB: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		webhookDB := db.Webhooks(keyring.Default().WebhookKey)
+		hook, err := webhookDB.GetByUUID(req.Context(), webhookUUID)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error while fetching webhook: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		hook.Secret = encryption.NewUnencrypted(app.WebhookSecret)
+		hook.Name = app.Name
+		if _, err := webhookDB.Update(req.Context(), hook); err != nil {
+			http.Error(w, fmt.Sprintf("Error while updating webhook secret: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 
@@ -289,14 +353,15 @@ func createGitHubApp(conversionURL string) (*types.GitHubApp, error) {
 	}
 
 	return &types.GitHubApp{
-		AppID:        response.AppID,
-		Name:         response.Name,
-		Slug:         response.Slug,
-		ClientID:     response.ClientID,
-		ClientSecret: response.ClientSecret,
-		PrivateKey:   response.PEM,
-		BaseURL:      htmlURL.Scheme + "://" + htmlURL.Host,
-		AppURL:       htmlURL.String(),
-		Logo:         fmt.Sprintf("%s://%s/identicons/app/app/%s", htmlURL.Scheme, htmlURL.Host, response.Slug),
+		AppID:         response.AppID,
+		Name:          response.Name,
+		Slug:          response.Slug,
+		ClientID:      response.ClientID,
+		ClientSecret:  response.ClientSecret,
+		WebhookSecret: response.WebhookSecret,
+		PrivateKey:    response.PEM,
+		BaseURL:       htmlURL.Scheme + "://" + htmlURL.Host,
+		AppURL:        htmlURL.String(),
+		Logo:          fmt.Sprintf("%s://%s/identicons/app/app/%s", htmlURL.Scheme, htmlURL.Host, response.Slug),
 	}, nil
 }

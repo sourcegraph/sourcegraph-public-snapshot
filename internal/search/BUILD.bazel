@@ -29,9 +29,9 @@ go_library(
         "//lib/errors",
         "//schema",
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_sourcegraph_zoekt//query",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
