@@ -25,9 +25,11 @@ func (a *Authenticator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	typ := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
 	if len(typ) != 2 {
 		response.JSONError(a.Logger, w, http.StatusBadRequest, errors.New("token type missing in Authorization header"))
+		return
 	}
 	if strings.ToLower(typ[0]) != "bearer" {
 		response.JSONError(a.Logger, w, http.StatusBadRequest, errors.Newf("invalid token type %s", typ[0]))
+		return
 	}
 
 	token := r.Header.Get("Authorization")[len("Bearer "):]
