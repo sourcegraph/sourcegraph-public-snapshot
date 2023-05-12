@@ -31,7 +31,7 @@ pre_codesign() {
     security create-keychain -p my_temporary_keychain_password my_temporary_keychain.keychain
     security set-keychain-settings my_temporary_keychain.keychain
     security unlock-keychain -p my_temporary_keychain_password my_temporary_keychain.keychain
-    security list-keychains -d user -s my_temporary_keychain.keychain $(security list-keychains -d user | sed 's/["]//g')
+    security list-keychains -d user -s my_temporary_keychain.keychain "$(security list-keychains -d user | sed 's/["]//g')"
 
     echo "$APPLE_CERTIFICATE" >cert.p12.base64
     base64 -d -i cert.p12.base64 -o cert.p12
@@ -39,7 +39,7 @@ pre_codesign() {
     security import ./cert.p12 -k my_temporary_keychain.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
     security set-key-partition-list -S apple-tool:,apple:, -s -k my_temporary_keychain_password -D "$APPLE_SIGNING_IDENTITY" -t private my_temporary_keychain.keychain
 
-    codesign --force -s "$APPLE_SIGNING_IDENTITY" --keychain my_temporary_keychain.keychain --deep .bin/sourcegraph-backend-aarch64-apple-darwin
+    codesign --force -s "$APPLE_SIGNING_IDENTITY" --keychain my_temporary_keychain.keychain --deep "$(pwd)/.bin/sourcegraph-backend-aarch64-apple-darwin"
 
     security delete-keychain my_temporary_keychain.keychain
     security list-keychains -d user -s login.keychain
