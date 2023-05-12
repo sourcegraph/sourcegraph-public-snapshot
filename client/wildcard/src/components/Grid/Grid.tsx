@@ -29,7 +29,7 @@ const getGridStyle = (
     templateColumns?: GridProps['templateColumns']
 ): CSSProperties => ({
     display: 'grid',
-    gap: Array.isArray(spacing) && spacing.length == 2 ? `${spacing[0]}rem ${spacing[1]}rem` : `${spacing}rem`,
+    gap: Array.isArray(spacing) && spacing.length === 2 ? `${spacing[0]}rem ${spacing[1]}rem` : `${spacing}rem`,
     gridTemplateColumns: templateColumns ?? `[row-start] repeat(${columnCount}, 1fr) [row-end]`,
     marginBottom: `${spacing}rem`,
 })
