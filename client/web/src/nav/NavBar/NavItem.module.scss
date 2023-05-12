@@ -44,6 +44,8 @@
     border-radius: 0;
     transition: none;
     font-weight: 400;
+    border-bottom: 2px solid transparent; // To prevent jumping when active/hovered
+    border-top: 2px solid transparent; // To center the text vertically
 
     &:hover {
         text-decoration: none;
@@ -53,9 +55,7 @@
 
     &:hover:not(.active):not([aria-disabled='true']) {
         border-bottom: 2px solid var(--border-color-2);
-        .link-content {
-            margin-bottom: -0.125rem;
-        }
+
         @media (--xs-breakpoint-down) {
             margin: 0;
             border: 0;
@@ -89,16 +89,12 @@
             margin-top: 0;
         }
     }
-    .link-content {
-        margin-bottom: -0.125rem;
-    }
+
     @media (--xs-breakpoint-down) {
-        .link-content {
-            margin-bottom: 0;
-        }
         border: 0;
         background-color: var(--link-color);
     }
+
     .text,
     .icon {
         @media (--xs-breakpoint-down) {

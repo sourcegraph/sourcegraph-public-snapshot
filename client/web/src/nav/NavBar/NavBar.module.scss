@@ -11,6 +11,10 @@
     padding: 0 1rem;
     align-items: center;
     white-space: nowrap;
+
+    // This is needed so that the mobile hamburger menu is shown above the content of the homepage.
+    // This is a temporary fix until we can refactor the navbar mobile menu to use Reach MenuButton and MenuList.
+    z-index: 1;
 }
 
 .menu {

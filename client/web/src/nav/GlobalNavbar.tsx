@@ -223,8 +223,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 variant: navLinkVariant,
                             }}
                             routeMatch={routeMatch}
-                            mobileHomeItem={{ content: 'Search home' }}
+                            homeItem={{ content: 'Search home' }}
                             items={searchNavBarItems}
+                            name="search"
                         />
                     ) : (
                         <NavItem icon={MagnifyIcon}>
@@ -283,7 +284,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 content: 'Feedback',
                                 variant: navLinkVariant,
                             }}
-                            mobileHomeItem={{ content: 'Feedback' }}
                             items={[
                                 {
                                     content: 'Join our Discord',
@@ -296,6 +296,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     target: '_blank',
                                 },
                             ]}
+                            name="feedback"
                         />
                     )}
                 </NavGroup>
