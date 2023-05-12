@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	otlog "github.com/opentracing/opentracing-go/log"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 
@@ -222,53 +222,54 @@ type TextPatternInfo struct {
 	Languages []string
 }
 
-func (p *TextPatternInfo) Fields() []otlog.Field {
-	res := make([]otlog.Field, 0, 4)
-	add := func(fs ...otlog.Field) {
+func (p *TextPatternInfo) Fields() []attribute.KeyValue {
+	res := make([]attribute.KeyValue, 0, 4)
+	add := func(fs ...attribute.KeyValue) {
 		res = append(res, fs...)
 	}
 
-	add(otlog.String("pattern", p.Pattern))
+	add(attribute.String("pattern", p.Pattern))
 
 	if p.IsNegated {
-		add(otlog.Bool("isNegated", p.IsNegated))
+		add(attribute.Bool("isNegated", p.IsNegated))
 	}
 	if p.IsRegExp {
-		add(otlog.Bool("isRegexp", p.IsRegExp))
+		add(attribute.Bool("isRegexp", p.IsRegExp))
 	}
 	if p.IsStructuralPat {
-		add(otlog.Bool("isStructural", p.IsStructuralPat))
+		add(attribute.Bool("isStructural", p.IsStructuralPat))
 	}
 	if p.CombyRule != "" {
-		add(otlog.String("combyRule", p.CombyRule))
+		add(attribute.String("combyRule", p.CombyRule))
 	}
 	if p.IsWordMatch {
-		add(otlog.Bool("isWordMatch", p.IsWordMatch))
+		add(attribute.Bool("isWordMatch", p.IsWordMatch))
 	}
 	if p.IsCaseSensitive {
-		add(otlog.Bool("isCaseSensitive", p.IsCaseSensitive))
+		add(attribute.Bool("isCaseSensitive", p.IsCaseSensitive))
 	}
-	add(otlog.Int32("fileMatchLimit", p.FileMatchLimit))
+	add(attribute.Int("fileMatchLimit", int(p.FileMatchLimit)))
+
 	if p.Index != query.Yes {
-		add(otlog.String("index", string(p.Index)))
+		add(attribute.String("index", string(p.Index)))
 	}
 	if len(p.Select) > 0 {
-		add(trace.Strings("select", p.Select))
+		add(attribute.StringSlice("select", p.Select))
 	}
 	if len(p.IncludePatterns) > 0 {
-		add(trace.Strings("includePatterns", p.IncludePatterns))
+		add(attribute.StringSlice("includePatterns", p.IncludePatterns))
 	}
 	if p.ExcludePattern != "" {
-		add(otlog.String("excludePattern", p.ExcludePattern))
+		add(attribute.String("excludePattern", p.ExcludePattern))
 	}
 	if p.PathPatternsAreCaseSensitive {
-		add(otlog.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive))
+		add(attribute.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive))
 	}
 	if p.PatternMatchesPath {
-		add(otlog.Bool("patternMatchesPath", p.PatternMatchesPath))
+		add(attribute.Bool("patternMatchesPath", p.PatternMatchesPath))
 	}
 	if len(p.Languages) > 0 {
-		add(trace.Strings("languages", p.Languages))
+		add(attribute.StringSlice("languages", p.Languages))
 	}
 	return res
 }
@@ -402,111 +403,111 @@ type RepoOptions struct {
 	OnlyArchived bool
 }
 
-func (op *RepoOptions) Tags() []otlog.Field {
-	res := make([]otlog.Field, 0, 8)
-	add := func(f otlog.Field) {
-		res = append(res, f)
+func (op *RepoOptions) Attributes() []attribute.KeyValue {
+	res := make([]attribute.KeyValue, 0, 8)
+	add := func(f ...attribute.KeyValue) {
+		res = append(res, f...)
 	}
 
 	if len(op.RepoFilters) > 0 {
-		add(trace.Printf("repoFilters", "%v", op.RepoFilters))
+		add(attribute.String("repoFilters", fmt.Sprintf("%v", op.RepoFilters)))
 	}
 	if len(op.MinusRepoFilters) > 0 {
-		add(trace.Strings("minusRepoFilters", op.MinusRepoFilters))
+		add(attribute.StringSlice("minusRepoFilters", op.MinusRepoFilters))
 	}
 	if len(op.DescriptionPatterns) > 0 {
-		add(trace.Strings("descriptionPatterns", op.DescriptionPatterns))
+		add(attribute.StringSlice("descriptionPatterns", op.DescriptionPatterns))
 	}
 	if op.CaseSensitiveRepoFilters {
-		add(otlog.Bool("caseSensitiveRepoFilters", true))
+		add(attribute.Bool("caseSensitiveRepoFilters", true))
 	}
 	if op.SearchContextSpec != "" {
-		add(otlog.String("searchContextSpec", op.SearchContextSpec))
+		add(attribute.String("searchContextSpec", op.SearchContextSpec))
 	}
 	if op.CommitAfter != nil {
-		add(otlog.String("commitAfter.time", op.CommitAfter.TimeRef))
-		add(otlog.Bool("commitAfter.negated", op.CommitAfter.Negated))
+		add(attribute.String("commitAfter.time", op.CommitAfter.TimeRef))
+		add(attribute.Bool("commitAfter.negated", op.CommitAfter.Negated))
 	}
 	if op.Visibility != query.Any {
-		add(otlog.String("visibility", string(op.Visibility)))
+		add(attribute.String("visibility", string(op.Visibility)))
 	}
 	if op.Limit > 0 {
-		add(otlog.Int("limit", op.Limit))
+		add(attribute.Int("limit", op.Limit))
 	}
 	if len(op.Cursors) > 0 {
-		add(trace.Printf("cursors", "%+v", op.Cursors))
+		add(attribute.String("cursors", fmt.Sprintf("%+v", op.Cursors)))
 	}
 	if op.UseIndex != query.Yes {
-		add(otlog.String("useIndex", string(op.UseIndex)))
+		add(attribute.String("useIndex", string(op.UseIndex)))
 	}
 	if len(op.HasFileContent) > 0 {
 		for i, arg := range op.HasFileContent {
-			nondefault := []otlog.Field{}
+			nondefault := []attribute.KeyValue{}
 			if arg.Path != "" {
-				nondefault = append(nondefault, otlog.String("path", arg.Path))
+				nondefault = append(nondefault, attribute.String("path", arg.Path))
 			}
 			if arg.PathNegated {
 				nondefault = append(nondefault, otlog.Bool("pathNegated", arg.PathNegated))
 			}
 			if arg.Content != "" {
-				nondefault = append(nondefault, otlog.String("content", arg.Content))
+				nondefault = append(nondefault, attribute.String("content", arg.Content))
 			}
 			if arg.ContentNegated {
 				nondefault = append(nondefault, otlog.Bool("contentNegated", arg.ContentNegated))
 			}
 			if arg.Negated {
-				nondefault = append(nondefault, otlog.Bool("negated", arg.Negated))
+				nondefault = append(nondefault, attribute.Bool("negated", arg.Negated))
 			}
-			add(trace.Scoped(fmt.Sprintf("hasFileContent[%d]", i), nondefault...))
+			add(trace.Scoped(fmt.Sprintf("hasFileContent[%d]", i), nondefault...)...)
 		}
 	}
 	if len(op.HasKVPs) > 0 {
 		for i, arg := range op.HasKVPs {
-			nondefault := []otlog.Field{}
+			nondefault := []attribute.KeyValue{}
 			if arg.Key != "" {
-				nondefault = append(nondefault, otlog.String("key", arg.Key))
+				nondefault = append(nondefault, attribute.String("key", arg.Key))
 			}
 			if arg.Value != nil {
-				nondefault = append(nondefault, otlog.String("value", *arg.Value))
+				nondefault = append(nondefault, attribute.String("value", *arg.Value))
 			}
 			if arg.Negated {
-				nondefault = append(nondefault, otlog.Bool("negated", arg.Negated))
+				nondefault = append(nondefault, attribute.Bool("negated", arg.Negated))
 			}
-			add(trace.Scoped(fmt.Sprintf("hasKVPs[%d]", i), nondefault...))
+			add(trace.Scoped(fmt.Sprintf("hasKVPs[%d]", i), nondefault...)...)
 		}
 	}
 	if len(op.HasTopics) > 0 {
 		for i, arg := range op.HasTopics {
-			nondefault := []otlog.Field{}
+			nondefault := []attribute.KeyValue{}
 			if arg.Topic != "" {
-				nondefault = append(nondefault, otlog.String("topic", arg.Topic))
+				nondefault = append(nondefault, attribute.String("topic", arg.Topic))
 			}
 			if arg.Negated {
-				nondefault = append(nondefault, otlog.Bool("negated", arg.Negated))
+				nondefault = append(nondefault, attribute.Bool("negated", arg.Negated))
 			}
-			add(trace.Scoped(fmt.Sprintf("hasTopics[%d]", i), nondefault...))
+			add(trace.Scoped(fmt.Sprintf("hasTopics[%d]", i), nondefault...)...)
 		}
 	}
 	if op.ForkSet {
-		add(otlog.Bool("forkSet", op.ForkSet))
+		add(attribute.Bool("forkSet", op.ForkSet))
 	}
 	if !op.NoForks { // default value is true
-		add(otlog.Bool("noForks", op.NoForks))
+		add(attribute.Bool("noForks", op.NoForks))
 	}
 	if op.OnlyForks {
-		add(otlog.Bool("onlyForks", op.OnlyForks))
+		add(attribute.Bool("onlyForks", op.OnlyForks))
 	}
 	if op.OnlyCloned {
-		add(otlog.Bool("onlyCloned", op.OnlyCloned))
+		add(attribute.Bool("onlyCloned", op.OnlyCloned))
 	}
 	if op.ArchivedSet {
-		add(otlog.Bool("archivedSet", op.ArchivedSet))
+		add(attribute.Bool("archivedSet", op.ArchivedSet))
 	}
 	if !op.NoArchived { // default value is true
-		add(otlog.Bool("noArchived", op.NoArchived))
+		add(attribute.Bool("noArchived", op.NoArchived))
 	}
 	if op.OnlyArchived {
-		add(otlog.Bool("onlyArchived", op.OnlyArchived))
+		add(attribute.Bool("onlyArchived", op.OnlyArchived))
 	}
 	return res
 }

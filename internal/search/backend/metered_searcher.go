@@ -7,7 +7,6 @@ import (
 
 	"github.com/keegancsmith/rpc"
 	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	sglog "github.com/sourcegraph/log"
@@ -83,19 +82,19 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		tr.Finish()
 	}()
 	if opts != nil {
-		fields := []log.Field{
-			log.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
-			log.Bool("opts.whole", opts.Whole),
-			log.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
-			log.Int("opts.shard_repo_max_match_count", opts.ShardRepoMaxMatchCount),
-			log.Int("opts.total_max_match_count", opts.TotalMaxMatchCount),
-			log.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
-			log.Int64("opts.flush_wall_time_ms", opts.FlushWallTime.Milliseconds()),
-			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
-			log.Bool("opts.use_document_ranks", opts.UseDocumentRanks),
+		fields := []attribute.KeyValue{
+			attribute.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
+			attribute.Bool("opts.whole", opts.Whole),
+			attribute.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
+			attribute.Int("opts.shard_repo_max_match_count", opts.ShardRepoMaxMatchCount),
+			attribute.Int("opts.total_max_match_count", opts.TotalMaxMatchCount),
+			attribute.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
+			attribute.Int64("opts.flush_wall_time_ms", opts.FlushWallTime.Milliseconds()),
+			attribute.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
+			attribute.Bool("opts.use_document_ranks", opts.UseDocumentRanks),
 		}
-		tr.LogFields(fields...) //nolint:staticcheck // TODO when upgrading the observation package
-		event.AddLogFields(fields)
+		tr.AddEvent("begin", fields...)
+		event.AddAttributes(fields)
 	}
 
 	// We wrap our queries in GobCache, this gives us a convenient way to find
@@ -130,11 +129,11 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			},
 
 			WriteRequestDone: func(err error) {
-				fields := []log.Field{log.String("event", "rpc.write_request_done")}
+				fields := []attribute.KeyValue{}
 				if err != nil {
-					fields = append(fields, log.String("rpc.write_request.error", err.Error()))
+					fields = append(fields, attribute.String("rpc.write_request.error", err.Error()))
 				}
-				tr.LogFields(fields...) //nolint:staticcheck // TODO when updating the observation package
+				tr.AddEvent("rpc.write_request_done", fields...)
 				writeRequestDone = time.Now()
 			},
 		})
@@ -187,35 +186,35 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		code = "error"
 	}
 
-	fields := []log.Field{
-		log.Int("filematches", nFilesMatches),
-		log.Int("events", nEvents),
-		log.Int64("stream.total_send_time_ms", totalSendTimeMs),
+	fields := []attribute.KeyValue{
+		attribute.Int("filematches", nFilesMatches),
+		attribute.Int("events", nEvents),
+		attribute.Int64("stream.total_send_time_ms", totalSendTimeMs),
 
 		// Zoekt stats.
-		log.Int64("stats.content_bytes_loaded", statsAgg.ContentBytesLoaded),
-		log.Int64("stats.index_bytes_loaded", statsAgg.IndexBytesLoaded),
-		log.Int("stats.crashes", statsAgg.Crashes),
-		log.Int("stats.file_count", statsAgg.FileCount),
-		log.Int("stats.files_considered", statsAgg.FilesConsidered),
-		log.Int("stats.files_loaded", statsAgg.FilesLoaded),
-		log.Int("stats.files_skipped", statsAgg.FilesSkipped),
-		log.Int("stats.match_count", statsAgg.MatchCount),
-		log.Int("stats.ngram_matches", statsAgg.NgramMatches),
-		log.Int("stats.shard_files_considered", statsAgg.ShardFilesConsidered),
-		log.Int("stats.shards_scanned", statsAgg.ShardsScanned),
-		log.Int("stats.shards_skipped", statsAgg.ShardsSkipped),
-		log.Int("stats.shards_skipped_filter", statsAgg.ShardsSkippedFilter),
-		log.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
-		log.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
-		log.String("stats.flush_reason", statsAgg.FlushReason.String()),
+		attribute.Int64("stats.content_bytes_loaded", statsAgg.ContentBytesLoaded),
+		attribute.Int64("stats.index_bytes_loaded", statsAgg.IndexBytesLoaded),
+		attribute.Int("stats.crashes", statsAgg.Crashes),
+		attribute.Int("stats.file_count", statsAgg.FileCount),
+		attribute.Int("stats.files_considered", statsAgg.FilesConsidered),
+		attribute.Int("stats.files_loaded", statsAgg.FilesLoaded),
+		attribute.Int("stats.files_skipped", statsAgg.FilesSkipped),
+		attribute.Int("stats.match_count", statsAgg.MatchCount),
+		attribute.Int("stats.ngram_matches", statsAgg.NgramMatches),
+		attribute.Int("stats.shard_files_considered", statsAgg.ShardFilesConsidered),
+		attribute.Int("stats.shards_scanned", statsAgg.ShardsScanned),
+		attribute.Int("stats.shards_skipped", statsAgg.ShardsSkipped),
+		attribute.Int("stats.shards_skipped_filter", statsAgg.ShardsSkippedFilter),
+		attribute.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
+		attribute.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
+		attribute.String("stats.flush_reason", statsAgg.FlushReason.String()),
 	}
-	tr.LogFields(fields...) //nolint:staticcheck // TODO when updating the observation package
+	tr.AddEvent("done", fields...)
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if err != nil {
 		event.AddField("error", err.Error())
 	}
-	event.AddLogFields(fields)
+	event.AddAttributes(fields)
 	event.Send()
 
 	// Record total duration of stream
@@ -252,7 +251,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	qStr := queryString(q)
 
 	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
-	tr.LogFields(trace.Stringer("opts", opts)) //nolint:staticcheck // TODO deal with stringer thing
+	tr.SetAttributes(attribute.Stringer("opts", opts))
 
 	event := honey.NoopEvent()
 	if honey.Enabled() && cat == "ListAll" {

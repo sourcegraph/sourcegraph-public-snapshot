@@ -5,13 +5,12 @@ import (
 	"math"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchalert "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -76,20 +75,20 @@ func (j *alertJob) Name() string {
 	return "AlertJob"
 }
 
-func (j *alertJob) Fields(v job.Verbosity) (res []log.Field) {
+func (j *alertJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			trace.Stringer("features", j.inputs.Features),
-			trace.Stringer("protocol", j.inputs.Protocol),
-			log.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
+			attribute.Stringer("features", j.inputs.Features),
+			attribute.Stringer("protocol", j.inputs.Protocol),
+			attribute.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
 		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Stringer("query", j.inputs.Query),
-			log.String("originalQuery", j.inputs.OriginalQuery),
-			trace.Stringer("patternType", j.inputs.PatternType),
+			attribute.Stringer("query", j.inputs.Query),
+			attribute.String("originalQuery", j.inputs.OriginalQuery),
+			attribute.Stringer("patternType", j.inputs.PatternType),
 		)
 	}
 	return res

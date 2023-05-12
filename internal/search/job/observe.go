@@ -3,7 +3,6 @@ package job
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/atomic"
 
@@ -16,7 +15,7 @@ type finishSpanFunc func(*search.Alert, error)
 
 func StartSpan(ctx context.Context, stream streaming.Sender, job Job) (*trace.Trace, context.Context, streaming.Sender, finishSpanFunc) {
 	tr, ctx := trace.New(ctx, job.Name(), "")
-	tr.TagFields(trace.LazyFields(func() []log.Field { return job.Fields(VerbosityMax) })) //nolint:staticcheck // OK until we drop OpenTracing
+	tr.SetAttributes(job.Attributes(VerbosityMax)...)
 
 	observingStream := newObservingStream(tr, stream)
 

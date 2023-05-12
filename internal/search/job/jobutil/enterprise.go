@@ -3,7 +3,7 @@ package jobutil
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -42,7 +42,7 @@ func (e *UnimplementedJob) Run(context.Context, job.RuntimeClients, streaming.Se
 	return nil, errors.New(e.msg)
 }
 
-func (e *UnimplementedJob) Name() string                     { return "UnimplementedJob" }
-func (e *UnimplementedJob) Fields(job.Verbosity) []log.Field { return nil }
-func (e *UnimplementedJob) Children() []job.Describer        { return nil }
-func (e *UnimplementedJob) MapChildren(job.MapFunc) job.Job  { return e }
+func (e *UnimplementedJob) Name() string                                  { return "UnimplementedJob" }
+func (e *UnimplementedJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
+func (e *UnimplementedJob) Children() []job.Describer                     { return nil }
+func (e *UnimplementedJob) MapChildren(job.MapFunc) job.Job               { return e }

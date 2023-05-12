@@ -76,7 +76,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 				attribute.Int64("duration_ms", stat.Duration.Milliseconds()),
 			}
 			if stat.Error != nil {
-				attrs = append(attrs, attribute.String("error", stat.Error.Error()))
+				attrs = append(attrs, trace.Error(stat.Error))
 			}
 			tr.AddEvent("write", attrs...)
 		}

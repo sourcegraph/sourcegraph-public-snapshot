@@ -101,13 +101,6 @@ type TraceLogger interface {
 	// underlying Logger.
 	SetAttributes(attributes ...attribute.KeyValue)
 
-	// Deprecated: Use SetAttributes(...) instead.
-	//
-	// Tag adds fields to the opentracing.Span as tags as well as as logs to the nettrace.Trace.
-	//
-	// Tag will add fields to the underlying logger.
-	Tag(fields ...otlog.Field)
-
 	// Logger is a logger scoped to this trace.
 	log.Logger
 }
@@ -189,19 +182,6 @@ func (t *traceLogger) SetAttributes(attributes ...attribute.KeyValue) {
 		t.trace.SetAttributes(attributes...)
 	}
 	t.Logger = t.Logger.With(attributesToLogFields(attributes)...)
-}
-
-// Deprecated: Use SetAttributes(...) instead.
-func (t *traceLogger) Tag(fields ...otlog.Field) {
-	if honey.Enabled() {
-		for _, field := range fields {
-			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
-		}
-	}
-	if t.trace != nil {
-		t.trace.TagFields(fields...)
-	}
-	t.Logger = t.Logger.With(toLogFields(fields)...)
 }
 
 // FinishFunc is the shape of the function returned by With and should be invoked within

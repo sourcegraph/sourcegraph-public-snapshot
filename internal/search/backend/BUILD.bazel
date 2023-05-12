@@ -32,7 +32,6 @@ go_library(
         "@com_github_keegancsmith_rpc//:rpc",
         "@com_github_mitchellh_hashstructure//:hashstructure",
         "@com_github_opentracing_opentracing_go//:opentracing-go",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
