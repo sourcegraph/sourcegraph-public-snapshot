@@ -44,13 +44,13 @@ type dequeueTestCase struct {
 	// only valid status code for this field is http.StatusNoContent
 	expectedStatusCode int
 
+	mockFunc      func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore)
+	assertionFunc func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore)
+
 	// TODO: due to generics, I'm not sure how to provide a single list of sequential dequeues.
 	// Without fairness, these could just be evaluated in the order of the queues as provided in the POST body,
 	// but when fairness comes into play, that will no longer apply. To circumvent this, I add the events with an ID
 	// to determine in which order they should be evaluated. Should be revisited
-	mockFunc      func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore)
-	assertionFunc func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore)
-
 	codeintelDequeueEvents map[int]dequeueEvent[uploadsshared.Index]
 	batchesDequeueEvents   map[int]dequeueEvent[*btypes.BatchSpecWorkspaceExecutionJob]
 }
