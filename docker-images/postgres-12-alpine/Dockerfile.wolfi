@@ -20,7 +20,9 @@ ARG POSTGRES_UID=999
 # and avoid issues with customers migrating.
 RUN addgroup -g $PING_UID ping &&\
     adduser -D -u $POSTGRES_UID postgres postgres &&\
-    mkdir -p /data/pgdata-12 && chown -R postgres:postgres /data
+    mkdir -p /data/pgdata-12 && chown -R postgres:postgres /data &&\
+    mkdir -p /var/lib/postgresql && chown -R postgres:postgres /var/lib/postgresql &&\
+    mkdir -p /var/run/postgresql && chown -R postgres:postgres /var/run/postgresql
 
 COPY rootfs /
 # Overwrite default postgresql.conf.sample
@@ -28,6 +30,8 @@ COPY config/postgresql.conf.sample /usr/share/postgresql/postgresql.conf.sample
 
 # Used by Postgresql during initdb. Wolfi's default is LANG=C
 ENV LANG=en_US.utf8
+# Set socket path for psql (defaults to /tmp)
+ENV PGHOST=/var/run/postgresql
 
 USER postgres
 ENTRYPOINT ["/postgres-wolfi.sh"]
