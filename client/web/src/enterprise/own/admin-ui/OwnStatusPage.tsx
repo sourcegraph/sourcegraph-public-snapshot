@@ -40,9 +40,8 @@ export const OwnStatusPage: FC = () => {
     const [hasLocalChanges, setHasLocalChanges] = useState<boolean>(false)
     const [localData, setLocalData] = useState<Job[]>([])
 
-    const { remoteData, loading, error } = useQuery<GetOwnSignalConfigurationsResult>(
+    const { loading, error } = useQuery<GetOwnSignalConfigurationsResult>(
         GET_OWN_JOB_CONFIGURATIONS, {onCompleted: data => {
-                console.log(data)
                 const jobs = data.signalConfigurations.map(sc => {
                     return {...sc, excluded: sc.excludedRepoPatterns}
                 })
