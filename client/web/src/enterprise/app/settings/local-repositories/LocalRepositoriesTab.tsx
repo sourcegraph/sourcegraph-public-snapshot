@@ -173,7 +173,10 @@ const LocalRepositoriesList: FC<LocalRepositoriesListProps> = ({ paths, reposito
                     path,
                     repositories,
                 })
+
+                continue
             }
+
             if (repositories.length === 1 && repositories[0].path !== path) {
                 folders.push({
                     path,
