@@ -543,7 +543,7 @@ var jobs = []signalJob{{
 	Description: "Calculates recent contributors one job per repository.",
 }, {
 	Name:        "recent-views",
-	Description: "Calcaultes recent viewers from the events stored inside Sourcegraph.",
+	Description: "Calculates recent viewers from the events stored inside Sourcegraph.",
 }}
 
 type signalJob struct {
@@ -553,4 +553,10 @@ type signalJob struct {
 
 func featureFlagName(job signalJob) string {
 	return fmt.Sprintf("own-background-index-repo-%s", job.Name)
+}
+
+func (r *ownResolver) UpdateSignalConfigurations(ctx context.Context, args graphqlbackend.UpdateSignalConfigurationsArgs) ([]graphqlbackend.SignalConfigurationResolver, error) {
+	// for now, just return the jobs
+	r.logger.Info("input singal configs", log.String("configs", fmt.Sprintf("%v", args.Input.Configs)))
+	return r.SignalConfigurations(ctx)
 }

@@ -17,3 +17,14 @@ export const GET_OWN_JOB_CONFIGURATIONS = gql`
     }
     ${OwnSignalFragment}
 `
+
+export const UPDATE_SIGNAL_CONFIGURATIONS = gql`
+    mutation UpdateSignalConfigs($input:UpdateSignalConfigurationsInput!) {
+        updateSignalConfigurations(input:$input) {
+            isEnabled
+            name
+            description
+            excludedRepoPatterns
+        }
+    }
+`

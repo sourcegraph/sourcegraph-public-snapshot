@@ -200,6 +200,8 @@ extend type Mutation {
     deleteCodeownersFiles deletes any existing Codeowners file for the given repositories.
     """
     deleteCodeownersFiles(repositories: [DeleteCodeownersFilesInput!]!): EmptyResponse
+
+    updateSignalConfigurations(input: UpdateSignalConfigurationsInput!): [SignalConfiguration!]!
 }
 
 """
@@ -249,6 +251,16 @@ type SignalConfiguration {
     description: String!
     isEnabled: Boolean!
     excludedRepoPatterns: [String!]!
+}
+
+input SignalConfigurationUpdate {
+    excludedRepoPatterns: [String!]!
+    enabled: Boolean!
+    name: String!
+}
+
+input UpdateSignalConfigurationsInput {
+    configs: [SignalConfigurationUpdate!]!
 }
 
 """

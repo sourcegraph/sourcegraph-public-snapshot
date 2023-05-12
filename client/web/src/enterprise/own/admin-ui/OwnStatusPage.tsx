@@ -9,11 +9,14 @@ import styles from '../../insights/admin-ui/CodeInsightsJobs.module.scss';
 import './own-status-page-styles.scss'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import {RepositoryPatternList} from '../../codeintel/configuration/components/RepositoryPatternList';
-import {useQuery} from '@sourcegraph/http-client';
+import {useMutation, useQuery} from '@sourcegraph/http-client';
 import {
     GetOwnSignalConfigurationsResult,
+    UpdateSignalConfigsResult,
+    UpdateSignalConfigsVariables,
+    UpdateSignalConfigurationsInput,
 } from '../../../graphql-operations';
-import {GET_OWN_JOB_CONFIGURATIONS} from './query';
+import {GET_OWN_JOB_CONFIGURATIONS, UPDATE_SIGNAL_CONFIGURATIONS} from './query';
 
 interface Job {
     name: string;
@@ -49,6 +52,8 @@ export const OwnStatusPage: FC = () => {
             }}
     )
 
+    const [saveConfigs, {loading: loadingSaveConfigs}] = useMutation<UpdateSignalConfigsResult, UpdateSignalConfigsVariables>(UPDATE_SIGNAL_CONFIGURATIONS)
+
     function onUpdateJob(index: number, newJob: Job): void {
         setHasLocalChanges(true)
         const newData = localData.map((job, ind) => {
@@ -73,16 +78,29 @@ export const OwnStatusPage: FC = () => {
                 />
             </div>
 
-            <Button id='saveButton' disabled={!hasLocalChanges} aria-label="Save changes" variant="primary" onClick={() => {
+            {!loadingSaveConfigs && <Button id='saveButton' disabled={!hasLocalChanges} aria-label="Save changes" variant="primary" onClick={() => {
                 // do network stuff
-                setHasLocalChanges(false)
-            }}>Save</Button>
+                saveConfigs({variables: {
+                    input: {
+                        configs: localData.map(ld => {
+                            return {name: ld.name, enabled: ld.isEnabled, excludedRepoPatterns: ld.excluded}
+                        })
+                    }
+                    }}).then(data => {
+                    const jobs = data.data.updateSignalConfigurations.map(sc => {
+                        return {...sc, excluded: sc.excludedRepoPatterns}
+                    })
+                    setHasLocalChanges(false)
+                    setLocalData(jobs)
+                }) // what do we do with errors here?
+            }}>Save</Button>}
+            {loadingSaveConfigs && <LoadingSpinner/>}
         </span>
 
         <Container className={styles.root}>
-            {loading && <LoadingSpinner/>}
+            {(loading) && <LoadingSpinner/>}
             {error && <ErrorAlert prefix="Error fetching Own signal configurations" error={error} /> }
-            {!loading && localData && !error && localData.map((job, index) => (
+            {!(loading) && localData && !error && localData.map((job, index) => (
                 <li key={job.name} className="job">
                     <div className='jobHeader'>
                         <H3 className='jobName'>{job.name}</H3>

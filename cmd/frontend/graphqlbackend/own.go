@@ -37,6 +37,7 @@ type OwnResolver interface {
 
 	// config
 	SignalConfigurations(ctx context.Context) ([]SignalConfigurationResolver, error)
+	UpdateSignalConfigurations(ctx context.Context, configurationsArgs UpdateSignalConfigurationsArgs) ([]SignalConfigurationResolver, error)
 }
 
 type OwnershipConnectionResolver interface {
@@ -133,4 +134,18 @@ type SignalConfigurationResolver interface {
 	Description() string
 	IsEnabled() bool
 	ExcludedRepoPatterns() []string
+}
+
+type UpdateSignalConfigurationsArgs struct {
+	Input UpdateSignalConfigurationsInput
+}
+
+type UpdateSignalConfigurationsInput struct {
+	Configs []SignalConfigurationUpdate
+}
+
+type SignalConfigurationUpdate struct {
+	Name                 string
+	ExcludedRepoPatterns []string
+	Enabled              bool
 }
