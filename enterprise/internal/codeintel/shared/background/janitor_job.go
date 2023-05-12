@@ -33,7 +33,6 @@ type JanitorMetrics struct {
 func NewJanitorMetrics(
 	observationCtx *observation.Context,
 	name string,
-	recordTypeName string,
 ) *JanitorMetrics {
 	replacer := strings.NewReplacer(
 		".", "_",
@@ -68,11 +67,11 @@ func NewJanitorMetrics(
 
 	numRecordsScanned := counter(
 		fmt.Sprintf("src_%s_records_scanned_total", metricName),
-		fmt.Sprintf("The number of %s records scanned by %s.", recordTypeName, name),
+		fmt.Sprintf("The number of records scanned by %s.", name),
 	)
 	numRecordsAltered := counter(
 		fmt.Sprintf("src_%s_records_altered_total", metricName),
-		fmt.Sprintf("The number of %s records altered by %s.", recordTypeName, name),
+		fmt.Sprintf("The number of records altered by %s.", name),
 	)
 
 	return &JanitorMetrics{

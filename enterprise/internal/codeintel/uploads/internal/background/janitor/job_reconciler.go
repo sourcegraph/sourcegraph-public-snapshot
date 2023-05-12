@@ -19,7 +19,6 @@ func NewFrontendDBReconciler(
 	return newReconciler(
 		"codeintel.uploads.reconciler.scip-metadata",
 		"Counts SCIP metadata records for which there is no data in the codeintel-db schema.",
-		"SCIP metadata",
 		&storeWrapper{store},
 		&lsifStoreWrapper{lsifstore},
 		config,
@@ -36,7 +35,6 @@ func NewCodeIntelDBReconciler(
 	return newReconciler(
 		"codeintel.uploads.reconciler.scip-data",
 		"Removes SCIP data records for which there is no known associated metadata in the frontend schema.",
-		"SCIP data",
 		&lsifStoreWrapper{lsifstore},
 		&storeWrapper{store},
 		config,
@@ -59,7 +57,6 @@ type reconcileStore interface {
 func newReconciler(
 	name string,
 	description string,
-	recordTypeName string,
 	sourceStore sourceStore,
 	reconcileStore reconcileStore,
 	config *Config,
@@ -69,7 +66,7 @@ func newReconciler(
 		Name:        name,
 		Description: description,
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			candidateIDs, err := sourceStore.Candidates(ctx, config.ReconcilerBatchSize)
 			if err != nil {

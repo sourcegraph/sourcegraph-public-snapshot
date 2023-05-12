@@ -12,8 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-const recordTypeName = "path count inputs"
-
 func NewExportedUploadsJanitor(
 	observationCtx *observation.Context,
 	store store.Store,
@@ -25,7 +23,7 @@ func NewExportedUploadsJanitor(
 		Name:        name,
 		Description: "Soft-deletes stale data from the ranking exported uploads table.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
 			return softDeleteStaleExportedUploads(ctx, store)
 		},
@@ -43,7 +41,7 @@ func NewDeletedUploadsJanitor(
 		Name:        name,
 		Description: "Removes soft-deleted data from the ranking exported uploads table no longer being read by a mapper process.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
 			numDeleted, err := vacuumDeletedExportedUploads(ctx, store)
 			return numDeleted, numDeleted, err
@@ -62,7 +60,7 @@ func NewAbandonedExportedUploadsJanitor(
 		Name:        name,
 		Description: "Removes ranking exported uploads records for old graph keys.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
 			numDeleted, err := vacuumAbandonedExportedUploads(ctx, store)
 			return numDeleted, numDeleted, err
@@ -81,7 +79,7 @@ func NewRankCountsJanitor(
 		Name:        name,
 		Description: "Removes old path count input records.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
 			numDeleted, err := vacuumStaleGraphs(ctx, store)
 			return numDeleted, numDeleted, err
@@ -100,7 +98,7 @@ func NewRankJanitor(
 		Name:        name,
 		Description: "Removes stale ranking data.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
 			return vacuumStaleRanks(ctx, store)
 		},
