@@ -37,18 +37,20 @@ type Message struct {
 	Content string `json:"content"`
 }
 
-type openAIChatCompletionStreamClient struct {
-	cli         httpcli.Doer
-	accessToken string
-	model       string
-}
+const ProviderName = "openai"
 
-func NewOpenAIClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
 	return &openAIChatCompletionStreamClient{
 		cli:         cli,
 		accessToken: accessToken,
 		model:       model,
 	}
+}
+
+type openAIChatCompletionStreamClient struct {
+	cli         httpcli.Doer
+	accessToken string
+	model       string
 }
 
 func (a *openAIChatCompletionStreamClient) Complete(ctx context.Context, requestParams types.CodeCompletionRequestParameters) (*types.CodeCompletionResponse, error) {

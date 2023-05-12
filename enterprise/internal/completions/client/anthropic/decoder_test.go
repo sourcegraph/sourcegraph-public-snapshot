@@ -15,7 +15,7 @@ func TestDecoder(t *testing.T) {
 	}
 
 	decodeAll := func(input string) ([]event, error) {
-		dec := NewDecoder(strings.NewReader(input))
+		dec := newDecoder(strings.NewReader(input))
 		var events []event
 		for dec.Scan() {
 			events = append(events, event{
