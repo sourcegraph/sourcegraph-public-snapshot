@@ -203,13 +203,18 @@ func headCommitSHA(ctx context.Context, logger log.Logger, dir GitDir) (string, 
 	return string(output), nil
 }
 
+// TODO: Move to gitdomain package maybe?
+var logFormatWithoutRefs = "--format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
+
 func newMappableCommits(ctx context.Context, logger log.Logger, dir GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
 	cmd := exec.CommandContext(ctx, "git", "log")
 	if lastMappedCommit != "" {
 		cmd.Args = append(cmd.Args, fmt.Sprintf("%s..%s", lastMappedCommit, head))
 	}
 
+	cmd.Args = append(cmd.Args, logFormatWithoutRefs)
 	dir.Set(cmd)
+
 	output, err := runWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, nil)
 	if err != nil {
 		return nil, &GitCommandError{Err: err, Output: string(output)}
