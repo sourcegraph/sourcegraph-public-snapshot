@@ -774,7 +774,7 @@ func TestParseStandard(t *testing.T) {
 		return jsonStr
 	}
 
-	t.Run("patterns are literal and slash-delimited patterns /.../ are regexp", func(t *testing.T) {
+	t.Run("patterns are literal and slash-delimited patterns slash...slash are regexp", func(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test("anjou /saumur/")))
 	})
 
