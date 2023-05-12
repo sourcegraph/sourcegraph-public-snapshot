@@ -36,7 +36,7 @@ func Scoped(scope string, kvs ...attribute.KeyValue) []attribute.KeyValue {
 	res := make([]attribute.KeyValue, len(kvs))
 	for i, kv := range kvs {
 		res[i] = attribute.KeyValue{
-			Key:   attribute.Key(scope) + kv.Key,
+			Key:   attribute.Key(fmt.Sprintf("%s.%s", scope, kv.Key)),
 			Value: kv.Value,
 		}
 	}

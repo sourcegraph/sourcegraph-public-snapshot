@@ -21,6 +21,7 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -135,10 +136,10 @@ func (j *SearchJob) Fields(v job.Verbosity) (res []attribute.KeyValue) {
 	case job.VerbosityBasic:
 		res = append(res,
 			attribute.Stringer("query", j.Query),
-			attribute.Stringer("repoOpts", &j.RepoOpts),
 			attribute.Bool("diff", j.Diff),
 			attribute.Int("limit", j.Limit),
 		)
+		res = append(res, trace.Scoped("repoOpts", j.RepoOpts.Attributes()...)...)
 	}
 	return res
 }
