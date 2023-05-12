@@ -17,10 +17,14 @@ interface ExternalServiceInformationProps {
     codeHostID: string
     reposNumber: number
     syncInProgress: boolean
+    gitHubApp?: {
+        id: string
+        name: string
+    } | null
 }
 
 export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = props => {
-    const { icon, kind, displayName, codeHostID, reposNumber, syncInProgress } = props
+    const { icon, kind, displayName, codeHostID, reposNumber, syncInProgress, gitHubApp } = props
 
     return (
         <table className={classNames(styles.table, 'table')}>
@@ -32,6 +36,14 @@ export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = p
                         {kind}
                     </td>
                 </tr>
+                {gitHubApp && (
+                    <tr>
+                        <th className={styles.tableHeader}>GitHub App</th>
+                        <td>
+                            <Link to={`/site-admin/github-apps/${gitHubApp.id}`}>{gitHubApp.name}</Link>
+                        </td>
+                    </tr>
+                )}
                 <tr>
                     <th className={styles.tableHeader}>Display name</th>
                     <td>{displayName}</td>

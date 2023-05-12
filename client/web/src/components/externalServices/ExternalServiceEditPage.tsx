@@ -1,9 +1,9 @@
 import React, { FC, useEffect, useState, useCallback, useMemo } from 'react'
 
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, PageHeader, Button } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, PageHeader, Button, Label } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
@@ -50,6 +50,7 @@ export const ExternalServiceEditPage: FC<Props> = ({
         loading: fetchGHAppLoading,
         data: ghAppData,
     } = useFetchGithubAppForES(externalService)
+    const ghApp = useMemo(() => ghAppData?.gitHubAppByAppID, [ghAppData])
 
     const [updated, setUpdated] = useState(false)
     const [updateExternalService, { error: updateExternalServiceError, loading: updateExternalServiceLoading }] =
@@ -91,7 +92,7 @@ export const ExternalServiceEditPage: FC<Props> = ({
         [externalService, setExternalService]
     )
 
-    const path = useMemo(() => getBreadCrumbs(externalService, ghAppData, true), [externalService, ghAppData])
+    const path = useMemo(() => getBreadCrumbs(externalService, true), [externalService])
 
     const externalServiceCategory = resolveExternalServiceCategory(externalService)
 
@@ -110,7 +111,6 @@ export const ExternalServiceEditPage: FC<Props> = ({
                 <PageTitle title="Code host" />
             )}
             {combinedError !== undefined && !combinedLoading && <ErrorAlert className="mb-3" error={combinedError} />}
-
             {externalService && (
                 <Container className="mb-3">
                     <PageHeader
@@ -130,6 +130,14 @@ export const ExternalServiceEditPage: FC<Props> = ({
                             </Button>
                         }
                     />
+                    {ghApp && (
+                        <Label>
+                            GitHub App:
+                            <Link className="ml-3" to={`/site-admin/github-apps/${ghApp.id}`}>
+                                {ghApp.name}
+                            </Link>
+                        </Label>
+                    )}
                     {externalServiceCategory && (
                         <ExternalServiceForm
                             input={{ ...externalService }}
