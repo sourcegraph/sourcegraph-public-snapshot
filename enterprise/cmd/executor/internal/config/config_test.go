@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -49,6 +50,12 @@ func TestConfig_Load(t *testing.T) {
 			return `[{"key": "foo", "operator": "In", "values": ["bar"]}]`
 		case "EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS":
 			return `[{"key": "faz", "operator": "In", "values": ["baz"]}]`
+		case "EXECUTOR_KUBERNETES_POD_AFFINITY":
+			return `[{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]`
+		case "EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY":
+			return `[{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]`
+		case "EXECUTOR_KUBERNETES_NODE_TOLERATIONS":
+			return `[{"key": "foo", "operator": "Equal", "value": "bar", "effect": "NoSchedule"}]`
 		default:
 			return name
 		}
@@ -93,6 +100,47 @@ func TestConfig_Load(t *testing.T) {
 		[]corev1.NodeSelectorRequirement{{Key: "faz", Operator: corev1.NodeSelectorOpIn, Values: []string{"baz"}}},
 		cfg.KubernetesNodeRequiredAffinityMatchFields,
 	)
+	assert.Equal(
+		t,
+		[]corev1.PodAffinityTerm{
+			{
+				LabelSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "foo",
+							Operator: metav1.LabelSelectorOpIn,
+							Values:   []string{"bar"},
+						},
+					},
+				},
+				TopologyKey: "kubernetes.io/hostname",
+			},
+		},
+		cfg.KubernetesPodAffinity,
+	)
+	assert.Equal(
+		t,
+		[]corev1.PodAffinityTerm{
+			{
+				LabelSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "foo",
+							Operator: metav1.LabelSelectorOpIn,
+							Values:   []string{"bar"},
+						},
+					},
+				},
+				TopologyKey: "kubernetes.io/hostname",
+			},
+		},
+		cfg.KubernetesPodAntiAffinity,
+	)
+	assert.Equal(
+		t,
+		[]corev1.Toleration{{Key: "foo", Operator: corev1.TolerationOpEqual, Value: "bar", Effect: corev1.TaintEffectNoSchedule}},
+		cfg.KubernetesNodeTolerations,
+	)
 }
 
 func TestConfig_Load_Defaults(t *testing.T) {
@@ -133,9 +181,11 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Equal(t, "12Gi", cfg.KubernetesResourceLimitMemory)
 	assert.Empty(t, cfg.KubernetesResourceRequestCPU)
 	assert.Equal(t, "12Gi", cfg.KubernetesResourceRequestMemory)
-	assert.Equal(t, 600, cfg.KubernetesJobRetryBackoffLimit)
-	assert.Equal(t, 100*time.Millisecond, cfg.KubernetesJobRetryBackoffDuration)
+	assert.Equal(t, 300, cfg.KubernetesJobDeadline)
 	assert.False(t, cfg.KubernetesKeepJobs)
+	assert.Equal(t, -1, cfg.KubernetesSecurityContextRunAsUser)
+	assert.Equal(t, -1, cfg.KubernetesSecurityContextRunAsGroup)
+	assert.Equal(t, 1000, cfg.KubernetesSecurityContextFSGroup)
 }
 
 func TestConfig_Validate(t *testing.T) {
