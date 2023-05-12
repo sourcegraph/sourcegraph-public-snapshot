@@ -117,13 +117,14 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			job, err = m.BatchesQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
 			if err != nil {
-				if _, err = m.BatchesQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); err != nil {
+				if _, markErr := m.BatchesQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); markErr != nil {
 					logger.Error("Failed to mark record as failed",
+						log.String("queue", queue),
 						log.Int("recordID", record.RecordID()),
-						log.Error(err))
+						log.Error(markErr))
 				}
-
-				http.Error(w, fmt.Sprintf("Failed to transform %s record into job: %s", queue, errors.Wrap(err, "RecordTransformer")), http.StatusInternalServerError)
+				err = errors.Wrapf(err, "RecordTransformer %s", queue)
+				m.marshalAndRespondError(w, err)
 				return
 			}
 		case "codeintel":
@@ -141,13 +142,13 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			job, err = m.CodeIntelQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
 			if err != nil {
-				if _, err = m.CodeIntelQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); err != nil {
+				if _, markErr := m.CodeIntelQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); markErr != nil {
 					logger.Error("Failed to mark record as failed",
 						log.Int("recordID", record.RecordID()),
-						log.Error(err))
+						log.Error(markErr))
 				}
-
-				http.Error(w, fmt.Sprintf("Failed to transform %s record into job: %s", queue, errors.Wrap(err, "RecordTransformer")), http.StatusInternalServerError)
+				err = errors.Wrapf(err, "RecordTransformer %s", queue)
+				m.marshalAndRespondError(w, err)
 				return
 			}
 		}

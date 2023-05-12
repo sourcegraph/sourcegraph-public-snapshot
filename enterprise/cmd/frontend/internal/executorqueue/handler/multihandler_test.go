@@ -172,9 +172,13 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
 				0: {
 					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"RecordTransformer: failed"}`,
+					expectedResponseBody: `{"error":"RecordTransformer codeintel: failed"}`,
 					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
-						mockStore.DequeueFunc.PushReturn(uploadsshared.Index{}, false, errors.New("failed to dequeue"))
+						mockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
+						mockStore.MarkFailedFunc.PushReturn(true, nil)
+					},
+					transformerFunc: func(ctx context.Context, version string, record uploadsshared.Index, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+						return executortypes.Job{}, errors.New("failed")
 					},
 					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
 						require.Len(t, mockStore.DequeueFunc.History(), 1)
@@ -189,7 +193,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			batchesDequeueEvents: map[int]dequeueEvent[*btypes.BatchSpecWorkspaceExecutionJob]{
 				1: {
 					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"RecordTransformer: failed"}`,
+					expectedResponseBody: `{"error":"RecordTransformer batches: failed"}`,
 					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 						mockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 1}, true, nil)
 						mockStore.MarkFailedFunc.PushReturn(true, nil)
