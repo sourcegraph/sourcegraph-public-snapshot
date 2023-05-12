@@ -73,7 +73,7 @@ type Transport struct {
 
 func (r *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set(traceHeader, strconv.FormatBool(ShouldTrace(req.Context())))
-	return r.RoundTrip(req)
+	return r.RoundTripper.RoundTrip(req)
 }
 
 // requestWantsTrace returns true if a request is opting into tracing either
