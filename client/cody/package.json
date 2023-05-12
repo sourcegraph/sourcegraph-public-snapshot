@@ -75,72 +75,51 @@
   "contributes": {
     "walkthroughs": [
       {
-        "id": "sample",
+        "id": "cody",
         "title": "Welcome do Cody",
         "description": "Discover how Cody can help you",
         "steps": [
           {
-            "id": "whoCodyWorks",
-            "title": "How Cody Works",
-            "description": "Understad how cody works and how it understands your code base",
+            "id": "setupCody",
+            "title": "Setup Cody",
+            "description": "Getting started with Cody is easy and only takes a few clicks",
             "media": {
-              "image": "media/image.png",
-              "altText": "Empty image"
-            },
-            "completionEvents": [
-              "onCommand:getting-started-sample.runCommand"
-            ]
+              "markdown": "guides/setup.md"
+            }
           },
           {
             "id": "chatInterface",
             "title": "Asking Cody",
-            "description": "This step will change a setting and check off when the setting has changed\n[Change Setting](command:getting-started-sample.changeSetting)",
+            "description": "Use Cody to have conversations about your codebase",
             "media": {
-              "markdown": "media/markdown.md"
-            },
-            "completionEvents": [
-              "onSettingChanged:getting-started-sample.sampleSetting"
-            ]
+              "markdown": "guides/chat.md"
+            }
           },
           {
             "id": "usingRecipes",
             "title": "Using recipes",
-            "description": "This step will change a setting and check off when the setting has changed\n[Change Setting](command:getting-started-sample.changeSetting)",
+            "description": "What is possible with recipes?",
             "media": {
-              "markdown": "media/markdown.md"
+              "markdown": "guides/recipes.md"
             },
             "completionEvents": [
               "onSettingChanged:getting-started-sample.sampleSetting"
             ]
           },
           {
-            "id": "usingRecipes",
+            "id": "completions",
             "title": "Auto completions",
-            "description": "This step will change a setting and check off when the setting has changed\n[Change Setting](command:getting-started-sample.changeSetting)",
+            "description": "How to enable auto completions",
             "media": {
-              "markdown": "media/markdown.md"
-            },
-            "completionEvents": [
-              "onSettingChanged:getting-started-sample.sampleSetting"
-            ]
+              "markdown": "guides/completions.md"
+            }
           },
           {
             "id": "fixup",
             "title": "Using fixup",
-            "description": "This step will change a setting and check off when the setting has changed\n[Change Setting](command:getting-started-sample.changeSetting)",
+            "description": "What is and how to use fixup",
             "media": {
-              "markdown": "media/markdown.md"
-            },
-            "completionEvents": [
-              "onSettingChanged:getting-started-sample.sampleSetting"
-            ]
-          },
-          {
-            "id": "learningMore",
-            "title": "Learn More",
-            "description": "This step will change a setting and check off when the setting has changed\n[Change Setting](command:getting-started-sample.changeSetting)",
-            "media": {
-              "markdown": "media/markdown.md"
+              "markdown": "guides/fixup.md"
             },
             "completionEvents": [
               "onSettingChanged:getting-started-sample.sampleSetting"
