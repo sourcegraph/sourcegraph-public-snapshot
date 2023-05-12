@@ -3,6 +3,7 @@ package updatecheck
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -30,6 +31,14 @@ type AppVersion struct {
 	Arch    string
 }
 
+type AppUpdateResponse struct {
+	Version   string    `json:"version"`
+	Notes     string    `json:"notes"`
+	PubDate   time.Time `json:"pub_date"`
+	Signature string    `json:"signature"`
+	URL       string    `json:"url"`
+}
+
 type AppUpdateManifest struct {
 	Version   string      `json:"version"`
 	Notes     string      `json:"notes"`
@@ -41,7 +50,7 @@ type AppPlatform map[string]AppLocation
 
 type AppLocation struct {
 	Signature string `json:"signature"`
-	Url       string `json:"url"`
+	URL       string `json:"url"`
 }
 
 type AppUpdateChecker struct {
@@ -63,6 +72,14 @@ type GCSManifestResolver struct {
 
 type StaticManifestResolver struct {
 	manifest AppUpdateManifest
+}
+
+func (v *AppVersion) Platform() string {
+	// creates a platform with string with the following format
+	// x86_64-Darwin
+	// x86_64-Linux
+	// aarch64-Darwin
+	return fmt.Sprintf("%s-%s", v.Arch, v.Target)
 }
 
 func NewGCSManifestResolver(ctx context.Context, bucket, manifestName string) (UpdateManifestResolver, error) {
@@ -148,8 +165,37 @@ func (checker *AppUpdateChecker) Handler() http.HandlerFunc {
 			return
 		}
 
+		var platformLoc AppLocation
+		if p, ok := manifest.Platforms[appClientVersion.Platform()]; !ok {
+			// we don't have this platform in our manifest, so this is just a bad request
+			checker.logger.Error("platform not found App Update Manifest", log.String("platform", appClientVersion.Platform()))
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		} else {
+			platformLoc = p
+		}
+
+		updateResp := AppUpdateResponse{
+			Version:   manifest.Version,
+			PubDate:   manifest.PubDate,
+			Notes:     manifest.Notes,
+			Signature: platformLoc.Signature,
+			URL:       platformLoc.URL,
+		}
+
 		// notify the app client that they can update
-		json.NewEncoder(w).Encode(manifest)
+		err = json.NewEncoder(w).Encode(updateResp)
+		if err != nil {
+			checker.logger.Error("failed to encode App Update Response", log.Error(err), log.Object("resp",
+				log.String("version", updateResp.Version),
+				log.Time("PubDate", updateResp.PubDate),
+				log.String("Notes", updateResp.Notes),
+				log.String("Signature", updateResp.Signature),
+				log.String("URL", updateResp.URL),
+			))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 	}
 }

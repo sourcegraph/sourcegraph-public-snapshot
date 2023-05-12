@@ -85,7 +85,7 @@ func TestAppUpdateCheckHandler(t *testing.T) {
 			Platforms: map[string]AppLocation{
 				"x86_64-amd64": {
 					Signature: "Yippy Kay YAY",
-					Url:       "https://example.com",
+					URL:       "https://example.com",
 				},
 			},
 		},
@@ -151,7 +151,7 @@ func TestAppUpdateCheckHandler(t *testing.T) {
 			if wanted.Signature != got.Signature {
 				t.Errorf("signature mistmactch - got %s wanted %s", got.Signature, wanted.Signature)
 			}
-			if wanted.Url != got.Url {
+			if wanted.URL != got.URL {
 				t.Errorf("url mistmactch - got %s wanted %s", got.Signature, wanted.Signature)
 			}
 		}
@@ -195,7 +195,7 @@ func TestGCSResolver(t *testing.T) {
 		if got.Signature == "" {
 			t.Errorf("%s platform has an empty signature", keyPlatform)
 		}
-		if got.Url == "" {
+		if got.URL == "" {
 			t.Errorf("%s platform has an empty url", keyPlatform)
 		}
 	}
