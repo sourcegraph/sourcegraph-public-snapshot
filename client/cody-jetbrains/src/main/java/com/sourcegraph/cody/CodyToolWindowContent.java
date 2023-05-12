@@ -46,6 +46,7 @@ class CodyToolWindowContent implements UpdatableChat {
         controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.X_AXIS));
         messageField = new JTextField();
         controlsPanel.add(messageField);
+        messageField.addActionListener(e -> sendMessage(project)); // TODO: Also disable the button while sending, then re-enable it
         JButton sendButton = new JButton("Send");
         sendButton.addActionListener(e -> sendMessage(project));
         controlsPanel.add(sendButton);
@@ -101,7 +102,7 @@ class CodyToolWindowContent implements UpdatableChat {
     private void sendMessage(@NotNull Project project) {
         // Build message
         EditorContext editorContext = EditorContextGetter.getEditorContext(project);
-        var chat = new Chat("", "https://sourcegraph.sourcegraph.com/", "TODO: API key");
+        var chat = new Chat("", "https://sourcegraph.com/", "TODO: API key");
         ArrayList<String> contextFiles = editorContext == null ? new ArrayList<>() : new ArrayList<>(Collections.singletonList(editorContext.getCurrentFileContent()));
         ChatMessage humanMessage = ChatMessage.createHumanMessage(messageField.getText(), contextFiles);
         addMessage(humanMessage);
