@@ -82,7 +82,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("default case", func(t *testing.T) {
 			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			initResults := NewAuthzProviders(
-			ctx,
+				ctx,
 				db,
 				[]*ExternalConnection{
 					{
@@ -113,7 +113,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("license does not have ACLs feature", func(t *testing.T) {
 			t.Cleanup(licensing.MockCheckFeatureError("failed"))
 			initResults := NewAuthzProviders(
-			ctx,
+				ctx,
 				db,
 				[]*ExternalConnection{
 					{
@@ -143,7 +143,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
 			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			initResults := NewAuthzProviders(
-			ctx,
+				ctx,
 				db,
 				[]*ExternalConnection{
 					{
