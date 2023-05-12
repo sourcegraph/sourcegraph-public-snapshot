@@ -9,7 +9,7 @@ import { PageTitle } from '../PageTitle'
 
 export interface AddGitHubPageProps extends TelemetryProps {}
 
-type stateResponse = {
+interface stateResponse {
     state: string
     webhookUUID: string
 }
@@ -35,8 +35,8 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
 
     const baseUrl = window.location.origin
     const getManifest = useCallback(
-        (name: string, webhookURL: string): string => {
-            return JSON.stringify({
+        (name: string, webhookURL: string): string =>
+            JSON.stringify({
                 name: name.trim(),
                 url: baseUrl,
                 hook_attributes: {
@@ -64,9 +64,8 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                     'meta',
                     'push',
                 ],
-            })
-        },
-        [baseUrl, name]
+            }),
+        [baseUrl]
     )
 
     const createActionUrl = useCallback(
@@ -93,7 +92,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                 ref.current.submit()
             }
         },
-        [createActionUrl]
+        [createActionUrl, getManifest]
     )
 
     const createState = useCallback(async () => {
@@ -106,7 +105,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
         } catch (_error) {
             setError(_error)
         }
-    }, [submitForm, name, url])
+    }, [submitForm, name, url, baseUrl])
 
     const handleNameChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
