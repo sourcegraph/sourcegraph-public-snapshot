@@ -130,15 +130,17 @@ func newAuthzProvider(
 
 	if ghaDetails := c.GitHubConnection.GitHubAppDetails; ghaDetails != nil {
 		auther, err := auth.FromConnection(ctx, c.GitHubConnection.GitHubConnection)
-		if err == nil {
-			ttl := time.Duration(c.Authorization.GroupsCacheTTL) * time.Hour
-			return NewProvider(c.GitHubConnection.URN, ProviderOptions{
-				GitHubURL:      baseURL,
-				BaseAuther:     auther,
-				GroupsCacheTTL: ttl,
-				DB:             db,
-			}), nil
+		if err != nil {
+			return nil, err
 		}
+
+		ttl := time.Duration(c.Authorization.GroupsCacheTTL) * time.Hour
+		return NewProvider(c.GitHubConnection.URN, ProviderOptions{
+			GitHubURL:      baseURL,
+			BaseAuther:     auther,
+			GroupsCacheTTL: ttl,
+			DB:             db,
+		}), nil
 	}
 
 	ttl := time.Duration(c.Authorization.GroupsCacheTTL) * time.Hour
