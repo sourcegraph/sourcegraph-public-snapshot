@@ -11,6 +11,7 @@ import {
     mdiSecurity,
     mdiVectorPolyline,
     mdiFileDocumentOutline,
+    mdiListStatus,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
@@ -191,15 +192,6 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                             <MenuList position={Position.bottomEnd}>
                                 <MenuItem
                                     as={Button}
-                                    disabled={!repoCloned(node)}
-                                    onSelect={() => navigate(`/${node.name}/-/settings/mirror`)}
-                                    className="p-2"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} className="mr-1" />
-                                    Last sync output
-                                </MenuItem>
-                                <MenuItem
-                                    as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
                                     onSelect={() => updateRepo()}
                                     className="p-2"
@@ -215,6 +207,15 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiDatabaseRefresh} className="mr-1" />
                                     Reclone
+                                </MenuItem>
+                                <MenuItem
+                                    as={Button}
+                                    disabled={!repoCloned(node)}
+                                    onSelect={() => navigate(`/${node.name}/-/settings/mirror`)}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiListStatus} className="mr-1" />
+                                    Last sync log
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}
