@@ -12,7 +12,11 @@
 CREATE TABLE IF NOT EXISTS gitserver_repos_sync_output (
     repo_id integer primary key,
     last_output text DEFAULT ''::text NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT gitserver_repos_sync_output_repo_id_fkey FOREIGN KEY (repo_id)
+        REFERENCES repo (id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE CASCADE
 );
 
 COMMENT ON TABLE gitserver_repos_sync_output IS 'Contains the most recent output from gitserver repository sync jobs.';
