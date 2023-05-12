@@ -8,10 +8,20 @@ import {
     CodeCompletionResponse,
 } from './types'
 
-type Config = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'debug' | 'customHeaders'>
+export interface CompletionLogger {
+    startCompletion(params: CodeCompletionParameters | CompletionParameters):
+        | undefined
+        | {
+              onError: (error: string) => void
+              onComplete: (response: string | CodeCompletionResponse) => void
+              onEvents: (events: Event[]) => void
+          }
+}
+
+export type Config = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'debug' | 'customHeaders'>
 
 export abstract class SourcegraphCompletionsClient {
-    constructor(protected config: Config) {}
+    constructor(protected config: Config, protected logger?: CompletionLogger) {}
 
     public onConfigurationChange(newConfig: Config): void {
         this.config = newConfig

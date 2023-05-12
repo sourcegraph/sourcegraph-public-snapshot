@@ -41,6 +41,7 @@ ts_project(
         "src/external-services.ts",
         "src/keyword-context/local-keyword-context-fetcher.ts",
         "src/local-app-detector.ts",
+        "src/log.ts",
         "src/main.ts",
         "src/rg.ts",
         "src/services/CodeLensProvider.ts",
