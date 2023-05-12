@@ -20,7 +20,7 @@
 - [How to determine cause for Precise-code-intel-worker in CrashLoopBackOff status](precise-code-intel-worker-crashloopbackoff.md)
 - [How to troubleshoot a failure to update repositories when new repositories are added](update_repo_failure.md)
 - [How to run postgres queries in your Sourcegraph instance](run-psql.md)
-- [How to purge deleted repository data from Sourcegraph](purge-deleted-repo-data.md)
+- [How to purge deleted repository data from Sourcegraph](remove-repo.md#manually-purge-deleted-repository-data-from-disk)
 - [How to address common monorepo problems](monorepo-issues.md)
 - [How to Set a password for Redis using a ConfigMap](redis_configmap.md)
 - [How to import a set of internal repositories to Sourcegraph](internal_github_repos.md)

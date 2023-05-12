@@ -46,8 +46,8 @@ Click `Continue with Sourcegraph.com` in the Cody extension. From there, you'll 
 
 You can optional configure code graph content, which gives Cody the ability to provide context-aware answers. For example, Cody can write example API calls if has context of a codebase's API schema.
 
-- [Configure code graph context for Sourcegraph.com](enabling_cody#configure-code-graph-context-for-code-aware-answers)
-- [Configure code graph context for Sourcegraph Enterprise](enabling_cody_enterprise#enabling-codebase-aware-answers)
+- [Configure code graph context for Sourcegraph.com](enabling_cody.md#configure-code-graph-context-for-code-aware-answers)
+- [Configure code graph context for Sourcegraph Enterprise](enabling_cody_enterprise.md#enabling-codebase-aware-answers)
 
 ## Get started with Cody
 

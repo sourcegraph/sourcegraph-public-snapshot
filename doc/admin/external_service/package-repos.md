@@ -10,7 +10,7 @@ Sourcegraph package repos can synchronize dependency sources (Rust crates, JVM l
 
 ## Enable package repositories
 
-Package repositories can be enabled on a per-ecosystem level in your [site configuration](/admin/config/site_config), for example:
+Package repositories can be enabled on a per-ecosystem level in your [site configuration](../config/site_config.md), for example:
 
 ```json
 {
@@ -31,7 +31,7 @@ Package repositories can be enabled on a per-ecosystem level in your [site confi
 
 There are generally two ways of syncing package repositories to the Sourcegraph instance.
 
-1. **Indexing** (recommended): package repositories can be added to the Sourcegraph instance when they are referenced in [code graph data uploads](/code_navigation/explanations/uploads). Code graph indexers can derive package repository references during indexing, which will be used on upload to sync them to your instance. An external service for the given ecosystem must be created in order for these referenced package repositories to be synchronized.
+1. **Indexing** (recommended): package repositories can be added to the Sourcegraph instance when they are referenced in [code graph data uploads](../../code_navigation/explanations/uploads.md). Code graph indexers can derive package repository references during indexing, which will be used on upload to sync them to your instance. An external service for the given ecosystem must be created in order for these referenced package repositories to be synchronized.
 2. **Code host configuration**: each package repository external service supports manually defining versions of packages to sync. See the page specific to the ecosystem you wish to configure. This method can be useful to verify that the credentials are picked up correctly without having to upload an index, as we'll as to poke holes in the filters (detailed below) if necessary.
 
 ## Filters

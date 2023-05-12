@@ -16,7 +16,7 @@ You can now run `executor validate`, which will inform you about any configurati
 ### Creating a debug Firecracker VM
 The next step is to create a temporary Firecracker VM for debugging purposes.
 
-> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
+> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform.md), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
 
 Run one of the following commands `executor test-vm` to generate a test firecracker VM:
 ```shell
@@ -35,7 +35,7 @@ $ ignite attach executor-test-vm-0160f53f-e765-4481-a81e-aa3c704d07bd
 Execute the generated `ignite attach <vm>` command to gain a shell to the Firecracker VM.
 
 ## Disabling the auto-deletion of Executor VMs
-> NOTE: These instructions are for users using the VMs deployed via the [Terraform Modules](./deploy_executors_terraform)
+> NOTE: These instructions are for users using the VMs deployed via the [Terraform Modules](./deploy_executors_terraform.md)
 
 The Executor host VMs are configured to automatically tear themselves down once all jobs in the queue are completed. While this is desired behaviour under regular circumstances, it complicates debugging issues in the executor configuration or connections. To prevent the VMs from automatically stopping:
 1. `ssh` into the VM
@@ -47,7 +47,7 @@ The VM should now persist after all jobs are satisfied.
 ## Recreating a Firecracker VM 
 If a server-side batch change fails unexpectedly, it's possible to recreate the generated Firecracker VM from the batch change execution.
 
-> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
+> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform.md), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
 
 1. Navigate to the failed execution page of the Batch Change
 1. Select a failed Workspace on the left and click the `Diagnostics` link on the right pane
@@ -157,7 +157,7 @@ This section lists some common mistakes with environment variables. Some of thes
 | `SRC_LOG_LEVEL`                                                                                                                                                         | not set to one of [`dbug`, `info`, `warn`, `error`, `crit`] |
 
 ## Verify Firecracker support    
-The VM instance must [support KVM](./deploy_executors#firecracker-requirements). In effect, this means the instance must meet certain requirements depending on the Cloud provider in use.
+The VM instance must [support KVM](./deploy_executors.md#firecracker-requirements). In effect, this means the instance must meet certain requirements depending on the Cloud provider in use.
     
 ### GCP
 Nested virtualization must be enabled on the machine.

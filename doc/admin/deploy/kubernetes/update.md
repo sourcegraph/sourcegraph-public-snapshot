@@ -4,7 +4,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 > WARNING: This guide applies exclusively to Kubernetes deployments **without** Helm. Please refer to the [Updating Sourcegraph in the Helm guide](helm.md#upgrading-sourcegraph) when using Helm.
 
-**This guide assumes you have created a `release` branch following the [reference repositories docs](repositories.md)**.
+**This guide assumes you have created a `release` branch following the [reference repositories docs](../repositories.md)**.
 
 ## Standard upgrades
 
@@ -14,7 +14,7 @@ A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between tw
 
 - Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
 - Find the relevant entry for your update version in the [update notes for Sourcegraph with Kubernetes](../../updates/kubernetes.md).
-- [Backup](migrate-backup) (snapshot) your databases before performing upgrades.
+- [Backup](../migrate-backup.md) (snapshot) your databases before performing upgrades.
   - This up-to-date backup can be used for recovery in the event that a database upgrade fails or causes issues.
 
 ### Upgrade with Kubernetes
@@ -37,7 +37,7 @@ For instances deployed using the old [deploy-sourcegraph](https://github.com/sou
 
 **Step 2**: Update your install script `kubectl-apply-all.sh`
 
-By default, the install script `kubectl-apply-all.sh` applies our base manifests using [`kubectl apply` command](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the layout of the [deploy-sourcegraph reference repository]([./index.md#reference-repository](https://github.com/sourcegraph/deploy-sourcegraph)).
+By default, the install script `kubectl-apply-all.sh` applies our base manifests using [`kubectl apply` command](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the layout of the [deploy-sourcegraph reference repository](https://github.com/sourcegraph/deploy-sourcegraph).
 
 If you have specific commands that should be run whenever you apply your manifests, you should modify this script accordingly. 
 
@@ -123,7 +123,7 @@ A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a do
 
 - Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
 - Find the entries that apply to the version range you're passing through in the [update notes for Sourcegraph with Kubernetes](../../updates/kubernetes.md#multi-version-upgrade-procedure).
-- [Backup](migrate-backup) (snapshot) your databases before performing upgrades.
+- [Backup](../migrate-backup.md) (snapshot) your databases before performing upgrades.
   - This up-to-date backup can be used for recovery in the event that a database upgrade fails or causes issues.
 
 ### MVU with Kustomize

@@ -15,6 +15,7 @@ Sourcegraph integrates with your other tools to help you search, navigate, and r
     - [Python dependencies](python.md)
     - [Go dependencies](go.md)
     - [Ruby dependencies](ruby.md)
+    - [Rust dependencies](rust.md)
   - [Other Git repository hosts](../admin/external_service/other.md)
 - [Editor plugins](editor.md): jump to Sourcegraph from your editor
   - [Open in Editor](open_in_editor.md): jump to your editor from Sourcegraph

@@ -72,4 +72,4 @@ For deployment configuration, please refer to the relevant [installation guide](
 - [Usage statistics](usage_statistics.md)
 - [User feedback surveys](user_surveys.md)
 - [Audit logs](audit_log.md)
-
+- [Sourcegraph Enterprise Free Plan FAQ](free-tier.md)

@@ -1174,7 +1174,7 @@ To mount the files through Kustomize:
 
 **Step 4:** Update code host configuration
 
-Update your [code host configuration file](../../../external_service/index.md#full-code-host-docs) to enable ssh cloning. For example, set [gitURLType](../../../../admin/external_service/github.md#gitURLType) to `ssh` for [GitHub](../../../external_service/github.md). See the [external service docs](../../../admin/external_service.md) for the correct setting for your code host.
+Update your [code host configuration file](../../external_service/index.md#full-code-host-docs) to enable ssh cloning. For example, set [gitURLType](../../external_service/github.md#gitURLType) to `ssh` for [GitHub](../../external_service/github.md). See the [external service docs](../../../admin/external_service/index.md) for the correct setting for your code host.
 
 ---
 
@@ -1303,7 +1303,7 @@ patches:
 
 ## Multi-version upgrade
 
-In order to perform a [multi-version upgrade](../../../updates/index.md#multi-version-upgrades), all pods must be scaled down to 0 except databases, which can be handled by including the `utils/multi-version-upgrade` component:
+In order to perform a [multi-version upgrade](../../updates/index.md#multi-version-upgrades), all pods must be scaled down to 0 except databases, which can be handled by including the `utils/multi-version-upgrade` component:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -1337,4 +1337,4 @@ When working with an [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/lat
 
 ## Troubleshooting
 
-See the [Troubleshooting docs](../troubleshoot.md).
+See the [Troubleshooting docs](troubleshoot.md).

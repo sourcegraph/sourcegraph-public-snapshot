@@ -10,7 +10,7 @@
 
 Outgoing webhooks can be configured on a Sourcegraph instance in order to send Sourcegraph events to external tools and services. This allows for deeper integrations between Sourcegraph and other applications.
 
-Currently, webhooks are only implemented for events related to [Batch Changes](../../batch_changes/index.md). They also cannot yet be scoped to specific entities, meaning that they will be triggered for all events of the specified type across Sourcegraph. Expanded support for more event types and scoped events is planned for the future. Please [let us know](mailto:feedback@sourcegraph.com) what types of events you would like to see implemented next, or if you have any other feedback!
+Currently, webhooks are only implemented for events related to [Batch Changes](../../../batch_changes/index.md). They also cannot yet be scoped to specific entities, meaning that they will be triggered for all events of the specified type across Sourcegraph. Expanded support for more event types and scoped events is planned for the future. Please [let us know](mailto:feedback@sourcegraph.com) what types of events you would like to see implemented next, or if you have any other feedback!
 
 > WARNING: Outgoing webhooks have the potential to send sensitive information about your repositories and code to other untrusted services. When configuring outgoing webhooks, be sure to only send events to trusted service URLs and to use the shared secret to verify any requests received.
 

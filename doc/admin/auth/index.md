@@ -338,7 +338,7 @@ Sourcegraph instance:
   - `Repositories`: `Read` (more information in [repository permissions section](../permissions/index.md))
 
 After the consumer is created, you will need the `Key` and the `Secret`, which can be found by expanding OAuth consumer in the list.
-Then add the following lines to your [site configuration](config/site_config.md):
+Then add the following lines to your [site configuration](../config/site_config.md):
 
 ```json
 {
@@ -359,7 +359,7 @@ Replace the `clientKey` and `clientSecret` values with the values from your Bitb
 <span class="badge badge-beta">Beta</span>
 
 To enable users to add Gerrit credentials and verify their access to repositories on Sourcegraph,
-add the following lines to your [site configuration](config/site_config.md):
+add the following lines to your [site configuration](../config/site_config.md):
 
 ```json
 {
