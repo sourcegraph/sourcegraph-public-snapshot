@@ -6,18 +6,27 @@ import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 
+import { ConnectApp } from './ConnectApp'
+import { VSCodeWrapper } from './utils/VSCodeApi'
+
 import styles from './Login.module.css'
 
 interface LoginProps {
     isValidLogin?: boolean
     onLogin: (token: string, endpoint: string) => void
     serverEndpoint?: string
+    isAppInstalled: boolean
+    vscodeAPI: VSCodeWrapper
+    enableConnectToApp?: boolean
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
     isValidLogin,
     onLogin,
     serverEndpoint,
+    isAppInstalled,
+    vscodeAPI,
+    enableConnectToApp,
 }) => {
     const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState(serverEndpoint)
@@ -70,7 +79,6 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <div className={styles.divider} />
             <section className={styles.section}>
                 <h2 className={styles.sectionHeader}>Everyone Else</h2>
-
                 <p className={styles.openMessage}>
                     Cody for open source code is available to all users with a Sourcegraph.com account
                 </p>
@@ -83,6 +91,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         Continue with Sourcegraph.com
                     </VSCodeButton>
                 </a>
+                {enableConnectToApp && <ConnectApp isAppInstalled={isAppInstalled} vscodeAPI={vscodeAPI} />}
             </section>
             <div
                 className={styles.terms}

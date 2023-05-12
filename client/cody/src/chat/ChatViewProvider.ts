@@ -25,6 +25,7 @@ import { getFullConfig, updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
+import { LocalAppDetector } from '../local-app-detector'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
@@ -48,6 +49,7 @@ type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'experimentalChatPredictions'
+    | 'experimentalConnectToApp'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -72,6 +74,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     // Codebase-context-related state
     private currentWorkspaceRoot: string
+
+    private localAppDetector: LocalAppDetector
 
     constructor(
         private extensionPath: string,
@@ -107,6 +111,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
             })
         )
+
+        this.localAppDetector = new LocalAppDetector({
+            onChange: isInstalled => {
+                void this.webview?.postMessage({ type: 'app-state', isInstalled })
+
+                // If app has been detected, we can stop the local app detector.
+                if (isInstalled) {
+                    this.localAppDetector.stop()
+                }
+            },
+        })
+        this.disposables.push(this.localAppDetector)
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -566,10 +582,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 accessToken: this.config.accessToken,
                 customHeaders: this.config.customHeaders,
             })
+
+            // Ensure local app detector is running
+            if (this.config.experimentalConnectToApp && !isAuthed) {
+                this.localAppDetector.start()
+            } else {
+                this.localAppDetector.stop()
+            }
+
             const configForWebview: ConfigurationSubsetForWebview = {
                 debug: this.config.debug,
                 serverEndpoint: this.config.serverEndpoint,
                 hasAccessToken: isAuthed,
+                experimentalConnectToApp: this.config.experimentalConnectToApp,
             }
             void vscode.commands.executeCommand('setContext', 'cody.activated', isAuthed)
             void this.webview?.postMessage({ type: 'config', config: configForWebview })
