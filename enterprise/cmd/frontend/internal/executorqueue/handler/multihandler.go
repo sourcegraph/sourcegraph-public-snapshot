@@ -102,11 +102,15 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// TODO: basically replicating error handling of handler.dequeue() here
 		switch queue {
 		case "batches":
-			record, _, err := m.BatchesQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
+			record, dequeued, err := m.BatchesQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
 			if err != nil {
 				logger.Error("Handler returned an error", log.Error(err))
 				http.Error(w, fmt.Sprintf("Failed to dequeue from queue %s: %s", queue, errors.Wrap(err, "dbworkerstore.Dequeue").Error()), http.StatusInternalServerError)
 				return
+			}
+			if !dequeued {
+				// no batches job to dequeue, try next queue
+				continue
 			}
 
 			job, err = m.BatchesQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
@@ -121,12 +125,17 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		case "codeintel":
-			record, _, err := m.CodeIntelQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
+			record, dequeued, err := m.CodeIntelQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
 			if err != nil {
 				logger.Error("Handler returned an error", log.Error(err))
 				http.Error(w, fmt.Sprintf("Failed to dequeue from queue %s: %s", queue, errors.Wrap(err, "dbworkerstore.Dequeue").Error()), http.StatusInternalServerError)
 				return
 			}
+			if !dequeued {
+				// no codeintel job to dequeue, try next queue
+				continue
+			}
+
 			job, err = m.CodeIntelQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
 			if err != nil {
 				if _, err = m.CodeIntelQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); err != nil {
@@ -144,6 +153,13 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+
+	if job.ID == 0 {
+		// all queues are empty, return no content
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	// If this executor supports v2, return a v2 payload. Based on this field,
 	// marshalling will be switched between old and new payload.
 	if version2Supported {
