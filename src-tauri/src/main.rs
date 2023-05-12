@@ -80,6 +80,7 @@ fn main() {
         })
         .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
+                // Ensure the app stays open after the last window is closed.
                 if event.window().label() == "main" {
                     event.window().hide().unwrap();
                     api.prevent_close();

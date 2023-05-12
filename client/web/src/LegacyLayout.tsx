@@ -201,7 +201,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
             {props.isSourcegraphDotCom && props.authenticatedUser && <CodySurveyToast />}
             {!isSiteInit &&
                 !isSignInOrUp &&
-                !isCodyStandalonePage(
+                !isCodyStandalonePage && (
                     <GlobalNavbar
                         {...props}
                         showSearchBox={
