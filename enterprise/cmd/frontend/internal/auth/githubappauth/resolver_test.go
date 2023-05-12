@@ -219,7 +219,7 @@ func TestResolver_GitHubApp(t *testing.T) {
 			}`, graphqlID),
 		ExpectedResult: fmt.Sprintf(`{
 			"gitHubApp": {
-				"id": "%s",
+				"id": "%s"
 			}
 		}`, graphqlID),
 	}, {
