@@ -357,25 +357,22 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		{
 			name: "Job token already exists",
 			body: `{"executorName": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
+				jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
+				jobTokenStore.RegenerateFunc.PushReturn("somenewtoken", nil)
+			},
+			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
+				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
+				require.Len(t, jobTokenStore.RegenerateFunc.History(), 1)
+				assert.Equal(t, 1, jobTokenStore.RegenerateFunc.History()[0].Arg1)
+				assert.Equal(t, "codeintel", jobTokenStore.RegenerateFunc.History()[0].Arg2)
+			},
 			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
 				0: {
 					expectedStatusCode:   http.StatusOK,
 					expectedResponseBody: `{"id":1,"token":"somenewtoken","queue":"codeintel", "repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
-					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
-						mockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
-						jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
-						jobTokenStore.RegenerateFunc.PushReturn("somenewtoken", nil)
-					},
-					transformerFunc: func(ctx context.Context, version string, record uploadsshared.Index, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
-						return executortypes.Job{ID: record.RecordID()}, nil
-					},
-					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
-						require.Len(t, mockStore.DequeueFunc.History(), 1)
-						require.Len(t, jobTokenStore.CreateFunc.History(), 1)
-						require.Len(t, jobTokenStore.RegenerateFunc.History(), 1)
-						assert.Equal(t, 1, jobTokenStore.RegenerateFunc.History()[0].Arg1)
-						assert.Equal(t, "codeintel", jobTokenStore.RegenerateFunc.History()[0].Arg2)
-					},
 				},
 			},
 		},
