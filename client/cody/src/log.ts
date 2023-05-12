@@ -46,7 +46,7 @@ export const logger: CompletionLogger = {
             outputChannel!.appendLine('')
         }
 
-        function onComplete(result: string): void {
+        function onComplete(result: string | CodeCompletionResponse): void {
             if (hasFinished) {
                 return
             }

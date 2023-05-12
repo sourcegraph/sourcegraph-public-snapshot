@@ -50,7 +50,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 log?.onError(message)
                                 reject(new Error(message))
                             } else {
-                                log?.onComplete(buffer)
+                                log?.onComplete(resp)
                                 resolve(resp)
                             }
                         } catch (error) {

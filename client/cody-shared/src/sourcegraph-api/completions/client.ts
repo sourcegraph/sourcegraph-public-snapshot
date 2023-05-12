@@ -13,7 +13,7 @@ export interface CompletionLogger {
         | undefined
         | {
               onError: (error: string) => void
-              onComplete: (response: string) => void
+              onComplete: (response: string | CodeCompletionResponse) => void
               onEvents: (events: Event[]) => void
           }
 }
