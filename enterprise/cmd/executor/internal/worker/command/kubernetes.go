@@ -19,19 +19,20 @@ import (
 )
 
 const (
-	kubernetesVolumeName = "sg-executor-job-volume"
+	// KubernetesExecutorMountPath is the path where the PersistentVolumeClaim is mounted in the Executor Pod.
+	KubernetesExecutorMountPath = "/data"
+	// KubernetesJobContainerName is the name of the container in the Job Pod that runs the step from the executor types.Job.
+	KubernetesJobContainerName = "sg-executor-job-container"
+	// KubernetesJobMountPath is the path where the PersistentVolumeClaim is mounted in the Job Pod.
+	KubernetesJobMountPath = "/job"
 )
 
 const (
-	// KubernetesContainerName is the name of the Kubernetes container that run the main container.
-	KubernetesContainerName = "sg-executor-job-container"
-	// KubernetesExecutorMountPath is the path where the Kubernetes volume is mounted in the container.
-	KubernetesExecutorMountPath = "/data"
-	// KubernetesJobMountPath is the path where the Kubernetes volume is mounted in the container.
-	KubernetesJobMountPath = "/job"
-	// KubernetesVolumeMountSubPath is the path that is mounted in the Kubernetes pod container.
-	// The path is removed from the path that the job data is writt
-	KubernetesVolumeMountSubPath = "/data/"
+	// kubernetesJobVolumeName is the name of the PersistentVolumeClaim that is mounted in the Job Pod.
+	kubernetesJobVolumeName = "sg-executor-job-volume"
+	// kubernetesExecutorVolumeMountSubPath is the path where the PersistentVolumeClaim is mounted to in the Executor Pod.
+	// The trailing slash is required to properly trim the specified path when creating the subpath in the Job Pod.
+	kubernetesExecutorVolumeMountSubPath = "/data/"
 )
 
 // KubernetesContainerOptions contains options for the Kubernetes Job containers.
@@ -257,7 +258,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 					ActiveDeadlineSeconds: options.Deadline,
 					Containers: []corev1.Container{
 						{
-							Name:       KubernetesContainerName,
+							Name:       KubernetesJobContainerName,
 							Image:      image,
 							Command:    spec.Command,
 							WorkingDir: filepath.Join(KubernetesJobMountPath, spec.Dir),
@@ -268,16 +269,16 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      kubernetesVolumeName,
+									Name:      kubernetesJobVolumeName,
 									MountPath: KubernetesJobMountPath,
-									SubPath:   strings.TrimPrefix(path, KubernetesVolumeMountSubPath),
+									SubPath:   strings.TrimPrefix(path, kubernetesExecutorVolumeMountSubPath),
 								},
 							},
 						},
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: kubernetesVolumeName,
+							Name: kubernetesJobVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 									ClaimName: options.PersistenceVolumeName,

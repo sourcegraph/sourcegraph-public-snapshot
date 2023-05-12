@@ -117,7 +117,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 				Clientset: clientset,
 			}
 
-			err := cmd.ReadLogs(context.Background(), "my-namespace", "my-pod", command.KubernetesContainerName, logger, "my-key", []string{"echo", "hello"})
+			err := cmd.ReadLogs(context.Background(), "my-namespace", "my-pod", command.KubernetesJobContainerName, logger, "my-key", []string{"echo", "hello"})
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
