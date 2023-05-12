@@ -26,7 +26,7 @@ else
   if [[ "$(uname -m)" == "arm64" ]]; then
     # build ctags with cargo; prevent x86-64 slowdown on mac
     root="$(dirname "${BASH_SOURCE[0]}")/../.." >/dev/null
-    $root/dev/scip-ctags-install.sh
+    "$root"/dev/scip-ctags-install.sh
   else
     # Build ctags docker image for scip-ctags-dev
     echo "Building scip-ctags docker image"
