@@ -86,12 +86,10 @@ ts_project(
         "//:node_modules/@types/isomorphic-fetch",
         "//:node_modules/@types/marked",
         "//:node_modules/@types/node",
-        "//:node_modules/@types/uuid",
         "//:node_modules/@types/vscode",  #keep
         "//:node_modules/@vscode",
         "//:node_modules/isomorphic-fetch",
         "//:node_modules/marked",
-        "//:node_modules/uuid",
     ],
 )
 
