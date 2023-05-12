@@ -260,63 +260,56 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			},
 			totalEvents: 2,
 		},
+		{
+			name: "Failed to create job token",
+			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
+			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
+				0: {
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"CreateToken: failed to create token"}`,
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
+						jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
+					},
+					transformerFunc: func(ctx context.Context, version string, record uploadsshared.Index, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+						return executortypes.Job{ID: record.RecordID()}, nil
+					},
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						require.Len(t, mockStore.DequeueFunc.History(), 1)
+						require.Len(t, jobTokenStore.CreateFunc.History(), 1)
+						require.Len(t, jobTokenStore.RegenerateFunc.History(), 0)
+					},
+				},
+			},
+			totalEvents: 1,
+		},
+		{
+			name: "Job token already exists",
+			body: `{"executorName": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
+			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
+				0: {
+					expectedStatusCode:   http.StatusOK,
+					expectedResponseBody: `{"id":1,"token":"somenewtoken","queue":"codeintel", "repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
+						jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
+						jobTokenStore.RegenerateFunc.PushReturn("somenewtoken", nil)
+					},
+					transformerFunc: func(ctx context.Context, version string, record uploadsshared.Index, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+						return executortypes.Job{ID: record.RecordID()}, nil
+					},
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						require.Len(t, mockStore.DequeueFunc.History(), 1)
+						require.Len(t, jobTokenStore.CreateFunc.History(), 1)
+						require.Len(t, jobTokenStore.RegenerateFunc.History(), 1)
+						assert.Equal(t, 1, jobTokenStore.RegenerateFunc.History()[0].Arg1)
+						assert.Equal(t, "codeintel", jobTokenStore.RegenerateFunc.History()[0].Arg2)
+					},
+				},
+			},
+			totalEvents: 1,
+		},
 	}
-	//	{
-	//		name: "V2 job",
-	//		body: `{"executorName": "test-executor", "version": "dev", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-	//		transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
-	//			return executortypes.Job{ID: record.RecordID()}, nil
-	//		},
-	//		mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
-	//			jobTokenStore.CreateFunc.PushReturn("sometoken", nil)
-	//		},
-	//		expectedStatusCode:   http.StatusOK,
-	//		expectedResponseBody: `{"version":2,"id":1,"token":"sometoken","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null,"dockerAuthConfig":{}}`,
-	//		assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			require.Len(t, mockStore.DequeueFunc.History(), 1)
-	//			require.Len(t, jobTokenStore.CreateFunc.History(), 1)
-	//		},
-	//	},
-	//	{
-	//		name: "Failed to create job token",
-	//		body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-	//		transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
-	//			return executortypes.Job{ID: record.RecordID()}, nil
-	//		},
-	//		mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
-	//			jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
-	//		},
-	//		expectedStatusCode:   http.StatusInternalServerError,
-	//		expectedResponseBody: `{"error":"CreateToken: failed to create token"}`,
-	//		assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			require.Len(t, mockStore.DequeueFunc.History(), 1)
-	//			require.Len(t, jobTokenStore.CreateFunc.History(), 1)
-	//			require.Len(t, jobTokenStore.RegenerateFunc.History(), 0)
-	//		},
-	//	},
-	//	{
-	//		name: "Job token already exists",
-	//		body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-	//		transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
-	//			return executortypes.Job{ID: record.RecordID()}, nil
-	//		},
-	//		mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
-	//			jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
-	//			jobTokenStore.RegenerateFunc.PushReturn("somenewtoken", nil)
-	//		},
-	//		expectedStatusCode:   http.StatusOK,
-	//		expectedResponseBody: `{"id":1,"token":"somenewtoken","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
-	//		assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			require.Len(t, mockStore.DequeueFunc.History(), 1)
-	//			require.Len(t, jobTokenStore.CreateFunc.History(), 1)
-	//			require.Len(t, jobTokenStore.RegenerateFunc.History(), 1)
-	//			assert.Equal(t, 1, jobTokenStore.RegenerateFunc.History()[0].Arg1)
-	//			assert.Equal(t, "test", jobTokenStore.RegenerateFunc.History()[0].Arg2)
-	//		},
-	//	},
 	//	{
 	//		name: "Failed to regenerate token",
 	//		body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,

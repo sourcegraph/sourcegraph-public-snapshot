@@ -96,7 +96,8 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Memory:    req.Memory,
 		DiskSpace: req.DiskSpace,
 	}
-	logger := log.Scoped("dequeue", "Select a job record from the database.")
+
+	logger := m.logger.Scoped("dequeue", "Select a job record from the database.")
 	var job executortypes.Job
 	// TODO - impl fairness later
 	for _, queue := range req.Queues {
@@ -172,17 +173,22 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		job.Version = 2
 	}
 
+	logger = m.logger.Scoped("token", "Create or regenerate a job token.")
 	token, err := m.JobTokenStore.Create(r.Context(), job.ID, job.Queue, job.RepositoryName)
 	if err != nil {
 		if errors.Is(err, executorstore.ErrJobTokenAlreadyCreated) {
 			// Token has already been created, regen it.
 			token, err = m.JobTokenStore.Regenerate(r.Context(), job.ID, job.Queue)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Failed to regenerate token: %s", errors.Wrap(err, "RegenerateToken").Error()), http.StatusInternalServerError)
+				err = errors.Wrap(err, "RegenerateToken")
+				logger.Error(err.Error())
+				m.marshalAndRespondError(w, err)
 				return
 			}
 		} else {
-			http.Error(w, fmt.Sprintf("Failed to create token: %s", errors.Wrap(err, "CreateToken").Error()), http.StatusInternalServerError)
+			err = errors.Wrap(err, "CreateToken")
+			logger.Error(err.Error())
+			m.marshalAndRespondError(w, err)
 			return
 		}
 	}
@@ -190,8 +196,9 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// TODO - does this actually work?
 	if err := json.NewEncoder(w).Encode(job); err != nil {
-		logger.Error("Failed to serialize payload", log.Error(err))
-		http.Error(w, fmt.Sprintf("Failed to serialize payload: %s", err), http.StatusInternalServerError)
+		err = errors.Wrap(err, "Failed to serialize payload")
+		m.logger.Error(err.Error())
+		m.marshalAndRespondError(w, err)
 	}
 }
 
