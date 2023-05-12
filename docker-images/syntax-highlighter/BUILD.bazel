@@ -12,6 +12,7 @@ rust_binary(
         normal = True,
     ) + [
         "//docker-images/syntax-highlighter/crates/sg-syntax:sg-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-syntax:scip-syntax",
         "//docker-images/syntax-highlighter/crates/scip-treesitter-languages:scip-treesitter-languages",
     ],
 )

@@ -2,9 +2,9 @@ package parser
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sourcegraph/go-ctags"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,7 +26,7 @@ func paserNameToParserType(name string) (ParserType, error) {
 	case "scip-ctags":
 		return ScipCtags, nil
 	default:
-		return UnknownCtags, fmt.Errorf("unknown parser type: %s", name)
+		return UnknownCtags, errors.Errorf("unknown parser type: %s", name)
 	}
 }
 
