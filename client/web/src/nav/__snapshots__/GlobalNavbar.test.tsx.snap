@@ -62,7 +62,7 @@ exports[`GlobalNavbar default 1`] = `
         class="list menuClose"
       >
         <li
-          class="item d-none d-sm-flex position-relative"
+          class="item d-none d-sm-flex wrapper"
         >
           <div
             class="link d-flex align-items-center p-0"
@@ -73,7 +73,7 @@ exports[`GlobalNavbar default 1`] = `
               aria-controls=""
               aria-haspopup="true"
               aria-label="Show search menu"
-              class="btn itemFocusable navDropdownButton"
+              class="btn itemFocusable button"
               data-reach-menu-button=""
               id="menu-button-test-id"
               type="button"
