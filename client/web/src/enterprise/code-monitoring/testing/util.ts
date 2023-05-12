@@ -21,6 +21,7 @@ export const mockUser: AuthenticatedUser = {
         __typename: 'OrgConnection',
         nodes: [],
     },
+    hasVerifiedEmail: true,
     session: { __typename: 'Session', canSignOut: true },
     tosAccepted: true,
     searchable: true,

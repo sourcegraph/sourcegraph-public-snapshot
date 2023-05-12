@@ -202,6 +202,7 @@ ts_project(
         "src/cody/stores/chat.ts",
         "src/cody/stores/editor.ts",
         "src/cody/stores/sidebar.ts",
+        "src/cody/useIsCodyEnabled.tsx",
         "src/cody/widgets/CodyRecipesWidget.tsx",
         "src/cody/widgets/components/Recipe.tsx",
         "src/cody/widgets/components/RecipeAction.tsx",

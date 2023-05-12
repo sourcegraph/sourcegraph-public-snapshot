@@ -3,8 +3,11 @@ package resolvers
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
@@ -20,6 +23,7 @@ import (
 
 func NewResolver(
 	db database.DB,
+	logger log.Logger,
 	gitserverClient gitserver.Client,
 	embeddingsClient *embeddings.Client,
 	repoStore repobg.RepoEmbeddingJobsStore,
@@ -36,10 +40,12 @@ func NewResolver(
 
 type Resolver struct {
 	db                        database.DB
+	logger                    log.Logger
 	gitserverClient           gitserver.Client
 	embeddingsClient          *embeddings.Client
 	repoEmbeddingJobsStore    repobg.RepoEmbeddingJobsStore
 	contextDetectionJobsStore contextdetectionbg.ContextDetectionEmbeddingJobsStore
+	emails                    backend.UserEmailsService
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
@@ -49,6 +55,10 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 
 	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
 		return nil, errors.New("cody experimental feature flag is not enabled for current user")
+	}
+
+	if err := cody.CheckVerifiedEmailRequirement(ctx, r.db, r.logger); err != nil {
+		return nil, err
 	}
 
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repo)
@@ -82,6 +92,11 @@ func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graph
 	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
 		return false, errors.New("cody experimental feature flag is not enabled for current user")
 	}
+
+	if err := cody.CheckVerifiedEmailRequirement(ctx, r.db, r.logger); err != nil {
+		return false, err
+	}
+
 	return r.embeddingsClient.IsContextRequiredForChatQuery(ctx, embeddings.IsContextRequiredForChatQueryParameters{Query: args.Query})
 }
 

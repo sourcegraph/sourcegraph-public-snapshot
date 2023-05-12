@@ -51,6 +51,7 @@ type UserEmailsStore interface {
 	GetInitialSiteAdminInfo(ctx context.Context) (email string, tosAccepted bool, err error)
 	GetLatestVerificationSentEmail(ctx context.Context, email string) (*UserEmail, error)
 	GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error)
+	HasVerifiedEmail(ctx context.Context, id int32) (bool, error)
 	GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error)
 	ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error)
 	Remove(ctx context.Context, userID int32, email string) error
@@ -110,6 +111,13 @@ func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email 
 		return "", false, err
 	}
 	return email, verified, nil
+}
+
+// HasVerifiedEmail returns whether the user with the given ID has a verified email.
+func (s *userEmailsStore) HasVerifiedEmail(ctx context.Context, id int32) (bool, error) {
+	q := sqlf.Sprintf("SELECT true FROM user_emails WHERE user_id = %s AND verified_at IS NOT NULL LIMIT 1", id)
+	verified, ok, err := basestore.ScanFirstBool(s.Query(ctx, q))
+	return ok && verified, err
 }
 
 // SetPrimaryEmail sets the primary email for a user.

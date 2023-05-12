@@ -14,6 +14,7 @@ import { BrandLogo } from '../../components/branding/BrandLogo'
 import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
 import { eventLogger } from '../../tracking/eventLogger'
 import { CodyIcon } from '../components/CodyIcon'
+import { useIsCodyEnabled } from '../useIsCodyEnabled'
 
 import { translateToQuery } from './translateToQuery'
 
@@ -29,6 +30,8 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
     useEffect(() => {
         eventLogger.logPageView('CodySearch')
     }, [])
+
+    const enabled = useIsCodyEnabled()
 
     const navigate = useNavigate()
 
@@ -106,7 +109,7 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
         <div className={classNames('d-flex flex-column align-items-center px-3', searchPageStyles.searchPage)}>
             <BrandLogo className={searchPageStyles.logo} isLightTheme={isLightTheme} variant="logo" />
             <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">Searching millions of public repositories</div>
-            {window.context?.codyEnabled ? (
+            {enabled.search ? (
                 <SearchInput
                     value={input}
                     onChange={onInputChange}

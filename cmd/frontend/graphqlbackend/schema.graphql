@@ -6114,6 +6114,11 @@ type User implements Node & SettingsSubject & Namespace {
     """
     emails: [UserEmail!]!
     """
+    Whether the user has a verified email or not.
+    Only the user and site admins can access this field.
+    """
+    hasVerifiedEmail: Boolean!
+    """
     The user's verified primary email address (if any).
     On dotcom only the user and site admins can access this field.
     """
@@ -7027,6 +7032,11 @@ type Site implements SettingsSubject {
     The quota of code completions requests allowed per user in a day. Null, if unlimited.
     """
     perUserCodeCompletionsQuota: Int
+
+    """
+    Whether users are required to have a verified email in order to access Cody.
+    """
+    requiresVerifiedEmailForCody: Boolean!
 }
 
 """

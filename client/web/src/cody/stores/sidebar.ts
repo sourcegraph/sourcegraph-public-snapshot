@@ -2,6 +2,8 @@ import create from 'zustand'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
+import { useIsCodyEnabled } from '../useIsCodyEnabled'
+
 interface CodySidebarSizeStore {
     size: number
     onResize: (size: number) => void
@@ -37,5 +39,7 @@ export function useCodySidebarStore(): Omit<CodySidebarSizeStore, 'size'> & Cody
 export function useCodySidebarSize(): number {
     const size = useCodySidebarSizeStore(store => store.size)
     const { isOpen } = useCodySidebarStore()
-    return isOpen && window.context?.codyEnabled ? size : 0
+    const enabled = useIsCodyEnabled()
+
+    return isOpen && enabled.sidebar ? size : 0
 }

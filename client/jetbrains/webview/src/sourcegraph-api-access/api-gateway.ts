@@ -25,6 +25,7 @@ export const siteVersionAndUserQuery = gql`
             siteAdmin
             url
             settingsURL
+            hasVerifiedEmail
             organizations {
                 nodes {
                     id

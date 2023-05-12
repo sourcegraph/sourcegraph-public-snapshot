@@ -503,3 +503,13 @@ func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
 	}
 	return nil
 }
+
+func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
+	// We only require this on dotcom
+	if !envvar.SourcegraphDotComMode() {
+		return false
+	}
+
+	isAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
+	return !isAdmin
+}

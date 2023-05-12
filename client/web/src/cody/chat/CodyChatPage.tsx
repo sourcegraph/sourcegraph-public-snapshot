@@ -54,8 +54,8 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
         eventLogger.logPageView('CodyChat')
     }, [])
 
-    if (!enabled || !authenticatedUser) {
-        return null
+    if (!enabled) {
+        return <PageTitle title="Cody AI Chat" />
     }
 
     return (

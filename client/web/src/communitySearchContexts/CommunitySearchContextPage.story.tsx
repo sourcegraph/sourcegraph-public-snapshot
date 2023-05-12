@@ -60,6 +60,7 @@ const authUser: AuthenticatedUser = {
         ] as AuthenticatedUser['organizations']['nodes'],
     },
     viewerCanAdminister: true,
+    hasVerifiedEmail: true,
     databaseID: 0,
     tosAccepted: true,
     searchable: true,

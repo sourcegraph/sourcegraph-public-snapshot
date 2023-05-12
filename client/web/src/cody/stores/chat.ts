@@ -13,6 +13,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor'
+import { useIsCodyEnabled } from '../useIsCodyEnabled'
 
 import { EditorStore, useEditorStore } from './editor'
 
@@ -330,6 +331,7 @@ export const useChatStore = ({
     setIsCodySidebarOpen?: (state: boolean | undefined) => void
 }): CodyChatStore => {
     const store = useChatStoreState()
+    const enabled = useIsCodyEnabled()
 
     const onEvent = useCallback(
         (eventName: 'submit' | 'reset' | 'error') => {
@@ -362,12 +364,12 @@ export const useChatStore = ({
 
     const { initializeClient, config: currentConfig } = store
     useEffect(() => {
-        if (!window.context?.codyEnabled || isEqual(config, currentConfig)) {
+        if (!(enabled.chat || enabled.sidebar) || isEqual(config, currentConfig)) {
             return
         }
 
         void initializeClient(config, editorStateRef, onEvent)
-    }, [config, initializeClient, currentConfig, editorStateRef, onEvent])
+    }, [config, initializeClient, currentConfig, editorStateRef, onEvent, enabled.chat, enabled.sidebar])
 
     return store
 }
