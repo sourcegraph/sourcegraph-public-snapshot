@@ -41,11 +41,11 @@ const AuthProviderJSON: FC<Props> = ({ app, id }) => {
             return [clientID, clientSecret]
         }
         return ['REDACTED', 'REDACTED']
-    }, [data, loading, reveal])
+    }, [data, loading, reveal, app?.clientID])
 
     const providerJson = useMemo(() => {
         // typescript compiler is not smart enough to know that app is not null
-        const url = app !== null ? app.baseURL : null
+        const url = app?.baseURL ?? null
         return JSON.stringify(
             {
                 type: 'github',
@@ -56,7 +56,7 @@ const AuthProviderJSON: FC<Props> = ({ app, id }) => {
             null,
             4
         )
-    }, [clientSecret, app])
+    }, [clientID, clientSecret, app?.baseURL])
 
     if (error) {
         return (
