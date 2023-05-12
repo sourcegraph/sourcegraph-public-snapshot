@@ -14,9 +14,9 @@ import (
 )
 
 // NewCodeCompletionsHandler is an http handler which sends back code completion results
-func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
+func NewCodeCompletionsHandler(_ log.Logger, db database.DB) http.Handler {
 	rl := NewRateLimiter(db, redispool.Store, RateLimitScopeCodeCompletion)
-	return newCompletionsHandler(logger, rl, "codeCompletions", func(c *schema.Completions) string {
+	return newCompletionsHandler(rl, "codeCompletions", func(c *schema.Completions) string {
 		return c.CompletionModel
 	}, func(ctx context.Context, requestParams types.CodeCompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
 		completion, err := cc.Complete(ctx, requestParams)

@@ -16,7 +16,7 @@ import (
 // NewCompletionsStreamHandler is an http handler which streams back completions results.
 func NewCompletionsStreamHandler(logger log.Logger, db database.DB) http.Handler {
 	rl := NewRateLimiter(db, redispool.Store, RateLimitScopeCompletion)
-	return newCompletionsHandler(logger, rl, "stream", func(c *schema.Completions) string {
+	return newCompletionsHandler(rl, "stream", func(c *schema.Completions) string {
 		return c.ChatModel
 	}, func(ctx context.Context, requestParams types.ChatCompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
 		eventWriter, err := streamhttp.NewWriter(w)
