@@ -122,14 +122,14 @@ type traceLogger struct {
 
 // initWithTags adds tags to everything except the underlying Logger, which should
 // already have init fields due to being spawned from a parent Logger.
-func (t *traceLogger) initWithTags(fields ...otlog.Field) {
+func (t *traceLogger) initWithTags(attrs ...attribute.KeyValue) {
 	if honey.Enabled() {
-		for _, field := range fields {
-			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
+		for _, field := range attrs {
+			t.event.AddField(t.opName+"."+toSnakeCase(string(field.Key)), field.Value.AsInterface())
 		}
 	}
 	if t.trace != nil {
-		t.trace.TagFields(fields...) //nolint:staticcheck // Workaround until we drop OpenTracing
+		t.trace.SetAttributes(attrs...)
 	}
 }
 
@@ -300,7 +300,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 	}
 
 	if mergedFields := mergeLogFields(op.logFields, args.LogFields); len(mergedFields) > 0 {
-		trLogger.initWithTags(mergedFields...)
+		trLogger.initWithTags(trace.OTLogFieldsToOTelAttrs(mergedFields)...)
 	}
 
 	return ctx, trLogger, func(count float64, finishArgs Args) {
