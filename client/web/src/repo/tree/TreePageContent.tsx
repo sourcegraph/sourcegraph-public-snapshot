@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { mdiCog, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
-import { escapeRegExp } from 'lodash'
+import { capitalize, escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 
@@ -44,8 +44,10 @@ import {
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
+import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
+import { getRefType } from '../utils'
 
 import { DiffStat, FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
@@ -204,6 +206,7 @@ const ExtraInfoSection: React.FC<{
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
 
     const metadataItems = useMemo(() => repo.metadata.map(({ key, value }) => ({ key, value })) || [], [repo.metadata])
+    const queryState = useNavbarQueryState(state => state.queryState)
 
     return (
         <Card className={className}>
@@ -242,7 +245,12 @@ const ExtraInfoSection: React.FC<{
                         )}
                     </ExtraInfoSectionItemHeader>
                     {metadataItems.length ? (
-                        <RepoMetadata items={metadataItems} />
+                        <RepoMetadata
+                            items={metadataItems}
+                            queryState={queryState}
+                            queryBuildOptions={{ omitRepoFilter: true }}
+                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                        />
                     ) : (
                         <Text className="text-muted">None</Text>
                     )}
@@ -309,7 +317,9 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
                 {!isPackage && (
                     <Card className={styles.commits}>
-                        <CardHeader className={panelStyles.cardColHeaderWrapper}>Commits</CardHeader>
+                        <CardHeader className={panelStyles.cardColHeaderWrapper}>
+                            {capitalize(pluralize(getRefType(repo.sourceType), 0))}
+                        </CardHeader>
                         <Commits {...props} />
                     </Card>
                 )}
@@ -335,6 +345,7 @@ const CONTRIBUTORS_QUERY = gql`
     ) {
         node(id: $repo) {
             ... on Repository {
+                sourceType
                 contributors(first: $first, revisionRange: $revisionRange, afterDate: $afterDate, path: $path) {
                     ...TreePageRepositoryContributorConnectionFields
                 }
@@ -418,6 +429,7 @@ const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
                                 key={node.person.email}
                                 node={node}
                                 repoName={repo.name}
+                                sourceType={repo.sourceType}
                                 {...spec}
                             />
                         ))}
@@ -467,6 +479,7 @@ interface QuerySpec {
 interface RepositoryContributorNodeProps extends QuerySpec {
     node: RepositoryContributorNodeFields
     repoName: string
+    sourceType: string
 }
 const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
     node,
@@ -474,6 +487,7 @@ const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
     revisionRange,
     after,
     path,
+    sourceType,
 }) => {
     const query: string = [
         searchQueryForRepoRevision(repoName),
@@ -485,6 +499,8 @@ const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
         .join(' ')
         .replace(/\s+/, ' ')
 
+    const refType = getRefType(sourceType)
+
     return (
         <tr className={classNames('list-group-item', contributorsStyles.repositoryContributorNode)}>
             <td className={contributorsStyles.person}>
@@ -495,13 +511,13 @@ const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
                 <Tooltip
                     content={
                         revisionRange?.includes('..')
-                            ? 'All commits will be shown (revision end ranges are not yet supported)'
+                            ? `All ${refType}s will be shown (revision end ranges are not yet supported)`
                             : null
                     }
                     placement="left"
                 >
                     <Link to={`/search?${buildSearchURLQuery(query, SearchPatternType.standard, false)}`}>
-                        {numberWithCommas(node.count)} {pluralize('commit', node.count)}
+                        {numberWithCommas(node.count)} {pluralize(refType, node.count)}
                     </Link>
                 </Tooltip>
             </td>
@@ -514,6 +530,7 @@ const COMMITS_QUERY = gql`
         node(id: $repo) {
             __typename
             ... on Repository {
+                sourceType
                 externalURLs {
                     url
                     serviceKind
@@ -588,14 +605,11 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
                                 {connection.nodes.length > 0 ? (
                                     <>
                                         Showing last {connection.nodes.length}{' '}
-                                        {pluralize(
-                                            'commit of the past year',
-                                            connection.nodes.length,
-                                            'commits of the past year'
-                                        )}
+                                        {pluralize(getRefType(node.sourceType), connection.nodes.length)} of the past
+                                        year
                                     </>
                                 ) : (
-                                    <>No commits in the past year</>
+                                    <>No {pluralize(getRefType(node.sourceType), 0)} in the past year</>
                                 )}
                             </span>
                         </small>

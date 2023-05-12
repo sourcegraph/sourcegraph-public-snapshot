@@ -6,42 +6,42 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAppNonce(t *testing.T) {
-	// We directly test against AppNonce to ensure that works. This also
-	// exercises the Nonce paths.
+func TestAppSecret(t *testing.T) {
+	// We directly test against AppSecret to ensure that works. This also
+	// exercises the Secret paths.
 	assert := assert.New(t)
 
-	// If we forget to generate a nonce, ensure we don't allow in random
-	// nonces.
-	assert.False(appNonce.Verify(""))
-	assert.False(appNonce.Verify("horsegraph"))
+	// If we forget to generate a secret, ensure we don't allow in random
+	// secrets.
+	assert.False(appSecret.Verify(""))
+	assert.False(appSecret.Verify("horsegraph"))
 
-	nonce, err := appNonce.Value()
+	secret, err := appSecret.Value()
 	assert.NoError(err)
-	assert.NotEmpty(nonce)
+	assert.NotEmpty(secret)
 
-	// Still check random nonces don't work after generating
-	assert.False(appNonce.Verify(""))
-	assert.False(appNonce.Verify("horsegraph"))
+	// Still check random secrets don't work after generating
+	assert.False(appSecret.Verify(""))
+	assert.False(appSecret.Verify("horsegraph"))
 
-	// We should get back the same value since we haven't used it yet
+	// We should get back the same value
 	{
-		nonceAgain, err := appNonce.Value()
+		secretAgain, err := appSecret.Value()
 		assert.NoError(err)
-		assert.Equal(nonce, nonceAgain)
+		assert.Equal(secret, secretAgain)
 	}
 
-	// success! Now every Verify after this should fail, even with the same
-	// nonce.
-	assert.True(appNonce.Verify(nonce))
+	// success! Now every Verify after this should succeed, even with the same
+	// secret.
+	assert.True(appSecret.Verify(secret))
 
-	assert.False(appNonce.Verify(nonce))
-	assert.False(appNonce.Verify(""))
-	assert.False(appNonce.Verify("horsegraph"))
+	assert.True(appSecret.Verify(secret))
+	assert.False(appSecret.Verify(""))
+	assert.False(appSecret.Verify("horsegraph"))
 
-	// Now if we ask for the current nonce value we should get back a new one
-	nonce2, err := appNonce.Value()
+	// Now if we ask for the current secret value we should get back the same one
+	secret2, err := appSecret.Value()
 	assert.NoError(err)
-	assert.NotEmpty(nonce2)
-	assert.NotEqual(nonce, nonce2)
+	assert.NotEmpty(secret2)
+	assert.Equal(secret, secret2)
 }

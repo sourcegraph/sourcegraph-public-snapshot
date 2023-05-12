@@ -34,10 +34,12 @@ ts_project(
         "src/chat/recipes/find-code-smells.ts",
         "src/chat/recipes/fixup.ts",
         "src/chat/recipes/generate-docstring.ts",
+        "src/chat/recipes/generate-release-notes.ts",
         "src/chat/recipes/generate-test.ts",
         "src/chat/recipes/git-log.ts",
         "src/chat/recipes/helpers.ts",
         "src/chat/recipes/improve-variable-names.ts",
+        "src/chat/recipes/inline-chat.ts",
         "src/chat/recipes/langs.ts",
         "src/chat/recipes/next-questions.ts",
         "src/chat/recipes/recipe.ts",
@@ -82,12 +84,12 @@ ts_project(
         ":node_modules/@sourcegraph/http-client",
         "//:node_modules/@microsoft/fetch-event-source",
         "//:node_modules/@types/isomorphic-fetch",
+        "//:node_modules/@types/marked",
         "//:node_modules/@types/node",
-        "//:node_modules/@types/uuid",
         "//:node_modules/@types/vscode",  #keep
         "//:node_modules/@vscode",
         "//:node_modules/isomorphic-fetch",
-        "//:node_modules/uuid",
+        "//:node_modules/marked",
     ],
 )
 
@@ -104,7 +106,6 @@ ts_project(
     testonly = True,
     srcs = [
         "src/chat/bot-response-multiplexer.test.ts",
-        "src/chat/markdown.test.ts",
         "src/chat/transcript/transcript.test.ts",
         "src/hallucinations-detector/index.test.ts",
         "src/sourcegraph-api/utils.test.ts",

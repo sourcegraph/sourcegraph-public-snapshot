@@ -18,8 +18,6 @@ pnpm run build --color
 
 # Only run bundlesize if intended and if there is valid a script provided in the relevant package.json
 if [ "$CHECK_BUNDLESIZE" ] && jq -e '.scripts.bundlesize' package.json >/dev/null; then
-  echo "--- bundlesize"
-  pnpm run bundlesize --enable-github-checks
   echo "--- bundlesize:web:upload"
   HONEYCOMB_API_KEY="$CI_HONEYCOMB_CLIENT_ENV_API_KEY" pnpm --filter @sourcegraph/observability-server run bundlesize:web:upload
 fi

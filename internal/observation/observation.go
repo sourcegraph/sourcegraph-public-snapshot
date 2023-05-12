@@ -90,23 +90,9 @@ type TraceLogger interface {
 	// AddEvent logs an event with name and fields on the trace.
 	AddEvent(name string, attributes ...attribute.KeyValue)
 
-	// Deprecated: Use AddEvent(...) instead.
-	//
-	// Log logs an event with fields to the opentracing.Span as well as the nettrace.Trace,
-	// and also logs an 'trace.event' log entry at INFO level with the fields, including
-	// any existing tags and parent observation context.
-	Log(fields ...otlog.Field)
-
 	// SetAttributes adds attributes to the trace, and also applies fields to the
 	// underlying Logger.
 	SetAttributes(attributes ...attribute.KeyValue)
-
-	// Deprecated: Use SetAttributes(...) instead.
-	//
-	// Tag adds fields to the opentracing.Span as tags as well as as logs to the nettrace.Trace.
-	//
-	// Tag will add fields to the underlying logger.
-	Tag(fields ...otlog.Field)
 
 	// Logger is a logger scoped to this trace.
 	log.Logger
@@ -129,14 +115,14 @@ type traceLogger struct {
 
 // initWithTags adds tags to everything except the underlying Logger, which should
 // already have init fields due to being spawned from a parent Logger.
-func (t *traceLogger) initWithTags(fields ...otlog.Field) {
+func (t *traceLogger) initWithTags(attrs ...attribute.KeyValue) {
 	if honey.Enabled() {
-		for _, field := range fields {
-			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
+		for _, field := range attrs {
+			t.event.AddField(t.opName+"."+toSnakeCase(string(field.Key)), field.Value.AsInterface())
 		}
 	}
 	if t.trace != nil {
-		t.trace.TagFields(fields...) //nolint:staticcheck // Workaround until we drop OpenTracing
+		t.trace.SetAttributes(attrs...)
 	}
 }
 
@@ -162,23 +148,6 @@ func (t *traceLogger) AddEvent(name string, attributes ...attribute.KeyValue) {
 	}
 }
 
-// Deprecated: Use AddEvent(...) instead.
-func (t *traceLogger) Log(fields ...otlog.Field) {
-	if honey.Enabled() {
-		for _, field := range fields {
-			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
-		}
-	}
-	if t.trace != nil {
-		t.trace.LogFields(fields...)
-		if enableTraceLog {
-			t.Logger.
-				AddCallerSkip(1). // Log() -> Logger
-				Info("trace.log", toLogFields(fields)...)
-		}
-	}
-}
-
 func (t *traceLogger) SetAttributes(attributes ...attribute.KeyValue) {
 	if honey.Enabled() {
 		for _, attr := range attributes {
@@ -189,19 +158,6 @@ func (t *traceLogger) SetAttributes(attributes ...attribute.KeyValue) {
 		t.trace.SetAttributes(attributes...)
 	}
 	t.Logger = t.Logger.With(attributesToLogFields(attributes)...)
-}
-
-// Deprecated: Use SetAttributes(...) instead.
-func (t *traceLogger) Tag(fields ...otlog.Field) {
-	if honey.Enabled() {
-		for _, field := range fields {
-			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
-		}
-	}
-	if t.trace != nil {
-		t.trace.TagFields(fields...)
-	}
-	t.Logger = t.Logger.With(toLogFields(fields)...)
 }
 
 // FinishFunc is the shape of the function returned by With and should be invoked within
@@ -320,7 +276,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 	}
 
 	if mergedFields := mergeLogFields(op.logFields, args.LogFields); len(mergedFields) > 0 {
-		trLogger.initWithTags(mergedFields...)
+		trLogger.initWithTags(trace.OTLogFieldsToOTelAttrs(mergedFields)...)
 	}
 
 	return ctx, trLogger, func(count float64, finishArgs Args) {
@@ -427,7 +383,7 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []otlog.
 		tr.SetError(*err)
 	}
 
-	tr.LogFields(logFields...) //nolint:staticcheck // TODO when updating the observation package
+	tr.AddEvent("done", trace.OTLogFieldsToOTelAttrs(logFields)...)
 	tr.Finish()
 }
 

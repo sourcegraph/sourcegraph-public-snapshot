@@ -30,6 +30,7 @@ func (s *store) InsertPathRanks(
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		insertPathRanksQuery,
 		derivativeGraphKey,
+		derivativeGraphKey,
 		batchSize,
 		derivativeGraphKey,
 	))
@@ -51,6 +52,16 @@ func (s *store) InsertPathRanks(
 
 const insertPathRanksQuery = `
 WITH
+progress AS (
+	SELECT
+		crp.id,
+		crp.mappers_started_at as started_at
+	FROM codeintel_ranking_progress crp
+	WHERE
+		crp.graph_key = %s and
+		crp.reducer_started_at IS NOT NULL AND
+		crp.reducer_completed_at IS NULL
+),
 input_ranks AS (
 	SELECT
 		pci.id,
@@ -58,6 +69,7 @@ input_ranks AS (
 		pci.document_path AS path,
 		pci.count
 	FROM codeintel_ranking_path_counts_inputs pci
+	JOIN progress p ON TRUE
 	WHERE
 		pci.graph_key = %s AND
 		NOT pci.processed AND
@@ -79,10 +91,10 @@ processed AS (
 	RETURNING 1
 ),
 inserted AS (
-	INSERT INTO codeintel_path_ranks AS pr (repository_id, graph_key, payload)
+	INSERT INTO codeintel_path_ranks AS pr (graph_key, repository_id, payload)
 	SELECT
-		temp.repository_id,
 		%s,
+		temp.repository_id,
 		jsonb_object_agg(temp.path, temp.count)
 	FROM (
 		SELECT
@@ -93,26 +105,27 @@ inserted AS (
 		GROUP BY cr.repository_id, cr.path
 	) temp
 	GROUP BY temp.repository_id
-	ON CONFLICT (repository_id) DO UPDATE SET
-		graph_key = EXCLUDED.graph_key,
-		payload = CASE
-			WHEN pr.graph_key != EXCLUDED.graph_key
-				THEN EXCLUDED.payload
-			ELSE
-				(
-					SELECT jsonb_object_agg(key, sum) FROM (
-						SELECT key, SUM(value::int) AS sum
-						FROM
-							(
-								SELECT * FROM jsonb_each(pr.payload)
-								UNION
-								SELECT * FROM jsonb_each(EXCLUDED.payload)
-							) AS both_payloads
-						GROUP BY key
-					) AS combined_json
-				)
-			END
+	ON CONFLICT (graph_key, repository_id) DO UPDATE SET
+		payload = (
+			SELECT jsonb_object_agg(key, sum) FROM (
+				SELECT key, SUM(value::int) AS sum
+				FROM
+					(
+						SELECT * FROM jsonb_each(pr.payload)
+						UNION
+						SELECT * FROM jsonb_each(EXCLUDED.payload)
+					) AS both_payloads
+				GROUP BY key
+			) AS combined_json
+		)
 	RETURNING 1
+),
+set_progress AS (
+	UPDATE codeintel_ranking_progress
+	SET reducer_completed_at = NOW()
+	WHERE
+		id IN (SELECT id FROM progress) AND
+		NOT EXISTS (SELECT 1 FROM processed)
 )
 SELECT
 	(SELECT COUNT(*) FROM processed) AS num_processed,
@@ -123,15 +136,12 @@ func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string)
 	ctx, _, endObservation := s.operations.vacuumStaleRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
-	if !ok {
+	if _, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey); !ok {
 		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
 	}
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
 		vacuumStaleRanksQuery,
-		derivativeGraphKey,
-		graphKey,
 		derivativeGraphKey,
 	))
 	defer func() { err = basestore.CloseRows(rows, err) }()
@@ -147,44 +157,32 @@ func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string)
 
 const vacuumStaleRanksQuery = `
 WITH
-matching_graph_keys AS (
-	SELECT DISTINCT graph_key
-	FROM codeintel_path_ranks
-	-- Implicit delete anything with a different graph key root
-	WHERE graph_key != %s AND graph_key LIKE %s || '.%%'
-),
 valid_graph_keys AS (
-	-- Select the current graph key as well as the highest graph key that
-	-- shares the same parent graph key. Returning both will help bridge
-	-- the gap that happens if we were to flush the entire table at the
-	-- start of a new graph reduction.
-	--
-	-- This may have the effect of returning stale ranking data for a repo
-	-- for which we no longer have SCIP data, but only from the previous
-	-- graph reduction (and changing the parent graph key will flush all
-	-- previous data (see the CTE definition above) if the need arises.
+	-- Select current graph key
 	SELECT %s AS graph_key
+	-- Select previous graph key
 	UNION (
-		SELECT graph_key
-		FROM matching_graph_keys
-		ORDER BY reverse(split_part(reverse(graph_key), '-', 1))::int DESC
+		SELECT crp.graph_key
+		FROM codeintel_ranking_progress crp
+		WHERE crp.reducer_completed_at IS NOT NULL
+		ORDER BY crp.reducer_completed_at DESC
 		LIMIT 1
 	)
 ),
 locked_records AS (
-	-- Lock all path rank records that don't have a recent graph key
-	SELECT repository_id
+	-- Lock all path rank records that don't have a valid graph key
+	SELECT id
 	FROM codeintel_path_ranks
 	WHERE graph_key NOT IN (SELECT graph_key FROM valid_graph_keys)
-	ORDER BY repository_id
+	ORDER BY id
 	FOR UPDATE
 ),
-del AS (
+deleted_records AS (
 	DELETE FROM codeintel_path_ranks
-	WHERE repository_id IN (SELECT repository_id FROM locked_records)
+	WHERE id IN (SELECT id FROM locked_records)
 	RETURNING 1
 )
 SELECT
 	(SELECT COUNT(*) FROM locked_records),
-	(SELECT COUNT(*) FROM del)
+	(SELECT COUNT(*) FROM deleted_records)
 `

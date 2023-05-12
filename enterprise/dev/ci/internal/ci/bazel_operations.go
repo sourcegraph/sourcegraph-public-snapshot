@@ -13,11 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
-func BazelOperations() *operations.Set {
-	ops := operations.NewNamedSet("Bazel")
-	ops.Append(bazelConfigure())
-	ops.Append(bazelTest("//...", "//client/web:test"))
-	ops.Append(bazelBackCompatTest(
+func BazelOperations() []operations.Operation {
+	ops := []operations.Operation{}
+	ops = append(ops, bazelConfigure())
+	ops = append(ops, bazelTest("//...", "//client/web:test"))
+	ops = append(ops, bazelBackCompatTest(
 		"@sourcegraph_back_compat//cmd/...",
 		"@sourcegraph_back_compat//lib/...",
 		"@sourcegraph_back_compat//internal/...",
@@ -90,6 +90,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
+		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log"),
 	}
 
 	// Test commands
@@ -101,17 +102,6 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 			bk.Cmd(cmd))
 	}
 	cmds = append(cmds, bazelTestCmds...)
-
-	// Run commands
-	runTargets := []string{
-		"//client/web:bundlesize-report",
-	}
-	bazelRunCmd := bazelCmd(fmt.Sprintf("run %s", strings.Join(runTargets, " ")))
-	cmds = append(cmds,
-		bazelAnnouncef("bazel run %s", strings.Join(runTargets, " ")),
-		bk.Cmd(bazelRunCmd),
-		bazelAnnouncef("✅"),
-	)
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":bazel: Tests",
@@ -278,7 +268,7 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 				// bk.AutomaticRetryStatus(3, 222),
 			)
 		}
-		pipeline.AddStep(":docker: :construction: Build Docker images", cmds...)
+		pipeline.AddStep(":bazel::docker: :construction: Build Docker images", cmds...)
 	}
 }
 
@@ -377,7 +367,7 @@ func bazelBuildCandidateDockerImage(app string, version string, tag string, rt r
 			// Retry in case of flakes when pushing
 			// bk.AutomaticRetryStatus(3, 222),
 		)
-		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":bazel::docker: :construction: Build %s", app), cmds...)
 	}
 }
 

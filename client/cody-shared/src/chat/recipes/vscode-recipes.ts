@@ -5,9 +5,11 @@ import { ExplainCodeHighLevel } from './explain-code-high-level'
 import { FindCodeSmells } from './find-code-smells'
 import { Fixup } from './fixup'
 import { GenerateDocstring } from './generate-docstring'
+import { ReleaseNotes } from './generate-release-notes'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
 import { ImproveVariableNames } from './improve-variable-names'
+import { InlineChat } from './inline-chat'
 import { NextQuestions } from './next-questions'
 import { Recipe } from './recipe'
 import { TranslateToLanguage } from './translate'
@@ -31,6 +33,7 @@ function init(): void {
         new ChatQuestion(),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
+        new InlineChat(),
         new GenerateDocstring(),
         new GenerateTest(),
         new GitHistory(),
@@ -40,6 +43,7 @@ function init(): void {
         new FindCodeSmells(),
         new NextQuestions(),
         new ContextSearch(),
+        new ReleaseNotes(),
     ]
 
     for (const recipe of recipes) {

@@ -75,7 +75,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Quickstart](cody/quickstart.md)
   - [Explanations](cody/explanations/index.md)
   - [FAQ](cody/faq.md)
-- [App (experimental)](app/index.md)
+- [App (beta)](app/index.md)
 - [Own (experimental)](own/index.md)
 - <br/>
 - [★ Search query syntax](code_search/reference/queries.md)

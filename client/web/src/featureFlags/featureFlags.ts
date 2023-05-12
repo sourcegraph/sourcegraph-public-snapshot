@@ -26,6 +26,11 @@ export type FeatureFlagName =
     | 'sourcegraph-operator-site-admin-hide-maintenance'
     | 'repository-metadata'
     | 'llm-proxy-management-ui'
+    | 'cody-web-chat'
+    | 'cody-web-search'
+    | 'cody-web-sidebar'
+    | 'cody-web-all'
+    | 'cody-web-editor-recipes'
 
 interface OrgFlagOverride {
     orgID: string

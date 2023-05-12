@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
@@ -17,12 +19,14 @@ var _ graphqlbackend.CompletionsResolver = &completionsResolver{}
 
 // completionsResolver provides chat completions
 type completionsResolver struct {
-	rl streaming.RateLimiter
+	rl     streaming.RateLimiter
+	db     database.DB
+	logger log.Logger
 }
 
-func NewCompletionsResolver(db database.DB) graphqlbackend.CompletionsResolver {
+func NewCompletionsResolver(db database.DB, logger log.Logger) graphqlbackend.CompletionsResolver {
 	rl := streaming.NewRateLimiter(db, redispool.Store, streaming.RateLimitScopeCompletion)
-	return &completionsResolver{rl: rl}
+	return &completionsResolver{rl: rl, db: db, logger: logger}
 }
 
 func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (_ string, err error) {
@@ -30,17 +34,26 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
+	if err := cody.CheckVerifiedEmailRequirement(ctx, c.db, c.logger); err != nil {
+		return "", err
+	}
+
 	completionsConfig := streaming.GetCompletionsConfig()
 	if completionsConfig == nil || !completionsConfig.Enabled {
 		return "", errors.New("completions are not configured or disabled")
 	}
 
-	ctx, done := streaming.Trace(ctx, "resolver", completionsConfig.Model).
+	ctx, done := streaming.Trace(ctx, "resolver", completionsConfig.ChatModel).
 		WithErrorP(&err).
 		Build()
 	defer done()
 
-	client, err := streaming.GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
+	client, err := streaming.GetCompletionClient(
+		completionsConfig.Endpoint,
+		completionsConfig.Provider,
+		completionsConfig.AccessToken,
+		completionsConfig.ChatModel,
+	)
 	if err != nil {
 		return "", errors.Wrap(err, "GetCompletionStreamClient")
 	}
