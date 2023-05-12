@@ -10,13 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func Init(
-	ctx context.Context,
+	_ context.Context,
 	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
@@ -24,9 +25,28 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	logger := log.Scoped("completions", "")
-	enterpriseServices.NewCompletionsStreamHandler = func() http.Handler { return streaming.NewCompletionsStreamHandler(logger, db) }
-	enterpriseServices.NewCodeCompletionsHandler = func() http.Handler { return streaming.NewCodeCompletionsHandler(logger, db) }
-	enterpriseServices.CompletionsResolver = resolvers.NewCompletionsResolver(db)
+
+	enterpriseServices.NewCompletionsStreamHandler = func() http.Handler {
+		completionsHandler := streaming.NewCompletionsStreamHandler(logger, db)
+		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, completionsHandler)
+	}
+	enterpriseServices.NewCodeCompletionsHandler = func() http.Handler {
+		codeCompletionsHandler := streaming.NewCodeCompletionsHandler(logger, db)
+		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, codeCompletionsHandler)
+	}
+	enterpriseServices.CompletionsResolver = resolvers.NewCompletionsResolver(db, observationCtx.Logger)
 
 	return nil
+}
+
+func requireVerifiedEmailMiddleware(db database.DB, logger log.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := cody.CheckVerifiedEmailRequirement(r.Context(), db, logger); err != nil {
+			// Report HTTP 403 Forbidden if user has no verified email address.
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

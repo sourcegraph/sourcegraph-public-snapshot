@@ -106,6 +106,7 @@ type CurrentUser struct {
 	Tags                []string   `json:"tags"`
 	TosAccepted         bool       `json:"tosAccepted"`
 	Searchable          bool       `json:"searchable"`
+	HasVerifiedEmail    bool       `json:"hasVerifiedEmail"`
 
 	Organizations  *UserOrganizationsConnection `json:"organizations"`
 	Session        *UserSession                 `json:"session"`
@@ -412,6 +413,11 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		return nil
 	}
 
+	hasVerifiedEmail, err := userResolver.HasVerifiedEmail(ctx)
+	if err != nil {
+		return nil
+	}
+
 	return &CurrentUser{
 		GraphQLTypename:     "User",
 		AvatarURL:           userResolver.AvatarURL(),
@@ -431,6 +437,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		Username:            userResolver.Username(),
 		ViewerCanAdminister: canAdminister,
 		Permissions:         resolveUserPermissions(ctx, userResolver),
+		HasVerifiedEmail:    hasVerifiedEmail,
 	}
 }
 
