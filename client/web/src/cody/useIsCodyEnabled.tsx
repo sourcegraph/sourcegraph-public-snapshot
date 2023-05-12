@@ -23,7 +23,6 @@ export const useIsCodyEnabled = (): { chat: boolean; sidebar: boolean; search: b
         !window.context?.currentUser?.siteAdmin &&
         !window.context?.currentUser?.hasVerifiedEmail
     ) {
-        console.log(window.context?.currentUser?.hasVerifiedEmail)
         return notEnabled
     }
 
