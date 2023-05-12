@@ -212,7 +212,7 @@ export const GitHubAppPage: FC<Props> = ({
                                                 </AnchorLink>
                                             </div>
                                             <div className="mt-4">
-                                                <H3 className="d-flex align-items-center">
+                                                <H3 className="d-flex align-items-center mb-0">
                                                     Code host connections
                                                     <ButtonLink
                                                         variant="secondary"
