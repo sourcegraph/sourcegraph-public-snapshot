@@ -530,7 +530,7 @@ require (
 	go.opentelemetry.io/collector/pdata v1.0.0-rc5 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.13.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
+	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 	golang.org/x/mod v0.8.0
 	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0

@@ -30,11 +30,6 @@ function build_scip_ctags {
   cp ./target/release/scip-ctags "$TARGET"
 }
 
-if [ ! -f "${TARGET}" ]; then
-  echo "Installing scip-ctags"
-  build_scip_ctags
-else
-  echo "scip-ctags is already available at $TARGET"
-fi
+build_scip_ctags
 
 popd >/dev/null
