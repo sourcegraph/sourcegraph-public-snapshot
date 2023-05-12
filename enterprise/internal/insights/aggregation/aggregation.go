@@ -234,20 +234,13 @@ func (r *searchAggregationResults) ResultLimitHit(limit int) bool {
 }
 
 func (r *searchAggregationResults) repos(matches result.Matches) (map[api.RepoID]*sTypes.Repo, error) {
-	repos := make(map[api.RepoID]*sTypes.Repo, 0)
-	// initialize repos if we are in repo metadata aggregation mode
-	// other modes currently don't use the repo parameter
-	if r.mode != types.REPO_METADATA_AGGREGATION_MODE {
-		return repos, nil
-	}
-
 	repoIDs := collections.NewSet[api.RepoID]()
 	for _, r := range matches {
 		repoIDs.Add(r.RepoName().ID)
 	}
 
 	res, err := r.db.Repos().List(r.ctx, database.ReposListOptions{IDs: repoIDs.Values()})
-	repos = make(map[api.RepoID]*sTypes.Repo, len(res))
+	repos := make(map[api.RepoID]*sTypes.Repo, len(res))
 	if err != nil {
 		return nil, err
 	}
@@ -264,10 +257,16 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 	r.progress.Update(event)
 	r.resultCount += event.Results.ResultCount()
 	combined := map[MatchKey]int{}
-	repos, err := r.repos(event.Results)
-	if err != nil {
-		r.tabulator(nil, err)
-		return
+	repos := make(map[api.RepoID]*sTypes.Repo, 0)
+	// initialize repos if we are in repo metadata aggregation mode
+	// other modes currently don't use the repo parameter
+	if r.mode == types.REPO_METADATA_AGGREGATION_MODE {
+		res, err := r.repos(event.Results)
+		if err != nil {
+			r.tabulator(nil, err)
+			return
+		}
+		repos = res
 	}
 	for _, match := range event.Results {
 		select {
