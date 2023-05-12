@@ -18,6 +18,12 @@
 }
 
 .installation {
+    margin-top: 1rem;
+
+    &:first-child {
+        margin-top: 0;
+    }
+
     .logo {
         /* stylelint-disable-next-line declaration-property-unit-allowed-list */
         height: 36px;
