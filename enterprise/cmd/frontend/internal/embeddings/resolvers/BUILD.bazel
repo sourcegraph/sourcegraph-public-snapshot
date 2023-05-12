@@ -9,6 +9,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings/resolvers",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
+        "//cmd/frontend/backend",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//enterprise/internal/embeddings",
@@ -25,5 +26,6 @@ go_library(
         "//lib/errors",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

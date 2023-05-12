@@ -6,7 +6,6 @@ import create from 'zustand'
 
 import { Client, createClient, ClientInit, Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/client'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { escapeCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { PrefilledOptions } from '@sourcegraph/cody-shared/src/editor/withPreselectedOptions'
 import { isErrorLike } from '@sourcegraph/common'
@@ -14,6 +13,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor'
+import { useIsCodyEnabled } from '../useIsCodyEnabled'
 
 import { EditorStore, useEditorStore } from './editor'
 
@@ -116,7 +116,6 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     }
 
     const submitMessage = (text: string): void => {
-        text = escapeCodyMarkdown(text, false)
         const { client, onEvent, getChatContext } = get()
         if (client && !isErrorLike(client)) {
             const { codebase, filePath } = getChatContext()
@@ -332,6 +331,7 @@ export const useChatStore = ({
     setIsCodySidebarOpen?: (state: boolean | undefined) => void
 }): CodyChatStore => {
     const store = useChatStoreState()
+    const enabled = useIsCodyEnabled()
 
     const onEvent = useCallback(
         (eventName: 'submit' | 'reset' | 'error') => {
@@ -364,12 +364,12 @@ export const useChatStore = ({
 
     const { initializeClient, config: currentConfig } = store
     useEffect(() => {
-        if (!window.context?.codyEnabled || isEqual(config, currentConfig)) {
+        if (!(enabled.chat || enabled.sidebar) || isEqual(config, currentConfig)) {
             return
         }
 
         void initializeClient(config, editorStateRef, onEvent)
-    }, [config, initializeClient, currentConfig, editorStateRef, onEvent])
+    }, [config, initializeClient, currentConfig, editorStateRef, onEvent, enabled.chat, enabled.sidebar])
 
     return store
 }
