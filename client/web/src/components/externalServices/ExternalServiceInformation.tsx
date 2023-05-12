@@ -20,7 +20,7 @@ interface ExternalServiceInformationProps {
     gitHubApp?: {
         id: string
         name: string
-    }
+    } | null
 }
 
 export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = props => {
