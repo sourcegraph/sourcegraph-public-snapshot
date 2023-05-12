@@ -507,10 +507,6 @@ func TestUpdateUser(t *testing.T) {
 	})
 
 	t.Run("bad avatarURL", func(t *testing.T) {
-		users := database.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
-
 		tests := []struct {
 			name      string
 			avatarURL string
@@ -530,9 +526,9 @@ func TestUpdateUser(t *testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateUser(
-					context.Background(),
+					actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 					&updateUserArgs{
-						User:      MarshalUserID(1),
+						User:      MarshalUserID(2),
 						AvatarURL: &test.avatarURL,
 					},
 				)

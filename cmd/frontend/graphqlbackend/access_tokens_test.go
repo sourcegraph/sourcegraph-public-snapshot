@@ -323,10 +323,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 	token1GQLID := graphql.ID("QWNjZXNzVG9rZW46MQ==")
 
 	t.Run("authenticated as user", func(t *testing.T) {
-		users := database.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
 		db := database.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 
 		RunTests(t, []*Test{
@@ -355,7 +352,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		const differentSiteAdminUID = 234
 
 		users := database.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil)
+		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil)
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
@@ -384,11 +381,9 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 
 	t.Run("unauthenticated", func(t *testing.T) {
 		users := database.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, database.ErrNoCurrentUser)
-		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "username"}, nil)
 		db := database.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
+		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), nil)
 		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})

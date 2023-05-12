@@ -69,14 +69,7 @@ func (e *InsufficientAuthorizationError) Unauthorized() bool { return true }
 // Returns an error without the name of the given user.
 func CheckSiteAdminOrSameUser(ctx context.Context, db database.DB, subjectUserID int32) error {
 	a := actor.FromContext(ctx)
-	if a.IsInternal() || (a.IsAuthenticated() && a.UID == subjectUserID) {
-		return nil
-	}
-	isSiteAdminErr := CheckCurrentUserIsSiteAdmin(ctx, db)
-	if isSiteAdminErr == nil {
-		return nil
-	}
-	return ErrMustBeSiteAdminOrSameUser
+	return CheckSiteAdminOrSameUserFromActor(a, db, subjectUserID)
 }
 
 // CheckSameUser returns an error if the user is not the user specified by

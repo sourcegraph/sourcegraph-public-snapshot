@@ -95,7 +95,6 @@ func TestSearchContextsStarDefaultPermissions(t *testing.T) {
 
 	users := database.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID, Username: username}, nil)
 
 	searchContextSpec := "test"
 	graphqlSearchContextID := marshalSearchContextID(searchContextSpec)
@@ -139,8 +138,9 @@ func TestSearchContextsStarDefaultPermissions(t *testing.T) {
 	}
 
 	// User is admin, trying to set things for another user
-	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username, SiteAdmin: true}, nil)
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{Username: username, SiteAdmin: true}, nil)
+	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: userID, Username: username, SiteAdmin: true}, nil)
+	// Create a new context with actor so that the user cached on actor is not reused
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: userID})
 
 	_, err = (&Resolver{db: db}).SetDefaultSearchContext(ctx, graphqlbackend.SetDefaultSearchContextArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
 	if err != nil {

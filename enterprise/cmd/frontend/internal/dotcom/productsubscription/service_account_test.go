@@ -58,10 +58,11 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			db := database.NewMockDB()
 			mockUsers := database.NewMockUserStore()
-			mockUsers.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
-				ID:        actorID,
-				SiteAdmin: tc.actorSiteAdmin,
-			}, nil)
+
+			user := &types.User{ID: actorID, SiteAdmin: tc.actorSiteAdmin}
+			mockUsers.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
+			mockUsers.GetByIDFunc.SetDefaultReturn(user, nil)
+
 			db.UsersFunc.SetDefaultReturn(mockUsers)
 
 			ctx := featureflag.WithFlags(context.Background(),
