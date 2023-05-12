@@ -23,7 +23,6 @@ type GitHubAppsResolver interface {
 
 	// Mutations
 	DeleteGitHubApp(ctx context.Context, args *DeleteGitHubAppArgs) (*EmptyResponse, error)
-	ConnectWebhookToGitHubApp(ctx context.Context, args *ConnectWebhookToGitHubAppArgs) (*EmptyResponse, error)
 }
 
 type GitHubAppConnectionResolver interface {
@@ -50,11 +49,6 @@ type GitHubAppResolver interface {
 
 type DeleteGitHubAppArgs struct {
 	GitHubApp graphql.ID
-}
-
-type ConnectWebhookToGitHubAppArgs struct {
-	GitHubApp graphql.ID
-	Webhook   graphql.ID
 }
 
 type GitHubAppsArgs struct {
