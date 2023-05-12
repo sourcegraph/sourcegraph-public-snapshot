@@ -103,7 +103,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      uri,
-				BaseToken:      token,
+				BaseAuther:     &auth.OAuthBearerToken{Token: token},
 				GroupsCacheTTL: -1,
 				DB:             testDB,
 			})
@@ -189,7 +189,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      uri,
-				BaseToken:      token,
+				BaseAuther:     &auth.OAuthBearerToken{Token: token},
 				GroupsCacheTTL: 72,
 				DB:             testDB,
 			})
@@ -310,7 +310,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      uri,
-				BaseToken:      token,
+				BaseAuther:     &auth.OAuthBearerToken{Token: token},
 				GroupsCacheTTL: -1,
 				DB:             testDB,
 			})
@@ -399,7 +399,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      uri,
-				BaseToken:      token,
+				BaseAuther:     &auth.OAuthBearerToken{Token: token},
 				GroupsCacheTTL: 72,
 				DB:             testDB,
 			})
