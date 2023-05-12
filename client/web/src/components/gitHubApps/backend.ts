@@ -26,9 +26,11 @@ export const GITHUB_APP_BY_ID_QUERY = gql`
         gitHubApp(id: $id) {
             id
             appID
+            baseURL
             name
             slug
             appURL
+            baseURL
             clientID
             logo
             createdAt
@@ -49,6 +51,35 @@ export const GITHUB_APP_BY_ID_QUERY = gql`
                 }
                 totalCount
             }
+        }
+    }
+`
+
+export const GITHUB_APP_CLIENT_SECRET_QUERY = gql`
+    query GitHubAppClientSecret($id: ID!) {
+        gitHubApp(id: $id) {
+            id
+            clientSecret
+        }
+    }
+`
+
+export const SITE_SETTINGS_QUERY = gql`
+    query SiteConfigForApps {
+        site {
+            __typename
+            id
+            configuration {
+                effectiveContents
+            }
+        }
+    }
+`
+
+export const DELETE_GITHUB_APP_BY_ID_QUERY = gql`
+    mutation DeleteGitHubApp($gitHubApp: ID!) {
+        deleteGitHubApp(gitHubApp: $gitHubApp) {
+            alwaysNil
         }
     }
 `

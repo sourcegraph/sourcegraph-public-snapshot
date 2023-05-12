@@ -21,21 +21,25 @@ export class Transcript {
                         Promise.resolve(context),
                         timestamp || new Date().toISOString()
                     )
-            )
+            ),
+            json.id
         )
     }
 
     private interactions: Interaction[] = []
 
-    constructor(interactions: Interaction[] = []) {
+    private internalID: string
+
+    constructor(interactions: Interaction[] = [], id?: string) {
         this.interactions = interactions
+        this.internalID =
+            id ||
+            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
+            new Date().toISOString()
     }
 
     public get id(): string {
-        return (
-            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
-            new Date().toISOString()
-        )
+        return this.internalID
     }
 
     public get isEmpty(): boolean {
@@ -43,13 +47,15 @@ export class Transcript {
     }
 
     public get lastInteractionTimestamp(): string {
-        const timestamp = this.getLastInteraction()?.timestamp || ''
+        for (let index = this.interactions.length - 1; index >= 0; index--) {
+            const { timestamp } = this.interactions[index]
 
-        if (isNaN(new Date(timestamp) as any)) {
-            return new Date().toISOString()
+            if (!isNaN(new Date(timestamp) as any)) {
+                return timestamp
+            }
         }
 
-        return timestamp
+        return new Date().toISOString()
     }
 
     public addInteraction(interaction: Interaction | null): void {
@@ -125,6 +131,7 @@ export class Transcript {
 
     public reset(): void {
         this.interactions = []
+        this.internalID = new Date().toISOString()
     }
 }
 

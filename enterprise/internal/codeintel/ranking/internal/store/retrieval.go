@@ -64,10 +64,19 @@ func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ 
 }
 
 const getDocumentRanksQuery = `
+WITH
+last_completed_progress AS (
+	SELECT crp.graph_key
+	FROM codeintel_ranking_progress crp
+	WHERE crp.reducer_completed_at IS NOT NULL
+	ORDER BY crp.reducer_completed_at DESC
+	LIMIT 1
+)
 SELECT payload
 FROM codeintel_path_ranks pr
 JOIN repo r ON r.id = pr.repository_id
 WHERE
+	pr.graph_key IN (SELECT graph_key FROM last_completed_progress) AND
 	r.name = %s AND
 	r.deleted_at IS NULL AND
 	r.blocked IS NULL
@@ -77,14 +86,7 @@ func (s *store) GetReferenceCountStatistics(ctx context.Context) (logmean float6
 	ctx, _, endObservation := s.operations.getReferenceCountStatistics.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(`
-		SELECT CASE
-			WHEN COALESCE(SUM(pr.num_paths), 0) = 0
-				THEN 0.0
-				ELSE SUM(pr.refcount_logsum) / SUM(pr.num_paths)::float
-		END AS logmean
-		FROM codeintel_path_ranks pr
-	`))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(getReferenceCountStatisticsQuery))
 	if err != nil {
 		return 0, err
 	}
@@ -99,6 +101,24 @@ func (s *store) GetReferenceCountStatistics(ctx context.Context) (logmean float6
 	return logmean, nil
 }
 
+const getReferenceCountStatisticsQuery = `
+WITH
+last_completed_progress AS (
+	SELECT crp.graph_key
+	FROM codeintel_ranking_progress crp
+	WHERE crp.reducer_completed_at IS NOT NULL
+	ORDER BY crp.reducer_completed_at DESC
+	LIMIT 1
+)
+SELECT
+	CASE WHEN COALESCE(SUM(pr.num_paths), 0) = 0
+		THEN 0.0
+		ELSE SUM(pr.refcount_logsum) / SUM(pr.num_paths)::float
+	END AS logmean
+FROM codeintel_path_ranks pr
+WHERE pr.graph_key IN (SELECT graph_key FROM last_completed_progress)
+`
+
 func (s *store) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (_ map[api.RepoID]time.Time, err error) {
 	ctx, _, endObservation := s.operations.lastUpdatedAt.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -112,11 +132,21 @@ func (s *store) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (_ map[
 }
 
 const lastUpdatedAtQuery = `
+WITH
+last_completed_progress AS (
+	SELECT crp.graph_key
+	FROM codeintel_ranking_progress crp
+	WHERE crp.reducer_completed_at IS NOT NULL
+	ORDER BY crp.reducer_completed_at DESC
+	LIMIT 1
+)
 SELECT
 	repository_id,
 	updated_at
-FROM codeintel_path_ranks
-WHERE repository_id = ANY(%s)
+FROM codeintel_path_ranks pr
+WHERE
+	pr.graph_key IN (SELECT graph_key FROM last_completed_progress) AND
+	repository_id = ANY(%s)
 `
 
 var scanLastUpdatedAtPairs = basestore.NewMapScanner(func(s dbutil.Scanner) (repoID api.RepoID, t time.Time, _ error) {

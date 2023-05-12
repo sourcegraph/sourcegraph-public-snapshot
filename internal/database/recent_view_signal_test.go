@@ -82,6 +82,11 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents(t *testing.T) {
 			Name:           "ViewBlob",
 			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/sourcegraph2"}`),
 		},
+		{
+			UserID:         2,
+			Name:           "ViewBlob",
+			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/not/found"}`),
+		},
 	}
 
 	// Building signal aggregates.

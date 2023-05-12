@@ -11,9 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-const ProviderName = "llmproxy"
-
-var llmProxyURL = mustParseURL("https://llm-proxy-ytplpvhyiq-uc.a.run.app/v1/completions/anthropic")
+const (
+	ProviderName    = "llmproxy"
+	DefaultEndpoint = "https://completions.sgdev.org/v1/completions/anthropic"
+)
 
 type llmProxyAnthropicClient struct {
 	cli             httpcli.Doer
@@ -22,7 +23,12 @@ type llmProxyAnthropicClient struct {
 	anthropicClient types.CompletionsClient
 }
 
-func NewClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, endpoint, accessToken string, model string) (types.CompletionsClient, error) {
+	llmProxyURL, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, err
+	}
+
 	anthropicDoer := httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
 		req.Host = llmProxyURL.Host
 		req.URL = llmProxyURL
@@ -34,7 +40,7 @@ func NewClient(cli httpcli.Doer, accessToken string, model string) types.Complet
 		accessToken:     accessToken,
 		model:           model,
 		anthropicClient: anthropic.NewAnthropicClient(anthropicDoer, "", model),
-	}
+	}, nil
 }
 
 func (a *llmProxyAnthropicClient) Complete(
@@ -50,12 +56,4 @@ func (a *llmProxyAnthropicClient) Stream(
 	sendEvent types.SendCompletionEvent,
 ) error {
 	return a.anthropicClient.Stream(ctx, requestParams, sendEvent)
-}
-
-func mustParseURL(s string) *url.URL {
-	u, err := url.Parse(s)
-	if err != nil {
-		panic(fmt.Sprintf("failed to parse URL %q: %s", s, err.Error()))
-	}
-	return u
 }

@@ -17,7 +17,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, ButtonLink, useWindowSize, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize, Tooltip, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { TauriNavigation } from '../app/TauriNavigation'
 import { HistoryStack } from '../app/useHistoryStack'
@@ -26,6 +26,7 @@ import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
+import { CodyLogo } from '../cody/components/CodyLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
@@ -152,6 +153,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
     const showCodeMonitoring = codeMonitoringEnabled
     const showSearchNotebook = notebooksEnabled
+    const showCody = window.context?.codyEnabled
+    const [showCodyChat] = useFeatureFlag('cody-web-chat')
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
     // TODO: Include isSourcegraphDotCom in subsequent PR
@@ -178,13 +181,17 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
-            window.context?.codyEnabled && {
+            showCody && {
                 path: EnterprisePageRoutes.CodySearch,
-                content: 'Cody',
+                content: (
+                    <>
+                        Natural language search <ProductStatusBadge status="experimental" />
+                    </>
+                ),
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext])
+    }, [ownEnabled, showSearchContext, showCody])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
@@ -223,6 +230,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavItem icon={MagnifyIcon}>
                             <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
                                 Code Search
+                            </NavLink>
+                        </NavItem>
+                    )}
+                    {showCody && showCodyChat && !!props.authenticatedUser && (
+                        <NavItem icon={CodyLogo}>
+                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
+                                Cody AI
                             </NavLink>
                         </NavItem>
                     )}
@@ -273,7 +287,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             items={[
                                 {
                                     content: 'Join our Discord',
-                                    path: 'https://about.sourcegraph.com/community',
+                                    path: 'https://discord.com/servers/sourcegraph-969688426372825169',
                                     target: '_blank',
                                 },
                                 {

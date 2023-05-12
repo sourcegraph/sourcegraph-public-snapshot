@@ -4,7 +4,7 @@ import { test } from 'mocha'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration'
+import { mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 

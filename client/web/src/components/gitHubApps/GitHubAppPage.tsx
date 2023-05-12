@@ -1,11 +1,13 @@
-import { FC, useEffect, useMemo } from 'react'
+import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiCog, mdiGithub, mdiRefresh, mdiPlus } from '@mdi/js'
+import { mdiCog, mdiDelete, mdiGithub, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-operations'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { useQuery } from '@sourcegraph/http-client'
+import { ErrorLike } from '@sourcegraph/common'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -19,6 +21,8 @@ import {
     H2,
     Card,
     Link,
+    Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { GitHubAppByIDResult, GitHubAppByIDVariables } from '../../graphql-operations'
@@ -26,7 +30,8 @@ import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
 import { ConnectionList, SummaryContainer, ConnectionSummary } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
-import { GITHUB_APP_BY_ID_QUERY } from './backend'
+import { AuthProviderMessage } from './AuthProviderMessage'
+import { GITHUB_APP_BY_ID_QUERY, DELETE_GITHUB_APP_BY_ID_QUERY } from './backend'
 
 import styles from './GitHubAppCard.module.scss'
 
@@ -41,10 +46,16 @@ export const GitHubAppPage: FC<Props> = ({
     allowEditExternalServicesWithFile,
 }) => {
     const { appID } = useParams()
+    const navigate = useNavigate()
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminGitHubApp')
     }, [telemetryService])
+    const [fetchError, setError] = useState<ErrorLike>()
+
+    const [deleteGitHubApp, { loading: deleteLoading }] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
+        DELETE_GITHUB_APP_BY_ID_QUERY
+    )
 
     const { data, loading, error } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(GITHUB_APP_BY_ID_QUERY, {
         variables: { id: appID ?? '' },
@@ -52,17 +63,46 @@ export const GitHubAppPage: FC<Props> = ({
 
     const app = useMemo(() => data?.gitHubApp, [data])
 
-    // TODO - make an actual GraphQL request to do it here...
-    const refreshFromGH = (): void => {}
+    const onDelete = useCallback<React.MouseEventHandler>(async () => {
+        if (!window.confirm(`Delete the GitHub App ${app?.name}?`)) {
+            return
+        }
+        try {
+            await deleteGitHubApp({
+                variables: { gitHubApp: app?.id ?? '' },
+            })
+        } finally {
+            navigate('/site-admin/github-apps')
+        }
+    }, [app, deleteGitHubApp, navigate])
 
     if (!appID) {
         return null
     }
 
+    const handleError = (error: ErrorLike): [] => {
+        setError(error)
+        return []
+    }
+
+    const onAddInstallation = async (app: NonNullable<GitHubAppByIDResult['gitHubApp']>): Promise<void> => {
+        try {
+            const req = await fetch(`/.auth/githubapp/state?id=${app?.id}`)
+            const state = await req.text()
+            window.location.assign(
+                app.appURL.endsWith('/')
+                    ? app.appURL + 'installations/new?state=' + state
+                    : app.appURL + '/installations/new?state=' + state
+            )
+        } catch (error) {
+            handleError(error)
+        }
+    }
+
     return (
         <div>
             {app ? <PageTitle title={`GitHub App - ${app.name}`} /> : <PageTitle title="GitHub App" />}
-            {error && <ErrorAlert className="mb-3" error={error} />}
+            {(error || fetchError) && <ErrorAlert className="mb-3" error={error ?? fetchError} />}
             {loading && <LoadingSpinner />}
             {app && (
                 <Container className="mb-3">
@@ -79,12 +119,21 @@ export const GitHubAppPage: FC<Props> = ({
                         headingElement="h2"
                         actions={
                             <>
-                                <Button onClick={refreshFromGH} variant="info" className="ml-auto">
-                                    <Icon inline={true} svgPath={mdiRefresh} aria-hidden={true} /> Refresh from GitHub
-                                </Button>
                                 <ButtonLink to={app.appURL} variant="info" className="ml-2">
                                     <Icon inline={true} svgPath={mdiGithub} aria-hidden={true} /> Edit
                                 </ButtonLink>
+                                <Tooltip content="Delete GitHub App">
+                                    <Button
+                                        aria-label="Delete"
+                                        className="ml-2"
+                                        onClick={onDelete}
+                                        disabled={deleteLoading}
+                                        variant="danger"
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                        {' Delete'}
+                                    </Button>
+                                </Tooltip>
                             </>
                         }
                     />
@@ -104,44 +153,66 @@ export const GitHubAppPage: FC<Props> = ({
                             </span>
                         </span>
                     </span>
+                    <AuthProviderMessage app={app} id={appID} />
                     <hr />
 
                     <div className="mt-4">
                         <H2>App installations</H2>
                         <div className="list-group mb-3" aria-label="GitHub App Installations">
-                            {app.installations?.map(installation => (
-                                <Card
-                                    className={classNames(styles.listNode, 'd-flex flex-row align-items-center')}
-                                    key={installation.id}
-                                >
-                                    <span className="mr-3">
-                                        <Link to={installation.account.url} className="mr-3">
-                                            <UserAvatar
-                                                size={32}
-                                                user={{ ...installation.account, displayName: null }}
-                                                className="mr-2"
-                                            />
-                                            {installation.account.login}
-                                        </Link>
-                                        <span>Type: {installation.account.type}</span>
-                                    </span>
-                                    <small className="text-muted mr-3">ID: {installation.id}</small>
-                                    <ButtonLink to={installation.url} variant="secondary" className="ml-auto" size="sm">
-                                        <Icon inline={true} svgPath={mdiGithub} aria-hidden={true} /> Edit
-                                    </ButtonLink>
-                                </Card>
-                            ))}
+                            {app.installations?.length === 0 ? (
+                                <Text>
+                                    This GitHub App does not have any installations. Install the App to create a new
+                                    connection.
+                                </Text>
+                            ) : (
+                                app.installations?.map(installation => (
+                                    <Card
+                                        className={classNames(styles.listNode, 'd-flex flex-row align-items-center')}
+                                        key={installation.id}
+                                    >
+                                        <span className="mr-3">
+                                            <Link to={installation.account.url} className="mr-3">
+                                                <UserAvatar
+                                                    size={32}
+                                                    user={{ ...installation.account, displayName: null }}
+                                                    className="mr-2"
+                                                />
+                                                {installation.account.login}
+                                            </Link>
+                                            <span>Type: {installation.account.type}</span>
+                                        </span>
+                                        <small className="text-muted mr-3">ID: {installation.id}</small>
+                                        <ButtonLink
+                                            to={installation.url}
+                                            variant="secondary"
+                                            className="ml-auto mr-1"
+                                            size="sm"
+                                        >
+                                            <Icon inline={true} svgPath={mdiGithub} aria-hidden={true} /> Edit
+                                        </ButtonLink>
+                                        <ButtonLink
+                                            variant="success"
+                                            to={`/site-admin/external-services/new?id=github&appID=${
+                                                app.appID
+                                            }&installationID=${installation.id}&url=${encodeURI(app.baseURL)}&org=${
+                                                installation.account.login
+                                            }`}
+                                            size="sm"
+                                        >
+                                            <Icon svgPath={mdiPlus} aria-hidden={true} /> New connection
+                                        </ButtonLink>
+                                    </Card>
+                                ))
+                            )}
                         </div>
-                        <ButtonLink
-                            to={
-                                app.appURL.endsWith('/')
-                                    ? app.appURL + 'installations/new'
-                                    : app.appURL + '/installations/new'
-                            }
+                        <Button
+                            onClick={async () => {
+                                await onAddInstallation(app)
+                            }}
                             variant="success"
                         >
                             <Icon svgPath={mdiPlus} aria-hidden={true} /> Add installation
-                        </ButtonLink>
+                        </Button>
                     </div>
                     <hr className="mt-4" />
                     <div className="mt-4">
@@ -164,9 +235,6 @@ export const GitHubAppPage: FC<Props> = ({
                                 />
                             </SummaryContainer>
                         )}
-                        <Button variant="success">
-                            <Icon svgPath={mdiPlus} aria-hidden={true} /> Add connection
-                        </Button>
                     </div>
                 </Container>
             )}

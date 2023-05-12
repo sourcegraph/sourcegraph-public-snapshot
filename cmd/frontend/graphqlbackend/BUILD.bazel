@@ -457,6 +457,7 @@ go_test(
         "//internal/gqlutil",
         "//internal/inventory",
         "//internal/oobmigration",
+        "//internal/rbac/types",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",
