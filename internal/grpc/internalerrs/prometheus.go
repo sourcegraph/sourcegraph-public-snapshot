@@ -44,7 +44,7 @@ func PrometheusStreamClientInterceptor(ctx context.Context, desc *grpc.StreamDes
 
 	s, err := streamer(ctx, desc, cc, fullMethod, opts...)
 	if err != nil {
-		doObservation(serviceName, methodName, err)
+		doObservation(serviceName, methodName, err) // method failed to be invoked at all, record it
 		return nil, err
 	}
 
