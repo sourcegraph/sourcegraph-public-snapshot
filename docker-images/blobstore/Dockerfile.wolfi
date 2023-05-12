@@ -1,17 +1,3 @@
-# Build s3proxy from source
-# hadolint ignore=DL3022
-FROM maven:3.8.6-openjdk-11-slim AS builder
-
-# hadolint ignore=DL3008,DL3009
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends git
-
-RUN git clone https://github.com/sourcegraph/s3proxy /build
-WORKDIR /build
-RUN mvn package -DskipTests && \
-    mv target/ /opt/s3proxy && \
-    cp src/main/resources/run-docker-container.sh /opt/s3proxy
-
 # Build our final Wolfi-based image
 # hadolint ignore=DL3007
 FROM us.gcr.io/sourcegraph-dev/wolfi-blobstore-base:latest
@@ -24,8 +10,6 @@ LABEL org.opencontainers.image.revision=${COMMIT_SHA}
 LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
-
-COPY --from=builder /opt/s3proxy /opt/s3proxy
 
 ENV \
     LOG_LEVEL="info" \
