@@ -50,11 +50,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 }
                 case 'config':
                     setConfig(message.config)
-                    setView(message.config.hasAccessToken ? 'chat' : 'login')
+                    setView(message.config.hasVerifiedEmail ? 'chat' : 'login')
                     break
                 case 'login':
                     setAuthStatus(message.authStatus)
-                    setView(message.authStatus.loggedIn && message.authStatus.hasVerifiedEmail ? 'chat' : 'login')
+                    setView(message.authStatus.hasVerifiedEmail ? 'chat' : 'login')
                     break
                 case 'showTab':
                     if (message.tab === 'chat') {
@@ -101,6 +101,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const onLogout = useCallback(() => {
         vscodeAPI.postMessage({ command: 'removeToken' })
+        setAuthStatus(undefined)
         setView('login')
     }, [vscodeAPI])
 
@@ -108,41 +109,45 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         return <LoadingPage />
     }
 
+    // Authed View
     return (
         <div className="outer-container">
             <Header />
-            {view === 'login' && (
+            {!authStatus?.loggedIn || !authStatus?.hasVerifiedEmail ? (
                 <Login onLogin={onLogin} authStatus={authStatus} serverEndpoint={config?.serverEndpoint} />
-            )}
-            {view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
-            {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}
-            {view === 'history' && (
-                <UserHistory
-                    userHistory={userHistory}
-                    setUserHistory={setUserHistory}
-                    setInputHistory={setInputHistory}
-                    setView={setView}
-                    vscodeAPI={vscodeAPI}
-                />
-            )}
-            {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
-            {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
-            {view === 'chat' && errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-            {view === 'chat' && (
-                <Chat
-                    messageInProgress={messageInProgress}
-                    messageBeingEdited={messageBeingEdited}
-                    setMessageBeingEdited={setMessageBeingEdited}
-                    transcript={transcript}
-                    contextStatus={contextStatus}
-                    formInput={formInput}
-                    setFormInput={setFormInput}
-                    inputHistory={inputHistory}
-                    setInputHistory={setInputHistory}
-                    vscodeAPI={vscodeAPI}
-                    suggestions={suggestions}
-                    setSuggestions={setSuggestions}
-                />
+            ) : (
+                <>
+                    <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />
+                    {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}
+                    {view === 'history' && (
+                        <UserHistory
+                            userHistory={userHistory}
+                            setUserHistory={setUserHistory}
+                            setInputHistory={setInputHistory}
+                            setView={setView}
+                            vscodeAPI={vscodeAPI}
+                        />
+                    )}
+                    {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
+                    {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
+                    {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
+                    {view === 'chat' && (
+                        <Chat
+                            messageInProgress={messageInProgress}
+                            messageBeingEdited={messageBeingEdited}
+                            setMessageBeingEdited={setMessageBeingEdited}
+                            transcript={transcript}
+                            contextStatus={contextStatus}
+                            formInput={formInput}
+                            setFormInput={setFormInput}
+                            inputHistory={inputHistory}
+                            setInputHistory={setInputHistory}
+                            vscodeAPI={vscodeAPI}
+                            suggestions={suggestions}
+                            setSuggestions={setSuggestions}
+                        />
+                    )}
+                </>
             )}
         </div>
     )

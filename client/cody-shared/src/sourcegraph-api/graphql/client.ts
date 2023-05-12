@@ -26,6 +26,7 @@ interface CurrentUserIdResponse {
 
 interface CurrentUserIdVerificationStatusResponse {
     currentUser: { id: string; hasVerifiedEmail: boolean } | null
+    site: { requiresVerifiedEmailForCody: boolean }
 }
 
 interface RepositoryIdResponse {

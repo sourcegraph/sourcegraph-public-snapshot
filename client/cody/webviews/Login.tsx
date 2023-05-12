@@ -27,7 +27,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     const onSubmit = useCallback<React.FormEventHandler>(
         event => {
             event.preventDefault()
-            if (endpoint) {
+            if (endpoint && token) {
                 onLogin(token, endpoint)
             }
         },
@@ -36,14 +36,13 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     return (
         <div className={styles.container}>
-            {authStatus?.loggedIn === false && (
+            {authStatus && (
                 <p className={styles.error}>
-                    Invalid credentials. Please check the Sourcegraph instance URL and access token.
-                </p>
-            )}
-            {authStatus?.loggedIn === true && authStatus?.hasVerifiedEmail === false && (
-                <p className={styles.error}>
-                    Email not verified. Please add a verified email to your Sourcegraph instance account.
+                    {!authStatus.loggedIn
+                        ? 'Invalid credentials. Please check the Sourcegraph instance URL and access token.'
+                        : !authStatus?.hasVerifiedEmail
+                        ? 'Email not verified. Please add a verified email to your Sourcegraph instance account.'
+                        : null}
                 </p>
             )}
             <section className={styles.section}>
@@ -51,20 +50,19 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 <form className={styles.wrapper} onSubmit={onSubmit}>
                     <VSCodeTextField
                         id="endpoint"
-                        value={endpoint || ''}
+                        value={endpoint}
                         className={styles.input}
-                        placeholder="https://example.sourcegraph.com"
-                        onInput={(e: any) => setEndpoint(e.target.value)}
+                        placeholder="https://sourcegraph.com"
+                        onInput={e => setEndpoint((e.target as HTMLInputElement).value)}
                     >
                         Sourcegraph Instance URL
                     </VSCodeTextField>
                     <VSCodeTextField
                         id="accessToken"
                         value={token}
-                        placeholder=""
                         className={styles.input}
                         type={TextFieldType.password}
-                        onInput={(e: any) => setToken(e.target.value)}
+                        onInput={e => setToken((e.target as HTMLInputElement).value)}
                     >
                         Access Token (
                         <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">docs</a>)
@@ -77,7 +75,6 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <div className={styles.divider} />
             <section className={styles.section}>
                 <h2 className={styles.sectionHeader}>Everyone Else</h2>
-
                 <p className={styles.openMessage}>
                     Cody for open source code is available to all users with a Sourcegraph.com account
                 </p>

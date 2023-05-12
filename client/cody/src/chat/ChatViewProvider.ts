@@ -35,7 +35,7 @@ export async function getAuthStatus(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
 ): Promise<AuthStatus> {
     const client = new SourcegraphGraphQLAPIClient(config)
-    const data = await client.getCurrentUserIDAndVerificationStatus()
+    const data = await client.getAuthStatus()
     return Promise.resolve(
         isError(data)
             ? { loggedIn: false, hasVerifiedEmail: false }
@@ -181,8 +181,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     customHeaders: this.config.customHeaders,
                 })
                 // activate when user has valid login
-                await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus)
-                if (authStatus.loggedIn) {
+                await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.hasVerifiedEmail)
+                if (authStatus.loggedIn && authStatus.hasVerifiedEmail) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
                     this.sendEvent('auth', 'login')
@@ -278,7 +278,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
-                    void this.sendLogin({ loggedIn: false, hasVerifiedEmail: statusCode != 403 })
+                    void this.sendLogin({ loggedIn: false, hasVerifiedEmail: statusCode !== 403 })
                     void this.clearAndRestartSession()
                 }
                 this.onCompletionEnd()
@@ -503,8 +503,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public async sendLogin(authStatus: AuthStatus): Promise<void> {
         this.sendEvent('token', 'Set')
-        await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.loggedIn)
-        if (authStatus.loggedIn) {
+        await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.hasVerifiedEmail)
+        if (authStatus.loggedIn && authStatus.hasVerifiedEmail) {
             this.sendEvent('auth', 'login')
         }
         void this.webview?.postMessage({
@@ -577,8 +577,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 debug: this.config.debug,
                 serverEndpoint: this.config.serverEndpoint,
                 hasAccessToken: authStatus.loggedIn,
+                hasVerifiedEmail: authStatus.hasVerifiedEmail,
             }
-            void vscode.commands.executeCommand('setContext', 'cody.activated', authStatus)
+            void vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.hasVerifiedEmail)
             void this.webview?.postMessage({ type: 'config', config: configForWebview })
         }
 

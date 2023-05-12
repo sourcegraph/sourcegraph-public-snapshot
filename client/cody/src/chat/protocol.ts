@@ -8,9 +8,7 @@ import { View } from '../../webviews/NavBar'
  * A message sent from the webview to the extension host.
  */
 export type WebviewMessage =
-    | {
-          command: 'initialized'
-      }
+    | { command: 'initialized' }
     | { command: 'event'; event: string; value: string }
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
     | { command: 'executeRecipe'; recipe: string }
@@ -42,6 +40,7 @@ export type ExtensionMessage =
  */
 export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debug' | 'serverEndpoint'> {
     hasAccessToken: boolean
+    hasVerifiedEmail: boolean
 }
 
 export const DOTCOM_URL = new URL('https://sourcegraph.com')
