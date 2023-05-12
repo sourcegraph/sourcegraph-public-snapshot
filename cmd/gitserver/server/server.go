@@ -2344,6 +2344,8 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	logger.Info("repo cloned")
 	repoClonedCounter.Inc()
 
+	s.PerforceChangelistMappingQueue.push(&perforceChangelistMappingJob{repo: repo})
+
 	return nil
 }
 
@@ -2609,6 +2611,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 	select {
 	case <-done:
 		if err != nil {
+			s.Logger.Warn("Pushing to perforcechangelistmapping queue")
 			s.PerforceChangelistMappingQueue.push(&perforceChangelistMappingJob{repo: repo})
 		}
 		return errors.Wrapf(err, "repo %s:", repo)
