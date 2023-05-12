@@ -90,13 +90,6 @@ type TraceLogger interface {
 	// AddEvent logs an event with name and fields on the trace.
 	AddEvent(name string, attributes ...attribute.KeyValue)
 
-	// Deprecated: Use AddEvent(...) instead.
-	//
-	// Log logs an event with fields to the opentracing.Span as well as the nettrace.Trace,
-	// and also logs an 'trace.event' log entry at INFO level with the fields, including
-	// any existing tags and parent observation context.
-	Log(fields ...otlog.Field)
-
 	// SetAttributes adds attributes to the trace, and also applies fields to the
 	// underlying Logger.
 	SetAttributes(attributes ...attribute.KeyValue)
@@ -152,23 +145,6 @@ func (t *traceLogger) AddEvent(name string, attributes ...attribute.KeyValue) {
 	}
 	if t.trace != nil {
 		t.trace.AddEvent(name, attributes...)
-	}
-}
-
-// Deprecated: Use AddEvent(...) instead.
-func (t *traceLogger) Log(fields ...otlog.Field) {
-	if honey.Enabled() {
-		for _, field := range fields {
-			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
-		}
-	}
-	if t.trace != nil {
-		t.trace.LogFields(fields...)
-		if enableTraceLog {
-			t.Logger.
-				AddCallerSkip(1). // Log() -> Logger
-				Info("trace.log", toLogFields(fields)...)
-		}
 	}
 }
 
@@ -407,7 +383,7 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []otlog.
 		tr.SetError(*err)
 	}
 
-	tr.LogFields(logFields...) //nolint:staticcheck // TODO when updating the observation package
+	tr.AddEvent("done", trace.OTLogFieldsToOTelAttrs(logFields)...) //nolint:staticcheck // TODO when updating the observation package
 	tr.Finish()
 }
 
