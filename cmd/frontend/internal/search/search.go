@@ -71,7 +71,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Log events to trace
-	streamWriter.StatHook = eventStreamTraceHook(tr.AddEvent) //nolint:staticcheck // TODO when updating observation package
+	streamWriter.StatHook = eventStreamTraceHook(tr.AddEvent)
 
 	eventWriter := newEventWriter(streamWriter)
 	defer eventWriter.Done()

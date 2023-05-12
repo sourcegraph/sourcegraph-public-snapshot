@@ -94,7 +94,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer eventWriter.Event("done", map[string]any{})
 
 	// Log events to trace
-	eventWriter.StatHook = eventStreamTraceHook(tr.AddEvent) //nolint:staticcheck // Deprecated: Ok until we update the observation package
+	eventWriter.StatHook = eventStreamTraceHook(tr.AddEvent)
 
 	events, getResults := NewComputeStream(ctx, h.logger, h.db, h.enterpriseJobs, searchQuery, computeQuery.Command)
 	events = batchEvents(events, 50*time.Millisecond)
