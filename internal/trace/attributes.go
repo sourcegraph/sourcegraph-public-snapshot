@@ -51,3 +51,10 @@ func Stringers[T fmt.Stringer](key string, values []T) attribute.KeyValue {
 	}
 	return attribute.StringSlice(key, strs)
 }
+
+func Error(err error) attribute.KeyValue {
+	if err != nil {
+		return attribute.String("error", err.Error())
+	}
+	return attribute.String("error", "<nil>")
+}

@@ -59,7 +59,7 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 				},
 			})
 			if err != nil {
-				tr.SetAttributes(attribute.String("repo", string(repoRevs.Repo.Name)), attribute.String("error", err.Error()))
+				tr.SetAttributes(attribute.String("repo", string(repoRevs.Repo.Name)), trace.Error(err))
 			}
 			return err
 		})

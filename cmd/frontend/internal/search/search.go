@@ -536,7 +536,7 @@ func eventStreamTraceHook(addEvent func(string, ...attribute.KeyValue)) func(str
 			attribute.Int64("duration_ms", stat.Duration.Milliseconds()),
 		}
 		if stat.Error != nil {
-			fields = append(fields, attribute.String("error", stat.Error.Error()))
+			fields = append(fields, trace.Error(stat.Error))
 		}
 		addEvent(stat.Event, fields...)
 	}

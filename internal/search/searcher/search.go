@@ -113,7 +113,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					if err != nil {
 						tr.SetAttributes(
 							attribute.String("repo", string(repo.Name)),
-							attribute.String("error", err.Error()),
+							trace.Error(err),
 							attribute.Bool("timeout", errcode.IsTimeout(err)),
 							attribute.Bool("temporary", errcode.IsTemporary(err)))
 						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
