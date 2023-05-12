@@ -222,11 +222,8 @@ func ExecutorsSrcCLIImageTag() string {
 
 func ExecutorsLsifGoImage() string {
 	current := Get()
-	// Unlike scip-go, lsif-go needs tags to work correctly.
-	if len(current.CodeIntelAutoIndexingIndexerMap) > 0 &&
-		current.CodeIntelAutoIndexingIndexerMap["go"] != "" &&
-		strings.Contains(current.CodeIntelAutoIndexingIndexerMap["go"], "lsif") {
-		return current.CodeIntelAutoIndexingIndexerMap["go"]
+	if current.ExecutorsLsifGoImage != "" {
+		return current.ExecutorsLsifGoImage
 	}
 	return "sourcegraph/lsif-go"
 }
