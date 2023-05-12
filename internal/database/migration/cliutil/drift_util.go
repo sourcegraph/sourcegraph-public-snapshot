@@ -66,7 +66,9 @@ func wrap(summary DriftSummary) []DriftSummary {
 	return []DriftSummary{summary}
 }
 
-func (s *driftSummary) String() string { return "xXx" + s.name + "xXx" }
+func (s *driftSummary) String() string {
+	return fmt.Sprintf("This is the problem %v. This is the solution: %v. This is the diff: %v. This is the statement: %v", s.problem, s.solution, cmp.Diff(s.a, s.b), s.statements)
+}
 
 func (s *driftSummary) Display(out OutputWriter) {
 	out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, s.problem))
