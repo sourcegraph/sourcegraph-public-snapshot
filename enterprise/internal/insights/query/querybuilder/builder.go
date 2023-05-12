@@ -396,8 +396,8 @@ func AddFileFilter(query BasicQuery, file string) (BasicQuery, error) {
 	return addFilterSimple(query, searchquery.FieldFile, file)
 }
 
-func AddRepoMetadataFilter(query BasicQuery, metadataKey string) (BasicQuery, error) {
-	if metadataKey == types.NO_REPO_METADATA_KEY {
+func AddRepoMetadataFilter(query BasicQuery, repoMeta string) (BasicQuery, error) {
+	if repoMeta == types.NO_REPO_METADATA_TEXT {
 		return query, errors.New("Can't search for no metadata key")
 	}
 	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
@@ -408,9 +408,16 @@ func AddRepoMetadataFilter(query BasicQuery, metadataKey string) (BasicQuery, er
 	mutatedQuery := searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
 		modified := make([]searchquery.Parameter, 0, len(basic.Parameters)+1)
 		modified = append(modified, basic.Parameters...)
+		fValue := fmt.Sprint("has.key(", repoMeta, ")")
+		meta := strings.Split(repoMeta, ":")
+		if len(meta) == 2 {
+			key := meta[0]
+			value := meta[1]
+			fValue = fmt.Sprint("has(", key, ":", value, ")")
+		}
 		modified = append(modified, searchquery.Parameter{
 			Field:      searchquery.FieldRepo,
-			Value:      fmt.Sprint("has.key(", metadataKey, ")"),
+			Value:      fValue,
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		})

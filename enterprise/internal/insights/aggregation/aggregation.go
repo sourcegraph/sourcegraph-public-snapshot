@@ -152,17 +152,17 @@ func matchContent(event result.Match) []string {
 }
 
 func countRepoMetadata(r result.Match, repo *sTypes.Repo) (map[MatchKey]int, error) {
-	metadata := map[string]*string{types.NO_REPO_METADATA_KEY: nil}
+	metadata := map[string]*string{types.NO_REPO_METADATA_TEXT: nil}
 	if repo != nil && repo.KeyValuePairs != nil {
 		metadata = repo.KeyValuePairs
 	}
 	matches := map[MatchKey]int{}
-	for key := range metadata {
+	for key, value := range metadata {
 		group := key
-		key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: group}
-		if len(key.Group) > 100 {
-			key.Group = key.Group[:100]
+		if value != nil && *value != "" {
+			group += ":" + *value
 		}
+		key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: group}
 		matches[key] = r.ResultCount()
 	}
 	return matches, nil
@@ -277,7 +277,7 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 			r.tabulator(nil, err)
 			return
 		default:
-			groups, err := r.countFunc(match, repos[match.RepoName().ID]) // pass metadata or entire repo here?
+			groups, err := r.countFunc(match, repos[match.RepoName().ID])
 			for groupKey, count := range groups {
 				// delegate error handling to the passed in tabulator
 				if err != nil {

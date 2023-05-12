@@ -233,7 +233,7 @@ func getDefaultAggregationMode(searchQuery, patternType string) types.SearchAggr
 		return types.PATH_AGGREGATION_MODE
 	}
 
-	repoMetadata,_, _ := canAggregateByRepoMetadata(searchQuery, patternType)
+	repoMetadata, _, _ := canAggregateByRepoMetadata(searchQuery, patternType)
 	if repoMetadata {
 		return types.REPO_METADATA_AGGREGATION_MODE
 	}

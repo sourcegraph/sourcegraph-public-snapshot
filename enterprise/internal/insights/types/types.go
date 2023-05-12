@@ -229,5 +229,5 @@ const (
 )
 
 const (
-	NO_REPO_METADATA_KEY = "No metadata"
+	NO_REPO_METADATA_TEXT = "No metadata"
 )
