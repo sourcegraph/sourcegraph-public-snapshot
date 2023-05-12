@@ -173,6 +173,6 @@ func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError) {
 	// Rate limit exceeded, write well known headers and return correct status code.
 	w.Header().Set("x-ratelimit-limit", strconv.Itoa(err.Limit))
 	w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(err.Limit-err.Used, 0)))
-	w.Header().Set("retry-after", err.RetryAfter.Format(time.RFC3339))
+	w.Header().Set("retry-after", err.RetryAfter.Format(time.RFC1123))
 	http.Error(w, err.Error(), http.StatusTooManyRequests)
 }

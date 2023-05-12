@@ -81,7 +81,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 }
 
 .edit-button {
-    border-radius: 1rem;
+    border-radius: 0.5rem;
 }
 
 .suggestion-button {

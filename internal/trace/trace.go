@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -88,20 +87,3 @@ func (t *Trace) Finish() {
 	t.nettraceTrace.Finish()
 	t.oteltraceSpan.End()
 }
-
-/////////////////////
-// Deprecated APIs //
-/////////////////////
-
-// Deprecated: Use AddEvent(...) instead.
-//
-// LogFields logs fields to the opentracing.Span as well as the nettrace.Trace.
-func (t *Trace) LogFields(fields ...log.Field) {
-	t.AddEvent("LogFields", otLogFieldsToOTelAttrs(fields)...)
-}
-
-// Deprecated: Use SetAttributes(...) instead.
-//
-// TagFields adds fields to the opentracing.Span as tags
-// as well as logs to the nettrace.Trace.
-func (t *Trace) TagFields(fields ...log.Field) { t.SetAttributes(otLogFieldsToOTelAttrs(fields)...) }

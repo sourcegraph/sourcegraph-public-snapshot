@@ -27,6 +27,7 @@ import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shar
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { useEditorStore } from '../../cody/stores/editor'
+import { useIsCodyEnabled } from '../../cody/useIsCodyEnabled'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunkData } from '../blame/useBlameHunks'
@@ -272,6 +273,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         [customHistoryAction]
     )
 
+    const codyEnabled = useIsCodyEnabled()
+
     const extensions = useMemo(
         () => [
             // Log uncaught errors that happen in callbacks that we pass to
@@ -288,7 +291,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }),
             scipSnapshot(blobInfo.snapshotData),
             codeFoldingExtension(),
-            window.context?.codyEnabled ? codyWidgetExtension() : [],
+            codyEnabled.editorRecipes ? codyWidgetExtension() : [],
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),

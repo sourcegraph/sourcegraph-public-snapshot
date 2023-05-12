@@ -23,6 +23,7 @@ pub fn extract_path_from_scheme_url<'a>(url: &'a str, scheme: &str) -> &'a str {
 }
 
 /// Checks if a URL starts with the scheme (sourcegraph://)
+#[cfg(not(target_os = "macos"))]
 pub fn is_scheme_url(url: &str, scheme: &str) -> bool {
     url.starts_with(scheme) && url[scheme.len()..].starts_with("://")
 }

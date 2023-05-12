@@ -13,5 +13,6 @@ go_library(
         "//internal/database",
         "//internal/redispool",
         "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

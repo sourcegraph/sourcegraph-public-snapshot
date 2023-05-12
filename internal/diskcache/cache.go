@@ -19,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	internaltrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -362,7 +363,7 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 		}
 		err = os.Remove(path)
 		if err != nil {
-			trace.AddEvent("failed to remove disk cache entry", attribute.String("path", path), attribute.String("error", err.Error()))
+			trace.AddEvent("failed to remove disk cache entry", attribute.String("path", path), internaltrace.Error(err))
 			log.Printf("failed to remove %s: %s", path, err)
 			continue
 		}

@@ -59,7 +59,7 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 				},
 			})
 			if err != nil {
-				tr.SetAttributes(attribute.String("repo", string(repoRevs.Repo.Name)), attribute.String("error", err.Error()))
+				tr.SetAttributes(attribute.String("repo", string(repoRevs.Repo.Name)), trace.Error(err))
 			}
 			return err
 		})
@@ -72,15 +72,15 @@ func (s *SymbolSearchJob) Name() string {
 	return "SearcherSymbolSearchJob"
 }
 
-func (s *SymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
+func (s *SymbolSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
 	case job.VerbosityBasic:
+		res = append(res, trace.Scoped("patternInfo", s.PatternInfo.Fields()...)...)
 		res = append(res,
-			trace.Scoped("patternInfo", s.PatternInfo.Fields()...),
-			log.Int("numRepos", len(s.Repos)),
-			log.Int("limit", s.Limit),
+			attribute.Int("numRepos", len(s.Repos)),
+			attribute.Int("limit", s.Limit),
 		)
 	}
 	return res

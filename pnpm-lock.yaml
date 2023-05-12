@@ -1103,6 +1103,9 @@ importers:
       regenerator-runtime:
         specifier: ^0.13.7
         version: 0.13.11
+      resolve-bin:
+        specifier: ^1.0.1
+        version: 1.0.1
       rimraf:
         specifier: ^3.0.2
         version: 3.0.2
@@ -16411,6 +16414,10 @@ packages:
       make-dir: 3.1.0
       pkg-dir: 4.2.0
 
+  /find-parent-dir@0.3.1:
+    resolution: {integrity: sha512-o4UcykWV/XN9wm+jMEtWLPlV8RXCZnMhQI6F6OdHeSez7iiJWePw8ijOlskJZMsaQoGR/b7dH6lO02HhaTN7+A==}
+    dev: true
+
   /find-up@1.1.2:
     resolution: {integrity: sha512-jvElSjyuo4EMQGoTwo1uJU5pQMwTW5lS1x05zzfJuTIyLR3zwO27LYrxNg+dlvKpGOuGy/MzBdXh80g0ve5+HA==}
     engines: {node: '>=0.10.0'}
@@ -25295,6 +25302,12 @@ packages:
 
   /resolve-alpn@1.2.1:
     resolution: {integrity: sha512-0a1F4l73/ZFZOakJnQ3FvkJ2+gSTQWz/r2KE5OdDY0TxPm5h4GkqkWWfM47T7HsbnOtcJVEF4epCVy6u7Q3K+g==}
+
+  /resolve-bin@1.0.1:
+    resolution: {integrity: sha512-4G9C3udcDB1c9qaopB+9dygm2bMyF2LeJ2JHBIc24N7ob+UuSSwX3ID1hQwpDEQep9ZRNdhT//rgEd6xbWA/SA==}
+    dependencies:
+      find-parent-dir: 0.3.1
+    dev: true
 
   /resolve-cwd@3.0.0:
     resolution: {integrity: sha512-OrZaX2Mb+rJCpH/6CpSqt9xFVpN++x01XnN2ie9g6P5/3xelLAkXWVADpdz1IHD/KFfEXyE6V0U01OQ3UO2rEg==}

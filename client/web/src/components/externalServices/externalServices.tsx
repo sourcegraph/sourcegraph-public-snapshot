@@ -561,6 +561,10 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
     editorActions: githubEditorActions(true),
     Instructions: () => <GitHubInstructions isEnterprise={true} />,
 }
+const GITHUB_APP: AddExternalServiceOptions = {
+    ...GITHUB_DOTCOM,
+    title: 'GitHub App',
+}
 export const gitHubAppConfig = (
     baseURL: string,
     appID: string,
@@ -573,7 +577,8 @@ export const gitHubAppConfig = (
   "url": "${decodeURI(baseURL)}",
   "gitHubAppDetails": {
     "installationID": ${installationID},
-    "appID": ${appID}
+    "appID": ${appID},
+    "baseURL": "${baseURL}"
   },
   "orgs": ["${org}"],
   "authorization": {}
@@ -1523,6 +1528,7 @@ const RUBY_PACKAGES: AddExternalServiceOptions = {
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     github: GITHUB_DOTCOM,
     ghe: GITHUB_ENTERPRISE,
+    ghapp: GITHUB_APP,
     gitlabcom: GITLAB_DOTCOM,
     gitlab: GITLAB_SELF_MANAGED,
     bitbucket: BITBUCKET_CLOUD,
