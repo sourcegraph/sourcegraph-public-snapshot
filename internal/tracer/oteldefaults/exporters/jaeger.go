@@ -10,7 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewJaegerExporter exports spans to a Jaeger collector or agent.
+// NewJaegerExporter exports spans to a Jaeger collector or agent based on environment
+// configuration.
+//
+// By default, prefer to use internal/tracer.Init to set up a global OpenTelemetry
+// tracer and use that instead.
 func NewJaegerExporter() (oteltracesdk.SpanExporter, error) {
 	// Set configuration from jaegercfg package, to try and preserve back-compat with
 	// existing behaviour.

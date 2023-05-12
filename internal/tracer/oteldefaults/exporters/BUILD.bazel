@@ -6,7 +6,7 @@ go_library(
         "jaeger.go",
         "otlp.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/tracer/internal/exporters",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults/exporters",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/otlpenv",

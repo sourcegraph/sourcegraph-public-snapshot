@@ -15,7 +15,10 @@ import (
 )
 
 // NewOTLPExporter exports spans to an OpenTelemetry collector via the OpenTelemetry
-// protocol (OTLP).
+// protocol (OTLP) based environment configuration.
+//
+// By default, prefer to use internal/tracer.Init to set up a global OpenTelemetry
+// tracer and use that instead.
 func NewOTLPExporter(ctx context.Context, logger log.Logger) (oteltracesdk.SpanExporter, error) {
 	endpoint := otlpenv.GetEndpoint()
 	if endpoint == "" {
