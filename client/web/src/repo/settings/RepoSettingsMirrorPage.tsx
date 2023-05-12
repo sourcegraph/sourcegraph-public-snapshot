@@ -21,8 +21,10 @@ import {
     CollapseHeader,
     Collapse,
     CollapsePanel,
+    Label,
 } from '@sourcegraph/wildcard'
 
+import { LogOutput } from '../../components/LogOutput'
 import { PageTitle } from '../../components/PageTitle'
 import {
     CheckMirrorRepositoryConnectionResult,
@@ -91,6 +93,10 @@ const UpdateMirrorRepositoryActionContainer: FC<UpdateMirrorRepositoryActionCont
                     Last refreshed:{' '}
                     {props.repo.mirrorInfo.updatedAt ? <Timestamp date={props.repo.mirrorInfo.updatedAt} /> : 'unknown'}{' '}
                 </div>
+            </>
+        )
+        info = (
+            <>
                 {updateSchedule && (
                     <div>
                         Next scheduled update <Timestamp date={updateSchedule.due} /> (position{' '}
@@ -121,6 +127,7 @@ const UpdateMirrorRepositoryActionContainer: FC<UpdateMirrorRepositoryActionCont
     return (
         <ActionContainer
             title={title}
+            titleAs="h3"
             description={<div>{description}</div>}
             buttonLabel={buttonLabel}
             buttonDisabled={buttonDisabled || props.disabled}
@@ -160,6 +167,7 @@ const CheckMirrorRepositoryConnectionActionContainer: FC<
     return (
         <BaseActionContainer
             title="Check connection to remote repository"
+            titleAs="h3"
             description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
             action={
                 <Button
@@ -235,6 +243,7 @@ const CorruptionLogsContainer: FC<CorruptionLogProps> = props => {
     return (
         <BaseActionContainer
             title="Repository corruption"
+            titleAs="h3"
             description={<span>Recent corruption events that have been detected on this repository.</span>}
             details={
                 <div className="flex-1">
@@ -279,21 +288,13 @@ const LastSyncOutputContainer: FC<LastSyncOutputProps> = props => {
     const output =
         (props.repo.mirrorInfo.cloneInProgress && 'Cloning in progress...') ||
         props.repo.mirrorInfo.lastSyncOutput ||
-        'No output yet.'
+        'No logs yet.'
     return (
         <BaseActionContainer
-            title="Sync output"
-            description={
-                <div>
-                    <span>Output from this repository's most recent sync job.</span>
-                    <hr />
-                </div>
-            }
-            details={
-                <pre className={classNames(styles.log)}>
-                    <Code>{output}</Code>
-                </pre>
-            }
+            title="Last sync log"
+            titleAs="h3"
+            description={<h4>Output from this repository's most recent sync job.</h4>}
+            details={<LogOutput text={output} logDescription="Job output:" />}
         />
     )
 }
@@ -335,11 +336,8 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
                 {error && <ErrorAlert error={error} />}
 
                 <div className="form-group">
-                    <Input
-                        value={repo.mirrorInfo.remoteURL || '(unknown)'}
-                        readOnly={true}
-                        className="mb-0"
-                        label={
+                    <Label>
+                        {
                             <>
                                 {' '}
                                 Remote repository URL{' '}
@@ -348,6 +346,20 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
                                 </small>
                             </>
                         }
+                    </Label>
+                    <Input
+                        value={repo.mirrorInfo.remoteURL || '(unknown)'}
+                        readOnly={true}
+                        className="mb-0"
+                        // label={
+                        //     <>
+                        //         {' '}
+                        //         Remote repository URL{' '}
+                        //         <small className="text-info">
+                        //             <Icon aria-hidden={true} svgPath={mdiLock} /> Only visible to site admins
+                        //         </small>
+                        //     </>
+                        // }
                     />
                     {repo.viewerCanAdminister && (
                         <small className="form-text text-muted">
@@ -373,6 +385,7 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
                 />
                 <ActionContainer
                     title="Reclone repository"
+                    titleAs="h3"
                     description={
                         <div>
                             This will delete the repository from disk and reclone it.
