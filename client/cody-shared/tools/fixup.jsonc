@@ -1,0 +1,377 @@
+{
+    purpose: '''A prompt template for a coding task. The input JSON has three fields:
+
+1. An instruction, describing work to be done on the code.
+2. The name of the file.
+3. An extended code snippet from the file. This may be an empty string if the file is empty.
+
+The output from the LLM should be written in <cody-replace> tags, apply the changes per the instruction, and repeat the rest of the code verbatim.
+''',
+    seed_prompt: '''You are Cody, a coding assistant from Sourcegraph. Here is some code from {filename}:
+
+```
+{code}
+```
+
+{instruction}
+
+Write the replacement code in <cody-replace> tags. Include all the unchanged code verbatim.
+
+Assistant: ''',
+    examples:[
+    // Adapted from:
+    // https://github.com/vuejs/core/commit/6bcb7a5ea3b9042f110bb1dd74c7c23ddd2d72da
+    // https://github.com/vuejs/core/blob/6bcb7a5ea3b9042f110bb1dd74c7c23ddd2d72da/packages/compiler-core/src/parse.ts
+    {
+        input: {
+            instruction: 'remove deprecated String.prototype.substr',
+            filename: 'parse.ts',
+            code: '''function parseComment(context: ParserContext): CommentNode {
+    __TEST__ && assert(startsWith(context.source, '<!--'))
+
+    const start = getCursor(context)
+    let content: string
+
+    // Regular comment.
+    const match = /--(\!)?>/.exec(context.source)
+    if (!match) {
+        content = context.source.substr(4)
+        advanceBy(context, context.source.length)
+        emitError(context, ErrorCodes.EOF_IN_COMMENT)
+    } else {
+        if (match.index <= 3) {
+        emitError(context, ErrorCodes.ABRUPT_CLOSING_OF_EMPTY_COMMENT)
+        }
+        if (match[1]) {
+        emitError(context, ErrorCodes.INCORRECTLY_CLOSED_COMMENT)
+        }
+        content = context.source.substr(4, match.index - 1)
+
+        // Advancing with reporting nested comments.
+        const s = context.source.substr(0, match.index - 1)
+        let prevIndex = 1,
+        nestedIndex = 0
+        while ((nestedIndex = s.indexOf('<!--', prevIndex)) !== -1) {
+        advanceBy(context, nestedIndex - prevIndex + 1)
+        if (nestedIndex + 4 < s.length) {
+            emitError(context, ErrorCodes.NESTED_COMMENT)
+        }
+        prevIndex = nestedIndex + 1
+        }
+        advanceBy(context, match.index + match[0].length - prevIndex + 1)
+    }
+
+    return {
+        type: NodeTypes.COMMENT,
+        content,
+        loc: getSelection(context, start)
+    }
+}'''
+        },
+        output: '''<cody-replace>function parseComment(context: ParserContext): CommentNode {
+    __TEST__ && assert(startsWith(context.source, '<!--'))
+
+    const start = getCursor(context)
+    let content: string
+
+    // Regular comment.
+    const match = /--(\!)?>/.exec(context.source)
+    if (!match) {
+        content = context.source.slice(4)
+        advanceBy(context, context.source.length)
+        emitError(context, ErrorCodes.EOF_IN_COMMENT)
+    } else {
+        if (match.index <= 3) {
+        emitError(context, ErrorCodes.ABRUPT_CLOSING_OF_EMPTY_COMMENT)
+        }
+        if (match[1]) {
+        emitError(context, ErrorCodes.INCORRECTLY_CLOSED_COMMENT)
+        }
+        content = context.source.slice(4, match.index)
+
+        // Advancing with reporting nested comments.
+        const s = context.source.slice(0, match.index)
+        let prevIndex = 1,
+        nestedIndex = 0
+        while ((nestedIndex = s.indexOf('<!--', prevIndex)) !== -1) {
+        advanceBy(context, nestedIndex - prevIndex + 1)
+        if (nestedIndex + 4 < s.length) {
+            emitError(context, ErrorCodes.NESTED_COMMENT)
+        }
+        prevIndex = nestedIndex + 1
+        }
+        advanceBy(context, match.index + match[0].length - prevIndex + 1)
+    }
+
+    return {
+        type: NodeTypes.COMMENT,
+        content,
+        loc: getSelection(context, start)
+    }
+          }</cody-replace>'''
+    },
+
+    { input: {instruction: 'document what does this program does',
+ filename: 'hello.rs',
+ code: '''
+fn main() {
+    println("Hello, world! From Cody demo land.")
+}'''
+},
+output: '''<cody-replace>
+// Prints a greeting to the console.
+fn main() {
+    println("Hello, world! From Cody demo land.")
+}
+</cody-replace>'''
+    },
+    {
+        input:
+{instruction: 'write a doc comment explaining what this function does',
+ filename: 'main.rs',
+ code: '''    if denominator != 0 && numerator % denominator == 0 {
+        numerator / denominator
+    } else {
+        i32::MIN
+    }
+}
+
+fn digit(n: u16) -> &'static str {
+    match n {
+        0b10 => ">1",
+        0b100 => ">2",
+        0b1000 => ">3",
+        0b10000 => ">4",
+        0b100000 => ">5",
+        0b1000000 => ">6",
+        0b10000000 => ">7",
+        0b100000000 => ">8",
+        0b1000000000 => ">9",
+        _ if n.count_ones() == 0 => "!",
+        _ if n.count_ones() == 1 => "?1",
+        _ if n.count_ones() == 2 => "?2",
+        _ if n.count_ones() == 3 => "?3",
+        _ if n.count_ones() == 4 => "?4",
+        _ if n.count_ones() == 5 => "?5",
+        _ if n.count_ones() == 6 => "?6",
+        _ if n.count_ones() == 7 => "?7",
+        _ if n.count_ones() == 8 => "?8",
+        _ if n.count_ones() == 9 => "?9",
+        _ => panic!("unreachable"),
+    }
+}
+
+const DIM: usize = 9;
+#[derive(Clone)]
+struct Board {
+    cells: [u16; DIM * DIM],
+}'''},
+output: '''<cody-replace>    if denominator != 0 && numerator % denominator == 0 {
+        numerator / denominator
+    } else {
+        i32::MIN
+    }
+}
+
+/// Converts a number to a string indicating which bits are set.
+/// If the N-th bit is set, 1 <= N < 10, the representation is
+/// ">N". If no bits are set, the representation is "!". Otherwise,
+/// if M bits are set, 1 <= M < 10 the output is "?M". Panics if
+/// more than 9 bits are set.
+fn digit(n: u16) -> &'static str {
+    match n {
+        0b10 => ">1",
+        0b100 => ">2",
+        0b1000 => ">3",
+        0b10000 => ">4",
+        0b100000 => ">5",
+        0b1000000 => ">6",
+        0b10000000 => ">7",
+        0b100000000 => ">8",
+        0b1000000000 => ">9",
+        _ if n.count_ones() == 0 => "!",
+        _ if n.count_ones() == 1 => "?1",
+        _ if n.count_ones() == 2 => "?2",
+        _ if n.count_ones() == 3 => "?3",
+        _ if n.count_ones() == 4 => "?4",
+        _ if n.count_ones() == 5 => "?5",
+        _ if n.count_ones() == 6 => "?6",
+        _ if n.count_ones() == 7 => "?7",
+        _ if n.count_ones() == 8 => "?8",
+        _ if n.count_ones() == 9 => "?9",
+        _ => panic!("unreachable"),
+    }
+}
+
+const DIM: usize = 9;
+#[derive(Clone)]
+struct Board {
+    cells: [u16; DIM * DIM],
+}
+
+</cody-replace>'''
+},
+{
+    input:
+{instruction: '''write a react component with a pair of color pickers
+we want one of the colors to always be the complementary color of the other''',
+ filename: 'scheme.tsx',
+ code: ''
+},
+output: '''<cody-replace>
+import React, { Component } from 'react';
+import { ChromePicker } from 'react-color';
+import Color from 'color';
+
+class ColorPicker extends Component {
+    state = {
+        color: '#ff0000',
+        compColor: '#00ffff',
+    };
+
+    handleColorChange = (color) => {
+        this.setState({
+            color: color.hex,
+            compColor: Color(color.hex).rotate(180).hex(),
+        });
+    };
+
+    handleCompColorChange = (color) => {
+        this.setState({
+            color: Color(color.hex).rotate(180).hex(),
+            compColor: color.hex,
+        });
+    };
+
+    render() {
+        return (
+            <div>
+                <ChromePicker
+                    color={this.state.color}
+                    onChangeComplete={this.handleColorChange}
+                />
+                <ChromePicker
+                    color={this.state.compColor}
+                    onChangeComplete={this.handleCompColorChange}
+                />
+            </div>
+        );
+    }
+}
+
+export default ColorPicker;
+</cody-replace>'''
+},
+{
+    input: {instruction: 'Rewrite this to use input type="color" and your own color calculation, not those external packages',
+ filename: 'color-picker.js',
+ code: '''import React, { Component } from 'react';
+import { ChromePicker } from 'react-color';
+import Color from 'color';
+
+class ColorPicker extends Component {
+    state = {
+        color: '#ff0000',
+        compColor: '#00ffff',
+    };
+
+    handleColorChange = (color) => {
+        this.setState({
+            color: color.hex,
+            compColor: Color(color.hex).rotate(180).hex(),
+        });
+    };
+
+    handleCompColorChange = (color) => {
+        this.setState({
+            color: Color(color.hex).rotate(180).hex(),
+            compColor: color.hex,
+        });
+    };
+
+    render() {
+        return (
+            <div>
+                <ChromePicker
+                    color={this.state.color}
+                    onChangeComplete={this.handleColorChange}
+                />
+                <ChromePicker
+                    color={this.state.compColor}
+                    onChangeComplete={this.handleCompColorChange}
+                />
+            </div>
+        );
+    }
+}
+
+export default ColorPicker;
+'''
+},
+output: '''<cody-replace>
+import React, { Component } from 'react';
+
+class ColorPicker extends Component {
+    state = {
+        color: '#ff0000',
+        compColor: '#00ffff',
+    };
+
+    handleColorChange = (event) => {
+        this.setState({
+            color: event.target.value,
+            compColor: this.getComplementaryColor(event.target.value),
+        });
+    };
+
+    handleCompColorChange = (event) => {
+        this.setState({
+            color: this.getComplementaryColor(event.target.value),
+            compColor: event.target.value,
+        });
+    };
+
+    getComplementaryColor = (hexColor) => {
+        const rgbColor = this.hexToRgb(hexColor);
+        const compRgb = { r: 255 - rgbColor.r, g: 255 - rgbColor.g, b: 255 - rgbColor.b };
+        return this.rgbToHex(compRgb.r, compRgb.g, compRgb.b);
+    };
+
+    hexToRgb = (hex) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result
+            ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16),
+              }
+            : null;
+    };
+
+    rgbToHex = (r, g, b) => {
+        return "#" + ((1 << 24) | ((r & 255) << 16) | ((g & 255) << 8) | (b & 255)).toString(16).slice(1).toUpperCase();
+    };
+
+    render() {
+        return (
+            <div>
+                <input
+                    type="color"
+                    value={this.state.color}
+                    onChange={this.handleColorChange}
+                />
+                <input
+                    type="color"
+                    value={this.state.compColor}
+                    onChange={this.handleCompColorChange}
+                />
+            </div>
+        );
+    }
+}
+
+export default ColorPicker;
+</cody-replace>'''
+}
+]
+}
