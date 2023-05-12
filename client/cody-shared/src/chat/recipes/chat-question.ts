@@ -13,6 +13,7 @@ import { Interaction } from '../transcript/interaction'
 import { Recipe, RecipeContext } from './recipe'
 
 export class ChatQuestion implements Recipe {
+    constructor(private numCodeResults = 12, private numTextResults = 3) {}
     public id = 'chat-question'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
@@ -50,8 +51,8 @@ export class ChatQuestion implements Recipe {
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
         if (isCodebaseContextRequired) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
-                numCodeResults: 12,
-                numTextResults: 3,
+                numCodeResults: this.numCodeResults,
+                numTextResults: this.numTextResults,
             })
             contextMessages.push(...codebaseContextMessages)
         }

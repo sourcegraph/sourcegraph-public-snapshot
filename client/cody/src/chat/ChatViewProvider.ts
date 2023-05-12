@@ -6,7 +6,7 @@ import * as vscode from 'vscode'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
+import { VSCodeRecipeRegistry } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
@@ -48,6 +48,8 @@ type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'experimentalChatPredictions'
+    | 'chatNumCodeResults'
+    | 'chatNumTextResults'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -60,6 +62,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private currentChatID = ''
     private inputHistory: string[] = []
     private chatHistory: ChatHistory = {}
+
+    private recipeRegistry: VSCodeRecipeRegistry
 
     private transcript: Transcript = new Transcript()
 
@@ -90,6 +94,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         // chat id is used to identify chat session
         this.createNewChatID()
 
+        this.recipeRegistry = new VSCodeRecipeRegistry({
+            chat: {
+                numCodeResults: this.config.chatNumCodeResults,
+                numTextResults: this.config.chatNumTextResults,
+            },
+        })
+
         this.disposables.push(this.configurationChangeEvent)
 
         // listen for vscode active editor change event
@@ -104,6 +115,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 if (newCodebaseContext) {
                     this.codebaseContext = newCodebaseContext
                 }
+                this.recipeRegistry = new VSCodeRecipeRegistry({
+                    chat: {
+                        numCodeResults: this.config.chatNumCodeResults,
+                        numTextResults: this.config.chatNumTextResults,
+                    },
+                })
             })
         )
     }
@@ -347,7 +364,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return
         }
 
-        const recipe = getRecipe(recipeId)
+        const recipe = this.recipeRegistry.getRecipe(recipeId)
         if (!recipe) {
             return
         }
@@ -390,7 +407,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     private async runRecipeForSuggestion(recipeId: string, humanChatInput: string = ''): Promise<void> {
-        const recipe = getRecipe(recipeId)
+        const recipe = this.recipeRegistry.getRecipe(recipeId)
         if (!recipe) {
             return
         }

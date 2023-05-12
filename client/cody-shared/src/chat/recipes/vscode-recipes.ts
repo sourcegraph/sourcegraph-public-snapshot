@@ -14,45 +14,45 @@ import { NextQuestions } from './next-questions'
 import { Recipe } from './recipe'
 import { TranslateToLanguage } from './translate'
 
-const registeredRecipes: { [id: string]: Recipe } = {}
-
-export function registerRecipe(id: string, recipe: Recipe): void {
-    registeredRecipes[id] = recipe
+export interface ChatOptions {
+    numCodeResults?: number
+    numTextResults?: number
 }
 
-export function getRecipe(id: string): Recipe | null {
-    return registeredRecipes[id]
+export interface Options {
+    chat?: ChatOptions
 }
 
-function init(): void {
-    if (Object.keys(registeredRecipes).length > 0) {
-        return
-    }
+export class VSCodeRecipeRegistry {
+    private registeredRecipes: Record<string, Recipe> = {}
+    constructor(options: Options) {
+        const recipes: Recipe[] = [
+            new ChatQuestion(options.chat?.numCodeResults, options.chat?.numTextResults),
+            new ExplainCodeDetailed(),
+            new ExplainCodeHighLevel(),
+            new InlineChat(),
+            new GenerateDocstring(),
+            new GenerateTest(),
+            new GitHistory(),
+            new ImproveVariableNames(),
+            new Fixup(),
+            new TranslateToLanguage(),
+            new FindCodeSmells(),
+            new NextQuestions(),
+            new ContextSearch(),
+            new ReleaseNotes(),
+        ]
 
-    const recipes: Recipe[] = [
-        new ChatQuestion(),
-        new ExplainCodeDetailed(),
-        new ExplainCodeHighLevel(),
-        new InlineChat(),
-        new GenerateDocstring(),
-        new GenerateTest(),
-        new GitHistory(),
-        new ImproveVariableNames(),
-        new Fixup(),
-        new TranslateToLanguage(),
-        new FindCodeSmells(),
-        new NextQuestions(),
-        new ContextSearch(),
-        new ReleaseNotes(),
-    ]
-
-    for (const recipe of recipes) {
-        const existingRecipe = getRecipe(recipe.id)
-        if (existingRecipe) {
-            throw new Error(`Duplicate recipe with ID ${recipe.id}`)
+        for (const recipe of recipes) {
+            const existingRecipe = this.getRecipe(recipe.id)
+            if (existingRecipe) {
+                throw new Error(`Duplicate recipe with ID ${recipe.id}`)
+            }
+            this.registeredRecipes[recipe.id] = recipe
         }
-        registerRecipe(recipe.id, recipe)
+    }
+
+    public getRecipe(id: string): Recipe | null {
+        return this.registeredRecipes[id]
     }
 }
-
-init()

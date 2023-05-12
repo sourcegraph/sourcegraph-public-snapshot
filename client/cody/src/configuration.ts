@@ -22,6 +22,8 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         experimentalChatPredictions: config.get('cody.experimental.chatPredictions', false),
         experimentalInline: config.get('cody.experimental.inline', false),
         customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
+        chatNumCodeResults: config.get('cody.chat.numCodeResults'),
+        chatNumTextResults: config.get('cody.chat.numTextResults'),
     }
 }
 

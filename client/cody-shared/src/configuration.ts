@@ -10,6 +10,8 @@ export interface Configuration {
     experimentalChatPredictions: boolean
     experimentalInline: boolean
     customHeaders: Record<string, string>
+    chatNumCodeResults?: number
+    chatNumTextResults?: number
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {
