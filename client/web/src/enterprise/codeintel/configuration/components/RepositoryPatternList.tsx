@@ -93,8 +93,7 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                 </div>
             ))}
 
-            {repositoryPatterns.length === 0 && <Button aria-label="Add an additional repository pattern" onClick={addRepositoryPattern}>
-                <Icon className="text-primary" aria-hidden={true} svgPath={mdiPlus} />
+            {repositoryPatterns.length === 0 && <Button variant='secondary' aria-label="Add an additional repository pattern" onClick={addRepositoryPattern}>
                 Add Repository Pattern
             </Button>}
 

@@ -3,12 +3,13 @@ import {PageTitle} from '../../../components/PageTitle';
 import {
     Container,
     PageHeader,
-    H3, Text, Label, Button
+    H3, Text, Label, Button, Icon
 } from '@sourcegraph/wildcard'
 import styles from '../../insights/admin-ui/CodeInsightsJobs.module.scss';
 import './own-status-page-styles.scss'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import {RepositoryPatternList} from '../../codeintel/configuration/components/RepositoryPatternList';
+import {mdiPlus} from "@mdi/js";
 
 interface Job {
     name: string;
@@ -33,8 +34,10 @@ let data: Job[] = [{
 
 export const OwnStatusPage: FC = () => {
     const [localData, setLocalData] = useState<Job[]>(data)
+    const [hasLocalChanges, setHasLocalChanges] = useState<boolean>(false)
 
     function onUpdateJob(index, newJob): void {
+        setHasLocalChanges(true)
         const newData = localData.map((job, ind) => {
             if (ind === index) {
                 return newJob
@@ -57,7 +60,10 @@ export const OwnStatusPage: FC = () => {
                 />
             </div>
 
-            <Button id='saveButton' variant="primary">Save</Button>
+            <Button id='saveButton' disabled={!hasLocalChanges} variant="primary" onClick={() => {
+                // do network stuff
+                setHasLocalChanges(false)
+            }}>Save</Button>
         </span>
 
         <Container className={styles.root}>
@@ -65,7 +71,7 @@ export const OwnStatusPage: FC = () => {
                 <li key={job.name} className="job">
                     <div className='jobHeader'>
                         <H3 className='jobName'>{job.name}</H3>
-                        <div id="job-item" className={'jobStatus'}>
+                        <div id="job-item" className='jobStatus'>
                             <Toggle
                                 onToggle={value => {
                                     onUpdateJob(index, {...job, isEnabled: value})
@@ -84,9 +90,9 @@ export const OwnStatusPage: FC = () => {
                     <div id='excludeRepos'>
                         <Label className="mb-0">Exclude repositories</Label>
                         <RepositoryPatternList repositoryPatterns={job.excluded} setRepositoryPatterns={updater => {
-                            onUpdateJob(index, {...job, excluded: updater(job.excluded)})
-                        }
+                            onUpdateJob(index, {...job, excluded: updater(job.excluded)})}
                         }/>
+
                     </div>
                 </li>
             ))}
