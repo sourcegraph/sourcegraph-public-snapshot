@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
@@ -428,9 +428,10 @@ func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 			tr.SetError(err)
 		}
 
-		tr.LogFields( //nolint:staticcheck // TODO unpack the object
-			otlog.Object("opt", opt),
-			otlog.Int("accounts.count", len(acct)),
+		tr.AddEvent(
+			"done",
+			attribute.String("opt", fmt.Sprintf("%#v", opt)),
+			attribute.Int("accounts.count", len(acct)),
 		)
 
 		tr.Finish()

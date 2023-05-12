@@ -3,12 +3,13 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -235,7 +236,7 @@ func (s *permsStore) Done(err error) error {
 func (s *permsStore) LoadUserPermissions(ctx context.Context, userID int32) (p []authz.Permission, err error) {
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
 	defer func() {
-		tracingFields := []otlog.Field{}
+		tracingFields := []attribute.KeyValue{}
 		for _, perm := range p {
 			tracingFields = append(tracingFields, perm.TracingFields()...)
 		}
@@ -267,7 +268,7 @@ WHERE user_external_account_id = %s;
 func (s *permsStore) LoadRepoPermissions(ctx context.Context, repoID int32) (p []authz.Permission, err error) {
 	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
 	defer func() {
-		tracingFields := []otlog.Field{}
+		tracingFields := []attribute.KeyValue{}
 		for _, perm := range p {
 			tracingFields = append(tracingFields, perm.TracingFields()...)
 		}
@@ -368,7 +369,7 @@ func (s *permsStore) SetRepoPerms(ctx context.Context, repoID int32, userIDs []a
 func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permission, entity authz.PermissionEntity, source authz.PermsSource, replacePerms bool) (_ *database.SetPermissionsResult, err error) {
 	ctx, save := s.observe(ctx, "setUserRepoPermissions", "")
 	defer func() {
-		f := []otlog.Field{}
+		f := []attribute.KeyValue{}
 		for _, permission := range p {
 			f = append(f, permission.TracingFields()...)
 		}
@@ -825,8 +826,8 @@ func (s *permsStore) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.
 	ctx, save := s.observe(ctx, "loadUserPendingPermissionsIDs", "")
 	defer func() {
 		save(&err,
-			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
-			otlog.Object("Query.Args", q.Args()),
+			attribute.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
+			attribute.String("Query.Args", fmt.Sprintf("%q", q.Args())),
 		)
 	}()
 
@@ -843,8 +844,8 @@ func (s *permsStore) loadExistingUserPendingPermissionsBatch(ctx context.Context
 	ctx, save := s.observe(ctx, "loadExistingUserPendingPermissionsBatch", "")
 	defer func() {
 		save(&err,
-			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
-			otlog.Object("Query.Args", q.Args()),
+			attribute.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
+			attribute.String("Query.Args", fmt.Sprintf("%q", q.Args())),
 		)
 	}()
 
@@ -1228,7 +1229,7 @@ func (s *permsStore) DeleteAllUserPermissions(ctx context.Context, userID int32)
 		defer func() { err = txs.Done(err) }()
 	}
 
-	defer func() { save(&err, otlog.Int32("userID", userID)) }()
+	defer func() { save(&err, attribute.Int("userID", int(userID))) }()
 
 	// first delete from the unified table
 	if err = txs.execute(ctx, sqlf.Sprintf(`DELETE FROM user_repo_permissions WHERE user_id = %d`, userID)); err != nil {
@@ -1268,7 +1269,7 @@ AND bind_id IN (%s)`,
 
 func (s *permsStore) execute(ctx context.Context, q *sqlf.Query, vs ...any) (err error) {
 	ctx, save := s.observe(ctx, "execute", "")
-	defer func() { save(&err, otlog.Object("q", q)) }()
+	defer func() { save(&err, attribute.String("q", q.Query(sqlf.PostgresBindVar))) }()
 
 	var rows *sql.Rows
 	rows, err = s.Query(ctx, q)
@@ -1345,8 +1346,8 @@ AND bind_id = %s
 	ctx, save := s.observe(ctx, "load", "")
 	defer func() {
 		save(&err,
-			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
-			otlog.Object("Query.Args", q.Args()),
+			attribute.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
+			attribute.String("Query.Args", fmt.Sprintf("%q", q.Args())),
 		)
 	}()
 	var rows *sql.Rows
@@ -1391,8 +1392,8 @@ AND permission = %s
 	ctx, save := s.observe(ctx, "load", "")
 	defer func() {
 		save(&err,
-			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
-			otlog.Object("Query.Args", q.Args()),
+			attribute.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
+			attribute.String("Query.Args", fmt.Sprintf("%q", q.Args())),
 		)
 	}()
 	var rows *sql.Rows
@@ -1787,17 +1788,17 @@ WHERE perms.repo_id IN
 	return m, nil
 }
 
-func (s *permsStore) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) { //nolint:unparam // unparam complains that `title` always has same value across call-sites, but that's OK
+func (s *permsStore) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...attribute.KeyValue)) { //nolint:unparam // unparam complains that `title` always has same value across call-sites, but that's OK
 	began := s.clock()
 	tr, ctx := trace.New(ctx, "database.PermsStore."+family, title)
 
-	return ctx, func(err *error, fs ...otlog.Field) {
+	return ctx, func(err *error, attrs ...attribute.KeyValue) {
 		now := s.clock()
 		took := now.Sub(began)
 
-		fs = append(fs, otlog.String("Duration", took.String()))
+		attrs = append(attrs, attribute.Stringer("Duration", took))
 
-		tr.LogFields(fs...) //nolint:staticcheck // TODO when updating the observation package
+		tr.AddEvent("finish", attrs...)
 
 		success := err == nil || *err == nil
 		if !success {

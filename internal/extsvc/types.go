@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -110,11 +110,11 @@ func NewEncryptedConfig(cipher, keyID string, key encryption.Key) *EncryptableCo
 }
 
 // TracingFields returns tracing fields for the opentracing log.
-func (s *Accounts) TracingFields() []otlog.Field {
-	return []otlog.Field{
-		otlog.String("Accounts.ServiceType", s.ServiceType),
-		otlog.String("Accounts.Perm", s.ServiceID),
-		otlog.Int("Accounts.AccountIDs.Count", len(s.AccountIDs)),
+func (s *Accounts) TracingFields() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.String("Accounts.ServiceType", s.ServiceType),
+		attribute.String("Accounts.Perm", s.ServiceID),
+		attribute.Int("Accounts.AccountIDs.Count", len(s.AccountIDs)),
 	}
 }
 
