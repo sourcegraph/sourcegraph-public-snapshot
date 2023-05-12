@@ -7,7 +7,7 @@ import { Alert, Container, Button, H2, Input, Label, Text } from '@sourcegraph/w
 
 import { PageTitle } from '../PageTitle'
 
-export interface AddGitHubPageProps extends TelemetryProps { }
+export interface AddGitHubPageProps extends TelemetryProps {}
 
 type stateResponse = {
     state: string
@@ -65,7 +65,6 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                     'push',
                 ],
             })
-
         },
         [baseUrl, name]
     )
@@ -169,7 +168,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form ref={ref} method="post">
                     {/* eslint-disable-next-line react/forbid-elements */}
-                    <input ref={formInput} name="manifest" onChange={() => { }} hidden={true} />
+                    <input ref={formInput} name="manifest" onChange={() => {}} hidden={true} />
                 </form>
             </Container>
         </>

@@ -3,10 +3,7 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { mdiCog, mdiDelete, mdiGithub, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate, useParams } from 'react-router-dom'
-import {
-    DeleteGitHubAppResult,
-    DeleteGitHubAppVariables,
-} from 'src/graphql-operations'
+import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-operations'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { ErrorLike } from '@sourcegraph/common'
@@ -60,12 +57,9 @@ export const GitHubAppPage: FC<Props> = ({
         DELETE_GITHUB_APP_BY_ID_QUERY
     )
 
-    const { data, loading, error } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(
-        GITHUB_APP_BY_ID_QUERY,
-        {
-            variables: { id: appID ?? '' },
-        }
-    )
+    const { data, loading, error } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(GITHUB_APP_BY_ID_QUERY, {
+        variables: { id: appID ?? '' },
+    })
 
     const app = useMemo(() => data?.gitHubApp, [data])
 
