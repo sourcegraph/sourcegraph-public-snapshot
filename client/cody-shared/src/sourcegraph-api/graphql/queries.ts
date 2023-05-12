@@ -5,8 +5,12 @@ query CurrentUser {
     }
 }`
 
-export const CURRENT_USER_ID_VERIFICATION_STATUS_QUERY = `
+// TODO: We can only query these fields on dotcom ... instrospection query?
+export const AUTH_STATUS_QUERY = `
 query CurrentUser {
+	site {
+		requiresVerifiedEmailForCody
+	}
     currentUser {
         id
 		hasVerifiedEmail
