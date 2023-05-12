@@ -3,13 +3,12 @@ import {PageTitle} from '../../../components/PageTitle';
 import {
     Container,
     PageHeader,
-    H3, Text, Label, Button, Icon
+    H3, Text, Label, Button
 } from '@sourcegraph/wildcard'
 import styles from '../../insights/admin-ui/CodeInsightsJobs.module.scss';
 import './own-status-page-styles.scss'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import {RepositoryPatternList} from '../../codeintel/configuration/components/RepositoryPatternList';
-import {mdiPlus} from "@mdi/js";
 
 interface Job {
     name: string;
@@ -18,7 +17,7 @@ interface Job {
     excluded: string[];  // array of strings
 }
 
-let data: Job[] = [{
+const data: Job[] = [{
     'name': 'recent-contributors',
     'description': 'Calculates recent contributors one job per repository.',
     'isEnabled': true,
