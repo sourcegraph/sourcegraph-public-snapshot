@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks/resolvers"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	ghauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
@@ -320,30 +319,6 @@ func (r *gitHubAppResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.app.UpdatedAt}
 }
 
-func (r *gitHubAppResolver) ExternalServices(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) *graphqlbackend.ComputedExternalServiceConnectionResolver {
-	extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
-		Kinds: []string{extsvc.KindGitHub},
-	})
-	if err != nil {
-		return nil
-	}
-
-	var filteredExtsvc []*itypes.ExternalService
-	for _, es := range extsvcs {
-		parsed, err := extsvc.ParseEncryptableConfig(ctx, extsvc.KindGitHub, es.Config)
-		if err != nil {
-			continue
-		}
-		c := parsed.(*schema.GitHubConnection)
-		if c.GitHubAppDetails == nil || c.GitHubAppDetails.AppID != r.app.AppID || c.Url != r.app.BaseURL {
-			continue
-		}
-		filteredExtsvc = append(filteredExtsvc, es)
-	}
-
-	return graphqlbackend.NewComputedExternalServiceConnectionResolver(r.db, filteredExtsvc, args.ConnectionArgs)
-}
-
 func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []graphqlbackend.GitHubAppInstallation) {
 	auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
 	if err != nil {
@@ -362,8 +337,29 @@ func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []
 		return nil
 	}
 
+	extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+		Kinds: []string{extsvc.KindGitHub},
+	})
+	if err != nil {
+		return nil
+	}
+
 	for _, install := range installs {
+		var installationExtsvcs []*itypes.ExternalService
+		for _, es := range extsvcs {
+			parsed, err := extsvc.ParseEncryptableConfig(ctx, extsvc.KindGitHub, es.Config)
+			if err != nil {
+				continue
+			}
+			c := parsed.(*schema.GitHubConnection)
+			if c.GitHubAppDetails == nil || c.GitHubAppDetails.AppID != r.app.AppID || c.Url != r.app.BaseURL || c.GitHubAppDetails.InstallationID != int(install.GetID()) {
+				continue
+			}
+			installationExtsvcs = append(installationExtsvcs, es)
+		}
+
 		installations = append(installations, graphqlbackend.GitHubAppInstallation{
+			DB:         r.db,
 			InstallID:  int32(*install.ID),
 			InstallURL: install.GetHTMLURL(),
 			InstallAccount: graphqlbackend.GitHubAppInstallationAccount{
@@ -372,6 +368,7 @@ func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []
 				AccountURL:       install.Account.GetHTMLURL(),
 				AccountType:      install.Account.GetType(),
 			},
+			InstallExternalServices: installationExtsvcs,
 		})
 	}
 
