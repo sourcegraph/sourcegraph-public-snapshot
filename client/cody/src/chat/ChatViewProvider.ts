@@ -190,8 +190,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendEvent(message.event, message.value)
                 break
             case 'removeToken':
-                await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-                this.sendEvent('token', 'Delete')
+                await this.logout()
                 break
             case 'removeHistory':
                 await this.clearHistory()
@@ -504,6 +503,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             this.sendEvent('auth', 'login')
         }
         void this.webview?.postMessage({ type: 'login', isValid })
+    }
+
+    /**
+     * Logout
+     */
+    public async logout(): Promise<void> {
+        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+        this.sendEvent('token', 'Delete')
+        this.sendEvent('auth', 'logout')
+        this.setWebviewView('login')
     }
 
     /**

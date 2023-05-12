@@ -10,6 +10,9 @@ import { Icon } from '../../utils/Icon'
 
 import styles from './ChatInputContext.module.css'
 
+const infoMsg =
+    "This codebase does not appear to be embedded in your Sourcegraph instance. While Cody will still function, we highly recommend embedding your codebase in Sourcegraph to enable Cody's full capabilities."
+
 export const ChatInputContext: React.FunctionComponent<{
     contextStatus: ChatContextStatus
     className?: string
@@ -21,7 +24,7 @@ export const ChatInputContext: React.FunctionComponent<{
                     ? {
                           icon: contextStatus.connection ? mdiSourceRepository : mdiFileExcel,
                           text: basename(contextStatus.codebase.replace(/^(github|gitlab)\.com\//, '')),
-                          tooltip: contextStatus.connection ? contextStatus.codebase : 'connection failed',
+                          tooltip: contextStatus.connection ? contextStatus.codebase : infoMsg,
                       }
                     : null,
                 contextStatus.filePath
@@ -38,9 +41,13 @@ export const ChatInputContext: React.FunctionComponent<{
     return (
         <div className={classNames(styles.container, className)}>
             {contextStatus.mode && contextStatus.connection ? (
-                <h3 className={styles.badge}>Embeddings</h3>
+                <h3 title="Current Context: Embedded" className={styles.badge}>
+                    Embeddings
+                </h3>
             ) : contextStatus.supportsKeyword ? (
-                <h3 className={styles.badge}>Keyword</h3>
+                <h3 title="Current Context: Local Keyword" className={styles.badge}>
+                    Keyword
+                </h3>
             ) : null}
 
             {items.length > 0 && (
@@ -61,7 +68,7 @@ const ContextItem: React.FunctionComponent<{ icon: string; text: string; tooltip
     tooltip,
     as: Tag,
 }) => (
-    <Tag className={tooltip === 'connection failed' ? styles.fail : styles.item}>
+    <Tag className={tooltip === infoMsg ? styles.info : styles.item}>
         <Icon svgPath={icon} className={styles.itemIcon} />
         <span className={styles.itemText} title={tooltip}>
             {text}

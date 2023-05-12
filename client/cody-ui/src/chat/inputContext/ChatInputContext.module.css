@@ -47,11 +47,11 @@
     overflow: hidden;
 }
 
-.fail {
+.info {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
     overflow: hidden;
 
-    color: var(--vscode-errorForeground, red);
+    color: var(--vscode-editorWarning-foreground, #ff5543);
 }
