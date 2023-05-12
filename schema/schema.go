@@ -246,6 +246,14 @@ type BatchChangeRolloutWindow struct {
 	Start string `json:"start,omitempty"`
 }
 
+// BatchChangesDefaultAuthor description: Default author for batch changes. Used when commit author name and email are not specified in batch changeset and cannot be derived from user store. If neither is specified, name "Sourcegraph" and email "batch-changes@sourcegraph.com" will be used.
+type BatchChangesDefaultAuthor struct {
+	// Email description: The Git commit author email.
+	Email string `json:"email"`
+	// Name description: The Git commit author name.
+	Name string `json:"name"`
+}
+
 // BatchSpec description: A batch specification, which describes the batch change and what kinds of changes to make (or what existing changesets to track).
 type BatchSpec struct {
 	// ChangesetTemplate description: A template describing how to create (and update) changesets with the file changes produced by the command steps.
@@ -2330,6 +2338,8 @@ type SiteConfiguration struct {
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
 	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`
+	// BatchChangesDefaultAuthor description: Default author for batch changes. Used when commit author name and email are not specified in batch changeset and cannot be derived from user store. If neither is specified, name "Sourcegraph" and email "batch-changes@sourcegraph.com" will be used.
+	BatchChangesDefaultAuthor *BatchChangesDefaultAuthor `json:"batchChanges.defaultAuthor,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
 	BatchChangesDisableWebhooksWarning bool `json:"batchChanges.disableWebhooksWarning,omitempty"`
 	// BatchChangesEnabled description: Enables/disables the Batch Changes feature.
@@ -2593,6 +2603,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "authz.enforceForSiteAdmins")
 	delete(m, "authz.refreshInterval")
 	delete(m, "batchChanges.changesetsRetention")
+	delete(m, "batchChanges.defaultAuthor")
 	delete(m, "batchChanges.disableWebhooksWarning")
 	delete(m, "batchChanges.enabled")
 	delete(m, "batchChanges.enforceForks")
