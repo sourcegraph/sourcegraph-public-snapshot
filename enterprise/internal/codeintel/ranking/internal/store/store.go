@@ -26,24 +26,13 @@ type Store interface {
 	// Export uploads (metadata tracking) + cleanup
 	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]uploadsshared.ExportedUpload, error)
 	VacuumAbandonedExportedUploads(ctx context.Context, graphKey string, batchSize int) (int, error)
+	SoftDeleteStaleExportedUploads(ctx context.Context, graphKey string) (numExportedUploadRecordsScanned int, numStaleExportedUploadRecordsDeleted int, _ error)
+	VacuumDeletedExportedUploads(ctx context.Context, derivativeGraphKey string) (int, error)
 
-	// Export definitions + cleanup
+	// Exported data (raw)
 	InsertDefinitionsForRanking(ctx context.Context, graphKey string, definitions chan shared.RankingDefinitions) error
-	VacuumAbandonedDefinitions(ctx context.Context, graphKey string, batchSize int) (int, error)
-	SoftDeleteStaleDefinitions(ctx context.Context, graphKey string) (numDefinitionRecordsScanned int, numStaleDefinitionRecordsDeleted int, _ error)
-	VacuumDeletedDefinitions(ctx context.Context, derivativeGraphKey string) (int, error)
-
-	// Export references + cleanup
-	InsertReferencesForRanking(ctx context.Context, graphKey string, batchSize int, uploadID int, references chan string) error
-	VacuumAbandonedReferences(ctx context.Context, graphKey string, batchSize int) (int, error)
-	SoftDeleteStaleReferences(ctx context.Context, graphKey string) (numReferenceRecordsScanned int, numStaleReferenceRecordsDeleted int, _ error)
-	VacuumDeletedReferences(ctx context.Context, derivativeGraphKey string) (int, error)
-
-	// Export upload paths + cleanup
-	InsertInitialPathRanks(ctx context.Context, uploadID int, documentPaths chan string, batchSize int, graphKey string) error
-	VacuumAbandonedInitialPathCounts(ctx context.Context, graphKey string, batchSize int) (int, error)
-	SoftDeleteStaleInitialPaths(ctx context.Context, graphKey string) (numPathRecordsScanned int, numStalePathRecordsDeleted int, _ error)
-	VacuumDeletedInitialPaths(ctx context.Context, derivativeGraphKey string) (int, error)
+	InsertReferencesForRanking(ctx context.Context, graphKey string, batchSize int, exportedUploadID int, references chan string) error
+	InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths chan string, batchSize int, graphKey string) error
 
 	// Coordinates mapper+reducer phases
 	Coordinate(ctx context.Context, derivativeGraphKey string) error

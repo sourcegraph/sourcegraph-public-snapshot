@@ -1,12 +1,14 @@
 package shared
 
 type RankingDefinitions struct {
-	UploadID     int
-	SymbolName   string
-	DocumentPath string
+	UploadID         int
+	ExportedUploadID int
+	SymbolName       string
+	DocumentPath     string
 }
 
 type RankingReferences struct {
-	UploadID    int
-	SymbolNames []string
+	UploadID         int
+	ExportedUploadID int
+	SymbolNames      []string
 }

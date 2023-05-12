@@ -22,11 +22,11 @@ func (s *store) InsertDefinitionsAndReferencesForDocument(
 	setDefsAndRefs func(ctx context.Context, upload shared.ExportedUpload, rankingBatchNumber int, rankingGraphKey, path string, document *scip.Document) error,
 ) (err error) {
 	ctx, _, endObservation := s.operations.insertDefinitionsAndReferencesForDocument.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("id", upload.ID),
+		otlog.Int("id", upload.UploadID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(getDocumentsByUploadIDQuery, upload.ID))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(getDocumentsByUploadIDQuery, upload.UploadID))
 	if err != nil {
 		return err
 	}

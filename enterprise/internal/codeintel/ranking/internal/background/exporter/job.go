@@ -89,7 +89,7 @@ func exportRankingGraph(
 				}); err != nil {
 					logger.Error(
 						"Failed to process upload for ranking graph",
-						log.Int("id", upload.ID),
+						log.Int("id", upload.UploadID),
 						log.String("repo", upload.Repo),
 						log.String("root", upload.Root),
 						log.Error(err),
@@ -104,10 +104,10 @@ func exportRankingGraph(
 				}
 				close(paths)
 
-				if err := tx.InsertInitialPathRanks(ctx, upload.ID, paths, writeBatchSize, graphKey); err != nil {
+				if err := tx.InsertInitialPathRanks(ctx, upload.ExportedUploadID, paths, writeBatchSize, graphKey); err != nil {
 					logger.Error(
 						"Failed to insert initial path counts",
-						log.Int("id", upload.ID),
+						log.Int("id", upload.UploadID),
 						log.Int("repoID", upload.RepoID),
 						log.String("graphKey", graphKey),
 						log.Error(err),
@@ -118,7 +118,7 @@ func exportRankingGraph(
 
 				logger.Info(
 					"Processed upload for ranking graph",
-					log.Int("id", upload.ID),
+					log.Int("id", upload.UploadID),
 					log.String("repo", upload.Repo),
 					log.String("root", upload.Root),
 				)
@@ -168,7 +168,7 @@ func setDefinitionsAndReferencesForUpload(
 		}
 	}()
 
-	if err := store.InsertReferencesForRanking(ctx, rankingGraphKey, batchSize, upload.ID, references); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, rankingGraphKey, batchSize, upload.ExportedUploadID, references); err != nil {
 		for range references {
 			// Drain channel to ensure it closes
 		}
@@ -199,9 +199,10 @@ func setDefinitionsForUpload(
 
 			if scip.SymbolRole_Definition.Matches(occ) {
 				definitions <- shared.RankingDefinitions{
-					UploadID:     upload.ID,
-					SymbolName:   occ.Symbol,
-					DocumentPath: filepath.Join(upload.Root, path),
+					UploadID:         upload.UploadID,
+					ExportedUploadID: upload.ExportedUploadID,
+					SymbolName:       occ.Symbol,
+					DocumentPath:     filepath.Join(upload.Root, path),
 				}
 				seenDefinitions[occ.Symbol] = struct{}{}
 			}

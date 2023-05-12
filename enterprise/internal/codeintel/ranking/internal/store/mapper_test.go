@@ -28,9 +28,12 @@ func TestInsertPathCountInputs(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
+	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+
 	t1 := time.Now().Add(-time.Minute * 10)
 	t2 := time.Now().Add(-time.Minute * 20)
 
+	// Insert and export uploads
 	insertUploads(t, db,
 		uploadsshared.Upload{ID: 42, RepositoryID: 50},
 		uploadsshared.Upload{ID: 43, RepositoryID: 51},
@@ -40,28 +43,41 @@ func TestInsertPathCountInputs(t *testing.T) {
 		uploadsshared.Upload{ID: 93, RepositoryID: 54, Root: "lib/", Indexer: "test"},
 		uploadsshared.Upload{ID: 94, RepositoryID: 54, Root: "lib/", Indexer: "test"},
 	)
+	if _, err := db.ExecContext(ctx, `
+		WITH v AS (SELECT unnest('{42, 43, 90, 91, 92, 93, 94}'::integer[]))
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
+		SELECT id + 100, id, $1 FROM v AS v(id)
+	`,
+		mockRankingGraphKey,
+	); err != nil {
+		t.Fatalf("failed to insert exported upload: %s", err)
+	}
 
 	// Insert definitions
 	mockDefinitions := make(chan shared.RankingDefinitions, 4)
 	mockDefinitions <- shared.RankingDefinitions{
-		UploadID:     42,
-		SymbolName:   "foo",
-		DocumentPath: "foo.go",
+		UploadID:         42,
+		ExportedUploadID: 142,
+		SymbolName:       "foo",
+		DocumentPath:     "foo.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
-		UploadID:     42,
-		SymbolName:   "bar",
-		DocumentPath: "bar.go",
+		UploadID:         42,
+		ExportedUploadID: 142,
+		SymbolName:       "bar",
+		DocumentPath:     "bar.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
-		UploadID:     43,
-		SymbolName:   "baz",
-		DocumentPath: "baz.go",
+		UploadID:         43,
+		ExportedUploadID: 143,
+		SymbolName:       "baz",
+		DocumentPath:     "baz.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
-		UploadID:     43,
-		SymbolName:   "bonk",
-		DocumentPath: "bonk.go",
+		UploadID:         43,
+		ExportedUploadID: 143,
+		SymbolName:       "bonk",
+		DocumentPath:     "bonk.go",
 	}
 	close(mockDefinitions)
 	if err := store.InsertDefinitionsForRanking(ctx, mockRankingGraphKey, mockDefinitions); err != nil {
@@ -73,7 +89,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at)
 		VALUES ($1,  1000, 1000, 1000, NOW())
 	`,
-		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
+		key,
 	); err != nil {
 		t.Fatalf("failed to insert metadata: %s", err)
 	}
@@ -85,11 +101,11 @@ func TestInsertPathCountInputs(t *testing.T) {
 	mockReferences <- "foo"
 	mockReferences <- "bar"
 	close(mockReferences)
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 90, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 190, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	if _, _, err := store.InsertPathCountInputs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 1000); err != nil {
+	if _, _, err := store.InsertPathCountInputs(ctx, key, 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
@@ -97,14 +113,14 @@ func TestInsertPathCountInputs(t *testing.T) {
 	mockReferences = make(chan string, 1)
 	mockReferences <- "baz"
 	close(mockReferences)
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 90, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 190, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
 	mockReferences = make(chan string, 1)
 	mockReferences <- "bonk"
 	close(mockReferences)
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 91, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 191, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -115,12 +131,12 @@ func TestInsertPathCountInputs(t *testing.T) {
 	mockReferences <- "baz"
 	mockReferences <- "bonk"
 	close(mockReferences)
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 92, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 192, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
 	// Test InsertPathCountInputs: should process existing rows
-	if _, _, err := store.InsertPathCountInputs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 1000); err != nil {
+	if _, _, err := store.InsertPathCountInputs(ctx, key, 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
@@ -131,12 +147,12 @@ func TestInsertPathCountInputs(t *testing.T) {
 	mockReferences <- "foo"
 	mockReferences <- "bar"
 	close(mockReferences)
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 93, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 193, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
 	// Test InsertPathCountInputs: should process unprocessed rows only
-	if _, _, err := store.InsertPathCountInputs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 1000); err != nil {
+	if _, _, err := store.InsertPathCountInputs(ctx, key, 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
@@ -149,12 +165,12 @@ func TestInsertPathCountInputs(t *testing.T) {
 	mockReferences <- "baz"
 	mockReferences <- "bonk"
 	close(mockReferences)
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 94, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 194, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
 	// Test InsertPathCountInputs: should do nothing, 94 covers the same project as 93
-	if _, _, err := store.InsertPathCountInputs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 1000); err != nil {
+	if _, _, err := store.InsertPathCountInputs(ctx, key, 1000); err != nil {
 		t.Fatalf("unexpected error inserting path count inputs: %s", err)
 	}
 
@@ -188,30 +204,40 @@ func TestInsertInitialPathCounts(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	// Creates repository 50
-	insertUploads(t, db, uploadsshared.Upload{ID: 1})
+	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+
+	// Insert and export upload
+	// N.B. This creates repository 50 implicitly
+	insertUploads(t, db, uploadsshared.Upload{ID: 4})
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
+		VALUES (104, 4, $1)
+	`,
+		mockRankingGraphKey,
+	); err != nil {
+		t.Fatalf("failed to insert exported upload: %s", err)
+	}
 
 	// Insert metadata to trigger mapper
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at)
 		VALUES ($1,  1000, 1000, 1000, NOW())
 	`,
-		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
+		key,
 	); err != nil {
 		t.Fatalf("failed to insert metadata: %s", err)
 	}
 
-	mockUploadID := 1
 	mockPathNames := make(chan string, 3)
 	mockPathNames <- "foo.go"
 	mockPathNames <- "bar.go"
 	mockPathNames <- "baz.go"
 	close(mockPathNames)
-	if err := store.InsertInitialPathRanks(ctx, mockUploadID, mockPathNames, 2, mockRankingGraphKey); err != nil {
+	if err := store.InsertInitialPathRanks(ctx, 104, mockPathNames, 2, mockRankingGraphKey); err != nil {
 		t.Fatalf("unexpected error inserting initial path counts: %s", err)
 	}
 
-	if _, _, err := store.InsertInitialPathCounts(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123), 1000); err != nil {
+	if _, _, err := store.InsertInitialPathCounts(ctx, key, 1000); err != nil {
 		t.Fatalf("unexpected error inserting initial path counts: %s", err)
 	}
 
@@ -236,11 +262,29 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
+	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+
+	// Insert and export uploads
+	insertUploads(t, db,
+		uploadsshared.Upload{ID: 1},
+		uploadsshared.Upload{ID: 2},
+		uploadsshared.Upload{ID: 3},
+	)
+	if _, err := db.ExecContext(ctx, `
+		WITH v AS (SELECT unnest('{1, 2, 3}'::integer[]))
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
+		SELECT id + 100, id, $1 FROM v AS v(id)
+	`,
+		mockRankingGraphKey,
+	); err != nil {
+		t.Fatalf("failed to insert exported upload: %s", err)
+	}
+
 	mockReferences := make(chan string, 2)
 	mockReferences <- "foo"
 	mockReferences <- "bar"
 	close(mockReferences)
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 1, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 101, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -249,7 +293,7 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	mockReferences <- "bar"
 	mockReferences <- "baz"
 	close(mockReferences)
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 2, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 102, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
@@ -257,12 +301,12 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	mockReferences <- "bar"
 	mockReferences <- "baz"
 	close(mockReferences)
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 3, mockReferences); err != nil {
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 103, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
 	for _, graphKey := range []string{
-		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123),
+		key,
 		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456),
 		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 789),
 	} {
