@@ -252,7 +252,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	qStr := queryString(q)
 
 	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
-	tr.LogFields(trace.Stringer("opts", opts)) //nolint:staticcheck // TODO deal with stringer thing
+	tr.SetAttributes(attribute.Stringer("opts", opts))
 
 	event := honey.NoopEvent()
 	if honey.Enabled() && cat == "ListAll" {
