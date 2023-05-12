@@ -2,7 +2,6 @@ package shared
 
 import (
 	"context"
-	"os"
 
 	"github.com/sourcegraph/log"
 
@@ -25,18 +24,18 @@ import (
 // and the use case is more niche as a standalone service.
 //
 // Based on https://cloud.google.com/trace/docs/setup/go-ot
-func maybeEnableTracing(ctx context.Context, logger log.Logger, tracePolicy policy.TracePolicy) (func(), error) {
+func maybeEnableTracing(ctx context.Context, logger log.Logger, config TraceConfig) (func(), error) {
 	// Set globals
-	policy.SetTracePolicy(tracePolicy)
+	policy.SetTracePolicy(config.Policy)
 	otel.SetTextMapPropagator(oteldefaults.Propagator())
 
 	// Initialize exporter
 	var exporter sdktrace.SpanExporter
-	if projectID := os.Getenv("GOOGLE_CLOUD_PROJECT"); projectID != "" {
-		logger.Info("initializing GCP trace exporter", log.String("projectID", projectID))
+	if config.GCPProjectID != "" {
+		logger.Info("initializing GCP trace exporter", log.String("projectID", config.GCPProjectID))
 		var err error
 		exporter, err = gcptraceexporter.New(
-			gcptraceexporter.WithProjectID(projectID),
+			gcptraceexporter.WithProjectID(config.GCPProjectID),
 			gcptraceexporter.WithErrorHandler(otel.ErrorHandlerFunc(func(err error) {
 				logger.Warn("gcptraceexporter error", log.Error(err))
 			})),
