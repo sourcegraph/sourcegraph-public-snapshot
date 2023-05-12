@@ -128,6 +128,9 @@ func TestKubernetesRunner_Run(t *testing.T) {
 		{
 			name: "Failed to find job pod",
 			mockFunc: func(clientset *fake.Clientset) {
+				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &batchv1.Job{Status: batchv1.JobStatus{Succeeded: 1}}, nil
+				})
 				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("failed")
 				})

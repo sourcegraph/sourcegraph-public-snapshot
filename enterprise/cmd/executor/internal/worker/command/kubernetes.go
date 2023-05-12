@@ -46,7 +46,7 @@ type KubernetesContainerOptions struct {
 	PersistenceVolumeName string
 	ResourceLimit         KubernetesResource
 	ResourceRequest       KubernetesResource
-	Retry                 KubernetesRetry
+	Deadline              *int64
 	KeepJobs              bool
 	SecurityContext       KubernetesSecurityContext
 }
@@ -61,12 +61,6 @@ type KubernetesNodeAffinity struct {
 type KubernetesResource struct {
 	CPU    resource.Quantity
 	Memory resource.Quantity
-}
-
-// KubernetesRetry contains the retry options for a Kubernetes Job.
-type KubernetesRetry struct {
-	Attempts int
-	Backoff  time.Duration
 }
 
 // KubernetesSecurityContext contains the security context options for a Kubernetes Job.
@@ -143,13 +137,9 @@ func (c *KubernetesCommand) FindPod(ctx context.Context, namespace string, name 
 }
 
 // WaitForJobToComplete waits for the job with the given name to complete.
-func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string, retry KubernetesRetry) error {
-	attempts := 0
+func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string) error {
 	for {
-		// After 60 seconds, give up
-		if attempts > retry.Attempts {
-			return ErrKubernetesJobDidNotComplete
-		}
+		// Eventually `ActiveDeadlineSeconds` will kill the job.
 		job, err := c.getJob(ctx, namespace, name)
 		if err != nil {
 			return errors.Wrap(err, "retrieving job")
@@ -159,14 +149,10 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace 
 		} else if job.Status.Failed > 0 {
 			return ErrKubernetesJobFailed
 		} else {
-			time.Sleep(retry.Backoff)
-			attempts++
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 }
-
-// ErrKubernetesJobDidNotComplete is returned when a Kubernetes job does not complete.
-var ErrKubernetesJobDidNotComplete = errors.New("job did not complete")
 
 // ErrKubernetesJobFailed is returned when a Kubernetes job fails.
 var ErrKubernetesJobFailed = errors.New("job failed")
@@ -265,9 +251,10 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 						RunAsGroup: options.SecurityContext.RunAsGroup,
 						FSGroup:    options.SecurityContext.FSGroup,
 					},
-					Affinity:      affinity,
-					RestartPolicy: corev1.RestartPolicyNever,
-					Tolerations:   options.Tolerations,
+					Affinity:              affinity,
+					RestartPolicy:         corev1.RestartPolicyNever,
+					Tolerations:           options.Tolerations,
+					ActiveDeadlineSeconds: options.Deadline,
 					Containers: []corev1.Container{
 						{
 							Name:       KubernetesContainerName,

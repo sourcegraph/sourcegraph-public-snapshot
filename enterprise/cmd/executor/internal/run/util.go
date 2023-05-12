@@ -200,6 +200,7 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 		runAsGroup = pointer.Int64(int64(c.KubernetesSecurityContextRunAsGroup))
 	}
 	fsGroup := pointer.Int64(int64(c.KubernetesSecurityContextFSGroup))
+	deadline := pointer.Int64(int64(c.KubernetesJobDeadline))
 	return runner.KubernetesOptions{
 		Enabled:    config.IsKubernetes(),
 		ConfigPath: c.KubernetesConfigPath,
@@ -217,11 +218,8 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 			PersistenceVolumeName: c.KubernetesPersistenceVolumeName,
 			ResourceLimit:         resourceLimit,
 			ResourceRequest:       resourceRequest,
-			Retry: command.KubernetesRetry{
-				Attempts: c.KubernetesJobRetryBackoffLimit,
-				Backoff:  c.KubernetesJobRetryBackoffDuration,
-			},
-			KeepJobs: c.KubernetesKeepJobs,
+			Deadline:              deadline,
+			KeepJobs:              c.KubernetesKeepJobs,
 			SecurityContext: command.KubernetesSecurityContext{
 				RunAsUser:  runAsUser,
 				RunAsGroup: runAsGroup,

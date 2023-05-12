@@ -84,8 +84,8 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	}
 	r.jobNames = append(r.jobNames, job.Name)
 
-	if err := r.cmd.WaitForJobToComplete(ctx, r.options.Namespace, job.Name, r.options.Retry); err != nil {
-		if errors.Is(err, command.ErrKubernetesJobFailed) || errors.Is(err, command.ErrKubernetesJobDidNotComplete) {
+	if err := r.cmd.WaitForJobToComplete(ctx, r.options.Namespace, job.Name); err != nil {
+		if errors.Is(err, command.ErrKubernetesJobFailed) {
 			pod, findPodErr := r.cmd.FindPod(ctx, r.options.Namespace, job.Name)
 			if findPodErr != nil {
 				return errors.Wrap(findPodErr, "finding pod")

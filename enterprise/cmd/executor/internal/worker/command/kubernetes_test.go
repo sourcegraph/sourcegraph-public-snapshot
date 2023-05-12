@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
@@ -296,7 +295,6 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 				context.Background(),
 				"my-namespace",
 				"my-job",
-				command.KubernetesRetry{Attempts: 10, Backoff: 1 * time.Millisecond},
 			)
 			if test.expectedErr != nil {
 				require.Error(t, err)
