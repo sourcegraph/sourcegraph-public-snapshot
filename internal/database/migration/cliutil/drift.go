@@ -38,6 +38,11 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		Usage:    "Skip validation of the instance's current version.",
 		Required: false,
 	}
+	ignoreMigratorUpdateCheckFlag := &cli.BoolFlag{
+		Name:     "ignore-migrator-update",
+		Usage:    "Ignore the running migrator not being the latest version. It is recommended to use the latest migrator version.",
+		Required: false,
+	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
 		airgapped := isAirgapped(ctx)
@@ -50,7 +55,12 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			if err != nil {
 				out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Failed to check for migrator update: %s. Continuing...", err))
 			} else if hasUpdate {
-				out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion, "A new migrator version is available (%s), please consider using it instead.", latest))
+				noticeStr := fmt.Sprintf("A newer migrator version is available (%s), please consider using it instead", latest)
+				if ignoreMigratorUpdateCheckFlag.Get(cmd) {
+					out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "%s. Continuing...", noticeStr))
+				} else {
+					return cli.Exit(fmt.Sprintf("%s %s%s or pass -ignore-migrator-update.%s", output.EmojiWarning, output.StyleWarning, noticeStr, output.StyleReset), 1)
+				}
 			}
 		}
 
@@ -129,6 +139,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			versionFlag,
 			fileFlag,
 			skipVersionCheckFlag,
+			ignoreMigratorUpdateCheckFlag,
 		},
 	}
 }
