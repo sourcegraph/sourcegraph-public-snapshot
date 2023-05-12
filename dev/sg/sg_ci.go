@@ -15,6 +15,8 @@ import (
 	"github.com/gen2brain/beeep"
 	"github.com/google/uuid"
 	"github.com/grafana/regexp"
+	"github.com/pjlast/llmsp/claude"
+	"github.com/pjlast/llmsp/sourcegraph/embeddings"
 	"github.com/urfave/cli/v2"
 
 	sgrun "github.com/sourcegraph/run"
@@ -63,6 +65,8 @@ var (
 		Usage:   "Select a custom Buildkite `pipeline` in the Sourcegraph org",
 		Value:   "sourcegraph",
 	}
+	// Buildkite's timestamp thingo causes log lines to not render in terminal
+	bkTimestamp = regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
 )
 
 // Register the following flags on all commands that can target different builds!
@@ -606,33 +610,97 @@ The '--job' flag can be used to narrow down the logs returned - you can provide 
 To send logs to a Loki instance, you can provide --out=http://127.0.0.1:3100 after spinning up an instance with 'sg run loki grafana'.
 From there, you can start exploring logs with the Grafana explore panel.
 `,
-			Flags: append(ciTargetFlags,
-				&cli.StringFlag{
-					Name:    "job",
-					Aliases: []string{"j"},
-					Usage:   "ID or name of the job to export logs for",
-				},
-				&cli.StringFlag{
-					Name:    "state",
-					Aliases: []string{"s"},
-					Usage:   "Job `state` to export logs for (provide an empty value for all states)",
-					Value:   "failed",
-				},
-				&cli.StringFlag{
-					Name:    "out",
-					Aliases: []string{"o"},
-					Usage: fmt.Sprintf("Output `format`: one of [%s], or a URL pointing to a Loki instance, such as %s",
-						strings.Join([]string{ciLogsOutTerminal, ciLogsOutSimple, ciLogsOutJSON}, "|"), loki.DefaultLokiURL),
-					Value: ciLogsOutTerminal,
-				},
-				&cli.StringFlag{
-					Name:  "overwrite-state",
-					Usage: "`state` to overwrite the job state metadata",
-				},
-			),
-			Action: func(cmd *cli.Context) error {
-				ctx := cmd.Context
-				client, err := bk.NewClient(ctx, std.Out)
+		Flags: append(ciTargetFlags,
+			&cli.StringFlag{
+				Name:    "job",
+				Aliases: []string{"j"},
+				Usage:   "ID or name of the job to export logs for",
+			},
+			&cli.StringFlag{
+				Name:    "state",
+				Aliases: []string{"s"},
+				Usage:   "Job `state` to export logs for (provide an empty value for all states)",
+				Value:   "failed",
+			},
+			&cli.StringFlag{
+				Name:    "out",
+				Aliases: []string{"o"},
+				Usage: fmt.Sprintf("Output `format`: one of [%s], or a URL pointing to a Loki instance, such as %s",
+					strings.Join([]string{ciLogsOutTerminal, ciLogsOutSimple, ciLogsOutJSON}, "|"), loki.DefaultLokiURL),
+				Value: ciLogsOutTerminal,
+			},
+			&cli.StringFlag{
+				Name:  "overwrite-state",
+				Usage: "`state` to overwrite the job state metadata",
+			},
+		),
+		Action: func(cmd *cli.Context) error {
+			ctx := cmd.Context
+			client, err := bk.NewClient(ctx, std.Out)
+			if err != nil {
+				return err
+			}
+
+			target, err := getBuildTarget(cmd)
+			if err != nil {
+				return err
+			}
+
+			build, err := target.GetBuild(ctx, client)
+			if err != nil {
+				return err
+			}
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Fetching logs for %s ...",
+				*build.WebURL))
+
+			options := bk.ExportLogsOpts{
+				JobQuery: cmd.String("job"),
+				State:    cmd.String("state"),
+			}
+			logs, err := client.ExportLogs(ctx, "sourcegraph", *build.Number, options)
+			if err != nil {
+				return err
+			}
+			if len(logs) == 0 {
+				std.Out.WriteLine(output.Line("", output.StyleSuggestion,
+					fmt.Sprintf("No logs found matching the given parameters (job: %q, state: %q).", options.JobQuery, options.State)))
+				return nil
+			}
+
+			logsOut := cmd.String("out")
+			switch logsOut {
+			case ciLogsOutTerminal, ciLogsOutSimple:
+				for _, log := range logs {
+					block := std.Out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
+						*log.JobMeta.Name))
+					content := bkTimestamp.ReplaceAllString(*log.Content, "")
+					if logsOut == ciLogsOutSimple {
+						content = bk.CleanANSI(content)
+					}
+					block.Write(content)
+					block.Close()
+				}
+				std.Out.WriteLine(output.Styledf(output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
+
+			case ciLogsOutJSON:
+				for _, log := range logs {
+					if logsOut != "" {
+						failed := logsOut
+						log.JobMeta.State = &failed
+					}
+					stream, err := loki.NewStreamFromJobLogs(log)
+					if err != nil {
+						return errors.Newf("build %d job %s: NewStreamFromJobLogs: %s", log.JobMeta.Build, log.JobMeta.Job, err)
+					}
+					b, err := json.MarshalIndent(stream, "", "\t")
+					if err != nil {
+						return errors.Newf("build %d job %s: Marshal: %s", log.JobMeta.Build, log.JobMeta.Job, err)
+					}
+					std.Out.Write(string(b))
+				}
+
+			default:
+				lokiURL, err := url.Parse(logsOut)
 				if err != nil {
 					return err
 				}
@@ -1016,6 +1084,14 @@ func fetchJobs(ctx context.Context, client *bk.Client, buildPtr **buildkite.Buil
 		if err != nil {
 			return false, errors.Newf("failed to get most recent build for branch %q: %w", *build.Branch, err)
 		}
+	}
+	if failedJob == nil {
+		return nil, nil, errors.Newf("no failed jobs found on build %d", *build.Number)
+	}
+	logs, err := client.JobRawLog(failedJob)
+	if err != nil {
+		return nil, nil, err
+	}
 
 		// Update the original build reference with the refreshed one.
 		*buildPtr = build
@@ -1048,90 +1124,204 @@ func fetchJobs(ctx context.Context, client *bk.Client, buildPtr **buildkite.Buil
 	}
 }
 
+func codyPreamble() []claude.Message {
+	backTick := "`"
+	return []claude.Message{
+		{
+			Speaker: "human",
+			Text: fmt.Sprintf(`You are Cody, an AI-powered coding assistant created by Sourcegraph. You work inside a Unix command line. You perform the following actions:
+- Answer general programming questions.
+- Answer questions about the code that I have provided to you.
+- Answer questions about errors and problems present in a CI pipeline log that I have provided to you.
+- Explain why an error occured based on the log output that I have provided you.
+- Provide commands to recreate the error from the log output locally.
+- Based on the code diff that I have provided to you, explain why an error occured if applicable.
+In your responses, obey the following rules:
+- Be as brief and concise as possible without losing clarity.
+- Refer to the bazel documents that I have provided for you.
+- For any build failures, provde me with a command to recreate the failure.
+- All code snippets, commands and build output have to be markdown-formatted without that language specifier, and placed in-between triple backticks like this %s%s%s.
+- Answer questions only if you know the answer or can make a well-informed guess. Otherwise, tell me you don't know and what context I need to provide you for you to answer the question.
+- Only reference file names or URLs if you are sure they exist.
+`, backTick, backTick, backTick),
+		},
+		{
+			Speaker: "assistant",
+			Text: fmt.Sprintf(`Understood. I am Cody, an AI assistant made by Sourcegraph to help with programming tasks.
+I will answer questions, explain code, debug errors, and generate code as concisely and clearly as possible.
+I will provide solutions on how to solve build and test failures.
+My responses will be formatted using Markdown syntax for code blocks without language specifiers.
+I will acknowledge when I don't know an answer or need more context.
+I have access to the %s repository and can answer questions about its files.`, "`sourcegraph`"),
+		},
+	}
+}
+
+func extractContextWindow(content []string, start, window int) (string, int, int) {
+	begin := start - 5
+	if begin < 0 {
+		begin = 0
+	}
+
+	end := start + (window * 2)
+	if end > len(content) {
+		end = len(content) - 1
+	}
+	final := []string{}
+	section := strings.TrimSpace(strings.Join(content[begin:end], ""))
+	for _, l := range strings.Split(section, "\n") {
+		l = strings.TrimSpace(l)
+		if !strings.Contains(l, "Fetching") && len(l) > 0 {
+			final = append(final, l)
+		}
+	}
+
+	return strings.Join(final, ""), begin, end
+}
+
+func scanLog(log []byte, window int) []string {
+	windows := make([]string, 0)
+	content := string(log)
+	content = bkTimestamp.ReplaceAllString(content, "")
+	content = bk.CleanANSI(content)
+	lines := strings.Split(content, "\n")
+
+	for i := 0; i < len(lines)-1; i++ {
+		l := lines[i]
+		if strings.Contains(l, "FAIL:") || strings.Contains(l, "error:") || strings.Contains(l, "ERROR ") || strings.Contains(l, "Error: ") {
+			ctx, _, end := extractContextWindow(lines, i, window)
+
+			windows = append(windows, ctx)
+			i = end + 1
+		}
+	}
+
+	return windows
+}
+
+func getEmbeddings(client *embeddings.Client, repo string, query string) ([]claude.Message, error) {
+	repoID, err := client.GetRepoID(repo)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := client.GetEmbeddings(repoID, query, 0, 2)
+	if err != nil {
+		return nil, err
+	}
+
+	msgs := []claude.Message{}
+	backTick := "`"
+	codeBlock := "```"
+	for _, v := range result.CodeResults {
+		interaction := []claude.Message{
+			{
+				Speaker: "human",
+				Text: fmt.Sprintf(`Here is the content of documentation found at %s:
+				%s
+				%s
+				%s`, backTick+v.FileName+backTick, codeBlock, v.Content, codeBlock),
+			},
+			{
+				Speaker: "assistant",
+				Text:    "Ok.",
+			},
+		}
+		msgs = append(msgs, interaction...)
+	}
+
+	return msgs, nil
+}
+
 func askCody(cmd *cli.Context) error {
-	std.Out.WriteNoticef("Fetching log of the first job failure on build %d", cmd.Int("build"))
+	//std.Out.WriteNoticef("Fetching log of the first job failure on build %d", cmd.Int("build"))
 	job, logs, err := getFailedJobLogs(cmd)
 	if err != nil {
 		return errors.Newf("failed to get failed job logs for build %s", cmd.Int("build"))
 	}
 
-	ciRefContent, err := os.ReadFile("./doc/dev/background-information/ci/reference.md")
-	if err != nil {
-		return errors.Newf("failed to read ci reference.md: %v", err)
-	}
-	bazelDocs, err := os.ReadFile("./doc/dev/background-information/bazel.md")
-	if err != nil {
-		return errors.Newf("failed to read ci bazel.md: %v", err)
-	}
-	bazelClientDocs, err := os.ReadFile("./doc/dev/background-information/bazel_web.md")
-	if err != nil {
-		return errors.Newf("failed to read ci bazel_web.md: %v", err)
+	windows := scanLog(logs, 20)
+	codeBlock := "```"
+	logMessages := []claude.Message{
+		{
+			Speaker: "human",
+			Text: fmt.Sprintf(`Here are the snippets from the CI log ouput:
+%sbash
+%s
+%s`, codeBlock, strings.Join(windows, ""), codeBlock),
+		},
+		{
+			Speaker: "assistant",
+			Text:    "Ok.",
+		},
 	}
 
 	srcURL := os.Getenv("SRC_URL")
 	srcToken := os.Getenv("SRC_TOKEN")
-	cli := claude.NewClient(srcURL, srcToken, nil)
-	messages := []claude.Message{
-		{
-			Speaker: "ASSISTANT",
-			Text: `I am Cody, an AI-powered coding assistant developed by Sourcegraph. I operate inside the Sourcegraph repository. My task is to help programmers with debugging tasks. I specialize in diagnosing CI failures.
-I have access to all files present in your Sourcegraph repository.
-I am able to suggest code changes and commands to run.
-I will generate suggestions as concisely and clearly as possible.
-I only suggest something if I am certain about my answer.`,
-		},
-		{
-			Speaker: "HUMAN",
-			Text:    fmt.Sprintf(`Here is some extra information about our CI Pipeline. Reference this information when you diagnose any problems I send to you about steps failing on the CI Pipeline: %s`, ciRefContent),
-		},
-		{
-			Speaker: claude.Assistant,
-			Text:    "Ok.",
-		},
-		{
-			Speaker: "HUMAN",
-			Text:    fmt.Sprintf(`Here is some extra information about Bazel. Reference this information when you diagnose any problems I send to you about things failing with Bazel: %s`, bazelDocs),
-		},
-		{
-			Speaker: claude.Assistant,
-			Text:    "Ok.",
-		},
-		{
-			Speaker: "HUMAN",
-			Text:    fmt.Sprintf(`Here is some extra information about our Client code using Bazel. Reference this information when you diagnose any problems I send to you about things failing with Bazel: %s`, bazelClientDocs),
-		},
-		{
-			Speaker: claude.Assistant,
-			Text:    "Ok.",
-		},
-		{
-			Speaker: "HUMAN",
-			Text:    fmt.Sprintf(`"Here is the failed job log output for step %s: %s`, *job.Name, logs),
-		},
-		{
-			Speaker: claude.Assistant,
-			Text:    "Ok.",
-		},
-		{
-			Speaker: "HUMAN",
-			Text:    `When suggesting fixes please use bazel commands equivalent if they exist, and if more debugging is needed they should reach out to @dev-experience-support. Show my why the build failed and suggest fixes I should attempt. If tests failed, show me which tests I should rerun and how`,
-		},
-		{
-			Speaker: "ASSISTANT",
-			Text:    "```markdown",
-		},
-	}
+	embeddingsClient := embeddings.NewClient(srcToken, srcToken, nil)
 
-	params := claude.DefaultCompletionParameters(messages)
+	messages := codyPreamble()
+	if embeddings, err := getEmbeddings(embeddingsClient, "sourcegraph/sourcegraph", "file:bazel.*.md"); err != nil {
+		messages = append(messages, embeddings...)
+	}
+	messages = append(messages, logMessages...)
+	messages = append(messages, claude.Message{
+		Speaker: "human",
+		Text:    fmt.Sprintf("Describe why the step \"%s\" build failed and provide the relevant output for your reasoning.", *job.Name),
+	})
+
+	cli := claude.NewClient(srcURL, srcToken, nil)
+
+	params := claude.DefaultCompletionParameters(append(messages, claude.Message{Speaker: "assistant", Text: "The build failed"}))
+
+	println("Sending the following to Cody")
+	//blk := std.Out.Block(output.Line("📔", output.StyleBold, "Prompt"))
+	for _, m := range messages {
+		var who = "🤖"
+		if m.Speaker == "human" {
+			who = "🗣️"
+		}
+		std.Out.WriteCode("bash", fmt.Sprintf("%s: %v", who, m.Text))
+	}
 
 	start := time.Now()
 	std.Out.WriteNoticef("Asking Cody 🤖 why %s failed...", *job.Name)
-	resChan, _ := cli.StreamCompletion(context.Background(), params, true)
+	resChan, err := cli.StreamCompletion(context.Background(), params, true)
+	if err != nil {
+		std.Out.WriteFailuref("failed to stream completion: %v", err)
+		return err
+	}
 	result := ""
 	for res := range resChan {
 		result = res
 	}
 	block := std.Out.Block(output.Styledf(output.StyleSuggestion, "Answer from Cody"))
+	block.WriteMarkdown(result, output.MarkdownNoMargin, output.MarkdownIndent(2))
+	block.Close()
+
+	messages = append(messages, []claude.Message{
+		{
+			Speaker: "assistant",
+			Text:    result,
+		}, {
+			Speaker: "human",
+			Text:    "What steps can I take to fix the build?",
+		}, {
+			Speaker: "assistant",
+			Text:    "The build can be fixed",
+		}}...)
+	std.Out.WriteNoticef("Asking Cody 🤖 how %s can be fixed...", *job.Name)
+	params = claude.DefaultCompletionParameters(messages)
+	resChan, err = cli.StreamCompletion(context.Background(), params, true)
+	if err != nil {
+		std.Out.WriteFailuref("failed to stream completion: %v", err)
+		return err
+	}
+	result = ""
+	for res := range resChan {
+		result = res
+	}
+	block = std.Out.Block(output.Styledf(output.StyleSuggestion, "Answer from Cody"))
 	block.WriteMarkdown(result, output.MarkdownNoMargin, output.MarkdownIndent(2))
 	block.Close()
 	fmt.Println(time.Since(start))

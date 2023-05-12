@@ -274,6 +274,27 @@ func hasState(job *buildkite.Job, state string) bool {
 	return job.State != nil && *job.State == state
 }
 
+func (c *Client) JobRawLog(job *buildkite.Job) ([]byte, error) {
+	u := *job.RawLogsURL
+	req, err := c.bk.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Accept", "text/plain")
+
+	buf := bytes.NewBuffer(nil)
+	resp, err := c.bk.Do(req, buf)
+	if err != nil {
+		c, _ := io.ReadAll(resp.Body)
+		fmt.Println(string(c))
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+
+}
+
 func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opts ExportLogsOpts) ([]*JobLogs, error) {
 	buildID := strconv.Itoa(build)
 	buildDetails, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, buildID, nil)
