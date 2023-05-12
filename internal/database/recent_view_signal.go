@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -93,28 +94,86 @@ const bulkInsertRecentViewSignalsFmtstr = `
 	SET views_count = EXCLUDED.views_count + own_aggregate_recent_view.views_count
 `
 
+const findAncestorPathsFmtstr = `
+	WITH RECURSIVE ancestor_paths AS (
+		SELECT id, parent_id
+		FROM repo_paths
+		WHERE id IN (%s)
+
+		UNION ALL
+
+		SELECT p.id, p.parent_id
+		FROM repo_paths p
+		JOIN ancestor_paths ap ON p.id = ap.parent_id
+	)
+	SELECT id, parent_id
+	FROM ancestor_paths
+	WHERE parent_id IS NOT NULL
+  `
+
 // InsertPaths inserts paths and view counts for a given `userID`. This function
-// has a hard limit of 5000 entries to be inserted. If more than 5000 paths are
-// provided, this function will only add the first 5000 values read from the map
-// (i.e. 5000 random paths) without any errors.
+// has a hard limit of 5000 entries per bulk insert. It will issue the len(repoPathIDToCount) % 5000 inserts.
 func (s *recentViewSignalStore) InsertPaths(ctx context.Context, userID int32, repoPathIDToCount map[int]int) error {
-	pathsNumber := len(repoPathIDToCount)
-	if pathsNumber == 0 {
+	batchSize := len(repoPathIDToCount)
+	if batchSize > 5000 {
+		batchSize = 5000
+	}
+	if batchSize == 0 {
 		return nil
 	}
-	if pathsNumber > 5000 {
-		pathsNumber = 5000
-	}
-	values := make([]*sqlf.Query, 0, pathsNumber)
-	for pathID, count := range repoPathIDToCount {
-		if pathsNumber == 0 {
-			break
+
+	// Query for parent IDs for given paths.
+	parentIDs := map[int]int{}
+	if err := func() error { // func to run rs.Close as soon as possible.
+		var pathIDs []*sqlf.Query
+		for pathID := range repoPathIDToCount {
+			pathIDs = append(pathIDs, sqlf.Sprintf("%s", pathID))
 		}
-		values = append(values, sqlf.Sprintf("(%s, %s, %s)", userID, pathID, count))
-		pathsNumber--
+		q := sqlf.Sprintf(findAncestorPathsFmtstr, sqlf.Join(pathIDs, ","))
+		rs, err := s.Query(ctx, q)
+		if err != nil {
+			return err
+		}
+		defer rs.Close()
+		for rs.Next() {
+			var id, parentID int
+			if err := rs.Scan(&id, &parentID); err != nil {
+				return err
+			}
+			parentIDs[id] = parentID
+		}
+		return nil
+	}(); err != nil {
+		return err
 	}
-	q := sqlf.Sprintf(bulkInsertRecentViewSignalsFmtstr, sqlf.Join(values, ","))
-	return s.Exec(ctx, q)
+
+	// Augment counts for ancestor paths, by summing views.
+	augmentedCounts := map[int]int{}
+	for leafID, count := range repoPathIDToCount {
+		for pathID := leafID; pathID != 0; pathID = parentIDs[pathID] {
+			augmentedCounts[pathID] = augmentedCounts[pathID] + count
+		}
+	}
+
+	// Inser paths in batches.
+	values := make([]*sqlf.Query, 0, batchSize)
+	for pathID, count := range augmentedCounts {
+		values = append(values, sqlf.Sprintf("(%s, %s, %s)", userID, pathID, count))
+		if len(values) == batchSize {
+			q := sqlf.Sprintf(bulkInsertRecentViewSignalsFmtstr, sqlf.Join(values, ","))
+			if err := s.Exec(ctx, q); err != nil {
+				return err
+			}
+			values = values[:0] // retain memory for the buffer
+		}
+	}
+	if len(values) > 0 { // check for remaining values.
+		q := sqlf.Sprintf(bulkInsertRecentViewSignalsFmtstr, sqlf.Join(values, ","))
+		if err := s.Exec(ctx, q); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 const listRecentViewSignalsFmtstr = `
@@ -203,6 +262,11 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 		if _, found := repoNameToMetadata[r.RepoName]; !found {
 			// If the repo is not present in `repoNameToMetadata`, we need to query it from
 			// the DB.
+			if _, notFound := notFoundRepos[r.RepoName]; notFound {
+				// If we already know that the repo cannot be found in the DB, we don't need to
+				// make an extra unsuccessful query.
+				continue
+			}
 			repo, err := db.Repos().GetByName(ctx, api.RepoName(r.RepoName))
 			if err != nil {
 				if errcode.IsNotFound(err) {
@@ -253,6 +317,8 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 		for rpn, count := range pathAndCount {
 			if pathID, found := repoNameToMetadata[rpn.RepoName].pathToID[rpn.FilePath]; found {
 				repoPathIDToCount[pathID] = count
+			} else if _, notFound := notFoundRepos[rpn.RepoName]; notFound {
+				// repo was not found in the database, that's fine.
 			} else {
 				return errors.Newf("cannot find id of path %q of repo %q: this is a bug", rpn.FilePath, rpn.RepoName)
 			}

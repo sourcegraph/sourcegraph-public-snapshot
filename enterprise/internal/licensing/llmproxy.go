@@ -12,15 +12,18 @@ type LLMProxyRateLimit struct {
 func NewLLMProxyRateLimit(plan Plan) LLMProxyRateLimit {
 	switch plan {
 	// TODO: This is just an example for now.
-	case PlanEnterprise1:
+	case PlanEnterprise1,
+		PlanEnterprise0:
 		return LLMProxyRateLimit{
 			Limit:           50,
 			IntervalSeconds: 60 * 60 * 24, // day
 		}
 
 	// TODO: Defaults for other plans
-
 	default:
-		return LLMProxyRateLimit{}
+		return LLMProxyRateLimit{
+			Limit:           10,
+			IntervalSeconds: 60 * 60 * 24,
+		}
 	}
 }

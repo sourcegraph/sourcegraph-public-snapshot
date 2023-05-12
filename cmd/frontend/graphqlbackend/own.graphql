@@ -41,6 +41,38 @@ extend type GitBlob implements Ownable {
     ): OwnershipConnection!
 }
 
+extend type GitTree {
+    """
+    Owners of the directory at revision.
+    """
+    ownership(
+        """
+        Returns the first n ownership records from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): OwnershipConnection!
+}
+
+extend type GitCommit {
+    """
+    Owners of the repository at this commit.
+    """
+    ownership(
+        """
+        Returns the first n ownership records from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): OwnershipConnection!
+}
+
 """
 A list of ownership entries.
 """
@@ -88,14 +120,29 @@ enum OwnershipReasonType {
 }
 
 """
-A union of all the different ownership reasons
+A union of all the different ownership reasons.
 """
-union OwnershipReason = CodeownersFileEntry | RecentContributorOwnershipSignal
+union OwnershipReason = CodeownersFileEntry | RecentContributorOwnershipSignal | RecentViewOwnershipSignal
 
 """
-A signal derived from recent code contributors
+A signal derived from recent code contributors.
 """
 type RecentContributorOwnershipSignal {
+    """
+    Descriptive title to display in the UI for the determination.
+    """
+    title: String!
+
+    """
+    More detailed description to display in the UI for the determination.
+    """
+    description: String!
+}
+
+"""
+A signal derived from recent code file views.
+"""
+type RecentViewOwnershipSignal {
     """
     Descriptive title to display in the UI for the determination.
     """

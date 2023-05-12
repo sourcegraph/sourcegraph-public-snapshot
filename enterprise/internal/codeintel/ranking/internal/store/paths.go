@@ -8,9 +8,11 @@ import (
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPaths chan string, batchSize int, graphKey string) (err error) {
@@ -91,16 +93,16 @@ deleted_initial_paths AS (
 SELECT COUNT(*) FROM deleted_initial_paths
 `
 
-func (s *store) VacuumStaleInitialPaths(ctx context.Context, graphKey string) (
+func (s *store) SoftDeleteStaleInitialPaths(ctx context.Context, graphKey string) (
 	numPathRecordsScanned int,
 	numStalePathRecordsDeleted int,
 	err error,
 ) {
-	ctx, _, endObservation := s.operations.vacuumStaleInitialPaths.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.softDeleteStaleInitialPaths.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
 	defer endObservation(1, observation.Args{})
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
-		vacuumStalePathsQuery,
+		softDeleteStalePathsQuery,
 		graphKey, int(threshold/time.Hour), vacuumBatchSize,
 	))
 	if err != nil {
@@ -120,17 +122,16 @@ func (s *store) VacuumStaleInitialPaths(ctx context.Context, graphKey string) (
 	return numPathRecordsScanned, numStalePathRecordsDeleted, nil
 }
 
-const vacuumStalePathsQuery = `
+const softDeleteStalePathsQuery = `
 WITH
 locked_initial_path_ranks AS (
 	SELECT
 		ipr.id,
-		u.repository_id,
 		ipr.upload_id
 	FROM codeintel_initial_path_ranks ipr
-	JOIN lsif_uploads u ON u.id = ipr.upload_id
 	WHERE
 		ipr.graph_key = %s AND
+		ipr.deleted_at IS NULL AND
 		(ipr.last_scanned_at IS NULL OR NOW() - ipr.last_scanned_at >= %s * '1 hour'::interval)
 	ORDER BY ipr.last_scanned_at ASC NULLS FIRST, ipr.id
 	FOR UPDATE SKIP LOCKED
@@ -141,7 +142,8 @@ candidates AS (
 		lipr.id,
 		uvt.is_default_branch IS TRUE AS safe
 	FROM locked_initial_path_ranks lipr
-	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = lipr.repository_id AND uvt.upload_id = lipr.upload_id
+	LEFT JOIN lsif_uploads u ON u.id = lipr.upload_id
+	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = u.repository_id AND uvt.upload_id = lipr.upload_id
 ),
 updated_initial_path_ranks AS (
 	UPDATE codeintel_initial_path_ranks
@@ -149,11 +151,60 @@ updated_initial_path_ranks AS (
 	WHERE id IN (SELECT c.id FROM candidates c WHERE c.safe)
 ),
 deleted_initial_path_ranks AS (
-	DELETE FROM codeintel_initial_path_ranks
+	UPDATE codeintel_initial_path_ranks
+	SET deleted_at = NOW()
 	WHERE id IN (SELECT c.id FROM candidates c WHERE NOT c.safe)
 	RETURNING 1
 )
 SELECT
 	(SELECT COUNT(*) FROM candidates),
 	(SELECT COUNT(*) FROM deleted_initial_path_ranks)
+`
+
+func (s *store) VacuumDeletedInitialPaths(ctx context.Context, derivativeGraphKey string) (
+	numPathRecordsDeleted int,
+	err error,
+) {
+	ctx, _, endObservation := s.operations.vacuumDeletedInitialPaths.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	if !ok {
+		return 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
+	}
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(
+		vacuumDeletedStalePathsQuery,
+		graphKey,
+		derivativeGraphKey,
+		vacuumBatchSize,
+	)))
+	return count, err
+}
+
+const vacuumDeletedStalePathsQuery = `
+WITH
+locked_initial_path_ranks AS (
+	SELECT ipr.id
+	FROM codeintel_initial_path_ranks ipr
+	WHERE
+		ipr.graph_key = %s AND
+		ipr.deleted_at IS NOT NULL AND
+		NOT EXISTS (
+			SELECT 1
+			FROM codeintel_ranking_progress crp
+			WHERE
+				crp.graph_key = %s AND
+				crp.seed_mapper_completed_at IS NULL
+		)
+	ORDER BY ipr.id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_initial_path_ranks AS (
+	DELETE FROM codeintel_initial_path_ranks
+	WHERE id IN (SELECT id FROM locked_initial_path_ranks)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_initial_path_ranks
 `

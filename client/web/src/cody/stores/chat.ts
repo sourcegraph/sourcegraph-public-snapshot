@@ -6,7 +6,6 @@ import create from 'zustand'
 
 import { Client, createClient, ClientInit, Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/client'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { escapeCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { PrefilledOptions } from '@sourcegraph/cody-shared/src/editor/withPreselectedOptions'
 import { isErrorLike } from '@sourcegraph/common'
@@ -14,6 +13,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor'
+import { useIsCodyEnabled } from '../useIsCodyEnabled'
 
 import { EditorStore, useEditorStore } from './editor'
 
@@ -44,6 +44,7 @@ interface CodyChatStore {
     getChatContext: () => ChatContextStatus
     loadTranscriptFromHistory: (id: string) => Promise<void>
     clearHistory: () => void
+    deleteHistoryItem: (id: string) => void
 }
 
 const CODY_TRANSCRIPT_HISTORY_KEY = 'cody:transcript-history'
@@ -57,23 +58,38 @@ export const safeTimestampToDate = (timestamp: string = ''): Date => {
     return new Date(timestamp)
 }
 
+const sortSliceTranscriptHistory = (transcriptHistory: TranscriptJSON[]): TranscriptJSON[] =>
+    transcriptHistory
+        .sort(
+            (a, b) =>
+                (safeTimestampToDate(a.lastInteractionTimestamp) as any) -
+                (safeTimestampToDate(b.lastInteractionTimestamp) as any)
+        )
+        .map(transcript => (transcript.id ? transcript : { ...transcript, id: Transcript.fromJSON(transcript).id }))
+        .slice(0, SAVE_MAX_TRANSCRIPT_HISTORY)
+
 export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore => {
     const fetchTranscriptHistory = (): TranscriptJSON[] => {
         try {
-            return JSON.parse(window.localStorage.getItem(CODY_TRANSCRIPT_HISTORY_KEY) || '[]')
+            const json = JSON.parse(
+                window.localStorage.getItem(CODY_TRANSCRIPT_HISTORY_KEY) || '[]'
+            ) as TranscriptJSON[]
+
+            if (!Array.isArray(json)) {
+                return []
+            }
+
+            const sorted = sortSliceTranscriptHistory(json)
+            saveTranscriptHistory(sorted)
+
+            return sorted
         } catch {
             return []
         }
     }
 
     const saveTranscriptHistory = (transcriptHistory: TranscriptJSON[]): void => {
-        const sorted = transcriptHistory
-            .sort(
-                (a, b) =>
-                    (safeTimestampToDate(a.lastInteractionTimestamp) as any) -
-                    (safeTimestampToDate(b.lastInteractionTimestamp) as any)
-            )
-            .slice(0, SAVE_MAX_TRANSCRIPT_HISTORY)
+        const sorted = sortSliceTranscriptHistory(transcriptHistory)
 
         window.localStorage.setItem(CODY_TRANSCRIPT_HISTORY_KEY, JSON.stringify(sorted))
         set({ transcriptHistory: sorted })
@@ -87,8 +103,19 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         }
         saveTranscriptHistory([])
     }
+
+    const deleteHistoryItem = (id: string): void => {
+        const { transcriptId } = get()
+        const transcriptHistory = fetchTranscriptHistory()
+
+        saveTranscriptHistory(transcriptHistory.filter(transcript => transcript.id !== id))
+
+        if (transcriptId === id) {
+            set({ transcript: [], transcriptId: null })
+        }
+    }
+
     const submitMessage = (text: string): void => {
-        text = escapeCodyMarkdown(text)
         const { client, onEvent, getChatContext } = get()
         if (client && !isErrorLike(client)) {
             const { codebase, filePath } = getChatContext()
@@ -292,6 +319,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         getChatContext,
         loadTranscriptFromHistory,
         clearHistory,
+        deleteHistoryItem,
     }
 })
 
@@ -303,6 +331,7 @@ export const useChatStore = ({
     setIsCodySidebarOpen?: (state: boolean | undefined) => void
 }): CodyChatStore => {
     const store = useChatStoreState()
+    const enabled = useIsCodyEnabled()
 
     const onEvent = useCallback(
         (eventName: 'submit' | 'reset' | 'error') => {
@@ -335,12 +364,12 @@ export const useChatStore = ({
 
     const { initializeClient, config: currentConfig } = store
     useEffect(() => {
-        if (!window.context?.codyEnabled || isEqual(config, currentConfig)) {
+        if (!(enabled.chat || enabled.sidebar) || isEqual(config, currentConfig)) {
             return
         }
 
         void initializeClient(config, editorStateRef, onEvent)
-    }, [config, initializeClient, currentConfig, editorStateRef, onEvent])
+    }, [config, initializeClient, currentConfig, editorStateRef, onEvent, enabled.chat, enabled.sidebar])
 
     return store
 }

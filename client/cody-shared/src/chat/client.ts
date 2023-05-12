@@ -10,7 +10,6 @@ import { isError } from '../utils'
 
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
-import { escapeCodyMarkdown } from './markdown'
 import { getPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
 import { Transcript, TranscriptJSON } from './transcript'
@@ -116,16 +115,22 @@ export async function createClient({
 
         const prompt = await transcript.toPrompt(getPreamble(config.codebase))
         const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
+        let rawText = ''
 
         chatClient.chat(prompt, {
-            onChange(rawText) {
-                const text = reformatBotMessage(escapeCodyMarkdown(rawText), responsePrefix)
+            onChange(_rawText) {
+                rawText = _rawText
+
+                const text = reformatBotMessage(rawText, responsePrefix)
                 transcript.addAssistantResponse(text)
 
                 sendTranscript()
             },
             onComplete() {
                 isMessageInProgress = false
+
+                const text = reformatBotMessage(rawText, responsePrefix)
+                transcript.addAssistantResponse(text)
                 sendTranscript()
             },
             onError(error) {

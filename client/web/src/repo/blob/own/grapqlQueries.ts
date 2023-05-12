@@ -44,6 +44,11 @@ export const FETCH_OWNERS = gql`
         description
     }
 
+    fragment RecentViewOwnershipSignalFields on RecentViewOwnershipSignal {
+        title
+        description
+    }
+
     query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
         node(id: $repo) {
             ... on Repository {
@@ -57,6 +62,7 @@ export const FETCH_OWNERS = gql`
                                 reasons {
                                     ...CodeownersFileEntryFields
                                     ...RecentContributorOwnershipSignalFields
+                                    ...RecentViewOwnershipSignalFields
                                 }
                             }
                         }
@@ -74,6 +80,7 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
     query FetchOwnersAndHistory($repo: ID!, $revision: String!, $currentPath: String!) {
         node(id: $repo) {
             ... on Repository {
+                sourceType
                 commit(rev: $revision) {
                     blob(path: $currentPath) {
                         ownership(first: 2) {

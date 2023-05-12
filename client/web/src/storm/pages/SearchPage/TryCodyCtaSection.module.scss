@@ -9,6 +9,16 @@
     }
 }
 
+.cody-illustration {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.cody-illustration svg {
+    margin-bottom: 1rem;
+}
+
 .card {
     background-color: var(--color-bg-1);
 }
@@ -19,11 +29,6 @@
 
 .try-cookbook-link {
     font-size: 1rem;
-    font-weight: bolder;
-    &,
-    &:hover {
-        color: var(--merged);
-    }
 }
 
 .close-button {

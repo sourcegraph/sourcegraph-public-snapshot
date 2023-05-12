@@ -28,6 +28,9 @@ export type FeatureFlagName =
     | 'llm-proxy-management-ui'
     | 'cody-web-chat'
     | 'cody-web-search'
+    | 'cody-web-sidebar'
+    | 'cody-web-all'
+    | 'cody-web-editor-recipes'
 
 interface OrgFlagOverride {
     orgID: string

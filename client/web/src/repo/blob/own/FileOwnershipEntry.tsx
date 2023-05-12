@@ -11,6 +11,7 @@ import {
     CodeownersFileEntryFields,
     OwnerFields,
     RecentContributorOwnershipSignalFields,
+    RecentViewOwnershipSignalFields,
 } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
 
@@ -21,7 +22,10 @@ interface Props {
     reasons: OwnershipReason[]
 }
 
-type OwnershipReason = CodeownersFileEntryFields | RecentContributorOwnershipSignalFields
+type OwnershipReason =
+    | CodeownersFileEntryFields
+    | RecentContributorOwnershipSignalFields
+    | RecentViewOwnershipSignalFields
 
 export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
