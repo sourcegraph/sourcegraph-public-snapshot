@@ -17,11 +17,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LocalRepository } from '../../../../graphql-operations'
-import {
-    useLocalPathsPicker,
-    useLocalRepositories,
-    useNewLocalRepositoriesPaths,
-} from '../../../../setup-wizard/components'
+import { callFilePicker, useLocalRepositories, useNewLocalRepositoriesPaths } from '../../../../setup-wizard/components'
 
 import styles from './LocalRepositoriesTab.module.scss'
 
@@ -98,10 +94,8 @@ interface PathsPickerActionsProps {
  * they have in the file picker.
  */
 const PathsPickerActions: FC<PathsPickerActionsProps> = ({ onPathsChange }) => {
-    const { callPathPicker } = useLocalPathsPicker()
-
     const handleClickCallPathPicker = async (): Promise<void> => {
-        const paths = await callPathPicker()
+        const paths = await callFilePicker()
 
         if (paths !== null) {
             onPathsChange(paths)

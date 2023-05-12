@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { open } from '@tauri-apps/api/dialog'
 import { isEqual } from 'lodash'
 
 import { ErrorLike } from '@sourcegraph/common'
@@ -218,29 +217,4 @@ export function useLocalRepositories({ paths, skip }: LocalRepositoriesInput): L
         loaded: skip || !!data || !!previousData,
         repositories: data?.localDirectories?.repositories ?? previousData?.localDirectories?.repositories ?? [],
     }
-}
-
-interface LocalPathPickerAPI {
-    callPathPicker: () => Promise<Path[] | null>
-}
-
-export function useLocalPathsPicker(): LocalPathPickerAPI {
-    const callPathPicker = useCallback(async () => {
-        const selected = await open({
-            directory: true,
-            multiple: true,
-        })
-
-        if (Array.isArray(selected)) {
-            return selected
-        }
-
-        if (selected !== null) {
-            return [selected]
-        }
-
-        return null
-    }, [])
-
-    return { callPathPicker }
 }
