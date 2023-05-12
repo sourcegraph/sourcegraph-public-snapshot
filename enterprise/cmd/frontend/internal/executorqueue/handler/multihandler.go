@@ -71,9 +71,9 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: simply exported this method: I guess all of this will move into the handler package anyway so temp solution
 	if err := validateWorkerHostname(req.ExecutorName); err != nil {
-		// TODO
+		m.logger.Error(err.Error())
+		m.marshalAndRespondError(w, err, http.StatusBadRequest)
 	}
 
 	version2Supported := false
