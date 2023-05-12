@@ -2,7 +2,6 @@ package updatecheck
 
 import (
 	"context"
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
