@@ -9,7 +9,7 @@ import {
     analyticsGroup,
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
-    repositoriesGroup,
+    repositoriesGroup as ossRepositoriesGroup,
     usersGroup as ossUsersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
@@ -157,6 +157,17 @@ const usersGroup: SiteAdminSideBarGroup = {
             label: 'Permissions',
             to: '/site-admin/permissions-syncs',
         },
+    ],
+}
+
+const repositoriesGroup: SiteAdminSideBarGroup = {
+    ...ossRepositoriesGroup,
+    items: [
+        {
+            label: 'GitHub Apps',
+            to: '/site-admin/github-apps',
+        },
+        ...ossRepositoriesGroup.items,
     ],
 }
 
