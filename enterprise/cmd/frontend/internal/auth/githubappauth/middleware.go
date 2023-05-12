@@ -232,6 +232,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 		hook.Secret = encryption.NewUnencrypted(app.WebhookSecret)
+		hook.Name = app.Name
 		if _, err := webhookDB.Update(req.Context(), hook); err != nil {
 			http.Error(w, fmt.Sprintf("Error while updating webhook secret: %s", err.Error()), http.StatusInternalServerError)
 			return
