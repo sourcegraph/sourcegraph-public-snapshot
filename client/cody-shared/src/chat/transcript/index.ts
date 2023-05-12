@@ -21,21 +21,25 @@ export class Transcript {
                         Promise.resolve(context),
                         timestamp || new Date().toISOString()
                     )
-            )
+            ),
+            json.id
         )
     }
 
     private interactions: Interaction[] = []
 
-    constructor(interactions: Interaction[] = []) {
+    private internalID: string
+
+    constructor(interactions: Interaction[] = [], id?: string) {
         this.interactions = interactions
+        this.internalID =
+            id ||
+            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
+            new Date().toISOString()
     }
 
     public get id(): string {
-        return (
-            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
-            new Date().toISOString()
-        )
+        return this.internalID
     }
 
     public get isEmpty(): boolean {
@@ -78,10 +82,17 @@ export class Transcript {
     }
 
     public addErrorAsAssistantResponse(errorText: string): void {
-        this.getLastInteraction()?.setAssistantMessage({
+        const lastInteraction = this.getLastInteraction()
+        if (!lastInteraction) {
+            return
+        }
+        // If assistant has responsed before, we will add the error message after it
+        const lastAssistantMessage = lastInteraction.getAssistantMessage().displayText || ''
+        lastInteraction.setAssistantMessage({
             speaker: 'assistant',
-            text: 'Failed to generate response due to server error.',
-            displayText: errorText,
+            text: 'Failed to generate a response due to server error.',
+            displayText:
+                lastAssistantMessage + `<div class="cody-chat-error"><span>Request failed: </span>${errorText}</div>`,
         })
     }
 
@@ -127,6 +138,7 @@ export class Transcript {
 
     public reset(): void {
         this.interactions = []
+        this.internalID = new Date().toISOString()
     }
 }
 

@@ -1,5 +1,7 @@
 // VS Code Docs https://code.visualstudio.com/api/references/vscode-api#Memento
 // A memento represents a storage utility. It can store and retrieve values.
+import * as uuid from 'uuid'
+// import * as vscode from 'vscode'
 import { Memento } from 'vscode'
 
 import { OldUserLocalHistory, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -8,6 +10,7 @@ export class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     private KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
     private KEY_LOCAL_HISTORY_MIGRATE = 'cody-local-chatHistory'
+    private ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 
     constructor(private storage: Memento) {}
 
@@ -70,6 +73,23 @@ export class LocalStorage {
     public async removeChatHistory(): Promise<void> {
         try {
             await this.storage.update(this.KEY_LOCAL_HISTORY, null)
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    public getAnonymousUserID(): string | null {
+        const anonUserID = this.storage.get(this.ANONYMOUS_USER_ID_KEY, null)
+        return anonUserID
+    }
+
+    public async setAnonymousUserID(): Promise<void> {
+        let anonUserID = this.storage.get(this.ANONYMOUS_USER_ID_KEY)
+        if (!anonUserID) {
+            anonUserID = uuid.v4()
+        }
+        try {
+            await this.storage.update(this.ANONYMOUS_USER_ID_KEY, anonUserID)
         } catch (error) {
             console.error(error)
         }

@@ -81,14 +81,14 @@ async function detectTokens(
 function highlightLine(line: string, tokens: HighlightedToken[]): string {
     let highlightedLine = line
     for (const token of tokens) {
-        highlightedLine = highlightedLine.replaceAll(token.innerValue, getHighlightedTokenHTML(token))
+        highlightedLine = highlightedLine.replaceAll(token.outerValue, getHighlightedTokenHTML(token))
     }
     return highlightedLine
 }
 
 function getHighlightedTokenHTML(token: HighlightedToken): string {
     const isHallucinatedClassName = token.isHallucinated ? 'hallucinated' : 'not-hallucinated'
-    return `<span class="token-${token.type} token-${isHallucinatedClassName}">${token.innerValue}</span>`
+    return ` <span class="token-${token.type} token-${isHallucinatedClassName}">${token.outerValue.trim()}</span> `
 }
 
 export function findFilePaths(line: string): { fullMatch: string; pathMatch: string }[] {
@@ -103,7 +103,7 @@ export function findFilePaths(line: string): { fullMatch: string; pathMatch: str
     return matches
 }
 
-const filePathCharacters = '[\\*\\w\\/\\._-]'
+const filePathCharacters = '[\\@\\*\\w\\/\\._-]'
 
 const filePathRegexpParts = [
     // File path can start with a `, ", ', or a whitespace
@@ -117,9 +117,24 @@ const filePathRegexpParts = [
 const filePathRegexp = new RegExp(filePathRegexpParts.join(''), 'g')
 
 function isFilePathLike(fullMatch: string, pathMatch: string): boolean {
+    if (
+        fullMatch.length >= 1 &&
+        (['"', "'", '`'].includes(fullMatch.charAt(0)) ||
+            ['"', "'", '`'].includes(fullMatch.charAt(fullMatch.length - 1)))
+    ) {
+        if (!fullMatch.endsWith(fullMatch.charAt(0))) {
+            // unbalanced delimiters
+            return false
+        }
+    }
+
     const parts = pathMatch.split(/[/\\]/)
     if (pathMatch.includes('*')) {
         // Probably a glob pattern
+        return false
+    }
+    if (parts.length === 2 && pathMatch.startsWith('@')) {
+        // Probably an npm package
         return false
     }
 

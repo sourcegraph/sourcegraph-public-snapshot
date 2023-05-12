@@ -17,9 +17,9 @@ This is a cool/awesome test.
 
 const expectedHighlightedTokensText = `# Title
 
-This is \`<span class="token-file token-hallucinated">/some/hallucinated/file/path</span>\`. Hosted on github.com/sourcegraph.
+This is  <span class="token-file token-hallucinated">\`/some/hallucinated/file/path\`</span> . Hosted on github.com/sourcegraph.
 
-Quoted "<span class="token-file token-not-hallucinated">file/path.js</span>". Unquoted hallucinated <span class="token-file token-hallucinated">file/path/Class.java</span> file.
+Quoted  <span class="token-file token-not-hallucinated">"file/path.js"</span> . Unquoted hallucinated <span class="token-file token-hallucinated">file/path/Class.java</span> file.
 
 This is a cool/awesome test.
 
@@ -61,6 +61,18 @@ describe('Hallucinations detector', () => {
             },
             {
                 input: 'pattern/foo/bar/*.ts',
+                output: [],
+            },
+            {
+                input: 'remix-run/react',
+                output: [{ fullMatch: 'remix-run/react', pathMatch: 'remix-run/react' }],
+            },
+            {
+                input: '`@remix-run/react`',
+                output: [],
+            },
+            {
+                input: '@remix-run/react',
                 output: [],
             },
         ]
