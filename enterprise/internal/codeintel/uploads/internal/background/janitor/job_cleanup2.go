@@ -11,8 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-const recordTypeName2 = "autoindexing"
-
 func NewUnknownRepositoryJanitor(
 	store store.Store,
 	config *Config,
@@ -24,7 +22,7 @@ func NewUnknownRepositoryJanitor(
 		Name:        name,
 		Description: "Removes index records associated with an unknown repository.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName2),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.DeleteIndexesWithoutRepository(ctx, time.Now())
 		},
@@ -46,7 +44,7 @@ func NewUnknownCommitJanitor2(
 		Name:        name,
 		Description: "Removes index records associated with an unknown commit.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName2),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.ProcessStaleSourcedCommits(
 				ctx,
@@ -75,7 +73,7 @@ func NewExpiredRecordJanitor(
 		Name:        name,
 		Description: "Removes old index records",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName2),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.ExpireFailedRecords(ctx, config.FailedIndexBatchSize, config.FailedIndexMaxAge, time.Now())
 		},

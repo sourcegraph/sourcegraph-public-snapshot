@@ -33,11 +33,7 @@ type PipelineMetrics struct {
 	numRecordsAltered   *prometheus.CounterVec
 }
 
-func NewPipelineMetrics(
-	observationCtx *observation.Context,
-	name string,
-	recordTypeName string,
-) *PipelineMetrics {
+func NewPipelineMetrics(observationCtx *observation.Context, name string) *PipelineMetrics {
 	replacer := strings.NewReplacer(
 		".", "_",
 		"-", "_",
@@ -81,12 +77,12 @@ func NewPipelineMetrics(
 
 	numRecordsProcessed := counter(
 		fmt.Sprintf("src_%s_records_processed_total", metricName),
-		fmt.Sprintf("The number of %s records processed by %s.", recordTypeName, name),
+		fmt.Sprintf("The number of records processed by %s.", name),
 	)
 
 	numRecordsAltered := counterVec(
 		fmt.Sprintf("src_%s_records_altered_total", metricName),
-		fmt.Sprintf("The number of %s records written/modified by %s.", recordTypeName, name),
+		fmt.Sprintf("The number of records written/modified by %s.", name),
 	)
 
 	return &PipelineMetrics{
