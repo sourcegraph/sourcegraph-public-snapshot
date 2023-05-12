@@ -19,8 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-const recordTypeName = "path count inputs"
-
 func NewSymbolExporter(
 	observationCtx *observation.Context,
 	store store.Store,
@@ -33,7 +31,7 @@ func NewSymbolExporter(
 		Name:        name,
 		Description: "Exports SCIP data to ranking definitions and reference tables.",
 		Interval:    config.Interval,
-		Metrics:     background.NewPipelineMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewPipelineMetrics(observationCtx, name),
 		ProcessFunc: func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered background.TaggedCounts, err error) {
 			numUploadsScanned, numDefinitionsInserted, numReferencesInserted, err := exportRankingGraph(
 				ctx,
