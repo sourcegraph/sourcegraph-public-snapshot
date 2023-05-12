@@ -1,8 +1,10 @@
 contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
+    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
   packages:
     ## Base set of packages included in sourcegraph/alpine base image
     - wolfi-baselayout
@@ -17,7 +19,7 @@ contents:
     - bind-tools
 
     ## blobstore packages
-    - openjdk-11
+    - s3proxy@sourcegraph
 
 accounts:
   groups:
