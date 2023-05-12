@@ -82,6 +82,7 @@ ts_project(
         "//:node_modules/@types/react",
         "//:node_modules/@types/react-dom",
         "//:node_modules/@types/stream-json",
+        "//:node_modules/@types/uuid",
         "//:node_modules/@types/vscode",  #keep
         "//:node_modules/@vscode",
         "//:node_modules/@vscode/webview-ui-toolkit",
@@ -90,6 +91,7 @@ ts_project(
         "//:node_modules/react-dom",
         "//:node_modules/stream-json",
         "//:node_modules/util",
+        "//:node_modules/uuid",
     ],
 )
 

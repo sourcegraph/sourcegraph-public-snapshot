@@ -103,6 +103,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 const newCodebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor)
                 if (newCodebaseContext) {
                     this.codebaseContext = newCodebaseContext
+                    await this.setAnonymousUserID()
                 }
             })
         )
@@ -115,6 +116,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     public async clearAndRestartSession(): Promise<void> {
         await this.saveTranscriptToChatHistory()
+        await this.setAnonymousUserID()
         this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
@@ -128,6 +130,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.chatHistory = {}
         this.inputHistory = []
         await this.localStorage.removeChatHistory()
+    }
+
+    public async setAnonymousUserID(): Promise<void> {
+        await this.localStorage.setAnonymousUserID()
     }
 
     /**
