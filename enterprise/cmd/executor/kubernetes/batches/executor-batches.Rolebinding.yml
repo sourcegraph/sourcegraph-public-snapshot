@@ -5,7 +5,7 @@ metadata:
   namespace: default
 subjects:
   - kind: ServiceAccount
-    name: sg-executor-batches-service-account
+    name: sg-executor-service-account
     namespace: default
 roleRef:
   kind: Role

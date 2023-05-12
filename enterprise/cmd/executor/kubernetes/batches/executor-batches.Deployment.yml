@@ -15,7 +15,7 @@ spec:
     spec:
       # For development purposes - lets the executor pod use the namespace of the host system instead of creating a new one.
       hostNetwork: true
-      serviceAccountName: sg-executor-batches-service-account
+      serviceAccountName: sg-executor-service-account
       containers:
         - name: sg-executor-batches
           image: executor-kubernetes:latest
