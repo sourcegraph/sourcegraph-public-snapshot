@@ -61,11 +61,11 @@ type dequeueRequest struct {
 }
 
 func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	logger := log.Scoped("dequeue", "Select a job record from the database.")
 	var req dequeueRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		// TODO: should we also log errors here? Not sure
-		http.Error(w, fmt.Sprintf("Failed to unmarshal payload: %s", err.Error()), http.StatusBadRequest)
+		err = errors.Wrap(err, fmt.Sprintf("Failed to unmarshal payload"))
+		m.logger.Error(err.Error())
+		m.marshalAndRespondError(w, err)
 		return
 	}
 
@@ -79,21 +79,15 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var err error
 		version2Supported, err = api.CheckSourcegraphVersion(req.Version, "4.3.0-0", "2022-11-24")
 		if err != nil {
-			// TODO: should we also log errors here? Not sure
-			data, err := json.Marshal(errorResponse{Error: err.Error()})
-			if err != nil {
-				logger.Error("Failed to serialize payload", log.Error(err))
-				http.Error(w, fmt.Sprintf("Failed to serialize payload: %s", err), http.StatusInternalServerError)
-				return
-			}
-			http.Error(w, string(data), http.StatusInternalServerError)
+			m.marshalAndRespondError(w, err)
 			return
 		}
 	}
 
 	if invalidQueues := validateQueues(req.Queues); len(invalidQueues) != 0 {
-		// TODO: should we also log errors here? Not sure
-		http.Error(w, fmt.Sprintf("Invalid queue name(s) '%s' found. Supported queue names are '%s'. ", strings.Join(invalidQueues, ", "), strings.Join(validQueues, ", ")), http.StatusBadRequest)
+		message := fmt.Sprintf("Invalid queue name(s) '%s' found. Supported queue names are '%s'. ", strings.Join(invalidQueues, ", "), strings.Join(validQueues, ", "))
+		m.logger.Error(message)
+		m.marshalAndRespondError(w, errors.New(message))
 		return
 	}
 
@@ -102,6 +96,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Memory:    req.Memory,
 		DiskSpace: req.DiskSpace,
 	}
+	logger := log.Scoped("dequeue", "Select a job record from the database.")
 	var job executortypes.Job
 	// TODO - impl fairness later
 	for _, queue := range req.Queues {
@@ -110,8 +105,9 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "batches":
 			record, dequeued, err := m.BatchesQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
 			if err != nil {
+				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
 				logger.Error("Handler returned an error", log.Error(err))
-				http.Error(w, fmt.Sprintf("Failed to dequeue from queue %s: %s", queue, errors.Wrap(err, "dbworkerstore.Dequeue").Error()), http.StatusInternalServerError)
+				m.marshalAndRespondError(w, err)
 				return
 			}
 			if !dequeued {
@@ -133,8 +129,9 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case "codeintel":
 			record, dequeued, err := m.CodeIntelQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
 			if err != nil {
+				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
 				logger.Error("Handler returned an error", log.Error(err))
-				http.Error(w, fmt.Sprintf("Failed to dequeue from queue %s: %s", queue, errors.Wrap(err, "dbworkerstore.Dequeue").Error()), http.StatusInternalServerError)
+				m.marshalAndRespondError(w, err)
 				return
 			}
 			if !dequeued {
@@ -193,4 +190,13 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		logger.Error("Failed to serialize payload", log.Error(err))
 		http.Error(w, fmt.Sprintf("Failed to serialize payload: %s", err), http.StatusInternalServerError)
 	}
+}
+
+func (m *MultiHandler) marshalAndRespondError(w http.ResponseWriter, err error) {
+	data, err := json.Marshal(errorResponse{Error: err.Error()})
+	if err != nil {
+		m.logger.Error("Failed to serialize payload", log.Error(err))
+		data = []byte(fmt.Sprintf("Failed to serialize payload: %s", err))
+	}
+	http.Error(w, string(data), http.StatusInternalServerError)
 }
