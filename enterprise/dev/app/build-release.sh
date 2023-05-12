@@ -118,9 +118,8 @@ set_platform() {
   export PLATFORM_IS_MACOS=${macos}
 }
 
-target_path=".bin/sourcegraph-backend-${PLATFORM}"
-
 set_platform
+target_path=".bin/sourcegraph-backend-${PLATFORM}"
 set_version
 bazel_build "${PLATFORM}" "${target_path}"
 if [[ ${CODESIGNING} == 1 ]]; then
