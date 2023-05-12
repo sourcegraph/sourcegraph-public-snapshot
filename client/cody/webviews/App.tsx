@@ -18,7 +18,10 @@ import { UserHistory } from './UserHistory'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<Pick<Configuration, 'debug' | 'serverEndpoint'> | null>(null)
+    const [config, setConfig] = useState<Pick<
+        Configuration,
+        'debug' | 'serverEndpoint' | 'experimentalConnectToApp'
+    > | null>(null)
     const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -31,6 +34,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
+    const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -79,6 +83,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 case 'suggestions':
                     setSuggestions(message.suggestions)
                     break
+                case 'app-state':
+                    setIsAppInstalled(message.isInstalled)
+                    break
             }
         })
 
@@ -110,7 +117,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         <div className="outer-container">
             <Header />
             {view === 'login' && (
-                <Login onLogin={onLogin} isValidLogin={isValidLogin} serverEndpoint={config?.serverEndpoint} />
+                <Login
+                    onLogin={onLogin}
+                    isValidLogin={isValidLogin}
+                    serverEndpoint={config?.serverEndpoint}
+                    isAppInstalled={isAppInstalled}
+                    vscodeAPI={vscodeAPI}
+                    enableConnectToApp={config?.experimentalConnectToApp}
+                />
             )}
             {view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
             {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}

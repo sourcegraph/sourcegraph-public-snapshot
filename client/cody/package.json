@@ -390,6 +390,10 @@
           "markdownDescription": "Enables inline chat with cody inside the code editor window",
           "default": false
         },
+        "cody.experimental.connectToApp": {
+          "type": "boolean",
+          "default": false
+        },
         "cody.customHeaders": {
           "order": 8,
           "type": "object",
