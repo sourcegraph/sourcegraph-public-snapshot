@@ -36,7 +36,9 @@ import (
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
 	// Enable tracing, at this point tracing wouldn't have been enabled yet because
 	// we run LLM-proxy without conf which means Sourcegraph tracing is not enabled.
-	shutdownTracing, err := maybeEnableTracing(ctx, obctx.Logger.Scoped("tracing", "tracing configuration"))
+	shutdownTracing, err := maybeEnableTracing(ctx,
+		obctx.Logger.Scoped("tracing", "tracing configuration"),
+		config.Trace)
 	if err != nil {
 		return errors.Wrap(err, "maybeEnableTracing")
 	}
