@@ -309,27 +309,31 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			},
 			totalEvents: 1,
 		},
+		{
+			name: "Failed to regenerate token",
+			body: `{"executorName": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
+			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
+				0: {
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"RegenerateToken: failed to regen token"}`,
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
+						jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
+						jobTokenStore.RegenerateFunc.PushReturn("", errors.New("failed to regen token"))
+					},
+					transformerFunc: func(ctx context.Context, version string, record uploadsshared.Index, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+						return executortypes.Job{ID: record.RecordID()}, nil
+					},
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						require.Len(t, mockStore.DequeueFunc.History(), 1)
+						require.Len(t, jobTokenStore.CreateFunc.History(), 1)
+						require.Len(t, jobTokenStore.RegenerateFunc.History(), 1)
+					},
+				},
+			},
+			totalEvents: 1,
+		},
 	}
-	//	{
-	//		name: "Failed to regenerate token",
-	//		body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-	//		transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
-	//			return executortypes.Job{ID: record.RecordID()}, nil
-	//		},
-	//		mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
-	//			jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
-	//			jobTokenStore.RegenerateFunc.PushReturn("", errors.New("failed to regen token"))
-	//		},
-	//		expectedStatusCode:   http.StatusInternalServerError,
-	//		expectedResponseBody: `{"error":"RegenerateToken: failed to regen token"}`,
-	//		assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			require.Len(t, mockStore.DequeueFunc.History(), 1)
-	//			require.Len(t, jobTokenStore.CreateFunc.History(), 1)
-	//			require.Len(t, jobTokenStore.RegenerateFunc.History(), 1)
-	//		},
-	//	},
-	//}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			jobTokenStore := executorstore.NewMockJobTokenStore()

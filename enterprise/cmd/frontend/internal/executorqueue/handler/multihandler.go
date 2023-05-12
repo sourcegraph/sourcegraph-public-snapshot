@@ -194,7 +194,6 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	job.Token = token
 
-	// TODO - does this actually work?
 	if err := json.NewEncoder(w).Encode(job); err != nil {
 		err = errors.Wrap(err, "Failed to serialize payload")
 		m.logger.Error(err.Error())
