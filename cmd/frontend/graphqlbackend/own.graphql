@@ -248,6 +248,7 @@ type SignalConfiguration {
     name: String!
     description: String!
     isEnabled: Boolean!
+    excludedRepoPatterns: [String!]!
 }
 
 """

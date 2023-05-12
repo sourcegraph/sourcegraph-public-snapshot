@@ -132,4 +132,5 @@ type SignalConfigurationResolver interface {
 	Name() string
 	Description() string
 	IsEnabled() bool
+	ExcludedRepoPatterns() []string
 }

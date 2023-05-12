@@ -517,8 +517,9 @@ func (r *ownResolver) SignalConfigurations(ctx context.Context) ([]graphqlbacken
 }
 
 type signalConfigResolver struct {
-	job     signalJob
-	enabled bool
+	job      signalJob
+	enabled  bool
+	excluded []string
 }
 
 func (s *signalConfigResolver) Name() string {
@@ -531,6 +532,10 @@ func (s *signalConfigResolver) Description() string {
 
 func (s *signalConfigResolver) IsEnabled() bool {
 	return s.enabled
+}
+
+func (s *signalConfigResolver) ExcludedRepoPatterns() []string {
+	return s.excluded
 }
 
 var jobs = []signalJob{{
