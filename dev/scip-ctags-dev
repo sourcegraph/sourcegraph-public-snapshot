@@ -10,9 +10,4 @@
 root="$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 TARGET=$("$root/dev/scip-ctags-install.sh" which)
 
-if [ ! -f "${TARGET}" ]; then 
-  echo TODO
-  exit 1
-else 
-  ${TARGET} "$@"
-fi
+${TARGET} "$@"
