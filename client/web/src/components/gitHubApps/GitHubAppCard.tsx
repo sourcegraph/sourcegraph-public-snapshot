@@ -1,12 +1,11 @@
 import React, { useCallback } from 'react'
 
-import { mdiDelete } from '@mdi/js'
+import { mdiDelete, mdiOpenInNew, mdiCogOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-operations'
 
-import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation } from '@sourcegraph/http-client'
-import { Button, Link, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Tooltip, Container, AnchorLink, ButtonLink } from '@sourcegraph/wildcard'
 
 import { DELETE_GITHUB_APP_BY_ID_QUERY } from './backend'
 
@@ -25,10 +24,9 @@ interface GitHubApp {
 interface GitHubAppCardProps {
     app: GitHubApp
     refetch: () => void
-    className?: string
 }
 
-export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, refetch, className = '' }) => {
+export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, refetch }) => {
     const [deleteGitHubApp, { loading }] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
         DELETE_GITHUB_APP_BY_ID_QUERY
     )
@@ -47,26 +45,29 @@ export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, refetch, clas
     }, [app, deleteGitHubApp, refetch])
 
     return (
-        <div className={classNames('d-flex align-items-center p-2 text-body text-decoration-none')}>
-            <Link
-                className={classNames('d-flex align-items-center p-2 text-body text-decoration-none', className ?? '')}
-                to={`./${app.id}`}
-            >
+        <Container className="d-flex align-items-center mb-2 p-3">
+            <Link className={classNames(styles.appLink, 'd-flex align-items-center text-decoration-none')} to={app.id}>
                 <img className={classNames('mr-3', styles.logo)} src={app.logo} alt="app logo" aria-hidden={true} />
                 <span>
-                    <H3 className="mt-1 mb-0">{app.name}</H3>
-                    <small className="text-muted">AppID: {app.appID}</small>
+                    <div className="font-weight-bold">{app.name}</div>
+                    <div className="text-muted">AppID: {app.appID}</div>
                 </span>
             </Link>
-            <span className="ml-auto mr-1">
-                Created <Timestamp date={app.createdAt} />
-            </span>
-            <Tooltip content="Delete GitHub App">
-                <Button aria-label="Delete" onClick={onDelete} disabled={loading} variant="danger" size="sm">
-                    <Icon aria-hidden={true} svgPath={mdiDelete} />
-                    {' Delete'}
-                </Button>
-            </Tooltip>
-        </div>
+            <div className="ml-auto">
+                <AnchorLink to={app.appURL} target="_blank" className="mr-3">
+                    <small>
+                        View In GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
+                    </small>
+                </AnchorLink>
+                <ButtonLink className="mr-2" aria-label="Edit" to={app.id} variant="secondary" size="sm">
+                    <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Edit
+                </ButtonLink>
+                <Tooltip content="Delete GitHub App">
+                    <Button aria-label="Delete" onClick={onDelete} disabled={loading} variant="danger" size="sm">
+                        <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
+                    </Button>
+                </Tooltip>
+            </div>
+        </Container>
     )
 }

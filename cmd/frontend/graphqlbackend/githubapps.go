@@ -6,7 +6,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // This file just contains stub GraphQL resolvers and data types for GitHub apps which merely
@@ -42,7 +44,6 @@ type GitHubAppResolver interface {
 	Logo() string
 	CreatedAt() gqlutil.DateTime
 	UpdatedAt() gqlutil.DateTime
-	ExternalServices(context.Context, *struct{ graphqlutil.ConnectionArgs }) *ComputedExternalServiceConnectionResolver
 	Installations(context.Context) []GitHubAppInstallation
 	Webhook(context.Context) WebhookResolver
 }
@@ -95,9 +96,11 @@ func (ghai GitHubAppInstallationAccount) Type() string {
 }
 
 type GitHubAppInstallation struct {
-	InstallID      int32
-	InstallURL     string
-	InstallAccount GitHubAppInstallationAccount
+	DB                      database.DB
+	InstallID               int32
+	InstallURL              string
+	InstallAccount          GitHubAppInstallationAccount
+	InstallExternalServices []*types.ExternalService
 }
 
 func (ghai GitHubAppInstallation) ID() int32 {
@@ -110,4 +113,8 @@ func (ghai GitHubAppInstallation) URL() string {
 
 func (ghai GitHubAppInstallation) Account() GitHubAppInstallationAccount {
 	return ghai.InstallAccount
+}
+
+func (ghai GitHubAppInstallation) ExternalServices(args *struct{ graphqlutil.ConnectionArgs }) *ComputedExternalServiceConnectionResolver {
+	return NewComputedExternalServiceConnectionResolver(ghai.DB, ghai.InstallExternalServices, args.ConnectionArgs)
 }
