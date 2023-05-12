@@ -73,6 +73,82 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "walkthroughs": [
+      {
+        "id": "sample",
+        "title": "Welcome do Cody",
+        "description": "Discover how Cody can help you",
+        "steps": [
+          {
+            "id": "whoCodyWorks",
+            "title": "How Cody Works",
+            "description": "Understad how cody works and how it understands your code base",
+            "media": {
+              "image": "media/image.png",
+              "altText": "Empty image"
+            },
+            "completionEvents": [
+              "onCommand:getting-started-sample.runCommand"
+            ]
+          },
+          {
+            "id": "chatInterface",
+            "title": "Asking Cody",
+            "description": "This step will change a setting and check off when the setting has changed\n[Change Setting](command:getting-started-sample.changeSetting)",
+            "media": {
+              "markdown": "media/markdown.md"
+            },
+            "completionEvents": [
+              "onSettingChanged:getting-started-sample.sampleSetting"
+            ]
+          },
+          {
+            "id": "usingRecipes",
+            "title": "Using recipes",
+            "description": "This step will change a setting and check off when the setting has changed\n[Change Setting](command:getting-started-sample.changeSetting)",
+            "media": {
+              "markdown": "media/markdown.md"
+            },
+            "completionEvents": [
+              "onSettingChanged:getting-started-sample.sampleSetting"
+            ]
+          },
+          {
+            "id": "usingRecipes",
+            "title": "Auto completions",
+            "description": "This step will change a setting and check off when the setting has changed\n[Change Setting](command:getting-started-sample.changeSetting)",
+            "media": {
+              "markdown": "media/markdown.md"
+            },
+            "completionEvents": [
+              "onSettingChanged:getting-started-sample.sampleSetting"
+            ]
+          },
+          {
+            "id": "fixup",
+            "title": "Using fixup",
+            "description": "This step will change a setting and check off when the setting has changed\n[Change Setting](command:getting-started-sample.changeSetting)",
+            "media": {
+              "markdown": "media/markdown.md"
+            },
+            "completionEvents": [
+              "onSettingChanged:getting-started-sample.sampleSetting"
+            ]
+          },
+          {
+            "id": "learningMore",
+            "title": "Learn More",
+            "description": "This step will change a setting and check off when the setting has changed\n[Change Setting](command:getting-started-sample.changeSetting)",
+            "media": {
+              "markdown": "media/markdown.md"
+            },
+            "completionEvents": [
+              "onSettingChanged:getting-started-sample.sampleSetting"
+            ]
+          }
+        ]
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
