@@ -61,6 +61,7 @@ type dequeueRequest struct {
 }
 
 func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	logger := log.Scoped("dequeue", "Select a job record from the database.")
 	var req dequeueRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		// TODO: should we also log errors here? Not sure
@@ -79,7 +80,13 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		version2Supported, err = api.CheckSourcegraphVersion(req.Version, "4.3.0-0", "2022-11-24")
 		if err != nil {
 			// TODO: should we also log errors here? Not sure
-			http.Error(w, fmt.Sprintf("Failed to check Sourcegraph version: %s", err.Error()), http.StatusInternalServerError)
+			data, err := json.Marshal(errorResponse{Error: err.Error()})
+			if err != nil {
+				logger.Error("Failed to serialize payload", log.Error(err))
+				http.Error(w, fmt.Sprintf("Failed to serialize payload: %s", err), http.StatusInternalServerError)
+				return
+			}
+			http.Error(w, string(data), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -96,7 +103,6 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		DiskSpace: req.DiskSpace,
 	}
 	var job executortypes.Job
-	logger := log.Scoped("dequeue", "Select a job record from the database.")
 	// TODO - impl fairness later
 	for _, queue := range req.Queues {
 		// TODO: basically replicating error handling of handler.dequeue() here
