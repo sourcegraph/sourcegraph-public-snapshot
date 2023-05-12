@@ -12,8 +12,6 @@ import { PageTitle } from '../PageTitle'
 import { GITHUB_APPS_QUERY } from './backend'
 import { GitHubAppCard } from './GitHubAppCard'
 
-import styles from './GitHubAppCard.module.scss'
-
 export const GitHubAppsPage: React.FC = () => {
     const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {})
     const gitHubApps = useMemo(() => data?.gitHubApps?.nodes ?? [], [data])
@@ -44,9 +42,7 @@ export const GitHubAppsPage: React.FC = () => {
                     {loading && !data && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="GitHub Apps">
                         {gitHubApps?.map(app => (
-                            <li key={app.id} className={styles.listNode}>
-                                <GitHubAppCard app={app} refetch={reloadApps} />
-                            </li>
+                            <GitHubAppCard key={app.id} app={app} refetch={reloadApps} />
                         ))}
                     </ConnectionList>
                 </ConnectionContainer>
