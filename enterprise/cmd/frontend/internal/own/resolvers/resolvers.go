@@ -259,28 +259,6 @@ func (r *ownResolver) ownershipConnection(
 	args graphqlbackend.ListOwnershipArgs,
 	ownerships []*ownershipResolver,
 ) (*ownershipConnectionResolver, error) {
-	// 0. Union ownerships by identifier
-	ownersByID := map[string][]*ownershipResolver{}
-	for _, o := range ownerships {
-		id := o.resolvedOwner.Identifier()
-		os := ownersByID[id]
-		ownersByID[id] = append(os, o)
-	}
-	ownerships = []*ownershipResolver{}
-	for _, os := range ownersByID {
-		var merged *ownershipResolver
-		for _, o := range os {
-			if merged == nil {
-				merged = o
-			} else {
-				merged.reasons = append(merged.reasons, o.reasons...)
-			}
-		}
-		if merged != nil {
-			ownerships = append(ownerships, merged)
-		}
-	}
-
 	// 1. Order ownerships for deterministic pagination:
 
 	// TODO(#51636): Introduce deterministic ordering based on priority of signals.
@@ -371,7 +349,8 @@ func (r *ownershipResolver) order() int {
 			codeownersCount++
 		}
 	}
-	return 10*codeownersCount + reasonsCount
+	// Smaller numbers are ordered in front, so take negative score.
+	return -10*codeownersCount + reasonsCount
 }
 
 type ownerResolver struct {
