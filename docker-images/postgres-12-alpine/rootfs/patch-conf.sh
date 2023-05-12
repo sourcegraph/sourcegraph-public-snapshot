@@ -3,7 +3,9 @@
 # In Wolfi, unix_socket_directories defaults to /tmp. In previous Alpine images, this defaulted to /var/run/postgres.
 # /tmp may not be writable, so any existing postgresql.conf configs that predate the Wolfi migration should be patched to update this setting.
 
-conf_file="/data/pgdata-12/postgresql.conf"
+CONFIG_DIR=${PGDATA:-/data/pgdata-12}
+
+conf_file="$CONFIG_DIR/postgresql.conf"
 new_socket_dir="/var/run/postgres"
 
 # Check if the parameter already exists in the file
