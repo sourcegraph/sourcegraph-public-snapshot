@@ -1,9 +1,20 @@
 .logo {
     /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-    height: 24px;
+    height: 32px;
     /* stylelint-disable-next-line declaration-property-unit-allowed-list */
-    width: 24px;
+    width: 32px;
     border-radius: 100%;
+
+    h2 & {
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        height: 24px;
+        /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+        width: 24px;
+    }
+}
+
+.app-link {
+    color: var(--body-color)
 }
 
 .installation {
