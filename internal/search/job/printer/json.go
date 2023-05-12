@@ -62,7 +62,7 @@ func (n node) MarshalJSON() ([]byte, error) {
 func toNode(j job.Describer, v job.Verbosity) node {
 	return node{
 		name: j.Name(),
-		tags: j.Fields(v),
+		tags: j.Attributes(v),
 		children: func() []node {
 			childJobs := j.Children()
 			res := make([]node, 0, len(childJobs))

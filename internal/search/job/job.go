@@ -55,7 +55,7 @@ type Describer interface {
 	Children() []Describer
 
 	// Fields is the set of fields that describe the job
-	Fields(Verbosity) []attribute.KeyValue
+	Attributes(Verbosity) []attribute.KeyValue
 }
 
 type Verbosity int

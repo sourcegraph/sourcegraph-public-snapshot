@@ -28,7 +28,7 @@ func (j *sanitizeJob) Name() string {
 	return "SanitizeJob"
 }
 
-func (j *sanitizeJob) Fields(job.Verbosity) []attribute.KeyValue {
+func (j *sanitizeJob) Attributes(job.Verbosity) []attribute.KeyValue {
 	return nil
 }
 

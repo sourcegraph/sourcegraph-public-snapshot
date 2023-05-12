@@ -87,7 +87,7 @@ func (s *selectOwnersJob) Name() string {
 	return "SelectOwnersSearchJob"
 }
 
-func (s *selectOwnersJob) Fields(_ job.Verbosity) []attribute.KeyValue { return nil }
+func (s *selectOwnersJob) Attributes(_ job.Verbosity) []attribute.KeyValue { return nil }
 
 func (s *selectOwnersJob) Children() []job.Describer {
 	return []job.Describer{s.child}

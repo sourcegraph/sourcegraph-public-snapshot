@@ -55,7 +55,7 @@ func (l *LimitJob) Name() string {
 	return "LimitJob"
 }
 
-func (l *LimitJob) Fields(v job.Verbosity) (res []attribute.KeyValue) {
+func (l *LimitJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough

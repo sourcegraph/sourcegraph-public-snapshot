@@ -69,7 +69,7 @@ func (a *AndJob) Name() string {
 	return "AndJob"
 }
 
-func (a *AndJob) Fields(job.Verbosity) []attribute.KeyValue { return nil }
+func (a *AndJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
 
 func (a *AndJob) Children() []job.Describer {
 	res := make([]job.Describer, len(a.children))
@@ -175,7 +175,7 @@ func (j *OrJob) Name() string {
 	return "OrJob"
 }
 
-func (j *OrJob) Fields(job.Verbosity) []attribute.KeyValue { return nil }
+func (j *OrJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
 
 func (j *OrJob) Children() []job.Describer {
 	res := make([]job.Describer, len(j.children))

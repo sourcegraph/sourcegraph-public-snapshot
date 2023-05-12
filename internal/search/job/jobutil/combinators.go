@@ -42,7 +42,7 @@ func (s *SequentialJob) Name() string {
 	return "SequentialJob"
 }
 
-func (s *SequentialJob) Fields(v job.Verbosity) (res []attribute.KeyValue) {
+func (s *SequentialJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
@@ -134,7 +134,7 @@ func (p *ParallelJob) Name() string {
 	return "ParallelJob"
 }
 
-func (p *ParallelJob) Fields(job.Verbosity) []attribute.KeyValue { return nil }
+func (p *ParallelJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
 func (p *ParallelJob) Children() []job.Describer {
 	res := make([]job.Describer, len(p.children))
 	for i := range p.children {
@@ -201,7 +201,7 @@ func (t *TimeoutJob) Name() string {
 	return "TimeoutJob"
 }
 
-func (t *TimeoutJob) Fields(v job.Verbosity) (res []attribute.KeyValue) {
+func (t *TimeoutJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
@@ -233,7 +233,7 @@ func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*s
 	return nil, nil
 }
 
-func (e *NoopJob) Name() string                              { return "NoopJob" }
-func (e *NoopJob) Fields(job.Verbosity) []attribute.KeyValue { return nil }
-func (e *NoopJob) Children() []job.Describer                 { return nil }
-func (e *NoopJob) MapChildren(job.MapFunc) job.Job           { return e }
+func (e *NoopJob) Name() string                                  { return "NoopJob" }
+func (e *NoopJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
+func (e *NoopJob) Children() []job.Describer                     { return nil }
+func (e *NoopJob) MapChildren(job.MapFunc) job.Job               { return e }

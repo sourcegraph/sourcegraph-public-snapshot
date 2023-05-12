@@ -72,7 +72,7 @@ func (s *SymbolSearchJob) Name() string {
 	return "SearcherSymbolSearchJob"
 }
 
-func (s *SymbolSearchJob) Fields(v job.Verbosity) (res []attribute.KeyValue) {
+func (s *SymbolSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough

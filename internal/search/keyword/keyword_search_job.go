@@ -40,7 +40,7 @@ func (j *keywordSearchJob) Name() string {
 	return "KeywordSearchJob"
 }
 
-func (j *keywordSearchJob) Fields(v job.Verbosity) (res []attribute.KeyValue) {
+func (j *keywordSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough

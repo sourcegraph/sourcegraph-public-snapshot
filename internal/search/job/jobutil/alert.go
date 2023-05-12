@@ -75,7 +75,7 @@ func (j *alertJob) Name() string {
 	return "AlertJob"
 }
 
-func (j *alertJob) Fields(v job.Verbosity) (res []attribute.KeyValue) {
+func (j *alertJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,

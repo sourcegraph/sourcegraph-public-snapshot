@@ -284,7 +284,7 @@ func (j *fileContainsFilterJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
-func (j *fileContainsFilterJob) Fields(v job.Verbosity) (res []attribute.KeyValue) {
+func (j *fileContainsFilterJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough

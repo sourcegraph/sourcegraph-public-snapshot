@@ -59,7 +59,7 @@ func (s *subRepoPermsFilterJob) Name() string {
 	return "SubRepoPermsFilterJob"
 }
 
-func (s *subRepoPermsFilterJob) Fields(job.Verbosity) []attribute.KeyValue { return nil }
+func (s *subRepoPermsFilterJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
 
 func (s *subRepoPermsFilterJob) Children() []job.Describer {
 	return []job.Describer{s.child}

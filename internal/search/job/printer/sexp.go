@@ -35,7 +35,7 @@ func SexpFormat(j job.Describer, verbosity job.Verbosity, sep, indent string) st
 		if j == nil {
 			return
 		}
-		tags := j.Fields(verbosity)
+		tags := j.Attributes(verbosity)
 		children := j.Children()
 		if len(tags) == 0 && len(children) == 0 {
 			b.WriteString(trimmedUpperName(j.Name()))

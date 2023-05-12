@@ -54,7 +54,7 @@ func (l *LogJob) Name() string {
 	return "LogJob"
 }
 
-func (l *LogJob) Fields(v job.Verbosity) (res []attribute.KeyValue) { return nil }
+func (l *LogJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) { return nil }
 
 func (l *LogJob) Children() []job.Describer {
 	return []job.Describer{l.child}

@@ -77,7 +77,7 @@ func (s *fileHasOwnersJob) Name() string {
 	return "FileHasOwnersFilterJob"
 }
 
-func (s *fileHasOwnersJob) Fields(v job.Verbosity) (res []attribute.KeyValue) {
+func (s *fileHasOwnersJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
