@@ -3,20 +3,12 @@ import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { mdiCog, mdiDelete, mdiGithub, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate, useParams } from 'react-router-dom'
-import {
-    ConnectWebhookToGitHubAppResult,
-    ConnectWebhookToGitHubAppVariables,
-    DeleteGitHubAppResult,
-    DeleteGitHubAppVariables,
-    WebhooksListResult,
-    WebhooksListVariables,
-} from 'src/graphql-operations'
+import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-operations'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -31,18 +23,15 @@ import {
     Link,
     Text,
     Tooltip,
-    H3,
-    Select,
 } from '@sourcegraph/wildcard'
 
 import { GitHubAppByIDResult, GitHubAppByIDVariables } from '../../graphql-operations'
-import { WEBHOOKS } from '../../site-admin/backend'
 import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
 import { ConnectionList, SummaryContainer, ConnectionSummary } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
 import { AuthProviderMessage } from './AuthProviderMessage'
-import { GITHUB_APP_BY_ID_QUERY, DELETE_GITHUB_APP_BY_ID_QUERY, CONNECT_WEBHOOK_TO_GITHUB_APP_QUERY } from './backend'
+import { GITHUB_APP_BY_ID_QUERY, DELETE_GITHUB_APP_BY_ID_QUERY } from './backend'
 
 import styles from './GitHubAppCard.module.scss'
 
@@ -63,28 +52,14 @@ export const GitHubAppPage: FC<Props> = ({
         telemetryService.logPageView('SiteAdminGitHubApp')
     }, [telemetryService])
     const [fetchError, setError] = useState<ErrorLike>()
-    const [selectedWebhook, setSelectedWebhook] = useState<string>('')
 
     const [deleteGitHubApp, { loading: deleteLoading }] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
         DELETE_GITHUB_APP_BY_ID_QUERY
     )
 
-    const [connectWebhook, { loading: connectWebhookLoading }] = useMutation<
-        ConnectWebhookToGitHubAppResult,
-        ConnectWebhookToGitHubAppVariables
-    >(CONNECT_WEBHOOK_TO_GITHUB_APP_QUERY)
-
-    const { data, loading, error, refetch } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(
-        GITHUB_APP_BY_ID_QUERY,
-        {
-            variables: { id: appID ?? '' },
-        }
-    )
-
-    const { data: webhooks, loading: webhooksLoading } = useQuery<WebhooksListResult, WebhooksListVariables>(
-        WEBHOOKS,
-        {}
-    )
+    const { data, loading, error } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(GITHUB_APP_BY_ID_QUERY, {
+        variables: { id: appID ?? '' },
+    })
 
     const app = useMemo(() => data?.gitHubApp, [data])
 
@@ -100,13 +75,6 @@ export const GitHubAppPage: FC<Props> = ({
             navigate('/site-admin/github-apps')
         }
     }, [app, deleteGitHubApp, navigate])
-
-    const handleWebhookChange = useCallback(
-        (event: React.ChangeEvent<HTMLSelectElement>) => {
-            setSelectedWebhook(event.target.value)
-        },
-        [setSelectedWebhook]
-    )
 
     if (!appID) {
         return null
@@ -186,57 +154,6 @@ export const GitHubAppPage: FC<Props> = ({
                         </span>
                     </span>
                     <AuthProviderMessage app={app} id={appID} />
-                    <H3>Webhooks</H3>
-                    {app.webhook ? (
-                        <Link to={`/site-admin/webhooks/incoming/${app.webhook.id}`}>View webhook logs</Link>
-                    ) : (
-                        <>
-                            <Text>
-                                This GitHub App does not have Webhooks set up. Connect a webhook from the list below, or{' '}
-                                <Link to="/site-admin/webhooks/incoming">create a new webhook</Link>.
-                            </Text>
-                            {webhooksLoading && <LoadingSpinner />}
-                            {!webhooksLoading && webhooks && webhooks.webhooks.nodes.length > 0 ? (
-                                <span className="d-flex mb-3">
-                                    <Select
-                                        id="webhookSelector"
-                                        aria-label="Available webhooks"
-                                        value={selectedWebhook}
-                                        onChange={handleWebhookChange}
-                                    >
-                                        <option value="">Select a webhook</option>
-                                        {webhooks?.webhooks.nodes
-                                            .filter(
-                                                item =>
-                                                    item.codeHostKind === ExternalServiceKind.GITHUB &&
-                                                    item.codeHostURN === app.baseURL + '/'
-                                            )
-                                            .map(item => (
-                                                <option key={item.id} value={item.id}>
-                                                    {item.name}
-                                                </option>
-                                            ))}
-                                    </Select>
-                                    <div>
-                                        <Button
-                                            variant="primary"
-                                            className="ml-2"
-                                            size="sm"
-                                            disabled={selectedWebhook === '' || connectWebhookLoading}
-                                            onClick={async () => {
-                                                await connectWebhook({
-                                                    variables: { gitHubApp: app?.id ?? '', webhook: selectedWebhook },
-                                                })
-                                                await refetch({ id: appID ?? '' })
-                                            }}
-                                        >
-                                            Connect webhook
-                                        </Button>
-                                    </div>
-                                </span>
-                            ) : null}
-                        </>
-                    )}
                     <hr />
 
                     <div className="mt-4">

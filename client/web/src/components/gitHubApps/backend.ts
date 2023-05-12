@@ -99,14 +99,6 @@ export const DELETE_GITHUB_APP_BY_ID_QUERY = gql`
     }
 `
 
-export const CONNECT_WEBHOOK_TO_GITHUB_APP_QUERY = gql`
-    mutation ConnectWebhookToGitHubApp($gitHubApp: ID!, $webhook: ID!) {
-        connectWebhookToGitHubApp(gitHubApp: $gitHubApp, webhook: $webhook) {
-            alwaysNil
-        }
-    }
-`
-
 export const useFetchGithubAppForES = (
     externalService?: ExternalServiceFieldsWithConfig
 ): QueryResult<GitHubAppByAppIDResult, GitHubAppByAppIDVariables> =>

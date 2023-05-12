@@ -9,12 +9,18 @@ import { PageTitle } from '../PageTitle'
 
 export interface AddGitHubPageProps extends TelemetryProps {}
 
+interface stateResponse {
+    state: string
+    webhookUUID: string
+}
+
 /**
  * Page for choosing a service kind and variant to add, among the available options.
  */
 export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
     const { search } = useLocation()
     const ref = useRef<HTMLFormElement>(null)
+    const formInput = useRef<HTMLInputElement>(null)
     const [name, setName] = useState<string>('Sourcegraph')
     const [url, setUrl] = useState<string>('https://github.com')
     const [org, setOrg] = useState<string>('')
@@ -28,35 +34,39 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
     }
 
     const baseUrl = window.location.origin
-    const manifest = JSON.stringify({
-        name: name.trim(),
-        url: baseUrl,
-        hook_attributes: {
-            url: baseUrl,
-        },
-        redirect_url: new URL('/.auth/githubapp/redirect', baseUrl).href,
-        setup_url: new URL('/.auth/githubapp/setup', baseUrl).href,
-        callback_urls: [new URL('/.auth/github/callback', baseUrl).href],
-        setup_on_update: true,
-        public: false,
-        default_permissions: {
-            contents: 'read',
-            emails: 'read',
-            members: 'read',
-            metadata: 'read',
-        },
-        default_events: [
-            'repository',
-            'public',
-            'member',
-            'membership',
-            'organization',
-            'team',
-            'team_add',
-            'meta',
-            'push',
-        ],
-    })
+    const getManifest = useCallback(
+        (name: string, webhookURL: string): string =>
+            JSON.stringify({
+                name: name.trim(),
+                url: baseUrl,
+                hook_attributes: {
+                    url: webhookURL,
+                },
+                redirect_url: new URL('/.auth/githubapp/redirect', baseUrl).href,
+                setup_url: new URL('/.auth/githubapp/setup', baseUrl).href,
+                callback_urls: [new URL('/.auth/github/callback', baseUrl).href],
+                setup_on_update: true,
+                public: false,
+                default_permissions: {
+                    contents: 'read',
+                    emails: 'read',
+                    members: 'read',
+                    metadata: 'read',
+                },
+                default_events: [
+                    'repository',
+                    'public',
+                    'member',
+                    'membership',
+                    'organization',
+                    'team',
+                    'team_add',
+                    'meta',
+                    'push',
+                ],
+            }),
+        [baseUrl]
+    )
 
     const createActionUrl = useCallback(
         (state: string): string => {
@@ -74,26 +84,28 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
     )
 
     const submitForm = useCallback(
-        (state: string) => {
-            if (state && ref.current) {
+        (state: string, webhookURL: string, name: string) => {
+            if (state && ref.current && formInput.current) {
                 const actionUrl = createActionUrl(state)
                 ref.current.action = actionUrl
+                formInput.current.value = getManifest(webhookURL, name)
                 ref.current.submit()
             }
         },
-        [createActionUrl]
+        [createActionUrl, getManifest]
     )
 
     const createState = useCallback(async () => {
         setError(null)
         try {
-            const response = await fetch('/.auth/githubapp/state')
-            const state = await response.text()
-            submitForm(state)
+            const response = await fetch(`/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}`)
+            const state: stateResponse = await response.json()
+            const webhookURL = new URL(`/.api/webhooks/${state.webhookUUID}`, baseUrl).href
+            submitForm(state.state, webhookURL, name)
         } catch (_error) {
             setError(_error)
         }
-    }, [submitForm])
+    }, [submitForm, name, url, baseUrl])
 
     const handleNameChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,7 +167,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form ref={ref} method="post">
                     {/* eslint-disable-next-line react/forbid-elements */}
-                    <input name="manifest" value={manifest} onChange={() => {}} hidden={true} />
+                    <input ref={formInput} name="manifest" onChange={() => {}} hidden={true} />
                 </form>
             </Container>
         </>
