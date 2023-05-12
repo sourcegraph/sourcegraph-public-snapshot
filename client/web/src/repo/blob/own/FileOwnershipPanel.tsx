@@ -67,9 +67,14 @@ export const FileOwnershipPanel: React.FunctionComponent<
         data.node.commit?.blob &&
         data.node.commit.blob.ownership.nodes.length > 0
     ) {
+        const nodes = data.node.commit.blob.ownership.nodes
+        const owners = nodes.filter(ownership =>
+            ownership.reasons.some(reason => reason.__typename === 'CodeownersFileEntry')
+        )
         return (
             <div className={styles.contents}>
-                <OwnExplanation owners={data.node.commit.blob.ownership.nodes.map(ownership => ownership.owner)} />
+                <OwnExplanation owners={nodes.map(ownership => ownership.owner)} />
+                {owners.length === 0 && <Alert variant="info">No ownership data for this file.</Alert>}
                 <Accordion
                     as="table"
                     collapsible={true}
@@ -85,7 +90,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
                             <th>Reason</th>
                         </tr>
                     </thead>
-                    {data.node.commit.blob?.ownership.nodes.map((ownership, index) => (
+                    {nodes.map((ownership, index) => (
                         <FileOwnershipEntry
                             // This list is not expected to change, so it's safe to use the index as a key.
                             // eslint-disable-next-line react/no-array-index-key
