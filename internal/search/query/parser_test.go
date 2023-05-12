@@ -782,7 +782,7 @@ func TestParseStandard(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test(`"veneto"`)))
 	})
 
-	t.Run("parens around /.../", func(t *testing.T) {
+	t.Run("parens around slash...slash", func(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test("(sancerre and /pouilly-fume/)")))
 	})
 }
