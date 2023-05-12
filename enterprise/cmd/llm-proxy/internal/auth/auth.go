@@ -22,17 +22,21 @@ type Authenticator struct {
 var _ http.Handler = &Authenticator{}
 
 func (a *Authenticator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	typ := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
-	if len(typ) != 2 {
-		response.JSONError(a.Logger, w, http.StatusBadRequest, errors.New("token type missing in Authorization header"))
-		return
-	}
-	if strings.ToLower(typ[0]) != "bearer" {
-		response.JSONError(a.Logger, w, http.StatusBadRequest, errors.Newf("invalid token type %s", typ[0]))
-		return
-	}
+	var token string
 
-	token := r.Header.Get("Authorization")[len("Bearer "):]
+	if authHeader := r.Header.Get("Authorization"); authHeader != "" {
+		typ := strings.SplitN(authHeader, " ", 2)
+		if len(typ) != 2 {
+			response.JSONError(a.Logger, w, http.StatusBadRequest, errors.New("token type missing in Authorization header"))
+			return
+		}
+		if strings.ToLower(typ[0]) != "bearer" {
+			response.JSONError(a.Logger, w, http.StatusBadRequest, errors.Newf("invalid token type %s", typ[0]))
+			return
+		}
+
+		token = typ[1]
+	}
 
 	act, err := a.Sources.Get(r.Context(), token)
 	if err != nil {
