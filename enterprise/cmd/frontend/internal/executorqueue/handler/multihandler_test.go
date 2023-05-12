@@ -186,6 +186,20 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			expectedStatusCode: http.StatusNoContent,
 		},
 		{
+			name: "Invalid queue name",
+			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB", "queues": ["invalidqueue"]}`,
+			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
+				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+			},
+			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
+				0: {
+					expectedStatusCode:   http.StatusBadRequest,
+					expectedResponseBody: `{"error":"Invalid queue name(s) 'invalidqueue' found. Supported queue names are 'batches, codeintel'."}`,
+				},
+			},
+		},
+		{
 			name: "Invalid version",
 			body: `{"executorName": "test-executor", "version":"\n1.2", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
@@ -194,7 +208,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			},
 			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
 				0: {
-					expectedStatusCode:   http.StatusInternalServerError,
+					expectedStatusCode:   http.StatusBadRequest,
 					expectedResponseBody: `{"error":"Invalid Semantic Version"}`,
 				},
 			},
@@ -418,26 +432,26 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 
 			if test.expectedStatusCode != 0 {
 				evaluateEvent(test.body, test.expectedStatusCode, "", t, router)
-			}
-
-			for eventIndex := 0; eventIndex < len(test.batchesDequeueEvents)+len(test.codeintelDequeueEvents); eventIndex++ {
-				if _, ok := test.codeintelDequeueEvents[eventIndex]; ok {
-					event := test.codeintelDequeueEvents[eventIndex]
-					if event.transformerFunc != nil {
-						mh.CodeIntelQueueHandler.RecordTransformer = event.transformerFunc
+			} else {
+				for eventIndex := 0; eventIndex < len(test.batchesDequeueEvents)+len(test.codeintelDequeueEvents); eventIndex++ {
+					if _, ok := test.codeintelDequeueEvents[eventIndex]; ok {
+						event := test.codeintelDequeueEvents[eventIndex]
+						if event.transformerFunc != nil {
+							mh.CodeIntelQueueHandler.RecordTransformer = event.transformerFunc
+						}
+						evaluateEvent(test.body, event.expectedStatusCode, event.expectedResponseBody, t, router)
+					} else {
+						event := test.batchesDequeueEvents[eventIndex]
+						if event.transformerFunc != nil {
+							mh.BatchesQueueHandler.RecordTransformer = event.transformerFunc
+						}
+						evaluateEvent(test.body, event.expectedStatusCode, event.expectedResponseBody, t, router)
 					}
-					evaluateEvent(test.body, event.expectedStatusCode, event.expectedResponseBody, t, router)
-				} else {
-					event := test.batchesDequeueEvents[eventIndex]
-					if event.transformerFunc != nil {
-						mh.BatchesQueueHandler.RecordTransformer = event.transformerFunc
-					}
-					evaluateEvent(test.body, event.expectedStatusCode, event.expectedResponseBody, t, router)
 				}
-			}
 
-			if test.assertionFunc != nil {
-				test.assertionFunc(t, codeIntelMockStore, batchesMockStore, jobTokenStore)
+				if test.assertionFunc != nil {
+					test.assertionFunc(t, codeIntelMockStore, batchesMockStore, jobTokenStore)
+				}
 			}
 		})
 	}

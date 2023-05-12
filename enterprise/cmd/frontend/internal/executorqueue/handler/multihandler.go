@@ -65,7 +65,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		err = errors.Wrap(err, fmt.Sprintf("Failed to unmarshal payload"))
 		m.logger.Error(err.Error())
-		m.marshalAndRespondError(w, err)
+		m.marshalAndRespondError(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -79,15 +79,15 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var err error
 		version2Supported, err = api.CheckSourcegraphVersion(req.Version, "4.3.0-0", "2022-11-24")
 		if err != nil {
-			m.marshalAndRespondError(w, err)
+			m.marshalAndRespondError(w, err, http.StatusBadRequest)
 			return
 		}
 	}
 
 	if invalidQueues := validateQueues(req.Queues); len(invalidQueues) != 0 {
-		message := fmt.Sprintf("Invalid queue name(s) '%s' found. Supported queue names are '%s'. ", strings.Join(invalidQueues, ", "), strings.Join(validQueues, ", "))
+		message := fmt.Sprintf("Invalid queue name(s) '%s' found. Supported queue names are '%s'.", strings.Join(invalidQueues, ", "), strings.Join(validQueues, ", "))
 		m.logger.Error(message)
-		m.marshalAndRespondError(w, errors.New(message))
+		m.marshalAndRespondError(w, errors.New(message), http.StatusBadRequest)
 		return
 	}
 
@@ -107,7 +107,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
 				logger.Error("Handler returned an error", log.Error(err))
-				m.marshalAndRespondError(w, err)
+				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
 				return
 			}
 			if !dequeued {
@@ -125,7 +125,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						log.Error(markErr))
 				}
 				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
-				m.marshalAndRespondError(w, err)
+				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
 				return
 			}
 		case "codeintel":
@@ -133,7 +133,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
 				logger.Error("Handler returned an error", log.Error(err))
-				m.marshalAndRespondError(w, err)
+				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
 				return
 			}
 			if !dequeued {
@@ -150,7 +150,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						log.Error(markErr))
 				}
 				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
-				m.marshalAndRespondError(w, err)
+				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
 				return
 			}
 		}
@@ -181,13 +181,13 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				err = errors.Wrap(err, "RegenerateToken")
 				logger.Error(err.Error())
-				m.marshalAndRespondError(w, err)
+				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
 				return
 			}
 		} else {
 			err = errors.Wrap(err, "CreateToken")
 			logger.Error(err.Error())
-			m.marshalAndRespondError(w, err)
+			m.marshalAndRespondError(w, err, http.StatusInternalServerError)
 			return
 		}
 	}
@@ -196,15 +196,15 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(job); err != nil {
 		err = errors.Wrap(err, "Failed to serialize payload")
 		m.logger.Error(err.Error())
-		m.marshalAndRespondError(w, err)
+		m.marshalAndRespondError(w, err, http.StatusInternalServerError)
 	}
 }
 
-func (m *MultiHandler) marshalAndRespondError(w http.ResponseWriter, err error) {
+func (m *MultiHandler) marshalAndRespondError(w http.ResponseWriter, err error, statusCode int) {
 	data, err := json.Marshal(errorResponse{Error: err.Error()})
 	if err != nil {
 		m.logger.Error("Failed to serialize payload", log.Error(err))
 		data = []byte(fmt.Sprintf("Failed to serialize payload: %s", err))
 	}
-	http.Error(w, string(data), http.StatusInternalServerError)
+	http.Error(w, string(data), statusCode)
 }
