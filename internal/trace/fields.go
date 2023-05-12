@@ -24,17 +24,6 @@ func Stringer(key string, v fmt.Stringer) log.Field {
 	})
 }
 
-// Scoped is an opentracing log.Field which is a LazyLogger. It will log each
-// field with a key scoped by the given scope like `scope.key`.
-func Scoped(scope string, fields ...log.Field) log.Field {
-	return log.Lazy(func(fv log.Encoder) {
-		enc := &scopedEncoder{scope: scope, enc: fv}
-		for _, field := range fields {
-			field.Marshal(enc)
-		}
-	})
-}
-
 // Strings is an opentracing log.Field which is a LazyLogger. It will log each
 // string as key.$i.
 func Strings(key string, values []string) log.Field {

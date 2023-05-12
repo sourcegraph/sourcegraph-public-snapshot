@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/conc/pool"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -21,7 +21,6 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -126,19 +125,19 @@ func (j SearchJob) Name() string {
 	return "CommitSearchJob"
 }
 
-func (j *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
+func (j *SearchJob) Fields(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
+			attribute.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
 		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Stringer("query", j.Query),
-			trace.Scoped("repoOpts", j.RepoOpts.Tags()...),
-			log.Bool("diff", j.Diff),
-			log.Int("limit", j.Limit),
+			attribute.Stringer("query", j.Query),
+			attribute.Stringer("repoOpts", &j.RepoOpts),
+			attribute.Bool("diff", j.Diff),
+			attribute.Int("limit", j.Limit),
 		)
 	}
 	return res

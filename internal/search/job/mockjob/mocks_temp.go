@@ -10,7 +10,7 @@ import (
 	"context"
 	"sync"
 
-	log "github.com/opentracing/opentracing-go/log"
+	attribute "go.opentelemetry.io/otel/attribute"
 	search "github.com/sourcegraph/sourcegraph/internal/search"
 	job "github.com/sourcegraph/sourcegraph/internal/search/job"
 	streaming "github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -47,7 +47,7 @@ func NewMockJob() *MockJob {
 			},
 		},
 		FieldsFunc: &JobFieldsFunc{
-			defaultHook: func(job.Verbosity) (r0 []log.Field) {
+			defaultHook: func(job.Verbosity) (r0 []attribute.KeyValue) {
 				return
 			},
 		},
@@ -79,7 +79,7 @@ func NewStrictMockJob() *MockJob {
 			},
 		},
 		FieldsFunc: &JobFieldsFunc{
-			defaultHook: func(job.Verbosity) []log.Field {
+			defaultHook: func(job.Verbosity) []attribute.KeyValue {
 				panic("unexpected invocation of MockJob.Fields")
 			},
 		},
@@ -224,15 +224,15 @@ func (c JobChildrenFuncCall) Results() []interface{} {
 // JobFieldsFunc describes the behavior when the Fields method of the parent
 // MockJob instance is invoked.
 type JobFieldsFunc struct {
-	defaultHook func(job.Verbosity) []log.Field
-	hooks       []func(job.Verbosity) []log.Field
+	defaultHook func(job.Verbosity) []attribute.KeyValue
+	hooks       []func(job.Verbosity) []attribute.KeyValue
 	history     []JobFieldsFuncCall
 	mutex       sync.Mutex
 }
 
 // Fields delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockJob) Fields(v0 job.Verbosity) []log.Field {
+func (m *MockJob) Fields(v0 job.Verbosity) []attribute.KeyValue {
 	r0 := m.FieldsFunc.nextHook()(v0)
 	m.FieldsFunc.appendCall(JobFieldsFuncCall{v0, r0})
 	return r0
@@ -240,7 +240,7 @@ func (m *MockJob) Fields(v0 job.Verbosity) []log.Field {
 
 // SetDefaultHook sets function that is called when the Fields method of the
 // parent MockJob instance is invoked and the hook queue is empty.
-func (f *JobFieldsFunc) SetDefaultHook(hook func(job.Verbosity) []log.Field) {
+func (f *JobFieldsFunc) SetDefaultHook(hook func(job.Verbosity) []attribute.KeyValue) {
 	f.defaultHook = hook
 }
 
@@ -248,7 +248,7 @@ func (f *JobFieldsFunc) SetDefaultHook(hook func(job.Verbosity) []log.Field) {
 // Fields method of the parent MockJob instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *JobFieldsFunc) PushHook(hook func(job.Verbosity) []log.Field) {
+func (f *JobFieldsFunc) PushHook(hook func(job.Verbosity) []attribute.KeyValue) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -256,20 +256,20 @@ func (f *JobFieldsFunc) PushHook(hook func(job.Verbosity) []log.Field) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *JobFieldsFunc) SetDefaultReturn(r0 []log.Field) {
-	f.SetDefaultHook(func(job.Verbosity) []log.Field {
+func (f *JobFieldsFunc) SetDefaultReturn(r0 []attribute.KeyValue) {
+	f.SetDefaultHook(func(job.Verbosity) []attribute.KeyValue {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *JobFieldsFunc) PushReturn(r0 []log.Field) {
-	f.PushHook(func(job.Verbosity) []log.Field {
+func (f *JobFieldsFunc) PushReturn(r0 []attribute.KeyValue) {
+	f.PushHook(func(job.Verbosity) []attribute.KeyValue {
 		return r0
 	})
 }
 
-func (f *JobFieldsFunc) nextHook() func(job.Verbosity) []log.Field {
+func (f *JobFieldsFunc) nextHook() func(job.Verbosity) []attribute.KeyValue {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -307,7 +307,7 @@ type JobFieldsFuncCall struct {
 	Arg0 job.Verbosity
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []log.Field
+	Result0 []attribute.KeyValue
 }
 
 // Args returns an interface slice containing the arguments of this

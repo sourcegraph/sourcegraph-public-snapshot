@@ -6,7 +6,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/grafana/regexp"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
@@ -142,19 +141,19 @@ func (s *TextSearchJob) Name() string {
 	return "SearcherTextSearchJob"
 }
 
-func (s *TextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
+func (s *TextSearchJob) Fields(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			otlog.Bool("useFullDeadline", s.UseFullDeadline),
-			trace.Scoped("patternInfo", s.PatternInfo.Fields()...),
-			otlog.Int("numRepos", len(s.Repos)),
-			otlog.Object("pathRegexps", s.PathRegexps),
+			attribute.Bool("useFullDeadline", s.UseFullDeadline),
+			attribute.Stringer("patternInfo", s.PatternInfo),
+			attribute.Int("numRepos", len(s.Repos)),
+			trace.Stringers("pathRegexps", s.PathRegexps),
 		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			otlog.Bool("indexed", s.Indexed),
+			attribute.Bool("indexed", s.Indexed),
 		)
 	}
 	return res
