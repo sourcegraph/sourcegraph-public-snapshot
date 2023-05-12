@@ -205,10 +205,11 @@ func testDownMigrationsDoNotCreateDrift(t *testing.T, name string, schema *schem
 		description := descriptions["public"]
 
 		// Detect drift between previous state (before to up/down) and new state (after)
-		if summaries := cliutil.CompareSchemaDescriptions(name, "", expectedDescription, description); len(summaries) > 0 {
+		if summaries := cliutil.CompareSchemaDescriptions(name, "", description, expectedDescription); len(summaries) > 0 {
 			for _, summary := range summaries {
 				// TODO - actually format the problem!
 				fmt.Printf("> %q\n", summary)
+				fmt.Printf("> This is where it is defined %d\n", definition.ID)
 			}
 
 			t.Fatalf("Detected drift!")
