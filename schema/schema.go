@@ -727,6 +727,8 @@ type ExcludedGitLabProject struct {
 	Id int `json:"id,omitempty"`
 	// Name description: The name of a GitLab project ("group/name") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
+	// Pattern description: Regular expression which matches against the name of a GitLab project ("group/name").
+	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitoliteRepo struct {
 	// Name description: The name of a Gitolite repo ("my-repo") to exclude from mirroring.

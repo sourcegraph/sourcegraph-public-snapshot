@@ -106,7 +106,12 @@
         "type": "object",
         "title": "ExcludedGitLabProject",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["emptyRepos"] }],
+        "anyOf": [
+          { "required": ["name"] },
+          { "required": ["id"] },
+          { "required": ["emptyRepos"] },
+          { "required": ["pattern"] }
+        ],
         "properties": {
           "name": {
             "description": "The name of a GitLab project (\"group/name\") to exclude from mirroring.",
@@ -120,6 +125,11 @@
           "emptyRepos": {
             "description": "Whether to exclude empty repositories.",
             "type": "boolean"
+          },
+          "pattern": {
+            "description": "Regular expression which matches against the name of a GitLab project (\"group/name\").",
+            "type": "string",
+            "format": "regex"
           }
         }
       },
