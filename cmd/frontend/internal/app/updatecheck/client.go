@@ -765,7 +765,7 @@ var telemetryHTTPProxy = env.Get("TELEMETRY_HTTP_PROXY", "", "if set, HTTP proxy
 
 // check performs an update check and updates the global state.
 func check(logger log.Logger, db database.DB) {
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	updateBodyFunc := updateBody
