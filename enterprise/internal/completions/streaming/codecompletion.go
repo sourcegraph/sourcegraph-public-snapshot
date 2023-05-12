@@ -8,12 +8,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
@@ -32,7 +29,7 @@ func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	ctx, cancel := context.WithTimeout(r.Context(), MaxRequestDuration)
 	defer cancel()
 
-	completionsConfig := conf.Get().Completions
+	completionsConfig := GetCompletionsConfig()
 	if completionsConfig == nil || !completionsConfig.Enabled {
 		http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
 		return
@@ -48,9 +45,9 @@ func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var p types.CodeCompletionRequestParameters
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	var requestParams types.CodeCompletionRequestParameters
+	if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
+		http.Error(w, "could not decode request body", http.StatusBadRequest)
 		return
 	}
 
@@ -61,7 +58,16 @@ func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		Build()
 	defer done()
 
-	client := anthropic.NewAnthropicClient(httpcli.ExternalDoer, completionsConfig.AccessToken, completionsConfig.CompletionModel)
+	completionClient, err := GetCompletionClient(
+		completionsConfig.Endpoint,
+		completionsConfig.Provider,
+		completionsConfig.AccessToken,
+		completionsConfig.CompletionModel,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// Check rate limit.
 	err = h.rl.TryAcquire(ctx)
@@ -74,7 +80,7 @@ func (h *codeCompletionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	completion, err := client.Complete(ctx, p)
+	completion, err := completionClient.Complete(ctx, requestParams)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
