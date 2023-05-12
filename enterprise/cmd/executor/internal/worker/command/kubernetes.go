@@ -19,15 +19,20 @@ import (
 )
 
 const (
-	kubernetesContainerName = "sg-executor-job-container"
-	kubernetesVolumeName    = "sg-executor-job-volume"
+	// KubernetesExecutorMountPath is the path where the PersistentVolumeClaim is mounted in the Executor Pod.
+	KubernetesExecutorMountPath = "/data"
+	// KubernetesJobContainerName is the name of the container in the Job Pod that runs the step from the executor types.Job.
+	KubernetesJobContainerName = "sg-executor-job-container"
+	// KubernetesJobMountPath is the path where the PersistentVolumeClaim is mounted in the Job Pod.
+	KubernetesJobMountPath = "/job"
 )
 
 const (
-	// KubernetesMountPath is the path where the Kubernetes volume is mounted in the container.
-	KubernetesMountPath = "/data"
-	// KubernetesVolumeMountSubPath is the path that is mounted in the Kubernetes pod container.
-	KubernetesVolumeMountSubPath = "/data/"
+	// kubernetesJobVolumeName is the name of the PersistentVolumeClaim that is mounted in the Job Pod.
+	kubernetesJobVolumeName = "sg-executor-job-volume"
+	// kubernetesExecutorVolumeMountSubPath is the path where the PersistentVolumeClaim is mounted to in the Executor Pod.
+	// The trailing slash is required to properly trim the specified path when creating the subpath in the Job Pod.
+	kubernetesExecutorVolumeMountSubPath = "/data/"
 )
 
 // KubernetesContainerOptions contains options for the Kubernetes Job containers.
@@ -36,11 +41,15 @@ type KubernetesContainerOptions struct {
 	NodeName              string
 	NodeSelector          map[string]string
 	RequiredNodeAffinity  KubernetesNodeAffinity
+	PodAffinity           []corev1.PodAffinityTerm
+	PodAntiAffinity       []corev1.PodAffinityTerm
+	Tolerations           []corev1.Toleration
 	PersistenceVolumeName string
 	ResourceLimit         KubernetesResource
 	ResourceRequest       KubernetesResource
-	Retry                 KubernetesRetry
+	Deadline              *int64
 	KeepJobs              bool
+	SecurityContext       KubernetesSecurityContext
 }
 
 // KubernetesNodeAffinity contains the Kubernetes node affinity for a Job.
@@ -53,6 +62,13 @@ type KubernetesNodeAffinity struct {
 type KubernetesResource struct {
 	CPU    resource.Quantity
 	Memory resource.Quantity
+}
+
+// KubernetesSecurityContext contains the security context options for a Kubernetes Job.
+type KubernetesSecurityContext struct {
+	RunAsUser  *int64
+	RunAsGroup *int64
+	FSGroup    *int64
 }
 
 // KubernetesCommand interacts with the Kubernetes API.
@@ -74,11 +90,11 @@ func (c *KubernetesCommand) DeleteJob(ctx context.Context, namespace string, job
 var propagationPolicy = metav1.DeletePropagationBackground
 
 // ReadLogs reads the logs of the given pod and writes them to the logger.
-func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podName string, cmdLogger Logger, key string, command []string) error {
-	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{Container: kubernetesContainerName})
+func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podName string, containerName string, cmdLogger Logger, key string, command []string) error {
+	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{Container: containerName})
 	stream, err := req.Stream(ctx)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "opening log stream for pod %s", podName)
 	}
 
 	logEntry := cmdLogger.LogEntry(key, command)
@@ -121,18 +137,10 @@ func (c *KubernetesCommand) FindPod(ctx context.Context, namespace string, name 
 	return &list.Items[0], nil
 }
 
-func (c *KubernetesCommand) getPod(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
-	return c.Clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
-}
-
 // WaitForJobToComplete waits for the job with the given name to complete.
-func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string, retry KubernetesRetry) error {
-	attempts := 0
+func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string) error {
 	for {
-		// After 60 seconds, give up
-		if attempts > retry.Attempts {
-			return errors.Newf("job %s did not complete", name)
-		}
+		// Eventually `ActiveDeadlineSeconds` will kill the job.
 		job, err := c.getJob(ctx, namespace, name)
 		if err != nil {
 			return errors.Wrap(err, "retrieving job")
@@ -140,21 +148,22 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace 
 		if job.Status.Active == 0 && job.Status.Succeeded > 0 {
 			return nil
 		} else if job.Status.Failed > 0 {
-			return errors.Newf("job %s failed", name)
+			return ErrKubernetesJobFailed
 		} else {
-			time.Sleep(retry.Backoff)
-			attempts++
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 }
 
-type KubernetesRetry struct {
-	Attempts int
-	Backoff  time.Duration
-}
+// ErrKubernetesJobFailed is returned when a Kubernetes job fails.
+var ErrKubernetesJobFailed = errors.New("job failed")
 
 func (c *KubernetesCommand) getJob(ctx context.Context, namespace string, name string) (*batchv1.Job, error) {
 	return c.Clientset.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+func (c *KubernetesCommand) getPod(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
+	return c.Clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
 // NewKubernetesJob creates a Kubernetes job with the given name, image, volume path, and spec.
@@ -180,6 +189,38 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 					},
 				},
 			},
+			PodAffinity: &corev1.PodAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: nil,
+						TopologyKey:   "",
+					},
+				},
+			},
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: nil,
+						TopologyKey:   "",
+					},
+				},
+			},
+		}
+	}
+	if len(options.PodAffinity) > 0 {
+		if affinity == nil {
+			affinity = &corev1.Affinity{}
+		}
+		affinity.PodAffinity = &corev1.PodAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: options.PodAffinity,
+		}
+	}
+	if len(options.PodAntiAffinity) > 0 {
+		if affinity == nil {
+			affinity = &corev1.Affinity{}
+		}
+		affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: options.PodAntiAffinity,
 		}
 	}
 
@@ -204,16 +245,23 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					NodeName:      options.NodeName,
-					NodeSelector:  options.NodeSelector,
-					Affinity:      affinity,
-					RestartPolicy: corev1.RestartPolicyNever,
+					NodeName:     options.NodeName,
+					NodeSelector: options.NodeSelector,
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsUser:  options.SecurityContext.RunAsUser,
+						RunAsGroup: options.SecurityContext.RunAsGroup,
+						FSGroup:    options.SecurityContext.FSGroup,
+					},
+					Affinity:              affinity,
+					RestartPolicy:         corev1.RestartPolicyNever,
+					Tolerations:           options.Tolerations,
+					ActiveDeadlineSeconds: options.Deadline,
 					Containers: []corev1.Container{
 						{
-							Name:       kubernetesContainerName,
+							Name:       KubernetesJobContainerName,
 							Image:      image,
 							Command:    spec.Command,
-							WorkingDir: filepath.Join(KubernetesMountPath, spec.Dir),
+							WorkingDir: filepath.Join(KubernetesJobMountPath, spec.Dir),
 							Env:        jobEnvs,
 							Resources: corev1.ResourceRequirements{
 								Limits:   resourceLimit,
@@ -221,16 +269,16 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      kubernetesVolumeName,
-									MountPath: KubernetesMountPath,
-									SubPath:   strings.TrimPrefix(path, KubernetesVolumeMountSubPath),
+									Name:      kubernetesJobVolumeName,
+									MountPath: KubernetesJobMountPath,
+									SubPath:   strings.TrimPrefix(path, kubernetesExecutorVolumeMountSubPath),
 								},
 							},
 						},
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: kubernetesVolumeName,
+							Name: kubernetesJobVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 									ClaimName: options.PersistenceVolumeName,

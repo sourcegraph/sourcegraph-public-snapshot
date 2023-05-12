@@ -220,6 +220,14 @@ func ExecutorsSrcCLIImageTag() string {
 	return srccli.MinimumVersion
 }
 
+func ExecutorsLsifGoImage() string {
+	current := Get()
+	if current.ExecutorsLsifGoImage != "" {
+		return current.ExecutorsLsifGoImage
+	}
+	return "sourcegraph/lsif-go"
+}
+
 func ExecutorsBatcheshelperImage() string {
 	current := Get()
 	if current.ExecutorsBatcheshelperImage != "" {

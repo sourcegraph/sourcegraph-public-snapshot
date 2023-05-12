@@ -33,7 +33,7 @@ func Post(
 	workspaceFilesPath string,
 ) error {
 	// Sometimes the files belong to different users. Mark the repository directory as safe.
-	if _, err := runner.Git(ctx, "", "config", "--global", "--add", "safe.directory", "/data/repository"); err != nil {
+	if _, err := runner.Git(ctx, "", "config", "--global", "--add", "safe.directory", "/job/repository"); err != nil {
 		return errors.Wrap(err, "failed to mark repository directory as safe")
 	}
 

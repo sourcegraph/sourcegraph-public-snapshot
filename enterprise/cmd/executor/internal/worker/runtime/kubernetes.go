@@ -34,7 +34,7 @@ func (r *kubernetesRuntime) PrepareWorkspace(ctx context.Context, logger command
 		r.cmd,
 		logger,
 		r.cloneOptions,
-		command.KubernetesMountPath,
+		command.KubernetesExecutorMountPath,
 		r.operations,
 	)
 }
@@ -56,7 +56,7 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types
 				Command: []string{
 					"/bin/sh",
 					"-c",
-					filepath.Join("/data/.sourcegraph-executor", ws.ScriptFilenames()[i]),
+					filepath.Join(command.KubernetesJobMountPath, ".sourcegraph-executor", ws.ScriptFilenames()[i]),
 				},
 				Dir:       step.Dir,
 				Env:       step.Env,

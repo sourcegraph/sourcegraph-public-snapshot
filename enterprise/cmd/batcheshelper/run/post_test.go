@@ -37,7 +37,7 @@ func TestPost(t *testing.T) {
 		{
 			name: "Success",
 			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("Git", mock.Anything, "", []string{"config", "--global", "--add", "safe.directory", "/data/repository"}).
+				runner.On("Git", mock.Anything, "", []string{"config", "--global", "--add", "safe.directory", "/job/repository"}).
 					Return("", nil)
 				runner.On("Git", mock.Anything, "repository", []string{"add", "--all"}).
 					Return("", nil)
@@ -101,7 +101,7 @@ func TestPost(t *testing.T) {
 				require.NoError(t, err)
 			},
 			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("Git", mock.Anything, "", []string{"config", "--global", "--add", "safe.directory", "/data/repository"}).
+				runner.On("Git", mock.Anything, "", []string{"config", "--global", "--add", "safe.directory", "/job/repository"}).
 					Return("", nil)
 				runner.On("Git", mock.Anything, "repository", []string{"add", "--all"}).
 					Return("", nil)
@@ -165,7 +165,7 @@ func TestPost(t *testing.T) {
 				}
 			},
 			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("Git", mock.Anything, "", []string{"config", "--global", "--add", "safe.directory", "/data/repository"}).
+				runner.On("Git", mock.Anything, "", []string{"config", "--global", "--add", "safe.directory", "/job/repository"}).
 					Return("", nil)
 				runner.On("Git", mock.Anything, "repository", []string{"add", "--all"}).
 					Return("", nil)
