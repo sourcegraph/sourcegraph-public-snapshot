@@ -89,7 +89,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
             if (state && ref.current && formInput.current) {
                 const actionUrl = createActionUrl(state)
                 ref.current.action = actionUrl
-                formInput.current.value = getManifest(webhookURL, name)
+                formInput.current.value = getManifest(name, webhookURL)
                 ref.current.submit()
             }
         },
