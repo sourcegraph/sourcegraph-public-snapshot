@@ -213,6 +213,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 {isSourcegraphApp && <TauriNavigation historyStack={historyStack} />}
 
                 <NavGroup>
+                    {showCody && showCodyChat && !!props.authenticatedUser && (
+                        <NavItem icon={CodyLogo}>
+                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
+                                Cody AI
+                            </NavLink>
+                        </NavItem>
+                    )}
                     {searchNavBarItems.length > 0 ? (
                         <NavDropdown
                             toggleItem={{
@@ -230,13 +237,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavItem icon={MagnifyIcon}>
                             <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
                                 Code Search
-                            </NavLink>
-                        </NavItem>
-                    )}
-                    {showCody && showCodyChat && !!props.authenticatedUser && (
-                        <NavItem icon={CodyLogo}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
-                                Cody AI
                             </NavLink>
                         </NavItem>
                     )}
