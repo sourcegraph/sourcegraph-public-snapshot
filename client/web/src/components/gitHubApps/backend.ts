@@ -47,12 +47,12 @@ export const GITHUB_APP_BY_ID_QUERY = gql`
                     url
                     type
                 }
-            }
-            externalServices(first: 100) {
-                nodes {
-                    ...ListExternalServiceFields
+                externalServices(first: 100) {
+                    nodes {
+                        ...ListExternalServiceFields
+                    }
+                    totalCount
                 }
-                totalCount
             }
             webhook {
                 id

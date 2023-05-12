@@ -14,7 +14,7 @@
 }
 
 .app-link {
-    color: var(--body-color)
+    color: var(--body-color);
 }
 
 .installation {
@@ -26,12 +26,12 @@
     }
 
     .list-group {
-        >li {
+        > li {
             border-top: var(--border-width) solid var(--border-color);
             padding: 1rem 0;
 
             &:first-child {
-                border-top: none
+                border-top: none;
             }
         }
     }

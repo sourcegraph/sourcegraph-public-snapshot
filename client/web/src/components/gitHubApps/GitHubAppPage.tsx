@@ -232,7 +232,7 @@ export const GitHubAppPage: FC<Props> = ({
                                                     className={styles.listGroup}
                                                     aria-label="Code Host Connections"
                                                 >
-                                                    {app.externalServices?.nodes?.map(node => (
+                                                    {installation.externalServices?.nodes?.map(node => (
                                                         <ExternalServiceNode
                                                             key={node.id}
                                                             node={node}
@@ -240,13 +240,13 @@ export const GitHubAppPage: FC<Props> = ({
                                                         />
                                                     ))}
                                                 </ConnectionList>
-                                                {app.externalServices && (
+                                                {installation.externalServices && (
                                                     <SummaryContainer className="mt-2" centered={true}>
                                                         <ConnectionSummary
                                                             noSummaryIfAllNodesVisible={false}
                                                             first={100}
                                                             centered={true}
-                                                            connection={app.externalServices}
+                                                            connection={installation.externalServices}
                                                             noun="code host connection"
                                                             pluralNoun="code host connections"
                                                             hasNextPage={false}
