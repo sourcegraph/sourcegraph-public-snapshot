@@ -65,11 +65,11 @@ export const OwnStatusPage: FC = () => {
     <div>
         <span className='topHeader'>
             <div>
-                <PageTitle title="Own status page"/>
+                <PageTitle title="Own Signals Configuration"/>
                 <PageHeader
                     headingElement="h2"
-                    path={[{text: 'Own status page'}]}
-                    description="List of Own inference signal indexers and their status. All repositories are included by default."
+                    path={[{text: 'Own Signals Configuration'}]}
+                    description="List of Own inference signal indexers and their configurations. All repositories are included by default."
                     className="mb-3"
                 />
             </div>
