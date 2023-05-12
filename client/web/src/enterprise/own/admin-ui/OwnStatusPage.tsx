@@ -5,7 +5,6 @@ import {
     PageHeader,
     H3, Text, Label, Button, LoadingSpinner, ErrorAlert
 } from '@sourcegraph/wildcard'
-import styles from '../../insights/admin-ui/CodeInsightsJobs.module.scss';
 import './own-status-page-styles.scss'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import {RepositoryPatternList} from '../../codeintel/configuration/components/RepositoryPatternList';
@@ -14,7 +13,6 @@ import {
     GetOwnSignalConfigurationsResult,
     UpdateSignalConfigsResult,
     UpdateSignalConfigsVariables,
-    UpdateSignalConfigurationsInput,
 } from '../../../graphql-operations';
 import {GET_OWN_JOB_CONFIGURATIONS, UPDATE_SIGNAL_CONFIGURATIONS} from './query';
 
@@ -78,13 +76,11 @@ export const OwnStatusPage: FC = () => {
                 />
             </div>
 
-            {!loadingSaveConfigs && <Button id='saveButton' disabled={!hasLocalChanges} aria-label="Save changes" variant="primary" onClick={() => {
+            {<Button id='saveButton' disabled={!hasLocalChanges} aria-label="Save changes" variant="primary" onClick={() => {
                 // do network stuff
                 saveConfigs({variables: {
                     input: {
-                        configs: localData.map(ld => {
-                            return {name: ld.name, enabled: ld.isEnabled, excludedRepoPatterns: ld.excluded}
-                        })
+                        configs: localData.map(ldd => ({name: ldd.name, enabled: ldd.isEnabled, excludedRepoPatterns: ldd.excluded}))
                     }
                     }}).then(data => {
                     const jobs = data.data.updateSignalConfigurations.map(sc => {
@@ -93,11 +89,13 @@ export const OwnStatusPage: FC = () => {
                     setHasLocalChanges(false)
                     setLocalData(jobs)
                 }) // what do we do with errors here?
-            }}>Save</Button>}
-            {loadingSaveConfigs && <LoadingSpinner/>}
+            }}>
+                {loadingSaveConfigs && <LoadingSpinner/>}
+                {!loadingSaveConfigs && 'Save'}
+            </Button>}
         </span>
 
-        <Container className={styles.root}>
+        <Container className='root'>
             {(loading) && <LoadingSpinner/>}
             {error && <ErrorAlert prefix="Error fetching Own signal configurations" error={error} /> }
             {!(loading) && localData && !error && localData.map((job, index) => (

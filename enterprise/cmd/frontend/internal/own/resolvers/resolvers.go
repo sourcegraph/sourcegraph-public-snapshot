@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -557,6 +558,7 @@ func featureFlagName(job signalJob) string {
 
 func (r *ownResolver) UpdateSignalConfigurations(ctx context.Context, args graphqlbackend.UpdateSignalConfigurationsArgs) ([]graphqlbackend.SignalConfigurationResolver, error) {
 	// for now, just return the jobs
+	time.Sleep(time.Second * 2)
 	r.logger.Info("input singal configs", log.String("configs", fmt.Sprintf("%v", args.Input.Configs)))
 	return r.SignalConfigurations(ctx)
 }
