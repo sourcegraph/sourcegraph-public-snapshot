@@ -162,8 +162,8 @@ func countRepoMetadata(r result.Match, repo *sTypes.Repo) (map[MatchKey]int, err
 		if value != nil && *value != "" {
 			group += ":" + *value
 		}
-		key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: group}
-		matches[key] = r.ResultCount()
+		matchKey := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: group}
+		matches[matchKey] = r.ResultCount()
 	}
 	return matches, nil
 }
