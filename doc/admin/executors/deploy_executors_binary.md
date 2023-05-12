@@ -8,12 +8,18 @@
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-## Dependencies
+## Installation
+
+> Note: See [offline installation guide](deploy_executors_binary_offline.md) for instructions on how to install executors in an air-gapped environment.
+
+The following steps will guide you through the process of installing executors on a linux machine.
+
+### Dependencies
 
 In order to run executors on your machine, a few things need to be set up correctly before proceeding.
 
 - Executors only support linux-based machine with amd64 processors
-- Docker has to be installed on the machine (`curl -fsSL https://get.docker.com | sh`)
+- Docker has to be installed on the machine (`curl -fsSL https://get.docker.com | sh`)
 - Git has to be installed at a version `>= v2.26`
 - The ability to run commands as `root` on the host machine and configure networking routes
 
@@ -27,10 +33,6 @@ If [Firecracker isolation will be used](index.md#how-it-works): _(recommended)_
   - `iptables`
   - `strings` (part of binutils)
   - `systemd` (optional)
-
-## Installation
-
-Once dependencies are met, you can download the executor binary and start configuring your machine:
 
 ### **Step 0:** Confirm that virtualization is enabled (if using Firecracker)
 
