@@ -182,7 +182,7 @@ func (a *anthropicClient) Stream(
 
 		var event types.ChatCompletionEvent
 		if err := json.Unmarshal(data, &event); err != nil {
-			return errors.Errorf("failed to decode event payload: %w", err)
+			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
 		}
 
 		err = sendEvent(event)
