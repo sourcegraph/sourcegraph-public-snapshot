@@ -14,7 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var ProviderName = "dotcom"
+const ProviderName = "dotcom"
+
 var done_bytes = []byte("done")
 
 const api_url = "https://sourcegraph.com/.api/completions/stream"

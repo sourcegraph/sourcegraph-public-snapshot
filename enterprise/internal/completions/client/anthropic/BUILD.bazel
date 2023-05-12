@@ -7,7 +7,7 @@ go_library(
         "decoder.go",
         "prompt.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/anthropic",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/completions/types",

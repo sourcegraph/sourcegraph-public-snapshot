@@ -1,29 +1,25 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "streaming",
+    name = "httpapi",
     srcs = [
         "codecompletion.go",
+        "handler.go",
         "limiter.go",
         "observability.go",
         "stream.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/httpapi",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/completions/streaming/anthropic",
-        "//enterprise/internal/completions/streaming/dotcom",
-        "//enterprise/internal/completions/streaming/llmproxy",
-        "//enterprise/internal/completions/streaming/openai",
+        "//enterprise/internal/completions/client",
         "//enterprise/internal/completions/types",
         "//internal/actor",
         "//internal/auth",
         "//internal/cody",
         "//internal/conf",
-        "//internal/conf/deploy",
         "//internal/database",
         "//internal/honey",
-        "//internal/httpcli",
         "//internal/redispool",
         "//internal/requestclient",
         "//internal/search/streaming/http",

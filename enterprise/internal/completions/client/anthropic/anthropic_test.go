@@ -32,7 +32,7 @@ func linesToResponse(lines []string) []byte {
 }
 
 func getMockClient(responseBody []byte) types.CompletionsClient {
-	return NewAnthropicClient(&mockDoer{
+	return NewClient(&mockDoer{
 		func(r *http.Request) (*http.Response, error) {
 			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader(responseBody))}, nil
 		},
