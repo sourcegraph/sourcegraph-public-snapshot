@@ -16,7 +16,7 @@ requiring [`src-cli`](https://github.com/sourcegraph/src-cli) to be installed on
 Native Execution is required when running Batch Changes in Kubernetes. No docker-in-docker or privileged
 containers are required.
 
-This is also useful for environments where it is difficult to install `src-cli` on the Executor machine, e.g. air-gapped
+This is also useful for environments where it is difficult to install `src-cli` on the Executor machine, e.g. air-gap
 environments.
 
 ## Enable
@@ -34,6 +34,11 @@ Native Execution is configured using a feature flag. To enable it,
 
 The Native Execution Docker image is available on Docker Hub
 at [`sourcegraph/batcheshelper`](https://hub.docker.com/r/sourcegraph/batcheshelper/tags).
+
+The default image (`sourcegraph/batcheshelper:${VERSION}`) can be overridden by updating the following in the **Site configuration** 
+
+- `executors.batcheshelperImage`
+- `executors.batcheshelperImageTag`
 
 ## Requirements
 

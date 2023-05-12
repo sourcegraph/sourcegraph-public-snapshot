@@ -12,9 +12,11 @@ import (
 const (
 	// DefaultIgniteVersion is the sourcegraph/ignite version to be used by this
 	// executor build.
+	// If this is changed, update the documentation in doc/admin/executors/deploy_executors_binary_offline.md.
 	DefaultIgniteVersion = "v0.10.5"
 	// DefaultFirecrackerKernelImage is the kernel source image to extract the vmlinux
 	// image from.
+	// If this is changed, update the documentation in doc/admin/executors/deploy_executors_binary_offline.md.
 	DefaultFirecrackerKernelImage = "sourcegraph/ignite-kernel:5.10.135-amd64"
 	// CNIBinDir is the dir where ignite expects the CNI plugins to be installed to.
 	CNIBinDir = "/opt/cni/bin"
