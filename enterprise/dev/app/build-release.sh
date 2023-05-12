@@ -8,8 +8,11 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 bazel_build() {
   local bazel_cmd
   local platform
+  local target_path
   platform=$1
+  target_path=$2
   bazel_cmd="bazel"
+
   if [[ ${GITHUB_ACTIONS:-""} == "true" ]]; then
     bazel_cmd="${bazel_cmd} --bazelrc=.aspect/bazelrc/github.bazelrc"
   fi
@@ -19,10 +22,12 @@ bazel_build() {
 
   out=$(bazel cquery //enterprise/cmd/sourcegraph:sourcegraph --output=files)
   mkdir -p ".bin"
-  cp -vf "${out}" ".bin/sourcegraph-backend-${platform}"
+  cp -vf "${out}" "${target_path}"
 }
 
 pre_codesign() {
+  local binary_path
+  binary_path=$1
   # Tauri won't code sign our sidecar sourcegraph-backend Go binary for us, so we need to do it on
   # our own. https://github.com/tauri-apps/tauri/discussions/2269
   # For details on code signing, see doc/dev/background-information/app/codesigning.md
@@ -39,7 +44,8 @@ pre_codesign() {
     security import ./cert.p12 -k my_temporary_keychain.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
     security set-key-partition-list -S apple-tool:,apple:, -s -k my_temporary_keychain_password -D "$APPLE_SIGNING_IDENTITY" -t private my_temporary_keychain.keychain
 
-    codesign --force -s "$APPLE_SIGNING_IDENTITY" --keychain my_temporary_keychain.keychain --deep "$(pwd)/.bin/sourcegraph-backend-aarch64-apple-darwin"
+    echo "[Code Signing] binary: ${binary_path}"
+    codesign --force -s "$APPLE_SIGNING_IDENTITY" --keychain my_temporary_keychain.keychain --deep "${binary_path}"
 
     security delete-keychain my_temporary_keychain.keychain
     security list-keychains -d user -s login.keychain
@@ -75,7 +81,7 @@ set_version() {
   tmp=$(mktemp)
   echo "[Script] updating package version in '${tauri_conf}' to ${VERSION}"
   jq --arg version "${VERSION}" '.package.version = $version' "${tauri_conf}" >"${tmp}"
-  mv "${tmp}" ./src-tauri/tauri.conf.json
+  mv "${tmp}" "${tauri_conf}"
 }
 
 set_platform() {
@@ -112,16 +118,18 @@ set_platform() {
   export PLATFORM_IS_MACOS=${macos}
 }
 
+target_path=".bin/sourcegraph-backend-${PLATFORM}"
+
 set_platform
 set_version
-bazel_build "${PLATFORM}"
+bazel_build "${PLATFORM}" "${target_path}"
 if [[ ${CODESIGNING} == 1 ]]; then
   # If on a macOS host, Tauri will invoke the base64 command as part of the code signing process.
   # it expects the macOS base64 command, not the gnutils one provided by homebrew, so we prefer
   # that one here:
   export PATH="/usr/bin/:$PATH"
 
-  pre_codesign "${PLATFORM}"
+  pre_codesign "${PLATFORM}" "${target_path}"
 fi
 echo "[Tauri] Building Application (${VERSION})"]
 NODE_ENV=production pnpm run build-app-shell
