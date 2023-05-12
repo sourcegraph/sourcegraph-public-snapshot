@@ -104,6 +104,80 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			totalEvents: 2,
 		},
 		{
+			name: "Dequeue only codeintel record when requesting codeintel queue and batches record exists",
+			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB", "queues": ["codeintel"]}`,
+			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
+				0: {
+					queueName:            "codeintel",
+					expectedStatusCode:   http.StatusOK,
+					expectedResponseBody: `{"id":1,"token":"token1","queue":"codeintel","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
+						jobTokenStore.CreateFunc.PushReturn("token1", nil)
+					},
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						require.Len(t, mockStore.DequeueFunc.History(), 1)
+						assert.Equal(t, "test-executor", mockStore.DequeueFunc.History()[0].Arg1)
+						assert.Nil(t, mockStore.DequeueFunc.History()[0].Arg2)
+						require.Len(t, jobTokenStore.CreateFunc.History(), 1)
+						assert.Equal(t, 1, jobTokenStore.CreateFunc.History()[0].Arg1)
+						assert.Equal(t, "codeintel", jobTokenStore.CreateFunc.History()[0].Arg2)
+					},
+				},
+			},
+			batchesDequeueEvents: map[int]dequeueEvent[*btypes.BatchSpecWorkspaceExecutionJob]{
+				1: {
+					queueName: "batches",
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 2}, true, nil)
+					},
+					expectedStatusCode: http.StatusNoContent,
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+						require.Len(t, mockStore.DequeueFunc.History(), 0)
+						require.Len(t, jobTokenStore.CreateFunc.History(), 1)
+					},
+				},
+			},
+			totalEvents: 2,
+		},
+		{
+			name: "Dequeue only codeintel record when requesting both queues and batches record doesn't exists",
+			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB", "queues": ["codeintel", "batches"]}`,
+			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
+				0: {
+					queueName:            "codeintel",
+					expectedStatusCode:   http.StatusOK,
+					expectedResponseBody: `{"id":1,"token":"token1","queue":"codeintel","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
+						jobTokenStore.CreateFunc.PushReturn("token1", nil)
+					},
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						require.Len(t, mockStore.DequeueFunc.History(), 1)
+						assert.Equal(t, "test-executor", mockStore.DequeueFunc.History()[0].Arg1)
+						assert.Nil(t, mockStore.DequeueFunc.History()[0].Arg2)
+						require.Len(t, jobTokenStore.CreateFunc.History(), 1)
+						assert.Equal(t, 1, jobTokenStore.CreateFunc.History()[0].Arg1)
+						assert.Equal(t, "codeintel", jobTokenStore.CreateFunc.History()[0].Arg2)
+					},
+				},
+			},
+			batchesDequeueEvents: map[int]dequeueEvent[*btypes.BatchSpecWorkspaceExecutionJob]{
+				1: {
+					queueName: "batches",
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{}, false, nil)
+					},
+					expectedStatusCode: http.StatusNoContent,
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+						require.Len(t, mockStore.DequeueFunc.History(), 1)
+						require.Len(t, jobTokenStore.CreateFunc.History(), 1)
+					},
+				},
+			},
+			totalEvents: 2,
+		},
+		{
 			name: "Nothing to dequeue",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB", "queues": ["codeintel","batches"]}`,
 			noDequeueEvent: noDequeueEvent{

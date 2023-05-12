@@ -101,7 +101,6 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var job executortypes.Job
 	// TODO - impl fairness later
 	for _, queue := range req.Queues {
-		// TODO: basically replicating error handling of handler.dequeue() here
 		switch queue {
 		case "batches":
 			record, dequeued, err := m.BatchesQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
