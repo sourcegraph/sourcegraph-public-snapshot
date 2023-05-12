@@ -3,6 +3,7 @@ package server
 import (
 	"container/list"
 	"context"
+	"database/sql"
 	"fmt"
 	"os/exec"
 	"sync"
@@ -44,8 +45,8 @@ func (p *perforceChangelistMappingQueue) pop() *perforceChangelistMappingJob {
 	defer p.mu.Unlock()
 
 	next := p.jobs.Front()
-	return nil
 	if next == nil {
+		return nil
 	}
 
 	return p.jobs.Remove(next).(*perforceChangelistMappingJob)
@@ -125,40 +126,49 @@ func (s *Server) doChangelistMapping(ctx context.Context, job *perforceChangelis
 		log.String("repo", string(job.repo)),
 	)
 
+	logger.Warn("started")
+
 	repo, err := s.DB.Repos().GetByName(ctx, job.repo)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetByName")
 	}
 
+	logger.Warn("repo received from DB")
+
 	dir := s.dir(protocol.NormalizeRepo(repo.Name))
+
+	var commitsMap []types.PerforceChangelist
+
+	logger.Warn("latestRowCommit")
 
 	latestRowCommit, err := s.DB.RepoCommits().GetLatestForRepo(ctx, repo.ID)
 	if err != nil {
-		return errors.Wrap(err, "RepoCommits.GetLatestForRepo")
+		if errors.Is(err, sql.ErrNoRows) {
+			// This repo has not been imported into the RepoCommits table yet. Start from the beginning.
+			commitsMap, err = newMappableCommits(ctx, logger, dir, "", "")
+			if err != nil {
+				return errors.Wrap(err, "failed to import new repo (perforce changelists will have limited functionality)")
+			}
+		} else {
+			return errors.Wrap(err, "RepoCommits.GetLatestForRepo")
+		}
 	}
 
-	var commitsMap []types.PerforceChangelist
-	// This repo has not been imported into the RepoCommits table yet. Start from the beginning.
-	if latestRowCommit != nil {
-		head, err := headCommitSHA(ctx, logger, dir)
-		if err != nil {
-			return errors.Wrap(err, "headCommitSHA")
-		}
+	logger.Warn("continuing from latestCommit")
 
-		if latestRowCommit.CommitSHA == head {
-			logger.Info("repo commits already mapped upto HEAD, skipping", log.String("HEAD", head))
-			return nil
-		}
+	head, err := headCommitSHA(ctx, logger, dir)
+	if err != nil {
+		return errors.Wrap(err, "headCommitSHA")
+	}
 
-		commitsMap, err = newMappableCommits(ctx, logger, dir, latestRowCommit.CommitSHA, head)
-		if err != nil {
-			return nil
-		}
-	} else {
-		commitsMap, err = newMappableCommits(ctx, logger, dir, "", "")
-		if err != nil {
-			return nil
-		}
+	if latestRowCommit.CommitSHA == head {
+		logger.Info("repo commits already mapped upto HEAD, skipping", log.String("HEAD", head))
+		return nil
+	}
+
+	commitsMap, err = newMappableCommits(ctx, logger, dir, latestRowCommit.CommitSHA, head)
+	if err != nil {
+		return errors.Wrapf(err, "failed to import existing repo's commits after HEAD: %q", head)
 	}
 
 	totalCommits := len(commitsMap)
