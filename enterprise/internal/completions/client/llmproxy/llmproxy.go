@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming/anthropic"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -39,7 +39,7 @@ func NewClient(cli httpcli.Doer, endpoint, accessToken string, model string) (ty
 		cli:             cli,
 		accessToken:     accessToken,
 		model:           model,
-		anthropicClient: anthropic.NewAnthropicClient(anthropicDoer, "", model),
+		anthropicClient: anthropic.NewClient(anthropicDoer, "", model),
 	}, nil
 }
 
