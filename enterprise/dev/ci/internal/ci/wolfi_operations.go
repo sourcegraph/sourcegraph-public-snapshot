@@ -156,6 +156,7 @@ func buildCandidateWolfiDockerImage(app, version, tag string, uploadSourcemaps b
 		cmds := []bk.StepOpt{
 			bk.Key(candidateImageStepKey(app)),
 			bk.Cmd(fmt.Sprintf(`echo "Building Wolfi %s image..."`, app)),
+			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),
 			bk.Env("VERSION", version),
