@@ -1,12 +1,10 @@
 import { ChangeEvent, FC, forwardRef, HTMLAttributes, InputHTMLAttributes, useEffect, useState } from 'react'
 
-import { useApolloClient, useLazyQuery } from '@apollo/client'
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
-import { isEqual } from 'lodash'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -22,24 +20,13 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import {
-    AddRemoteCodeHostResult,
-    AddRemoteCodeHostVariables,
-    DiscoverLocalRepositoriesResult,
-    DiscoverLocalRepositoriesVariables,
-    ExternalServiceKind,
-    GetLocalDirectoryPathResult,
-    GetLocalCodeHostsResult,
-    DeleteRemoteCodeHostResult,
-    DeleteRemoteCodeHostVariables,
-} from '../../../graphql-operations'
-import { ADD_CODE_HOST, DELETE_CODE_HOST } from '../../queries'
+import { DiscoverLocalRepositoriesResult, DiscoverLocalRepositoriesVariables } from '../../../graphql-operations'
 import { CodeHostExternalServiceAlert } from '../CodeHostExternalServiceAlert'
 import { ProgressBar } from '../ProgressBar'
 import { CustomNextButton, FooterWidget } from '../setup-steps'
 
-import { getLocalServices, getLocalServicePaths, createDefaultLocalServiceConfig } from './helpers'
-import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_CODE_HOSTS, GET_LOCAL_DIRECTORY_PATH } from './queries'
+import { useLocalRepositoriesPaths, useLocalRepositories, useLocalPathsPicker } from './hooks'
+import { DISCOVER_LOCAL_REPOSITORIES } from './queries'
 
 import styles from './LocalRepositoriesStep.module.scss'
 
@@ -54,98 +41,17 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = ({
     progressBar = true,
     ...attributes
 }) => {
-    const [directoryPaths, setDirectoryPaths] = useState<string[]>([])
-    const [error, setError] = useState<ErrorLike | undefined>()
-
-    const apolloClient = useApolloClient()
-
-    const { data, loading } = useQuery<GetLocalCodeHostsResult>(GET_LOCAL_CODE_HOSTS, {
-        fetchPolicy: 'network-only',
-        // Sync local external service paths on first load
-        onCompleted: data => {
-            setDirectoryPaths(getLocalServicePaths(data))
-        },
-        onError: setError,
-    })
-
-    const [addLocalCodeHost] = useMutation<AddRemoteCodeHostResult, AddRemoteCodeHostVariables>(ADD_CODE_HOST)
-    const [deleteLocalCodeHost] = useMutation<DeleteRemoteCodeHostResult, DeleteRemoteCodeHostVariables>(
-        DELETE_CODE_HOST
-    )
-
-    // Automatically creates or deletes local external service to
-    // match user chosen paths for local repositories.
-    useEffect(() => {
-        if (loading) {
-            return
-        }
-
-        setError(undefined)
-
-        const localServices = getLocalServices(data)
-        const localServicePaths = getLocalServicePaths(data)
-        const havePathsChanged = !isEqual(directoryPaths, localServicePaths)
-
-        // Do nothing if paths haven't changed
-        if (!havePathsChanged) {
-            return
-        }
-
-        async function syncExternalServices(): Promise<void> {
-            // Create/update local external services
-            for (const directoryPath of directoryPaths) {
-                // If we already have a local external service for this path, skip it
-                if (localServicePaths.includes(directoryPath)) {
-                    continue
-                }
-
-                // Create a new local external service for this path
-                await addLocalCodeHost({
-                    variables: {
-                        input: {
-                            displayName: `Local repositories service (${directoryPath})`,
-                            config: createDefaultLocalServiceConfig(directoryPath),
-                            kind: ExternalServiceKind.OTHER,
-                        },
-                    },
-                })
-            }
-
-            // Delete local external services that are no longer in the list
-            for (const localService of localServices || []) {
-                // If we still have a local external service for this path, skip it
-                if (directoryPaths.includes(localService.path)) {
-                    continue
-                }
-
-                // Delete local external service for this path
-                await deleteLocalCodeHost({
-                    variables: {
-                        id: localService.id,
-                    },
-                })
-            }
-
-            // Refetch local external services and status after all mutations have been completed.
-            await apolloClient.refetchQueries({ include: ['GetLocalCodeHosts', 'StatusAndRepoStats'] })
-        }
-
-        syncExternalServices().catch(setError)
-    }, [directoryPaths, data, loading, addLocalCodeHost, deleteLocalCodeHost, apolloClient])
+    const { paths, autogeneratedPaths, loading, error, setPaths } = useLocalRepositoriesPaths()
 
     useEffect(() => {
         telemetryService.log('SetupWizardLandedAddLocalCode')
     }, [telemetryService])
 
     const handleNextButtonClick = (): void => {
-        if (!directoryPaths) {
+        if (!paths) {
             telemetryService.log('SetupWizardSkippedAddLocalCode')
         }
     }
-
-    // Try to find autogenerated local external service to list built-in repositories
-    // below manually added repositories section
-    const autogeneratedServicePaths = getLocalServices(data, true).map(item => item.path)
 
     return (
         <div {...attributes}>
@@ -158,13 +64,13 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = ({
                     <LocalRepositoriesForm
                         isFilePickerAvailable={window.context.localFilePickerAvailable}
                         error={error}
-                        directoryPaths={directoryPaths}
-                        onDirectoryPathsChange={setDirectoryPaths}
+                        directoryPaths={paths}
+                        onDirectoryPathsChange={setPaths}
                     />
                 )}
 
-                {!loading && autogeneratedServicePaths.length > 0 && (
-                    <BuiltInRepositories directoryPaths={autogeneratedServicePaths} />
+                {!loading && autogeneratedPaths.length > 0 && (
+                    <BuiltInRepositories directoryPaths={autogeneratedPaths} />
                 )}
             </Container>
 
@@ -175,8 +81,8 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = ({
             )}
 
             <CustomNextButton
-                label={directoryPaths.length > 0 ? 'Next' : 'Skip'}
-                tooltip={directoryPaths.length === 0 ? 'You can get back to this step later' : ''}
+                label={paths.length > 0 ? 'Next' : 'Skip'}
+                tooltip={paths.length === 0 ? 'You can get back to this step later' : ''}
                 onClick={handleNextButtonClick}
             />
         </div>
@@ -194,19 +100,11 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
     const { isFilePickerAvailable, error, directoryPaths, onDirectoryPathsChange } = props
 
     const [internalPaths, setInternalPaths] = useState(directoryPaths)
-    const [queryPath] = useLazyQuery<GetLocalDirectoryPathResult>(GET_LOCAL_DIRECTORY_PATH, {
-        fetchPolicy: 'network-only',
-        onCompleted: data =>
-            data.localDirectoriesPicker?.paths && onDirectoryPathsChange(data.localDirectoriesPicker?.paths),
-    })
+    const { callPathPicker } = useLocalPathsPicker()
 
-    const { data: repositoriesData, loading } = useQuery<
-        DiscoverLocalRepositoriesResult,
-        DiscoverLocalRepositoriesVariables
-    >(DISCOVER_LOCAL_REPOSITORIES, {
-        skip: directoryPaths.length <= 0 || !!error,
-        fetchPolicy: 'cache-and-network',
-        variables: { paths: directoryPaths },
+    const { repositories, loading, loaded } = useLocalRepositories({
+        skip: !!error,
+        paths: directoryPaths,
     })
 
     // By default, input is disabled so this callback won't be fired
@@ -229,12 +127,16 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
         onDirectoryPathsChange(debouncedInternalPaths)
     }, [debouncedInternalPaths, onDirectoryPathsChange])
 
+    const handlePathsPickClick = async (): Promise<void> => {
+        const paths = await callPathPicker()
+
+        onDirectoryPathsChange(paths)
+    }
+
     // Use internal path only if backend-based file picker is unavailable
     const paths = isFilePickerAvailable ? directoryPaths : internalPaths
-    const initialState = !repositoriesData && !error && !loading
-    const foundRepositories = repositoriesData?.localDirectories?.repositories ?? []
-    const zeroResultState =
-        paths.length > 0 && !error && repositoriesData && repositoriesData.localDirectories.repositories.length === 0
+    const initialState = !error && !loading && paths.length === 0 && repositories.length === 0
+    const zeroResultState = loaded && paths.length > 0 && !error && repositories.length === 0
 
     return (
         <>
@@ -249,7 +151,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
                     isProcessing={loading}
                     className={styles.filePicker}
                     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                    onPickPath={() => queryPath()}
+                    onPickPath={handlePathsPickClick}
                     onPathReset={handlePathReset}
                     onChange={handleInputChange}
                 />
@@ -259,15 +161,15 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
 
             {!error && (
                 <ul className={styles.list}>
-                    {foundRepositories.map(codeHost => (
-                        <li key={codeHost.path} className={classNames('d-flex')}>
+                    {repositories.map(repository => (
+                        <li key={repository.path} className="d-flex">
                             <Icon svgPath={mdiGit} size="md" aria-hidden={true} className="mt-1 mr-3" />
                             <div className="d-flex flex-column">
                                 <Text weight="medium" className="mb-0">
-                                    {codeHost.name}
+                                    {repository.name}
                                 </Text>
                                 <Text size="small" className="text-muted mb-0">
-                                    {codeHost.path}
+                                    {repository.path}
                                 </Text>
                             </div>
                         </li>

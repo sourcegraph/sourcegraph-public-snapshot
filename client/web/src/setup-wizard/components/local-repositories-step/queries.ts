@@ -13,11 +13,15 @@ export const DISCOVER_LOCAL_REPOSITORIES = gql`
         localDirectories(paths: $paths) {
             paths
             repositories {
-                __typename
-                path
-                name
+                ...LocalRepository
             }
         }
+    }
+
+    fragment LocalRepository on LocalRepository {
+        __typename
+        path
+        name
     }
 `
 
