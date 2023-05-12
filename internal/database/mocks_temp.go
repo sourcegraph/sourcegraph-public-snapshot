@@ -4988,6 +4988,9 @@ type MockDB struct {
 	// RedisKeyValueFunc is an instance of a mock function object
 	// controlling the behavior of the method RedisKeyValue.
 	RedisKeyValueFunc *DBRedisKeyValueFunc
+	// RepoCommitsFunc is an instance of a mock function object controlling
+	// the behavior of the method RepoCommits.
+	RepoCommitsFunc *DBRepoCommitsFunc
 	// RepoKVPsFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoKVPs.
 	RepoKVPsFunc *DBRepoKVPsFunc
@@ -5226,6 +5229,11 @@ func NewMockDB() *MockDB {
 		},
 		RedisKeyValueFunc: &DBRedisKeyValueFunc{
 			defaultHook: func() (r0 RedisKeyValueStore) {
+				return
+			},
+		},
+		RepoCommitsFunc: &DBRepoCommitsFunc{
+			defaultHook: func() (r0 RepoCommitsStore) {
 				return
 			},
 		},
@@ -5511,6 +5519,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.RedisKeyValue")
 			},
 		},
+		RepoCommitsFunc: &DBRepoCommitsFunc{
+			defaultHook: func() RepoCommitsStore {
+				panic("unexpected invocation of MockDB.RepoCommits")
+			},
+		},
 		RepoKVPsFunc: &DBRepoKVPsFunc{
 			defaultHook: func() RepoKVPStore {
 				panic("unexpected invocation of MockDB.RepoKVPs")
@@ -5722,6 +5735,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		RedisKeyValueFunc: &DBRedisKeyValueFunc{
 			defaultHook: i.RedisKeyValue,
+		},
+		RepoCommitsFunc: &DBRepoCommitsFunc{
+			defaultHook: i.RepoCommits,
 		},
 		RepoKVPsFunc: &DBRepoKVPsFunc{
 			defaultHook: i.RepoKVPs,
@@ -9301,6 +9317,104 @@ func (c DBRedisKeyValueFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBRedisKeyValueFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBRepoCommitsFunc describes the behavior when the RepoCommits method of
+// the parent MockDB instance is invoked.
+type DBRepoCommitsFunc struct {
+	defaultHook func() RepoCommitsStore
+	hooks       []func() RepoCommitsStore
+	history     []DBRepoCommitsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoCommits delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) RepoCommits() RepoCommitsStore {
+	r0 := m.RepoCommitsFunc.nextHook()()
+	m.RepoCommitsFunc.appendCall(DBRepoCommitsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RepoCommits method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBRepoCommitsFunc) SetDefaultHook(hook func() RepoCommitsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoCommits method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBRepoCommitsFunc) PushHook(hook func() RepoCommitsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRepoCommitsFunc) SetDefaultReturn(r0 RepoCommitsStore) {
+	f.SetDefaultHook(func() RepoCommitsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRepoCommitsFunc) PushReturn(r0 RepoCommitsStore) {
+	f.PushHook(func() RepoCommitsStore {
+		return r0
+	})
+}
+
+func (f *DBRepoCommitsFunc) nextHook() func() RepoCommitsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRepoCommitsFunc) appendCall(r0 DBRepoCommitsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRepoCommitsFuncCall objects describing
+// the invocations of this function.
+func (f *DBRepoCommitsFunc) History() []DBRepoCommitsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRepoCommitsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRepoCommitsFuncCall is an object that describes an invocation of method
+// RepoCommits on an instance of MockDB.
+type DBRepoCommitsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RepoCommitsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRepoCommitsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRepoCommitsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
