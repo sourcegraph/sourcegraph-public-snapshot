@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiCog, mdiDelete, mdiGithub, mdiPlus } from '@mdi/js'
+import { mdiCog, mdiDelete, mdiOpenInNew, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-operations'
@@ -8,7 +8,6 @@ import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-ope
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -19,10 +18,12 @@ import {
     LoadingSpinner,
     Button,
     H2,
-    Card,
+    H3,
     Link,
     Text,
     Tooltip,
+    Grid,
+    AnchorLink,
 } from '@sourcegraph/wildcard'
 
 import { GitHubAppByIDResult, GitHubAppByIDVariables } from '../../graphql-operations'
@@ -105,138 +106,175 @@ export const GitHubAppPage: FC<Props> = ({
             {(error || fetchError) && <ErrorAlert className="mb-3" error={error ?? fetchError} />}
             {loading && <LoadingSpinner />}
             {app && (
-                <Container className="mb-3">
+                <>
                     <PageHeader
                         path={[
                             { icon: mdiCog },
                             { to: '/site-admin/github-apps', text: 'GitHub Apps' },
                             {
-                                to: `/site-admin/github-apps/${appID}`,
-                                text: app.name,
+                                text: (
+                                    <span className="d-flex align-items-center">
+                                        <img
+                                            className={classNames(styles.logo, 'mr-2')}
+                                            src={app.logo}
+                                            alt="App logo"
+                                        />
+                                        <span>{app.name}</span>
+                                    </span>
+                                ),
                             },
                         ]}
                         className="mb-3"
                         headingElement="h2"
-                        actions={
-                            <>
-                                <ButtonLink to={app.appURL} variant="info" className="ml-2">
-                                    <Icon inline={true} svgPath={mdiGithub} aria-hidden={true} /> Edit
-                                </ButtonLink>
-                                <Tooltip content="Delete GitHub App">
-                                    <Button
-                                        aria-label="Delete"
-                                        className="ml-2"
-                                        onClick={onDelete}
-                                        disabled={deleteLoading}
-                                        variant="danger"
-                                    >
-                                        <Icon aria-hidden={true} svgPath={mdiDelete} />
-                                        {' Delete'}
-                                    </Button>
-                                </Tooltip>
-                            </>
-                        }
                     />
-                    <span className="d-flex align-items-center mt-2 mb-3">
-                        <img className={classNames(styles.logo, 'mr-4')} src={app.logo} alt="App logo" />
-                        <div className="d-flex flex-column">
-                            <small className="text-muted">AppID: {app.appID}</small>
-                            <small className="text-muted">Slug: {app.slug}</small>
-                            <small className="text-muted">ClientID: {app.clientID}</small>
-                        </div>
-                        <span className="ml-auto">
-                            <span>
-                                Created <Timestamp date={app.createdAt} />
-                            </span>
-                            <span className="ml-3">
-                                Updated <Timestamp date={app.updatedAt} />
-                            </span>
+                    <div className="d-flex align-items-center">
+                        <span className="timestamps text-muted">
+                            Created <Timestamp date={app.createdAt} /> | Updated <Timestamp date={app.updatedAt} />
                         </span>
-                    </span>
+                        <span className="ml-auto">
+                            <AnchorLink to={app.appURL} target="_blank" className="mr-3">
+                                View In GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
+                            </AnchorLink>
+                            <Button onClick={() => navigate(-1)} variant="secondary">
+                                Cancel
+                            </Button>
+                            <Tooltip content="Delete GitHub App">
+                                <Button
+                                    aria-label="Delete"
+                                    className="ml-2"
+                                    onClick={onDelete}
+                                    disabled={deleteLoading}
+                                    variant="danger"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                    {' Delete'}
+                                </Button>
+                            </Tooltip>
+                        </span>
+                    </div>
                     <AuthProviderMessage app={app} id={appID} />
-                    <hr />
+                    <Container className="mt-3 mb-3">
+                        <Grid columnCount={2} templateColumns="auto 1fr" spacing={[0.6, 2]}>
+                            <span className="font-weight-bold">GitHub App Name</span>
+                            <span>{app.name}</span>
+                            <span className="font-weight-bold">URL</span>
+                            <AnchorLink to={app.appURL} target="_blank" className="text-decoration-none">
+                                {app.appURL}
+                            </AnchorLink>
+                            <span className="font-weight-bold">AppID</span>
+                            <span>{app.appID}</span>
+                        </Grid>
 
-                    <div className="mt-4">
-                        <H2>App installations</H2>
-                        <div className="list-group mb-3" aria-label="GitHub App Installations">
-                            {app.installations?.length === 0 ? (
-                                <Text>
-                                    This GitHub App does not have any installations. Install the App to create a new
-                                    connection.
-                                </Text>
-                            ) : (
-                                app.installations?.map(installation => (
-                                    <Card
-                                        className={classNames(styles.listNode, 'd-flex flex-row align-items-center')}
-                                        key={installation.id}
-                                    >
-                                        <span className="mr-3">
-                                            <Link to={installation.account.url} className="mr-3">
-                                                <UserAvatar
-                                                    size={32}
-                                                    user={{ ...installation.account, displayName: null }}
-                                                    className="mr-2"
-                                                />
-                                                {installation.account.login}
-                                            </Link>
-                                            <span>Type: {installation.account.type}</span>
-                                        </span>
-                                        <small className="text-muted mr-3">ID: {installation.id}</small>
-                                        <ButtonLink
-                                            to={installation.url}
-                                            variant="secondary"
-                                            className="ml-auto mr-1"
-                                            size="sm"
+                        <hr className="mt-4 mb-4" />
+
+                        <div>
+                            <H2 className="d-flex align-items-center">
+                                Installations
+                                <Button className="ml-auto" onClick={() => onAddInstallation(app)} variant="primary">
+                                    <Icon svgPath={mdiPlus} aria-hidden={true} /> Add installation
+                                </Button>
+                            </H2>
+                            <div className="list-group mb-3" aria-label="GitHub App Installations">
+                                {app.installations?.length === 0 ? (
+                                    <Text>
+                                        This GitHub App does not have any installations. Install the App to create a new
+                                        connection.
+                                    </Text>
+                                ) : (
+                                    app.installations?.map(installation => (
+                                        <Container
+                                            className={classNames(styles.installation, 'p-3')}
+                                            key={installation.id}
                                         >
-                                            <Icon inline={true} svgPath={mdiGithub} aria-hidden={true} /> Edit
-                                        </ButtonLink>
-                                        <ButtonLink
-                                            variant="success"
-                                            to={`/site-admin/external-services/new?id=github&appID=${
-                                                app.appID
-                                            }&installationID=${installation.id}&url=${encodeURI(app.baseURL)}&org=${
-                                                installation.account.login
-                                            }`}
-                                            size="sm"
-                                        >
-                                            <Icon svgPath={mdiPlus} aria-hidden={true} /> New connection
-                                        </ButtonLink>
-                                    </Card>
-                                ))
-                            )}
+                                            <div className="d-flex align-items-center">
+                                                <Link
+                                                    to={installation.account.url}
+                                                    className="d-flex align-items-center"
+                                                >
+                                                    <img
+                                                        className={styles.logo}
+                                                        src={installation.account.avatarURL}
+                                                        alt="account avatar"
+                                                    />
+                                                    <div className="d-flex flex-column ml-3">
+                                                        {installation.account.login}
+                                                        <span className="text-muted">
+                                                            ID: {installation.id} | Type: {installation.account.type}
+                                                        </span>
+                                                    </div>
+                                                </Link>
+                                                <AnchorLink to={installation.url} target="_blank" className="ml-auto">
+                                                    <small>
+                                                        View In GitHub{' '}
+                                                        <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
+                                                    </small>
+                                                </AnchorLink>
+                                            </div>
+                                            <div className="mt-4">
+                                                <H3 className="d-flex align-items-center mb-0">
+                                                    Code host connections
+                                                    <ButtonLink
+                                                        variant="secondary"
+                                                        outline={true}
+                                                        className="ml-auto"
+                                                        to={`/site-admin/external-services/new?id=github&appID=${
+                                                            app.appID
+                                                        }&installationID=${installation.id}&url=${encodeURI(
+                                                            app.baseURL
+                                                        )}&org=${installation.account.login}`}
+                                                        size="sm"
+                                                    >
+                                                        <Icon svgPath={mdiPlus} aria-hidden={true} /> Add connection
+                                                    </ButtonLink>
+                                                </H3>
+                                                <ConnectionList
+                                                    as="ul"
+                                                    className={styles.listGroup}
+                                                    aria-label="Code Host Connections"
+                                                >
+                                                    {installation.externalServices?.nodes?.map(node => (
+                                                        <ExternalServiceNode
+                                                            key={node.id}
+                                                            node={node}
+                                                            editingDisabled={false}
+                                                        />
+                                                    ))}
+                                                </ConnectionList>
+                                                {installation.externalServices && (
+                                                    <SummaryContainer className="mt-2" centered={true}>
+                                                        <ConnectionSummary
+                                                            noSummaryIfAllNodesVisible={false}
+                                                            first={100}
+                                                            centered={true}
+                                                            connection={installation.externalServices}
+                                                            noun="code host connection"
+                                                            pluralNoun="code host connections"
+                                                            hasNextPage={false}
+                                                        />
+                                                    </SummaryContainer>
+                                                )}
+                                            </div>
+                                        </Container>
+                                    ))
+                                )}
+                                <SummaryContainer className="mt-3" centered={true}>
+                                    <ConnectionSummary
+                                        noSummaryIfAllNodesVisible={false}
+                                        first={app?.installations?.length ?? 0}
+                                        centered={true}
+                                        connection={{
+                                            nodes: app?.installations ?? [],
+                                            totalCount: app?.installations?.length ?? 0,
+                                        }}
+                                        noun="installation"
+                                        pluralNoun="installations"
+                                        hasNextPage={false}
+                                    />
+                                </SummaryContainer>
+                            </div>
                         </div>
-                        <Button
-                            onClick={async () => {
-                                await onAddInstallation(app)
-                            }}
-                            variant="success"
-                        >
-                            <Icon svgPath={mdiPlus} aria-hidden={true} /> Add installation
-                        </Button>
-                    </div>
-                    <hr className="mt-4" />
-                    <div className="mt-4">
-                        <H2>Code host connections</H2>
-                        <ConnectionList as="ul" className="list-group" aria-label="Code Host Connections">
-                            {app.externalServices?.nodes?.map(node => (
-                                <ExternalServiceNode key={node.id} node={node} editingDisabled={false} />
-                            ))}
-                        </ConnectionList>
-                        {app.externalServices && (
-                            <SummaryContainer className="mt-2" centered={true}>
-                                <ConnectionSummary
-                                    noSummaryIfAllNodesVisible={false}
-                                    first={app.externalServices.totalCount ?? 0}
-                                    centered={true}
-                                    connection={app.externalServices}
-                                    noun="code host connection"
-                                    pluralNoun="code host connections"
-                                    hasNextPage={false}
-                                />
-                            </SummaryContainer>
-                        )}
-                    </div>
-                </Container>
+                    </Container>
+                </>
             )}
         </div>
     )

@@ -84,10 +84,6 @@ type GitHubApp implements Node {
     """
     updatedAt: DateTime!
     """
-    Fetches external services related to this GitHub App.
-    """
-    externalServices(first: Int): ExternalServiceConnection!
-    """
     Fetches a list of installation IDs for this GitHub App.
     """
     installations: [Installation!]!
@@ -135,4 +131,8 @@ type Installation {
     The account on which the App was installed
     """
     account: GitHubAccount!
+    """
+    The external services derived from this installation.
+    """
+    externalServices(first: Int): ExternalServiceConnection!
 }
