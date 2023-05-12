@@ -99,7 +99,7 @@ func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podN
 	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{Container: containerName})
 	stream, err := req.Stream(ctx)
 	if err != nil {
-		return errors.Wrap(err, "opening log stream")
+		return errors.Wrapf(err, "opening log stream for pod %s", podName)
 	}
 
 	logEntry := cmdLogger.LogEntry(key, command)
