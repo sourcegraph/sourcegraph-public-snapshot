@@ -213,28 +213,54 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			},
 			totalEvents: 2,
 		},
+		{
+			name: "Failed to mark record as failed",
+			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
+			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
+				0: {
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"RecordTransformer codeintel: 2 errors occurred:\n\t* failed\n\t* failed to mark"}`,
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
+						mockStore.MarkFailedFunc.PushReturn(true, errors.New("failed to mark"))
+					},
+					transformerFunc: func(ctx context.Context, version string, record uploadsshared.Index, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+						return executortypes.Job{}, errors.New("failed")
+					},
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], jobTokenStore *executorstore.MockJobTokenStore) {
+						require.Len(t, mockStore.DequeueFunc.History(), 1)
+						require.Len(t, mockStore.MarkFailedFunc.History(), 1)
+						assert.Equal(t, 1, mockStore.MarkFailedFunc.History()[0].Arg1)
+						assert.Equal(t, "failed to transform record: failed", mockStore.MarkFailedFunc.History()[0].Arg2)
+						assert.Equal(t, dbworkerstore.MarkFinalOptions{}, mockStore.MarkFailedFunc.History()[0].Arg3)
+						require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+					},
+				},
+			},
+			batchesDequeueEvents: map[int]dequeueEvent[*btypes.BatchSpecWorkspaceExecutionJob]{
+				1: {
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"RecordTransformer batches: 2 errors occurred:\n\t* failed\n\t* failed to mark"}`,
+					mockFunc: func(mockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+						mockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 1}, true, nil)
+						mockStore.MarkFailedFunc.PushReturn(true, errors.New("failed to mark"))
+					},
+					transformerFunc: func(ctx context.Context, version string, record *btypes.BatchSpecWorkspaceExecutionJob, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+						return executortypes.Job{}, errors.New("failed")
+					},
+					assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+						require.Len(t, mockStore.DequeueFunc.History(), 1)
+						require.Len(t, mockStore.MarkFailedFunc.History(), 1)
+						assert.Equal(t, 1, mockStore.MarkFailedFunc.History()[0].Arg1)
+						assert.Equal(t, "failed to transform record: failed", mockStore.MarkFailedFunc.History()[0].Arg2)
+						assert.Equal(t, dbworkerstore.MarkFinalOptions{}, mockStore.MarkFailedFunc.History()[0].Arg3)
+						require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+					},
+				},
+			},
+			totalEvents: 2,
+		},
 	}
-	//	{
-	//		name: "Failed to mark record as failed",
-	//		body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-	//		transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
-	//			return executortypes.Job{}, errors.New("failed")
-	//		},
-	//		mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
-	//			mockStore.MarkFailedFunc.PushReturn(false, errors.New("failed to mark"))
-	//		},
-	//		expectedStatusCode:   http.StatusInternalServerError,
-	//		expectedResponseBody: `{"error":"RecordTransformer: failed"}`,
-	//		assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-	//			require.Len(t, mockStore.DequeueFunc.History(), 1)
-	//			require.Len(t, mockStore.MarkFailedFunc.History(), 1)
-	//			assert.Equal(t, 1, mockStore.MarkFailedFunc.History()[0].Arg1)
-	//			assert.Equal(t, "failed to transform record: failed", mockStore.MarkFailedFunc.History()[0].Arg2)
-	//			assert.Equal(t, dbworkerstore.MarkFinalOptions{}, mockStore.MarkFailedFunc.History()[0].Arg3)
-	//			require.Len(t, jobTokenStore.CreateFunc.History(), 0)
-	//		},
-	//	},
 	//	{
 	//		name: "V2 job",
 	//		body: `{"executorName": "test-executor", "version": "dev", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
@@ -326,6 +352,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			router := mux.NewRouter()
 			router.HandleFunc("/dequeue", mh.ServeHTTP)
 
+			// Ugly.. but works
 			if test.totalEvents == 0 {
 				req, err := http.NewRequest(http.MethodPost, "/dequeue", strings.NewReader(test.body))
 				require.NoError(t, err)

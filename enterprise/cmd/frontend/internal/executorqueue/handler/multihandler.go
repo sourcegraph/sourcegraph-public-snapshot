@@ -117,13 +117,14 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			job, err = m.BatchesQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
 			if err != nil {
-				if _, markErr := m.BatchesQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); markErr != nil {
+				var markErr error
+				if _, markErr = m.BatchesQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); markErr != nil {
 					logger.Error("Failed to mark record as failed",
 						log.String("queue", queue),
 						log.Int("recordID", record.RecordID()),
 						log.Error(markErr))
 				}
-				err = errors.Wrapf(err, "RecordTransformer %s", queue)
+				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
 				m.marshalAndRespondError(w, err)
 				return
 			}
@@ -142,12 +143,13 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			job, err = m.CodeIntelQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
 			if err != nil {
-				if _, markErr := m.CodeIntelQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); markErr != nil {
+				var markErr error
+				if _, markErr = m.CodeIntelQueueHandler.Store.MarkFailed(r.Context(), record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), dbworkerstore.MarkFinalOptions{}); markErr != nil {
 					logger.Error("Failed to mark record as failed",
 						log.Int("recordID", record.RecordID()),
 						log.Error(markErr))
 				}
-				err = errors.Wrapf(err, "RecordTransformer %s", queue)
+				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
 				m.marshalAndRespondError(w, err)
 				return
 			}
