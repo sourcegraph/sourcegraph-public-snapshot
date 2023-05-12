@@ -35,7 +35,6 @@ pipeline:
       extract: true
   - runs: |
       mvn package -DskipTests
-      ls -al target/
   - runs: |
       mkdir -p ${{targets.destdir}}/opt/
       cp -r target/ ${{targets.destdir}}/opt/s3proxy
