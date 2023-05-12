@@ -1,9 +1,9 @@
 import { FC, useState, useCallback, useRef } from 'react'
 
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Container, Button, H2, Input, Label, Text } from '@sourcegraph/wildcard'
+import { Alert, Container, Button, Input, Label, Text, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../PageTitle'
 
@@ -19,10 +19,11 @@ interface stateResponse {
  */
 export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
     const { search } = useLocation()
+    const navigate = useNavigate()
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
-    const [name, setName] = useState<string>('Sourcegraph')
-    const [url, setUrl] = useState<string>('https://github.com')
+    const [name, setName] = useState<string>('')
+    const [url, setUrl] = useState<string>('')
     const [org, setOrg] = useState<string>('')
     const [error, setError] = useState<any>(null)
 
@@ -88,7 +89,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
             if (state && ref.current && formInput.current) {
                 const actionUrl = createActionUrl(state)
                 ref.current.action = actionUrl
-                formInput.current.value = getManifest(webhookURL, name)
+                formInput.current.value = getManifest(name, webhookURL)
                 ref.current.submit()
             }
         },
@@ -130,38 +131,74 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
 
     return (
         <>
-            <PageTitle title="Add GitHubApp" />
-            <H2>Add GitHub App</H2>
-            <Container>
+            <PageTitle title="Create GitHub App" />
+            <PageHeader
+                path={[{ text: 'Create GitHub App' }]}
+                description={
+                    <>
+                        Create and connect a GitHub App.
+                        {/* TODO: add proper link here */}
+                        <Link to="" className="ml-1">
+                            See how GitHub App configuration works.
+                        </Link>
+                    </>
+                }
+            />
+            <Container className="mt-3">
                 {alert}
                 {error && <Alert variant="danger">Error creating github app: {error}</Alert>}
-                <div className="form-group">
-                    <Label className="w-100">
-                        <Text alignment="left" className="mb-2">
-                            Name
-                        </Text>
-                        <Input type="text" onChange={handleNameChange} value={name} />
-                    </Label>
-                </div>
-                <div className="form-group">
-                    <Label className="w-100">
-                        <Text alignment="left" className="mb-2">
-                            Base URL
-                        </Text>
-                        <Input type="text" onChange={handleUrlChange} value={url} />
-                    </Label>
-                </div>
-                <div className="form-group">
-                    <Label className="w-100">
-                        <Text alignment="left" className="mb-2">
-                            Organization (optional)
-                        </Text>
-                        <Input type="text" onChange={handleOrgChange} value={org} />
-                    </Label>
-                </div>
-                <div className="form-group">
-                    <Button variant="primary" onClick={createState}>
+                <Text>
+                    Create a new GitHub App by completing the form below. Once you click "Create GitHub App", you will
+                    be redirected to GitHub where you will create your GitHub App, choose which organizations to connect
+                    to your GitHub App, and choose which repositories to install.
+                </Text>
+                <Text>Once completing install in GitHub, you'll be redirected back here.</Text>
+
+                <Label className="w-100">
+                    <Text alignment="left" className="mb-2">
+                        GitHub App Name
+                    </Text>
+                    <Input
+                        type="text"
+                        onChange={handleNameChange}
+                        value={name}
+                        placeholder="Sourcegraph"
+                        message="This is the display name of your GitHub App in GitHub."
+                    />
+                </Label>
+                <Label className="w-100 mt-2">
+                    <Text alignment="left" className="mb-2">
+                        GitHub URL
+                    </Text>
+                    <Input
+                        type="text"
+                        onChange={handleUrlChange}
+                        value={url}
+                        placeholder="https://github.com"
+                        message="This is the URL of the GitHub account or organization that you would like to create your GitHub App in."
+                    />
+                </Label>
+                <Label className="w-100 mt-2">
+                    <Text alignment="left" className="mb-2">
+                        Organization name <span className="text-muted">(optional)</span>
+                    </Text>
+                    <Input
+                        type="text"
+                        onChange={handleOrgChange}
+                        value={org}
+                        message="If creating a GitHub App for your GitHub Organization, this should match your GitHub Organization name."
+                    />
+                </Label>
+                <div className="mt-3">
+                    <Button
+                        variant="primary"
+                        onClick={createState}
+                        disabled={name.trim().length < 3 || url.trim().length < 10}
+                    >
                         Create Github App
+                    </Button>
+                    <Button className="ml-3" onClick={() => navigate(-1)} variant="secondary">
+                        Cancel
                     </Button>
                 </div>
                 {/* eslint-disable-next-line react/forbid-elements */}
