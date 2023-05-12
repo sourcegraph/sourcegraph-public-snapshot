@@ -32,7 +32,7 @@ func NewCompletionsStreamHandler(logger log.Logger, db database.DB) http.Handler
 
 		err = cc.Stream(ctx, requestParams, func(event types.ChatCompletionEvent) error { return eventWriter.Event("completion", event) })
 		if err != nil {
-			logger.Error("error while streaming completions", log.Error(err))
+			trace.Logger(logger).Error("error while streaming completions", log.Error(err))
 			_ = eventWriter.Event("error", map[string]string{"error": err.Error()})
 			return
 		}
