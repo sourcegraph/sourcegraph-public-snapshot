@@ -221,10 +221,11 @@ export class InlineController {
         // Stop tracking for file changes to perfotm replacement
         this.isInProgress = false
         // Perform edits
-        await activeEditor.edit(edit => {
-            edit.replace(selection, replacement)
-        })
         const startLine = selection.start.line
+        await activeEditor.edit(edit => {
+            edit.delete(selection)
+            edit.insert(new vscode.Position(startLine, 0), replacement + '\n')
+        })
         const newLineCount = replacement.split('\n').length - 2
         // Highlight from the start line to the length of the replacement content
         const newRange = new vscode.Range(startLine, 0, startLine + newLineCount, 0)
