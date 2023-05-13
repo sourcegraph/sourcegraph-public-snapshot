@@ -8,3 +8,18 @@
     display: flex;
     justify-content: space-between;
   }
+
+  .emptyState {
+    color: var(--gray-05);
+    display: flex;
+    flex-direction: column;
+    padding: 0.9375rem 2.5rem;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .emptyStateContainer {
+    display: flex;
+    width:65%;
+    text-align: center;
+  }
